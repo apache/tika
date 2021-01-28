@@ -267,7 +267,7 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
 
     private String getJsonString(String fileName) {
         JsonObject root = new JsonObject();
-        root.add("fetcherName", new JsonPrimitive(FETCHER_NAME));
+        root.add("fetcher", new JsonPrimitive(FETCHER_NAME));
         root.add("fetchKey", new JsonPrimitive(fileName));
         root.add("emitter", new JsonPrimitive(EMITTER_NAME));
         return GSON.toJson(root);

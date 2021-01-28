@@ -29,7 +29,7 @@ public class EmptyEmitter implements Emitter {
     }
 
     @Override
-    public void emit(List<Metadata> metadataList) throws IOException, TikaException {
+    public void emit(String emitKey, List<Metadata> metadataList) throws IOException, TikaEmitterException {
 
     }
 }

@@ -38,7 +38,6 @@ public class TestBasic {
         Emitter emitter = tikaConfig.getEmitterManager().getEmitter("solr1");
         List<Metadata> metadataList = new ArrayList<>();
         Metadata m1 = new Metadata();
-        m1.set("id", "1");
         m1.set(Metadata.CONTENT_LENGTH, "314159");
         m1.set(TikaCoreProperties.TIKA_CONTENT, "the quick brown");
         m1.set(TikaCoreProperties.TITLE, "this is the first title");
@@ -54,6 +53,6 @@ public class TestBasic {
         metadataList.add(m1);
         metadataList.add(m2);
 
-        emitter.emit(metadataList);
+        emitter.emit("1", metadataList);
     }
 }

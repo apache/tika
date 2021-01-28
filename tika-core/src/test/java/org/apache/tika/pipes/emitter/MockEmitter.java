@@ -25,7 +25,7 @@ import java.util.List;
 public class MockEmitter extends AbstractEmitter {
 
     @Override
-    public void emit(List<Metadata> metadataList) throws IOException, TikaException {
+    public void emit(String emitKey, List<Metadata> metadataList) throws IOException, TikaEmitterException {
 
     }
 }

@@ -20,7 +20,6 @@ import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.iterable.S3Objects;
-import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
@@ -28,8 +27,9 @@ import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.pipes.fetcher.FetchId;
-import org.apache.tika.pipes.fetcher.FetchIdMetadataPair;
+import org.apache.tika.pipes.emitter.EmitKey;
+import org.apache.tika.pipes.fetcher.FetchKey;
+import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
 import org.apache.tika.pipes.fetchiterator.FetchIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,11 +97,13 @@ public class S3FetchIterator extends FetchIterator implements Initializable {
         long start = System.currentTimeMillis();
         int count = 0;
         for (S3ObjectSummary summary : S3Objects.withPrefix(s3Client, bucket, s3PathPrefix)) {
+
             long elapsed = System.currentTimeMillis() - start;
             LOGGER.debug("adding ({}) {} in {} ms", count, summary.getKey(),
                     elapsed);
-            tryToAdd( new FetchIdMetadataPair(
-                    new FetchId(fetcherName, summary.getKey()),
+            tryToAdd(new FetchEmitTuple(
+                    new FetchKey(fetcherName, summary.getKey()),
+                    new EmitKey(fetcherName, summary.getKey()),
                     new Metadata()));
             count++;
         }

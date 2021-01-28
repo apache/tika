@@ -18,12 +18,9 @@ package org.apache.tika.pipes.fetchiterator.jdbc;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.pipes.fetcher.FetchId;
-import org.apache.tika.pipes.fetcher.FetchIdMetadataPair;
+import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
 import org.apache.tika.pipes.fetchiterator.FetchIterator;
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -32,22 +29,18 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -99,7 +92,7 @@ public class TestJDBCFetchIterator {
         FetchIterator fetchIterator = tk.getFetchIterator();
         ExecutorService es = Executors.newFixedThreadPool(numConsumers+1);
         ExecutorCompletionService<Integer> completionService = new ExecutorCompletionService<>(es);
-        ArrayBlockingQueue<FetchIdMetadataPair> queue = fetchIterator.init(numConsumers);
+        ArrayBlockingQueue<FetchEmitTuple> queue = fetchIterator.init(numConsumers);
         completionService.submit(fetchIterator);
         List<MockFetcher> fetchers = new ArrayList<>();
         for (int i = 0; i < numConsumers; i++) {
@@ -119,8 +112,8 @@ public class TestJDBCFetchIterator {
         int cnt = 0;
         Matcher m = Pattern.compile("fk(\\d+)").matcher("");
         for (MockFetcher f : fetchers) {
-            for (FetchIdMetadataPair p : f.pairs) {
-                String k = p.getFetchId().getFetchKey();
+            for (FetchEmitTuple p : f.pairs) {
+                String k = p.getFetchKey().getKey();
                 String num = "";
                 if (m.reset(k).find()) {
                     num = m.group(1);
@@ -143,9 +136,11 @@ public class TestJDBCFetchIterator {
                 "    <fetchIterators>\n" +
                 "        <fetchIterator class=\"org.apache.tika.pipes.fetchiterator.jdbc.JDBCFetchIterator\">\n" +
                 "            <params>\n" +
-                "                <param name=\"fetcherName\" type=\"string\">s3</param>\n" +
+                "                <param name=\"fetcherName\" type=\"string\">s3f</param>\n" +
+                "                <param name=\"emitterName\" type=\"string\">s3e</param>\n" +
                 "                <param name=\"queueSize\" type=\"int\">57</param>\n" +
                 "                <param name=\"fetchKeyColumn\" type=\"string\">my_fetchkey</param>\n" +
+                "                <param name=\"emitKeyColumn\" type=\"string\">my_fetchkey</param>\n" +
                 "                <param name=\"select\" type=\"string\">" +
                 "select id as my_id, project as my_project, fetchKey as my_fetchKey from fetchkeys</param>\n" +
                 "                <param name=\"connection\" type=\"string\">jdbc:h2:file:"+
@@ -158,20 +153,20 @@ public class TestJDBCFetchIterator {
     }
 
     private static class MockFetcher implements Callable<Integer> {
-        private final ArrayBlockingQueue<FetchIdMetadataPair> queue;
-        private final List<FetchIdMetadataPair> pairs = new ArrayList<>();
-        private MockFetcher(ArrayBlockingQueue<FetchIdMetadataPair> queue) {
+        private final ArrayBlockingQueue<FetchEmitTuple> queue;
+        private final List<FetchEmitTuple> pairs = new ArrayList<>();
+        private MockFetcher(ArrayBlockingQueue<FetchEmitTuple> queue) {
             this.queue = queue;
         }
 
         @Override
         public Integer call() throws Exception {
             while (true) {
-                FetchIdMetadataPair p = queue.poll(1, TimeUnit.HOURS);
-                if (p == FetchIterator.COMPLETED_SEMAPHORE) {
+                FetchEmitTuple t = queue.poll(1, TimeUnit.HOURS);
+                if (t == FetchIterator.COMPLETED_SEMAPHORE) {
                     return pairs.size();
                 }
-                pairs.add(p);
+                pairs.add(t);
             }
         }
     }

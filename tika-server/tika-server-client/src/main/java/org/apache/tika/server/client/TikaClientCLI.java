@@ -18,9 +18,8 @@ package org.apache.tika.server.client;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
 import org.apache.tika.pipes.fetchiterator.FetchIterator;
-import org.apache.tika.pipes.fetcher.FetchIdMetadataPair;
-import org.apache.tika.pipes.fetchiterator.FileSystemFetchIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -53,21 +52,18 @@ public class TikaClientCLI {
         //TODO -- add an actual commandline
         Path tikaConfigPath = Paths.get(args[0]);
         List<String> tikaServerUrls = Arrays.asList(args[1].split(","));
-        String fetcherString = args[2];
-
         TikaClientCLI cli = new TikaClientCLI();
-        cli.execute(tikaConfigPath, tikaServerUrls, fetcherString);
+        cli.execute(tikaConfigPath, tikaServerUrls);
     }
 
-    private void execute(Path tikaConfigPath, List<String> tikaServerUrls, String fetcherString)
+    private void execute(Path tikaConfigPath, List<String> tikaServerUrls)
             throws TikaException, IOException, SAXException {
         TikaConfig config = new TikaConfig(tikaConfigPath);
 
         ExecutorService executorService = Executors.newFixedThreadPool(numThreads+1);
         ExecutorCompletionService<Integer> completionService = new ExecutorCompletionService<>(executorService);
-        //TODO: fix this!
         final FetchIterator fetchIterator = config.getFetchIterator();
-        ArrayBlockingQueue<FetchIdMetadataPair> queue = fetchIterator.init(numThreads);
+        final ArrayBlockingQueue<FetchEmitTuple> queue = fetchIterator.init(numThreads);
 
         completionService.submit(fetchIterator);
         if (tikaServerUrls.size() == numThreads) {
@@ -75,12 +71,12 @@ public class TikaClientCLI {
             for (int i = 0; i < numThreads; i++) {
                 TikaClient client = TikaClient.get(config,
                         Collections.singletonList(tikaServerUrls.get(i)));
-                completionService.submit(new FetchWorker(queue, client, fetcherString));
+                completionService.submit(new FetchWorker(queue, client));
             }
         } else {
             for (int i = 0; i < numThreads; i++) {
                 TikaClient client = TikaClient.get(config, tikaServerUrls);
-                completionService.submit(new FetchWorker(queue, client, fetcherString));
+                completionService.submit(new FetchWorker(queue, client));
             }
         }
 
@@ -114,14 +110,11 @@ public class TikaClientCLI {
     }
 
     private class FetchWorker implements Callable<Integer> {
-        private final ArrayBlockingQueue<FetchIdMetadataPair> queue;
+        private final ArrayBlockingQueue<FetchEmitTuple> queue;
         private final TikaClient client;
-        private final String emitterString;
-        public FetchWorker(ArrayBlockingQueue<FetchIdMetadataPair> queue, TikaClient client,
-                           String emitterString) {
+        public FetchWorker(ArrayBlockingQueue<FetchEmitTuple> queue, TikaClient client) {
             this.queue = queue;
             this.client = client;
-            this.emitterString = emitterString;
         }
 
         @Override
@@ -129,20 +122,20 @@ public class TikaClientCLI {
 
             while (true) {
 
-                FetchIdMetadataPair p = queue.poll(maxWaitMs, TimeUnit.MILLISECONDS);
-                if (p == null) {
+                FetchEmitTuple t = queue.poll(maxWaitMs, TimeUnit.MILLISECONDS);
+                if (t == null) {
                     throw new TimeoutException("exceeded maxWaitMs");
                 }
-                if (p == FetchIterator.COMPLETED_SEMAPHORE) {
+                if (t == FetchIterator.COMPLETED_SEMAPHORE) {
                     return 1;
                 }
                 try {
-                    LOGGER.debug("about to parse: {}", p.getFetchId());
-                    client.parse(p.getFetchId(), p.getMetadata(), emitterString);
+                    LOGGER.debug("about to parse: {}", t.getFetchKey());
+                    client.parse(t, t.getMetadata());
                 } catch (IOException e) {
-                    LOGGER.warn(p.getFetchId().toString(), e);
+                    LOGGER.warn(t.getFetchKey().toString(), e);
                 } catch (TikaException e) {
-                    LOGGER.warn(p.getFetchId().toString(), e);
+                    LOGGER.warn(t.getFetchKey().toString(), e);
                 }
             }
         }

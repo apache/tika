@@ -24,7 +24,7 @@ import com.google.gson.JsonPrimitive;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.pipes.fetcher.FetchId;
+import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -57,19 +57,20 @@ public class TikaClient {
 
     }*/
 
-    public TikaEmitterResult parse(FetchId fetchId, Metadata metadata, String emitter)
+    public TikaEmitterResult parse(FetchEmitTuple fetchEmit, Metadata metadata)
             throws IOException, TikaException {
         TikaHttpClient client = getHttpClient();
-        String jsonRequest = jsonifyRequest(fetchId, metadata, emitter);
+        String jsonRequest = jsonifyRequest(fetchEmit, metadata);
         return client.postJson(jsonRequest);
 
     }
 
-    private String jsonifyRequest(FetchId fetchId, Metadata metadata, String emitter) {
+    private String jsonifyRequest(FetchEmitTuple fetchEmit, Metadata metadata) {
         JsonObject root = new JsonObject();
-        root.add("fetcherName", new JsonPrimitive(fetchId.getFetcherName()));
-        root.add("fetchKey", new JsonPrimitive(fetchId.getFetchKey()));
-        root.add("emitter", new JsonPrimitive(emitter));
+        root.add("fetcher", new JsonPrimitive(fetchEmit.getFetchKey().getFetcherName()));
+        root.add("fetchKey", new JsonPrimitive(fetchEmit.getFetchKey().getKey()));
+        root.add("emitter", new JsonPrimitive(fetchEmit.getEmitKey().getEmitterName()));
+        root.add("emitKey", new JsonPrimitive(fetchEmit.getEmitKey().getEmitKey()));
         if (metadata.size() > 0) {
             JsonObject m = new JsonObject();
             for (String n : metadata.names()) {

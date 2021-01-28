@@ -1647,4 +1647,11 @@ public class TikaConfig {
                     paramName + "' must be set in the config file");
         }
     }
+
+    public static void mustNotBeEmpty(String paramName, Path paramValue) throws TikaConfigException {
+        if (paramValue == null) {
+            throw new IllegalArgumentException("parameter '"+
+                    paramName + "' must be set in the config file");
+        }
+    }
 }

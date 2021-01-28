@@ -16,31 +16,32 @@
  */
 package org.apache.tika.pipes.fetcher;
 
-import org.apache.tika.metadata.Metadata;
+/**
+ * Pair of fetcherName (which fetcher to call) and the key
+ * to send to that fetcher to retrieve a specific file.
+ */
+public class FetchKey {
+    private final String fetcherName;
+    private final String fetchKey;
 
-public class FetchIdMetadataPair {
-
-    private final FetchId fetchId;
-    private final Metadata metadata;
-
-    public FetchIdMetadataPair(FetchId fetchId, Metadata metadata) {
-        this.fetchId = fetchId;
-        this.metadata = metadata;
+    public FetchKey(String fetcherName, String fetchKey) {
+        this.fetcherName = fetcherName;
+        this.fetchKey = fetchKey;
     }
 
-    public Metadata getMetadata() {
-        return metadata;
+    public String getFetcherName() {
+        return fetcherName;
     }
 
-    public FetchId getFetchId() {
-        return fetchId;
+    public String getKey() {
+        return fetchKey;
     }
 
     @Override
     public String toString() {
-        return "FetchIdMetadataPair{" +
-                "fetchId=" + fetchId +
-                ", metadata=" + metadata +
+        return "FetcherKeyPair{" +
+                "fetcherName='" + fetcherName + '\'' +
+                ", fetchKey='" + fetchKey + '\'' +
                 '}';
     }
 
@@ -49,16 +50,16 @@ public class FetchIdMetadataPair {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        FetchIdMetadataPair that = (FetchIdMetadataPair) o;
+        FetchKey fetchKey = (FetchKey) o;
 
-        if (fetchId != null ? !fetchId.equals(that.fetchId) : that.fetchId != null) return false;
-        return metadata != null ? metadata.equals(that.metadata) : that.metadata == null;
+        if (fetcherName != null ? !fetcherName.equals(fetchKey.fetcherName) : fetchKey.fetcherName != null) return false;
+        return this.fetchKey != null ? this.fetchKey.equals(fetchKey.fetchKey) : fetchKey.fetchKey == null;
     }
 
     @Override
     public int hashCode() {
-        int result = fetchId != null ? fetchId.hashCode() : 0;
-        result = 31 * result + (metadata != null ? metadata.hashCode() : 0);
+        int result = fetcherName != null ? fetcherName.hashCode() : 0;
+        result = 31 * result + (fetchKey != null ? fetchKey.hashCode() : 0);
         return result;
     }
 }

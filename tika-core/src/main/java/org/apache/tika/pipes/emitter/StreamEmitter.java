@@ -19,14 +19,9 @@ package org.apache.tika.pipes.emitter;
 import org.apache.tika.metadata.Metadata;
 
 import java.io.IOException;
-import java.util.List;
+import java.io.InputStream;
 
-public interface Emitter {
-
-    String getName();
-
-    void emit(String emitKey, List<Metadata> metadataList) throws IOException, TikaEmitterException;
-    //TODO we can add this later?
-    //void emit(String txt, Metadata metadata) throws IOException, TikaException;
-
+public interface StreamEmitter extends Emitter {
+    void emit(String emitKey, InputStream inputStream, Metadata userMetadata)
+            throws IOException, TikaEmitterException;
 }

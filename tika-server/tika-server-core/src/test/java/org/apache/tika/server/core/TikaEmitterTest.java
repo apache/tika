@@ -168,7 +168,7 @@ public class TikaEmitterTest extends CXFTestBase {
     public void testPost() throws Exception {
 
         JsonObject root = new JsonObject();
-        root.add("fetcherName", new JsonPrimitive("fsf"));
+        root.add("fetcher", new JsonPrimitive("fsf"));
         root.add("fetchKey", new JsonPrimitive("hello_world.xml"));
         root.add("emitter", new JsonPrimitive("fse"));
         JsonObject userMetadata = new JsonObject();
@@ -209,7 +209,7 @@ public class TikaEmitterTest extends CXFTestBase {
     public void testPut() throws Exception {
 
         String getUrl = endPoint+EMITTER_PATH_AND_FS;
-        String metaPathKey = EmitterResource.PATH_KEY_FOR_HTTP_HEADER;
+        String metaPathKey = EmitterResource.EMIT_KEY_FOR_HTTP_HEADER;
 
         Response response = WebClient
                 .create(getUrl)
@@ -237,7 +237,7 @@ public class TikaEmitterTest extends CXFTestBase {
     public void testPostNPE() throws Exception {
 
         JsonObject root = new JsonObject();
-        root.add("fetcherName", new JsonPrimitive("fsf"));
+        root.add("fetcher", new JsonPrimitive("fsf"));
         root.add("fetchKey", new JsonPrimitive("null_pointer.xml"));
         root.add("emitter", new JsonPrimitive("fse"));
         JsonObject userMetadata = new JsonObject();

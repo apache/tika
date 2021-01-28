@@ -28,11 +28,14 @@ import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.pipes.emitter.AbstractEmitter;
+import org.apache.tika.pipes.emitter.StreamEmitter;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,7 +70,10 @@ import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
  *                  &lt;param name="profile" type="string"&gt;my-profile&lt;/param&gt;
  *                  &lt;!-- required --&gt;
  *                  &lt;param name="bucket" type="string"&gt;my-bucket&lt;/param&gt;
- *                  &lt;!-- optional; default is 'json' --&gt;
+ *                  &lt;!-- optional; prefix to add to the path before emitting; default is no prefix --&gt;
+ *                  &lt;param name="prefix" type="string"&gt;my-prefix&lt;/param&gt;
+ *                  &lt;!-- optional; default is 'json' this will be added to the SOURCE_PATH
+ *                                    if no emitter key is specified --&gt;
  *                  &lt;param name="fileExtension" type="string"&gt;json&lt;/param&gt;
  *                  &lt;!-- optional; default is 'true'-- whether to copy the json to a local file before putting to s3 --&gt;
  *                  &lt;param name="spoolToTemp" type="bool"&gt;true&lt;/param&gt;
@@ -76,16 +82,16 @@ import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
  *      &lt;/emitters&gt;
  *  &lt;/properties&gt;</pre>
  */
-public class S3Emitter extends AbstractEmitter implements Initializable {
+public class S3Emitter extends AbstractEmitter implements Initializable, StreamEmitter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(S3Emitter.class);
     private String region;
     private String profile;
     private String bucket;
-    private AmazonS3 s3Client;
     private String fileExtension = "json";
     private boolean spoolToTemp = true;
-
+    private String prefix = null;
+    private AmazonS3 s3Client;
 
     /**
      * Requires the src-bucket/path/to/my/file.txt in the {@link TikaCoreProperties#SOURCE_PATH}.
@@ -95,26 +101,22 @@ public class S3Emitter extends AbstractEmitter implements Initializable {
      * @throws TikaException
      */
     @Override
-    public void emit(List<Metadata> metadataList) throws IOException, TikaException {
+    public void emit(String emitKey, List<Metadata> metadataList) throws IOException, TikaEmitterException {
         if (metadataList == null || metadataList.size() == 0) {
             throw new TikaEmitterException("metadata list must not be null or of size 0");
         }
-        String path = metadataList.get(0)
-                .get(TikaCoreProperties.SOURCE_PATH);
-        if (path == null) {
-            throw new TikaEmitterException("Must specify a "+TikaCoreProperties.SOURCE_PATH.getName() +
-                    " in the metadata in order for this emitter to generate the output file path.");
-        }
+
         if (! spoolToTemp) {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             try (Writer writer =
                          new BufferedWriter(new OutputStreamWriter(bos, StandardCharsets.UTF_8))) {
                 JsonMetadataList.toJson(metadataList, writer);
+            } catch (TikaException e) {
+                throw new TikaEmitterException("can't jsonify", e);
             }
             byte[] bytes = bos.toByteArray();
-            long length = bytes.length;
-            try (InputStream is = new ByteArrayInputStream(bytes)) {
-                emit(path, is, length, new Metadata());
+            try (InputStream is = TikaInputStream.get(bytes)) {
+                emit(emitKey, is, new Metadata());
             }
         } else {
             TemporaryResources tmp = new TemporaryResources();
@@ -123,10 +125,11 @@ public class S3Emitter extends AbstractEmitter implements Initializable {
                 try (Writer writer = Files.newBufferedWriter(tmpPath,
                         StandardCharsets.UTF_8, StandardOpenOption.CREATE)) {
                     JsonMetadataList.toJson(metadataList, writer);
+                } catch (TikaException e) {
+                    throw new TikaEmitterException("can't jsonify", e);
                 }
-                long length = Files.size(tmpPath);
-                try (InputStream is = Files.newInputStream(tmpPath)) {
-                    emit(path, is, length, new Metadata());
+                try (InputStream is = TikaInputStream.get(tmpPath)) {
+                    emit(emitKey, is, new Metadata());
                 }
             } finally {
                 tmp.close();
@@ -141,14 +144,29 @@ public class S3Emitter extends AbstractEmitter implements Initializable {
      * @param userMetadata this will be written to the s3 ObjectMetadata's userMetadata
      * @throws TikaEmitterException
      */
-    public void emit(String path, InputStream is, long length, Metadata userMetadata) throws TikaEmitterException {
+    @Override
+    public void emit(String path, InputStream is, Metadata userMetadata) throws IOException, TikaEmitterException {
 
-        if (fileExtension != null && fileExtension.length() > 0) {
+        if (!StringUtils.isBlank(prefix)) {
+            path = prefix + "/" + path;
+        }
+
+        if (! StringUtils.isBlank(fileExtension)) {
             path += "." + fileExtension;
         }
 
         LOGGER.debug("about to emit to target bucket: ({}) path:({})",
                 bucket, path);
+        long length = -1;
+        if (is instanceof TikaInputStream) {
+            if (((TikaInputStream)is).hasFile()) {
+                try {
+                    length = ((TikaInputStream) is).getLength();
+                } catch (IOException e) {
+                    throw new TikaEmitterException("exception getting length", e);
+                }
+            }
+        }
         ObjectMetadata objectMetadata = new ObjectMetadata();
         if (length > 0) {
             objectMetadata.setContentLength(length);
@@ -192,6 +210,16 @@ public class S3Emitter extends AbstractEmitter implements Initializable {
     @Field
     public void setBucket(String bucket) {
         this.bucket = bucket;
+    }
+
+    @Field
+    public void setPrefix(String prefix) {
+        //strip final "/" if it exists
+        if (prefix.endsWith("/")) {
+            this.prefix = prefix.substring(0, prefix.length()-1);
+        } else {
+            this.prefix = prefix;
+        }
     }
 
     /**

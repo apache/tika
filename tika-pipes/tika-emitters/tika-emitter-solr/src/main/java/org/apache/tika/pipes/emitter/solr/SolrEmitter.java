@@ -20,24 +20,25 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import org.apache.tika.client.HttpClientUtil;
+import org.apache.tika.client.TikaClientException;
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
+import org.apache.tika.pipes.emitter.AbstractEmitter;
 import org.apache.tika.pipes.emitter.Emitter;
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.pipes.emitter.TikaEmitterException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class SolrEmitter implements Emitter, Initializable {
+public class SolrEmitter extends AbstractEmitter implements Initializable {
 
     enum AttachmentStrategy {
         SKIP,
@@ -50,7 +51,6 @@ public class SolrEmitter implements Emitter, Initializable {
     private static final String UPDATE_PATH = "/update";
     private static final Logger LOG = LoggerFactory.getLogger(SolrEmitter.class);
 
-    private String name = "solr";
     private AttachmentStrategy attachmentStrategy = AttachmentStrategy.PARENT_CHILD;
     private String url;
     private String contentField = "content";
@@ -58,23 +58,23 @@ public class SolrEmitter implements Emitter, Initializable {
     private int commitWithin = 100;
 
     @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public void emit(List<Metadata> metadataList) throws IOException,
-            TikaException {
+    public void emit(String emitKey, List<Metadata> metadataList) throws IOException,
+            TikaEmitterException {
         if (metadataList == null || metadataList.size() == 0) {
             LOG.warn("metadataList is null or empty");
             return;
         }
-        String json = jsonify(metadataList);
+        String json = jsonify(emitKey, metadataList);
         LOG.debug("emitting json:"+json);
-        HttpClientUtil.postJson(url+UPDATE_PATH+"?commitWithin="+getCommitWithin(), json);
+        try {
+            HttpClientUtil.postJson(url+UPDATE_PATH+"?commitWithin="+getCommitWithin(), json);
+        } catch (TikaClientException e) {
+            throw new TikaEmitterException("can't post", e);
+        }
     }
 
-    private String jsonify(List<Metadata> metadataList) {
+    private String jsonify(String emitKey, List<Metadata> metadataList) {
+        metadataList.get(0).set(idField, emitKey);
         if (attachmentStrategy == AttachmentStrategy.SKIP) {
             return toJsonString(jsonify(metadataList.get(0)));
         } else if (attachmentStrategy == AttachmentStrategy.CONCATENATE_CONTENT) {
@@ -161,11 +161,6 @@ public class SolrEmitter implements Emitter, Initializable {
             throw new IllegalArgumentException("Expected 'skip', 'concatenate-content' or "+
                     "'parent-child'. I regret I do not recognize: " + attachmentStrategy);
         }
-    }
-
-    @Field
-    public void setName(String name) {
-        this.name = name;
     }
 
     /**

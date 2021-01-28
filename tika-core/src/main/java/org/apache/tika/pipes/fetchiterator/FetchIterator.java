@@ -21,7 +21,6 @@ import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.pipes.fetcher.FetchIdMetadataPair;
 
 import java.io.IOException;
 import java.util.Map;
@@ -40,14 +39,15 @@ public abstract class FetchIterator implements Callable<Integer>, Initializable 
 
     public static final long DEFAULT_MAX_WAIT_MS = 300_000;
     public static final int DEFAULT_QUEUE_SIZE = 1000;
-    public static final FetchIdMetadataPair COMPLETED_SEMAPHORE =
-            new FetchIdMetadataPair(null, null);
+    public static final FetchEmitTuple COMPLETED_SEMAPHORE =
+            new FetchEmitTuple(null, null, null);
 
     private long maxWaitMs = DEFAULT_MAX_WAIT_MS;
     private int numConsumers = -1;
-    private ArrayBlockingQueue<FetchIdMetadataPair> queue = null;
+    private ArrayBlockingQueue<FetchEmitTuple> queue = null;
     private int queueSize = DEFAULT_QUEUE_SIZE;
     private String fetcherName;
+    private String emitterName;
     private int added = 0;
     public FetchIterator() {
 
@@ -61,7 +61,7 @@ public abstract class FetchIterator implements Callable<Integer>, Initializable 
      * This must be called before 'calling' this object.
      * @param numConsumers
      */
-    public ArrayBlockingQueue<FetchIdMetadataPair> init(int numConsumers) {
+    public ArrayBlockingQueue<FetchEmitTuple> init(int numConsumers) {
         this.queue = new ArrayBlockingQueue<>(queueSize);
         this.numConsumers = numConsumers;
         return queue;
@@ -76,6 +76,14 @@ public abstract class FetchIterator implements Callable<Integer>, Initializable 
         return fetcherName;
     }
 
+    @Field
+    public void setEmitterName(String emitterName) {
+        this.emitterName = emitterName;
+    }
+
+    public String getEmitterName() {
+        return emitterName;
+    }
 
     @Field
     public void setMaxWaitMs(long maxWaitMs) {
@@ -86,6 +94,7 @@ public abstract class FetchIterator implements Callable<Integer>, Initializable 
     public void setQueueSize(int queueSize) {
         this.queueSize = queueSize;
     }
+
     @Override
     public Integer call() throws Exception {
         if (queue == null || numConsumers < 0) {
@@ -105,7 +114,7 @@ public abstract class FetchIterator implements Callable<Integer>, Initializable 
 
     protected abstract void enqueue() throws IOException, TimeoutException, InterruptedException;
 
-    protected void tryToAdd(FetchIdMetadataPair p) throws InterruptedException, TimeoutException {
+    protected void tryToAdd(FetchEmitTuple p) throws InterruptedException, TimeoutException {
         if (p != COMPLETED_SEMAPHORE) {
             added++;
         }

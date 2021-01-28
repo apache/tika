@@ -37,6 +37,10 @@ public class StringUtils {
         return cs == null || cs.length() == 0;
     }
 
+    public static boolean isBlank(final String s) {
+        return s == null || s.trim().length() == 0;
+    }
+
     /**
      * <p>Left pad a String with a specified String.</p>
      *

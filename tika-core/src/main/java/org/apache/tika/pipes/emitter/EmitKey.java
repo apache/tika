@@ -16,17 +16,29 @@
  */
 package org.apache.tika.pipes.emitter;
 
-import org.apache.tika.metadata.Metadata;
+public class EmitKey {
 
-import java.io.IOException;
-import java.util.List;
+    private final String emitterName;
+    private final String emitKey;
 
-public interface Emitter {
+    public EmitKey(String emitterName, String emitKey) {
+        this.emitterName = emitterName;
+        this.emitKey = emitKey;
+    }
 
-    String getName();
+    public String getEmitterName() {
+        return emitterName;
+    }
 
-    void emit(String emitKey, List<Metadata> metadataList) throws IOException, TikaEmitterException;
-    //TODO we can add this later?
-    //void emit(String txt, Metadata metadata) throws IOException, TikaException;
+    public String getEmitKey() {
+        return emitKey;
+    }
 
+    @Override
+    public String toString() {
+        return "EmitterKey{" +
+                "emitterName='" + emitterName + '\'' +
+                ", emitterKey='" + emitKey + '\'' +
+                '}';
+    }
 }

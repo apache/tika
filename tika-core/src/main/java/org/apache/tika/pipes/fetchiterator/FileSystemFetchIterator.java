@@ -19,11 +19,11 @@ package org.apache.tika.pipes.fetchiterator;
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.pipes.fetcher.FetchId;
-import org.apache.tika.pipes.fetcher.FetchIdMetadataPair;
+import org.apache.tika.pipes.emitter.EmitKey;
+import org.apache.tika.pipes.fetcher.FetchKey;
 
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -32,7 +32,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 public class FileSystemFetchIterator
@@ -60,9 +59,9 @@ public class FileSystemFetchIterator
             throw new IllegalArgumentException("\"basePath\" directory does not exist: " +
                     basePath.toAbsolutePath());
         }
-        String fetcherName = getFetcherName();
+
         try {
-            Files.walkFileTree(basePath, new FSFileVisitor(fetcherName));
+            Files.walkFileTree(basePath, new FSFileVisitor(getFetcherName(), getEmitterName()));
         } catch (IOException e) {
             Throwable cause = e.getCause();
             if (cause != null && cause instanceof TimeoutException) {
@@ -75,22 +74,21 @@ public class FileSystemFetchIterator
 
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
+        //these should all be fatal
+        TikaConfig.mustNotBeEmpty("basePath", basePath);
+        TikaConfig.mustNotBeEmpty("fetcherName", getFetcherName());
+        TikaConfig.mustNotBeEmpty("emitterName", getFetcherName());
 
-        //ignore problem handler.  These should all be fatal.
-        if (basePath == null) {
-            throw new TikaConfigException("Must specify a \"basePath\"");
-        }
-        if (getFetcherName() == null || getFetcherName().trim().length() == 0) {
-            throw new TikaConfigException("\"fetcherName\" must be specified and must be not blank");
-        }
     }
 
 
     private class FSFileVisitor implements FileVisitor<Path> {
 
         private final String fetcherName;
-        private FSFileVisitor(String fetcherName) {
+        private final String emitterName;
+        private FSFileVisitor(String fetcherName, String emitterName) {
             this.fetcherName = fetcherName;
+            this.emitterName = emitterName;
         }
         @Override
         public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
@@ -102,8 +100,10 @@ public class FileSystemFetchIterator
             String relPath = basePath.relativize(file).toString();
 
             try {
-                tryToAdd(new FetchIdMetadataPair(
-                        new FetchId(fetcherName, relPath), new Metadata()));
+                tryToAdd(new FetchEmitTuple(
+                        new FetchKey(fetcherName, relPath),
+                        new EmitKey(emitterName, relPath), new Metadata())
+                );
             } catch (TimeoutException e) {
                 throw new IOException(e);
             } catch (InterruptedException e) {

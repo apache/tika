@@ -25,17 +25,15 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.emitter.Emitter;
 import org.apache.tika.pipes.emitter.s3.S3Emitter;
-import org.apache.tika.pipes.fetcher.FetchIdMetadataPair;
 import org.apache.tika.pipes.fetcher.Fetcher;
+import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
 import org.apache.tika.pipes.fetchiterator.FetchIterator;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -94,7 +92,7 @@ public class PipeIntegrationTests {
         int numConsumers = 1;
         ExecutorService es = Executors.newFixedThreadPool(numConsumers + 1);
         ExecutorCompletionService<Integer> completionService = new ExecutorCompletionService<>(es);
-        ArrayBlockingQueue<FetchIdMetadataPair> queue = it.init(numConsumers);
+        ArrayBlockingQueue<FetchEmitTuple> queue = it.init(numConsumers);
         completionService.submit(it);
         for (int i = 0; i < numConsumers; i++) {
             completionService.submit(new FSFetcherEmitter(
@@ -118,7 +116,7 @@ public class PipeIntegrationTests {
         int numConsumers = 20;
         ExecutorService es = Executors.newFixedThreadPool(numConsumers + 1);
         ExecutorCompletionService<Integer> completionService = new ExecutorCompletionService<>(es);
-        ArrayBlockingQueue<FetchIdMetadataPair> queue = it.init(numConsumers);
+        ArrayBlockingQueue<FetchEmitTuple> queue = it.init(numConsumers);
         completionService.submit(it);
         for (int i = 0; i < numConsumers; i++) {
             completionService.submit(new S3FetcherEmitter(
@@ -149,9 +147,9 @@ public class PipeIntegrationTests {
 
         private final Fetcher fetcher;
         private final Emitter emitter;
-        private final ArrayBlockingQueue<FetchIdMetadataPair> queue;
+        private final ArrayBlockingQueue<FetchEmitTuple> queue;
 
-        FSFetcherEmitter(ArrayBlockingQueue<FetchIdMetadataPair> queue, Fetcher
+        FSFetcherEmitter(ArrayBlockingQueue<FetchEmitTuple> queue, Fetcher
                 fetcher, Emitter emitter) {
             this.queue = queue;
             this.fetcher = fetcher;
@@ -162,24 +160,24 @@ public class PipeIntegrationTests {
         public Integer call() throws Exception {
 
             while (true) {
-                FetchIdMetadataPair p = queue.poll(5, TimeUnit.MINUTES);
-                if (p == null) {
+                FetchEmitTuple t = queue.poll(5, TimeUnit.MINUTES);
+                if (t == null) {
                     throw new TimeoutException("");
                 }
-                if (p == FetchIterator.COMPLETED_SEMAPHORE) {
+                if (t == FetchIterator.COMPLETED_SEMAPHORE) {
                     return 1;
                 }
-                process(p);
+                process(t);
             }
         }
 
-        private void process(FetchIdMetadataPair p) throws IOException, TikaException {
-            Path targ = OUTDIR.resolve(p.getFetchId().getFetchKey());
+        private void process(FetchEmitTuple t) throws IOException, TikaException {
+            Path targ = OUTDIR.resolve(t.getFetchKey().getKey());
             if (Files.isRegularFile(targ)) {
                 return;
             }
-            try (InputStream is = fetcher.fetch(p.getFetchId().getFetchKey(), p.getMetadata())) {
-                System.out.println(counter.getAndIncrement() + " : "+p );
+            try (InputStream is = fetcher.fetch(t.getFetchKey().getKey(), t.getMetadata())) {
+                System.out.println(counter.getAndIncrement() + " : "+t );
                 Files.createDirectories(targ.getParent());
                 Files.copy(is, targ);
             }
@@ -191,9 +189,9 @@ public class PipeIntegrationTests {
 
         private final Fetcher fetcher;
         private final S3Emitter emitter;
-        private final ArrayBlockingQueue<FetchIdMetadataPair> queue;
+        private final ArrayBlockingQueue<FetchEmitTuple> queue;
 
-        S3FetcherEmitter(ArrayBlockingQueue<FetchIdMetadataPair> queue, Fetcher
+        S3FetcherEmitter(ArrayBlockingQueue<FetchEmitTuple> queue, Fetcher
                 fetcher, S3Emitter emitter) {
             this.queue = queue;
             this.fetcher = fetcher;
@@ -204,28 +202,23 @@ public class PipeIntegrationTests {
         public Integer call() throws Exception {
 
             while (true) {
-                FetchIdMetadataPair p = queue.poll(5, TimeUnit.MINUTES);
-                if (p == null) {
+                FetchEmitTuple t = queue.poll(5, TimeUnit.MINUTES);
+                if (t == null) {
                     throw new TimeoutException("");
                 }
-                if (p == FetchIterator.COMPLETED_SEMAPHORE) {
+                if (t == FetchIterator.COMPLETED_SEMAPHORE) {
                     return 1;
                 }
-                process(p);
+                process(t);
             }
         }
 
-        private void process(FetchIdMetadataPair p) throws IOException, TikaException {
+        private void process(FetchEmitTuple t) throws IOException, TikaException {
             Metadata userMetadata = new Metadata();
             userMetadata.set("project", "my-project");
 
-            try (InputStream is = fetcher.fetch(p.getFetchId().getFetchKey(), p.getMetadata())) {
-                long length = -1;
-                if (is instanceof TikaInputStream &&
-                        ((TikaInputStream) is).hasFile()) {
-                    length = ((TikaInputStream)is).getLength();
-                }
-                emitter.emit(p.getFetchId().getFetchKey(), is, length, userMetadata);
+            try (InputStream is = fetcher.fetch(t.getFetchKey().getKey(), t.getMetadata())) {
+                emitter.emit(t.getEmitKey().getEmitKey(), is, userMetadata);
             }
         }
     }

@@ -16,7 +16,6 @@
  */
 package org.apache.tika.pipes.fetchiterator;
 
-import org.apache.tika.pipes.fetcher.FetchIdMetadataPair;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -55,7 +54,7 @@ public class FileSystemFetchIteratorTest {
         ExecutorCompletionService<Integer> cs = new ExecutorCompletionService<>(es);
         FetchIterator it = new FileSystemFetchIterator(fetcherName, root);
         it.setQueueSize(20000);
-        ArrayBlockingQueue<FetchIdMetadataPair> q = it.init(1);
+        ArrayBlockingQueue<FetchEmitTuple> q = it.init(1);
 
         cs.submit(it);
 
@@ -64,11 +63,11 @@ public class FileSystemFetchIteratorTest {
         f.get();
 
         Set<String> iteratorSet = new HashSet<>();
-        for (FetchIdMetadataPair p : q) {
+        for (FetchEmitTuple p : q) {
             if (p == FetchIterator.COMPLETED_SEMAPHORE) {
                 break;
             }
-            iteratorSet.add(p.getFetchId().getFetchKey());
+            iteratorSet.add(p.getFetchKey().getKey());
         }
 
         assertEquals(truthSet, iteratorSet);

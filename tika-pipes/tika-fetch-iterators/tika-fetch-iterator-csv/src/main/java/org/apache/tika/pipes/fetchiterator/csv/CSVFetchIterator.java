@@ -22,10 +22,15 @@ import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.pipes.fetcher.FetchId;
-import org.apache.tika.pipes.fetcher.FetchIdMetadataPair;
+import org.apache.tika.pipes.emitter.EmitKey;
+import org.apache.tika.pipes.fetcher.FetchKey;
+import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
 import org.apache.tika.pipes.fetchiterator.FetchIterator;
+import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -40,11 +45,32 @@ import java.util.concurrent.TimeoutException;
 
 import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
 
+/**
+ * Iterates through a UTF-8 CSV file. This adds all columns
+ * (except for the 'fetchKeyColumn' and 'emitKeyColumn', if specified)
+ * to the metadata object.
+ * <p>
+ *  <ul>
+ *      <li>If a 'fetchKeyColumn' is specified, this will use that column's value as the fetchKey.</li>
+ *      <li>If no 'fetchKeyColumn' is specified, this will send the metadata from the other columns.</li>
+ *      <li>The 'fetchKeyColumn' value is not added to the metadata.</li>
+ *  </ul>
+ * <p>
+ *  <ul>
+ *      <li>If an 'emitKeyColumn' is specified, this will use that column's value as the emit key.</li>
+ *      <li>If an 'emitKeyColumn' is not specified, this will use the value from the 'fetchKeyColumn'.</li>
+ *      <li>The 'emitKeyColumn' value is not added to the metadata.</li>
+ *  </ul>
+ *
+ */
 public class CSVFetchIterator extends FetchIterator implements Initializable {
 
-    private Charset charset = StandardCharsets.UTF_8;
+    private static final Logger LOGGER = LoggerFactory.getLogger(CSVFetchIterator.class);
+
+    private final Charset charset = StandardCharsets.UTF_8;
     private Path csvPath;
     private String fetchKeyColumn;
+    private String emitKeyColumn;
 
 
     @Field
@@ -57,6 +83,11 @@ public class CSVFetchIterator extends FetchIterator implements Initializable {
         this.fetchKeyColumn = fetchKeyColumn;
     }
 
+    @Field
+    public void setEmitKeyColumn(String emitKeyColumn) {
+        this.emitKeyColumn = emitKeyColumn;
+    }
+
     public void setCsvPath(Path csvPath) {
         this.csvPath = csvPath;
     }
@@ -64,35 +95,93 @@ public class CSVFetchIterator extends FetchIterator implements Initializable {
     @Override
     protected void enqueue() throws InterruptedException, IOException, TimeoutException {
         String fetcherName = getFetcherName();
+        String emitterName = getEmitterName();
         try (Reader reader = Files.newBufferedReader(csvPath, charset)) {
             Iterable<CSVRecord> records = CSVFormat.EXCEL.parse(reader);
-            int fetchKeyIndex = -1;
             List<String> headers = new ArrayList<>();
+            FetchEmitKeyIndices fetchEmitKeyIndices = null;
             for (CSVRecord record : records) {
-                fetchKeyIndex = loadHeaders(record, headers);
+                fetchEmitKeyIndices = loadHeaders(record, headers);
                 break;
             }
-            //check that if a user set a fetchKeyColumn, but we didn't find it
-            if (fetchKeyIndex < 0 && (fetchKeyColumn != null)) {
-                throw new IllegalArgumentException("Can't find " + fetchKeyColumn +
-                        " in the csv. I see:"+
-                        headers);
-            }
+
+            checkFetchEmitValidity(fetcherName, emitterName, fetchEmitKeyIndices, headers);
+
             for (CSVRecord record : records) {
-                String fetchKey = "";
-                if (fetchKeyIndex > -1) {
-                    fetchKey = record.get(fetchKeyIndex);
+                String fetchKey = getFetchKey(fetchEmitKeyIndices, record);
+                String emitKey = getEmitKey(fetchEmitKeyIndices, record);
+                if (StringUtils.isBlank(fetchKey) && ! StringUtils.isBlank(fetcherName)) {
+                    LOGGER.debug("Fetcher specified ({}), but no fetchkey was found in ({})",
+                            fetcherName, record);
                 }
-                Metadata metadata = loadMetadata(fetchKeyIndex, headers, record);
-                tryToAdd(new FetchIdMetadataPair(new FetchId(fetcherName, fetchKey), metadata));
+                if (StringUtils.isBlank(emitKey)) {
+                    throw new IOException("emitKey must not be blank in :"+record);
+                }
+                Metadata metadata = loadMetadata(fetchEmitKeyIndices, headers, record);
+                tryToAdd(new FetchEmitTuple(
+                        new FetchKey(fetcherName, fetchKey),
+                        new EmitKey(emitterName, emitKey), metadata));
             }
         }
     }
 
-    private Metadata loadMetadata(int fetchKeyIndex, List<String> headers, CSVRecord record) {
+    private void checkFetchEmitValidity(String fetcherName,
+                                        String emitterName,
+                                        FetchEmitKeyIndices fetchEmitKeyIndices,
+                                        List<String> headers) throws IOException {
+
+        if (StringUtils.isBlank(emitterName)) {
+            throw new IOException(new TikaConfigException("must specify at least an emitterName"));
+        }
+
+        if (StringUtils.isBlank(fetcherName) && ! StringUtils.isBlank(fetchKeyColumn)) {
+            throw new IOException(new TikaConfigException("If specifying a 'fetchKeyColumn', " +
+                    "you must also specify a 'fetcherName'"));
+        }
+
+        if (StringUtils.isBlank(fetcherName)) {
+            LOGGER.debug("No fetcher specified. This will be metadata only");
+        }
+
+        //if a fetchkeycolumn is specified, make sure that it was found
+        if (! StringUtils.isBlank(fetchKeyColumn) && fetchEmitKeyIndices.fetchKeyIndex < 0) {
+            throw new IOException(new TikaConfigException("Couldn't find fetchKeyColumn ("+
+                    fetchKeyColumn+" in header.\n" +
+                    "These are the headers I see: " + headers));
+        }
+
+        //if an emitkeycolumn is specified, make sure that it was found
+        if (! StringUtils.isBlank(emitKeyColumn) && fetchEmitKeyIndices.emitKeyIndex < 0) {
+            throw new IOException(new TikaConfigException("Couldn't find emitKeyColumn ("+
+                    emitKeyColumn+" in header.\n" +
+                    "These are the headers I see: " + headers));
+        }
+
+        if (StringUtils.isBlank(emitKeyColumn)) {
+            LOGGER.debug("No emitKeyColumn specified. " +
+                            "Will use fetchKeyColumn ({}) for both the fetch key and emit key",
+                    fetchKeyColumn);
+        }
+    }
+
+    private String getFetchKey(FetchEmitKeyIndices fetchEmitKeyIndices, CSVRecord record) {
+        if (fetchEmitKeyIndices.fetchKeyIndex > -1) {
+            return record.get(fetchEmitKeyIndices.fetchKeyIndex);
+        }
+        return StringUtils.EMPTY;
+    }
+
+    private String getEmitKey(FetchEmitKeyIndices fetchEmitKeyIndices, CSVRecord record) {
+        if (fetchEmitKeyIndices.emitKeyIndex > -1) {
+            return record.get(fetchEmitKeyIndices.emitKeyIndex);
+        }
+        return getFetchKey(fetchEmitKeyIndices, record);
+    }
+
+    private Metadata loadMetadata(FetchEmitKeyIndices fetchEmitKeyIndices, List<String> headers, CSVRecord record) {
         Metadata metadata = new Metadata();
         for (int i = 0; i < record.size(); i++) {
-            if (fetchKeyIndex == i) {
+            if (fetchEmitKeyIndices.shouldSkip(i)) {
                 continue;
             }
             metadata.set(headers.get(i), record.get(i));
@@ -101,23 +190,45 @@ public class CSVFetchIterator extends FetchIterator implements Initializable {
     }
 
 
-    private int loadHeaders(CSVRecord record, List<String> headers) {
+    private FetchEmitKeyIndices loadHeaders(CSVRecord record, List<String> headers)
+        throws IOException {
         int fetchKeyColumnIndex = -1;
+        int emitKeyColumnIndex = -1;
 
         for (int col = 0; col < record.size(); col++) {
             String header = record.get(col);
+            if (StringUtils.isBlank(header)) {
+                throw new IOException(
+                        new TikaException("Header in column (" +col +") must not be empty"));
+            }
             headers.add(header);
             if (header.equals(fetchKeyColumn)) {
                 fetchKeyColumnIndex = col;
+            } else if (header.equals(emitKeyColumn)) {
+                emitKeyColumnIndex = col;
             }
         }
-        return fetchKeyColumnIndex;
+        return new FetchEmitKeyIndices(fetchKeyColumnIndex, emitKeyColumnIndex);
     }
 
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler)
             throws TikaConfigException {
         super.checkInitialization(problemHandler);
-        mustNotBeEmpty("csvPath", this.csvPath.toString());
+        mustNotBeEmpty("csvPath", this.csvPath);
+    }
+
+    private static class FetchEmitKeyIndices {
+        private final int fetchKeyIndex;
+        private final int emitKeyIndex;
+
+        public FetchEmitKeyIndices(int fetchKeyIndex, int emitKeyIndex) {
+            this.fetchKeyIndex = fetchKeyIndex;
+            this.emitKeyIndex = emitKeyIndex;
+        }
+
+        public boolean shouldSkip(int index) {
+            return fetchKeyIndex == index || emitKeyIndex == index;
+        }
     }
 }

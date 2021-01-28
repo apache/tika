@@ -15,22 +15,16 @@
  * limitations under the License.
  */
 package org.apache.tika.pipes.fetchiterator.s3;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.pipes.fetcher.FetchId;
-import org.apache.tika.pipes.fetcher.FetchIdMetadataPair;
+import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
 import org.apache.tika.pipes.fetchiterator.FetchIterator;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -52,7 +46,7 @@ public class TestS3FetchIterator {
         it.setRegion("");//select one
         it.initialize(Collections.EMPTY_MAP);
         int numConsumers = 6;
-        ArrayBlockingQueue<FetchIdMetadataPair> queue = it.init(numConsumers);
+        ArrayBlockingQueue<FetchEmitTuple> queue = it.init(numConsumers);
 
         ExecutorService es = Executors.newFixedThreadPool(numConsumers+1);
         ExecutorCompletionService c = new ExecutorCompletionService(es);
@@ -78,20 +72,20 @@ public class TestS3FetchIterator {
     }
 
     private static class MockFetcher implements Callable<Integer> {
-        private final ArrayBlockingQueue<FetchIdMetadataPair> queue;
-        private final List<FetchIdMetadataPair> pairs = new ArrayList<>();
-        private MockFetcher(ArrayBlockingQueue<FetchIdMetadataPair> queue) {
+        private final ArrayBlockingQueue<FetchEmitTuple> queue;
+        private final List<FetchEmitTuple> pairs = new ArrayList<>();
+        private MockFetcher(ArrayBlockingQueue<FetchEmitTuple> queue) {
             this.queue = queue;
         }
 
         @Override
         public Integer call() throws Exception {
             while (true) {
-                FetchIdMetadataPair p = queue.poll(1, TimeUnit.HOURS);
-                if (p == FetchIterator.COMPLETED_SEMAPHORE) {
+                FetchEmitTuple t = queue.poll(1, TimeUnit.HOURS);
+                if (t == FetchIterator.COMPLETED_SEMAPHORE) {
                     return pairs.size();
                 }
-                pairs.add(p);
+                pairs.add(t);
             }
         }
     }
