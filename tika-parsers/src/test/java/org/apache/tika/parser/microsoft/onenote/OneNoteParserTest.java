@@ -206,6 +206,14 @@ public class OneNoteParserTest extends TikaTest {
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document".equals(ml.get("Content-Type"))));
     }
 
+    @Test
+    public void testOneNoteWithNonAsciiCharacter() throws Exception {
+        String txt = getText("testOneNoteNonAscii.one");
+
+        assertContains("äöüß", txt);
+        assertContains("的是\uD83D\uDE0A", txt);
+    }
+
     private void assertNoJunk(String txt) {
         //Should not include font names in the text
         assertNotContained("Calibri", txt);
