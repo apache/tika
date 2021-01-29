@@ -30,9 +30,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -54,6 +56,9 @@ import java.util.Set;
  *                  &lt;param name="basePath" type="string"&gt;/path/to/output&lt;/param&gt;
  *                  &lt;!-- optional; default is 'json' --&gt;
  *                  &lt;param name="fileExtension" type="string"&gt;json&lt;/param&gt;
+ *                  &lt;!-- optional; if the file already exists, options ('skip', 'replace', 'exception')
+ *                  default is 'exception' --&gt;
+ *                  &lt;param name="onExists" type="string"&gt;skip&lt;/param&gt;
  *              &lt;/params&gt;
  *          &lt;/emitter&gt;
  *      &lt;/emitters&gt;
@@ -61,8 +66,13 @@ import java.util.Set;
  */
 public class FileSystemEmitter extends AbstractEmitter implements StreamEmitter {
 
+    enum ON_EXISTS {
+        SKIP, EXCEPTION, REPLACE
+    }
+
     private Path basePath = null;
     private String fileExtension = "json";
+    private ON_EXISTS onExists = ON_EXISTS.EXCEPTION;
 
 
     @Override
@@ -108,9 +118,40 @@ public class FileSystemEmitter extends AbstractEmitter implements StreamEmitter 
         this.fileExtension = fileExtension;
     }
 
+    @Field
+    public void setOnExists(String onExists) {
+        if (onExists.equals("skip")) {
+            this.onExists = ON_EXISTS.SKIP;
+        } else if (onExists.equals("replace")) {
+            this.onExists = ON_EXISTS.REPLACE;
+        } else if (onExists.equals("exception")) {
+            this.onExists = ON_EXISTS.EXCEPTION;
+        } else {
+            throw new IllegalArgumentException(
+                    "Don't understand '" + onExists +
+                            "'; must be one of: 'skip', 'replace', 'exception'");
+        }
+    }
     @Override
     public void emit(String path, InputStream inputStream, Metadata userMetadata) throws IOException,
             TikaEmitterException {
-        Files.copy(inputStream, basePath.resolve(path));
+        Path target = basePath.resolve(path);
+
+        if (!Files.isDirectory(target.getParent())) {
+            Files.createDirectories(target.getParent());
+        }
+        if (onExists == ON_EXISTS.REPLACE) {
+            Files.copy(inputStream, target, StandardCopyOption.REPLACE_EXISTING);
+        } else if (onExists == ON_EXISTS.EXCEPTION) {
+            Files.copy(inputStream, target);
+        } else if (onExists == ON_EXISTS.SKIP) {
+            if (!Files.isRegularFile(target)) {
+                try {
+                    Files.copy(inputStream, target);
+                } catch (FileAlreadyExistsException e) {
+                    //swallow
+                }
+            }
+        }
     }
 }

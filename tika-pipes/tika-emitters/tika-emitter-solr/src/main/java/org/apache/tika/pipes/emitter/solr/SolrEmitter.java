@@ -19,6 +19,8 @@ package org.apache.tika.pipes.emitter.solr;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import org.apache.http.client.HttpClient;
+import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.client.HttpClientUtil;
 import org.apache.tika.client.TikaClientException;
 import org.apache.tika.config.Field;
@@ -56,6 +58,8 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
     private String contentField = "content";
     private String idField = "id";
     private int commitWithin = 100;
+    private HttpClientFactory httpClientFactory;
+    private HttpClient httpClient;
 
     @Override
     public void emit(String emitKey, List<Metadata> metadataList) throws IOException,
@@ -67,7 +71,8 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
         String json = jsonify(emitKey, metadataList);
         LOG.debug("emitting json:"+json);
         try {
-            HttpClientUtil.postJson(url+UPDATE_PATH+"?commitWithin="+getCommitWithin(), json);
+            HttpClientUtil.postJson(httpClient,
+                    url+UPDATE_PATH+"?commitWithin="+getCommitWithin(), json);
         } catch (TikaClientException e) {
             throw new TikaEmitterException("can't post", e);
         }
@@ -200,7 +205,6 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
     public int getCommitWithin() {
         return commitWithin;
     }
-    //TODO: add username/password for authentication?
 
     /**
      * Specify the field in the first Metadata that should be
@@ -213,10 +217,36 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
         this.idField = idField;
     }
 
+    //TODO -- add other httpclient configurations
+    @Field
+    public void setUserName(String userName) {
+        httpClientFactory.setUserName(userName);
+    }
+
+    @Field
+    public void setPassword(String password) {
+        httpClientFactory.setPassword(password);
+    }
+
+    @Field
+    public void setAuthScheme(String authScheme) {
+        httpClientFactory.setAuthScheme(authScheme);
+    }
+
+    @Field
+    public void setProxyHost(String proxyHost) {
+        httpClientFactory.setProxyHost(proxyHost);
+    }
+
+    @Field
+    public void setProxyPort(int proxyPort) {
+        httpClientFactory.setProxyPort(proxyPort);
+    }
+
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         //TODO: build the client here?
-
+        httpClient = httpClientFactory.build();
     }
 
     @Override
