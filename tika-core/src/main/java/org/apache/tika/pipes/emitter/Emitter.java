@@ -26,7 +26,15 @@ public interface Emitter {
     String getName();
 
     void emit(String emitKey, List<Metadata> metadataList) throws IOException, TikaEmitterException;
-    //TODO we can add this later?
+
     //void emit(String txt, Metadata metadata) throws IOException, TikaException;
+
+   /*
+    TODO we can add this later?
+    void addBatch(String emitKey, List<Metadata> metadataList) throws IOException, TikaEmitterException;
+
+    void executeBatch() throws IOException, TikaEmitterException;
+
+    */
 
 }

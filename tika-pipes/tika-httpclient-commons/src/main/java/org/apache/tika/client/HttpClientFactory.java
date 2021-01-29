@@ -78,6 +78,12 @@ import java.util.Base64;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * This holds quite a bit of state and is not thread safe.  Beware!
+ *
+ * Also, we're currently ignoring the SSL checks.  Please open a ticket/PR
+ * if you need robust SSL.
+ */
 public class HttpClientFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(HttpClientFactory.class);
@@ -391,6 +397,7 @@ public class HttpClientFactory {
         private byte[] key;
 
         private AES() throws TikaConfigException {
+            //TODO: clean this up -- potential race condition, etc...
             secretKey = setKey(System.getenv("AES_KEY"));
         }
 

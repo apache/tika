@@ -44,19 +44,18 @@ public class TikaClientCLI {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TikaClientCLI.class);
 
-    //make these configurable
-    private int numThreads = 1;
     private long maxWaitMs = 300000;
 
     public static void main(String[] args) throws Exception {
-        //TODO -- add an actual commandline
+        //TODO -- add an actual commandline,
         Path tikaConfigPath = Paths.get(args[0]);
-        List<String> tikaServerUrls = Arrays.asList(args[1].split(","));
+        int numThreads = Integer.parseInt(args[1]);
+        List<String> tikaServerUrls = Arrays.asList(args[2].split(","));
         TikaClientCLI cli = new TikaClientCLI();
-        cli.execute(tikaConfigPath, tikaServerUrls);
+        cli.execute(tikaConfigPath, tikaServerUrls, numThreads);
     }
 
-    private void execute(Path tikaConfigPath, List<String> tikaServerUrls)
+    private void execute(Path tikaConfigPath, List<String> tikaServerUrls, int numThreads)
             throws TikaException, IOException, SAXException {
         TikaConfig config = new TikaConfig(tikaConfigPath);
 
