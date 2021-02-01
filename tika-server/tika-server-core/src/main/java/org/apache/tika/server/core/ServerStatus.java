@@ -41,7 +41,7 @@ public class ServerStatus {
     public enum STATUS {
         INITIALIZING(0),
         OPERATING(1),
-        HIT_MAX(2),
+        HIT_MAX_FILES(2),
         TIMEOUT(3),
         ERROR(4),
         PARENT_REQUESTED_SHUTDOWN(5),

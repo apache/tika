@@ -136,7 +136,7 @@ public class ServerStatusWatcher implements Runnable {
         }
         long filesProcessed = serverStatus.getFilesProcessed();
         if (filesProcessed >= maxFiles) {
-            serverStatus.setStatus(ServerStatus.STATUS.HIT_MAX);
+            serverStatus.setStatus(ServerStatus.STATUS.HIT_MAX_FILES);
         }
     }
 

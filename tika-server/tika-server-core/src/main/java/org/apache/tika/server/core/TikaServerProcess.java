@@ -23,6 +23,7 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.cxf.binding.BindingFactoryManager;
+import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
@@ -36,6 +37,8 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.digestutils.BouncyCastleDigester;
 import org.apache.tika.parser.digestutils.CommonsDigester;
+import org.apache.tika.server.core.resource.AsyncEmitter;
+import org.apache.tika.server.core.resource.AsyncResource;
 import org.apache.tika.server.core.resource.DetectorResource;
 import org.apache.tika.server.core.resource.EmitterResource;
 import org.apache.tika.server.core.resource.LanguageResource;
@@ -72,13 +75,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class TikaServerProcess {
 
 
     //used in fork mode -- restart after processing this many files
     private static final long DEFAULT_MAX_FILES = 100000;
-
+    private static String ENABLE_UNSECURE_FEATURES = "enableUnsecureFeatures";
 
     private static final int DEFAULT_DIGEST_MARK_LIMIT = 20 * 1024 * 1024;
     public static final Set<String> LOG_LEVELS = new HashSet<>(Arrays.asList("debug", "info"));
@@ -132,7 +140,7 @@ public class TikaServerProcess {
 
             CommandLineParser cliParser = new DefaultParser();
             CommandLine line = cliParser.parse(options, args);
-            runServer(line, options);
+            mainLoop(line, options);
         } catch (Exception e) {
             e.printStackTrace();
             LOG.error("Can't start: ", e);
@@ -140,10 +148,35 @@ public class TikaServerProcess {
         }
     }
 
+    private static void mainLoop(CommandLine commandLine, Options options) throws Exception {
+        AsyncResource asyncResource = null;
+        ArrayBlockingQueue asyncQueue = null;
+        int numAsyncThreads = 10;
+        if (commandLine.hasOption("unsecureFeatures")) {
+            asyncResource = new AsyncResource();
+            asyncQueue = asyncResource.getQueue(numAsyncThreads);
+        }
+
+        ServerDetails serverDetails = initServer(commandLine, asyncResource);
+        ExecutorService executorService = Executors.newFixedThreadPool(numAsyncThreads+1);
+        ExecutorCompletionService<Integer> executorCompletionService = new ExecutorCompletionService<>(executorService);
+
+        executorCompletionService.submit(new ServerThread(serverDetails));
+        if (asyncQueue != null) {
+            for (int i = 0; i < numAsyncThreads; i++) {
+                executorCompletionService.submit(new AsyncEmitter(asyncQueue));
+            }
+        }
+        while (true) {
+
+        }
+    }
+
     //This starts the server in this process.  This can
     //be either a direct call from -noFork or the process that is forked
     //in the 2.0 default mode.
-    private static void runServer(CommandLine line, Options options) throws Exception {
+    private static ServerDetails initServer(CommandLine line,
+                                     AsyncResource asyncResource) throws Exception {
 
         String host = null;
 
@@ -224,12 +257,12 @@ public class TikaServerProcess {
         }
 
         InputStreamFactory inputStreamFactory = null;
-        if (line.hasOption("enableUnsecureFeatures")) {
+        if (line.hasOption(ENABLE_UNSECURE_FEATURES)) {
             inputStreamFactory = new FetcherStreamFactory(tika.getFetcherManager());
         } else {
             inputStreamFactory = new DefaultInputStreamFactory();
         }
-        logFetchersAndEmitters(line.hasOption("enableUnsecureFeatures"), tika);
+        logFetchersAndEmitters(line.hasOption(ENABLE_UNSECURE_FEATURES), tika);
         String serverId = line.hasOption("i") ? line.getOptionValue("i") : UUID.randomUUID().toString();
         LOG.debug("SERVER ID:" + serverId);
         ServerStatus serverStatus;
@@ -272,8 +305,9 @@ public class TikaServerProcess {
         rCoreProviders.add(new SingletonResourceProvider(new TikaDetectors()));
         rCoreProviders.add(new SingletonResourceProvider(new TikaParsers()));
         rCoreProviders.add(new SingletonResourceProvider(new TikaVersion()));
-        if (line.hasOption("enableUnsecureFeatures")) {
+        if (line.hasOption(ENABLE_UNSECURE_FEATURES)) {
             rCoreProviders.add(new SingletonResourceProvider(new EmitterResource()));
+            rCoreProviders.add(new SingletonResourceProvider(asyncResource));
         }
         rCoreProviders.addAll(loadResourceServices());
         if (line.hasOption("status")) {
@@ -315,11 +349,11 @@ public class TikaServerProcess {
         JAXRSBindingFactory factory = new JAXRSBindingFactory();
         factory.setBus(sf.getBus());
         manager.registerBindingFactory(JAXRSBindingFactory.JAXRS_BINDING_ID, factory);
-        sf.create();
-        LOG.info("Started Apache Tika server {} at {}",
-                serverId,
-                url);
-
+        ServerDetails details = new ServerDetails();
+        details.sf = sf;
+        details.url = url;
+        details.serverId = serverId;
+        return details;
     }
 
     private static void logFetchersAndEmitters(boolean enableUnsecureFeatures, TikaConfig tika) {
@@ -421,4 +455,28 @@ public class TikaServerProcess {
         return serverTimeouts;
     }
 
+    private static class ServerThread implements Callable<Integer> {
+        private final ServerDetails serverDetails;
+        public ServerThread(ServerDetails serverDetails) {
+            this.serverDetails = serverDetails;
+        }
+
+        @Override
+        public Integer call() throws Exception {
+
+            Server server = serverDetails.sf.create();
+            System.err.println("started : "+serverDetails.serverId);
+                LOG.info("Started Apache Tika server {} at {}",
+                        serverDetails.serverId,
+                        serverDetails.url);
+            System.err.println("returning : "+serverDetails.serverId);
+                return 2;
+        }
+    }
+
+    private static class ServerDetails {
+        JAXRSServerFactoryBean sf;
+        String serverId;
+        String url;
+    }
 }

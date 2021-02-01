@@ -218,7 +218,7 @@ public class PipeIntegrationTests {
             userMetadata.set("project", "my-project");
 
             try (InputStream is = fetcher.fetch(t.getFetchKey().getKey(), t.getMetadata())) {
-                emitter.emit(t.getEmitKey().getEmitKey(), is, userMetadata);
+                emitter.emit(t.getEmitKey().getKey(), is, userMetadata);
             }
         }
     }

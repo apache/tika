@@ -30,7 +30,7 @@ public class EmitKey {
         return emitterName;
     }
 
-    public String getEmitKey() {
+    public String getKey() {
         return emitKey;
     }
 

@@ -27,14 +27,8 @@ public interface Emitter {
 
     void emit(String emitKey, List<Metadata> metadataList) throws IOException, TikaEmitterException;
 
+    void emit(List<EmitData> emitData) throws IOException, TikaEmitterException;
+    //TODO -- add this later for xhtml?
     //void emit(String txt, Metadata metadata) throws IOException, TikaException;
-
-   /*
-    TODO we can add this later?
-    void addBatch(String emitKey, List<Metadata> metadataList) throws IOException, TikaEmitterException;
-
-    void executeBatch() throws IOException, TikaEmitterException;
-
-    */
 
 }

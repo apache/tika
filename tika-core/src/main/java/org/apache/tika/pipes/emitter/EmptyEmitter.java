@@ -16,13 +16,13 @@
  */
 package org.apache.tika.pipes.emitter;
 
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 
 import java.io.IOException;
 import java.util.List;
 
 public class EmptyEmitter implements Emitter {
+
     @Override
     public String getName() {
         return "empty";
@@ -30,6 +30,11 @@ public class EmptyEmitter implements Emitter {
 
     @Override
     public void emit(String emitKey, List<Metadata> metadataList) throws IOException, TikaEmitterException {
+
+    }
+
+    @Override
+    public void emit(List<EmitData> emitData) throws IOException, TikaEmitterException {
 
     }
 }

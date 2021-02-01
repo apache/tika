@@ -70,7 +70,7 @@ public class TikaClient {
         root.add("fetcher", new JsonPrimitive(fetchEmit.getFetchKey().getFetcherName()));
         root.add("fetchKey", new JsonPrimitive(fetchEmit.getFetchKey().getKey()));
         root.add("emitter", new JsonPrimitive(fetchEmit.getEmitKey().getEmitterName()));
-        root.add("emitKey", new JsonPrimitive(fetchEmit.getEmitKey().getEmitKey()));
+        root.add("emitKey", new JsonPrimitive(fetchEmit.getEmitKey().getKey()));
         if (metadata.size() > 0) {
             JsonObject m = new JsonObject();
             for (String n : metadata.names()) {

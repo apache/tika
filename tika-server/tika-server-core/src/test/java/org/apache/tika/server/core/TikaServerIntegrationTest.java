@@ -64,7 +64,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
             public void run() {
                 TikaServerCli.main(
                         new String[]{
-                                "-maxFiles", "2000",
+                                "-maxFiles", "100",
                                 "-p", INTEGRATION_TEST_PORT,
                                 "-tmpFilePrefix", "basic-"
                         });
@@ -72,9 +72,12 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         };
         serverThread.start();
         try {
-            testBaseline();
+            for (int i = 0; i < 500; i++) {
+                System.out.println("base "+i);
+                testBaseline();
+            }
         } finally {
-            serverThread.interrupt();
+            //serverThread.interrupt();
         }
     }
 
@@ -563,6 +566,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
                 .put(ClassLoader
                         .getSystemResourceAsStream(TEST_HELLO_WORLD));
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        System.out.println(response.getStatus());
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
         assertEquals(1, metadataList.size());
         assertEquals("Nikolai Lobachevsky", metadataList.get(0).get("author"));
