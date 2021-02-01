@@ -17,19 +17,26 @@
 package org.apache.tika.parser.ocr;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.tika.utils.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Configuration for TesseractOCRParser.
@@ -67,6 +74,9 @@ public class TesseractOCRConfig implements Serializable {
 
     // Path to the 'tessdata' folder, which contains language files and config files.
     private String tessdataPath = "";
+
+    // Actual path to tessdata, if not specified by user and we have to find it ourselves
+    private static File windowsActualTessdataDir;
 
     // Language dictionary to be used.
     private String language = "eng";
@@ -192,7 +202,7 @@ public class TesseractOCRConfig implements Serializable {
         setResize(
                 getProp(props, "resize", getResize()));
         setApplyRotation(
-        		getProp(props, "applyRotation", isApplyRotation()));
+                getProp(props, "applyRotation", isApplyRotation()));
 
         loadOtherTesseractConfig(props);
     }
@@ -253,11 +263,80 @@ public class TesseractOCRConfig implements Serializable {
      * e.g. "chi_tra+chi_sim"
      */
     public void setLanguage(String language) {
-        if (!language.matches("([a-zA-Z]{3}(_[a-zA-Z]{3,4}){0,2}(\\+?))+")
-                || language.endsWith("+")) {
-            throw new IllegalArgumentException("Invalid language code: "+language);
+        final String[] langs = language.split("\\s*\\+\\s*");
+        List<String> invalidCodes = new ArrayList<>();
+        for (String lang : langs) {
+            if (!langExists(lang)) {
+                invalidCodes.add(lang);
+            }
+        }
+        if (!invalidCodes.isEmpty()) {
+            throw new IllegalArgumentException("Invalid language code(s): " + invalidCodes);
         }
         this.language = language;
+    }
+
+
+    /**
+     * Check if tessdata language model exists
+     */
+    private boolean langExists(String lang) {
+        LOG.warn("actualTessdataDir:" + windowsActualTessdataDir);
+        if (windowsActualTessdataDir == null) {
+        // Use the same logic used in TesseractOCRParser.setEnv().  If tessdataPath is not specified then use tesseractPath, if specified
+            if (!tessdataPath.isEmpty()) {
+                windowsActualTessdataDir = new File(tessdataPath);
+            } else if (!tesseractPath.isEmpty()) {
+                windowsActualTessdataDir = new File(tesseractPath, "tessdata");
+            } else {
+                // Neither path was specified
+                if (SystemUtils.IS_OS_UNIX) {
+                    // For xNix, Tesseract uses this default
+                    windowsActualTessdataDir = new File("/usr/opt/tessdata");
+                } else {
+                    getWindowsActualTessdataDir();
+                }
+            }
+        }
+
+        LOG.warn("actualTessdataDir: " + windowsActualTessdataDir);
+        if (!windowsActualTessdataDir.isDirectory()) {
+            throw new RuntimeException(windowsActualTessdataDir + " is not a directory");
+        }
+        String trainedDataName = lang + ".traineddata";
+        LOG.info("Checking for " + new File(windowsActualTessdataDir, trainedDataName) + " " + new File(windowsActualTessdataDir, trainedDataName).exists());
+        if (!new File(windowsActualTessdataDir, trainedDataName).exists()) {
+            // Check the script directory
+            LOG.info("Checking for " + new File(new File(windowsActualTessdataDir, "script"), trainedDataName) + " " + new File(new File(windowsActualTessdataDir, "script"), trainedDataName).exists());
+            return new File(new File(windowsActualTessdataDir, "script"), trainedDataName).exists();
+        }
+        return true;
+    }
+
+    /**
+     * If user hasn't specified tesseractPath or tessdataPath, we need to find it ourselves (Windows only)
+     */
+    private void getWindowsActualTessdataDir() {
+        if (SystemUtils.IS_OS_WINDOWS) {
+            LOG.warn("Looking for Tesseract on Windows: ");
+            String actualTesseractPath;
+            // For Windows, the default is under the Tesseract directory.  So we need to find it first
+            try {
+                ProcessBuilder pb = new ProcessBuilder("where", "tesseract.exe").redirectError(ProcessBuilder.Redirect.INHERIT);
+                Process process = pb.start();
+                try (BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream(), UTF_8))) {
+                    // Just get the first (and probably only) one
+                    actualTesseractPath = in.readLine();
+                    if (actualTesseractPath == null) {
+                        // Tessdata not found.  Should we throw exception here or just log it and let Tesseract deal with it?
+                        throw new RuntimeException("Tessdata not found.  Required for Tesseract");
+                    }
+                }
+            } catch (IOException e) {
+                throw new RuntimeException("Error executing 'where' command to fine tesseract executable", e);
+            }
+            windowsActualTessdataDir = new File(new File(actualTesseractPath).getParent(), "tessdata");
+        }
     }
 
     /**
@@ -295,9 +374,9 @@ public class TesseractOCRConfig implements Serializable {
      */
     public void setPageSeparator(String pageSeparator) {
         Matcher m = ALLOWABLE_PAGE_SEPARATORS_PATTERN.matcher(pageSeparator);
-        if (! m.find()) {
-            throw new IllegalArgumentException(pageSeparator + " contains illegal characters.\n"+
-            "If you trust this value, set it with setTrustedPageSeparator");
+        if (!m.find()) {
+            throw new IllegalArgumentException(pageSeparator + " contains illegal characters.\n" +
+                    "If you trust this value, set it with setTrustedPageSeparator");
         }
         setTrustedPageSeparator(pageSeparator);
     }
@@ -305,6 +384,7 @@ public class TesseractOCRConfig implements Serializable {
     /**
      * Same as {@link #setPageSeparator(String)} but does not perform
      * any checks on the string.
+     *
      * @param pageSeparator
      */
     public void setTrustedPageSeparator(String pageSeparator) {
@@ -321,12 +401,12 @@ public class TesseractOCRConfig implements Serializable {
     }
 
     /**
-     *
      * @return whether or not to maintain interword spacing.
      */
     public boolean isPreserveInterwordSpacing() {
         return preserveInterwordSpacing;
     }
+
     /**
      * @see #setMinFileSizeToOcr(long minFileSizeToOcr)
      */
@@ -475,7 +555,7 @@ public class TesseractOCRConfig implements Serializable {
         if (colorspace == null) {
             throw new IllegalArgumentException("Colorspace value cannot be null.");
         }
-        if (! colorspace.matches("(?i)^[-_A-Z0-9]+$")) {
+        if (!colorspace.matches("(?i)^[-_A-Z0-9]+$")) {
             throw new IllegalArgumentException("colorspace must match this pattern: (?i)^[-_A-Z0-9]+$");
         }
         this.colorspace = colorspace;
@@ -557,16 +637,16 @@ public class TesseractOCRConfig implements Serializable {
      * @return Whether or not a rotation value should be calculated and passed to ImageMagick before performing OCR.
      */
     public boolean isApplyRotation() {
-    	return this.applyRotation;
+        return this.applyRotation;
     }
 
     /**
      * Sets whether or not a rotation value should be calculated and passed to ImageMagick.
-     * 
+     *
      * @param applyRotation to calculate and apply rotation, false to skip.  Default is false
      */
     public void setApplyRotation(boolean applyRotation) {
-    	this.applyRotation = applyRotation;
+        this.applyRotation = applyRotation;
     }
 
     /**
@@ -579,7 +659,7 @@ public class TesseractOCRConfig implements Serializable {
     /**
      * Add a key-value pair to pass to Tesseract using its -c command line option.
      * To see the possible options, run tesseract --print-parameters.
-     *
+     * <p>
      * You may also add these parameters in TesseractOCRConfig.properties; any
      * key-value pair in the properties file where the key contains an underscore
      * is passed directly to Tesseract.
@@ -596,12 +676,12 @@ public class TesseractOCRConfig implements Serializable {
         }
 
         Matcher m = ALLOWABLE_OTHER_PARAMS_PATTERN.matcher(key);
-        if (! m.find()) {
-            throw new IllegalArgumentException("Key contains illegal characters: "+key);
+        if (!m.find()) {
+            throw new IllegalArgumentException("Key contains illegal characters: " + key);
         }
         m.reset(value);
-        if (! m.find()) {
-            throw new IllegalArgumentException("Value contains illegal characters: "+value);
+        if (!m.find()) {
+            throw new IllegalArgumentException("Value contains illegal characters: " + value);
         }
 
         otherTesseractConfig.put(key.trim(), value.trim());
