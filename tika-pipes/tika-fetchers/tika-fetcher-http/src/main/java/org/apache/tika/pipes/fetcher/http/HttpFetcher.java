@@ -49,7 +49,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable {
     private HttpClientFactory httpClientFactory;
     private HttpClient httpClient;
 
-    public HttpFetcher() {
+    public HttpFetcher() throws TikaConfigException {
         httpClientFactory = new HttpClientFactory();
     }
     @Override

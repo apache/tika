@@ -86,9 +86,10 @@ import java.util.Set;
  */
 public class HttpClientFactory {
 
+    public static final String AES_ENV_VAR = "AES_KEY";
     private static final Logger LOG = LoggerFactory.getLogger(HttpClientFactory.class);
 
-    private AES aes;
+    private AES aes = null;
 
     private String proxyHost;
     private int proxyPort;
@@ -105,6 +106,16 @@ public class HttpClientFactory {
     private String authScheme = "basic"; //ntlm or basic
     private boolean credentialsAESEncrypted = false;
 
+
+    public HttpClientFactory() throws TikaConfigException {
+        if (credentialsAESEncrypted && System.getenv(AES_ENV_VAR) == null) {
+            throw new TikaConfigException(
+                    "must specify aes key in the environment variable: " + AES_ENV_VAR);
+        }
+        if (credentialsAESEncrypted) {
+            aes = new AES();
+        }
+    }
     public String getProxyHost() {
         return proxyHost;
     }
@@ -305,14 +316,8 @@ public class HttpClientFactory {
     }
 
     private String decrypt(String encrypted) throws TikaConfigException {
-        if (! credentialsAESEncrypted) {
+        if (aes == null || encrypted == null) {
             return encrypted;
-        }
-        if (encrypted == null) {
-            return encrypted;
-        }
-        if (aes == null) {
-            aes = new AES();
         }
         return aes.decrypt(encrypted);
     }
@@ -397,8 +402,7 @@ public class HttpClientFactory {
         private byte[] key;
 
         private AES() throws TikaConfigException {
-            //TODO: clean this up -- potential race condition, etc...
-            secretKey = setKey(System.getenv("AES_KEY"));
+            secretKey = setKey(System.getenv(AES_ENV_VAR));
         }
 
         private SecretKeySpec setKey(String myKey) throws TikaConfigException {
