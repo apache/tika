@@ -16,7 +16,7 @@
  */
 package org.apache.tika.server.core;
 
-public class ServerTimeouts {
+public class ServerTimeoutConfig {
 
     /*
     TODO: integrate these settings:

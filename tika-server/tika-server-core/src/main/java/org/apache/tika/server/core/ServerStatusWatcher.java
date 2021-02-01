@@ -40,7 +40,7 @@ public class ServerStatusWatcher implements Runnable {
     private final ServerStatus serverStatus;
     private final DataInputStream fromParent;
     private final long maxFiles;
-    private final ServerTimeouts serverTimeouts;
+    private final ServerTimeoutConfig serverTimeouts;
     private final Path forkedStatusPath;
     private final ByteBuffer statusBuffer = ByteBuffer.allocate(16);
 
@@ -51,7 +51,7 @@ public class ServerStatusWatcher implements Runnable {
     public ServerStatusWatcher(ServerStatus serverStatus,
                                InputStream inputStream, Path forkedStatusPath,
                                long maxFiles,
-                               ServerTimeouts serverTimeouts) throws IOException {
+                               ServerTimeoutConfig serverTimeouts) throws IOException {
         this.serverStatus = serverStatus;
         this.maxFiles = maxFiles;
         this.serverTimeouts = serverTimeouts;
@@ -166,7 +166,7 @@ public class ServerStatusWatcher implements Runnable {
         try {
             writeStatus();
         } catch (Exception e) {
-            LOG.warn("problem writing status before shutdown", e);
+            LOG.debug("problem writing status before shutdown", e);
         }
 
         //if something went wrong with the parent,
