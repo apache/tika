@@ -23,6 +23,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
@@ -62,7 +63,7 @@ public class RecursiveMetadataResource {
      * just the immediate children.
      * <p>
      * The extracted text content is stored with the key
-     * {@link RecursiveParserWrapper#TIKA_CONTENT}.
+     * {@link org.apache.tika.metadata.TikaCoreProperties#TIKA_CONTENT}.
      * <p>
      * Specify the handler for the content (xml, html, text, ignore)
      * in the path:<br/>
@@ -98,7 +99,7 @@ public class RecursiveMetadataResource {
      * just the immediate children.
      * <p>
      * The extracted text content is stored with the key
-     * {@link RecursiveParserWrapper#TIKA_CONTENT}.
+     * {@link org.apache.tika.metadata.TikaCoreProperties#TIKA_CONTENT}.
      * <p>
      * Specify the handler for the content (xml, html, text, ignore)
      * in the path:<br/>
@@ -161,19 +162,13 @@ public class RecursiveMetadataResource {
                 TikaResource.getConfig().getMetadataFilter());
 		try {
             TikaResource.parse(wrapper, LOG, info.getPath(), is, handler, metadata, context);
-        } catch (SecurityException e) {
+        } catch (SecurityException|WebApplicationException e) {
 		    throw e;
         } catch (Exception e) {
-		    //swallow it and report it via the metadata list
+		    //we shouldn't get here?
+		    e.printStackTrace();
         }
-		/*
-		    We used to have this non-functional bit of code...refactor to add it back and make it work?
-						new LanguageHandler() {
-					public void endDocument() {
-						metadata.set("language", getLanguage().getLanguage());
-					}
-				},
-		 */
+
 		return handler.getMetadataList();
 	}
 

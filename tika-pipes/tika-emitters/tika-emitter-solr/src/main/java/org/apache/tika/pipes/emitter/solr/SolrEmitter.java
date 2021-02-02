@@ -34,11 +34,18 @@ import org.apache.tika.pipes.emitter.TikaEmitterException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.StringWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.zip.GZIPOutputStream;
 
 public class SolrEmitter extends AbstractEmitter implements Initializable {
 
@@ -51,6 +58,8 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
     private static final String ATTACHMENTS = "attachments";
     private static final String UPDATE_PATH = "/update";
     private static final Logger LOG = LoggerFactory.getLogger(SolrEmitter.class);
+    //one day this will be allowed?
+    private final boolean gzipJson = false;
 
     private AttachmentStrategy attachmentStrategy = AttachmentStrategy.PARENT_CHILD;
     private String url;
@@ -71,16 +80,24 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
             LOG.warn("metadataList is null or empty");
             return;
         }
-        StringWriter writer = new StringWriter();
-        JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer);
-        jsonGenerator.writeStartArray();
-        jsonify(jsonGenerator, emitKey, metadataList);
-        jsonGenerator.writeEndArray();
-        String json = writer.toString();
-        LOG.debug("emitting json:"+json);
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        Writer writer = gzipJson ?
+                new BufferedWriter(
+                        new OutputStreamWriter(
+                                new GZIPOutputStream(bos), StandardCharsets.UTF_8)) :
+                new BufferedWriter(
+                        new OutputStreamWriter(bos, StandardCharsets.UTF_8));
+        try (
+        JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
+            jsonGenerator.writeStartArray();
+            jsonify(jsonGenerator, emitKey, metadataList);
+            jsonGenerator.writeEndArray();
+        }
+        LOG.debug("emitting json ({})",
+                new String(bos.toByteArray(), StandardCharsets.UTF_8));
         try {
             HttpClientUtil.postJson(httpClient,
-                    url+UPDATE_PATH+"?commitWithin="+getCommitWithin(), json);
+                    url+UPDATE_PATH+"?commitWithin="+getCommitWithin(), bos.toByteArray(), gzipJson);
         } catch (TikaClientException e) {
             throw new TikaEmitterException("can't post", e);
         }
@@ -93,18 +110,26 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
             LOG.warn("batch is null or empty");
             return;
         }
-        StringWriter writer = new StringWriter();
-        JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer);
-        jsonGenerator.writeStartArray();
-        for (EmitData d : batch) {
-            jsonify(jsonGenerator, d.getKey(), d.getMetadataList());
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        Writer writer = gzipJson ?
+                new BufferedWriter(
+                        new OutputStreamWriter(
+                                new GZIPOutputStream(bos), StandardCharsets.UTF_8)) :
+            new BufferedWriter(
+                new OutputStreamWriter(bos, StandardCharsets.UTF_8));
+        try (JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
+            jsonGenerator.writeStartArray();
+            for (EmitData d : batch) {
+                jsonify(jsonGenerator, d.getEmitKey().getKey(), d.getMetadataList());
+            }
+            jsonGenerator.writeEndArray();
         }
-        jsonGenerator.writeEndArray();
-        String json = writer.toString();
-        LOG.debug("emitting json:"+json);
+        LOG.debug("emitting json ({})",
+                new String(bos.toByteArray(), StandardCharsets.UTF_8));
         try {
             HttpClientUtil.postJson(httpClient,
-                    url+UPDATE_PATH+"?commitWithin="+getCommitWithin(), json);
+                    url+UPDATE_PATH+"?commitWithin="+getCommitWithin(),
+                    bos.toByteArray(), gzipJson);
         } catch (TikaClientException e) {
             throw new TikaEmitterException("can't post", e);
         }
@@ -128,7 +153,7 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
             parent.set(getContentField(), sb.toString());
             jsonify(parent, jsonGenerator);
         } else if (attachmentStrategy == AttachmentStrategy.PARENT_CHILD) {
-            jsonify(metadataList.get(0), jsonGenerator);
+            jsonify(metadataList.get(0), jsonGenerator, false);
             jsonGenerator.writeArrayFieldStart(ATTACHMENTS);
 
             for (int i = 1; i < metadataList.size(); i++) {
@@ -137,17 +162,16 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
                 jsonify(m, jsonGenerator);
             }
             jsonGenerator.writeEndArray();
+            jsonGenerator.writeEndObject();
         } else {
             throw new IllegalArgumentException("I don't yet support this attachment strategy: "
                     + attachmentStrategy);
         }
     }
 
-
-    private void jsonify(Metadata metadata, JsonGenerator jsonGenerator) throws IOException {
+    private void jsonify(Metadata metadata, JsonGenerator jsonGenerator, boolean writeEndObject) throws IOException {
         jsonGenerator.writeStartObject();
         for (String n : metadata.names()) {
-
             String[] vals = metadata.getValues(n);
             if (vals.length == 0) {
                 continue;
@@ -155,11 +179,19 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
                 jsonGenerator.writeStringField(n, vals[0]);
             } else if (vals.length > 1) {
                 jsonGenerator.writeArrayFieldStart(n);
-                jsonGenerator.writeArray(vals, 0, vals.length);
+                for (String val : vals) {
+                    jsonGenerator.writeString(val);
+                }
                 jsonGenerator.writeEndArray();
             }
         }
-        jsonGenerator.writeEndObject();
+        if (writeEndObject) {
+            jsonGenerator.writeEndObject();
+        }
+    }
+
+    private void jsonify(Metadata metadata, JsonGenerator jsonGenerator) throws IOException {
+        jsonify(metadata, jsonGenerator, true);
     }
 
     /**

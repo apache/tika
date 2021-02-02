@@ -80,6 +80,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 public class TikaServerProcess {
 
@@ -137,7 +139,6 @@ public class TikaServerProcess {
         LOG.info("Starting {} server", new Tika());
         try {
             Options options = getOptions();
-
             CommandLineParser cliParser = new DefaultParser();
             CommandLine line = cliParser.parse(options, args);
             mainLoop(line, options);
@@ -152,7 +153,7 @@ public class TikaServerProcess {
         AsyncResource asyncResource = null;
         ArrayBlockingQueue asyncQueue = null;
         int numAsyncThreads = 10;
-        if (commandLine.hasOption("unsecureFeatures")) {
+        if (commandLine.hasOption(ENABLE_UNSECURE_FEATURES)) {
             asyncResource = new AsyncResource();
             asyncQueue = asyncResource.getQueue(numAsyncThreads);
         }
@@ -168,7 +169,10 @@ public class TikaServerProcess {
             }
         }
         while (true) {
-
+            Future<Integer> future = executorCompletionService.poll(1, TimeUnit.MINUTES);
+            if (future != null) {
+                System.out.println("future val: " + future.get());
+            }
         }
     }
 
@@ -465,12 +469,10 @@ public class TikaServerProcess {
         public Integer call() throws Exception {
 
             Server server = serverDetails.sf.create();
-            System.err.println("started : "+serverDetails.serverId);
-                LOG.info("Started Apache Tika server {} at {}",
+            LOG.info("Started Apache Tika server {} at {}",
                         serverDetails.serverId,
                         serverDetails.url);
-            System.err.println("returning : "+serverDetails.serverId);
-                return 2;
+            return 2;
         }
     }
 

@@ -18,6 +18,7 @@ package org.apache.tika.server.core;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.apache.commons.io.IOUtils;
 import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.tika.TikaTest;
@@ -32,10 +33,14 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.ProcessingException;
 import javax.ws.rs.core.Response;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.ConnectException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -55,7 +60,6 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerIntegrationTest.class);
 
 
-
     @Test
     public void testBasic() throws Exception {
 
@@ -72,12 +76,9 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         };
         serverThread.start();
         try {
-            for (int i = 0; i < 500; i++) {
-                System.out.println("base "+i);
-                testBaseline();
-            }
+            testBaseline();
         } finally {
-            //serverThread.interrupt();
+            serverThread.interrupt();
         }
     }
 
@@ -206,9 +207,9 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
 
     private String getServerId() throws Exception {
         Response response = WebClient
-                    .create(endPoint + STATUS_PATH)
-                    .accept("application/json")
-                    .get();
+                .create(endPoint + STATUS_PATH)
+                .accept("application/json")
+                .get();
         String jsonString =
                 CXFTestBase.getStringFromInputStream((InputStream) response.getEntity());
         JsonObject root = JsonParser.parseString(jsonString).getAsJsonObject();
@@ -379,10 +380,10 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
             awaitServerStartup();
 
             Response response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
-                .put(ClassLoader
-                        .getSystemResourceAsStream(TEST_STDOUT_STDERR));
+                    .create(endPoint + META_PATH)
+                    .accept("application/json")
+                    .put(ClassLoader
+                            .getSystemResourceAsStream(TEST_STDOUT_STDERR));
             Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
             List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
             assertEquals(1, metadataList.size());
@@ -439,7 +440,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
                                 "-p", INTEGRATION_TEST_PORT,
                                 "-taskTimeoutMillis", "10000", "-taskPulseMillis", "500",
                                 "-pingPulseMillis", "100", "-maxRestarts", "0",
-                                "-JDlog4j.configuration=file:"+ LOG_FILE.toAbsolutePath(),
+                                "-JDlog4j.configuration=file:" + LOG_FILE.toAbsolutePath(),
                                 "-tmpFilePrefix", "tika-server-stderrlogging"
                         });
             }
@@ -472,14 +473,14 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
     private void awaitServerStartup() throws Exception {
         Instant started = Instant.now();
         long elapsed = Duration.between(started, Instant.now()).toMillis();
-        WebClient client = WebClient.create(endPoint+"/tika").accept("text/plain");
+        WebClient client = WebClient.create(endPoint + "/tika").accept("text/plain");
         while (elapsed < MAX_WAIT_MS) {
             try {
                 Response response = client.get();
                 if (response.getStatus() == 200) {
                     elapsed = Duration.between(started, Instant.now()).toMillis();
                     LOG.info("client observes server successfully started after " +
-                            elapsed+ " ms");
+                            elapsed + " ms");
                     return;
                 }
                 LOG.debug("tika test client failed to connect to server with status: {}", response.getStatus());
@@ -516,7 +517,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         awaitServerStartup();
         Random r = new Random();
         for (int i = 0; i < 100; i++) {
-            System.out.println("FILE # "+i);
+            System.out.println("FILE # " + i);
             boolean ex = false;
             Response response = null;
             String file = TEST_HELLO_WORLD;
@@ -528,7 +529,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
                 } else if (r.nextFloat() < 0.02) {
                     file = TEST_HEAVY_HANG;
                 }
-                System.out.println("about to process: "+file);
+                System.out.println("about to process: " + file);
                 response = WebClient
                         .create(endPoint + META_PATH)
                         .accept("application/json")
@@ -559,17 +560,29 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
     }
 
     private void testBaseline() throws Exception {
-        awaitServerStartup();
-        Response response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
-                .put(ClassLoader
-                        .getSystemResourceAsStream(TEST_HELLO_WORLD));
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        System.out.println(response.getStatus());
-        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-        assertEquals(1, metadataList.size());
-        assertEquals("Nikolai Lobachevsky", metadataList.get(0).get("author"));
-        assertContains("hello world", metadataList.get(0).get("X-TIKA:content"));
+        int maxTries = 3;
+        int tries = 0;
+        while (++tries < maxTries) {
+            awaitServerStartup();
+            Response response = null;
+
+            try {
+                response = WebClient
+                        .create(endPoint + META_PATH)
+                        .accept("application/json")
+                        .put(ClassLoader
+                                .getSystemResourceAsStream(TEST_HELLO_WORLD));
+            } catch (ProcessingException e) {
+                continue;
+            }
+            if (response.getStatus() == 503) {
+                continue;
+            }
+            Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+            List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+            assertEquals(1, metadataList.size());
+            assertEquals("Nikolai Lobachevsky", metadataList.get(0).get("author"));
+            assertContains("hello world", metadataList.get(0).get("X-TIKA:content"));
+        }
     }
 }

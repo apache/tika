@@ -142,8 +142,6 @@ public class TikaServerCli {
             } catch (InterruptedException e) {
                 e.printStackTrace();
                 //swallow
-            } catch (Exception e) {
-                e.printStackTrace();
             }
         }
     }
