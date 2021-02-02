@@ -17,6 +17,7 @@ package org.apache.tika.metadata.serialization;
 * limitations under the License.
 */
 
+import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 
@@ -63,18 +64,12 @@ public class JsonMetadataTest {
         JsonMetadata.setPrettyPrinting(true);
         JsonMetadata.toJson(metadata, writer);
         assertTrue(writer.toString().contains(
-                "  \"json_escapes\": \"the: \\\"quick\\\" brown, fox\",\n" +
-                "  \"k1\": [\n" +
-                "    \"v1\",\n" +
-                "    \"v2\"\n" +
-                "  ],\n" +
-                "  \"k3\": [\n" +
-                "    \"v3\",\n" +
-                "    \"v3\"\n" +
-                "  ],\n" +
-                "  \"k4\": \"500,000\",\n" +
-                "  \"url\": \"/myApp/myAction.html?method\\u003drouter\\u0026cmd\\u003d1\"\n" +
-                "}"));
+                "\"json_escapes\" : \"the: \\\"quick\\\" brown, fox\",\n" +
+                        "  \"k1\" : [ \"v1\", \"v2\" ],\n" +
+                        "  \"k3\" : [ \"v3\", \"v3\" ],\n" +
+                        "  \"k4\" : \"500,000\",\n" +
+                        "  \"url\" : \"/myApp/myAction.html?method=router&cmd=1\"\n" +
+                        "}"));
     }
     
     @Test
@@ -84,7 +79,7 @@ public class JsonMetadataTest {
         boolean ex = false;
         try {
             Metadata deserialized = JsonMetadata.fromJson(new StringReader(json));
-        } catch (TikaException e) {
+        } catch (IOException e) {
             ex = true;
         }
         assertTrue(ex);
@@ -96,7 +91,7 @@ public class JsonMetadataTest {
         boolean ex = false;
         try {
             JsonMetadata.toJson(null, writer);
-        } catch (TikaException e) {
+        } catch (IOException e) {
             ex = true;
         }
         assertFalse(ex);

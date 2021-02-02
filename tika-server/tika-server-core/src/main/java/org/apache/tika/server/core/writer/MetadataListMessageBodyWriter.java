@@ -56,13 +56,9 @@ public class MetadataListMessageBodyWriter implements MessageBodyWriter<Metadata
     public void writeTo(MetadataList list, Class<?> type, Type genericType, Annotation[] annotations,
                         MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream) throws IOException,
             WebApplicationException {
-        try {
-            Writer writer = new OutputStreamWriter(entityStream, UTF_8);
-            JsonMetadataList.toJson(list.getMetadata(), writer);
-            writer.flush();
-        } catch (TikaException e) {
-            throw new IOException(e);
-        }
+        Writer writer = new OutputStreamWriter(entityStream, UTF_8);
+        JsonMetadataList.toJson(list.getMetadata(), writer);
+        writer.flush();
         entityStream.flush();
     }
 }

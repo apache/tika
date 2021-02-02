@@ -52,4 +52,24 @@ public class FetchEmitTuple {
                 ", metadata=" + metadata +
                 '}';
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        FetchEmitTuple that = (FetchEmitTuple) o;
+
+        if (fetchKey != null ? !fetchKey.equals(that.fetchKey) : that.fetchKey != null) return false;
+        if (emitKey != null ? !emitKey.equals(that.emitKey) : that.emitKey != null) return false;
+        return metadata != null ? metadata.equals(that.metadata) : that.metadata == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = fetchKey != null ? fetchKey.hashCode() : 0;
+        result = 31 * result + (emitKey != null ? emitKey.hashCode() : 0);
+        result = 31 * result + (metadata != null ? metadata.hashCode() : 0);
+        return result;
+    }
 }

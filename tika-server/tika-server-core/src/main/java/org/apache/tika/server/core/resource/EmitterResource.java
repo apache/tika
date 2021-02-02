@@ -17,9 +17,9 @@
 
 package org.apache.tika.server.core.resource;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import org.apache.tika.metadata.serialization.JsonFetchEmitTuple;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.emitter.Emitter;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
@@ -158,12 +158,11 @@ public class EmitterResource {
                                          @Context HttpHeaders httpHeaders,
                                          @Context UriInfo info
     ) throws Exception {
-
-        JsonFactory jfactory = new JsonFactory();
-        JsonParser jParser = jfactory.createParser(is);
-        FetchEmitTuple t = deserializeTuple(jParser);
+        FetchEmitTuple t = null;
+        try (Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8)) {
+            t = JsonFetchEmitTuple.fromJson(reader);
+        }
         Metadata metadata = new Metadata();
-
 
         List<Metadata> metadataList = null;
         try (InputStream stream =
@@ -185,7 +184,13 @@ public class EmitterResource {
             LOG.debug("post parse/pre emit metadata {}: {}",
                     n, metadataList.get(0).get(n));
         }
-        return emit(t.getEmitKey(), metadataList);
+        //use fetch key if emitter key is not specified
+        //clean this up?
+        EmitKey emitKey = t.getEmitKey();
+        if (StringUtils.isBlank(emitKey.getKey())) {
+            emitKey = new EmitKey(emitKey.getEmitterName(), t.getFetchKey().getKey());
+        }
+        return emit(emitKey, metadataList);
     }
 
     private FetchEmitTuple deserializeTuple(JsonParser jParser) throws IOException {
@@ -220,7 +225,6 @@ public class EmitterResource {
             String key = jParser.getCurrentName();
             JsonToken token = jParser.nextToken();
             if (jParser.isExpectedStartArrayToken()) {
-                List<String> vals = new ArrayList<>();
                 while (jParser.nextToken() != JsonToken.END_ARRAY) {
                     metadata.add(key, jParser.getText());
                 }

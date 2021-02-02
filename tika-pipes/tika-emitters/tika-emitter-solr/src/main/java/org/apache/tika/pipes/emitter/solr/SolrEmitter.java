@@ -88,7 +88,7 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
                 new BufferedWriter(
                         new OutputStreamWriter(bos, StandardCharsets.UTF_8));
         try (
-        JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
+            JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
             jsonGenerator.writeStartArray();
             jsonify(jsonGenerator, emitKey, metadataList);
             jsonGenerator.writeEndArray();

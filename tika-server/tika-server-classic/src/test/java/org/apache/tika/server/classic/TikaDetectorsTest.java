@@ -26,8 +26,8 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
@@ -41,9 +41,6 @@ import org.gagravarr.tika.OggDetector;
 import org.junit.Test;
 
 public class TikaDetectorsTest extends CXFTestBase {
-
-    private static final Gson GSON = new GsonBuilder().create();
-
 
     private static final String DETECTORS_PATH = "/detectors";
 
@@ -108,7 +105,8 @@ public class TikaDetectorsTest extends CXFTestBase {
                 .get();
 
         String jsonStr = getStringFromInputStream((InputStream) response.getEntity());
-        Map<String, Object> json = (Map<String, Object>) GSON.fromJson(jsonStr, Map.class);
+        Map<String, Object> json =
+                new ObjectMapper().readerFor(Map.class).readValue(jsonStr);
 
         // Should have a nested structure
         assertTrue(json.containsKey("name"));

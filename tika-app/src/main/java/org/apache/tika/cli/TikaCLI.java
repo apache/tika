@@ -531,11 +531,7 @@ public class TikaCLI {
         }
         JsonMetadataList.setPrettyPrinting(prettyPrint);
         Writer writer = getOutputWriter(output, encoding);
-        try {
-            JsonMetadataList.toJson(handler.getMetadataList(), writer);
-        } finally {
-            writer.flush();
-        }
+        JsonMetadataList.toJson(handler.getMetadataList(), writer);
     }
 
     private ContentHandlerFactory getContentHandlerFactory(OutputType type) {
@@ -1233,7 +1229,7 @@ public class TikaCLI {
                 JsonMetadata.setPrettyPrinting(prettyPrint);
                 JsonMetadata.toJson(metadata, writer);
                 writer.flush();
-            } catch (TikaException e) {
+            } catch (IOException e) {
                 throw new SAXException(e);
             }
         }        

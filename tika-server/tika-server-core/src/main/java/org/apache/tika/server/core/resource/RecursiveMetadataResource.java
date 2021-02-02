@@ -40,6 +40,7 @@ import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.server.core.MetadataList;
+import org.apache.tika.server.core.TikaServerParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -135,15 +136,15 @@ public class RecursiveMetadataResource {
                                                UriInfo info, String handlerTypeName)
             throws Exception {
 
-		final ParseContext context = new ParseContext();
-		Parser parser = TikaResource.createParser();
-		// TODO: parameterize choice of max chars/max embedded attachments
-		RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
+        final ParseContext context = new ParseContext();
+        Parser parser = TikaResource.createParser();
+        // TODO: parameterize choice of max chars/max embedded attachments
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
 
 
         fillMetadata(parser, metadata, httpHeaders);
         fillParseContext(httpHeaders, metadata, context);
-		TikaResource.logRequest(LOG, info, metadata);
+        TikaResource.logRequest(LOG, info, metadata);
 
         int writeLimit = -1;
         if (httpHeaders.containsKey("writeLimit")) {
@@ -157,11 +158,13 @@ public class RecursiveMetadataResource {
 
         BasicContentHandlerFactory.HANDLER_TYPE type =
                 BasicContentHandlerFactory.parseHandlerType(handlerTypeName, DEFAULT_HANDLER_TYPE);
-		RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-		        new BasicContentHandlerFactory(type, writeLimit), maxEmbeddedResources,
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
+                new BasicContentHandlerFactory(type, writeLimit), maxEmbeddedResources,
                 TikaResource.getConfig().getMetadataFilter());
-		try {
+        try {
             TikaResource.parse(wrapper, LOG, info.getPath(), is, handler, metadata, context);
+        } catch (TikaServerParseException e) {
+            //do nothing
         } catch (SecurityException|WebApplicationException e) {
 		    throw e;
         } catch (Exception e) {

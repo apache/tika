@@ -220,10 +220,8 @@ public class TikaCLITest {
     public void testJsonMetadataPrettyPrintOutput() throws Exception {
         String json = getParamOutContent("--json", "-r", resourcePrefix + "testJsonMultipleInts.html");
 
-        assertTrue(json.contains("  \"X-TIKA:Parsed-By\": [\n" +
-                "    \"org.apache.tika.parser.DefaultParser\",\n" +
-                "    \"org.apache.tika.parser.html.HtmlParser\"\n" +
-                "  ],\n"));
+        assertTrue(json.contains("\"X-TIKA:Parsed-By\" : [ \"org.apache.tika.parser.DefaultParser\", " +
+                "\"org.apache.tika.parser.html.HtmlParser\" ],"));
         //test legacy alphabetic sort of keys
         int enc = json.indexOf("\"Content-Encoding\"");
         int fb = json.indexOf("fb:admins");
@@ -478,17 +476,17 @@ public class TikaCLITest {
     public void testJsonRecursiveMetadataParserMetadataOnly() throws Exception {
         String content = getParamOutContent("-m", "-J", "-r", resourcePrefix+"test_recursive_embedded.docx");
         assertTrue(content.contains(
-                "\"extended-properties:AppVersion\": \"15.0000\","));
+                "\"extended-properties:AppVersion\" : \"15.0000\","));
         assertTrue(content.contains(
-                "\"extended-properties:Application\": \"Microsoft Office Word\","));
-        assertTrue(content.contains("\"X-TIKA:embedded_resource_path\": \"/embed1.zip\""));
+                "\"extended-properties:Application\" : \"Microsoft Office Word\","));
+        assertTrue(content.contains("\"X-TIKA:embedded_resource_path\" : \"/embed1.zip\""));
         assertFalse(content.contains("X-TIKA:content"));
     }
 
     @Test
     public void testJsonRecursiveMetadataParserDefault() throws Exception {
         String content = getParamOutContent("-J", "-r", resourcePrefix+"test_recursive_embedded.docx");
-        assertTrue(content.contains("\"X-TIKA:content\": \"\\u003chtml xmlns\\u003d\\\"http://www.w3.org/1999/xhtml"));
+        assertTrue(content.contains("\"X-TIKA:content\" : \"<html xmlns=\\\"http://www.w3.org/1999/xhtml"));
     }
 
     @Test
@@ -502,8 +500,8 @@ public class TikaCLITest {
     public void testDigestInJson() throws Exception {
         String content = getParamOutContent("-J", "-r", "-t", "--digest=MD5",
                                             resourcePrefix+"test_recursive_embedded.docx");
-        assertTrue(content.contains("\"X-TIKA:digest:MD5\": \"59f626e09a8c16ab6dbc2800c685f772\","));
-        assertTrue(content.contains("\"X-TIKA:digest:MD5\": \"f9627095ef86c482e61d99f0cc1cf87d\""));
+        assertTrue(content.contains("\"X-TIKA:digest:MD5\" : \"59f626e09a8c16ab6dbc2800c685f772\","));
+        assertTrue(content.contains("\"X-TIKA:digest:MD5\" : \"f9627095ef86c482e61d99f0cc1cf87d\""));
     }
 
     @Test

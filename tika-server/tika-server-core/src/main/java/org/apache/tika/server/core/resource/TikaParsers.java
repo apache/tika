@@ -19,6 +19,7 @@ package org.apache.tika.server.core.resource;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -28,8 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
@@ -45,7 +45,6 @@ import org.apache.tika.server.core.HTMLHelper;
 @Path("/parsers")
 public class TikaParsers {
     private static final ParseContext EMPTY_PC = new ParseContext();
-    private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
     private HTMLHelper html;
 
     public TikaParsers() {
@@ -116,21 +115,23 @@ public class TikaParsers {
     @GET
     @Path("/details")
     @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
-    public String getParserDetailsJSON() {
+    public String getParserDetailsJSON() throws IOException {
         return getParsersJSON(true);
     }
 
     @GET
     @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
-    public String getParsersJSON() {
+    public String getParsersJSON() throws IOException {
         return getParsersJSON(false);
     }
 
-    protected String getParsersJSON(boolean withMimeTypes) {
+    protected String getParsersJSON(boolean withMimeTypes) throws IOException  {
         Map<String, Object> details = new HashMap<String, Object>();
         parserAsMap(new ParserDetails(TikaResource.getConfig().getParser()), withMimeTypes, details);
-
-        return GSON.toJson(details);
+        ObjectMapper objectMapper = new ObjectMapper();
+        return objectMapper
+                .writerWithDefaultPrettyPrinter()
+                .writeValueAsString(details);
     }
 
     private void parserAsMap(ParserDetails p, boolean withMimeTypes, Map<String, Object> details) {

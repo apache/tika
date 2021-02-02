@@ -19,6 +19,7 @@ package org.apache.tika.server.core.resource;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,8 +27,7 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.CompositeParser;
@@ -40,8 +40,6 @@ import org.apache.tika.server.core.HTMLHelper;
  */
 @Path("/mime-types")
 public class TikaMimeTypes {
-
-    private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
 
     private HTMLHelper html;
 
@@ -94,7 +92,7 @@ public class TikaMimeTypes {
 
     @GET
     @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
-    public String getMimeTypesJSON() {
+    public String getMimeTypesJSON() throws IOException  {
         Map<String, Object> details = new HashMap<String, Object>();
 
         for (MediaTypeDetails type : getMediaTypes()) {
@@ -111,7 +109,8 @@ public class TikaMimeTypes {
             details.put(type.type.toString(), typeDets);
         }
 
-        return GSON.toJson(details);
+        return new ObjectMapper().writerWithDefaultPrettyPrinter()
+                .writeValueAsString(details);
     }
 
     private static String[] copyToStringArray(MediaType[] aliases) {

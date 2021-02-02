@@ -16,11 +16,11 @@
  */
 package org.apache.tika.server.core;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonPrimitive;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FileUtils;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.junit.AfterClass;
@@ -32,9 +32,11 @@ import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -58,7 +60,6 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
     private static Path TMP_OUTPUT_DIR;
     private static String TIKA_CONFIG_XML;
     private static Path TIKA_CONFIG;
-    private static Gson GSON = new GsonBuilder().create();
 
     private static final String EMITTER_NAME = "fse";
     private static final String FETCHER_NAME = "fsf";
@@ -192,8 +193,8 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
         };
         serverThread.start();
         try {
-            JsonObject response = testOne("real_oom.xml", false);
-            assertContains("heap space", response.get("parse_error").getAsString());
+            JsonNode response = testOne("real_oom.xml", false);
+            assertContains("heap space", response.get("parse_error").asText());
         } finally {
             serverThread.interrupt();
         }
@@ -218,8 +219,8 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
         };
         serverThread.start();
         try {
-            JsonObject response = testOne("heavy_hang_30000.xml", false);
-            assertContains("heap space", response.get("parse_error").getAsString());
+            JsonNode response = testOne("heavy_hang_30000.xml", false);
+            assertContains("heap space", response.get("parse_error").asText());
         } finally {
             serverThread.interrupt();
         }
@@ -251,7 +252,7 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
                 elapsed + " ms");
     }
 
-    private JsonObject testOne(String fileName, boolean shouldFileExist) throws Exception {
+    private JsonNode testOne(String fileName, boolean shouldFileExist) throws Exception {
         awaitServerStartup();
         Response response = WebClient
                 .create(endPoint + "/emit")
@@ -262,14 +263,17 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
             assertTrue(Files.size(targFile) > 1);
         }
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        return JsonParser.parseReader(reader).getAsJsonObject();
+        return new ObjectMapper().readTree(reader);
     }
 
-    private String getJsonString(String fileName) {
-        JsonObject root = new JsonObject();
-        root.add("fetcher", new JsonPrimitive(FETCHER_NAME));
-        root.add("fetchKey", new JsonPrimitive(fileName));
-        root.add("emitter", new JsonPrimitive(EMITTER_NAME));
-        return GSON.toJson(root);
+    private String getJsonString(String fileName) throws IOException {
+        StringWriter writer = new StringWriter();
+        try (JsonGenerator generator = new JsonFactory().createGenerator(writer)) {
+            generator.writeStartObject();
+            generator.writeStringField("fetcher", FETCHER_NAME);
+            generator.writeStringField("fetchKey", fileName);
+            generator.writeStringField("emitter", EMITTER_NAME);
+        }
+        return writer.toString();
     }
 }

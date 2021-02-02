@@ -109,7 +109,7 @@ public class HandlerBuilderTest extends FSBatchTestBase {
         Path outputFile = outputDir.resolve("test0.xml.json");
         String resultString = readFileToString(outputFile, UTF_8);
         assertTrue(resultString.contains("\"author\":\"Nikolai Lobachevsky\""));
-        assertTrue(resultString.contains("tika-batch\\u0027s first test file"));
+        assertTrue(resultString.contains("tika-batch's first test file"));
     }
 
 

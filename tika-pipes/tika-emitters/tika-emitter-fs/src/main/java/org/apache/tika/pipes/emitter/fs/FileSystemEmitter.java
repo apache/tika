@@ -41,7 +41,7 @@ import java.util.Set;
 
 /**
  * Emitter to write to a file system.
- *
+ * <p>
  * This calculates the path to write to based on the {@link #basePath}
  * and the value of the {@link TikaCoreProperties#SOURCE_PATH} value.
  *
@@ -95,11 +95,7 @@ public class FileSystemEmitter extends AbstractEmitter implements StreamEmitter 
             Files.createDirectories(output.getParent());
         }
         try (Writer writer = Files.newBufferedWriter(output, StandardCharsets.UTF_8)) {
-            try {
-                JsonMetadataList.toJson(metadataList, writer);
-            } catch (TikaException e) {
-                throw new TikaEmitterException("can't create json", e);
-            }
+            JsonMetadataList.toJson(metadataList, writer);
         }
     }
 
@@ -111,6 +107,7 @@ public class FileSystemEmitter extends AbstractEmitter implements StreamEmitter 
     /**
      * If you want to customize the output file's file extension.
      * Do not include the "."
+     *
      * @param fileExtension
      */
     @Field
@@ -132,6 +129,7 @@ public class FileSystemEmitter extends AbstractEmitter implements StreamEmitter 
                             "'; must be one of: 'skip', 'replace', 'exception'");
         }
     }
+
     @Override
     public void emit(String path, InputStream inputStream, Metadata userMetadata) throws IOException,
             TikaEmitterException {

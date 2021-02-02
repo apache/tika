@@ -16,7 +16,9 @@
  */
 package org.apache.tika.metadata.serialization;
 
-import com.google.gson.stream.JsonWriter;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 import org.apache.tika.metadata.Metadata;
 
 import java.io.IOException;
@@ -26,40 +28,28 @@ import java.util.Arrays;
 
 public class JsonStreamingSerializer implements AutoCloseable {
 
-    private final JsonWriter jsonWriter;
+    private final Writer writer;
+    private JsonGenerator jsonGenerator;
     boolean hasStartedArray = false;
     public JsonStreamingSerializer(Writer writer) {
-        this.jsonWriter = new JsonWriter(writer);
+        this.writer = writer;
     }
 
     public void add(Metadata metadata) throws IOException {
         if (!hasStartedArray) {
-            jsonWriter.beginArray();
+            jsonGenerator = new JsonFactory().createGenerator(writer);
+            jsonGenerator.writeStartArray();
             hasStartedArray = true;
         }
         String[] names = metadata.names();
         Arrays.sort(names);
-        jsonWriter.beginObject();
-        for (String n : names) {
-            jsonWriter.name(n);
-            String[] values = metadata.getValues(n);
-            if (values.length == 1) {
-                jsonWriter.value(values[0]);
-            } else {
-                jsonWriter.beginArray();
-                for (String v : values) {
-                    jsonWriter.value(v);
-                }
-                jsonWriter.endArray();
-            }
-        }
-        jsonWriter.endObject();
+        JsonMetadata.writeMetadataObject(metadata, jsonGenerator, false);
     }
 
     @Override
     public void close() throws IOException {
-        jsonWriter.endArray();
-        jsonWriter.flush();
-        jsonWriter.close();
+        jsonGenerator.writeEndArray();
+        jsonGenerator.flush();
+        jsonGenerator.close();
     }
 }

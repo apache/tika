@@ -16,18 +16,11 @@
  */
 package org.apache.tika.server.core;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import org.apache.commons.io.IOUtils;
-import org.apache.cxf.common.logging.LogUtils;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.cxf.jaxrs.client.WebClient;
-import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -212,8 +205,8 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
                 .get();
         String jsonString =
                 CXFTestBase.getStringFromInputStream((InputStream) response.getEntity());
-        JsonObject root = JsonParser.parseString(jsonString).getAsJsonObject();
-        return root.get("server_id").getAsJsonPrimitive().getAsString();
+        JsonNode root = new ObjectMapper().readTree(jsonString);
+        return root.get("server_id").asText();
     }
 
     private int getNumRestarts() throws Exception {
@@ -223,8 +216,8 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
                 .get();
         String jsonString =
                 CXFTestBase.getStringFromInputStream((InputStream) response.getEntity());
-        JsonObject root = JsonParser.parseString(jsonString).getAsJsonObject();
-        return root.get("num_restarts").getAsJsonPrimitive().getAsInt();
+        JsonNode root = new ObjectMapper().readTree(jsonString);
+        return root.get("num_restarts").intValue();
     }
 
     @Test
