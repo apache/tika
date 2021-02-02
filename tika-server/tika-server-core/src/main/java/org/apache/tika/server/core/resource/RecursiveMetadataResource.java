@@ -144,7 +144,7 @@ public class RecursiveMetadataResource {
 
         fillMetadata(parser, metadata, httpHeaders);
         fillParseContext(httpHeaders, metadata, context);
-        TikaResource.logRequest(LOG, info, metadata);
+        TikaResource.logRequest(LOG, "/rmeta", metadata);
 
         int writeLimit = -1;
         if (httpHeaders.containsKey("writeLimit")) {
@@ -162,7 +162,7 @@ public class RecursiveMetadataResource {
                 new BasicContentHandlerFactory(type, writeLimit), maxEmbeddedResources,
                 TikaResource.getConfig().getMetadataFilter());
         try {
-            TikaResource.parse(wrapper, LOG, info.getPath(), is, handler, metadata, context);
+            TikaResource.parse(wrapper, LOG, "/rmeta", is, handler, metadata, context);
         } catch (TikaServerParseException e) {
             //do nothing
         } catch (SecurityException|WebApplicationException e) {

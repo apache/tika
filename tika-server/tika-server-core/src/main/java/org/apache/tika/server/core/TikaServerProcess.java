@@ -37,7 +37,10 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.digestutils.BouncyCastleDigester;
 import org.apache.tika.parser.digestutils.CommonsDigester;
+import org.apache.tika.pipes.emitter.EmitData;
+import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
 import org.apache.tika.server.core.resource.AsyncEmitter;
+import org.apache.tika.server.core.resource.AsyncParser;
 import org.apache.tika.server.core.resource.AsyncResource;
 import org.apache.tika.server.core.resource.DetectorResource;
 import org.apache.tika.server.core.resource.EmitterResource;
@@ -151,37 +154,42 @@ public class TikaServerProcess {
 
     private static void mainLoop(CommandLine commandLine, Options options) throws Exception {
         AsyncResource asyncResource = null;
-        ArrayBlockingQueue asyncQueue = null;
-        int numAsyncThreads = 10;
+        ArrayBlockingQueue<FetchEmitTuple> asyncFetchEmitQueue = null;
+        ArrayBlockingQueue<EmitData> asyncEmitData = null;
+        int numAsyncParserThreads = 10;
         if (commandLine.hasOption(ENABLE_UNSECURE_FEATURES)) {
             asyncResource = new AsyncResource();
-            asyncQueue = asyncResource.getQueue(numAsyncThreads);
+            asyncFetchEmitQueue = asyncResource.getFetchEmitQueue(10000);
+            asyncEmitData = asyncResource.getEmitDataQueue(1000);
         }
 
         ServerDetails serverDetails = initServer(commandLine, asyncResource);
-        ExecutorService executorService = Executors.newFixedThreadPool(numAsyncThreads+1);
+        ExecutorService executorService = Executors.newFixedThreadPool(numAsyncParserThreads+1);
         ExecutorCompletionService<Integer> executorCompletionService = new ExecutorCompletionService<>(executorService);
 
-        executorCompletionService.submit(new ServerThread(serverDetails));
-        if (asyncQueue != null) {
-            for (int i = 0; i < numAsyncThreads; i++) {
-                executorCompletionService.submit(new AsyncEmitter(asyncQueue));
+        if (asyncFetchEmitQueue != null) {
+            executorCompletionService.submit(new AsyncEmitter(asyncEmitData));
+            for (int i = 0; i < numAsyncParserThreads; i++) {
+                executorCompletionService.submit(new AsyncParser(asyncFetchEmitQueue, asyncEmitData));
             }
         }
+        //start the server
+        Server server = serverDetails.sf.create();
+        LOG.info("Started Apache Tika server {} at {}",
+                serverDetails.serverId,
+                serverDetails.url);
+
         while (true) {
             Future<Integer> future = executorCompletionService.poll(1, TimeUnit.MINUTES);
             if (future != null) {
-                System.out.println("future val: " + future.get());
+                LOG.warn("future val: " + future.get());
             }
         }
     }
 
-    //This starts the server in this process.  This can
-    //be either a direct call from -noFork or the process that is forked
-    //in the 2.0 default mode.
+    //This returns the server, configured and ready to be started.
     private static ServerDetails initServer(CommandLine line,
                                      AsyncResource asyncResource) throws Exception {
-
         String host = null;
 
         if (line.hasOption("host")) {
@@ -459,22 +467,6 @@ public class TikaServerProcess {
         return serverTimeouts;
     }
 
-    private static class ServerThread implements Callable<Integer> {
-        private final ServerDetails serverDetails;
-        public ServerThread(ServerDetails serverDetails) {
-            this.serverDetails = serverDetails;
-        }
-
-        @Override
-        public Integer call() throws Exception {
-
-            Server server = serverDetails.sf.create();
-            LOG.info("Started Apache Tika server {} at {}",
-                        serverDetails.serverId,
-                        serverDetails.url);
-            return 2;
-        }
-    }
 
     private static class ServerDetails {
         JAXRSServerFactoryBean sf;

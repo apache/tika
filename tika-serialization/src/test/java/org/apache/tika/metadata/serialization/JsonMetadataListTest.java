@@ -93,7 +93,7 @@ public class JsonMetadataListTest {
     @Test
     public void testPrettyPrint() throws Exception {
         Metadata m1 = new Metadata();
-        m1.add("tika:content", "this is the content");
+        m1.add(TikaCoreProperties.TIKA_CONTENT, "this is the content");
         m1.add("zk1", "v1");
         m1.add("zk1", "v2");
         m1.add("zk1", "v3");
@@ -121,7 +121,7 @@ public class JsonMetadataListTest {
         assertTrue(writer.toString().startsWith("[ {\n" +
                 "  \"zk1\" : [ \"v1\", \"v2\", \"v3\", \"v4\", \"v4\" ],\n" +
                 "  \"zk2\" : \"v1\",\n" +
-                "  \"tika:content\" : \"this is the content\"\n" +
+                "  \"X-TIKA:content\" : \"this is the content\"\n" +
                 "},"));
 
 

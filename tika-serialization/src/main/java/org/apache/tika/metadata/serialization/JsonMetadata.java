@@ -82,7 +82,7 @@ public class JsonMetadata {
      *
      * @param reader reader to read from
      * @return Metadata or null if nothing could be read from the reader
-     * @throws TikaException in case of parse failure by Gson or IO failure with Reader
+     * @throws IOException in case of parse failure or IO failure with Reader
      */
     public static Metadata fromJson(Reader reader) throws IOException {
         Metadata m = null;

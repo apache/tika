@@ -28,14 +28,15 @@ import org.apache.tika.utils.StringUtils;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.io.StringWriter;
 import java.io.Writer;
 
 public class JsonFetchEmitTuple {
 
     private static final String FETCHER = "fetcher";
     private static final String FETCHKEY = "fetchKey";
-    private static final String EMITTER = "emitter";
-    private static final String EMITKEY = "emitKey";
+    public static final String EMITTER = "emitter";
+    public static final String EMITKEY = "emitKey";
     private static final String METADATAKEY = "metadata";
 
     public static FetchEmitTuple fromJson(Reader reader) throws IOException {
@@ -48,8 +49,11 @@ public class JsonFetchEmitTuple {
     }
 
 
-    private static FetchEmitTuple parseFetchEmitTuple(JsonParser jParser) throws IOException {
+    static FetchEmitTuple parseFetchEmitTuple(JsonParser jParser) throws IOException {
         JsonToken token = jParser.nextToken();
+        if (token == JsonToken.START_OBJECT) {
+            token = jParser.nextToken();
+        }
         String fetcherName = null;
         String fetchKey = null;
         String emitterName = null;
@@ -92,21 +96,32 @@ public class JsonFetchEmitTuple {
         return jParser.getValueAsString();
     }
 
+    public static String toJson(FetchEmitTuple t) throws IOException {
+        StringWriter writer = new StringWriter();
+        toJson(t, writer);
+        return writer.toString();
+    }
+
     public static void toJson(FetchEmitTuple t, Writer writer) throws IOException {
 
         try (JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
-            jsonGenerator.writeStartObject();
-            jsonGenerator.writeStringField(FETCHER, t.getFetchKey().getFetcherName());
-            jsonGenerator.writeStringField(FETCHKEY, t.getFetchKey().getKey());
-            jsonGenerator.writeStringField(EMITTER, t.getEmitKey().getEmitterName());
-            if (!StringUtils.isBlank(t.getEmitKey().getKey())) {
-                jsonGenerator.writeStringField(EMITKEY, t.getEmitKey().getKey());
-            }
-            if (t.getMetadata().size() > 0) {
-                jsonGenerator.writeFieldName(METADATAKEY);
-                JsonMetadata.writeMetadataObject(t.getMetadata(), jsonGenerator, false);
-            }
-            jsonGenerator.writeEndObject();
+            writeTuple(t, jsonGenerator);
         }
+    }
+
+    static void writeTuple(FetchEmitTuple t, JsonGenerator jsonGenerator) throws IOException {
+        jsonGenerator.writeStartObject();
+        jsonGenerator.writeStringField(FETCHER, t.getFetchKey().getFetcherName());
+        jsonGenerator.writeStringField(FETCHKEY, t.getFetchKey().getKey());
+        jsonGenerator.writeStringField(EMITTER, t.getEmitKey().getEmitterName());
+        if (!StringUtils.isBlank(t.getEmitKey().getKey())) {
+            jsonGenerator.writeStringField(EMITKEY, t.getEmitKey().getKey());
+        }
+        if (t.getMetadata().size() > 0) {
+            jsonGenerator.writeFieldName(METADATAKEY);
+            JsonMetadata.writeMetadataObject(t.getMetadata(), jsonGenerator, false);
+        }
+        jsonGenerator.writeEndObject();
+
     }
 }

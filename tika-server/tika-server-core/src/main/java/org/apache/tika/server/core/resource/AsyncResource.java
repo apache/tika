@@ -17,9 +17,10 @@
 
 package org.apache.tika.server.core.resource;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.serialization.JsonFetchEmitTupleList;
+import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.emitter.EmitterManager;
 import org.apache.tika.pipes.fetcher.FetchKey;
@@ -28,6 +29,7 @@ import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -35,10 +37,17 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriInfo;
+import java.io.IOException;
 import java.io.InputStream;
 
-import java.util.Collections;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -48,13 +57,17 @@ public class AsyncResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(AsyncResource.class);
 
-    private static final int DEFAULT_QUEUE_SIZE = 100;
-    private int queueSize = DEFAULT_QUEUE_SIZE;
-    private ArrayBlockingQueue<AsyncRequest> queue;
+    private static final int DEFAULT_FETCH_EMIT_QUEUE_SIZE = 10000;
+    long maxQueuePauseMs = 60000;
+    private ArrayBlockingQueue<FetchEmitTuple> queue;
 
-    public ArrayBlockingQueue<AsyncRequest> getQueue(int numThreads) {
-        this.queue = new ArrayBlockingQueue<>(queueSize+numThreads);
+    public ArrayBlockingQueue<FetchEmitTuple> getFetchEmitQueue(int queueSize) {
+        this.queue = new ArrayBlockingQueue<>(queueSize);
         return queue;
+    }
+
+    public ArrayBlockingQueue<EmitData> getEmitDataQueue(int size) {
+        return new ArrayBlockingQueue<>(size);
     }
     /**
      * The client posts a json request.  At a minimum, this must be a
@@ -74,14 +87,18 @@ public class AsyncResource {
      */
     @POST
     @Produces("application/json")
-    public Map<String, String> post(InputStream is,
+    public Map<String, Object> post(InputStream is,
                                          @Context HttpHeaders httpHeaders,
                                          @Context UriInfo info
     ) throws Exception {
 
         AsyncRequest request = deserializeASyncRequest(is);
-        FetcherManager fetcherManager = TikaConfig.getDefaultConfig().getFetcherManager();
-        EmitterManager emitterManager = TikaConfig.getDefaultConfig().getEmitterManager();
+
+        //make sure that there are no problems with
+        //the requested fetchers and emitters
+        //throw early
+        FetcherManager fetcherManager = TikaResource.getConfig().getFetcherManager();
+        EmitterManager emitterManager = TikaResource.getConfig().getEmitterManager();
         for (FetchEmitTuple t : request.getTuples()) {
             if (! fetcherManager.getSupported().contains(t.getFetchKey().getFetcherName())) {
                 return badFetcher(t.getFetchKey());
@@ -90,34 +107,61 @@ public class AsyncResource {
                 return badEmitter(t.getEmitKey());
             }
         }
-
-        //parameterize
-        boolean offered = queue.offer(request, 60, TimeUnit.SECONDS);
-        if (! offered) {
-            return throttleResponse();
+        Instant start = Instant.now();
+        long elapsed = ChronoUnit.MILLIS.between(start, Instant.now());
+        List<FetchEmitTuple> notAdded = new ArrayList<>();
+        int addedCount = 0;
+        for (FetchEmitTuple t : request.getTuples()) {
+            boolean offered = false;
+            while (!offered && elapsed < maxQueuePauseMs) {
+                offered = queue.offer(t, 10, TimeUnit.MILLISECONDS);
+                elapsed = ChronoUnit.MILLIS.between(start, Instant.now());
+            }
+            if (! offered) {
+                notAdded.add(t);
+            } else {
+                addedCount++;
+            }
         }
-        return ok(request.getId(), request.getTuples().size());
+
+        if (notAdded.size() > 0) {
+            return throttle(notAdded, addedCount);
+        }
+        return ok(request.getTuples().size());
     }
 
-    private Map<String, String> ok(String id, int size) {
-        return null;
-    }
-
-    private Map<String, String> throttleResponse() {
-        Map<String, String> map = new HashMap<>();
+    private Map<String, Object> ok(int size) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("status", "ok");
+        map.put("added", size);
         return map;
     }
 
-    private Map<String, String> badEmitter(EmitKey emitKey) {
-        return null;
+    private Map<String, Object> throttle(List<FetchEmitTuple> notAdded, int added) {
+        List<String> fetchKeys = new ArrayList<>();
+        for (FetchEmitTuple t : notAdded) {
+            fetchKeys.add(t.getFetchKey().getKey());
+        }
+        Map<String, Object> map = new HashMap<>();
+        map.put("status", "throttled");
+        map.put("added", added);
+        map.put("skipped", notAdded.size());
+        map.put("skippedFetchKeys", fetchKeys);
+        return map;
     }
 
-    private Map<String, String> badFetcher(FetchKey fetchKey) {
-        return null;
+    private Map<String, Object> badEmitter(EmitKey emitKey) {
+        throw new BadRequestException("can't find emitter for "+emitKey.getEmitterName());
     }
 
-    private AsyncRequest deserializeASyncRequest(InputStream is) {
-        return new AsyncRequest("", Collections.EMPTY_LIST);
+    private Map<String, Object> badFetcher(FetchKey fetchKey) {
+        throw new BadRequestException("can't find fetcher for " + fetchKey.getFetcherName());
+    }
+
+    private AsyncRequest deserializeASyncRequest(InputStream is) throws IOException {
+        try (Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8)) {
+            return new AsyncRequest(JsonFetchEmitTupleList.fromJson(reader));
+        }
     }
 
 }

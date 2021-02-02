@@ -126,7 +126,7 @@ public class UnpackerResource {
         fillMetadata(parser, metadata, httpHeaders.getRequestHeaders());
         fillParseContext(httpHeaders.getRequestHeaders(), metadata, pc);
 
-        TikaResource.logRequest(LOG, info, metadata);
+        TikaResource.logRequest(LOG, "/unpack", metadata);
         //even though we aren't currently parsing embedded documents,
         //we need to add this to allow for "inline" use of other parsers.
         pc.set(Parser.class, parser);

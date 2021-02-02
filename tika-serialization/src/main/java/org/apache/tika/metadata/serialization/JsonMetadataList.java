@@ -65,7 +65,7 @@ public class JsonMetadataList {
      *
      * @param reader
      * @return Metadata or null if nothing could be read from the reader
-     * @throws org.apache.tika.exception.TikaException in case of parse failure by Gson or IO failure with Reader
+     * @throws IOException in case of parse failure or IO failure with Reader
      */
     public static List<Metadata> fromJson(Reader reader) throws IOException {
         List<Metadata> ms = null;
