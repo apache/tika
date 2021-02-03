@@ -116,13 +116,13 @@ class OneNoteLegacyDumpStrings {
                 }
                 ByteBuffer byteBuffer = ByteBuffer.allocate((int)nextBufferSize);
                 oneNoteDirectFileResource.read(byteBuffer);
-
-                for (long i = 0; i < nextBufferSize - 1; ++i) {
-                    int c1 = byteBuffer.get((int)i);
+                for (long i = 0; i < nextBufferSize - 1; i++) {
+                    int c1 = byteBuffer.get((int)i) & 0xff;
                     int c2 = byteBuffer.get((int)i+1);
-                    if (c1 == 0x00 && c2 >= 0x20 && c2 < 0x7F) {
+
+                    if (c2 == 0x00 && c1 >= 0x20) {// add this back? && c1 < 0x7F) {
                         ++i;
-                        os.write(c2);
+                        os.write(c1);
                     } else {
                         if (os.size() >= MIN_STRING_LENGTH) {
                             writeIfUseful(os);
@@ -144,7 +144,7 @@ class OneNoteLegacyDumpStrings {
      * @param os Byte array output stream containing the buffer.
      */
     private void writeIfUseful(ByteArrayOutputStream os) throws SAXException {
-        String str = new String(os.toByteArray(), StandardCharsets.US_ASCII);
+        String str = new String(os.toByteArray(), StandardCharsets.ISO_8859_1);
         String [] spl = str.split(" ");
         if (spl.length > 1) {
             int numAlpha = 0;
