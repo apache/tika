@@ -21,11 +21,9 @@ import org.apache.tika.utils.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,8 +33,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Configuration for TesseractOCRParser.
@@ -270,7 +266,7 @@ public class TesseractOCRConfig implements Serializable {
      */
     public void setLanguage(String language) {
         // Get rid of embedded spaces
-        language = language.replaceAll("\\s","");
+        language = language.replaceAll("\\s", "");
         // Test for leading or trailing +
         if (language.matches("\\+.*|.*\\+")) {
             throw new IllegalArgumentException("Invalid syntax - Can't start or end with +" + language);
@@ -309,7 +305,9 @@ public class TesseractOCRConfig implements Serializable {
                     // For xNix, Tesseract uses this default
                     windowsActualTessdataDir = new File("/usr/share/tessdata");
                 } else {
-                    getWindowsActualTessdataDir();
+                    // There is no default location for Windows, so we'll just assume
+                    // the language is good and rely on Tesseract to tell us if there's a problem
+                    return true;
                 }
             }
         }
@@ -318,33 +316,9 @@ public class TesseractOCRConfig implements Serializable {
             throw new RuntimeException(windowsActualTessdataDir + " is not a directory");
         }
         String trainedDataName = lang + ".traineddata";
-        return  new File(windowsActualTessdataDir, trainedDataName).exists();
+        return new File(windowsActualTessdataDir, trainedDataName).exists();
     }
 
-    /**
-     * If user hasn't specified tesseractPath or tessdataPath, we need to find it ourselves (Windows only)
-     */
-    private void getWindowsActualTessdataDir() {
-        if (SystemUtils.IS_OS_WINDOWS) {
-            String actualTesseractPath;
-            // For Windows, the default is under the Tesseract directory.  So we need to find it first
-            try {
-                ProcessBuilder pb = new ProcessBuilder("where", "tesseract.exe").redirectError(ProcessBuilder.Redirect.INHERIT);
-                Process process = pb.start();
-                try (BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream(), UTF_8))) {
-                    // Just get the first (and probably only) one
-                    actualTesseractPath = in.readLine();
-                    if (actualTesseractPath == null) {
-                        // Tessdata not found.  Should we throw exception here or just log it and let Tesseract deal with it?
-                        throw new RuntimeException("Tessdata not found.  Required for Tesseract");
-                    }
-                }
-            } catch (IOException e) {
-                throw new RuntimeException("Error executing 'where' command to fine tesseract executable", e);
-            }
-            windowsActualTessdataDir = new File(new File(actualTesseractPath).getParent(), "tessdata");
-        }
-    }
 
     /**
      * @see #setPageSegMode(String pageSegMode)
