@@ -67,9 +67,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
@@ -324,9 +327,10 @@ public class TesseractOCRParser extends AbstractParser {
         process.getOutputStream().close();
         InputStream out = process.getInputStream();
         InputStream err = process.getErrorStream();
-
-        logStream("OCR MSG", out, input);
-        logStream("OCR ERROR", err, input);
+        StringBuilder outBuilder = new StringBuilder();
+        StringBuilder errBuilder = new StringBuilder();
+        logStream("OCR MSG", out, input, outBuilder);
+        logStream("OCR ERROR", err, input, errBuilder);
 
         FutureTask<Integer> waitTask = new FutureTask<>(new Callable<Integer>() {
             public Integer call() throws Exception {
@@ -337,8 +341,9 @@ public class TesseractOCRParser extends AbstractParser {
         Thread waitThread = new Thread(waitTask);
         waitThread.start();
 
+        int exitValue = Integer.MIN_VALUE;
         try {
-            waitTask.get(config.getTimeout(), TimeUnit.SECONDS);
+            exitValue = waitTask.get(config.getTimeout(), TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             waitThread.interrupt();
             process.destroy();
@@ -350,6 +355,10 @@ public class TesseractOCRParser extends AbstractParser {
             waitThread.interrupt();
             process.destroy();
             throw new TikaException("TesseractOCRParser timeout", e);
+        }
+        if (exitValue > 0) {
+            throw new TikaException("TesseractOCRParser bad exit value " +
+                    exitValue + " err msg: "+errBuilder.toString());
         }
     }
 
@@ -402,15 +411,16 @@ public class TesseractOCRParser extends AbstractParser {
      * stream of the given process to not block the process. The stream is closed
      * once fully processed.
      */
-    private void logStream(final String logType, final InputStream stream, final File file) {
+    private void logStream(final String logType, final InputStream stream,
+                           final File file, final StringBuilder out) {
         new Thread() {
             public void run() {
                 Reader reader = new InputStreamReader(stream, UTF_8);
-                StringBuilder out = new StringBuilder();
                 char[] buffer = new char[1024];
                 try {
-                    for (int n = reader.read(buffer); n != -1; n = reader.read(buffer))
+                    for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
                         out.append(buffer, 0, n);
+                    }
                 } catch (IOException e) {
 
                 } finally {

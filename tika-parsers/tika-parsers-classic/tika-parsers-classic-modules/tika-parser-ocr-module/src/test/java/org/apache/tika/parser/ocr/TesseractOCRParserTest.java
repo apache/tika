@@ -18,6 +18,7 @@ package org.apache.tika.parser.ocr;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -90,6 +91,24 @@ public class TesseractOCRParserTest extends TikaTest {
                         parseContext).xml;
         Matcher m = Pattern.compile("The\\s{5,20}quick").matcher(xml);
         assertTrue(m.find());
+    }
+
+    @Test (expected = TikaException.class)
+    public void testBadLanguageCode() throws Exception {
+        assumeTrue("can run OCR", canRun());
+
+        TesseractOCRConfig tesseractOCRConfigconfig = new TesseractOCRConfig();
+        tesseractOCRConfigconfig.setLanguage("kerplekistanese");
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(TesseractOCRConfig.class, tesseractOCRConfigconfig);
+
+        //with preserve interwordspacing "on"
+        //allow some flexibility in case Tesseract is computing spaces
+        //somewhat differently in different versions/OS's, etc.
+        String xml = getXML("testOCR_spacing.png",
+                getMetadata(MediaType.image("png")),
+                parseContext).xml;
+        System.out.println(xml);
     }
 
     private Metadata getMetadata(MediaType mediaType) {
