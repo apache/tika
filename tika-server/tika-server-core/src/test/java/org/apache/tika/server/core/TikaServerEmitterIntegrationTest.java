@@ -65,7 +65,8 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
 
     private static String[] FILES = new String[]{
             "hello_world.xml",
-            "heavy_hang_30000.xml", "real_oom.xml", "system_exit.xml"
+            "heavy_hang_30000.xml", "real_oom.xml", "system_exit.xml",
+            "null_pointer.xml"
     };
 
     @BeforeClass
@@ -124,7 +125,6 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
         }
     }
 
-
     @Test
     public void testBasic() throws Exception {
 
@@ -145,6 +145,65 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
         try {
             JsonNode node = testOne("hello_world.xml", true);
             assertEquals("ok", node.get("status").asText());
+        } catch (Exception e) {
+            fail("shouldn't have an exception" + e.getMessage());
+        } finally {
+            serverThread.interrupt();
+        }
+    }
+
+    @Test
+    public void testNPEDefault() throws Exception {
+
+        Thread serverThread = new Thread() {
+            @Override
+            public void run() {
+                TikaServerCli.main(
+                        new String[]{
+                                "-enableUnsecureFeatures",
+                                "-maxFiles", "2000",
+                                "-p", INTEGRATION_TEST_PORT,
+                                "-tmpFilePrefix", "basic-",
+                                "-config", TIKA_CONFIG.toAbsolutePath().toString()
+                        });
+            }
+        };
+        serverThread.start();
+        try {
+            JsonNode node = testOne("null_pointer.xml", true);
+            assertEquals("ok", node.get("status").asText());
+            assertContains("java.lang.NullPointerException",
+                    node.get("parse_exception").asText());
+        } catch (Exception e) {
+            fail("shouldn't have an exception" + e.getMessage());
+        } finally {
+            serverThread.interrupt();
+        }
+    }
+
+    @Test
+    public void testNPESkip() throws Exception {
+
+        Thread serverThread = new Thread() {
+            @Override
+            public void run() {
+                TikaServerCli.main(
+                        new String[]{
+                                "-enableUnsecureFeatures",
+                                "-maxFiles", "2000",
+                                "-p", INTEGRATION_TEST_PORT,
+                                "-tmpFilePrefix", "basic-",
+                                "-config", TIKA_CONFIG.toAbsolutePath().toString()
+                        });
+            }
+        };
+        serverThread.start();
+        try {
+            JsonNode node = testOne("null_pointer.xml", false,
+                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
+            assertEquals("ok", node.get("status").asText());
+            assertContains("java.lang.NullPointerException",
+                    node.get("parse_exception").asText());
         } catch (Exception e) {
             fail("shouldn't have an exception" + e.getMessage());
         } finally {
@@ -252,17 +311,23 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
         throw new TimeoutException("couldn't connect to server after " +
                 elapsed + " ms");
     }
-
     private JsonNode testOne(String fileName, boolean shouldFileExist) throws Exception {
+        return testOne(fileName, shouldFileExist, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
+    }
+
+    private JsonNode testOne(String fileName, boolean shouldFileExist, FetchEmitTuple.ON_PARSE_EXCEPTION onParseException) throws Exception {
+
         awaitServerStartup();
         Response response = WebClient
                 .create(endPoint + "/emit")
                 .accept("application/json")
-                .post(getJsonString(fileName));
+                .post(getJsonString(fileName, onParseException));
         if (response.getStatus() == 200) {
+            Path targFile = TMP_OUTPUT_DIR.resolve(fileName + ".json");
             if (shouldFileExist) {
-                Path targFile = TMP_OUTPUT_DIR.resolve(fileName + ".json");
                 assertTrue(Files.size(targFile) > 1);
+            } else {
+                assertFalse(Files.isRegularFile(targFile));
             }
             Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
             return new ObjectMapper().readTree(reader);
@@ -270,11 +335,11 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
         return null;
     }
 
-    private String getJsonString(String fileName) throws IOException {
+    private String getJsonString(String fileName, FetchEmitTuple.ON_PARSE_EXCEPTION onParseException) throws IOException {
         FetchEmitTuple t = new FetchEmitTuple(
                 new FetchKey(FETCHER_NAME, fileName),
                 new EmitKey(EMITTER_NAME, ""),
-                new Metadata()
+                new Metadata(), onParseException
         );
         return JsonFetchEmitTuple.toJson(t);
     }

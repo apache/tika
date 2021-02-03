@@ -171,7 +171,7 @@ public class JDBCFetchIterator extends FetchIterator implements Initializable {
         tryToAdd(new FetchEmitTuple(
                 new FetchKey(fetcherName, fetchKey),
                 new EmitKey(emitterName, emitKey),
-                metadata));
+                metadata, getOnParseException()));
     }
 
     private String toString(ResultSet rs) throws SQLException {

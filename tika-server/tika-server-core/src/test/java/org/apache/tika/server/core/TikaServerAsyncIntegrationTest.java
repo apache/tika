@@ -56,18 +56,20 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerAsyncIntegrationTest.class);
 
+    private static FetchEmitTuple.ON_PARSE_EXCEPTION ON_PARSE_EXCEPTION
+            = FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT;
     private static Path TMP_DIR;
     private static Path TMP_OUTPUT_DIR;
     private static String TIKA_CONFIG_XML;
     private static Path TIKA_CONFIG;
 
-    private static final int NUM_FILES = 8034;
+    private static final int NUM_FILES = 1000;
     private static final String EMITTER_NAME = "fse";
     private static final String FETCHER_NAME = "fsf";
 
     private static List<String> FILE_LIST = new ArrayList<>();
     private static String[] FILES = new String[] {
-            "hello_world.xml",
+            "hello_world.xml", "null_pointer.xml"
            // "heavy_hang_30000.xml", "real_oom.xml", "system_exit.xml"
     };
 
@@ -155,8 +157,10 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
         try {
             JsonNode response = sendAsync(FILE_LIST);
             System.out.println(response);
+            int expected = (ON_PARSE_EXCEPTION == FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT) ?
+                    FILE_LIST.size() : FILE_LIST.size()/2;
             int targets = 0;
-            while (targets < NUM_FILES) {
+            while (targets < FILE_LIST.size()) {
                 System.out.println("targets "+targets);
                 targets = countTargets();
                 Thread.sleep(1000);
@@ -219,7 +223,7 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
         return new FetchEmitTuple(
                 new FetchKey(FETCHER_NAME, fileName),
                 new EmitKey(EMITTER_NAME, ""),
-                new Metadata()
+                new Metadata(), ON_PARSE_EXCEPTION
         );
     }
 }

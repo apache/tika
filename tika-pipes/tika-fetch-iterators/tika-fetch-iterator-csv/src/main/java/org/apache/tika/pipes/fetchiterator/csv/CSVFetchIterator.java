@@ -120,7 +120,8 @@ public class CSVFetchIterator extends FetchIterator implements Initializable {
                 Metadata metadata = loadMetadata(fetchEmitKeyIndices, headers, record);
                 tryToAdd(new FetchEmitTuple(
                         new FetchKey(fetcherName, fetchKey),
-                        new EmitKey(emitterName, emitKey), metadata));
+                        new EmitKey(emitterName, emitKey), metadata,
+                        getOnParseException()));
             }
         }
     }

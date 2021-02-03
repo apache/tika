@@ -58,7 +58,7 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
     private static final String ATTACHMENTS = "attachments";
     private static final String UPDATE_PATH = "/update";
     private static final Logger LOG = LoggerFactory.getLogger(SolrEmitter.class);
-    //one day this will be allowed?
+    //one day this will be allowed or can be configured?
     private final boolean gzipJson = false;
 
     private AttachmentStrategy attachmentStrategy = AttachmentStrategy.PARENT_CHILD;

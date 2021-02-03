@@ -30,20 +30,23 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.Locale;
 
 public class JsonFetchEmitTuple {
 
-    private static final String FETCHER = "fetcher";
-    private static final String FETCHKEY = "fetchKey";
+    public static final String FETCHER = "fetcher";
+    public static final String FETCHKEY = "fetchKey";
     public static final String EMITTER = "emitter";
     public static final String EMITKEY = "emitKey";
-    private static final String METADATAKEY = "metadata";
+    public static final String METADATAKEY = "metadata";
+    public static final String ON_PARSE_EXCEPTION = "onParseException";
+
 
     public static FetchEmitTuple fromJson(Reader reader) throws IOException {
         JsonParser jParser = new JsonFactory().createParser(reader);
-        JsonToken token =jParser.nextToken();
+        JsonToken token = jParser.nextToken();
         if (token != JsonToken.START_OBJECT) {
-            throw new IOException("require start object, but see: "+token.name());
+            throw new IOException("require start object, but see: " + token.name());
         }
         return parseFetchEmitTuple(jParser);
     }
@@ -58,6 +61,7 @@ public class JsonFetchEmitTuple {
         String fetchKey = null;
         String emitterName = null;
         String emitKey = null;
+        FetchEmitTuple.ON_PARSE_EXCEPTION onParseException = null;
         Metadata metadata = new Metadata();
         while (token != JsonToken.END_OBJECT) {
             if (token != JsonToken.FIELD_NAME) {
@@ -78,20 +82,37 @@ public class JsonFetchEmitTuple {
                     throw new IOException("required start object, but see: " + token.name());
                 }
                 metadata = JsonMetadata.readMetadataObject(jParser);
+            } else if (ON_PARSE_EXCEPTION.equals(name)) {
+                String value = getValue(jParser);
+                if ("skip".equalsIgnoreCase(value)) {
+                    onParseException = FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP;
+                } else if ("emit".equalsIgnoreCase(value)) {
+                    onParseException = FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT;
+                } else {
+                    throw new IOException(ON_PARSE_EXCEPTION +
+                            " must be either 'skip' or 'emit'");
+                }
             }
             token = jParser.nextToken();
         }
 
-        return new FetchEmitTuple(
-                new FetchKey(fetcherName, fetchKey),
-                new EmitKey(emitterName, emitKey), metadata
-        );
+        if (onParseException == null) {
+            return new FetchEmitTuple(
+                    new FetchKey(fetcherName, fetchKey),
+                    new EmitKey(emitterName, emitKey), metadata
+            );
+        } else {
+            return new FetchEmitTuple(
+                    new FetchKey(fetcherName, fetchKey),
+                    new EmitKey(emitterName, emitKey), metadata, onParseException
+            );
+        }
     }
 
     private static String getValue(JsonParser jParser) throws IOException {
         JsonToken token = jParser.nextToken();
         if (token != JsonToken.VALUE_STRING) {
-            throw new IOException("required value string, but see: "+token.name());
+            throw new IOException("required value string, but see: " + token.name());
         }
         return jParser.getValueAsString();
     }
@@ -121,6 +142,8 @@ public class JsonFetchEmitTuple {
             jsonGenerator.writeFieldName(METADATAKEY);
             JsonMetadata.writeMetadataObject(t.getMetadata(), jsonGenerator, false);
         }
+        jsonGenerator.writeStringField(ON_PARSE_EXCEPTION,
+                t.getOnParseException().name().toLowerCase(Locale.US));
         jsonGenerator.writeEndObject();
 
     }

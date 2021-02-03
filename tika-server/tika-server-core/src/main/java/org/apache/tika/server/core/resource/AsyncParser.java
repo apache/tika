@@ -19,6 +19,7 @@ package org.apache.tika.server.core.resource;
 import org.apache.cxf.jaxrs.impl.UriInfoImpl;
 import org.apache.cxf.message.MessageImpl;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
@@ -35,38 +36,70 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Worker thread that takes {@link FetchEmitTuple} off the queue, parses
- * the file and puts the {@link EmitData} on the queue for the {@link AsyncEmitter}.
+ * the file and puts the {@link EmitData} on the emitDataQueue for the {@link AsyncEmitter}.
  *
  */
 public class AsyncParser implements Callable<Integer> {
 
     private static final Logger LOG = LoggerFactory.getLogger(AsyncParser.class);
 
-    private final ArrayBlockingQueue<FetchEmitTuple> queue;
+    private final ArrayBlockingQueue<FetchEmitTuple> fetchEmitTupleQueue;
     private final ArrayBlockingQueue<EmitData> emitDataQueue;
 
     public AsyncParser(ArrayBlockingQueue<FetchEmitTuple> queue,
                        ArrayBlockingQueue<EmitData> emitData) {
-        this.queue = queue;
+        this.fetchEmitTupleQueue = queue;
         this.emitDataQueue = emitData;
     }
 
     @Override
     public Integer call() throws Exception {
-        int parsed = 0;
         while (true) {
-            FetchEmitTuple request = queue.poll(1, TimeUnit.MINUTES);
+            FetchEmitTuple request = fetchEmitTupleQueue.poll(1, TimeUnit.MINUTES);
             if (request != null) {
                 EmitData emitData = processTuple(request);
-                boolean offered = emitDataQueue.offer(emitData, 10, TimeUnit.MINUTES);
-                parsed++;
-                if (! offered) {
-                    //TODO: deal with this
+                boolean shouldEmit = checkForParseException(request, emitData);
+                if (shouldEmit) {
+                    boolean offered = emitDataQueue.offer(emitData, 10, TimeUnit.MINUTES);
+                    if (!offered) {
+                        //TODO: deal with this
+                        LOG.warn("Failed to add ({}) " +
+                                "to emit queue after 10 minutes.",
+                                request.getFetchKey().getKey());
+                    }
                 }
             } else {
                 LOG.trace("Nothing on the async queue");
             }
         }
+    }
+
+    private boolean checkForParseException(FetchEmitTuple request, EmitData emitData) {
+        if (emitData == null || emitData.getMetadataList() == null ||
+            emitData.getMetadataList().size() == 0) {
+            LOG.warn("empty or null emit data ({})", request.getFetchKey().getKey());
+            return false;
+        }
+        boolean shouldEmit = true;
+        Metadata container = emitData.getMetadataList().get(0);
+        String stack = container.get(TikaCoreProperties.CONTAINER_EXCEPTION);
+        if (stack != null) {
+            LOG.warn("fetchKey ({}) container parse exception ({})",
+                    request.getFetchKey().getKey(), stack);
+            if (request.getOnParseException() == FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP) {
+                shouldEmit = false;
+            }
+        }
+
+        for (int i = 1; i < emitData.getMetadataList().size(); i++) {
+            Metadata m = emitData.getMetadataList().get(i);
+            String embeddedStack = m.get(TikaCoreProperties.EMBEDDED_EXCEPTION);
+            if (embeddedStack != null) {
+                LOG.warn("fetchKey ({}) embedded parse exception ({})",
+                        request.getFetchKey().getKey(), embeddedStack);
+            }
+        }
+        return shouldEmit;
     }
 
     private EmitData processTuple(FetchEmitTuple t) {
@@ -88,6 +121,7 @@ public class AsyncParser implements Callable<Integer> {
         } catch (Exception e) {
             LOG.warn(t.toString(), e);
         }
+
         injectUserMetadata(userMetadata, metadataList);
         EmitKey emitKey = t.getEmitKey();
         if (StringUtils.isBlank(emitKey.getKey())) {

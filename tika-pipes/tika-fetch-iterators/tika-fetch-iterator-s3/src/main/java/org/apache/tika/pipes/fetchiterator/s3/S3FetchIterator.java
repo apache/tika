@@ -104,7 +104,7 @@ public class S3FetchIterator extends FetchIterator implements Initializable {
             tryToAdd(new FetchEmitTuple(
                     new FetchKey(fetcherName, summary.getKey()),
                     new EmitKey(fetcherName, summary.getKey()),
-                    new Metadata()));
+                    new Metadata(), getOnParseException()));
             count++;
         }
         long elapsed = System.currentTimeMillis() - start;

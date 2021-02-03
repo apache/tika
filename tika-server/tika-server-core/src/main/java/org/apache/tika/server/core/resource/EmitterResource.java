@@ -19,6 +19,7 @@ package org.apache.tika.server.core.resource;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import org.apache.tika.Tika;
 import org.apache.tika.metadata.serialization.JsonFetchEmitTuple;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.emitter.Emitter;
@@ -178,63 +179,67 @@ public class EmitterResource {
             return returnError(t.getEmitKey().getEmitterName(), error);
         }
 
+        boolean shouldEmit = checkParseException(t, metadataList);
+        if (! shouldEmit) {
+            return skip(t, metadataList);
+        }
+
         injectUserMetadata(t.getMetadata(), metadataList.get(0));
 
         for (String n : metadataList.get(0).names()) {
             LOG.debug("post parse/pre emit metadata {}: {}",
                     n, metadataList.get(0).get(n));
         }
+        return emit(calcEmitKey(t), metadataList);
+    }
+
+    static EmitKey calcEmitKey(FetchEmitTuple t) {
         //use fetch key if emitter key is not specified
-        //clean this up?
+        //TODO: clean this up?
         EmitKey emitKey = t.getEmitKey();
         if (StringUtils.isBlank(emitKey.getKey())) {
             emitKey = new EmitKey(emitKey.getEmitterName(), t.getFetchKey().getKey());
         }
-        return emit(emitKey, metadataList);
+        return emitKey;
     }
 
-    private FetchEmitTuple deserializeTuple(JsonParser jParser) throws IOException {
-        String fetcherName = null;
-        String fetchKey = null;
-        String emitterName = null;
-        String emitKey = null;
+    private Map<String, String> skip(FetchEmitTuple t, List<Metadata> metadataList) {
+            Map<String, String> statusMap = new HashMap<>();
+            statusMap.put("status", "ok");
+            statusMap.put("emitter", t.getEmitKey().getEmitterName());
+            statusMap.put("emitKey", t.getEmitKey().getKey());
+            String msg = metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION);
+            statusMap.put("parse_exception", msg);
+            return statusMap;
+    }
 
-        Metadata metadata = null;
-        while (jParser.nextToken() != JsonToken.END_OBJECT) {
-            String currentName = jParser.getCurrentName();
-            if ("fetcherName".equals(currentName)) {
-                fetcherName = currentName;
-            } else if ("fetchKey".equals(currentName)) {
-                fetchKey = currentName;
-            } else if ("emitterName".equals(currentName)) {
-                emitterName = currentName;
-            } else if ("emitKey".equals(currentName)) {
-                emitKey = currentName;
-            } else if ("metadata".equals(currentName)) {
-                metadata = deserializeMetadata(jParser);
+    private boolean checkParseException(FetchEmitTuple t, List<Metadata> metadataList) {
+        if (metadataList == null || metadataList.size() < 1) {
+            return false;
+        }
+        boolean shouldEmit = true;
+        String stack = metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION);
+        if (stack != null) {
+            if (t.getOnParseException() == FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP) {
+                shouldEmit = false;
+            }
+            LOG.warn("fetchKey ({}) container parse exception ({})",
+                    t.getFetchKey().getKey(), stack);
+        }
+
+        for (int i = 1; i < metadataList.size(); i++) {
+            Metadata m = metadataList.get(i);
+            String embeddedStack = m.get(TikaCoreProperties.EMBEDDED_EXCEPTION);
+            if (embeddedStack != null) {
+                LOG.warn("fetchKey ({}) embedded parse exception ({})",
+                        t.getFetchKey().getKey(), embeddedStack);
             }
         }
-        return new FetchEmitTuple(new FetchKey(fetcherName, fetchKey),
-                new EmitKey(emitterName, emitKey), metadata);
+
+        return shouldEmit;
     }
 
-    private Metadata deserializeMetadata(JsonParser jParser) throws IOException {
-        Metadata metadata = new Metadata();
 
-        while (jParser.nextToken() != JsonToken.END_OBJECT) {
-            String key = jParser.getCurrentName();
-            JsonToken token = jParser.nextToken();
-            if (jParser.isExpectedStartArrayToken()) {
-                while (jParser.nextToken() != JsonToken.END_ARRAY) {
-                    metadata.add(key, jParser.getText());
-                }
-            } else {
-                metadata.set(key, token.asString());
-            }
-        }
-        return metadata;
-
-    }
     private void injectUserMetadata(Metadata userMetadata, Metadata metadata) {
         for (String n : userMetadata.names()) {
             metadata.set(n, null);
@@ -260,7 +265,7 @@ public class EmitterResource {
         try {
             emitter.emit(emitKey.getKey(), metadataList);
         } catch (IOException | TikaEmitterException e) {
-            LOG.warn("problem with emitting", e);
+            LOG.warn("problem emitting ("+emitKey.getKey()+")", e);
             status = "emitter_exception";
             exceptionMsg = ExceptionUtils.getStackTrace(e);
         }
