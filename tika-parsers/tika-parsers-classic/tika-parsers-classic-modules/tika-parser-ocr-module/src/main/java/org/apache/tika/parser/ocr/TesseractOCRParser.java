@@ -315,7 +315,7 @@ public class TesseractOCRParser extends AbstractParser {
                 (config.isPreserveInterwordSpacing())? "preserve_interword_spaces=1" : "preserve_interword_spaces=0",
                 config.getOutputType().name().toLowerCase(Locale.US)
         ));
-        LOG.info("Tesseract command: " + String.join(" ", cmd));
+        LOG.debug("Tesseract command: " + String.join(" ", cmd));
         
         ProcessBuilder pb = new ProcessBuilder(cmd);
         setEnv(config, pb);
@@ -417,7 +417,7 @@ public class TesseractOCRParser extends AbstractParser {
                     IOUtils.closeQuietly(stream);
                 }
 
-                LOG.info("{}", out);
+                LOG.debug("{}", out);
             }
         }.start();
     }

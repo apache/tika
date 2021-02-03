@@ -259,15 +259,31 @@ public class TesseractOCRConfig implements Serializable {
 
     /**
      * Set tesseract language dictionary to be used. Default is "eng".
+     * languages are either:
+     * <ol>
+     *   <li>Nominally an ISO-639-2 code but compound codes are allowed separated by underscore: e.g., chi_tra_vert, aze_cyrl</li>
+     *   <li>A file path in the script directory.  The name starts with upper-case letter.
+     *       Some of them have underscores and other upper-case letters: e.g., script/Arabic, script/HanS_vert, script/Japanese_vert, script/Canadian_Aboriginal</li>
+     * </ol>
      * Multiple languages may be specified, separated by plus characters.
-     * e.g. "chi_tra+chi_sim"
+     * e.g. "chi_tra+chi_sim+script/Arabic"
      */
     public void setLanguage(String language) {
-        final String[] langs = language.split("\\s*\\+\\s*");
+        // Get rid of embedded spaces
+        language = language.replaceAll("\\s","");
+        // Test for leading or trailing +
+        if (language.matches("\\+.*|.*\\+")) {
+            throw new IllegalArgumentException("Invalid syntax - Can't start or end with +" + language);
+        }
+        // Split on the + sign
+        final String[] langs = language.split("\\+");
         List<String> invalidCodes = new ArrayList<>();
         for (String lang : langs) {
-            if (!langExists(lang)) {
-                invalidCodes.add(lang);
+            // First, make sure it conforms to the correct syntax
+            if (!lang.matches("([a-zA-Z]{3}(_[a-zA-Z]{3,4}){0,2})|script(/|\\\\)[A-Z][a-zA-Z_]+")) {
+                invalidCodes.add(lang + " (invalid syntax)");
+            } else if (!langExists(lang)) {
+                invalidCodes.add(lang + " (not found)");
             }
         }
         if (!invalidCodes.isEmpty()) {
@@ -281,9 +297,8 @@ public class TesseractOCRConfig implements Serializable {
      * Check if tessdata language model exists
      */
     private boolean langExists(String lang) {
-        LOG.warn("actualTessdataDir:" + windowsActualTessdataDir);
         if (windowsActualTessdataDir == null) {
-        // Use the same logic used in TesseractOCRParser.setEnv().  If tessdataPath is not specified then use tesseractPath, if specified
+            // Use the same logic used in TesseractOCRParser.setEnv().  If tessdataPath is not specified then use tesseractPath, if specified
             if (!tessdataPath.isEmpty()) {
                 windowsActualTessdataDir = new File(tessdataPath);
             } else if (!tesseractPath.isEmpty()) {
@@ -292,25 +307,18 @@ public class TesseractOCRConfig implements Serializable {
                 // Neither path was specified
                 if (SystemUtils.IS_OS_UNIX) {
                     // For xNix, Tesseract uses this default
-                    windowsActualTessdataDir = new File("/usr/opt/tessdata");
+                    windowsActualTessdataDir = new File("/usr/share/tessdata");
                 } else {
                     getWindowsActualTessdataDir();
                 }
             }
         }
 
-        LOG.warn("actualTessdataDir: " + windowsActualTessdataDir);
         if (!windowsActualTessdataDir.isDirectory()) {
             throw new RuntimeException(windowsActualTessdataDir + " is not a directory");
         }
         String trainedDataName = lang + ".traineddata";
-        LOG.info("Checking for " + new File(windowsActualTessdataDir, trainedDataName) + " " + new File(windowsActualTessdataDir, trainedDataName).exists());
-        if (!new File(windowsActualTessdataDir, trainedDataName).exists()) {
-            // Check the script directory
-            LOG.info("Checking for " + new File(new File(windowsActualTessdataDir, "script"), trainedDataName) + " " + new File(new File(windowsActualTessdataDir, "script"), trainedDataName).exists());
-            return new File(new File(windowsActualTessdataDir, "script"), trainedDataName).exists();
-        }
-        return true;
+        return  new File(windowsActualTessdataDir, trainedDataName).exists();
     }
 
     /**
@@ -318,7 +326,6 @@ public class TesseractOCRConfig implements Serializable {
      */
     private void getWindowsActualTessdataDir() {
         if (SystemUtils.IS_OS_WINDOWS) {
-            LOG.warn("Looking for Tesseract on Windows: ");
             String actualTesseractPath;
             // For Windows, the default is under the Tesseract directory.  So we need to find it first
             try {
