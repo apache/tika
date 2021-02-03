@@ -166,8 +166,6 @@ public class ExtractReader {
             }
         } catch (IOException e) {
             throw new ExtractReaderException(ExtractReaderException.TYPE.IO_EXCEPTION);
-        } catch (TikaException e) {
-            throw new ExtractReaderException(ExtractReaderException.TYPE.EXTRACT_PARSE_EXCEPTION);
         } finally {
             IOUtils.closeQuietly(reader);
             IOUtils.closeQuietly(is);

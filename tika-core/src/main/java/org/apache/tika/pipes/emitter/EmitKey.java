@@ -30,7 +30,7 @@ public class EmitKey {
         return emitterName;
     }
 
-    public String getEmitKey() {
+    public String getKey() {
         return emitKey;
     }
 
@@ -40,5 +40,24 @@ public class EmitKey {
                 "emitterName='" + emitterName + '\'' +
                 ", emitterKey='" + emitKey + '\'' +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        EmitKey emitKey1 = (EmitKey) o;
+
+        if (emitterName != null ? !emitterName.equals(emitKey1.emitterName) : emitKey1.emitterName != null)
+            return false;
+        return emitKey != null ? emitKey.equals(emitKey1.emitKey) : emitKey1.emitKey == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = emitterName != null ? emitterName.hashCode() : 0;
+        result = 31 * result + (emitKey != null ? emitKey.hashCode() : 0);
+        return result;
     }
 }

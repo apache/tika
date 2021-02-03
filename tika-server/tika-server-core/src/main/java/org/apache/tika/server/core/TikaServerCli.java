@@ -140,6 +140,7 @@ public class TikaServerCli {
             try {
                 mainLoop(line, newArgs);
             } catch (InterruptedException e) {
+                e.printStackTrace();
                 //swallow
             }
         }
@@ -173,11 +174,13 @@ public class TikaServerCli {
                     WatchDogResult result = future.get();
                     LOG.debug("main loop future: ({}); about to restart", result);
                     if (maxRestarts < 0 || result.getNumRestarts() < maxRestarts) {
+                        System.err.println("starting up again");
                         executorCompletionService.submit(
                                 new TikaServerWatchDog(args, result.getPort(),
                                 result.getId(),
                                 result.getNumRestarts(), serverTimeoutConfig));
                     } else {
+                        System.err.println("finished!");
                         LOG.warn("id {} with port {} has exceeded maxRestarts {}. Shutting down and not restarting.",
                                 result.getId(), result.getPort(), maxRestarts);
                         finished++;

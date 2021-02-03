@@ -16,11 +16,8 @@
  */
 package org.apache.tika.server.core;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonPrimitive;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FileUtils;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
@@ -29,7 +26,11 @@ import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.serialization.JsonFetchEmitTuple;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.pipes.emitter.EmitKey;
+import org.apache.tika.pipes.fetcher.FetchKey;
+import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
 import org.apache.tika.server.core.resource.EmitterResource;
 import org.apache.tika.server.core.writer.JSONObjWriter;
 import org.junit.AfterClass;
@@ -42,6 +43,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -68,6 +70,11 @@ public class TikaEmitterTest extends CXFTestBase {
     private static String HELLO_WORLD = "hello_world.xml";
     private static String HELLO_WORLD_JSON = "hello_world.xml.json";
 
+    private static String[] VALUE_ARRAY = new String[]{
+            "my-value-1",
+            "my-value-2",
+            "my-value-3"
+    };
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
         TMP_DIR = Files.createTempDirectory("tika-emitter-test-");
@@ -128,6 +135,7 @@ public class TikaEmitterTest extends CXFTestBase {
     @Override
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
         List<Object> providers = new ArrayList<>();
+        providers.add(new TikaServerParseExceptionMapper(true));
         providers.add(new JSONObjWriter());
         sf.setProviders(providers);
     }
@@ -167,27 +175,24 @@ public class TikaEmitterTest extends CXFTestBase {
     @Test
     public void testPost() throws Exception {
 
-        JsonObject root = new JsonObject();
-        root.add("fetcher", new JsonPrimitive("fsf"));
-        root.add("fetchKey", new JsonPrimitive("hello_world.xml"));
-        root.add("emitter", new JsonPrimitive("fse"));
-        JsonObject userMetadata = new JsonObject();
-        String[] valueArray = new String[] {"my-value-1", "my-value-2", "my-value-3"};
-        JsonArray arr = new JsonArray();
-        for (int i = 0; i < valueArray.length; i++) {
-            arr.add(valueArray[i]);
+        Metadata userMetadata = new Metadata();
+        userMetadata.set("my-key", "my-value");
+        for (int i = 0; i < VALUE_ARRAY.length; i++) {
+            userMetadata.add("my-key-multi", VALUE_ARRAY[i]);
         }
 
-        userMetadata.add("my-key", new JsonPrimitive("my-value"));
-        userMetadata.add("my-key-multi", arr);
-        root.add("metadata", userMetadata);
-        String jsonPost = new Gson().toJson(root);
+        FetchEmitTuple t = new FetchEmitTuple(
+                new FetchKey("fsf", "hello_world.xml"),
+                new EmitKey("fse", ""),
+                userMetadata);
+        StringWriter writer = new StringWriter();
+        JsonFetchEmitTuple.toJson(t, writer);
 
         String getUrl = endPoint+EMITTER_PATH;
         Response response = WebClient
                 .create(getUrl)
                 .accept("application/json")
-                .post(jsonPost);
+                .post(writer.toString());
         assertEquals(200, response.getStatus());
 
         List<Metadata> metadataList = null;
@@ -202,7 +207,7 @@ public class TikaEmitterTest extends CXFTestBase {
         assertEquals("你好，世界", metadata.get("title"));
         assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("my-value", metadata.get("my-key"));
-        assertArrayEquals(valueArray, metadata.getValues("my-key-multi"));
+        assertArrayEquals(VALUE_ARRAY, metadata.getValues("my-key-multi"));
     }
 
     @Test
@@ -235,36 +240,32 @@ public class TikaEmitterTest extends CXFTestBase {
 
     @Test
     public void testPostNPE() throws Exception {
-
-        JsonObject root = new JsonObject();
-        root.add("fetcher", new JsonPrimitive("fsf"));
-        root.add("fetchKey", new JsonPrimitive("null_pointer.xml"));
-        root.add("emitter", new JsonPrimitive("fse"));
-        JsonObject userMetadata = new JsonObject();
-        String[] valueArray = new String[] {"my-value-1", "my-value-2", "my-value-3"};
-        JsonArray arr = new JsonArray();
-        for (int i = 0; i < valueArray.length; i++) {
-            arr.add(valueArray[i]);
+        Metadata userMetadata = new Metadata();
+        userMetadata.set("my-key", "my-value");
+        for (int i = 0; i < VALUE_ARRAY.length; i++) {
+            userMetadata.add("my-key-multi", VALUE_ARRAY[i]);
         }
 
-        userMetadata.add("my-key", new JsonPrimitive("my-value"));
-        userMetadata.add("my-key-multi", arr);
-        root.add("metadata", userMetadata);
-        String jsonPost = new Gson().toJson(root);
+        FetchEmitTuple t = new FetchEmitTuple(
+                new FetchKey("fsf", "null_pointer.xml"),
+                new EmitKey("fse", ""),
+                userMetadata);
+        StringWriter writer = new StringWriter();
+        JsonFetchEmitTuple.toJson(t, writer);
 
         String getUrl = endPoint+EMITTER_PATH;
         Response response = WebClient
                 .create(getUrl)
                 .accept("application/json")
-                .post(jsonPost);
+                .post(writer.toString());
         assertEquals(200, response.getStatus());
 
-        JsonObject jsonResponse;
+        JsonNode jsonResponse;
         try (Reader reader = new InputStreamReader(
                 (InputStream)response.getEntity(), StandardCharsets.UTF_8)) {
-            jsonResponse = JsonParser.parseReader(reader).getAsJsonObject();
+            jsonResponse = new ObjectMapper().readTree(reader);
         };
-        String parseException = jsonResponse.get("parse_exception").getAsString();
+        String parseException = jsonResponse.get("parse_exception").asText();
         assertNotNull(parseException);
         assertContains("NullPointerException", parseException);
 
@@ -276,7 +277,7 @@ public class TikaEmitterTest extends CXFTestBase {
         Metadata metadata = metadataList.get(0);
         assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("my-value", metadata.get("my-key"));
-        assertArrayEquals(valueArray, metadata.getValues("my-key-multi"));
+        assertArrayEquals(VALUE_ARRAY, metadata.getValues("my-key-multi"));
         assertContains("NullPointerException", metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION));
     }
 

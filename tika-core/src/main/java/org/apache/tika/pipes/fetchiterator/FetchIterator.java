@@ -49,6 +49,8 @@ public abstract class FetchIterator implements Callable<Integer>, Initializable 
     private String fetcherName;
     private String emitterName;
     private int added = 0;
+    private FetchEmitTuple.ON_PARSE_EXCEPTION onParseException = FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT;
+
     public FetchIterator() {
 
     }
@@ -93,6 +95,26 @@ public abstract class FetchIterator implements Callable<Integer>, Initializable 
     @Field
     public void setQueueSize(int queueSize) {
         this.queueSize = queueSize;
+    }
+
+    @Field
+    public void setOnParseException(String onParseException) throws TikaConfigException {
+        if ("skip".equalsIgnoreCase(onParseException)) {
+            setOnParseException(FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
+        } else if ("emit".equalsIgnoreCase(onParseException)) {
+            setOnParseException(FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
+        } else {
+            throw new TikaConfigException("must be either 'skip' or 'emit': "
+                    + onParseException);
+        }
+    }
+
+    public void setOnParseException(FetchEmitTuple.ON_PARSE_EXCEPTION onParseException) {
+        this.onParseException = onParseException;
+    }
+
+    public FetchEmitTuple.ON_PARSE_EXCEPTION getOnParseException() {
+        return onParseException;
     }
 
     @Override

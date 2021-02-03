@@ -132,7 +132,7 @@ public class MetadataResource {
         //no need to parse embedded docs
         context.set(DocumentSelector.class, metadata1 -> false);
 
-        TikaResource.logRequest(LOG, info, metadata);
+        TikaResource.logRequest(LOG, "/meta", metadata);
         TikaResource.parse(parser, LOG, info.getPath(), is,
                 new LanguageHandler() {
                     public void endDocument() {

@@ -19,13 +19,13 @@ package org.apache.tika.server.core.resource;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.server.core.HTMLHelper;
@@ -36,8 +36,6 @@ import org.apache.tika.server.core.HTMLHelper;
  */
 @Path("/detectors")
 public class TikaDetectors {
-    private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
-
 
     private HTMLHelper html;
 
@@ -77,10 +75,10 @@ public class TikaDetectors {
 
     @GET
     @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
-    public String getDetectorsJSON() {
+    public String getDetectorsJSON() throws IOException  {
         Map<String, Object> details = new HashMap<String, Object>();
         detectorAsMap(TikaResource.getConfig().getDetector(), details);
-        return GSON.toJson(details);
+        return new ObjectMapper().writeValueAsString(details);
     }
 
     private void detectorAsMap(Detector d, Map<String, Object> details) {

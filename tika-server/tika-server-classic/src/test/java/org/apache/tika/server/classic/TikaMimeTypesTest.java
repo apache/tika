@@ -16,8 +16,8 @@
  */
 package org.apache.tika.server.classic;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
@@ -34,7 +34,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class TikaMimeTypesTest extends CXFTestBase {
-    private static final Gson GSON = new GsonBuilder().create();
 
     private static final String MIMETYPES_PATH = "/mime-types";
 
@@ -62,8 +61,7 @@ public class TikaMimeTypesTest extends CXFTestBase {
                 .get();
 
         String jsonStr = getStringFromInputStream((InputStream) response.getEntity());
-        Map<String, Map<String, Object>> json = (Map<String, Map<String, Object>>)
-                GSON.fromJson(jsonStr, Map.class);
+        Map<String, Map<String, Object>> json = new ObjectMapper().readerFor(Map.class).readValue(jsonStr);
 
         assertEquals(true, json.containsKey("text/plain"));
         assertEquals(true, json.containsKey("application/xml"));

@@ -17,6 +17,8 @@ package org.apache.tika.metadata.serialization;
 * limitations under the License.
 */
 
+import org.apache.tika.metadata.TikaCoreProperties;
+
 public class PrettyMetadataKeyComparator implements java.util.Comparator<String> {
     @Override
     public int compare(String s1, String s2) {
@@ -26,15 +28,12 @@ public class PrettyMetadataKeyComparator implements java.util.Comparator<String>
             return -1;
         }
 
-        //this is stinky.  This should reference AbstractRecursiveParserWrapperHandler.TIKA_CONTENT
-        //but that would require making core a dependency of serialization...
-        //do we want to do that?
-        if (s1.equals("tika:content")) {
-            if (s2.equals("tika:content")) {
+        if (s1.equals(TikaCoreProperties.TIKA_CONTENT.getName())) {
+            if (s2.equals(TikaCoreProperties.TIKA_CONTENT.getName())) {
                 return 0;
             }
             return 2;
-        } else if (s2.equals("tika:content")) {
+        } else if (s2.equals(TikaCoreProperties.TIKA_CONTENT.getName())) {
             return -2;
         }
         //do we want to lowercase?

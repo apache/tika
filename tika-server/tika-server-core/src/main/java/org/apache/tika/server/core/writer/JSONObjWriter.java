@@ -17,8 +17,7 @@
 
 package org.apache.tika.server.core.writer;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.tika.metadata.Metadata;
 
 import javax.ws.rs.Produces;
@@ -40,7 +39,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @Provider
 @Produces(MediaType.APPLICATION_JSON)
 public class JSONObjWriter implements MessageBodyWriter<Map<String, Object>> {
-    private static Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+
 
     public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
         return Map.class.isAssignableFrom(type);
@@ -55,8 +54,8 @@ public class JSONObjWriter implements MessageBodyWriter<Map<String, Object>> {
                         MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream)
             throws IOException, WebApplicationException {
         Writer writer = new OutputStreamWriter(entityStream, UTF_8);
-        GSON.toJson(map, writer);
-        writer.flush();
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.writerWithDefaultPrettyPrinter().writeValue(writer, map);
         entityStream.flush();
     }
 }

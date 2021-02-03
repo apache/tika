@@ -16,40 +16,30 @@
  */
 package org.apache.tika.metadata.serialization;
 
-
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.pipes.emitter.EmitData;
+import org.apache.tika.pipes.emitter.EmitKey;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.Arrays;
 
+public class JsonEmitData {
 
-public class JsonStreamingSerializer implements AutoCloseable {
-
-    private final Writer writer;
-    private JsonGenerator jsonGenerator;
-    boolean hasStartedArray = false;
-    public JsonStreamingSerializer(Writer writer) {
-        this.writer = writer;
-    }
-
-    public void add(Metadata metadata) throws IOException {
-        if (!hasStartedArray) {
-            jsonGenerator = new JsonFactory().createGenerator(writer);
+    public static void toJson(EmitData emitData, Writer writer) throws IOException {
+        try (JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
+            jsonGenerator.writeStartObject();
+            EmitKey key = emitData.getEmitKey();
+            jsonGenerator.writeStringField(JsonFetchEmitTuple.EMITTER, key.getEmitterName());
+            jsonGenerator.writeStringField(JsonFetchEmitTuple.EMITKEY, key.getKey());
+            jsonGenerator.writeFieldName("data");
             jsonGenerator.writeStartArray();
-            hasStartedArray = true;
+            for (Metadata m : emitData.getMetadataList()) {
+                JsonMetadata.writeMetadataObject(m, jsonGenerator, false);
+            }
+            jsonGenerator.writeEndArray();
+            jsonGenerator.writeEndObject();
         }
-        String[] names = metadata.names();
-        Arrays.sort(names);
-        JsonMetadata.writeMetadataObject(metadata, jsonGenerator, false);
-    }
-
-    @Override
-    public void close() throws IOException {
-        jsonGenerator.writeEndArray();
-        jsonGenerator.flush();
-        jsonGenerator.close();
     }
 }

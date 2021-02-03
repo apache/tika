@@ -16,9 +16,8 @@
  */
 package org.apache.tika.pipes.emitter.solr;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 import org.apache.http.client.HttpClient;
 import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.client.HttpClientUtil;
@@ -28,17 +27,25 @@ import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.pipes.emitter.AbstractEmitter;
-import org.apache.tika.pipes.emitter.Emitter;
+import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.zip.GZIPOutputStream;
 
 public class SolrEmitter extends AbstractEmitter implements Initializable {
 
@@ -48,10 +55,11 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
         PARENT_CHILD,
         //anything else?
     }
-    private static final Gson GSON = new Gson();
     private static final String ATTACHMENTS = "attachments";
     private static final String UPDATE_PATH = "/update";
     private static final Logger LOG = LoggerFactory.getLogger(SolrEmitter.class);
+    //one day this will be allowed or can be configured?
+    private final boolean gzipJson = false;
 
     private AttachmentStrategy attachmentStrategy = AttachmentStrategy.PARENT_CHILD;
     private String url;
@@ -61,27 +69,77 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
     private HttpClientFactory httpClientFactory;
     private HttpClient httpClient;
 
+    public SolrEmitter() throws TikaConfigException {
+        httpClientFactory = new HttpClientFactory();
+    }
     @Override
     public void emit(String emitKey, List<Metadata> metadataList) throws IOException,
             TikaEmitterException {
+
         if (metadataList == null || metadataList.size() == 0) {
             LOG.warn("metadataList is null or empty");
             return;
         }
-        String json = jsonify(emitKey, metadataList);
-        LOG.debug("emitting json:"+json);
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        Writer writer = gzipJson ?
+                new BufferedWriter(
+                        new OutputStreamWriter(
+                                new GZIPOutputStream(bos), StandardCharsets.UTF_8)) :
+                new BufferedWriter(
+                        new OutputStreamWriter(bos, StandardCharsets.UTF_8));
+        try (
+            JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
+            jsonGenerator.writeStartArray();
+            jsonify(jsonGenerator, emitKey, metadataList);
+            jsonGenerator.writeEndArray();
+        }
+        LOG.debug("emitting json ({})",
+                new String(bos.toByteArray(), StandardCharsets.UTF_8));
         try {
             HttpClientUtil.postJson(httpClient,
-                    url+UPDATE_PATH+"?commitWithin="+getCommitWithin(), json);
+                    url+UPDATE_PATH+"?commitWithin="+getCommitWithin(), bos.toByteArray(), gzipJson);
         } catch (TikaClientException e) {
             throw new TikaEmitterException("can't post", e);
         }
     }
 
-    private String jsonify(String emitKey, List<Metadata> metadataList) {
+    @Override
+    public void emit(List<EmitData> batch) throws IOException,
+            TikaEmitterException {
+        if (batch == null || batch.size() == 0) {
+            LOG.warn("batch is null or empty");
+            return;
+        }
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        Writer writer = gzipJson ?
+                new BufferedWriter(
+                        new OutputStreamWriter(
+                                new GZIPOutputStream(bos), StandardCharsets.UTF_8)) :
+            new BufferedWriter(
+                new OutputStreamWriter(bos, StandardCharsets.UTF_8));
+        try (JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
+            jsonGenerator.writeStartArray();
+            for (EmitData d : batch) {
+                jsonify(jsonGenerator, d.getEmitKey().getKey(), d.getMetadataList());
+            }
+            jsonGenerator.writeEndArray();
+        }
+        LOG.debug("emitting json ({})",
+                new String(bos.toByteArray(), StandardCharsets.UTF_8));
+        try {
+            HttpClientUtil.postJson(httpClient,
+                    url+UPDATE_PATH+"?commitWithin="+getCommitWithin(),
+                    bos.toByteArray(), gzipJson);
+        } catch (TikaClientException e) {
+            throw new TikaEmitterException("can't post", e);
+        }
+    }
+
+    private void jsonify(JsonGenerator jsonGenerator, String emitKey, List<Metadata> metadataList) throws IOException {
         metadataList.get(0).set(idField, emitKey);
-        if (attachmentStrategy == AttachmentStrategy.SKIP) {
-            return toJsonString(jsonify(metadataList.get(0)));
+        if (attachmentStrategy == AttachmentStrategy.SKIP ||
+            metadataList.size() == 1) {
+            jsonify(metadataList.get(0), jsonGenerator);
         } else if (attachmentStrategy == AttachmentStrategy.CONCATENATE_CONTENT) {
             //this only handles text for now, not xhtml
             StringBuilder sb = new StringBuilder();
@@ -93,53 +151,47 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
             }
             Metadata parent = metadataList.get(0);
             parent.set(getContentField(), sb.toString());
-            return toJsonString(jsonify(parent));
+            jsonify(parent, jsonGenerator);
         } else if (attachmentStrategy == AttachmentStrategy.PARENT_CHILD) {
-            if (metadataList.size() == 1) {
-                JsonObject obj = jsonify(metadataList.get(0));
-                return toJsonString(obj);
-            }
-            JsonObject parent = jsonify(metadataList.get(0));
-            JsonArray children = new JsonArray();
+            jsonify(metadataList.get(0), jsonGenerator, false);
+            jsonGenerator.writeArrayFieldStart(ATTACHMENTS);
+
             for (int i = 1; i < metadataList.size(); i++) {
                 Metadata m = metadataList.get(i);
                 m.set(idField, UUID.randomUUID().toString());
-                children.add(jsonify(m));
+                jsonify(m, jsonGenerator);
             }
-            parent.add(ATTACHMENTS, children);
-            return toJsonString(parent);
+            jsonGenerator.writeEndArray();
+            jsonGenerator.writeEndObject();
         } else {
             throw new IllegalArgumentException("I don't yet support this attachment strategy: "
                     + attachmentStrategy);
         }
     }
 
-    private String toJsonString(JsonObject obj) {
-        //wrap the document into an array
-        //so that Solr correctly interprets this as
-        //upload docs vs a command.
-        JsonArray docs = new JsonArray();
-        docs.add(obj);
-        return GSON.toJson(docs);
-    }
-
-    private JsonObject jsonify(Metadata metadata) {
-        JsonObject obj = new JsonObject();
+    private void jsonify(Metadata metadata, JsonGenerator jsonGenerator, boolean writeEndObject) throws IOException {
+        jsonGenerator.writeStartObject();
         for (String n : metadata.names()) {
             String[] vals = metadata.getValues(n);
             if (vals.length == 0) {
                 continue;
             } else if (vals.length == 1) {
-                obj.addProperty(n, vals[0]);
+                jsonGenerator.writeStringField(n, vals[0]);
             } else if (vals.length > 1) {
-                JsonArray valArr = new JsonArray();
-                for (int i = 0; i < vals.length; i++) {
-                    valArr.add(vals[i]);
+                jsonGenerator.writeArrayFieldStart(n);
+                for (String val : vals) {
+                    jsonGenerator.writeString(val);
                 }
-                obj.add(n, valArr);
+                jsonGenerator.writeEndArray();
             }
         }
-        return obj;
+        if (writeEndObject) {
+            jsonGenerator.writeEndObject();
+        }
+    }
+
+    private void jsonify(Metadata metadata, JsonGenerator jsonGenerator) throws IOException {
+        jsonify(metadata, jsonGenerator, true);
     }
 
     /**

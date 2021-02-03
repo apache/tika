@@ -16,27 +16,21 @@
  */
 package org.apache.tika.server.client;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.serialization.JsonFetchEmitTuple;
+import org.apache.tika.metadata.serialization.JsonFetchEmitTupleList;
 import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 public class TikaClient {
 
-    private static final Gson GSON = new GsonBuilder().create();
-
     private final Random random = new Random();
-    private final TikaConfig tikaConfig;
     private List<TikaHttpClient> clients;
 
 
@@ -45,11 +39,11 @@ public class TikaClient {
         for (String url : tikaServers) {
             clients.add(TikaHttpClient.get(url));
         }
-        return new TikaClient(tikaConfig, clients);
+        return new TikaClient(clients);
     }
 
-    private TikaClient(TikaConfig tikaConfig, List<TikaHttpClient> clients) {
-        this.tikaConfig = tikaConfig;
+    private TikaClient(List<TikaHttpClient> clients) {
+
         this.clients = clients;
     }
 
@@ -57,37 +51,20 @@ public class TikaClient {
 
     }*/
 
-    public TikaEmitterResult parse(FetchEmitTuple fetchEmit, Metadata metadata)
+    public TikaEmitterResult parse(FetchEmitTuple fetchEmit)
             throws IOException, TikaException {
         TikaHttpClient client = getHttpClient();
-        String jsonRequest = jsonifyRequest(fetchEmit, metadata);
-        return client.postJson(jsonRequest);
-
+        StringWriter writer = new StringWriter();
+        JsonFetchEmitTuple.toJson(fetchEmit, writer);
+        return client.postJson(writer.toString());
     }
 
-    private String jsonifyRequest(FetchEmitTuple fetchEmit, Metadata metadata) {
-        JsonObject root = new JsonObject();
-        root.add("fetcher", new JsonPrimitive(fetchEmit.getFetchKey().getFetcherName()));
-        root.add("fetchKey", new JsonPrimitive(fetchEmit.getFetchKey().getKey()));
-        root.add("emitter", new JsonPrimitive(fetchEmit.getEmitKey().getEmitterName()));
-        root.add("emitKey", new JsonPrimitive(fetchEmit.getEmitKey().getEmitKey()));
-        if (metadata.size() > 0) {
-            JsonObject m = new JsonObject();
-            for (String n : metadata.names()) {
-                String[] vals = metadata.getValues(n);
-                if (vals.length == 1) {
-                    m.add(n, new JsonPrimitive(vals[0]));
-                } else if (vals.length > 1) {
-                    JsonArray arr = new JsonArray();
-                    for (int i = 0; i < vals.length; i++) {
-                        arr.add(vals[i]);
-                    }
-                    m.add(n, arr);
-                }
-            }
-            root.add("metadata", m);
-        }
-        return GSON.toJson(root);
+    public TikaEmitterResult parseAsync(List<FetchEmitTuple> tuples)
+            throws IOException, TikaException {
+        StringWriter writer = new StringWriter();
+        JsonFetchEmitTupleList.toJson(tuples, writer);
+        TikaHttpClient client = getHttpClient();
+        return client.postJsonAsync(writer.toString());
     }
 
     private TikaHttpClient getHttpClient() {

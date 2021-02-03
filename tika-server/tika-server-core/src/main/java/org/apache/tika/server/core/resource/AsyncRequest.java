@@ -14,27 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.emitter;
+package org.apache.tika.server.core.resource;
 
-import org.apache.tika.metadata.Metadata;
+import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
 
-import java.io.IOException;
 import java.util.List;
 
-public class EmptyEmitter implements Emitter {
+public class AsyncRequest {
+    private final List<FetchEmitTuple> tuples;
 
-    @Override
-    public String getName() {
-        return "empty";
+    public AsyncRequest(List<FetchEmitTuple> tuples) {
+        this.tuples = tuples;
     }
 
-    @Override
-    public void emit(String emitKey, List<Metadata> metadataList) throws IOException, TikaEmitterException {
-
-    }
-
-    @Override
-    public void emit(List<EmitData> emitData) throws IOException, TikaEmitterException {
-
+    public List<FetchEmitTuple> getTuples() {
+        return tuples;
     }
 }

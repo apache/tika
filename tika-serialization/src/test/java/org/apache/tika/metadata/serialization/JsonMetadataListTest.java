@@ -93,7 +93,7 @@ public class JsonMetadataListTest {
     @Test
     public void testPrettyPrint() throws Exception {
         Metadata m1 = new Metadata();
-        m1.add("tika:content", "this is the content");
+        m1.add(TikaCoreProperties.TIKA_CONTENT, "this is the content");
         m1.add("zk1", "v1");
         m1.add("zk1", "v2");
         m1.add("zk1", "v3");
@@ -114,24 +114,22 @@ public class JsonMetadataListTest {
         metadataList.add(m2);
         StringWriter writer = new StringWriter();
         JsonMetadataList.toJson(metadataList, writer);
-        assertTrue(writer.toString().startsWith("[{\"tika:content\":\"this is the content\",\"zk1\":[\"v1\",\"v2\","));
+        assertTrue(writer.toString().startsWith("["));
         writer = new StringWriter();
         JsonMetadataList.setPrettyPrinting(true);
         JsonMetadataList.toJson(metadataList, writer);
-        assertTrue(writer.toString().startsWith("[\n" +
-                "  {\n" +
-                "    \"zk1\": [\n" +
-                "      \"v1\",\n" +
-                "      \"v2\","));
-        assertTrue(writer.toString().contains("    \"zk2\": \"v1\",\n" +
-                "    \"tika:content\": \"this is the content\"\n" +
-                "  },"));
+        assertTrue(writer.toString().startsWith("[ {\n" +
+                "  \"zk1\" : [ \"v1\", \"v2\", \"v3\", \"v4\", \"v4\" ],\n" +
+                "  \"zk2\" : \"v1\",\n" +
+                "  \"X-TIKA:content\" : \"this is the content\"\n" +
+                "},"));
+
 
         //now set it back to false
         JsonMetadataList.setPrettyPrinting(false);
         writer = new StringWriter();
         JsonMetadataList.toJson(metadataList, writer);
-        assertTrue(writer.toString().startsWith("[{\"tika:content\":\"this is the content\",\"zk1\":[\"v1\",\"v2\","));
+        assertTrue(writer.toString().startsWith("["));
     }
 
     @Test

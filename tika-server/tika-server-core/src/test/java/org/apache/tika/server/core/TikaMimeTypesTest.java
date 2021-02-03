@@ -26,8 +26,6 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
@@ -37,7 +35,6 @@ import org.junit.Test;
 
 public class TikaMimeTypesTest extends CXFTestBase {
 
-    private static final Gson GSON = new GsonBuilder().create();
 
     private static final String MIMETYPES_PATH = "/mime-types";
 

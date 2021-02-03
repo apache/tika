@@ -17,6 +17,10 @@
 package org.apache.tika.pipes.emitter;
 
 import org.apache.tika.config.Field;
+import org.apache.tika.metadata.Metadata;
+
+import java.io.IOException;
+import java.util.List;
 
 public abstract class AbstractEmitter implements Emitter {
 
@@ -30,5 +34,34 @@ public abstract class AbstractEmitter implements Emitter {
     @Override
     public String getName() {
         return name;
+    }
+
+    /**
+     * The default behavior is to call {@link #emit(String, List)} on each item.
+     * Some implementations, e.g. Solr/ES/vespa, can benefit from subclassing this and
+     * emitting a bunch of docs at once.
+     *
+     * @param emitData
+     * @throws IOException
+     * @throws TikaEmitterException
+     */
+    @Override
+    public void emit(List<EmitData> emitData) throws IOException, TikaEmitterException {
+        for (EmitData d : emitData) {
+            emit(d.getEmitKey().getKey(), d.getMetadataList());
+        }
+    }
+
+    public static long estimateSizeInBytes(String id, List<Metadata> metadataList) {
+        long sz = 36 + id.length() * 2;
+        for (Metadata m : metadataList) {
+            for (String n : m.names()) {
+                sz += 36 + n.length() * 2;
+                for (String v : m.getValues(n)) {
+                    sz += 36 + v.length() * 2;
+                }
+            }
+        }
+        return sz;
     }
 }

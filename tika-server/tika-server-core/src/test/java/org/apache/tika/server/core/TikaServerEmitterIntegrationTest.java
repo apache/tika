@@ -16,13 +16,16 @@
  */
 package org.apache.tika.server.core;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonPrimitive;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FileUtils;
 import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.serialization.JsonFetchEmitTuple;
+import org.apache.tika.pipes.emitter.EmitKey;
+import org.apache.tika.pipes.fetcher.FetchKey;
+import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -32,23 +35,21 @@ import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
-import java.util.Random;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
 
@@ -58,14 +59,14 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
     private static Path TMP_OUTPUT_DIR;
     private static String TIKA_CONFIG_XML;
     private static Path TIKA_CONFIG;
-    private static Gson GSON = new GsonBuilder().create();
 
     private static final String EMITTER_NAME = "fse";
     private static final String FETCHER_NAME = "fsf";
 
-    private static String[] FILES = new String[] {
+    private static String[] FILES = new String[]{
             "hello_world.xml",
-            "heavy_hang_30000.xml", "real_oom.xml", "system_exit.xml"
+            "heavy_hang_30000.xml", "real_oom.xml", "system_exit.xml",
+            "null_pointer.xml"
     };
 
     @BeforeClass
@@ -78,30 +79,30 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
 
         for (String mockFile : FILES) {
             Files.copy(TikaEmitterTest.class.getResourceAsStream(
-                    "/test-documents/mock/"+mockFile),
+                    "/test-documents/mock/" + mockFile),
                     inputDir.resolve(mockFile));
         }
         TIKA_CONFIG = TMP_DIR.resolve("tika-config.xml");
 
-        TIKA_CONFIG_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"+
-                "<properties>"+
-                "<fetchers>"+
-                "<fetcher class=\"org.apache.tika.pipes.fetcher.FileSystemFetcher\">"+
-                "<params>"+
-                "<param name=\"name\" type=\"string\">"+FETCHER_NAME+"</param>"+
-                "<param name=\"basePath\" type=\"string\">"+inputDir.toAbsolutePath()+"</param>"+
-                "</params>"+
-                "</fetcher>"+
-                "</fetchers>"+
-                "<emitters>"+
-                "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">"+
-                "<params>"+
-                "<param name=\"name\" type=\"string\">"+EMITTER_NAME+"</param>"+
+        TIKA_CONFIG_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
+                "<properties>" +
+                "<fetchers>" +
+                "<fetcher class=\"org.apache.tika.pipes.fetcher.FileSystemFetcher\">" +
+                "<params>" +
+                "<param name=\"name\" type=\"string\">" + FETCHER_NAME + "</param>" +
+                "<param name=\"basePath\" type=\"string\">" + inputDir.toAbsolutePath() + "</param>" +
+                "</params>" +
+                "</fetcher>" +
+                "</fetchers>" +
+                "<emitters>" +
+                "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" +
+                "<params>" +
+                "<param name=\"name\" type=\"string\">" + EMITTER_NAME + "</param>" +
 
-                "<param name=\"basePath\" type=\"string\">"+ TMP_OUTPUT_DIR.toAbsolutePath()+"</param>"+
-                "</params>"+
-                "</emitter>"+
-                "</emitters>"+
+                "<param name=\"basePath\" type=\"string\">" + TMP_OUTPUT_DIR.toAbsolutePath() + "</param>" +
+                "</params>" +
+                "</emitter>" +
+                "</emitters>" +
                 "</properties>";
 
         FileUtils.write(TIKA_CONFIG.toFile(), TIKA_CONFIG_XML, UTF_8);
@@ -124,7 +125,6 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
         }
     }
 
-
     @Test
     public void testBasic() throws Exception {
 
@@ -143,7 +143,69 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
         };
         serverThread.start();
         try {
-            testOne("hello_world.xml", true);
+            JsonNode node = testOne("hello_world.xml", true);
+            assertEquals("ok", node.get("status").asText());
+        } catch (Exception e) {
+            fail("shouldn't have an exception" + e.getMessage());
+        } finally {
+            serverThread.interrupt();
+        }
+    }
+
+    @Test
+    public void testNPEDefault() throws Exception {
+
+        Thread serverThread = new Thread() {
+            @Override
+            public void run() {
+                TikaServerCli.main(
+                        new String[]{
+                                "-enableUnsecureFeatures",
+                                "-maxFiles", "2000",
+                                "-p", INTEGRATION_TEST_PORT,
+                                "-tmpFilePrefix", "basic-",
+                                "-config", TIKA_CONFIG.toAbsolutePath().toString()
+                        });
+            }
+        };
+        serverThread.start();
+        try {
+            JsonNode node = testOne("null_pointer.xml", true);
+            assertEquals("ok", node.get("status").asText());
+            assertContains("java.lang.NullPointerException",
+                    node.get("parse_exception").asText());
+        } catch (Exception e) {
+            fail("shouldn't have an exception" + e.getMessage());
+        } finally {
+            serverThread.interrupt();
+        }
+    }
+
+    @Test
+    public void testNPESkip() throws Exception {
+
+        Thread serverThread = new Thread() {
+            @Override
+            public void run() {
+                TikaServerCli.main(
+                        new String[]{
+                                "-enableUnsecureFeatures",
+                                "-maxFiles", "2000",
+                                "-p", INTEGRATION_TEST_PORT,
+                                "-tmpFilePrefix", "basic-",
+                                "-config", TIKA_CONFIG.toAbsolutePath().toString()
+                        });
+            }
+        };
+        serverThread.start();
+        try {
+            JsonNode node = testOne("null_pointer.xml", false,
+                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
+            assertEquals("ok", node.get("status").asText());
+            assertContains("java.lang.NullPointerException",
+                    node.get("parse_exception").asText());
+        } catch (Exception e) {
+            fail("shouldn't have an exception" + e.getMessage());
         } finally {
             serverThread.interrupt();
         }
@@ -192,8 +254,8 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
         };
         serverThread.start();
         try {
-            JsonObject response = testOne("real_oom.xml", false);
-            assertContains("heap space", response.get("parse_error").getAsString());
+            JsonNode response = testOne("real_oom.xml", false);
+            assertContains("heap space", response.get("parse_error").asText());
         } finally {
             serverThread.interrupt();
         }
@@ -218,8 +280,7 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
         };
         serverThread.start();
         try {
-            JsonObject response = testOne("heavy_hang_30000.xml", false);
-            assertContains("heap space", response.get("parse_error").getAsString());
+            JsonNode response = testOne("heavy_hang_30000.xml", false);
         } finally {
             serverThread.interrupt();
         }
@@ -228,14 +289,14 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
     private void awaitServerStartup() throws Exception {
         Instant started = Instant.now();
         long elapsed = Duration.between(started, Instant.now()).toMillis();
-        WebClient client = WebClient.create(endPoint+"/tika").accept("text/plain");
+        WebClient client = WebClient.create(endPoint + "/tika").accept("text/plain");
         while (elapsed < MAX_WAIT_MS) {
             try {
                 Response response = client.get();
                 if (response.getStatus() == 200) {
                     elapsed = Duration.between(started, Instant.now()).toMillis();
                     LOG.info("client observes server successfully started after " +
-                            elapsed+ " ms");
+                            elapsed + " ms");
                     return;
                 }
                 LOG.debug("tika test client failed to connect to server with status: {}", response.getStatus());
@@ -250,26 +311,36 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
         throw new TimeoutException("couldn't connect to server after " +
                 elapsed + " ms");
     }
+    private JsonNode testOne(String fileName, boolean shouldFileExist) throws Exception {
+        return testOne(fileName, shouldFileExist, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
+    }
 
-    private JsonObject testOne(String fileName, boolean shouldFileExist) throws Exception {
+    private JsonNode testOne(String fileName, boolean shouldFileExist, FetchEmitTuple.ON_PARSE_EXCEPTION onParseException) throws Exception {
+
         awaitServerStartup();
         Response response = WebClient
                 .create(endPoint + "/emit")
                 .accept("application/json")
-                .post(getJsonString(fileName));
-        if (shouldFileExist) {
+                .post(getJsonString(fileName, onParseException));
+        if (response.getStatus() == 200) {
             Path targFile = TMP_OUTPUT_DIR.resolve(fileName + ".json");
-            assertTrue(Files.size(targFile) > 1);
+            if (shouldFileExist) {
+                assertTrue(Files.size(targFile) > 1);
+            } else {
+                assertFalse(Files.isRegularFile(targFile));
+            }
+            Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+            return new ObjectMapper().readTree(reader);
         }
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        return JsonParser.parseReader(reader).getAsJsonObject();
+        return null;
     }
 
-    private String getJsonString(String fileName) {
-        JsonObject root = new JsonObject();
-        root.add("fetcher", new JsonPrimitive(FETCHER_NAME));
-        root.add("fetchKey", new JsonPrimitive(fileName));
-        root.add("emitter", new JsonPrimitive(EMITTER_NAME));
-        return GSON.toJson(root);
+    private String getJsonString(String fileName, FetchEmitTuple.ON_PARSE_EXCEPTION onParseException) throws IOException {
+        FetchEmitTuple t = new FetchEmitTuple(
+                new FetchKey(FETCHER_NAME, fileName),
+                new EmitKey(EMITTER_NAME, ""),
+                new Metadata(), onParseException
+        );
+        return JsonFetchEmitTuple.toJson(t);
     }
 }

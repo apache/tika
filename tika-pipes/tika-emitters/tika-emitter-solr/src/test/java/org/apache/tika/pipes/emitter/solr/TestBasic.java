@@ -18,6 +18,9 @@ package org.apache.tika.pipes.emitter.solr;
 
 
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.pipes.emitter.EmitData;
+import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.emitter.Emitter;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -36,23 +39,50 @@ public class TestBasic {
         TikaConfig tikaConfig = new TikaConfig(
                 TestBasic.class.getResourceAsStream("/tika-config-simple-emitter.xml"));
         Emitter emitter = tikaConfig.getEmitterManager().getEmitter("solr1");
+        List<Metadata> metadataList = getParentChild(tikaConfig,
+                "id1", 2);
+
+        emitter.emit("1", metadataList);
+    }
+
+    @Test
+    public void testBatch() throws Exception {
+        TikaConfig tikaConfig = new TikaConfig(
+                TestBasic.class.getResourceAsStream("/tika-config-simple-emitter.xml"));
+        Emitter emitter = tikaConfig.getEmitterManager().getEmitter("solr2");
+        List<EmitData> emitData = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            List<Metadata> metadataList = getParentChild(tikaConfig,
+                    "batch_"+i, 4);
+            emitData.add(new EmitData(
+                    new EmitKey(emitter.getName(),  "batch_"+i),
+                    metadataList));
+        }
+        emitter.emit(emitData);
+    }
+
+    private List<Metadata> getParentChild(TikaConfig tikaConfig,
+                                          String id, int numChildren) throws TikaException {
         List<Metadata> metadataList = new ArrayList<>();
+        MetadataFilter filter = tikaConfig.getMetadataFilter();
+
         Metadata m1 = new Metadata();
+        m1.set("id", id);
         m1.set(Metadata.CONTENT_LENGTH, "314159");
         m1.set(TikaCoreProperties.TIKA_CONTENT, "the quick brown");
         m1.set(TikaCoreProperties.TITLE, "this is the first title");
         m1.add(TikaCoreProperties.CREATOR, "firstAuthor");
         m1.add(TikaCoreProperties.CREATOR, "secondAuthor");
-
-        Metadata m2 = new Metadata();
-        m2.set(TikaCoreProperties.EMBEDDED_RESOURCE_PATH, "/path_to_this.txt");
-        m2.set(TikaCoreProperties.TIKA_CONTENT, "fox jumped over the lazy");
-        MetadataFilter filter = tikaConfig.getMetadataFilter();
         filter.filter(m1);
-        filter.filter(m2);
         metadataList.add(m1);
-        metadataList.add(m2);
-
-        emitter.emit("1", metadataList);
+        for (int i = 1; i < numChildren; i++ ) {
+            Metadata m2 = new Metadata();
+            m2.set(TikaCoreProperties.EMBEDDED_RESOURCE_PATH, "/path_to_this.txt");
+            m2.set(TikaCoreProperties.TIKA_CONTENT, "fox jumped over the lazy " + i);
+            filter.filter(m2);
+            metadataList.add(m2);
+        }
+        return metadataList;
     }
+
 }

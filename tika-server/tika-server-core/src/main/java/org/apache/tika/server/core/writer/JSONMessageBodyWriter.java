@@ -53,13 +53,9 @@ public class JSONMessageBodyWriter implements MessageBodyWriter<Metadata> {
     public void writeTo(Metadata metadata, Class<?> type, Type genericType, Annotation[] annotations,
                         MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream) throws IOException,
             WebApplicationException {
-        try {
-            Writer writer = new OutputStreamWriter(entityStream, UTF_8);
-            JsonMetadata.toJson(metadata, writer);
-            writer.flush();
-        } catch (TikaException e) {
-            throw new IOException(e);
-        }
+        Writer writer = new OutputStreamWriter(entityStream, UTF_8);
+        JsonMetadata.toJson(metadata, writer);
+        writer.flush();
         entityStream.flush();
     }
 }

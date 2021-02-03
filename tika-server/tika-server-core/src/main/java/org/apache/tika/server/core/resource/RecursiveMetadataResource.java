@@ -23,6 +23,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
@@ -39,6 +40,7 @@ import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.server.core.MetadataList;
+import org.apache.tika.server.core.TikaServerParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,7 +64,7 @@ public class RecursiveMetadataResource {
      * just the immediate children.
      * <p>
      * The extracted text content is stored with the key
-     * {@link RecursiveParserWrapper#TIKA_CONTENT}.
+     * {@link org.apache.tika.metadata.TikaCoreProperties#TIKA_CONTENT}.
      * <p>
      * Specify the handler for the content (xml, html, text, ignore)
      * in the path:<br/>
@@ -98,7 +100,7 @@ public class RecursiveMetadataResource {
      * just the immediate children.
      * <p>
      * The extracted text content is stored with the key
-     * {@link RecursiveParserWrapper#TIKA_CONTENT}.
+     * {@link org.apache.tika.metadata.TikaCoreProperties#TIKA_CONTENT}.
      * <p>
      * Specify the handler for the content (xml, html, text, ignore)
      * in the path:<br/>
@@ -134,15 +136,15 @@ public class RecursiveMetadataResource {
                                                UriInfo info, String handlerTypeName)
             throws Exception {
 
-		final ParseContext context = new ParseContext();
-		Parser parser = TikaResource.createParser();
-		// TODO: parameterize choice of max chars/max embedded attachments
-		RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
+        final ParseContext context = new ParseContext();
+        Parser parser = TikaResource.createParser();
+        // TODO: parameterize choice of max chars/max embedded attachments
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
 
 
         fillMetadata(parser, metadata, httpHeaders);
         fillParseContext(httpHeaders, metadata, context);
-		TikaResource.logRequest(LOG, info, metadata);
+        TikaResource.logRequest(LOG, "/rmeta", metadata);
 
         int writeLimit = -1;
         if (httpHeaders.containsKey("writeLimit")) {
@@ -156,24 +158,20 @@ public class RecursiveMetadataResource {
 
         BasicContentHandlerFactory.HANDLER_TYPE type =
                 BasicContentHandlerFactory.parseHandlerType(handlerTypeName, DEFAULT_HANDLER_TYPE);
-		RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-		        new BasicContentHandlerFactory(type, writeLimit), maxEmbeddedResources,
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
+                new BasicContentHandlerFactory(type, writeLimit), maxEmbeddedResources,
                 TikaResource.getConfig().getMetadataFilter());
-		try {
-            TikaResource.parse(wrapper, LOG, info.getPath(), is, handler, metadata, context);
-        } catch (SecurityException e) {
+        try {
+            TikaResource.parse(wrapper, LOG, "/rmeta", is, handler, metadata, context);
+        } catch (TikaServerParseException e) {
+            //do nothing
+        } catch (SecurityException|WebApplicationException e) {
 		    throw e;
         } catch (Exception e) {
-		    //swallow it and report it via the metadata list
+		    //we shouldn't get here?
+		    e.printStackTrace();
         }
-		/*
-		    We used to have this non-functional bit of code...refactor to add it back and make it work?
-						new LanguageHandler() {
-					public void endDocument() {
-						metadata.set("language", getLanguage().getLanguage());
-					}
-				},
-		 */
+
 		return handler.getMetadataList();
 	}
 

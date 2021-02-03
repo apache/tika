@@ -354,11 +354,12 @@ public class TikaResource {
         }
     }
 
-    public static void logRequest(Logger logger, UriInfo info, Metadata metadata) {
+    public static void logRequest(Logger logger, String endpoint, Metadata metadata) {
+
         if (metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE) == null) {
-            logger.info("{} (autodetecting type)", info.getPath());
+            logger.info("{} (autodetecting type)", endpoint);
         } else {
-            logger.info("{} ({})", info.getPath(), metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE));
+            logger.info("{} ({})", endpoint, metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE));
         }
     }
 
@@ -403,7 +404,7 @@ public class TikaResource {
         fillMetadata(parser, metadata, httpHeaders);
         fillParseContext(httpHeaders, metadata, context);
 
-        logRequest(LOG, info, metadata);
+        logRequest(LOG, "/tika", metadata);
 
         return new StreamingOutput() {
             public void write(OutputStream outputStream) throws IOException, WebApplicationException {
@@ -432,7 +433,7 @@ public class TikaResource {
         fillMetadata(parser, metadata, httpHeaders);
         fillParseContext(httpHeaders, metadata, context);
 
-        logRequest(LOG, info, metadata);
+        logRequest(LOG, "/tika", metadata);
 
         return new StreamingOutput() {
             public void write(OutputStream outputStream) throws IOException, WebApplicationException {
@@ -489,7 +490,7 @@ public class TikaResource {
         fillParseContext(httpHeaders, metadata, context);
 
 
-        logRequest(LOG, info, metadata);
+        logRequest(LOG, "/tika", metadata);
 
         return new StreamingOutput() {
             public void write(OutputStream outputStream)

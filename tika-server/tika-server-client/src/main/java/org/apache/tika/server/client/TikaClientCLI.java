@@ -27,6 +27,7 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -108,6 +109,42 @@ public class TikaClientCLI {
                 servers, numThreads);
     }
 
+    private class AsyncFetchWorker implements Callable<Integer> {
+        private final ArrayBlockingQueue<FetchEmitTuple> queue;
+        private final TikaClient client;
+        public AsyncFetchWorker(ArrayBlockingQueue<FetchEmitTuple> queue, TikaClient client) {
+            this.queue = queue;
+            this.client = client;
+        }
+
+        @Override
+        public Integer call() throws Exception {
+            List<FetchEmitTuple> localCache = new ArrayList<>();
+            while (true) {
+
+                FetchEmitTuple t = queue.poll(maxWaitMs, TimeUnit.MILLISECONDS);
+                if (t == null) {
+                    send(localCache);
+                    throw new TimeoutException("exceeded maxWaitMs");
+                }
+                if (t == FetchIterator.COMPLETED_SEMAPHORE) {
+                    send(localCache);
+                    return 1;
+                }
+                if (localCache.size() > 20) {
+                    LOGGER.debug("about to send: {}", localCache.size());
+                    send(localCache);
+                    localCache.clear();
+                }
+                localCache.add(t);
+            }
+        }
+
+        private void send(List<FetchEmitTuple> localCache) {
+
+        }
+    }
+
     private class FetchWorker implements Callable<Integer> {
         private final ArrayBlockingQueue<FetchEmitTuple> queue;
         private final TikaClient client;
@@ -130,7 +167,7 @@ public class TikaClientCLI {
                 }
                 try {
                     LOGGER.debug("about to parse: {}", t.getFetchKey());
-                    client.parse(t, t.getMetadata());
+                    client.parse(t);
                 } catch (IOException e) {
                     LOGGER.warn(t.getFetchKey().toString(), e);
                 } catch (TikaException e) {

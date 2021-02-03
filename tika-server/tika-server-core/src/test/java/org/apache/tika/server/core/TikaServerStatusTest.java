@@ -16,13 +16,11 @@
  */
 package org.apache.tika.server.core;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.apache.tika.server.core.CXFTestBase;
-import org.apache.tika.server.core.ServerStatus;
 import org.apache.tika.server.core.resource.TikaServerStatus;
 import org.apache.tika.server.core.writer.JSONObjWriter;
 import org.junit.Test;
@@ -59,15 +57,15 @@ public class TikaServerStatusTest extends CXFTestBase {
         Response response = WebClient.create(endPoint + STATUS_PATH).get();
         String jsonString =
                 getStringFromInputStream((InputStream) response.getEntity());
-        JsonObject root = JsonParser.parseString(jsonString).getAsJsonObject();
+        JsonNode root = new ObjectMapper().readTree(jsonString);
         assertTrue(root.has("server_id"));
         assertTrue(root.has("status"));
         assertTrue(root.has("millis_since_last_parse_started"));
         assertTrue(root.has("files_processed"));
-        assertEquals("OPERATING", root.getAsJsonPrimitive("status").getAsString());
-        assertEquals(0, root.getAsJsonPrimitive("files_processed").getAsInt());
-        long millis = root.getAsJsonPrimitive("millis_since_last_parse_started").getAsInt();
+        assertEquals("OPERATING", root.get("status").asText());
+        assertEquals(0, root.get("files_processed").intValue());
+        long millis = root.get("millis_since_last_parse_started").longValue();
         assertTrue(millis > 0 && millis < 360000);
-        assertEquals(SERVER_ID, root.getAsJsonPrimitive("server_id").getAsString());
+        assertEquals(SERVER_ID, root.get("server_id").asText());
     }
 }

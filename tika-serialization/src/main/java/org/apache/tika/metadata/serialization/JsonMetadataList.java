@@ -18,25 +18,23 @@ package org.apache.tika.metadata.serialization;
  */
 
 
+import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
-import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.List;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonIOException;
-import com.google.gson.reflect.TypeToken;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
-public class JsonMetadataList extends JsonMetadataBase {
-    
-    private final static Type listType = new TypeToken<List<Metadata>>(){}.getType();
-    private static Gson GSON;
-    static {
-        GSON = defaultInit();
-    }
+public class JsonMetadataList {
+    static volatile boolean PRETTY_PRINT = false;
 
     /**
      * Serializes a Metadata object to Json.  This does not flush or close the writer.
@@ -45,11 +43,20 @@ public class JsonMetadataList extends JsonMetadataBase {
      * @param writer writer
      * @throws org.apache.tika.exception.TikaException if there is an IOException during writing
      */
-    public static void toJson(List<Metadata> metadataList, Writer writer) throws TikaException {
-        try {
-            GSON.toJson(metadataList, writer);
-        } catch (JsonIOException e) {
-            throw new TikaException(e.getMessage());
+    public static void toJson(List<Metadata> metadataList, Writer writer) throws IOException {
+        if (metadataList == null) {
+            writer.write("null");
+            return;
+        }
+        try (JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
+            if (PRETTY_PRINT) {
+                jsonGenerator.useDefaultPrettyPrinter();
+            }
+            jsonGenerator.writeStartArray();
+            for (Metadata m : metadataList) {
+                JsonMetadata.writeMetadataObject(m, jsonGenerator, PRETTY_PRINT);
+            }
+            jsonGenerator.writeEndArray();
         }
     }
         
@@ -58,18 +65,28 @@ public class JsonMetadataList extends JsonMetadataBase {
      *
      * @param reader
      * @return Metadata or null if nothing could be read from the reader
-     * @throws org.apache.tika.exception.TikaException in case of parse failure by Gson or IO failure with Reader
+     * @throws IOException in case of parse failure or IO failure with Reader
      */
-    public static List<Metadata> fromJson(Reader reader) throws TikaException {
+    public static List<Metadata> fromJson(Reader reader) throws IOException {
         List<Metadata> ms = null;
         if (reader == null) {
             return ms;
         }
-        try {
-            ms = GSON.fromJson(reader, listType);
-        } catch (com.google.gson.JsonParseException e){
-            //covers both io and parse exceptions
-            throw new TikaException(e.getMessage());
+        ms = new ArrayList<>();
+        try (JsonParser jParser = new JsonFactory().createParser(reader)) {
+
+            JsonToken token = jParser.nextToken();
+            if (token != JsonToken.START_ARRAY) {
+                throw new IOException(
+                        "metadata list must start with an array, but I see: "+token.name());
+            }
+            token = jParser.nextToken();
+            while (token != JsonToken.END_ARRAY) {
+                Metadata m = JsonMetadata.readMetadataObject(jParser);
+                ms.add(m);
+                token = jParser.nextToken();
+            }
+
         }
         if (ms == null) {
             return null;
@@ -88,23 +105,8 @@ public class JsonMetadataList extends JsonMetadataBase {
         return ms;
     }
 
-    /**
-     * Enables setting custom configurations on Gson.  Remember to register
-     * a serializer and a deserializer for Metadata.  This does a literal set
-     * and does not add the default serializer and deserializers.
-     *
-     * @param gson
-     */
-    public static void setGson(Gson gson) {
-        GSON = gson;
-    }
-
     public static void setPrettyPrinting(boolean prettyPrint) {
-        if (prettyPrint) {
-            GSON = prettyInit();
-        } else {
-            GSON = defaultInit();
-        }
+        PRETTY_PRINT = prettyPrint;
     }
 
 

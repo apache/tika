@@ -111,7 +111,7 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
             try (Writer writer =
                          new BufferedWriter(new OutputStreamWriter(bos, StandardCharsets.UTF_8))) {
                 JsonMetadataList.toJson(metadataList, writer);
-            } catch (TikaException e) {
+            } catch (IOException e) {
                 throw new TikaEmitterException("can't jsonify", e);
             }
             byte[] bytes = bos.toByteArray();
@@ -125,7 +125,7 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
                 try (Writer writer = Files.newBufferedWriter(tmpPath,
                         StandardCharsets.UTF_8, StandardOpenOption.CREATE)) {
                     JsonMetadataList.toJson(metadataList, writer);
-                } catch (TikaException e) {
+                } catch (IOException e) {
                     throw new TikaEmitterException("can't jsonify", e);
                 }
                 try (InputStream is = TikaInputStream.get(tmpPath)) {
