@@ -322,44 +322,46 @@ public class TesseractOCRParser extends AbstractParser {
         
         ProcessBuilder pb = new ProcessBuilder(cmd);
         setEnv(config, pb);
-        final Process process = pb.start();
 
+        Process process = null;
+        try {
+            process = pb.start();
+            runOCRProcess(process, config.getTimeout());
+        } finally {
+            if (process != null) {
+                process.destroyForcibly();
+            }
+        }
+    }
+
+    private void runOCRProcess(Process process, int timeout) throws IOException, TikaException {
         process.getOutputStream().close();
         InputStream out = process.getInputStream();
         InputStream err = process.getErrorStream();
         StringBuilder outBuilder = new StringBuilder();
         StringBuilder errBuilder = new StringBuilder();
-        logStream("OCR MSG", out, input, outBuilder);
-        logStream("OCR ERROR", err, input, errBuilder);
-
-        FutureTask<Integer> waitTask = new FutureTask<>(new Callable<Integer>() {
-            public Integer call() throws Exception {
-                return process.waitFor();
-            }
-        });
-
-        Thread waitThread = new Thread(waitTask);
-        waitThread.start();
+        logStream(out, outBuilder);
+        logStream(err, errBuilder);
 
         int exitValue = Integer.MIN_VALUE;
         try {
-            exitValue = waitTask.get(config.getTimeout(), TimeUnit.SECONDS);
+            boolean finished = process.waitFor(timeout, TimeUnit.SECONDS);
+            if (! finished) {
+                throw new TikaException("TesseractOCRParser timeout");
+            }
+            exitValue = process.exitValue();
         } catch (InterruptedException e) {
-            waitThread.interrupt();
-            process.destroy();
             Thread.currentThread().interrupt();
             throw new TikaException("TesseractOCRParser interrupted", e);
-        } catch (ExecutionException e) {
-            // should not be thrown
-        } catch (TimeoutException e) {
-            waitThread.interrupt();
-            process.destroy();
-            throw new TikaException("TesseractOCRParser timeout", e);
+        } catch (IllegalThreadStateException e) {
+            //this _should_ never be thrown
+            throw new TikaException("TesseractOCRParser timeout");
         }
         if (exitValue > 0) {
             throw new TikaException("TesseractOCRParser bad exit value " +
                     exitValue + " err msg: "+errBuilder.toString());
         }
+
     }
 
     /**
@@ -411,8 +413,7 @@ public class TesseractOCRParser extends AbstractParser {
      * stream of the given process to not block the process. The stream is closed
      * once fully processed.
      */
-    private void logStream(final String logType, final InputStream stream,
-                           final File file, final StringBuilder out) {
+    private void logStream(final InputStream stream, final StringBuilder out) {
         new Thread() {
             public void run() {
                 Reader reader = new InputStreamReader(stream, UTF_8);
