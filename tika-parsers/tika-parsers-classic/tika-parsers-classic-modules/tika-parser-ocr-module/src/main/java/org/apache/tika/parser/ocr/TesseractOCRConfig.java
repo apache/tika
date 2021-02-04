@@ -24,7 +24,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
@@ -67,6 +69,9 @@ public class TesseractOCRConfig implements Serializable {
 
     // Path to the 'tessdata' folder, which contains language files and config files.
     private String tessdataPath = "";
+
+    // Actual path to tessdata, if not specified by user and we have to find it ourselves
+    private static File windowsActualTessdataDir;
 
     // Language dictionary to be used.
     private String language = "eng";
@@ -192,7 +197,7 @@ public class TesseractOCRConfig implements Serializable {
         setResize(
                 getProp(props, "resize", getResize()));
         setApplyRotation(
-        		getProp(props, "applyRotation", isApplyRotation()));
+                getProp(props, "applyRotation", isApplyRotation()));
 
         loadOtherTesseractConfig(props);
     }
@@ -249,16 +254,64 @@ public class TesseractOCRConfig implements Serializable {
 
     /**
      * Set tesseract language dictionary to be used. Default is "eng".
+     * languages are either:
+     * <ol>
+     *   <li>Nominally an ISO-639-2 code but compound codes are allowed separated by underscore: e.g., chi_tra_vert, aze_cyrl</li>
+     *   <li>A file path in the script directory.  The name starts with upper-case letter.
+     *       Some of them have underscores and other upper-case letters: e.g., script/Arabic, script/HanS_vert, script/Japanese_vert, script/Canadian_Aboriginal</li>
+     * </ol>
      * Multiple languages may be specified, separated by plus characters.
-     * e.g. "chi_tra+chi_sim"
+     * e.g. "chi_tra+chi_sim+script/Arabic"
      */
     public void setLanguage(String language) {
-        if (!language.matches("([a-zA-Z]{3}(_[a-zA-Z]{3,4}){0,2}(\\+?))+")
-                || language.endsWith("+")) {
-            throw new IllegalArgumentException("Invalid language code: "+language);
+        // Get rid of embedded spaces
+        language = language.replaceAll("\\s", "");
+        // Test for leading or trailing +
+        if (language.matches("\\+.*|.*\\+")) {
+            throw new IllegalArgumentException("Invalid syntax - Can't start or end with +" + language);
+        }
+        // Split on the + sign
+        final String[] langs = language.split("\\+");
+        List<String> invalidCodes = new ArrayList<>();
+        for (String lang : langs) {
+            // First, make sure it conforms to the correct syntax
+            if (!lang.matches("([a-zA-Z]{3}(_[a-zA-Z]{3,4}){0,2})|script(/|\\\\)[A-Z][a-zA-Z_]+")) {
+                invalidCodes.add(lang + " (invalid syntax)");
+            } else if (!langExists(lang)) {
+                invalidCodes.add(lang + " (not found)");
+            }
+        }
+        if (!invalidCodes.isEmpty()) {
+            throw new IllegalArgumentException("Invalid language code(s): " + invalidCodes);
         }
         this.language = language;
     }
+
+
+    /**
+     * Check if tessdata language model exists
+     */
+    private boolean langExists(String lang) {
+        if (windowsActualTessdataDir == null) {
+            // Use the same logic used in TesseractOCRParser.setEnv().  If tessdataPath is not specified then use tesseractPath, if specified
+            if (!tessdataPath.isEmpty()) {
+                windowsActualTessdataDir = new File(tessdataPath);
+            } else if (!tesseractPath.isEmpty()) {
+                windowsActualTessdataDir = new File(tesseractPath, "tessdata");
+            } else {
+                // Neither path was specified, so we'll just assume
+                // the language is good and rely on Tesseract to tell us if there's a problem
+                return true;
+            }
+        }
+
+        if (!windowsActualTessdataDir.isDirectory()) {
+            throw new RuntimeException(windowsActualTessdataDir + " is not a directory");
+        }
+        String trainedDataName = lang + ".traineddata";
+        return new File(windowsActualTessdataDir, trainedDataName).exists();
+    }
+
 
     /**
      * @see #setPageSegMode(String pageSegMode)
@@ -295,9 +348,9 @@ public class TesseractOCRConfig implements Serializable {
      */
     public void setPageSeparator(String pageSeparator) {
         Matcher m = ALLOWABLE_PAGE_SEPARATORS_PATTERN.matcher(pageSeparator);
-        if (! m.find()) {
-            throw new IllegalArgumentException(pageSeparator + " contains illegal characters.\n"+
-            "If you trust this value, set it with setTrustedPageSeparator");
+        if (!m.find()) {
+            throw new IllegalArgumentException(pageSeparator + " contains illegal characters.\n" +
+                    "If you trust this value, set it with setTrustedPageSeparator");
         }
         setTrustedPageSeparator(pageSeparator);
     }
@@ -305,6 +358,7 @@ public class TesseractOCRConfig implements Serializable {
     /**
      * Same as {@link #setPageSeparator(String)} but does not perform
      * any checks on the string.
+     *
      * @param pageSeparator
      */
     public void setTrustedPageSeparator(String pageSeparator) {
@@ -321,12 +375,12 @@ public class TesseractOCRConfig implements Serializable {
     }
 
     /**
-     *
      * @return whether or not to maintain interword spacing.
      */
     public boolean isPreserveInterwordSpacing() {
         return preserveInterwordSpacing;
     }
+
     /**
      * @see #setMinFileSizeToOcr(long minFileSizeToOcr)
      */
@@ -475,7 +529,7 @@ public class TesseractOCRConfig implements Serializable {
         if (colorspace == null) {
             throw new IllegalArgumentException("Colorspace value cannot be null.");
         }
-        if (! colorspace.matches("(?i)^[-_A-Z0-9]+$")) {
+        if (!colorspace.matches("(?i)^[-_A-Z0-9]+$")) {
             throw new IllegalArgumentException("colorspace must match this pattern: (?i)^[-_A-Z0-9]+$");
         }
         this.colorspace = colorspace;
@@ -557,16 +611,16 @@ public class TesseractOCRConfig implements Serializable {
      * @return Whether or not a rotation value should be calculated and passed to ImageMagick before performing OCR.
      */
     public boolean isApplyRotation() {
-    	return this.applyRotation;
+        return this.applyRotation;
     }
 
     /**
      * Sets whether or not a rotation value should be calculated and passed to ImageMagick.
-     * 
+     *
      * @param applyRotation to calculate and apply rotation, false to skip.  Default is false
      */
     public void setApplyRotation(boolean applyRotation) {
-    	this.applyRotation = applyRotation;
+        this.applyRotation = applyRotation;
     }
 
     /**
@@ -579,7 +633,7 @@ public class TesseractOCRConfig implements Serializable {
     /**
      * Add a key-value pair to pass to Tesseract using its -c command line option.
      * To see the possible options, run tesseract --print-parameters.
-     *
+     * <p>
      * You may also add these parameters in TesseractOCRConfig.properties; any
      * key-value pair in the properties file where the key contains an underscore
      * is passed directly to Tesseract.
@@ -596,12 +650,12 @@ public class TesseractOCRConfig implements Serializable {
         }
 
         Matcher m = ALLOWABLE_OTHER_PARAMS_PATTERN.matcher(key);
-        if (! m.find()) {
-            throw new IllegalArgumentException("Key contains illegal characters: "+key);
+        if (!m.find()) {
+            throw new IllegalArgumentException("Key contains illegal characters: " + key);
         }
         m.reset(value);
-        if (! m.find()) {
-            throw new IllegalArgumentException("Value contains illegal characters: "+value);
+        if (!m.find()) {
+            throw new IllegalArgumentException("Value contains illegal characters: " + value);
         }
 
         otherTesseractConfig.put(key.trim(), value.trim());
