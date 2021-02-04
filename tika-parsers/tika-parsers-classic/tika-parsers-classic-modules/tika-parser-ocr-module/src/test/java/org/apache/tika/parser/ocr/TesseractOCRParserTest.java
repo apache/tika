@@ -98,7 +98,7 @@ public class TesseractOCRParserTest extends TikaTest {
         assumeTrue("can run OCR", canRun());
 
         TesseractOCRConfig tesseractOCRConfigconfig = new TesseractOCRConfig();
-        tesseractOCRConfigconfig.setLanguage("kerplekistanese");
+        tesseractOCRConfigconfig.setLanguage("zzz");
         ParseContext parseContext = new ParseContext();
         parseContext.set(TesseractOCRConfig.class, tesseractOCRConfigconfig);
 

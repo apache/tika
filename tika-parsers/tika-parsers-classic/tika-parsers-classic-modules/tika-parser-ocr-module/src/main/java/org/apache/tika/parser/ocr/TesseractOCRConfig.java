@@ -70,9 +70,6 @@ public class TesseractOCRConfig implements Serializable {
     // Path to the 'tessdata' folder, which contains language files and config files.
     private String tessdataPath = "";
 
-    // Actual path to tessdata, if not specified by user and we have to find it ourselves
-    private static File windowsActualTessdataDir;
-
     // Language dictionary to be used.
     private String language = "eng";
 
@@ -277,8 +274,6 @@ public class TesseractOCRConfig implements Serializable {
             // First, make sure it conforms to the correct syntax
             if (!lang.matches("([a-zA-Z]{3}(_[a-zA-Z]{3,4}){0,2})|script(/|\\\\)[A-Z][a-zA-Z_]+")) {
                 invalidCodes.add(lang + " (invalid syntax)");
-            } else if (!langExists(lang)) {
-                invalidCodes.add(lang + " (not found)");
             }
         }
         if (!invalidCodes.isEmpty()) {
@@ -286,32 +281,6 @@ public class TesseractOCRConfig implements Serializable {
         }
         this.language = language;
     }
-
-
-    /**
-     * Check if tessdata language model exists
-     */
-    private boolean langExists(String lang) {
-        if (windowsActualTessdataDir == null) {
-            // Use the same logic used in TesseractOCRParser.setEnv().  If tessdataPath is not specified then use tesseractPath, if specified
-            if (!tessdataPath.isEmpty()) {
-                windowsActualTessdataDir = new File(tessdataPath);
-            } else if (!tesseractPath.isEmpty()) {
-                windowsActualTessdataDir = new File(tesseractPath, "tessdata");
-            } else {
-                // Neither path was specified, so we'll just assume
-                // the language is good and rely on Tesseract to tell us if there's a problem
-                return true;
-            }
-        }
-
-        if (!windowsActualTessdataDir.isDirectory()) {
-            throw new RuntimeException(windowsActualTessdataDir + " is not a directory");
-        }
-        String trainedDataName = lang + ".traineddata";
-        return new File(windowsActualTessdataDir, trainedDataName).exists();
-    }
-
 
     /**
      * @see #setPageSegMode(String pageSegMode)
