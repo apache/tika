@@ -23,7 +23,7 @@
     <parser class="org.apache.tika.parser.ocr.TesseractOCRParser">
       <params>
         <param name="timeout" type="int">241</param>
-        <param name="tesseractPath" type="string">/myspecial/tess</param>
+<!--        <param name="tesseractPath" type="string">/myspecial/tess</param> -->
         <param name="outputType" type="string">hocr</param>
         <param name="applyRotation" type="bool">false</param>
         <param name="language" type="string">ceb</param>

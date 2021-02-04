@@ -24,6 +24,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -69,6 +72,8 @@ public class TesseractOCRConfig implements Serializable {
 
     // Path to the 'tessdata' folder, which contains language files and config files.
     private String tessdataPath = "";
+
+    private Path actualTessdataPath;
 
     // Language dictionary to be used.
     private String language = "eng";
@@ -274,12 +279,39 @@ public class TesseractOCRConfig implements Serializable {
             // First, make sure it conforms to the correct syntax
             if (!lang.matches("([a-zA-Z]{3}(_[a-zA-Z]{3,4}){0,2})|script(/|\\\\)[A-Z][a-zA-Z_]+")) {
                 invalidCodes.add(lang + " (invalid syntax)");
+            } else if (!langExists(lang)) {
+                invalidCodes.add(lang + " (not found)");
             }
         }
         if (!invalidCodes.isEmpty()) {
-            throw new IllegalArgumentException("Invalid language code(s): " + invalidCodes);
+            throw new IllegalArgumentException(
+                    "Invalid language code(s): " + invalidCodes);
         }
         this.language = language;
+    }
+    /**
+     * Check if tessdata language model exists
+     */
+    private boolean langExists(String lang) {
+        if (actualTessdataPath == null) {
+            // Use the same logic used in TesseractOCRParser.setEnv().
+            // If tessdataPath is not specified then use tesseractPath, if specified
+            if (!tessdataPath.isEmpty()) {
+                actualTessdataPath = Paths.get(tessdataPath);
+            } else if (!tesseractPath.isEmpty()) {
+                actualTessdataPath = Paths.get(tesseractPath, "tessdata");
+            } else {
+                // Neither path was specified, so we'll just assume
+                // the language is good and rely on Tesseract to tell us if there's a problem
+                return true;
+            }
+        }
+
+        if (!Files.isDirectory(actualTessdataPath)) {
+            throw new IllegalArgumentException(actualTessdataPath + " is not a directory");
+        }
+        String trainedDataName = lang + ".traineddata";
+        return Files.isRegularFile(actualTessdataPath.resolve(trainedDataName));
     }
 
     /**
