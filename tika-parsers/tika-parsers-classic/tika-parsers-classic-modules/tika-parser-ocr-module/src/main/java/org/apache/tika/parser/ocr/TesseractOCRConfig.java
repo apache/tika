@@ -17,7 +17,6 @@
 package org.apache.tika.parser.ocr;
 
 import org.apache.commons.io.FilenameUtils;
-import org.apache.tika.utils.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -300,15 +299,9 @@ public class TesseractOCRConfig implements Serializable {
             } else if (!tesseractPath.isEmpty()) {
                 windowsActualTessdataDir = new File(tesseractPath, "tessdata");
             } else {
-                // Neither path was specified
-                if (SystemUtils.IS_OS_UNIX) {
-                    // For xNix, Tesseract uses this default
-                    windowsActualTessdataDir = new File("/usr/share/tessdata");
-                } else {
-                    // There is no default location for Windows, so we'll just assume
-                    // the language is good and rely on Tesseract to tell us if there's a problem
-                    return true;
-                }
+                // Neither path was specified, so we'll just assume
+                // the language is good and rely on Tesseract to tell us if there's a problem
+                return true;
             }
         }
 
