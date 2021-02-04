@@ -16,16 +16,15 @@
  */
 package org.apache.tika.eval.core.tokens;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonParseException;
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.tika.exception.TikaException;
 
 public class AnalyzerManager {
 
@@ -42,20 +41,23 @@ public class AnalyzerManager {
     }
 
     public static AnalyzerManager newInstance(int maxTokens) {
-        InputStream is = AnalyzerManager.class.getClassLoader().getResourceAsStream("lucene-analyzers.json");
-        Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8);
-        GsonBuilder builder = new GsonBuilder();
-        builder.registerTypeHierarchyAdapter(Map.class, new AnalyzerDeserializer(maxTokens));
-        Gson gson = builder.create();
-        Map<String, Analyzer> map = gson.fromJson(reader, Map.class);
+        Map<String, Analyzer> map;
+        try (InputStream is = AnalyzerManager.class.getClassLoader()
+                .getResourceAsStream("lucene-analyzers.json")) {
+            try (Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8)) {
+                map = AnalyzerDeserializer.buildAnalyzers(reader, maxTokens);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Can't find lucene-analyzers.json?!");
+        }
         Analyzer general = map.get(GENERAL);
         Analyzer alphaIdeo = map.get(ALPHA_IDEOGRAPH);
         Analyzer common = map.get(COMMON_TOKENS);
         if (general == null) {
-            throw new JsonParseException("Must specify "+GENERAL + " analyzer");
+            throw new IllegalStateException("Must specify "+GENERAL + " analyzer");
         }
         if (common == null) {
-            throw new JsonParseException("Must specify "+ COMMON_TOKENS + " analyzer");
+            throw new IllegalStateException("Must specify "+ COMMON_TOKENS + " analyzer");
         }
 
         return new AnalyzerManager(general, common);

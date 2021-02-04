@@ -379,8 +379,6 @@
               sun.java2d.cmm.kcms;resolution:=optional,
               sun.misc;resolution:=optional,
               com.jmatio.io;resolution:=optional,
-              com.google.gson;resolution:=optional,
-              com.google.gson.reflect;resolution:=optional,
               colorspace;resolution:=optional,
               com.sun.jna;resolution:=optional,
               com.sun.jna.ptr;resolution:=optional,

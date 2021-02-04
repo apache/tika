@@ -30,6 +30,7 @@ import org.apache.lucene.util.BytesRef;
 import org.apache.tika.eval.core.langid.LanguageIDWrapper;
 import org.apache.tika.eval.core.tokens.AnalyzerManager;
 import org.apache.tika.eval.core.tokens.TokenCounts;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.language.detect.LanguageResult;
 
 

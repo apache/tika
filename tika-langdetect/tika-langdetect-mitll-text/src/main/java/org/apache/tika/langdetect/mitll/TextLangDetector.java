@@ -16,9 +16,8 @@
  */
 package org.apache.tika.langdetect.mitll;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.tika.language.detect.LanguageConfidence;
 import org.apache.tika.language.detect.LanguageDetector;
@@ -111,9 +110,9 @@ public class TextLangDetector extends LanguageDetector {
                     .create(restHostUrlStr + TEXT_LID_PATH)
                     .get();
             String json = response.readEntity(String.class);
-            JsonArray jsonArray = new JsonParser().parse(json).getAsJsonObject().get("all_languages").getAsJsonArray();
-            for (JsonElement jsonElement : jsonArray) {
-                languages.add(jsonElement.toString());
+            JsonNode jsonArray = new ObjectMapper().readTree(json).get("all_languages");
+            for (JsonNode jsonElement : jsonArray) {
+                languages.add(jsonElement.asText());
             }
         } catch (Exception e) {
             LOG.warn("problem getting and parsing json", e);
@@ -128,7 +127,7 @@ public class TextLangDetector extends LanguageDetector {
                     .create(restHostUrlStr + TEXT_LID_PATH)
                     .put(content);
             String json = response.readEntity(String.class);
-            language = new JsonParser().parse(json).getAsJsonObject().get("language").getAsString();
+            language = new ObjectMapper().readTree(json).get("language").asText();
         } catch (Exception e) {
             LOG.warn("problem detecting", e);
         }
@@ -141,7 +140,7 @@ public class TextLangDetector extends LanguageDetector {
                     .create(TEXT_REST_HOST + TEXT_LID_PATH)
                     .get();
             String json = response.readEntity(String.class);
-            JsonArray jsonArray = new JsonParser().parse(json).getAsJsonObject().get("all_languages").getAsJsonArray();
+            JsonNode jsonArray = new ObjectMapper().readTree(json).get("all_languages");
             return jsonArray.size() != 0;
         } catch (Exception e) {
             LOG.warn("Can't run", e);

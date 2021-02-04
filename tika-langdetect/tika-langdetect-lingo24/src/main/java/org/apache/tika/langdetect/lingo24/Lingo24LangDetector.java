@@ -16,11 +16,10 @@
  */
 package org.apache.tika.langdetect.lingo24;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.cxf.jaxrs.client.WebClient;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.language.detect.LanguageConfidence;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
@@ -154,10 +153,15 @@ public class Lingo24LangDetector extends LanguageDetector {
         Response response = client.accept(MediaType.APPLICATION_JSON).form(form);
 
         String json = response.readEntity(String.class);
-        JsonElement element = new JsonParser().parse(json);
-        if (element.getAsJsonObject().get("success") != null &&
-                element.getAsJsonObject().get("success").getAsString().equals("true")) {
-            language = element.getAsJsonObject().get("lang").getAsString();
+        JsonNode element = null;
+        try {
+            element = new ObjectMapper().readTree(json);
+        } catch (JsonProcessingException e) {
+            LOG.warn("problem detecting ", e);
+        }
+        if (element.has("success") &&
+                element.get("success").asText().equals("true")) {
+            language = element.get("lang").asText();
         }
         return language;
     }
@@ -181,11 +185,13 @@ public class Lingo24LangDetector extends LanguageDetector {
                     .query("user_key", userKey).get();
 
             String json = response.readEntity(String.class);
-            JsonArray jsonArray = new JsonParser().parse(json).getAsJsonObject().get("source_langs").getAsJsonArray();
-            for (JsonElement jsonElement : jsonArray) {
-                languages.add(jsonElement.getAsJsonArray().get(0).getAsString());
+            JsonNode jsonArray = new ObjectMapper().readTree(json).get("source_langs");
+            for (JsonNode jsonElement : jsonArray) {
+                languages.add(jsonElement.get(0).asText());
             }
-        } catch (Throwable e) {
+        } catch (SecurityException e) {
+            throw e;
+        } catch (Exception e) {
             LOG.warn("problem detecting", e);
         } finally {
             if (_client != null) {
