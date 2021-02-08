@@ -17,6 +17,7 @@
 package org.apache.tika.parser.ocr;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.tika.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -207,8 +208,9 @@ public class TesseractOCRConfig implements Serializable {
     /**
      * @see #setTesseractPath(String tesseractPath)
      */
-    public String getTesseractPath() {
-        return tesseractPath;
+    public String  getTesseractPath() {
+        final String env = System.getenv("TIKA_TESSERACT_PATH");
+        return StringUtils.isBlank(env) ? tesseractPath : env;
     }
 
     /**
@@ -231,7 +233,8 @@ public class TesseractOCRConfig implements Serializable {
      * @see #setTessdataPath(String tessdataPath)
      */
     public String getTessdataPath() {
-        return tessdataPath;
+        final String env = System.getenv("TIKA_TESSDATA_PATH");
+        return StringUtils.isBlank(env) ? tessdataPath : env;
     }
 
     /**
