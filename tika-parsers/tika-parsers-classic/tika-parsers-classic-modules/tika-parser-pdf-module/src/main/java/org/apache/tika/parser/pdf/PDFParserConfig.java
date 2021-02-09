@@ -33,16 +33,9 @@ import org.apache.tika.exception.TikaException;
  * This allows parameters to be set programmatically:
  * <ol>
  * <li>Calls to PDFParser, i.e. parser.getPDFParserConfig().setEnableAutoSpace() (as before)</li>
- * <li>Constructor of PDFParser</li>
  * <li>Passing to PDFParser through a ParseContext: context.set(PDFParserConfig.class, config);</li>
  * </ol>
  * <p/>
- * Parameters can also be set by modifying the PDFParserConfig.properties file,
- * which lives in the expected places, in trunk:
- * tika-parsers/src/main/resources/org/apache/tika/parser/pdf
- * <p/>
- * Or, in tika-app-x.x.jar or tika-parsers-x.x.jar:
- * org/apache/tika/parser/pdf
  */
 public class PDFParserConfig implements Serializable {
 
