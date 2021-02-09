@@ -47,6 +47,7 @@ import static org.apache.cxf.helpers.HttpHeaderHelper.CONTENT_ENCODING;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class TikaResourceTest extends CXFTestBase {
     public static final String TEST_DOC = "test-documents/test.doc";
@@ -288,7 +289,7 @@ public class TikaResourceTest extends CXFTestBase {
     //TIKA-2638 and TIKA-2816
     @Test
     public void testOCRLanguageConfig() throws Exception {
-        if (! new TesseractOCRParser().hasTesseract(new TesseractOCRConfig())) {
+        if (! new TesseractOCRParser().hasTesseract()) {
             return;
         }
 
@@ -307,7 +308,7 @@ public class TikaResourceTest extends CXFTestBase {
     //TIKA-2290
     @Test
     public void testPDFOCRConfig() throws Exception {
-        if (! new TesseractOCRParser().hasTesseract(new TesseractOCRConfig())) {
+        if (! new TesseractOCRParser().hasTesseract()) {
             return;
         }
 
@@ -318,6 +319,7 @@ public class TikaResourceTest extends CXFTestBase {
                 .put(ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"));
         String responseMsg = getStringFromInputStream((InputStream) response
                 .getEntity());
+
         assertTrue(responseMsg.trim().equals(""));
 
         response = WebClient.create(endPoint + TIKA_PATH)
@@ -415,14 +417,18 @@ public class TikaResourceTest extends CXFTestBase {
             //started after the upgrade to 3.2.7
         }
 
-        response = WebClient.create(endPoint + TIKA_PATH)
-                .type("application/pdf")
-                .accept("text/plain")
-                .header(TesseractServerConfig.X_TIKA_OCR_HEADER_PREFIX +
-                                "tesseractPath",
-                        "bogus path")
-                .put(ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"));
-        assertEquals(200, response.getStatus());
+        try {
+            response = WebClient.create(endPoint + TIKA_PATH)
+                    .type("application/pdf")
+                    .accept("text/plain")
+                    .header(TesseractServerConfig.X_TIKA_OCR_HEADER_PREFIX +
+                                    "tesseractPath",
+                            "bogus path")
+                    .put(ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"));
+            assertEquals(400, response.getStatus());
+        } catch (ProcessingException e) {
+
+        }
     }
 
     @Test

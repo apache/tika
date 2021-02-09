@@ -124,7 +124,11 @@ public class PDFParser extends AbstractParser implements Initializable {
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
 
-        PDFParserConfig localConfig = context.get(PDFParserConfig.class, defaultConfig);
+        PDFParserConfig localConfig = defaultConfig;
+        PDFParserConfig userConfig = context.get(PDFParserConfig.class);
+        if (userConfig != null) {
+            localConfig = defaultConfig.cloneAndUpdate(userConfig);
+        }
         if (localConfig.isSetKCMS()) {
             System.setProperty("sun.java2d.cmm", "sun.java2d.cmm.kcms.KcmsServiceProvider");
         }

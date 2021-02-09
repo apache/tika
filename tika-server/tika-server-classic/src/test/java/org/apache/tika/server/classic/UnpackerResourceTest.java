@@ -220,7 +220,7 @@ public class UnpackerResourceTest extends CXFTestBase {
 
     @Test
     public void testPDFRenderOCR() throws Exception {
-        Assume.assumeTrue( new TesseractOCRParser().hasTesseract(new TesseractOCRConfig()));
+        Assume.assumeTrue( new TesseractOCRParser().hasTesseract());
 
         Response response = WebClient.create(CXFTestBase.endPoint + ALL_PATH)
                 .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX+"ocrStrategy", "ocr_only")

@@ -16,14 +16,16 @@
  */
 package org.apache.tika.parser.pdf;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.Serializable;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.HashSet;
 import java.util.Locale;
-import java.util.Properties;
+import java.util.Set;
 
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.text.PDFTextStripper;
+import org.apache.tika.exception.TikaException;
 
 /**
  * Config for PDFParser.
@@ -84,7 +86,7 @@ public class PDFParserConfig implements Serializable {
     private boolean enableAutoSpace = true;
 
     // True if we let PDFBox remove duplicate overlapping text:
-    private boolean suppressDuplicateOverlappingText;
+    private boolean suppressDuplicateOverlappingText = false;
 
     // True if we extract annotation text ourselves
     // (workaround for PDFBOX-1143):
@@ -138,7 +140,7 @@ public class PDFParserConfig implements Serializable {
     private String ocrImageFormatName = "png";
     private float ocrImageQuality = 1.0f;
 
-    private AccessChecker accessChecker;
+    private AccessChecker accessChecker = new AccessChecker();
 
     //The PDFParser can throw IOExceptions if there is a problem
     //with a streams.  If this is set to true, Tika's
@@ -156,112 +158,7 @@ public class PDFParserConfig implements Serializable {
 
     private boolean detectAngles = false;
 
-    public PDFParserConfig() {
-        init(this.getClass().getResourceAsStream("PDFParser.properties"));
-    }
-
-    /**
-     * Loads properties from InputStream and then tries to close InputStream.
-     * If there is an IOException, this silently swallows the exception
-     * and goes back to the default.
-     *
-     * @param is
-     */
-    public PDFParserConfig(InputStream is) {
-        init(is);
-    }
-
-    //initializes object and then tries to close inputstream
-    private void init(InputStream is) {
-
-        if (is == null) {
-            return;
-        }
-        Properties props = new Properties();
-        try {
-            props.load(is);
-        } catch (IOException e) {
-        } finally {
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException e) {
-                    //swallow
-                }
-            }
-        }
-        setEnableAutoSpace(
-                getBooleanProp(props.getProperty("enableAutoSpace"), isEnableAutoSpace()));
-        setSuppressDuplicateOverlappingText(
-                getBooleanProp(props.getProperty("suppressDuplicateOverlappingText"),
-                        isSuppressDuplicateOverlappingText()));
-        setExtractAnnotationText(
-                getBooleanProp(props.getProperty("extractAnnotationText"),
-                        isExtractAnnotationText()));
-        setSortByPosition(
-                getBooleanProp(props.getProperty("sortByPosition"),
-                        isSortByPosition()));
-        setExtractAcroFormContent(
-                getBooleanProp(props.getProperty("extractAcroFormContent"),
-                        isExtractAcroFormContent()));
-		setExtractBookmarksText(
-				getBooleanProp(props.getProperty("extractBookmarksText"),
-						isExtractBookmarksText()));
-        setExtractInlineImages(
-                getBooleanProp(props.getProperty("extractInlineImages"),
-                        isExtractInlineImages()));
-        setExtractUniqueInlineImagesOnly(
-                getBooleanProp(props.getProperty("extractUniqueInlineImagesOnly"),
-                        isExtractUniqueInlineImagesOnly()));
-        setExtractInlineImageMetadataOnly(
-                getBooleanProp(props.getProperty("extractInlineImageMetadataOnly"),
-                        isExtractInlineImageMetadataOnly())
-        );
-        setExtractFontNames(
-                getBooleanProp(props.getProperty("extractFontNames"),
-                        isExtractFontNames()));
-
-
-        setIfXFAExtractOnlyXFA(
-            getBooleanProp(props.getProperty("ifXFAExtractOnlyXFA"),
-                isIfXFAExtractOnlyXFA()));
-
-        setCatchIntermediateIOExceptions(
-                getBooleanProp(props.getProperty("catchIntermediateIOExceptions"),
-                isCatchIntermediateIOExceptions()));
-
-        setOcrStrategy(OCR_STRATEGY.parse(props.getProperty("ocrStrategy")));
-
-        setOcrDPI(getIntProp(props.getProperty("ocrDPI"), getOcrDPI()));
-
-        setOcrImageFormatName(props.getProperty("ocrImageFormatName"));
-
-        setOcrImageType(parseImageType(props.getProperty("ocrImageType")));
-
-        setExtractActions(getBooleanProp(props.getProperty("extractActions"), false));
-
-        setExtractMarkedContent(getBooleanProp(props.getProperty("extractMarkedContent"), false));
-
-        setSetKCMS(getBooleanProp(props.getProperty("setKCMS"), false));
-
-        setAverageCharTolerance(getFloatProp(props.getProperty("averageCharTolerance"), averageCharTolerance));
-        setSpacingTolerance(getFloatProp(props.getProperty("spacingTolerance"), spacingTolerance));
-        setDropThreshold(getFloatProp(props.getProperty("dropThreshold"), dropThreshold));
-
-        boolean checkExtractAccessPermission = getBooleanProp(props.getProperty("checkExtractAccessPermission"), false);
-        boolean allowExtractionForAccessibility = getBooleanProp(props.getProperty("allowExtractionForAccessibility"), true);
-
-        if (checkExtractAccessPermission == false) {
-            //silently ignore the crazy configuration of checkExtractAccessPermission = false,
-            //but allowExtractionForAccessibility=false
-            accessChecker = new AccessChecker();
-        } else {
-            accessChecker = new AccessChecker(allowExtractionForAccessibility);
-        }
-
-        maxMainMemoryBytes = getLongProp(props.getProperty("maxMainMemoryBytes"), -1);
-        detectAngles = getBooleanProp(props.getProperty("detectAngles"), false);
-    }
+    private final Set<String> userConfigured = new HashSet<>();
 
     /**
      * Use this when you want to know how many images of what formats are in a PDF
@@ -276,6 +173,7 @@ public class PDFParserConfig implements Serializable {
      */
     void setExtractInlineImageMetadataOnly(boolean extractInlineImageMetadataOnly) {
         this.extractInlineImageMetadataOnly = extractInlineImageMetadataOnly;
+        userConfigured.add("extractInlineImageMetadataOnly");
     }
 
     /**
@@ -296,6 +194,7 @@ public class PDFParserConfig implements Serializable {
      */
     public void setExtractMarkedContent(boolean extractMarkedContent) {
         this.extractMarkedContent = extractMarkedContent;
+        userConfigured.add("extractMarkedContent");
     }
 
     public boolean isExtractMarkedContent() {
@@ -342,7 +241,7 @@ public class PDFParserConfig implements Serializable {
      */
     public void setExtractAcroFormContent(boolean extractAcroFormContent) {
         this.extractAcroFormContent = extractAcroFormContent;
-
+        userConfigured.add("extractAcroFormContent");
     }
 
     /**
@@ -362,6 +261,7 @@ public class PDFParserConfig implements Serializable {
      */
     public void setIfXFAExtractOnlyXFA(boolean ifXFAExtractOnlyXFA) {
         this.ifXFAExtractOnlyXFA = ifXFAExtractOnlyXFA;
+        userConfigured.add("ifXFAExtractOnlyXFA");
     }
 
 	/**
@@ -379,6 +279,7 @@ public class PDFParserConfig implements Serializable {
 	 */
 	public void setExtractBookmarksText(boolean extractBookmarksText) {
 		this.extractBookmarksText = extractBookmarksText;
+		userConfigured.add("extractBookmarksText");
 	}
 
     /**
@@ -387,6 +288,7 @@ public class PDFParserConfig implements Serializable {
      */
 	public void setExtractFontNames(boolean extractFontNames) {
 	    this.extractFontNames = extractFontNames;
+	    userConfigured.add("extractFontNames");
     }
 
     public boolean isExtractFontNames() {
@@ -415,6 +317,7 @@ public class PDFParserConfig implements Serializable {
      */
     public void setExtractInlineImages(boolean extractInlineImages) {
         this.extractInlineImages = extractInlineImages;
+        userConfigured.add("extractInlineImages");
     }
 
     /**
@@ -447,6 +350,7 @@ public class PDFParserConfig implements Serializable {
      */
     public void setExtractUniqueInlineImagesOnly(boolean extractUniqueInlineImagesOnly) {
         this.extractUniqueInlineImagesOnly = extractUniqueInlineImagesOnly;
+        userConfigured.add("extractUniqueInlineImagesOnly");
     }
 
     /**
@@ -464,6 +368,7 @@ public class PDFParserConfig implements Serializable {
      */
     public void setEnableAutoSpace(boolean enableAutoSpace) {
         this.enableAutoSpace = enableAutoSpace;
+        userConfigured.add("enableAutoSpace");
     }
 
     /**
@@ -485,6 +390,7 @@ public class PDFParserConfig implements Serializable {
     public void setSuppressDuplicateOverlappingText(
             boolean suppressDuplicateOverlappingText) {
         this.suppressDuplicateOverlappingText = suppressDuplicateOverlappingText;
+        userConfigured.add("suppressDuplicateOverlappingText");
     }
 
     /**
@@ -500,6 +406,7 @@ public class PDFParserConfig implements Serializable {
      */
     public void setExtractAnnotationText(boolean extractAnnotationText) {
         this.extractAnnotationText = extractAnnotationText;
+        userConfigured.add("extractAnnotationText");
     }
 
     /**
@@ -519,6 +426,7 @@ public class PDFParserConfig implements Serializable {
      */
     public void setSortByPosition(boolean sortByPosition) {
         this.sortByPosition = sortByPosition;
+        userConfigured.add("sortByPosition");
     }
 
     /**
@@ -533,6 +441,7 @@ public class PDFParserConfig implements Serializable {
      */
     public void setAverageCharTolerance(Float averageCharTolerance) {
         this.averageCharTolerance = averageCharTolerance;
+        userConfigured.add("averageCharTolerance");
     }
 
     /**
@@ -547,6 +456,7 @@ public class PDFParserConfig implements Serializable {
      */
     public void setSpacingTolerance(Float spacingTolerance) {
         this.spacingTolerance = spacingTolerance;
+        userConfigured.add("spacingTolerance");
     }
 
     /**
@@ -561,6 +471,7 @@ public class PDFParserConfig implements Serializable {
      */
     public void setDropThreshold(Float dropThreshold) {
         this.dropThreshold = dropThreshold;
+        userConfigured.add("dropThreshold");
     }
 
     public AccessChecker getAccessChecker() {
@@ -569,6 +480,7 @@ public class PDFParserConfig implements Serializable {
 
     public void setAccessChecker(AccessChecker accessChecker) {
         this.accessChecker = accessChecker;
+        userConfigured.add("accessChecker");
     }
 
     /**
@@ -589,6 +501,7 @@ public class PDFParserConfig implements Serializable {
      */
     public void setCatchIntermediateIOExceptions(boolean catchIntermediateIOExceptions) {
         this.catchIntermediateIOExceptions = catchIntermediateIOExceptions;
+        userConfigured.add("catchIntermediateIOExceptions");
     }
 
     /**
@@ -597,14 +510,7 @@ public class PDFParserConfig implements Serializable {
      */
     public void setOcrStrategy(OCR_STRATEGY ocrStrategy) {
         this.ocrStrategy = ocrStrategy;
-    }
-
-    /**
-     * Which strategy to use for OCR
-     * @param ocrStrategyString
-     */
-    public void setOcrStrategy(String ocrStrategyString) {
-        this.ocrStrategy = OCR_STRATEGY.parse(ocrStrategyString);
+        userConfigured.add("ocrStrategy");
     }
     /**
      *
@@ -614,47 +520,14 @@ public class PDFParserConfig implements Serializable {
         return ocrStrategy;
     }
 
-    private boolean getBooleanProp(String p, boolean defaultMissing) {
-        if (p == null) {
-            return defaultMissing;
-        }
-        if (p.toLowerCase(Locale.ROOT).equals("true")) {
-            return true;
-        } else if (p.toLowerCase(Locale.ROOT).equals("false")) {
-            return false;
-        } else {
-            return defaultMissing;
-        }
-    }
-    //throws NumberFormatException if there's a non-null unparseable
-    //string passed in
-    private int getIntProp(String p, int defaultMissing) {
-        if (p == null) {
-            return defaultMissing;
-        }
-
-        return Integer.parseInt(p);
+    /**
+     * Which strategy to use for OCR
+     * @param ocrStrategyString
+     */
+    public void setOcrStrategy(String ocrStrategyString) {
+        setOcrStrategy(OCR_STRATEGY.parse(ocrStrategyString));
     }
 
-    //throws NumberFormatException if there's a non-null unparseable
-    //string passed in
-    private long getLongProp(String p, long defaultMissing) {
-        if (p == null) {
-            return defaultMissing;
-        }
-
-        return Long.parseLong(p);
-    }
-
-    //throws NumberFormatException if there's a non-null unparseable
-    //string passed in
-    private static float getFloatProp(String p, float defaultMissing) {
-        if (p == null) {
-            return defaultMissing;
-        }
-
-        return Float.parseFloat(p);
-    }
     /**
      * String representation of the image format used to render
      * the page image for OCR (examples: png, tiff, jpeg)
@@ -679,6 +552,7 @@ public class PDFParserConfig implements Serializable {
                     "I'm sorry, but I don't recognize: "+ocrImageFormatName);
         }
         this.ocrImageFormatName = ocrImageFormatName;
+        userConfigured.add("ocrImageFormatName");
     }
 
     /**
@@ -696,6 +570,7 @@ public class PDFParserConfig implements Serializable {
      */
     public void setOcrImageType(ImageType ocrImageType) {
         this.ocrImageType = ocrImageType;
+        userConfigured.add("ocrImageType");
     }
 
     /**
@@ -722,6 +597,7 @@ public class PDFParserConfig implements Serializable {
      */
     public void setOcrDPI(int ocrDPI) {
         this.ocrDPI = ocrDPI;
+        userConfigured.add("ocrDPI");
     }
 
     /**
@@ -739,6 +615,7 @@ public class PDFParserConfig implements Serializable {
      */
     public void setOcrImageQuality(float ocrImageQuality) {
         this.ocrImageQuality = ocrImageQuality;
+        userConfigured.add("ocrImageQuality");
     }
 
     /**
@@ -750,6 +627,7 @@ public class PDFParserConfig implements Serializable {
      */
     public void setExtractActions(boolean v) {
         extractActions = v;
+        userConfigured.add("extractActions");
     }
 
     /**
@@ -770,17 +648,9 @@ public class PDFParserConfig implements Serializable {
         return maxMainMemoryBytes;
     }
 
-    /**
-     * @deprecated use {@link #setMaxMainMemoryBytes(long)}
-     * @param maxMainMemoryBytes
-     */
-    @Deprecated
-    public void setMaxMainMemoryBytes(int maxMainMemoryBytes) {
-        this.maxMainMemoryBytes = maxMainMemoryBytes;
-    }
-
     public void setMaxMainMemoryBytes(long maxMainMemoryBytes) {
         this.maxMainMemoryBytes = maxMainMemoryBytes;
+        userConfigured.add("maxMainMemoryBytes");
     }
 
     /**
@@ -801,6 +671,7 @@ public class PDFParserConfig implements Serializable {
      */
     public void setSetKCMS(boolean setKCMS) {
         this.setKCMS = setKCMS;
+        userConfigured.add("setKCMS");
     }
 
     public boolean isSetKCMS() {
@@ -829,12 +700,40 @@ public class PDFParserConfig implements Serializable {
 
     public void setDetectAngles(boolean detectAngles) {
         this.detectAngles = detectAngles;
+        userConfigured.add("detectAngles");
     }
 
     public boolean isDetectAngles() {
         return detectAngles;
     }
 
+    public PDFParserConfig cloneAndUpdate(PDFParserConfig updates) throws TikaException {
+        PDFParserConfig updated = new PDFParserConfig();
+        for (Field field : this.getClass().getDeclaredFields()) {
+            if (Modifier.isFinal(field.getModifiers())) {
+                continue;
+            } else if (Modifier.isStatic(field.getModifiers())) {
+                continue;
+            }
+            if ("userConfigured".equals(field.getName())) {
+                continue;
+            }
+            if (updates.userConfigured.contains(field.getName())) {
+                try {
+                    field.set(updated, field.get(updates));
+                } catch (IllegalAccessException e) {
+                    throw new TikaException("can't update " + field.getName(), e);
+                }
+            } else {
+                try {
+                    field.set(updated, field.get(this));
+                } catch (IllegalAccessException e) {
+                    throw new TikaException("can't update " + field.getName(), e);
+                }
+            }
+        }
+        return updated;
+    }
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
