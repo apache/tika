@@ -16,39 +16,36 @@
  */
 package org.apache.tika.parser.ocr;
 
-import org.apache.commons.io.FilenameUtils;
+import org.apache.tika.exception.TikaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.Serializable;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Properties;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * Configuration for TesseractOCRParser.
+ * This class is not thread safe and must be synchronized externally.
  * <p>
- * This allows to enable TesseractOCRParser and set its parameters:
- * <p>
- * TesseractOCRConfig config = new TesseractOCRConfig();<br>
- * config.setTesseractPath(tesseractFolder);<br>
- * parseContext.set(TesseractOCRConfig.class, config);<br>
- * </p>
- * <p>
- * Parameters can also be set by either editing the existing TesseractOCRConfig.properties file in,
- * tika-parser/src/main/resources/org/apache/tika/parser/ocr, or overriding it by creating your own
- * and placing it in the package org/apache/tika/parser/ocr on the classpath.
+ * This class will remember all set* field forever,
+ * and on {@link #cloneAndUpdate(TesseractOCRConfig)},
+ * it will update all the fields that have been set on the "update" config.
+ * So, for example, if you want to change language to "fra"
+ * from "eng" and then on another parse,
+ * you want to change depth to 5 on the same update object,
+ * but you expect the language to revert to "eng", you'll be wrong.
+ * Create a new update config for each parse unless you're only changing the
+ * same field(s) with every parse.
  */
 public class TesseractOCRConfig implements Serializable {
 
@@ -67,14 +64,6 @@ public class TesseractOCRConfig implements Serializable {
         HOCR
     }
 
-    // Path to tesseract installation folder, if not on system path.
-    private String tesseractPath = "";
-
-    // Path to the 'tessdata' folder, which contains language files and config files.
-    private String tessdataPath = "";
-
-    private Path actualTessdataPath;
-
     // Language dictionary to be used.
     private String language = "eng";
 
@@ -88,16 +77,13 @@ public class TesseractOCRConfig implements Serializable {
     private long maxFileSizeToOcr = Integer.MAX_VALUE;
 
     // Maximum time (seconds) to wait for the ocring process termination
-    private int timeout = 120;
+    private int timeoutSeconds = 120;
 
     // The format of the ocr'ed output to be returned, txt or hocr.
     private OUTPUT_TYPE outputType = OUTPUT_TYPE.TXT;
 
     // enable image processing (optional)
     private boolean enableImageProcessing = false;
-
-    // Path to ImageMagick program, if not on system path.
-    private String imageMagickPath = "";
 
     // resolution of processed image (in dpi).
     private int density = 300;
@@ -125,128 +111,13 @@ public class TesseractOCRConfig implements Serializable {
     // whether or not to apply rotation calculated by the rotation.py script
     private boolean applyRotation = false;
 
+    // runtime switch to turn off OCR
+    private boolean skipOcr = false;
+
     // See addOtherTesseractConfig.
     private Map<String, String> otherTesseractConfig = new HashMap<>();
 
-
-    /**
-     * Default constructor.
-     */
-    public TesseractOCRConfig() {
-        init(this.getClass().getResourceAsStream("TesseractOCRConfig.properties"));
-    }
-
-    /**
-     * Loads properties from InputStream and then tries to close InputStream.
-     * If there is an IOException, this silently swallows the exception
-     * and goes back to the default.
-     *
-     * @param is
-     */
-    public TesseractOCRConfig(InputStream is) {
-        init(is);
-    }
-
-    private void init(InputStream is) {
-        if (is == null) {
-            return;
-        }
-        Properties props = new Properties();
-        try {
-            props.load(is);
-        } catch (IOException e) {
-        } finally {
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException e) {
-                    //swallow
-                }
-            }
-        }
-
-        // set parameters for Tesseract
-        setTesseractPath(
-                getProp(props, "tesseractPath", getTesseractPath()));
-        setTessdataPath(
-                getProp(props, "tessdataPath", getTessdataPath()));
-        setLanguage(
-                getProp(props, "language", getLanguage()));
-        setPageSegMode(
-                getProp(props, "pageSegMode", getPageSegMode()));
-        setMinFileSizeToOcr(
-                getProp(props, "minFileSizeToOcr", getMinFileSizeToOcr()));
-        setMaxFileSizeToOcr(
-                getProp(props, "maxFileSizeToOcr", getMaxFileSizeToOcr()));
-        setTimeout(
-                getProp(props, "timeout", getTimeout()));
-        setOutputType(getProp(props, "outputType", getOutputType().toString()));
-        setPreserveInterwordSpacing(getProp(props, "preserveInterwordSpacing", false));
-
-        // set parameters for ImageMagick
-        setEnableImageProcessing(
-                getProp(props, "enableImageProcessing", isEnableImageProcessing()));
-        setImageMagickPath(
-                getProp(props, "ImageMagickPath", getImageMagickPath()));
-        setDensity(
-                getProp(props, "density", getDensity()));
-        setDepth(
-                getProp(props, "depth", getDepth()));
-        setColorspace(
-                getProp(props, "colorspace", getColorspace()));
-        setFilter(
-                getProp(props, "filter", getFilter()));
-        setResize(
-                getProp(props, "resize", getResize()));
-        setApplyRotation(
-                getProp(props, "applyRotation", isApplyRotation()));
-
-        loadOtherTesseractConfig(props);
-    }
-
-    /**
-     * @see #setTesseractPath(String tesseractPath)
-     */
-    public String getTesseractPath() {
-        return tesseractPath;
-    }
-
-    /**
-     * Set the path to the Tesseract executable's directory, needed if it is not on system path.
-     * <p>
-     * Note that if you set this value, it is highly recommended that you also
-     * set the path to the 'tessdata' folder using {@link #setTessdataPath}.
-     * </p>
-     */
-    public void setTesseractPath(String tesseractPath) {
-
-        tesseractPath = FilenameUtils.normalize(tesseractPath);
-        if (!tesseractPath.isEmpty() && !tesseractPath.endsWith(File.separator))
-            tesseractPath += File.separator;
-
-        this.tesseractPath = tesseractPath;
-    }
-
-    /**
-     * @see #setTessdataPath(String tessdataPath)
-     */
-    public String getTessdataPath() {
-        return tessdataPath;
-    }
-
-    /**
-     * Set the path to the 'tessdata' folder, which contains language files and config files. In some cases (such
-     * as on Windows), this folder is found in the Tesseract installation, but in other cases
-     * (such as when Tesseract is built from source), it may be located elsewhere.
-     */
-    public void setTessdataPath(String tessdataPath) {
-        tessdataPath = FilenameUtils.normalize(tessdataPath);
-        if (!tessdataPath.isEmpty() && !tessdataPath.endsWith(File.separator))
-            tessdataPath += File.separator;
-
-        this.tessdataPath = tessdataPath;
-    }
-
+    private Set<String> userConfigured = new HashSet<>();
     /**
      * @see #setLanguage(String language)
      */
@@ -279,8 +150,6 @@ public class TesseractOCRConfig implements Serializable {
             // First, make sure it conforms to the correct syntax
             if (!lang.matches("([a-zA-Z]{3}(_[a-zA-Z]{3,4}){0,2})|script(/|\\\\)[A-Z][a-zA-Z_]+")) {
                 invalidCodes.add(lang + " (invalid syntax)");
-            } else if (!langExists(lang)) {
-                invalidCodes.add(lang + " (not found)");
             }
         }
         if (!invalidCodes.isEmpty()) {
@@ -288,30 +157,7 @@ public class TesseractOCRConfig implements Serializable {
                     "Invalid language code(s): " + invalidCodes);
         }
         this.language = language;
-    }
-    /**
-     * Check if tessdata language model exists
-     */
-    private boolean langExists(String lang) {
-        if (actualTessdataPath == null) {
-            // Use the same logic used in TesseractOCRParser.setEnv().
-            // If tessdataPath is not specified then use tesseractPath, if specified
-            if (!tessdataPath.isEmpty()) {
-                actualTessdataPath = Paths.get(tessdataPath);
-            } else if (!tesseractPath.isEmpty()) {
-                actualTessdataPath = Paths.get(tesseractPath, "tessdata");
-            } else {
-                // Neither path was specified, so we'll just assume
-                // the language is good and rely on Tesseract to tell us if there's a problem
-                return true;
-            }
-        }
-
-        if (!Files.isDirectory(actualTessdataPath)) {
-            throw new IllegalArgumentException(actualTessdataPath + " is not a directory");
-        }
-        String trainedDataName = lang + ".traineddata";
-        return Files.isRegularFile(actualTessdataPath.resolve(trainedDataName));
+        userConfigured.add("language");
     }
 
     /**
@@ -330,6 +176,7 @@ public class TesseractOCRConfig implements Serializable {
             throw new IllegalArgumentException("Invalid page segmentation mode");
         }
         this.pageSegMode = pageSegMode;
+        userConfigured.add("pageSegMode");
     }
 
     /**
@@ -354,6 +201,7 @@ public class TesseractOCRConfig implements Serializable {
                     "If you trust this value, set it with setTrustedPageSeparator");
         }
         setTrustedPageSeparator(pageSeparator);
+        userConfigured.add("pageSeparator");
     }
 
     /**
@@ -373,6 +221,7 @@ public class TesseractOCRConfig implements Serializable {
      */
     public void setPreserveInterwordSpacing(boolean preserveInterwordSpacing) {
         this.preserveInterwordSpacing = preserveInterwordSpacing;
+        userConfigured.add("preserveInterwordSpacing");
     }
 
     /**
@@ -395,6 +244,7 @@ public class TesseractOCRConfig implements Serializable {
      */
     public void setMinFileSizeToOcr(long minFileSizeToOcr) {
         this.minFileSizeToOcr = minFileSizeToOcr;
+        userConfigured.add("minFileSizeToOcr");
     }
 
     /**
@@ -410,22 +260,24 @@ public class TesseractOCRConfig implements Serializable {
      */
     public void setMaxFileSizeToOcr(long maxFileSizeToOcr) {
         this.maxFileSizeToOcr = maxFileSizeToOcr;
+        userConfigured.add("maxFileSizeToOcr");
     }
 
     /**
      * Set maximum time (seconds) to wait for the ocring process to terminate.
      * Default value is 120s.
      */
-    public void setTimeout(int timeout) {
-        this.timeout = timeout;
+    public void setTimeoutSeconds(int timeoutSeconds) {
+        this.timeoutSeconds = timeoutSeconds;
+        userConfigured.add("timeoutSeconds");
     }
 
     /**
      * @return timeout value for Tesseract
-     * @see #setTimeout(int timeout)
+     * @see #setTimeoutSeconds(int timeout)
      */
-    public int getTimeout() {
-        return timeout;
+    public int getTimeoutSeconds() {
+        return timeoutSeconds;
     }
 
     /**
@@ -434,6 +286,7 @@ public class TesseractOCRConfig implements Serializable {
      */
     public void setOutputType(OUTPUT_TYPE outputType) {
         this.outputType = outputType;
+        userConfigured.add("outputType");
     }
 
     public void setOutputType(String outputType) {
@@ -448,8 +301,6 @@ public class TesseractOCRConfig implements Serializable {
         } else {
             throw new IllegalArgumentException("outputType must be either 'txt' or 'hocr'");
         }
-
-
     }
 
     /**
@@ -473,6 +324,7 @@ public class TesseractOCRConfig implements Serializable {
      */
     public void setEnableImageProcessing(boolean enableImageProcessing) {
         this.enableImageProcessing = enableImageProcessing;
+        userConfigured.add("enableImageProcessing");
     }
 
     /**
@@ -491,6 +343,7 @@ public class TesseractOCRConfig implements Serializable {
             throw new IllegalArgumentException("Invalid density value. Valid range of values is 150-1200.");
         }
         this.density = density;
+        userConfigured.add("density");
     }
 
     /**
@@ -509,6 +362,7 @@ public class TesseractOCRConfig implements Serializable {
         for (int allowedValue : allowedValues) {
             if (depth == allowedValue) {
                 this.depth = depth;
+                userConfigured.add("depth");
                 return;
             }
         }
@@ -534,6 +388,7 @@ public class TesseractOCRConfig implements Serializable {
             throw new IllegalArgumentException("colorspace must match this pattern: (?i)^[-_A-Z0-9]+$");
         }
         this.colorspace = colorspace;
+        userConfigured.add("colorspace");
     }
 
     /**
@@ -557,11 +412,26 @@ public class TesseractOCRConfig implements Serializable {
         for (String allowedFilter : allowedFilters) {
             if (filter.equalsIgnoreCase(allowedFilter)) {
                 this.filter = filter;
+                userConfigured.add("filter");
                 return;
             }
         }
         throw new IllegalArgumentException("Invalid filter value. Valid values are point, hermite, "
                 + "cubic, box, gaussian, catrom, triangle, quadratic and mitchell.");
+    }
+
+    /**
+     * If you want to turn off OCR at run time for a specific file,
+     * set this to <code>true</code>
+     * @param skipOcr
+     */
+    public void setSkipOcr(boolean skipOcr) {
+        this.skipOcr = skipOcr;
+        userConfigured.add("skipOcr");
+    }
+
+    public boolean isSkipOcr() {
+        return skipOcr;
     }
 
     /**
@@ -579,34 +449,12 @@ public class TesseractOCRConfig implements Serializable {
         for (int i = 1; i < 10; i++) {
             if (resize == i * 100) {
                 this.resize = resize;
+                userConfigured.add("resize");
                 return;
             }
         }
         throw new IllegalArgumentException("Invalid resize value. Valid range of values is 100-900.");
     }
-
-    /**
-     * @return path to ImageMagick executable directory.
-     * @see #setImageMagickPath(String imageMagickPath)
-     */
-    public String getImageMagickPath() {
-
-        return imageMagickPath;
-    }
-
-    /**
-     * Set the path to the ImageMagick executable directory, needed if it is not on system path.
-     *
-     * @param imageMagickPath to ImageMagick executable directory.
-     */
-    public void setImageMagickPath(String imageMagickPath) {
-        imageMagickPath = FilenameUtils.normalize(imageMagickPath);
-        if (!imageMagickPath.isEmpty() && !imageMagickPath.endsWith(File.separator)) {
-            imageMagickPath += File.separator;
-        }
-        this.imageMagickPath = imageMagickPath;
-    }
-
 
     /**
      * @return Whether or not a rotation value should be calculated and passed to ImageMagick before performing OCR.
@@ -622,6 +470,7 @@ public class TesseractOCRConfig implements Serializable {
      */
     public void setApplyRotation(boolean applyRotation) {
         this.applyRotation = applyRotation;
+        userConfigured.add("applyRotation");
     }
 
     /**
@@ -658,93 +507,43 @@ public class TesseractOCRConfig implements Serializable {
         if (!m.find()) {
             throw new IllegalArgumentException("Value contains illegal characters: " + value);
         }
-
         otherTesseractConfig.put(key.trim(), value.trim());
+        userConfigured.add("otherTesseractConfig");
     }
 
-    /**
-     * Get property from the properties file passed in.
-     *
-     * @param properties     properties file to read from.
-     * @param property       the property to fetch.
-     * @param defaultMissing default parameter to use.
-     * @return the value.
-     */
-    private int getProp(Properties properties, String property, int defaultMissing) {
-        String p = properties.getProperty(property);
-        if (p == null || p.isEmpty()) {
-            return defaultMissing;
-        }
-        try {
-            return Integer.parseInt(p);
-        } catch (Throwable ex) {
-            throw new RuntimeException(String.format(Locale.ROOT, "Cannot parse TesseractOCRConfig variable %s, invalid integer value",
-                    property), ex);
-        }
-    }
-
-    /**
-     * Get property from the properties file passed in.
-     *
-     * @param properties     properties file to read from.
-     * @param property       the property to fetch.
-     * @param defaultMissing default parameter to use.
-     * @return the value.
-     */
-    private long getProp(Properties properties, String property, long defaultMissing) {
-        String p = properties.getProperty(property);
-        if (p == null || p.isEmpty()) {
-            return defaultMissing;
-        }
-        try {
-            return Integer.parseInt(p);
-        } catch (Throwable ex) {
-            throw new RuntimeException(String.format(Locale.ROOT, "Cannot parse TesseractOCRConfig variable %s, invalid integer value",
-                    property), ex);
-        }
-    }
-
-
-    /**
-     * Get property from the properties file passed in.
-     *
-     * @param properties     properties file to read from.
-     * @param property       the property to fetch.
-     * @param defaultMissing default parameter to use.
-     * @return the value.
-     */
-    private String getProp(Properties properties, String property, String defaultMissing) {
-        return properties.getProperty(property, defaultMissing);
-    }
-
-    private boolean getProp(Properties properties, String property, boolean defaultMissing) {
-        String propVal = properties.getProperty(property);
-        if (propVal == null) {
-            return defaultMissing;
-        }
-        if (propVal.equalsIgnoreCase("true")) {
-            return true;
-        } else if (propVal.equalsIgnoreCase("false")) {
-            return false;
-        }
-
-        throw new RuntimeException(String.format(Locale.ROOT,
-                "Cannot parse TesseractOCRConfig variable %s, invalid boolean value: %s",
-                property, propVal));
-    }
-
-    /**
-     * Populate otherTesseractConfig from the given properties.
-     * This assumes that any key-value pair where the key contains
-     * an underscore is an option to be passed opaquely to Tesseract.
-     *
-     * @param properties properties file to read from.
-     */
-    private void loadOtherTesseractConfig(Properties properties) {
-        for (String k : properties.stringPropertyNames()) {
-            if (k.contains("_")) {
-                addOtherTesseractConfig(k, properties.getProperty(k));
+    public TesseractOCRConfig cloneAndUpdate(TesseractOCRConfig updates) throws TikaException {
+        TesseractOCRConfig updated = new TesseractOCRConfig();
+        for (Field field : this.getClass().getDeclaredFields()) {
+            if (Modifier.isFinal(field.getModifiers())) {
+                continue;
+            } else if (Modifier.isStatic(field.getModifiers())) {
+                continue;
+            }
+            if ("userConfigured".equals(field.getName())) {
+                continue;
+            }
+            if ("otherTesseractConfig".equals(field.getName())
+                    && updates.userConfigured.contains(field.getName())) {
+                //deep copy
+                for (Map.Entry<String, String> e : updates.getOtherTesseractConfig().entrySet()) {
+                    updated.addOtherTesseractConfig(e.getKey(), e.getValue());
+                }
+                continue;
+            }
+            if (updates.userConfigured.contains(field.getName())) {
+                try {
+                    field.set(updated, field.get(updates));
+                } catch (IllegalAccessException e) {
+                    throw new TikaException("can't update " + field.getName(), e);
+                }
+            } else {
+                try {
+                    field.set(updated, field.get(this));
+                } catch (IllegalAccessException e) {
+                    throw new TikaException("can't update " + field.getName(), e);
+                }
             }
         }
+        return updated;
     }
 }

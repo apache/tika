@@ -20,6 +20,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
@@ -54,11 +55,11 @@ public class PDFParserTest extends TikaTest {
 
     private static Boolean hasTesseract = null;
 
-    public static boolean canRunOCR() {
+    public static boolean canRunOCR() throws TikaConfigException {
         if (hasTesseract != null) {
             return hasTesseract;
         }
-        hasTesseract = new TesseractOCRParser().hasTesseract(new TesseractOCRConfig());
+        hasTesseract = new TesseractOCRParser().hasTesseract();
         return hasTesseract;
     }
 
@@ -386,6 +387,7 @@ public class PDFParserTest extends TikaTest {
             //now override the max file size to ocr, and you should get text
             ParseContext pc = new ParseContext();
             TesseractOCRConfig tesseractOCRConfig = new TesseractOCRConfig();
+            tesseractOCRConfig.setMaxFileSizeToOcr(10000000);
             pc.set(TesseractOCRConfig.class, tesseractOCRConfig);
             text = getText(getResourceAsStream("/test-documents/testOCR.pdf"), p, pc);
             assertContains("Happy", text);

@@ -654,7 +654,8 @@ public class TikaConfig {
             List<T> loaded = new ArrayList<T>();
 
             // Find the children of the parent tag, if any
-            for (Element le : getTopLevelElementChildren(element, getParentTagName(), getLoaderTagName())) {T loadedChild = loadOne(le, mimeTypes, loader);
+            for (Element le : getTopLevelElementChildren(element, getParentTagName(), getLoaderTagName())) {
+                T loadedChild = loadOne(le, mimeTypes, loader);
                 if (loadedChild != null) loaded.add(loadedChild);
             }
 
@@ -742,7 +743,7 @@ public class TikaConfig {
                                 excludeChildren.add(loader.getServiceClass(getLoaderClass(), exclName));
                             } catch (ClassNotFoundException e) {
                                 //TIKA-3268 -- This should stop the world.
-                                throw new TikaConfigException("Class now found in -exclude list: " + exclName);
+                                throw new TikaConfigException("Class not found in -exclude list: " + exclName);
                             }
                         }
                     }

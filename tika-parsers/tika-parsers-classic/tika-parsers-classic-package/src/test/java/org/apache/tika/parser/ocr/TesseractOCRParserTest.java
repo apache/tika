@@ -23,6 +23,7 @@ import static org.junit.Assume.assumeTrue;
 import java.util.List;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -38,20 +39,16 @@ import org.junit.Test;
 
 public class TesseractOCRParserTest extends TikaTest {
 
-    public static boolean canRun() {
-        TesseractOCRConfig config = new TesseractOCRConfig();
-        TesseractOCRParserTest tesseractOCRTest = new TesseractOCRParserTest();
-        return tesseractOCRTest.canRun(config);
+    public static boolean canRun() throws TikaConfigException {
+        TesseractOCRParser p = new TesseractOCRParser();
+        return p.hasTesseract();
     }
 
-    private boolean canRun(TesseractOCRConfig config) {
-        String[] checkCmd = {config.getTesseractPath() + TesseractOCRParser.getTesseractProg()};
-        // If Tesseract is not on the path, do not run the test.
-        return ExternalParser.check(checkCmd);
-    }
+
 
     /*
-    Check that if Tesseract is not found, the TesseractOCRParser claims to not support
+    Check that if Tesseract is told to skip OCR,
+    the TesseractOCRParser claims to not support
     any file types. So, the standard image parser is called instead.
      */
     @Test
@@ -61,11 +58,11 @@ public class TesseractOCRParserTest extends TikaTest {
         MediaType png = MediaType.image("png");
 
         // With an invalid path, will offer no types
-        TesseractOCRConfig invalidConfig = new TesseractOCRConfig();
-        invalidConfig.setTesseractPath("/made/up/path");
+        TesseractOCRConfig skipOcrConfig = new TesseractOCRConfig();
+        skipOcrConfig.setSkipOcr(true);
 
         ParseContext parseContext = new ParseContext();
-        parseContext.set(TesseractOCRConfig.class, invalidConfig);
+        parseContext.set(TesseractOCRConfig.class, skipOcrConfig);
 
         // No types offered
         Assert.assertEquals(0, parser.getSupportedTypes(parseContext).size());

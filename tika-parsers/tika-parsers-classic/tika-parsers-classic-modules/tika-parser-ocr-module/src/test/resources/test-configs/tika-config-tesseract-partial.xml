@@ -17,16 +17,21 @@
 -->
 <properties>
   <parsers>
-    <parser class="org.apache.tika.parser.DefaultParser">
-      <parser-exclude class="org.apache.tika.parser.ocr.TesseractOCRParser"/>
-    </parser>
     <parser class="org.apache.tika.parser.ocr.TesseractOCRParser">
       <params>
-        <param name="timeout" type="int">241</param>
-<!--        <param name="tesseractPath" type="string">/myspecial/tess</param> -->
+        <param name="timeout" type="int">240</param>
+        <param name="density" type="int">200</param>
+        <param name="depth" type="int">8</param>
+        <param name="resize" type="int">300</param>
+
+        <param name="minFileSizeToOcr" type="long">1</param>
         <param name="outputType" type="string">hocr</param>
+        <param name="filter" type="string">box</param>
         <param name="applyRotation" type="bool">false</param>
-        <param name="language" type="string">ceb</param>
+        <param name="enableImageProcessing" type="bool">false</param>
+
+        <param name="language" type="string">fra+deu</param>
+
       </params>
     </parser>
   </parsers>

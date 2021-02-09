@@ -16,11 +16,12 @@
  */
 package org.apache.tika.parser.ocr;
 
-import org.apache.commons.lang3.SystemUtils;
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.CompositeDetector;
+import org.apache.tika.parser.CompositeParser;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
@@ -34,14 +35,11 @@ public class TesseractOCRConfigTest extends TikaTest {
     @Test
     public void testNoConfig() throws Exception {
         TesseractOCRConfig config = new TesseractOCRConfig();
-        assertEquals("Invalid default tesseractPath value", "", config.getTesseractPath());
-        assertEquals("Invalid default tessdataPath value", "", config.getTessdataPath());
         assertEquals("Invalid default language value", "eng", config.getLanguage());
         assertEquals("Invalid default pageSegMode value", "1", config.getPageSegMode());
         assertEquals("Invalid default minFileSizeToOcr value", 0, config.getMinFileSizeToOcr());
         assertEquals("Invalid default maxFileSizeToOcr value", Integer.MAX_VALUE, config.getMaxFileSizeToOcr());
-        assertEquals("Invalid default timeout value", 120, config.getTimeout());  
-        assertEquals("Invalid default ImageMagickPath value", "", config.getImageMagickPath());
+        assertEquals("Invalid default timeout value", 120, config.getTimeoutSeconds());
         assertEquals("Invalid default density value", 300 , config.getDensity());
         assertEquals("Invalid default depth value", 4 , config.getDepth());
         assertEquals("Invalid default colorpsace value", "gray" , config.getColorspace());
@@ -53,17 +51,16 @@ public class TesseractOCRConfigTest extends TikaTest {
     @Test
     public void testPartialConfig() throws Exception {
 
-        InputStream stream = getResourceAsStream("/test-properties/TesseractOCRConfig-partial.properties");
+        InputStream stream = getResourceAsStream("/test-configs/tika-config-tesseract-partial.xml");
 
-        TesseractOCRConfig config = new TesseractOCRConfig(stream);
-        assertEquals("Invalid default tesseractPath value", "", config.getTesseractPath());
-        assertEquals("Invalid default tessdataPath value", "", config.getTessdataPath());
+        TesseractOCRParser parser = (TesseractOCRParser)
+                ((CompositeParser)new TikaConfig(stream).getParser()).getAllComponentParsers().get(0);
+        TesseractOCRConfig config = parser.getDefaultConfig();
         assertEquals("Invalid overridden language value", "fra+deu", config.getLanguage());
         assertEquals("Invalid default pageSegMode value", "1", config.getPageSegMode());
         assertEquals("Invalid overridden minFileSizeToOcr value", 1, config.getMinFileSizeToOcr());
         assertEquals("Invalid default maxFileSizeToOcr value", Integer.MAX_VALUE, config.getMaxFileSizeToOcr());
-        assertEquals("Invalid overridden timeout value", 240, config.getTimeout());
-        assertEquals("Invalid default ImageMagickPath value", "", config.getImageMagickPath());
+        assertEquals("Invalid overridden timeout value", 240, config.getTimeoutSeconds());
         assertEquals("Invalid overridden density value", 200 , config.getDensity());
         assertEquals("Invalid overridden depth value", 8 , config.getDepth());
         assertEquals("Invalid overridden filter value", "box" , config.getFilter());	
@@ -74,19 +71,16 @@ public class TesseractOCRConfigTest extends TikaTest {
     @Test
     public void testFullConfig() throws Exception {
 
-        InputStream stream = getResourceAsStream("/test-properties/TesseractOCRConfig-full.properties");
+        InputStream stream = getResourceAsStream("/test-configs/tika-config-tesseract-full.xml");
 
-        TesseractOCRConfig config = new TesseractOCRConfig(stream);
-        if(SystemUtils.IS_OS_UNIX) {
-        	//assertEquals("Invalid overridden tesseractPath value", "/opt/tesseract" + File.separator, config.getTesseractPath());
-            //assertEquals("Invalid overridden tesseractPath value", "/usr/local/share" + File.separator, config.getTessdataPath());
-        	assertEquals("Invalid overridden ImageMagickPath value", "/usr/local/bin/", config.getImageMagickPath());
-        }
-        assertEquals("Invalid overridden language value", "eng", config.getLanguage());
+        TesseractOCRParser parser = (TesseractOCRParser)
+                ((CompositeParser)new TikaConfig(stream).getParser()).getAllComponentParsers().get(0);
+        TesseractOCRConfig config = parser.getDefaultConfig();
+        assertEquals("Invalid overridden language value", "ceb", config.getLanguage());
         assertEquals("Invalid overridden pageSegMode value", "2", config.getPageSegMode());
         assertEquals("Invalid overridden minFileSizeToOcr value", 1, config.getMinFileSizeToOcr());
         assertEquals("Invalid overridden maxFileSizeToOcr value", 2000000, config.getMaxFileSizeToOcr());
-        assertEquals("Invalid overridden timeout value", 240, config.getTimeout());
+        assertEquals("Invalid overridden timeout value", 240, config.getTimeoutSeconds());
         assertEquals("Invalid overridden density value", 200 , config.getDensity());
         assertEquals("Invalid overridden depth value", 8 , config.getDepth());
         assertEquals("Invalid overridden filter value", "box" , config.getFilter());
@@ -172,14 +166,14 @@ public class TesseractOCRConfigTest extends TikaTest {
 
     @Test(expected=IllegalArgumentException.class)
     public void testDataPathCheck() {
-        TesseractOCRConfig config = new TesseractOCRConfig();
-        config.setTessdataPath("blah\u0000deblah");
+        TesseractOCRParser parser = new TesseractOCRParser();
+        parser.setTessdataPath("blah\u0000deblah");
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void testPathCheck() {
-        TesseractOCRConfig config = new TesseractOCRConfig();
-        config.setTesseractPath("blah\u0000deblah");
+        TesseractOCRParser parser = new TesseractOCRParser();
+        parser.setTesseractPath("blah\u0000deblah");
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -213,43 +207,40 @@ public class TesseractOCRConfigTest extends TikaTest {
         config.addOtherTesseractConfig("good", "good");
     }
 
-    @Test
-    public void testBogusPathCheck() {
-        //allow path that doesn't actually exist
-        TesseractOCRConfig config = new TesseractOCRConfig();
-        config.setTesseractPath("blahdeblahblah");
-        assertEquals("blahdeblahblah"+File.separator, config.getTesseractPath());
-    }
-
-    @Test
-    public void testTrailingSlashInPathBehavior() {
-
-        TesseractOCRConfig config = new TesseractOCRConfig();
-        config.setTesseractPath("blah");
-        assertEquals("blah"+File.separator, config.getTesseractPath());
-        config.setTesseractPath("blah"+File.separator);
-        assertEquals("blah"+File.separator, config.getTesseractPath());
-        config.setTesseractPath("");
-        assertEquals("", config.getTesseractPath());
-
-        config.setTessdataPath("blahdata");
-        assertEquals("blahdata"+File.separator, config.getTessdataPath());
-        config.setTessdataPath("blahdata"+File.separator);
-        assertEquals("blahdata"+File.separator, config.getTessdataPath());
-        config.setTessdataPath("");
-        assertEquals("", config.getTessdataPath());
-
-        config.setImageMagickPath("imagemagickpath");
-        assertEquals("imagemagickpath"+File.separator, config.getImageMagickPath());
-        config.setImageMagickPath("imagemagickpath"+File.separator);
-        assertEquals("imagemagickpath"+File.separator, config.getImageMagickPath());
-        config.setImageMagickPath("");
-        assertEquals("", config.getImageMagickPath());
+    @Test (expected = IllegalArgumentException.class)
+    public void testBadLanguageCode() throws Exception {
+        TesseractOCRConfig tesseractOCRConfig = new TesseractOCRConfig();
+        tesseractOCRConfig.setLanguage("kerplekistani");
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void testBadColorSpace() {
         TesseractOCRConfig config = new TesseractOCRConfig();
         config.setColorspace("someth!ng");
+    }
+
+    @Test
+    public void testUpdatingConfigs() throws Exception {
+        TesseractOCRConfig configA = new TesseractOCRConfig();
+        configA.setLanguage("eng");
+        configA.setMinFileSizeToOcr(100);
+        configA.setOutputType(TesseractOCRConfig.OUTPUT_TYPE.TXT);
+        configA.addOtherTesseractConfig("k1", "a1");
+        configA.addOtherTesseractConfig("k2", "a2");
+
+        TesseractOCRConfig configB = new TesseractOCRConfig();
+        configB.setLanguage("fra");
+        configB.setMinFileSizeToOcr(1000);
+        configB.setOutputType(TesseractOCRConfig.OUTPUT_TYPE.HOCR);
+        configB.addOtherTesseractConfig("k1", "b1");
+        configB.addOtherTesseractConfig("k2", "b2");
+
+        TesseractOCRConfig clone = configA.cloneAndUpdate(configB);
+        assertEquals("fra", clone.getLanguage());
+        assertEquals(1000, clone.getMinFileSizeToOcr());
+        assertEquals(TesseractOCRConfig.OUTPUT_TYPE.HOCR,
+                clone.getOutputType());
+        assertEquals("b1", clone.getOtherTesseractConfig().get("k1"));
+        assertEquals("b2", clone.getOtherTesseractConfig().get("k2"));
     }
 }
