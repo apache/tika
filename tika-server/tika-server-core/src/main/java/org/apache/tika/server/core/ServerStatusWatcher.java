@@ -39,8 +39,7 @@ public class ServerStatusWatcher implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(ServerStatusWatcher.class);
     private final ServerStatus serverStatus;
     private final DataInputStream fromParent;
-    private final long maxFiles;
-    private final ServerTimeoutConfig serverTimeouts;
+    private final TikaServerConfig tikaServerConfig;
     private final Path forkedStatusPath;
     private final ByteBuffer statusBuffer = ByteBuffer.allocate(16);
 
@@ -50,11 +49,9 @@ public class ServerStatusWatcher implements Runnable {
 
     public ServerStatusWatcher(ServerStatus serverStatus,
                                InputStream inputStream, Path forkedStatusPath,
-                               long maxFiles,
-                               ServerTimeoutConfig serverTimeouts) throws IOException {
+                               TikaServerConfig tikaServerConfig) throws IOException {
         this.serverStatus = serverStatus;
-        this.maxFiles = maxFiles;
-        this.serverTimeouts = serverTimeouts;
+        this.tikaServerConfig = tikaServerConfig;
         this.forkedStatusPath = forkedStatusPath;
         serverStatus.setStatus(ServerStatus.STATUS.OPERATING);
         this.fromParent = new DataInputStream(inputStream);
@@ -112,7 +109,7 @@ public class ServerStatusWatcher implements Runnable {
         try (FileChannel channel = FileChannel.open(forkedStatusPath,
                 StandardOpenOption.CREATE,
                 StandardOpenOption.WRITE)) {
-            while (elapsed < serverTimeouts.getPingTimeoutMillis()) {
+            while (elapsed < tikaServerConfig.getPingTimeoutMillis()) {
                 try (FileLock lock = channel.tryLock()) {
                     if (lock != null) {
                         ((Buffer) statusBuffer).position(0);
@@ -131,11 +128,11 @@ public class ServerStatusWatcher implements Runnable {
     }
 
     private void checkForHitMaxFiles() {
-        if (maxFiles < 0) {
+        if (tikaServerConfig.getMaxFiles() < 0) {
             return;
         }
         long filesProcessed = serverStatus.getFilesProcessed();
-        if (filesProcessed >= maxFiles) {
+        if (filesProcessed >= tikaServerConfig.getMaxFiles()) {
             serverStatus.setStatus(ServerStatus.STATUS.HIT_MAX_FILES);
         }
     }
@@ -144,7 +141,7 @@ public class ServerStatusWatcher implements Runnable {
         Instant now = Instant.now();
         for (TaskStatus status : serverStatus.getTasks().values()) {
             long millisElapsed = Duration.between(status.started, now).toMillis();
-            if (millisElapsed > serverTimeouts.getTaskTimeoutMillis()) {
+            if (millisElapsed > tikaServerConfig.getTaskTimeoutMillis()) {
                 serverStatus.setStatus(ServerStatus.STATUS.TIMEOUT);
                 if (status.fileName.isPresent()) {
                     LOG.error("Timeout task {}, millis elapsed {}, file {}" +
@@ -199,13 +196,13 @@ public class ServerStatusWatcher implements Runnable {
 
                 if (lastPing != null) {
                     long elapsed = Duration.between(lastPing, Instant.now()).toMillis();
-                    if (elapsed > serverTimeouts.getPingTimeoutMillis()) {
+                    if (elapsed > tikaServerConfig.getPingTimeoutMillis()) {
                         serverStatus.setStatus(ServerStatus.STATUS.PARENT_EXCEPTION);
                         shutdown(ServerStatus.STATUS.PARENT_EXCEPTION);
                     }
                 }
                 try {
-                    Thread.sleep(serverTimeouts.getPingPulseMillis());
+                    Thread.sleep(tikaServerConfig.getPingPulseMillis());
                 } catch (InterruptedException e) {
                     return;
                 }

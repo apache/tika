@@ -61,7 +61,7 @@ public abstract class CXFTestBase {
     private final static int DIGESTER_READ_LIMIT = 20*1024*1024;
 
     protected static final String endPoint =
-            "http://localhost:" + TikaServerCli.DEFAULT_PORT;
+            "http://localhost:" + TikaServerConfig.DEFAULT_PORT;
     protected Server server;
     private TikaConfig tika;
 

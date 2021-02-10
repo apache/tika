@@ -19,8 +19,10 @@ package org.apache.tika.server.core;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.utils.ProcessUtils;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -33,9 +35,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.ConnectException;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.Permission;
 import java.time.Duration;
@@ -47,6 +51,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class TikaServerIntegrationTest extends IntegrationTestBase {
 
@@ -61,9 +66,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
             public void run() {
                 TikaServerCli.main(
                         new String[]{
-                                "-maxFiles", "100",
-                                "-p", INTEGRATION_TEST_PORT,
-                                "-tmpFilePrefix", "basic-"
+                                "-c", getConfig("tika-config-server-basic.xml")
                         });
             }
         };
@@ -127,7 +130,6 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
                                 "-pingPulseMillis", "100",
                                 "-status",
                                 "-tmpFilePrefix", "tika-server-oom"
-
                         });
             }
         };
@@ -333,10 +335,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
             public void run() {
                 TikaServerCli.main(
                         new String[]{
-                                "-JXms20m", "-JXmx10m",
-                                "-p", INTEGRATION_TEST_PORT,
-                                "-tmpFilePrefix", "tika-server-badargs"
-
+                                "-c", getConfig("tika-config-server-badjvmargs.xml"),
                         });
             }
         };
@@ -350,6 +349,15 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         serverThread.join(30000);
 
         assertEquals(-1, i.get());
+    }
+
+    private String getConfig(String configName) {
+        try {
+            return ProcessUtils.escapeCommandLine(Paths.get(TikaServerIntegrationTest.class.
+                    getResource("/configs/"+configName).toURI()).toAbsolutePath().toString());
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test
@@ -466,7 +474,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
     private void awaitServerStartup() throws Exception {
         Instant started = Instant.now();
         long elapsed = Duration.between(started, Instant.now()).toMillis();
-        WebClient client = WebClient.create(endPoint + "/tika").accept("text/plain");
+        WebClient client = WebClient.create(endPoint + "/").accept("text/html");
         while (elapsed < MAX_WAIT_MS) {
             try {
                 Response response = client.get();
@@ -576,6 +584,8 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
             assertEquals(1, metadataList.size());
             assertEquals("Nikolai Lobachevsky", metadataList.get(0).get("author"));
             assertContains("hello world", metadataList.get(0).get("X-TIKA:content"));
+            return;
         }
+        fail("should have completed within 3 tries");
     }
 }

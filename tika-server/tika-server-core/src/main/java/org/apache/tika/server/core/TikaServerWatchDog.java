@@ -64,40 +64,29 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
     private volatile Instant lastPing = null;
     private ForkedProcess forkedProcess = null;
 
-    private final String[] args;
     private final int port;
     private final String id;
     private final int restarts;
-    private final ServerTimeoutConfig serverTimeoutConfig;
+    private final TikaServerConfig tikaServerConfig;
 
-    TikaServerWatchDog(String[] args, int port, String id, int restarts,
-                       ServerTimeoutConfig serverTimeoutConfig) {
-        this.args = addPortAndId(args, port, id);
+    TikaServerWatchDog(int port, String id, int restarts,
+                       TikaServerConfig tikaServerConfig) {
         this.port = port;
         this.id  = id;
         this.restarts = restarts;
-        this.serverTimeoutConfig = serverTimeoutConfig;
+        this.tikaServerConfig = tikaServerConfig;
     }
 
-    private static String[] addPortAndId(String[] args, int port, String id) {
-        List<String> newArgs = new ArrayList<>();
-        newArgs.addAll(Arrays.asList(args));
-        newArgs.add("-p");
-        newArgs.add(Integer.toString(port));
-        newArgs.add("-i");
-        newArgs.add(id);
-        return newArgs.toArray(new String[0]);
-    }
 
     @Override
     public WatchDogResult call() throws Exception {
         LOG.info("server watch dog is starting up");
         try {
-            forkedProcess = new ForkedProcess(args, restarts, serverTimeoutConfig);
+            forkedProcess = new ForkedProcess(restarts);
             setForkedStatus(FORKED_STATUS.RUNNING);
-            startPingTimer(serverTimeoutConfig);
+            startPingTimer();
             while (forkedProcess.ping()) {
-                Thread.sleep(serverTimeoutConfig.getPingPulseMillis());
+                Thread.sleep(tikaServerConfig.getPingPulseMillis());
             }
         } catch (InterruptedException e) {
             //interrupted...shutting down
@@ -112,7 +101,7 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
         return new WatchDogResult(port, id,restarts+1);
     }
 
-    private void startPingTimer(ServerTimeoutConfig serverTimeouts) {
+    private void startPingTimer() {
         //if the forked thread is in stop-the-world mode, and isn't
         //reading the ping, this thread checks to make sure
         //that the parent ping is sent often enough.
@@ -131,7 +120,7 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
                     }
                     if (tmpLastPing > 0) {
                         long elapsed = Duration.between(Instant.ofEpochMilli(tmpLastPing), Instant.now()).toMillis();
-                        if (elapsed > serverTimeouts.getPingTimeoutMillis()) {
+                        if (elapsed > tikaServerConfig.getPingTimeoutMillis()) {
                             Process processToDestroy = null;
                             try {
                                 processToDestroy = forkedProcess.process;
@@ -145,7 +134,7 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
                         }
                     }
                     try {
-                        Thread.sleep(serverTimeouts.getPingPulseMillis());
+                        Thread.sleep(tikaServerConfig.getPingPulseMillis());
                     } catch (InterruptedException e) {
                         //swallow
                     }
@@ -228,28 +217,21 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
 
         private final Process process;
         private final DataOutputStream toForked;
-        private final ServerTimeoutConfig serverTimeoutConfig;
         private final Path forkedStatusFile;
         private final ByteBuffer statusBuffer = ByteBuffer.allocate(16);
 
-        private ForkedProcess(String[] args, int numRestarts, ServerTimeoutConfig serverTimeoutConfig) throws Exception {
-            String prefix = DEFAULT_FORKED_STATUS_FILE_PREFIX;
-            for (int i = 0; i < args.length; i++) {
-                if (args[i].equals("-tmpFilePrefix")) {
-                    prefix = args[i+1];
-                }
-            }
+        private ForkedProcess(int numRestarts) throws Exception {
+            String prefix = tikaServerConfig.getTempFilePrefix();
 
             this.forkedStatusFile = Files.createTempFile(prefix, "");
-            this.serverTimeoutConfig = serverTimeoutConfig;
-            this.process = startProcess(args, numRestarts, forkedStatusFile);
+            this.process = startProcess(numRestarts, forkedStatusFile);
 
             //wait for file to be written/initialized by forked process
             Instant start = Instant.now();
             long elapsed = Duration.between(start, Instant.now()).toMillis();
             try {
                 while (process.isAlive() && Files.size(forkedStatusFile) < 12
-                        && elapsed < serverTimeoutConfig.getMaxForkedStartupMillis()) {
+                        && elapsed < tikaServerConfig.getMaxForkedStartupMillis()) {
                     Thread.sleep(50);
                     elapsed = Duration.between(start, Instant.now()).toMillis();
                 }
@@ -259,7 +241,7 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
                 LOG.warn("failed to start forked process", e);
             }
 
-            if (elapsed > serverTimeoutConfig.getMaxForkedStartupMillis()) {
+            if (elapsed > tikaServerConfig.getMaxForkedStartupMillis()) {
                 close();
                 throw new RuntimeException("Forked process failed to start after "+elapsed + " (ms)");
             }
@@ -308,7 +290,7 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
                     forkedStatus.status);
 
             if (elapsedSinceLastUpdate >
-                    serverTimeoutConfig.getPingTimeoutMillis()) {
+                    tikaServerConfig.getPingTimeoutMillis()) {
                 //forked hasn't written a status update in a longer time than allowed
                 LOG.warn("Forked's last update exceeded ping timeout: {} (ms) with status {}",
                         elapsedSinceLastUpdate, forkedStatus.status);
@@ -325,7 +307,7 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
             //only reading, but need to include write to allow for locking
             try (FileChannel fc = FileChannel.open(forkedStatusFile, READ, WRITE)) {
 
-                while (elapsed < serverTimeoutConfig.getPingTimeoutMillis()) {
+                while (elapsed < tikaServerConfig.getPingTimeoutMillis()) {
                     try (FileLock lock = fc.tryLock(0, 16, true)) {
                         if (lock != null) {
                             ((Buffer)statusBuffer).position(0);
@@ -378,15 +360,15 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
 
         }
 
-        private Process startProcess(String[] args, int numRestarts, Path forkedStatusFile) throws IOException {
+        private Process startProcess(int numRestarts, Path forkedStatusFile) throws IOException {
 
             ProcessBuilder builder = new ProcessBuilder();
             builder.redirectError(ProcessBuilder.Redirect.INHERIT);
 
             List<String> argList = new ArrayList<>();
-            String javaPath = extractJavaPath(args);
-            List<String> jvmArgs = extractJVMArgs(args);
-            List<String> forkedArgs = extractArgs(args);
+            String javaPath = tikaServerConfig.getJavaPath();
+            List<String> jvmArgs = tikaServerConfig.getForkedJvmArgs();
+            List<String> forkedArgs = tikaServerConfig.getForkedProcessArgs(port, id);
 
             forkedArgs.add("-forkedStatusFile");
             forkedArgs.add(ProcessUtils.escapeCommandLine(forkedStatusFile.toAbsolutePath().toString()));
