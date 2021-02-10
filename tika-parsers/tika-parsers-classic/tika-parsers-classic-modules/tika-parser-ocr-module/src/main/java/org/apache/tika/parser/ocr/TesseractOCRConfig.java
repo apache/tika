@@ -82,8 +82,8 @@ public class TesseractOCRConfig implements Serializable {
     // The format of the ocr'ed output to be returned, txt or hocr.
     private OUTPUT_TYPE outputType = OUTPUT_TYPE.TXT;
 
-    // enable image processing (optional)
-    private boolean enableImageProcessing = false;
+    // enable image preprocessing with ImageMagick (optional)
+    private boolean enableImagePreprocessing = false;
 
     // resolution of processed image (in dpi).
     private int density = 300;
@@ -312,19 +312,19 @@ public class TesseractOCRConfig implements Serializable {
 
     /**
      * @return image processing is enabled or not
-     * @see #setEnableImageProcessing(boolean)
+     * @see #setEnableImagePreprocessing(boolean)
      */
-    public boolean isEnableImageProcessing() {
-        return enableImageProcessing;
+    public boolean isEnableImagePreprocessing() {
+        return enableImagePreprocessing;
     }
 
     /**
      * Set the value to true if processing is to be enabled.
      * Default value is false.
      */
-    public void setEnableImageProcessing(boolean enableImageProcessing) {
-        this.enableImageProcessing = enableImageProcessing;
-        userConfigured.add("enableImageProcessing");
+    public void setEnableImagePreprocessing(boolean enableImagePreprocessing) {
+        this.enableImagePreprocessing = enableImagePreprocessing;
+        userConfigured.add("enableImagePreprocessing");
     }
 
     /**

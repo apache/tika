@@ -269,7 +269,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
             if (size >= config.getMinFileSizeToOcr() && size <= config.getMaxFileSizeToOcr()) {
 
                 // Process image
-                if (config.isEnableImageProcessing() || config.isApplyRotation()) {
+                if (config.isEnableImagePreprocessing() || config.isApplyRotation()) {
                     if (!hasImageMagick) {
                         LOG.warn("User has selected to preprocess images, but I can't find ImageMagick." +
                                 "Backing off to original file.");
@@ -674,8 +674,8 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     }
 
     @Field
-    public void setEnableImageProcessing(boolean enableImageProcessing) {
-        defaultConfig.setEnableImageProcessing(enableImageProcessing);
+    public void setEnableImagePreprocessing(boolean enableImagePreprocessing) {
+        defaultConfig.setEnableImagePreprocessing(enableImagePreprocessing);
     }
 
     @Field

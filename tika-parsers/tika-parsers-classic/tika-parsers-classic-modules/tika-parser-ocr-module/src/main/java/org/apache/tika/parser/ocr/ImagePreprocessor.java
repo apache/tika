@@ -18,34 +18,21 @@ package org.apache.tika.parser.ocr;
 
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.io.IOUtils;
-import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.parser.ocr.tess4j.ImageDeskew;
-import org.apache.tika.utils.ProcessUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.Serializable;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 class ImagePreprocessor implements Serializable {
@@ -68,7 +55,7 @@ class ImagePreprocessor implements Serializable {
                 ? getAngle(sourceFile, metadata)
                 : 0d;
 
-        if (config.isEnableImageProcessing() || config.isApplyRotation() && angle != 0) {
+        if (config.isEnableImagePreprocessing() || config.isApplyRotation() && angle != 0) {
             // process the image - parameter values can be set in TesseractOCRConfig.properties
             CommandLine commandLine = new CommandLine(fullImageMagickPath);
 
@@ -84,7 +71,7 @@ class ImagePreprocessor implements Serializable {
 
             Stream<List<String>> stream = Stream.empty();
             if (angle == 0) {
-                if (config.isEnableImageProcessing()) {
+                if (config.isEnableImagePreprocessing()) {
                     // Do pre-processing, but don't do any rotation
                     stream = Stream.of(
                             density,
@@ -95,7 +82,7 @@ class ImagePreprocessor implements Serializable {
                             sourceFileArg,
                             targFileArg);
                 }
-            } else if (config.isEnableImageProcessing()) {
+            } else if (config.isEnableImagePreprocessing()) {
                 // Do pre-processing with rotation
                 stream = Stream.of(
                         density,

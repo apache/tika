@@ -28,7 +28,7 @@
         <param name="outputType" type="string">hocr</param>
         <param name="filter" type="string">box</param>
         <param name="applyRotation" type="bool">false</param>
-        <param name="enableImageProcessing" type="bool">false</param>
+        <param name="enableImagePreprocessing" type="bool">false</param>
 
         <param name="language" type="string">fra+deu</param>
 
