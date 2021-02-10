@@ -33,6 +33,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -70,11 +71,24 @@ public class MockParser extends AbstractParser {
     private static final long serialVersionUID = 1L;
     private static PrintStream ORIG_STDERR;
     private static PrintStream ORIG_STDOUT;
+    private static AtomicInteger TIMES_INITIATED = new AtomicInteger(0);
     static {
         ORIG_STDERR = System.err;
         ORIG_STDOUT = System.out;
     }
     private final Random random = new Random();
+    public MockParser() {
+        TIMES_INITIATED.incrementAndGet();
+    }
+
+    public static void resetTimesInitiated() {
+        TIMES_INITIATED.set(0);
+    }
+
+    public static int getTimesInitiated() {
+        return TIMES_INITIATED.get();
+    }
+
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         Set<MediaType> types = new HashSet<>();

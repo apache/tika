@@ -16,6 +16,9 @@
  */
 package org.apache.tika.config;
 
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.parser.Parser;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.BufferedReader;
@@ -28,8 +31,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -334,32 +339,47 @@ public class ServiceLoader {
         return names;
     }
 
-    /**
-     * Returns the available static service providers of the given type.
-     * The providers are loaded using the service provider mechanism using
-     * the configured class loader (if any). The returned list is newly
-     * allocated and may be freely modified by the caller.
-     *
-     * @since Apache Tika 1.2
-     * @param iface service provider interface
-     * @return static service providers
-     */
-    @SuppressWarnings("unchecked")
     public <T> List<T> loadStaticServiceProviders(Class<T> iface) {
+        return loadStaticServiceProviders(iface, Collections.EMPTY_SET);
+    }
+        /**
+         * Returns the available static service providers of the given type.
+         * The providers are loaded using the service provider mechanism using
+         * the configured class loader (if any). The returned list is newly
+         * allocated and may be freely modified by the caller.
+         *
+         * @since Apache Tika 1.2
+         * @param iface service provider interface
+         * @param excludes -- do not load these classes
+         * @return static service providers
+         */
+    @SuppressWarnings("unchecked")
+    public <T> List<T> loadStaticServiceProviders(Class<T> iface,
+                                                  Collection<Class<? extends T>> excludes) {
         List<T> providers = new ArrayList<T>();
 
         if (loader != null) {
             List<String> names = identifyStaticServiceProviders(iface);
-
             for (String name : names) {
                 try {
                     Class<?> klass = loader.loadClass(name);
                     if (iface.isAssignableFrom(klass)) {
-                        T instance = (T) klass.newInstance();
-                        if (instance instanceof Initializable) {
-                            ((Initializable)instance).checkInitialization(initializableProblemHandler);
+                        boolean shouldExclude = false;
+                        for (Class<? extends T> ex : excludes) {
+                            if (ex.isAssignableFrom(klass)) {
+                                shouldExclude = true;
+                                break;
+                            }
                         }
-                        providers.add(instance);
+                        if (! shouldExclude) {
+                            T instance = (T) klass.getConstructor().newInstance();
+                            if (instance instanceof Initializable) {
+                                ((Initializable) instance).checkInitialization(initializableProblemHandler);
+                            }
+                            providers.add(instance);
+                        }
+                    } else {
+                        throw new TikaConfigException("Class "+name + " is not of type: " + iface);
                     }
                 } catch (Throwable t) {
                     handler.handleLoadError(name, t);

@@ -51,8 +51,9 @@ public class DefaultParser extends CompositeParser {
      * @return ordered list of statically loadable parsers
      */
     private static List<Parser> getDefaultParsers(ServiceLoader loader,
-                                                  EncodingDetector encodingDetector) {
-        List<Parser> parsers = loader.loadStaticServiceProviders(Parser.class);
+                                                  EncodingDetector encodingDetector,
+                                                  Collection<Class<? extends Parser>> excludeParsers) {
+        List<Parser> parsers = loader.loadStaticServiceProviders(Parser.class, excludeParsers);
 
         if (encodingDetector != null) {
             for (Parser p : parsers) {
@@ -82,22 +83,22 @@ public class DefaultParser extends CompositeParser {
     public DefaultParser(MediaTypeRegistry registry, ServiceLoader loader,
                          Collection<Class<? extends Parser>> excludeParsers,
                          EncodingDetector encodingDetector) {
-        super(registry, getDefaultParsers(loader, encodingDetector), excludeParsers);
+        super(registry, getDefaultParsers(loader, encodingDetector, excludeParsers));
         this.loader = loader;
     }
 
     public DefaultParser(MediaTypeRegistry registry, ServiceLoader loader,
                          Collection<Class<? extends Parser>> excludeParsers) {
-        super(registry, getDefaultParsers(loader, new DefaultEncodingDetector(loader)), excludeParsers);
+        super(registry, getDefaultParsers(loader, new DefaultEncodingDetector(loader), excludeParsers));
         this.loader = loader;
     }
 
     public DefaultParser(MediaTypeRegistry registry, ServiceLoader loader, EncodingDetector encodingDetector) {
-        this(registry, loader, null, encodingDetector);
+        this(registry, loader, Collections.EMPTY_SET, encodingDetector);
     }
 
     public DefaultParser(MediaTypeRegistry registry, ServiceLoader loader) {
-        this(registry, loader, null, new DefaultEncodingDetector(loader));
+        this(registry, loader, Collections.EMPTY_SET, new DefaultEncodingDetector(loader));
     }
 
     public DefaultParser(MediaTypeRegistry registry, ClassLoader loader) {

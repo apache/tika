@@ -17,6 +17,7 @@
 package org.apache.tika.detect;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -56,8 +57,9 @@ public class DefaultDetector extends CompositeDetector {
      * @return ordered list of statically loadable detectors
      */
     private static List<Detector> getDefaultDetectors(
-            MimeTypes types, ServiceLoader loader) {
-        List<Detector> detectors = loader.loadStaticServiceProviders(Detector.class);
+            MimeTypes types, ServiceLoader loader,
+            Collection<Class<? extends Detector>> excludeDetectors) {
+        List<Detector> detectors = loader.loadStaticServiceProviders(Detector.class, excludeDetectors);
 
         ServiceLoaderUtils.sortLoadedClasses(detectors);
         //look for the override index and put that first
@@ -83,12 +85,12 @@ public class DefaultDetector extends CompositeDetector {
 
     public DefaultDetector(MimeTypes types, ServiceLoader loader,
                            Collection<Class<? extends Detector>> excludeDetectors) {
-        super(types.getMediaTypeRegistry(), getDefaultDetectors(types, loader), excludeDetectors);
+        super(types.getMediaTypeRegistry(), getDefaultDetectors(types, loader, excludeDetectors));
         this.loader = loader;
     }
     
     public DefaultDetector(MimeTypes types, ServiceLoader loader) {
-        this(types, loader, null);
+        this(types, loader, Collections.EMPTY_SET);
     }
 
     public DefaultDetector(MimeTypes types, ClassLoader loader) {

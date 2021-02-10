@@ -26,13 +26,9 @@ import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import org.apache.tika.ResourceLoggingClassLoader;
-import org.apache.tika.config.DummyExecutor;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.config.TikaConfigTest;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeDetectionTest;
 import org.apache.tika.parser.AutoDetectParser;
@@ -42,6 +38,7 @@ import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ErrorParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
+import org.apache.tika.parser.mock.MockParser;
 import org.apache.tika.parser.multiple.FallbackParser;
 import org.apache.tika.pipes.emitter.Emitter;
 import org.apache.tika.pipes.emitter.EmitterManager;
@@ -49,7 +46,6 @@ import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.FetcherManager;
 import org.apache.tika.pipes.fetcher.FileSystemFetcher;
 import org.apache.tika.pipes.fetchiterator.FetchIterator;
-import org.apache.tika.pipes.fetchiterator.FileSystemFetchIterator;
 import org.apache.tika.utils.XMLReaderUtils;
 import org.junit.Test;
 
@@ -421,5 +417,14 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
         FetchIterator f = getConfig("fetch-iterator-multiple-config.xml")
                 .getFetchIterator();
         assertEquals("fs1", f.getFetcherName());
+    }
+
+    @Test
+    public void testTimesInitiated() throws Exception {
+        //this prevents multi-threading tests, but we aren't doing that now...
+        MockParser.resetTimesInitiated();
+        TikaConfig tikaConfig =
+                new TikaConfig(TikaConfigTest.class.getResourceAsStream("mock-exclude.xml"));
+        assertEquals(1, MockParser.getTimesInitiated());
     }
 }
