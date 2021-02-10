@@ -118,6 +118,10 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     private String tesseractPath = "";
     private String tessdataPath = "";
     private String imageMagickPath = "";
+    //if set to true, this will run --list-langs
+    //at initialization and then check langs
+    //at parse time
+    private boolean preloadLangs = false;
     //if a user specifies a custom tess path or tessdata path
     //load the available languages at initialization time
     private final Set<String> langs = new HashSet<>();
@@ -322,9 +326,9 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
      * @throws IOException   if an input error occurred
      */
     private void doOCR(File input, File output, TesseractOCRConfig config) throws IOException, TikaException {
-        if (langs.size() > 0 && ! langs.contains(config.getLanguage())) {
-            throw new IllegalArgumentException("Couldn't find language "+
-                    config.getLanguage() +" upon initialization. I did find: "
+        if (langs.size() > 0 && !langs.contains(config.getLanguage())) {
+            throw new IllegalArgumentException("Couldn't find language " +
+                    config.getLanguage() + " upon initialization. I did find: "
                     + langs);
         }
         ArrayList<String> cmd = new ArrayList<>(Arrays.asList(
@@ -363,8 +367,9 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         InputStream err = process.getErrorStream();
         StringBuilder outBuilder = new StringBuilder();
         StringBuilder errBuilder = new StringBuilder();
-        logStream(out, outBuilder);
-        logStream(err, errBuilder);
+        Thread outThread = logStream(out, outBuilder);
+        Thread errThread = logStream(err, errBuilder);
+        outThread.start(); errThread.start();
 
         int exitValue = Integer.MIN_VALUE;
         try {
@@ -381,6 +386,12 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
             throw new TikaException("TesseractOCRParser timeout");
         }
         if (exitValue > 0) {
+            try {
+                //make sure this thread is actually done
+                errThread.join(1000);
+            } catch (InterruptedException e) {
+                //swallow
+            }
             throw new TikaException("TesseractOCRParser bad exit value " +
                     exitValue + " err msg: " + errBuilder.toString());
         }
@@ -432,8 +443,8 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
      * stream of the given process to not block the process. The stream is closed
      * once fully processed.
      */
-    private void logStream(final InputStream stream, final StringBuilder out) {
-        new Thread() {
+    private Thread logStream(final InputStream stream, final StringBuilder out) {
+        return new Thread() {
             public void run() {
                 Reader reader = new InputStreamReader(stream, UTF_8);
                 char[] buffer = new char[1024];
@@ -449,7 +460,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
 
                 LOG.debug("{}", out);
             }
-        }.start();
+        };
     }
 
     public static String getTesseractProg() {
@@ -466,9 +477,25 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
             throws TikaConfigException {
         hasTesseract = hasTesseract();
         hasImageMagick = hasImageMagick();
-        loadLangs();
+        if (preloadLangs) {
+            preloadLangs();
+        }
+        if (langs.size() > 0 &&
+                ! StringUtils.isBlank(defaultConfig.getLanguage())) {
+            if (! langs.contains(defaultConfig.getLanguage())) {
+                throw new TikaConfigException(
+                        "It doesn't look like tesseract has lang data for "
+                                + defaultConfig.getLanguage() + ". " +
+                                "I see only: "+langs
+                );
+            }
+        }
         imagePreprocessor = new ImagePreprocessor(
-                getImageMagickPath()+getImageMagickProg());
+                getImageMagickPath() + getImageMagickProg());
+    }
+
+    public Set<String> getLangs() {
+        return langs;
     }
 
     private static class HOCRPassThroughHandler extends DefaultHandler {
@@ -599,8 +626,8 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         for (String s : settings) {
             String[] bits = s.trim().split("\\s+");
             if (bits.length != 2) {
-                throw new TikaConfigException("Expected space delimited key value pair."+
-                        " However, I found "+bits.length+" bits.");
+                throw new TikaConfigException("Expected space delimited key value pair." +
+                        " However, I found " + bits.length + " bits.");
             }
             defaultConfig.addOtherTesseractConfig(bits[0], bits[1]);
         }
@@ -681,40 +708,87 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         defaultConfig.setApplyRotation(applyRotation);
     }
 
+    /**
+     * If set to <code>true</code> and if tesseract is found, this will load the
+     * langs that result from --list-langs. At parse time, the
+     * parser will verify that tesseract has the requested lang
+     * available.
+     * <p>
+     * If set to <code>false</code> (the default) and tesseract is found, if a user
+     * requests a language that tesseract does not have data for,
+     * a TikaException will be thrown with tesseract's native exception
+     * message, which is a bit less readable.
+     *
+     * @param preloadLangs
+     */
+    @Field
+    public void setPreloadLangs(boolean preloadLangs) {
+        this.preloadLangs = preloadLangs;
+    }
+
     public TesseractOCRConfig getDefaultConfig() {
         return defaultConfig;
     }
 
-    private void loadLangs() throws TikaConfigException {
+    private void preloadLangs() {
+        String[] args = new String[]{
+                getTesseractPath() + getTesseractProg(),
+                "--list-langs"
+        };
 
-        if (! hasTesseract) {
-            return;
-        }
+        ProcessBuilder pb = new ProcessBuilder(args);
 
-        Path actualTessdataPath = null;
-        if (!tessdataPath.isEmpty()) {
-            actualTessdataPath = Paths.get(tessdataPath);
-        } else if (!tesseractPath.isEmpty()) {
-            actualTessdataPath = Paths.get(tesseractPath, "tessdata");
-        } else {
-            return;
-        }
-        if (! Files.isDirectory(actualTessdataPath)) {
-            throw new TikaConfigException(actualTessdataPath + " is not a directory");
-        }
-        for (File f : actualTessdataPath.toFile().listFiles()) {
-            if (f.isFile() && f.getName().endsWith(".traineddata")) {
-                String lang = f.getName().replace(".traineddata", "");
-                langs.add(lang);
+        setEnv(pb);
+
+        Process process = null;
+        try {
+            process = pb.start();
+            getLangs(process, defaultConfig.getTimeoutSeconds());
+        } catch (TikaException | IOException e) {
+            LOG.warn("Problem preloading langs", e);
+        } finally {
+            if (process != null) {
+                process.destroyForcibly();
             }
-        }
-        if (langs.size() == 0) {
-            throw new TikaConfigException("Could not identify any languages (files ending in .traineddata) "+
-                    " in: "+actualTessdataPath.toAbsolutePath());
-        } else if (LOG.isDebugEnabled()) {
-            LOG.debug("found langs: "+langs);
         }
     }
 
+    private void getLangs(Process process, int timeoutSeconds)
+            throws IOException, TikaException {
+        process.getOutputStream().close();
+        InputStream out = process.getInputStream();
+        InputStream err = process.getErrorStream();
+        StringBuilder outBuilder = new StringBuilder();
+        StringBuilder errBuilder = new StringBuilder();
+        Thread outThread = logStream(out, outBuilder);
+        Thread errThread = logStream(err, errBuilder);
+        outThread.start(); errThread.start();
+
+        int exitValue = Integer.MIN_VALUE;
+        try {
+            boolean finished = process.waitFor(timeoutSeconds, TimeUnit.SECONDS);
+            if (!finished) {
+                throw new TikaException("TesseractOCRParser timeout");
+            }
+            exitValue = process.exitValue();
+            outThread.join(1000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new TikaException("TesseractOCRParser interrupted", e);
+        } catch (IllegalThreadStateException e) {
+            //this _should_ never be thrown
+            throw new TikaException("TesseractOCRParser timeout");
+        }
+        if (exitValue > 0) {
+            throw new TikaException("TesseractOCRParser bad exit value " +
+                    exitValue + " err msg: " + errBuilder.toString());
+        }
+        for (String line : outBuilder.toString().split("[\r\n]+")) {
+            if (line.startsWith("List of available")) {
+                continue;
+            }
+            langs.add(line.trim());
+        }
+    }
 }
 

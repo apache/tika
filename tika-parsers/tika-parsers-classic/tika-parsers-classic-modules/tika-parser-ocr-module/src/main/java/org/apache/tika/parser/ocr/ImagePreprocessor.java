@@ -49,8 +49,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 class ImagePreprocessor implements Serializable {
-    private static final Map<String, Boolean> IMAGE_MAGICK_PRESENT = new HashMap<>();
-    private static final Logger LOG = LoggerFactory.getLogger(TesseractOCRParser.class);
+
+    private static final Logger LOG = LoggerFactory.getLogger(ImagePreprocessor.class);
     private static final double MINIMUM_DESKEW_THRESHOLD = 1.0D;
 
     private final String fullImageMagickPath;

@@ -19,9 +19,11 @@ package org.apache.tika.parser.ocr;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.image.BPGParser;
@@ -45,6 +47,7 @@ import java.util.regex.Pattern;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
 
 public class TesseractOCRParserTest extends TikaTest {
@@ -73,17 +76,16 @@ public class TesseractOCRParserTest extends TikaTest {
         //somewhat differently in different versions/OS's, etc.
         xml = getXML("testOCR_spacing.png",
                 getMetadata(MediaType.image("png")),
-                        parseContext).xml;
+                parseContext).xml;
         Matcher m = Pattern.compile("The\\s{5,20}quick").matcher(xml);
         assertTrue(m.find());
     }
 
 
-
     private Metadata getMetadata(MediaType mediaType) {
         Metadata metadata = new Metadata();
         MediaType ocrMediaType = new MediaType(mediaType.getType(),
-                "OCR-"+mediaType.getSubtype());
+                "OCR-" + mediaType.getSubtype());
         metadata.set(TikaCoreProperties.CONTENT_TYPE_OVERRIDE,
                 ocrMediaType.toString());
         return metadata;
@@ -163,7 +165,7 @@ public class TesseractOCRParserTest extends TikaTest {
             Parser tesseractOCRParser = findParser(p, org.apache.tika.parser.ocr.TesseractOCRParser.class);
             assertNotNull(tesseractOCRParser);
 
-            TesseractOCRConfig tesseractOCRConfig = ((TesseractOCRParser)tesseractOCRParser).getDefaultConfig();
+            TesseractOCRConfig tesseractOCRConfig = ((TesseractOCRParser) tesseractOCRParser).getDefaultConfig();
             Assert.assertEquals(241, tesseractOCRConfig.getTimeoutSeconds());
             Assert.assertEquals(TesseractOCRConfig.OUTPUT_TYPE.HOCR, tesseractOCRConfig.getOutputType());
             Assert.assertEquals("ceb", tesseractOCRConfig.getLanguage());
@@ -173,13 +175,41 @@ public class TesseractOCRParserTest extends TikaTest {
     }
 
     @Test
+    public void testPreloadLangs() throws Exception {
+        assumeTrue(canRun());
+        TikaConfig config;
+        try (InputStream is = getResourceAsStream("/test-configs/tika-config-tesseract-load-langs.xml")) {
+            config = new TikaConfig(is);
+        }
+        Parser p = config.getParser();
+        Parser tesseractOCRParser = findParser(p, org.apache.tika.parser.ocr.TesseractOCRParser.class);
+        assertNotNull(tesseractOCRParser);
+        Set<String> langs = ((TesseractOCRParser) tesseractOCRParser).getLangs();
+        assertTrue(langs.size() > 0);
+
+        TesseractOCRConfig tesseractOCRConfig = new TesseractOCRConfig();
+        tesseractOCRConfig.setLanguage("zzz");
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(TesseractOCRConfig.class, tesseractOCRConfig);
+        try {
+            getRecursiveMetadata("testOCR_spacing.png",
+                    new AutoDetectParser(config), getMetadata(MediaType.image("png")), parseContext,
+                    false);
+            fail("should have thrown exception");
+        } catch (TikaException e) {
+            //expected
+        }
+
+    }
+
+    @Test
     public void testArbitraryParams() throws Exception {
         try (InputStream is = getResourceAsStream("/test-configs/tika-config-tesseract-arbitrary.xml")) {
             TikaConfig config = new TikaConfig(is);
             Parser p = config.getParser();
             Parser tesseractOCRParser = findParser(p, org.apache.tika.parser.ocr.TesseractOCRParser.class);
             assertNotNull(tesseractOCRParser);
-            TesseractOCRConfig tesseractOCRConfig = ((TesseractOCRParser)tesseractOCRParser).getDefaultConfig();
+            TesseractOCRConfig tesseractOCRConfig = ((TesseractOCRParser) tesseractOCRParser).getDefaultConfig();
             Assert.assertEquals("0.75",
                     tesseractOCRConfig.getOtherTesseractConfig().get("textord_initialx_ile"));
 
@@ -196,7 +226,7 @@ public class TesseractOCRParserTest extends TikaTest {
     //@Test
     public void showCoverage() throws Exception {
         Set<MediaType> imageParserMimes = new HashSet<>();
-        for (Parser p : new Parser[] {
+        for (Parser p : new Parser[]{
                 new BPGParser(),
                 new HeifParser(),
                 new ICNSParser(),
@@ -226,14 +256,14 @@ public class TesseractOCRParserTest extends TikaTest {
         }
 
         for (MediaType mt : imageParserMimes) {
-            if (! ocrTesseractMimes.contains(mt)) {
-                System.out.println("tesseract isn't currently configured to handle: "+mt);
+            if (!ocrTesseractMimes.contains(mt)) {
+                System.out.println("tesseract isn't currently configured to handle: " + mt);
             }
         }
 
         for (MediaType mt : literalTesseractMimes) {
             System.out.println("We don't have dedicated image parsers " +
-                    "for these formats, which are handled by tesseract: "+mt);
+                    "for these formats, which are handled by tesseract: " + mt);
         }
     }
 
@@ -242,23 +272,23 @@ public class TesseractOCRParserTest extends TikaTest {
 
         TesseractOCRParser parser = new TesseractOCRParser();
         parser.setTesseractPath("blah");
-        assertEquals("blah"+ File.separator, parser.getTesseractPath());
-        parser.setTesseractPath("blah"+File.separator);
-        assertEquals("blah"+File.separator, parser.getTesseractPath());
+        assertEquals("blah" + File.separator, parser.getTesseractPath());
+        parser.setTesseractPath("blah" + File.separator);
+        assertEquals("blah" + File.separator, parser.getTesseractPath());
         parser.setTesseractPath("");
         assertEquals("", parser.getTesseractPath());
 
         parser.setTessdataPath("blahdata");
-        assertEquals("blahdata"+File.separator, parser.getTessdataPath());
-        parser.setTessdataPath("blahdata"+File.separator);
-        assertEquals("blahdata"+File.separator, parser.getTessdataPath());
+        assertEquals("blahdata" + File.separator, parser.getTessdataPath());
+        parser.setTessdataPath("blahdata" + File.separator);
+        assertEquals("blahdata" + File.separator, parser.getTessdataPath());
         parser.setTessdataPath("");
         assertEquals("", parser.getTessdataPath());
 
         parser.setImageMagickPath("imagemagickpath");
-        assertEquals("imagemagickpath"+File.separator, parser.getImageMagickPath());
-        parser.setImageMagickPath("imagemagickpath"+File.separator);
-        assertEquals("imagemagickpath"+File.separator, parser.getImageMagickPath());
+        assertEquals("imagemagickpath" + File.separator, parser.getImageMagickPath());
+        parser.setImageMagickPath("imagemagickpath" + File.separator);
+        assertEquals("imagemagickpath" + File.separator, parser.getImageMagickPath());
         parser.setImageMagickPath("");
         assertEquals("", parser.getImageMagickPath());
     }
@@ -268,6 +298,6 @@ public class TesseractOCRParserTest extends TikaTest {
         //allow path that doesn't actually exist
         TesseractOCRParser parser = new TesseractOCRParser();
         parser.setTesseractPath("blahdeblahblah");
-        assertEquals("blahdeblahblah"+File.separator, parser.getTesseractPath());
+        assertEquals("blahdeblahblah" + File.separator, parser.getTesseractPath());
     }
 }
