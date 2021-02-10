@@ -165,8 +165,11 @@ public class TikaResource {
      * @throws WebApplicationException thrown when field cannot be found.
      */
     public static void processHeaderConfig(MultivaluedMap<String, String> httpHeaders, Object object, String key, String prefix) {
+        String val = httpHeaders.getFirst(key);
+        val = val.trim();
 
-        try {String property = StringUtils.removeStart(key, prefix);
+        try {
+            String property = StringUtils.removeStart(key, prefix);
             Field field = null;
             try {
                 field = object.getClass().getDeclaredField(StringUtils.uncapitalize(property));
@@ -209,8 +212,6 @@ public class TikaResource {
             }
 
             if (m != null) {
-                String val = httpHeaders.getFirst(key);
-                val = val.trim();
                 if (clazz == String.class) {
                     checkTrustWorthy(setter, val);
                     m.invoke(object, val);
@@ -234,8 +235,8 @@ public class TikaResource {
         } catch (Throwable ex) {
             throw new WebApplicationException(
                     String.format(Locale.ROOT,
-                    "%s is an invalid %s header",
-                            key, prefix), Response.Status.BAD_REQUEST);
+                    "%s is an invalid %s header or has an invalid value: %s",
+                            key, prefix, val), Response.Status.BAD_REQUEST);
         }
     }
 

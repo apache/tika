@@ -65,7 +65,7 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
 
     private static String[] FILES = new String[]{
             "hello_world.xml",
-            "heavy_hang_30000.xml", "real_oom.xml", "system_exit.xml",
+            "heavy_hang_30000.xml", "fake_oom.xml", "system_exit.xml",
             "null_pointer.xml"
     };
 
@@ -254,8 +254,12 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
         };
         serverThread.start();
         try {
-            JsonNode response = testOne("real_oom.xml", false);
-            assertContains("heap space", response.get("parse_error").asText());
+            JsonNode response = testOne("fake_oom.xml", false);
+            assertContains("oom message", response.get("parse_error").asText());
+        } catch (ProcessingException e) {
+            //depending on timing, there may be a connection exception --
+            // TODO add more of a delay to server shutdown to ensure message is sent
+            // before shutdown.
         } finally {
             serverThread.interrupt();
         }

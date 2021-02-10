@@ -325,6 +325,17 @@ public class TikaResourceTest extends CXFTestBase {
         response = WebClient.create(endPoint + TIKA_PATH)
                 .type("application/pdf")
                 .accept("text/plain")
+                .header(TesseractServerConfig.X_TIKA_OCR_HEADER_PREFIX+"skipOcr", "true")
+                .put(ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"));
+        responseMsg = getStringFromInputStream((InputStream) response
+                .getEntity());
+
+        assertTrue(responseMsg.trim().equals(""));
+
+
+        response = WebClient.create(endPoint + TIKA_PATH)
+                .type("application/pdf")
+                .accept("text/plain")
                 .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX+"OcrStrategy", "ocr_only")
                 .put(ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"));
         responseMsg = getStringFromInputStream((InputStream) response
