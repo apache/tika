@@ -469,17 +469,19 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
 
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
-        //no-op
-    }
-
-    @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
         hasTesseract = hasTesseract();
         hasImageMagick = hasImageMagick();
         if (preloadLangs) {
             preloadLangs();
         }
+        imagePreprocessor = new ImagePreprocessor(
+                getImageMagickPath() + getImageMagickProg());
+    }
+
+    @Override
+    public void checkInitialization(InitializableProblemHandler problemHandler)
+            throws TikaConfigException {
+
         if (langs.size() > 0 &&
                 ! StringUtils.isBlank(defaultConfig.getLanguage())) {
             if (! langs.contains(defaultConfig.getLanguage())) {
@@ -490,8 +492,6 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
                 );
             }
         }
-        imagePreprocessor = new ImagePreprocessor(
-                getImageMagickPath() + getImageMagickProg());
     }
 
     public Set<String> getLangs() {

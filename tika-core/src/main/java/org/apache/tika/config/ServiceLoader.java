@@ -374,6 +374,7 @@ public class ServiceLoader {
                         if (! shouldExclude) {
                             T instance = (T) klass.getConstructor().newInstance();
                             if (instance instanceof Initializable) {
+                                ((Initializable) instance).initialize(Collections.EMPTY_MAP);
                                 ((Initializable) instance).checkInitialization(initializableProblemHandler);
                             }
                             providers.add(instance);

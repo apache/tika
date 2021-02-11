@@ -289,15 +289,14 @@ public class StringsParser extends AbstractParser implements Initializable {
 
 	@Override
 	public void initialize(Map<String, Param> params) throws TikaConfigException {
-
+		checkForStrings();
+		fileCommandDetector = new FileCommandDetector();
+		fileCommandDetector.setFilePath(filePath);
+		fileCommandDetector.setTimeoutMs(defaultStringsConfig.getTimeoutSeconds()*1000);
 	}
 
 	@Override
 	public void checkInitialization(
 			InitializableProblemHandler problemHandler) throws TikaConfigException {
-		checkForStrings();
-		fileCommandDetector = new FileCommandDetector();
-		fileCommandDetector.setFilePath(filePath);
-		fileCommandDetector.setTimeoutMs(defaultStringsConfig.getTimeoutSeconds()*1000);
 	}
 }

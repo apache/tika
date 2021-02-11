@@ -17,6 +17,7 @@
 package org.apache.tika.parser.ocr;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
@@ -39,6 +40,8 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -54,6 +57,7 @@ public class TesseractOCRParserTest extends TikaTest {
 
     public static boolean canRun() throws TikaConfigException {
         TesseractOCRParser p = new TesseractOCRParser();
+        p.initialize(Collections.EMPTY_MAP);
         return p.hasTesseract();
     }
 
@@ -123,8 +127,8 @@ public class TesseractOCRParserTest extends TikaTest {
 
     @Test
     public void testPositiveRotateOCR() throws Exception {
-        TesseractOCRParser p = new TesseractOCRParser();
         assumeTrue(canRun());
+        TesseractOCRParser p = new TesseractOCRParser();
         assumeTrue(p.hasImageMagick());
         TesseractOCRConfig config = new TesseractOCRConfig();
         config.setApplyRotation(true);
@@ -299,5 +303,24 @@ public class TesseractOCRParserTest extends TikaTest {
         TesseractOCRParser parser = new TesseractOCRParser();
         parser.setTesseractPath("blahdeblahblah");
         assertEquals("blahdeblahblah" + File.separator, parser.getTesseractPath());
+    }
+
+    @Test
+    public void testThreadJoinInLoadingLangs() throws Exception {
+        assumeTrue(canRun());
+        //make sure that the stream is fully read and
+        //we're getting the same answers on several iterations
+        Set<String> langs = getLangs();
+        assumeTrue(langs.size() > 0);
+        for (int i = 0; i < 20; i++) {
+            assertEquals(langs, getLangs());
+        }
+    }
+
+    private Set<String> getLangs() throws Exception {
+        TesseractOCRParser p = new TesseractOCRParser();
+        p.setPreloadLangs(true);
+        p.initialize(Collections.EMPTY_MAP);
+        return p.getLangs();
     }
 }

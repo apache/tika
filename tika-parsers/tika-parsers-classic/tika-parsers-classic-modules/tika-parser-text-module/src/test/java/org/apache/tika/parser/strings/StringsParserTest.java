@@ -19,6 +19,7 @@ import static org.junit.Assume.assumeTrue;
 
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Collections;
 
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -50,7 +51,7 @@ public class StringsParserTest {
 		StringsConfig stringsConfig = new StringsConfig();
 
 		Parser parser = new StringsParser();
-		((Initializable)parser).checkInitialization(InitializableProblemHandler.IGNORE);
+		((Initializable)parser).initialize(Collections.emptyMap());
 		ContentHandler handler = new BodyContentHandler();
 		Metadata metadata = new Metadata();
 
