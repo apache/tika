@@ -36,7 +36,6 @@ import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
-import org.graalvm.compiler.lir.LIRInstruction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
