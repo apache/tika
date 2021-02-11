@@ -25,10 +25,13 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Serializable;
+import java.sql.Time;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -103,6 +106,8 @@ public class ExternalParser extends AbstractParser {
      */
     private Map<Pattern, String> metadataPatterns = null;
 
+    //make this parameterizable
+    private long timeoutMs = 60000;
     /**
      * The external command to invoke.
      *
@@ -286,7 +291,7 @@ public class ExternalParser extends AbstractParser {
      * stream of the given process to the given XHTML content handler.
      * The standard output stream is closed once fully processed.
      *
-     * @param process process
+     * @param stream
      * @param xhtml   XHTML content handler
      * @throws SAXException if the XHTML SAX events could not be handled
      * @throws IOException  if an input error occurred
@@ -432,13 +437,19 @@ public class ExternalParser extends AbstractParser {
             errorValue = new int[]{127};
         }
 
+        Process process = null;
         try {
-            Process process = Runtime.getRuntime().exec(checkCmd);
+            process = Runtime.getRuntime().exec(checkCmd);
             Thread stdErrSuckerThread = ignoreStream(process.getErrorStream(), false);
             Thread stdOutSuckerThread = ignoreStream(process.getInputStream(), false);
             stdErrSuckerThread.join();
             stdOutSuckerThread.join();
-            int result = process.waitFor();
+            //make the timeout parameterizable
+            boolean finished = process.waitFor(60000, TimeUnit.MILLISECONDS);
+            if (! finished) {
+                throw new TimeoutException();
+            }
+            int result = process.exitValue();
             for (int err : errorValue) {
                 if (result == err) return false;
             }
@@ -446,12 +457,12 @@ public class ExternalParser extends AbstractParser {
         } catch (IOException e) {
             // Some problem, command is there or is broken
             return false;
-        } catch (InterruptedException ie) {
+        } catch (InterruptedException| TimeoutException ie) {
             // Some problem, command is there or is broken
             return false;
         } catch (SecurityException se) {
             // External process execution is banned by the security manager
-            return false;
+            throw se;
         } catch (Error err) {
             if (err.getMessage() != null &&
                     (err.getMessage().contains("posix_spawn") ||
@@ -462,6 +473,10 @@ public class ExternalParser extends AbstractParser {
             }
             //throw if a different kind of error
             throw err;
+        } finally {
+            if (process != null) {
+                process.destroyForcibly();
+            }
         }
     }
 }

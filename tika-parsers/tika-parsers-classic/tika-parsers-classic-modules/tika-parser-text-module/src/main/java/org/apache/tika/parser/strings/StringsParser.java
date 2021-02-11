@@ -13,22 +13,26 @@
  */
 package org.apache.tika.parser.strings;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.tika.config.Field;
+import org.apache.tika.config.Initializable;
+import org.apache.tika.config.InitializableProblemHandler;
+import org.apache.tika.config.Param;
+import org.apache.tika.detect.FileCommandDetector;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -38,6 +42,7 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.SystemUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -52,7 +57,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @author gtotaro
  *
  */
-public class StringsParser extends AbstractParser {
+public class StringsParser extends AbstractParser implements Initializable {
 	/**
 	 * Serial version UID
 	 */
@@ -61,16 +66,16 @@ public class StringsParser extends AbstractParser {
 	private static final Set<MediaType> SUPPORTED_TYPES = Collections
 			.singleton(MediaType.OCTET_STREAM);
 
-	private static final StringsConfig DEFAULT_STRINGS_CONFIG = new StringsConfig();
+	private final StringsConfig defaultStringsConfig = new StringsConfig();
 	
-	private static final FileConfig DEFAULT_FILE_CONFIG = new FileConfig();
-	
-	/*
-	 * This map is organized as follows:
-	 * command's pathname (String) -> is it present? (Boolean), does it support -e option? (Boolean)
-	 * It stores check results for command and, if present, -e (encoding) option.
-	 */
-	private static Map<String,Boolean[]> STRINGS_PRESENT = new HashMap<String, Boolean[]>();
+	private String filePath = "";
+
+	private FileCommandDetector fileCommandDetector;
+
+	private boolean stringsPresent = false;
+	private boolean hasEncodingOption = false;//whether or not the strings app allows -e
+
+	private String stringsPath = "";
 
 	@Override
 	public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -81,12 +86,11 @@ public class StringsParser extends AbstractParser {
 	public void parse(InputStream stream, ContentHandler handler,
 			Metadata metadata, ParseContext context) throws IOException,
 			SAXException, TikaException {
-		StringsConfig stringsConfig = context.get(StringsConfig.class, DEFAULT_STRINGS_CONFIG);
-		FileConfig fileConfig = context.get(FileConfig.class, DEFAULT_FILE_CONFIG);
 
-		if (!hasStrings(stringsConfig)) {
+		if (!stringsPresent) {
 			return;
 		}
+		StringsConfig stringsConfig = context.get(StringsConfig.class, defaultStringsConfig);
 
 		TemporaryResources tmp = new TemporaryResources();
 		TikaInputStream tis = TikaInputStream.get(stream, tmp);
@@ -96,7 +100,7 @@ public class StringsParser extends AbstractParser {
 			// Metadata
 			metadata.set("strings:min-len", "" + stringsConfig.getMinLength());
 			metadata.set("strings:encoding", stringsConfig.toString());
-			metadata.set("strings:file_output", doFile(input, fileConfig));
+			metadata.set("strings:file_output", doFile(tis));
 
 			int totalBytes = 0;
 
@@ -116,63 +120,40 @@ public class StringsParser extends AbstractParser {
 		}
 	}
 
+	private String doFile(TikaInputStream tis) throws IOException {
+		Metadata tmpMetadata = new Metadata();
+		fileCommandDetector.detect(tis, tmpMetadata);
+		return tmpMetadata.get(Metadata.CONTENT_TYPE);
+	}
+
 	/**
 	 * Checks if the "strings" command is supported.
 	 * 
-	 * @param config
-	 *            {@see StringsConfig} object used for testing the strings
-	 *            command.
 	 * @return Returns returns {@code true} if the strings command is supported.
 	 */
-	private boolean hasStrings(StringsConfig config) {
-		String stringsProg = config.getStringsPath() + getStringsProg();
-		
-		if (STRINGS_PRESENT.containsKey(stringsProg)) {
-			return STRINGS_PRESENT.get(stringsProg)[0];
-		}
+	private void checkForStrings() {
+		String stringsProg = getStringsPath() + getStringsProg();
+
 
 		String[] checkCmd = { stringsProg, "--version" };
 		try {
-			boolean hasStrings = ExternalParser.check(checkCmd);
-
-			boolean encodingOpt = false;
-
-			// Check if the -e option (encoding) is supported
-			if (!System.getProperty("os.name").startsWith("Windows")) {
-				String[] checkOpt = {stringsProg, "-e", "" + config.getEncoding().get(), "/dev/null"};
-				int[] errorValues = {1, 2}; // Exit status code: 1 = general error; 2 = incorrect usage.
-				encodingOpt = ExternalParser.check(checkOpt, errorValues);
+			stringsPresent = ExternalParser.check(checkCmd);
+			if (! stringsPresent) {
+				return;
 			}
-		
-			Boolean[] values = {hasStrings, encodingOpt};
-			STRINGS_PRESENT.put(stringsProg, values);
-
-			return hasStrings;
+			// Check if the -e option (encoding) is supported
+			if (!SystemUtils.IS_OS_WINDOWS) {
+				String[] checkOpt = {stringsProg, "-e", "" + defaultStringsConfig.getEncoding().get(), "/dev/null"};
+				int[] errorValues = {1, 2}; // Exit status code: 1 = general error; 2 = incorrect usage.
+				hasEncodingOption = ExternalParser.check(checkOpt, errorValues);
+			}
 		} catch (NoClassDefFoundError ncdfe) {
 			// This happens under OSGi + Fork Parser - see TIKA-1507
 			// As a workaround for now, just say we can't use strings
 			// TODO Resolve it so we don't need this try/catch block
-			Boolean[] values = {false, false};
-			STRINGS_PRESENT.put(stringsProg, values);
-			return false;
 		}
 	}
 
-	/**
-	 * Checks if the "file" command is supported.
-	 * 
-	 * @param config
-	 * @return
-	 */
-	private boolean hasFile(FileConfig config) {
-		String fileProg = config.getFilePath() + getFileProg();
-
-		String[] checkCmd = { fileProg, "--version" };
-
-		boolean hasFile = ExternalParser.check(checkCmd);
-
-		return hasFile;
-	}
 
 	/**
 	 * Runs the "strings" command on the given file.
@@ -195,7 +176,7 @@ public class StringsParser extends AbstractParser {
 			XHTMLContentHandler xhtml) throws IOException, TikaException,
 			SAXException {
 		
-		String stringsProg = config.getStringsPath() + getStringsProg();
+		String stringsProg = getStringsPath() + getStringsProg();
 		
 		// Builds the command array
 		ArrayList<String> cmdList = new ArrayList<String>(4);
@@ -203,7 +184,7 @@ public class StringsParser extends AbstractParser {
 		cmdList.add("-n");
 		cmdList.add("" + config.getMinLength());;
 		// Currently, encoding option is not supported by Windows (and other) versions
-		if (STRINGS_PRESENT.get(stringsProg)[1]) {
+		if (hasEncodingOption) {
 			cmdList.add("-e");
 			cmdList.add("" + config.getEncoding().get());
 		}
@@ -215,127 +196,108 @@ public class StringsParser extends AbstractParser {
 		final Process process = pb.start();
 
 		InputStream out = process.getInputStream();
-
-		FutureTask<Integer> waitTask = new FutureTask<Integer>(
-				new Callable<Integer>() {
-					public Integer call() throws Exception {
-						return process.waitFor();
-					}
-				});
-
-		Thread waitThread = new Thread(waitTask);
-		waitThread.start();
-
+		AtomicInteger totalBytes = new AtomicInteger();
 		// Reads content printed out by "strings" command
-		int totalBytes = 0;
-		totalBytes = extractOutput(out, xhtml);		
-
+		Thread gobbler = logStream(out, xhtml, totalBytes);
+		gobbler.start();
 		try {
-			waitTask.get(config.getTimeout(), TimeUnit.SECONDS);
-
-		} catch (InterruptedException ie) {
-			waitThread.interrupt();
-			process.destroy();
-			Thread.currentThread().interrupt();
-			throw new TikaException(StringsParser.class.getName()
-					+ " interrupted", ie);
-
-		} catch (ExecutionException ee) {
-			// should not be thrown
-
-		} catch (TimeoutException te) {
-			waitThread.interrupt();
-			process.destroy();
-			throw new TikaException(StringsParser.class.getName() + " timeout",
-					te);
-		}
-
-		return totalBytes;
-	}
-
-	/**
-	 * Extracts ASCII strings using the "strings" command.
-	 * 
-	 * @param stream
-	 *            {@see InputStream} object used for reading the binary file.
-	 * @param xhtml
-	 *            {@see XHTMLContentHandler} object.
-	 * @return the total number of bytes read using the "strings" command.
-	 * @throws SAXException
-	 *             if the content element could not be written.
-	 * @throws IOException
-	 *             if any I/O error occurs.
-	 */
-	private int extractOutput(InputStream stream, XHTMLContentHandler xhtml)
-			throws SAXException, IOException {
-
-		char[] buffer = new char[1024];
-		int totalBytes = 0;
-
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, UTF_8))) {
-			int n = 0;
-			while ((n = reader.read(buffer)) != -1) {
-				if (n > 0) {
-					xhtml.characters(buffer, 0, n);
-				}
-				totalBytes += n;
+			boolean completed = process.waitFor(config.getTimeoutSeconds(), TimeUnit.SECONDS);
+			if (! completed) {
+				throw new TimeoutException("timed out");
 			}
-
+			gobbler.join(10000);
+		} catch (InterruptedException| TimeoutException e) {
+			throw new TikaException("strings process failed", e);
+		} finally {
+			process.destroyForcibly();
 		}
 
-		return totalBytes;
+		return totalBytes.get();
 	}
 
-	/**
-	 * Runs the "file" command on the given file that aims at providing an
-	 * alternative way to determine the file type.
-	 * 
-	 * @param input
-	 *            {@see File} object that represents the file to detect.
-	 * @return the file type provided by the "file" command using the "-b"
-	 *         option (it stands for "brief mode").
-	 * @throws IOException
-	 *             if any I/O error occurs.
-	 */
-	private String doFile(File input, FileConfig config) throws IOException {
-		if (!hasFile(config)) {
-			return null;
-		}
-		
-		// Builds the command array
-		ArrayList<String> cmdList = new ArrayList<String>(3);
-		cmdList.add(config.getFilePath() + getFileProg());
-		cmdList.add("-b");
-		if (config.isMimetype()) {
-			cmdList.add("-I");
-		}
-		cmdList.add(input.getPath());
-		
-		String[] cmd = cmdList.toArray(new String[0]);
 
-		ProcessBuilder pb = new ProcessBuilder(cmd);
-		final Process process = pb.start();
+	private Thread logStream(final InputStream stream, final ContentHandler handler,
+							 final AtomicInteger totalBytes)
+			{
+		return new Thread() {
+			public void run() {
+				Reader reader = new InputStreamReader(stream, UTF_8);
+				char[] buffer = new char[1024];
+				try {
+					for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
+						handler.characters(buffer, 0, n);
+						totalBytes.addAndGet(n);
+					}
+				} catch (SAXException|IOException e) {
 
-		InputStream out = process.getInputStream();
-
-		String fileOutput = null;
-
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(out, UTF_8))) {
-			fileOutput = reader.readLine();
-		} catch (IOException ioe) {
-			// file output not available!
-			fileOutput = "";
-		}
-
-		return fileOutput;
+				} finally {
+					IOUtils.closeQuietly(stream);
+				}
+			}
+		};
 	}
-
 	
 	public static String getStringsProg() {
-		return System.getProperty("os.name").startsWith("Windows") ? "strings.exe" : "strings";
+		return SystemUtils.IS_OS_WINDOWS ? "strings.exe" : "strings";
 	}
-	
-	public static String getFileProg() {
-		return System.getProperty("os.name").startsWith("Windows") ? "file.exe" : "file";
+
+
+	/**
+	 * Sets the "strings" installation folder.
+	 *
+	 * @param path
+	 *            the "strings" installation folder.
+	 */
+	@Field
+	public void setStringsPath(String path) {
+		if (!path.isEmpty() && !path.endsWith(File.separator)) {
+			path += File.separatorChar;
+		}
+		this.stringsPath = path;
+	}
+
+	public String getStringsPath() {
+		return stringsPath;
+	}
+
+	@Field
+	public void setEncoding(String encoding) {
+		defaultStringsConfig.setEncoding(StringsEncoding.valueOf(encoding));
+	}
+
+	@Field
+	public void setTimeoutSeconds(int timeoutSeconds) {
+		defaultStringsConfig.setTimeoutSeconds(timeoutSeconds);
+	}
+
+	@Field
+	public void setMinLength(int minLength) {
+		defaultStringsConfig.setMinLength(minLength);
+	}
+
+	public int getMinLength() {
+		return defaultStringsConfig.getMinLength();
+	}
+
+	public int getTimeoutSeconds() {
+		return defaultStringsConfig.getTimeoutSeconds();
+	}
+
+	public StringsEncoding getStringsEncoding() {
+		return defaultStringsConfig.getEncoding();
+	}
+
+	@Override
+	public void initialize(Map<String, Param> params) throws TikaConfigException {
+
+	}
+
+	@Override
+	public void checkInitialization(
+			InitializableProblemHandler problemHandler) throws TikaConfigException {
+		checkForStrings();
+		fileCommandDetector = new FileCommandDetector();
+		fileCommandDetector.setFilePath(filePath);
+		fileCommandDetector.setTimeoutMs(defaultStringsConfig.getTimeoutSeconds()*1000);
 	}
 }

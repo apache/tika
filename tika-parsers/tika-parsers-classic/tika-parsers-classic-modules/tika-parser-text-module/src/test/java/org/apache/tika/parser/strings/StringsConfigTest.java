@@ -15,9 +15,10 @@ package org.apache.tika.parser.strings;
 
 import static org.junit.Assert.*;
 
-import java.io.File;
 import java.io.InputStream;
 
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.parser.CompositeParser;
 import org.junit.Test;
 
 public class StringsConfigTest {
@@ -25,34 +26,47 @@ public class StringsConfigTest {
 	@Test
 	public void testNoConfig() {
 		StringsConfig config = new StringsConfig();
-		assertEquals("Invalid default filePath value", "", config.getStringsPath());
 		assertEquals("Invalid default encoding value", StringsEncoding.SINGLE_7_BIT, config.getEncoding());
 		assertEquals("Invalid default min-len value", 4, config.getMinLength());
-		assertEquals("Invalid default timeout value", 120, config.getTimeout());
+		assertEquals("Invalid default timeout value", 120, config.getTimeoutSeconds());
 	}
 	
 	@Test
-	public void testPartialConfig() {
-		InputStream stream = StringsConfigTest.class.getResourceAsStream("/test-properties/StringsConfig-partial.properties");
+	public void testPartialConfig() throws Exception {
+		TikaConfig tikaConfig = null;
+		try(InputStream stream =
+					StringsConfigTest.class.getResourceAsStream(
+							"/test-configs/tika-config-strings-partial.xml")) {
+			tikaConfig = new TikaConfig(stream);
+
+		}
+		StringsParser p = (StringsParser)((CompositeParser)tikaConfig.getParser())
+				.getAllComponentParsers().get(0);
 		
-		StringsConfig config = new StringsConfig(stream);
-		assertEquals("Invalid default stringsPath value", "", config.getStringsPath());
-		assertEquals("Invalid overridden encoding value", StringsEncoding.BIGENDIAN_16_BIT, config.getEncoding());
-		assertEquals("Invalid default min-len value", 4, config.getMinLength());
-		assertEquals("Invalid overridden timeout value", 60, config.getTimeout());
+		assertEquals("Invalid overridden encoding value",
+				StringsEncoding.BIGENDIAN_16_BIT, p.getStringsEncoding());
+		assertEquals("Invalid default min-len value", 4, p.getMinLength());
+		assertEquals("Invalid overridden timeout value", 60, p.getTimeoutSeconds());
 	}
 	
 	@Test
-	public void testFullConfig() {
-		InputStream stream = StringsConfigTest.class.getResourceAsStream("/test-properties/StringsConfig-full.properties");
-		
-		StringsConfig config = new StringsConfig(stream);
-		assertEquals("Invalid overridden stringsPath value", "/opt/strings" + File.separator, config.getStringsPath());
-		assertEquals("Invalid overridden encoding value", StringsEncoding.BIGENDIAN_16_BIT, config.getEncoding());
-		assertEquals("Invalid overridden min-len value", 3, config.getMinLength());
-		assertEquals("Invalid overridden timeout value", 60, config.getTimeout());
+	public void testFullConfig() throws Exception {
+		TikaConfig tikaConfig = null;
+		try(InputStream stream =
+					StringsConfigTest.class.getResourceAsStream(
+							"/test-configs/tika-config-strings-full.xml")) {
+			tikaConfig = new TikaConfig(stream);
+
+		}
+		StringsParser p = (StringsParser)((CompositeParser)tikaConfig.getParser())
+				.getAllComponentParsers().get(0);
+		assertEquals("Invalid overridden encoding value",
+				StringsEncoding.BIGENDIAN_16_BIT, p.getStringsEncoding());
+		assertEquals("Invalid overridden min-len value", 3, p.getMinLength());
+		assertEquals("Invalid overridden timeout value", 60, p.getTimeoutSeconds());
+
 	}
-	
+
 	@Test(expected=IllegalArgumentException.class)
 	public void testValidateEconding() {
 		StringsConfig config = new StringsConfig();

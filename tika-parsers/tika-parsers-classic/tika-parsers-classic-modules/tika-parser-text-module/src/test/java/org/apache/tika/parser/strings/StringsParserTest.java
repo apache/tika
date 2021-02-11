@@ -20,6 +20,8 @@ import static org.junit.Assume.assumeTrue;
 import java.io.InputStream;
 import java.util.Arrays;
 
+import org.apache.tika.config.Initializable;
+import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -30,8 +32,7 @@ import org.xml.sax.ContentHandler;
 
 public class StringsParserTest {
 	public static boolean canRun() {
-		StringsConfig config = new StringsConfig();
-		String[] checkCmd = {config.getStringsPath() + getStringsProg(), "--version"};
+		String[] checkCmd = {new StringsParser().getStringsPath() + getStringsProg(), "--version"};
 		boolean hasStrings = ExternalParser.check(checkCmd);
 		return hasStrings;
 	}
@@ -47,15 +48,14 @@ public class StringsParserTest {
 		String[] met_attributes = {"min-len", "encoding", "strings:file_output"};
 
 		StringsConfig stringsConfig = new StringsConfig();
-		FileConfig fileConfig = new FileConfig();
 
 		Parser parser = new StringsParser();
+		((Initializable)parser).checkInitialization(InitializableProblemHandler.IGNORE);
 		ContentHandler handler = new BodyContentHandler();
 		Metadata metadata = new Metadata();
 
 		ParseContext context = new ParseContext();
 		context.set(StringsConfig.class, stringsConfig);
-		context.set(FileConfig.class, fileConfig);
 
 		try (InputStream stream = StringsParserTest.class.getResourceAsStream(resource)) {
 			parser.parse(stream, handler, metadata, context);
@@ -65,7 +65,7 @@ public class StringsParserTest {
 
 		// Content
 		for (String word : content) {
-			assertTrue(handler.toString().contains(word));
+			assertTrue("can't find "+word, handler.toString().contains(word));
 		}
 		
 		// Metadata

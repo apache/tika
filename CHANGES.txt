@@ -5,9 +5,20 @@ Release 2.0.0-ALPHA - 01/13/2021
      * OCR is now triggered automatically for PDFs if tesseract
        is on the user's path see (https://cwiki.apache.org/confluence/display/TIKA/TikaOCR#TikaOCR-disable-ocr)
        for how to disable OCR.
-     * Remove deprecated Metadata keys/properties (TIKA-1974).
+     * Removed deprecated Metadata keys/properties (TIKA-1974).
      * Removed dangerous calls to read an inputstream or convert to bytes
        without specifying a charset
+     * Parsers can be configured via tika-config.xml on instantiation.
+       We have moved away from configuration via .properties files because
+       of confusion among users.  This affects the PDFParser, TesseractOCRParser
+       and the StringsParser.
+     * For those parsers that can be configured per parse via a config object
+       passed in through the ParseContext, the config object will only update those fields
+       that the user has modified.  The config object will no longer
+       fully reset all settings to the default settings per parse.
+       This has a more intuitive "update the base/configured settings" with
+       what has been changed in the config object.
+
 
    * tika-parsers
      * The parser modules have been broken into three main modules:

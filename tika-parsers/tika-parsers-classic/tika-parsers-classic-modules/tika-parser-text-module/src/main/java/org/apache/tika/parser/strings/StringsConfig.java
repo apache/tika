@@ -13,11 +13,7 @@
  */
 package org.apache.tika.parser.strings;
 
-import java.io.File;
 import java.io.Serializable;
-import java.util.Properties;
-import java.io.InputStream;
-import java.io.IOException;
 
 /**
  * Configuration for the "strings" (or strings-alternative) command.
@@ -38,70 +34,7 @@ public class StringsConfig implements Serializable {
 	private StringsEncoding encoding = StringsEncoding.SINGLE_7_BIT;
 
 	// Maximum time (seconds) to wait for the strings process termination
-	private int timeout = 120;
-
-	/**
-	 * Default contructor.
-	 */
-	public StringsConfig() {
-		init(this.getClass().getResourceAsStream("Strings.properties"));
-	}
-
-	/**
-	 * Loads properties from InputStream and then tries to close InputStream. If
-	 * there is an IOException, this silently swallows the exception and goes
-	 * back to the default.
-	 *
-	 * @param is
-	 */
-	public StringsConfig(InputStream is) {
-		init(is);
-	}
-
-	/**
-	 * Initializes attributes.
-	 *
-	 * @param is
-	 */
-	private void init(InputStream is) {
-		if (is == null) {
-			return;
-		}
-		Properties props = new Properties();
-		try {
-			props.load(is);
-		} catch (IOException e) {
-			// swallow
-		} finally {
-			if (is != null) {
-				try {
-					is.close();
-				} catch (IOException e) {
-					// swallow
-				}
-			}
-		}
-
-		setStringsPath(props.getProperty("stringsPath", "" + getStringsPath()));
-		
-		setMinLength(Integer.parseInt(props.getProperty("minLength", ""
-				+ getMinLength())));
-
-		setEncoding(StringsEncoding.valueOf(props.getProperty("encoding", ""
-				+ getEncoding().get())));
-
-		setTimeout(Integer.parseInt(props.getProperty("timeout", ""
-				+ getTimeout())));
-	}
-
-	/**
-	 * Returns the "strings" installation folder.
-	 * 
-	 * @return the "strings" installation folder.
-	 */
-	public String getStringsPath() {
-		return this.stringsPath;
-	}
+	private int timeoutSeconds = 120;
 
 	/**
 	 * Returns the minimum sequence length (characters) to print.
@@ -129,22 +62,11 @@ public class StringsConfig implements Serializable {
 	 * @return the maximum time (in seconds) to wait for the "strings" command
 	 *         to terminate.
 	 */
-	public int getTimeout() {
-		return this.timeout;
+	public int getTimeoutSeconds() {
+		return this.timeoutSeconds;
 	}
 
-	/**
-	 * Sets the "strings" installation folder.
-	 * 
-	 * @param path
-	 *            the "strings" installation folder.
-	 */
-	public void setStringsPath(String path) {
-		if (!path.isEmpty() && !path.endsWith(File.separator)) {
-			path += File.separatorChar;
-		}
-		this.stringsPath = path;
-	}
+
 
 	/**
 	 * Sets the minimum sequence length (characters) to print.
@@ -174,14 +96,14 @@ public class StringsConfig implements Serializable {
 	 * Sets the maximum time (in seconds) to wait for the "strings" command to
 	 * terminate.
 	 * 
-	 * @param timeout
+	 * @param timeoutSeconds
 	 *            the maximum time (in seconds) to wait for the "strings"
 	 *            command to terminate.
 	 */
-	public void setTimeout(int timeout) {
-		if (timeout < 1) {
+	public void setTimeoutSeconds(int timeoutSeconds) {
+		if (timeoutSeconds < 1) {
 			throw new IllegalArgumentException("Invalid timeout");
 		}
-		this.timeout = timeout;
+		this.timeoutSeconds = timeoutSeconds;
 	}
 }
