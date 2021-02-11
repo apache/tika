@@ -23,6 +23,7 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.utils.ProcessUtils;
+import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -46,6 +47,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -57,146 +59,118 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerIntegrationTest.class);
 
+    @After
+    public void tearDown() throws Exception {
+        //wait just a bit for the servers to shutdown
+        Thread.sleep(500);
+    }
 
     @Test
     public void testBasic() throws Exception {
 
-        Thread serverThread = new Thread() {
-            @Override
-            public void run() {
-                TikaServerCli.main(
-                        new String[]{
-                                "-c", getConfig("tika-config-server-basic.xml")
-                        });
-            }
-        };
-        serverThread.start();
+        Process p = null;
         try {
+            p = startProcess(new String[]{"-config",
+                    getConfig("tika-config-server-basic.xml")});
             testBaseline();
         } finally {
-            serverThread.interrupt();
+            if (p != null) {
+                p.destroyForcibly();
+            }
         }
     }
 
     @Test
     public void testOOM() throws Exception {
 
-        Thread serverThread = new Thread() {
-            @Override
-            public void run() {
-                TikaServerCli.main(
-                        new String[]{
-                                "-JXmx256m",
-                                "-p", INTEGRATION_TEST_PORT,
-                                "-pingPulseMillis", "100",
-                                "-tmpFilePrefix", "tika-server-oom"
+        Process p = null;
+        try {
+            p = startProcess(new String[]{"-config",
+                    getConfig("tika-config-server-basic.xml")});
 
-                        });
+            awaitServerStartup();
+
+            Response response = null;
+            try {
+                response = WebClient
+                        .create(endPoint + META_PATH)
+                        .accept("application/json")
+                        .put(ClassLoader
+                                .getSystemResourceAsStream(TEST_OOM));
+            } catch (Exception e) {
+                //oom may or may not cause an exception depending
+                //on the timing
             }
-        };
-        serverThread.start();
-        awaitServerStartup();
-
-        Response response = null;
-        try {
-            response = WebClient
-                    .create(endPoint + META_PATH)
-                    .accept("application/json")
-                    .put(ClassLoader
-                            .getSystemResourceAsStream(TEST_OOM));
-        } catch (Exception e) {
-            //oom may or may not cause an exception depending
-            //on the timing
-        }
-        //give some time for the server to crash/terminate itself
-        Thread.sleep(2000);
-        try {
+            //give some time for the server to crash/terminate itself
+            Thread.sleep(2000);
             testBaseline();
         } finally {
-            serverThread.interrupt();
+            if (p != null) {
+                p.destroyForcibly();
+            }
         }
     }
 
     @Test
     public void testSameServerIdAfterOOM() throws Exception {
 
-        Thread serverThread = new Thread() {
-            @Override
-            public void run() {
-                TikaServerCli.main(
-                        new String[]{
-                                "-JXmx256m",
-                                "-p", INTEGRATION_TEST_PORT,
-                                "-pingPulseMillis", "100",
-                                "-status",
-                                "-tmpFilePrefix", "tika-server-oom"
-                        });
+        Process p = null;
+        try {
+            p = startProcess(new String[]{"-config",
+                    getConfig("tika-config-server-basic.xml")});
+            awaitServerStartup();
+            String serverId = getServerId();
+            Response response = null;
+            try {
+                response = WebClient
+                        .create(endPoint + META_PATH)
+                        .accept("application/json")
+                        .put(ClassLoader
+                                .getSystemResourceAsStream(TEST_OOM));
+            } catch (Exception e) {
+                //oom may or may not cause an exception depending
+                //on the timing
             }
-        };
-        serverThread.start();
-        awaitServerStartup();
-        String serverId = getServerId();
-        Response response = null;
-        try {
-            response = WebClient
-                    .create(endPoint + META_PATH)
-                    .accept("application/json")
-                    .put(ClassLoader
-                            .getSystemResourceAsStream(TEST_OOM));
-        } catch (Exception e) {
-            //oom may or may not cause an exception depending
-            //on the timing
-        }
-        //give some time for the server to crash/terminate itself
-        Thread.sleep(2000);
-        try {
+            //give some time for the server to crash/terminate itself
+            Thread.sleep(2000);
             testBaseline();
             assertEquals(serverId, getServerId());
             assertEquals(1, getNumRestarts());
         } finally {
-            serverThread.interrupt();
+            if (p != null) {
+                p.destroyForcibly();
+            }
         }
     }
 
     @Test
     public void testSameDeclaredServerIdAfterOOM() throws Exception {
         String serverId = "qwertyuiop";
-        Thread serverThread = new Thread() {
-            @Override
-            public void run() {
-                TikaServerCli.main(
-                        new String[]{
-                                "-JXmx256m",
-                                "-p", INTEGRATION_TEST_PORT,
-                                "-pingPulseMillis", "100",
-                                "-status",
-                                "-id",
-                                serverId,
-                                "-tmpFilePrefix", "tika-server-oom"
-
-                        });
+        Process p = null;
+        try {
+            p = startProcess(new String[]{"-config",
+                    getConfig("tika-config-server-basic.xml"),
+                    "-id", serverId});
+            awaitServerStartup();
+            Response response = null;
+            try {
+                response = WebClient
+                        .create(endPoint + META_PATH)
+                        .accept("application/json")
+                        .put(ClassLoader
+                                .getSystemResourceAsStream(TEST_OOM));
+            } catch (Exception e) {
+                //oom may or may not cause an exception depending
+                //on the timing
             }
-        };
-        serverThread.start();
-        awaitServerStartup();
-        Response response = null;
-        try {
-            response = WebClient
-                    .create(endPoint + META_PATH)
-                    .accept("application/json")
-                    .put(ClassLoader
-                            .getSystemResourceAsStream(TEST_OOM));
-        } catch (Exception e) {
-            //oom may or may not cause an exception depending
-            //on the timing
-        }
-        //give some time for the server to crash/terminate itself
-        Thread.sleep(2000);
-        try {
+            //give some time for the server to crash/terminate itself
+            Thread.sleep(2000);
             testBaseline();
             assertEquals(serverId, getServerId());
         } finally {
-            serverThread.interrupt();
+            if (p != null) {
+                p.destroyForcibly();
+            }
         }
     }
 
@@ -225,136 +199,110 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
     @Test
     public void testSystemExit() throws Exception {
 
-        Thread serverThread = new Thread() {
-            @Override
-            public void run() {
-                TikaServerCli.main(
-                        new String[]{
-                                "-p", INTEGRATION_TEST_PORT,
-                                "-tmpFilePrefix", "tika-server-systemexit"
+        Process p = null;
+        try {
+            p = startProcess(new String[]{"-config",
+                    getConfig("tika-config-server-basic.xml")});
 
-                        });
+            awaitServerStartup();
+            Response response = null;
+            try {
+                response = WebClient
+                        .create(endPoint + META_PATH)
+                        .accept("application/json")
+                        .put(ClassLoader
+                                .getSystemResourceAsStream(TEST_SYSTEM_EXIT));
+            } catch (Exception e) {
+                //sys exit causes catchable problems for the client
             }
-        };
-        serverThread.start();
-        awaitServerStartup();
-        Response response = null;
-        try {
-            response = WebClient
-                    .create(endPoint + META_PATH)
-                    .accept("application/json")
-                    .put(ClassLoader
-                            .getSystemResourceAsStream(TEST_SYSTEM_EXIT));
-        } catch (Exception e) {
-            //sys exit causes catchable problems for the client
-        }
-        //give some time for the server to crash/terminate itself
-        Thread.sleep(2000);
-        try {
+            //give some time for the server to crash/terminate itself
+            Thread.sleep(2000);
+
             testBaseline();
         } finally {
-            serverThread.interrupt();
+            if (p != null) {
+                p.destroyForcibly();
+            }
+
         }
     }
 
     @Test
     public void testTimeoutOk() throws Exception {
-        //test that there's enough time for this file.
-        Thread serverThread = new Thread() {
-            @Override
-            public void run() {
-                TikaServerCli.main(
-                        new String[]{
-                                "-p", INTEGRATION_TEST_PORT,
-                                "-taskTimeoutMillis", "10000", "-taskPulseMillis", "500",
-                                "-pingPulseMillis", "500",
-                                "-tmpFilePrefix", "tika-server-timeoutok"
-
-                        });
+        Process p = null;
+        try {
+            p = startProcess(new String[]{"-config",
+                    getConfig("tika-config-server-timeout-10000.xml")});
+            awaitServerStartup();
+            Response response = null;
+            try {
+                response = WebClient
+                        .create(endPoint + META_PATH)
+                        .accept("application/json")
+                        .put(ClassLoader
+                                .getSystemResourceAsStream(TEST_HEAVY_HANG_SHORT));
+            } catch (Exception e) {
+                //potential exception depending on timing
             }
-        };
-        serverThread.start();
-        awaitServerStartup();
-        Response response = null;
-        try {
-            response = WebClient
-                    .create(endPoint + META_PATH)
-                    .accept("application/json")
-                    .put(ClassLoader
-                            .getSystemResourceAsStream(TEST_HEAVY_HANG_SHORT));
-        } catch (Exception e) {
-            //potential exception depending on timing
-        }
-        try {
             testBaseline();
         } finally {
-            serverThread.interrupt();
+            if (p != null) {
+                p.destroyForcibly();
+            }
         }
     }
 
     @Test(timeout = 60000)
     public void testTimeout() throws Exception {
 
-        Thread serverThread = new Thread() {
-            @Override
-            public void run() {
-                TikaServerCli.main(
-                        new String[]{
-                                "-p", INTEGRATION_TEST_PORT,
-                                "-taskTimeoutMillis", "10000", "-taskPulseMillis", "100",
-                                "-pingPulseMillis", "100",
-                                "-tmpFilePrefix", "tika-server-timeout"
-
-                        });
+        Process p = null;
+        try {
+            p = startProcess(new String[]{"-config",
+                    getConfig("tika-config-server-timeout-10000.xml")});
+            awaitServerStartup();
+            Response response = null;
+            try {
+                response = WebClient
+                        .create(endPoint + META_PATH)
+                        .accept("application/json")
+                        .put(ClassLoader
+                                .getSystemResourceAsStream(TEST_HEAVY_HANG));
+            } catch (Exception e) {
+                //catchable exception when server shuts down.
             }
-        };
-        serverThread.start();
-        awaitServerStartup();
-        Response response = null;
-        try {
-            response = WebClient
-                    .create(endPoint + META_PATH)
-                    .accept("application/json")
-                    .put(ClassLoader
-                            .getSystemResourceAsStream(TEST_HEAVY_HANG));
-        } catch (Exception e) {
-            //catchable exception when server shuts down.
-        }
-        try {
             testBaseline();
         } finally {
-            serverThread.interrupt();
+            if (p != null) {
+                p.destroyForcibly();
+            }
         }
     }
 
     @Test
     public void testBadJVMArgs() throws Exception {
-        final AtomicInteger i = new AtomicInteger();
-        Thread serverThread = new Thread() {
-            @Override
-            public void run() {
-                TikaServerCli.main(
-                        new String[]{
-                                "-c", getConfig("tika-config-server-badjvmargs.xml"),
-                        });
-            }
-        };
-        serverThread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-            @Override
-            public void uncaughtException(Thread t, Throwable e) {
-                i.set(((MyExitException) e).getStatus());
-            }
-        });
-        serverThread.start();
-        serverThread.join(30000);
 
-        assertEquals(-1, i.get());
+        Process p = null;
+        try {
+            p = startProcess(new String[]{"-config",
+                    getConfig("tika-config-server-badjvmargs.xml"),
+            });
+
+            boolean finished = p.waitFor(10000, TimeUnit.MILLISECONDS);
+            if (! finished) {
+                fail("should have completed by now");
+            }
+            assertEquals(255, p.exitValue());
+        } finally {
+            if (p != null) {
+                p.destroyForcibly();
+            }
+        }
     }
 
     private String getConfig(String configName) {
         try {
             return ProcessUtils.escapeCommandLine(Paths.get(TikaServerIntegrationTest.class.
-                    getResource("/configs/"+configName).toURI()).toAbsolutePath().toString());
+                    getResource("/configs/" + configName).toURI()).toAbsolutePath().toString());
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
@@ -362,22 +310,10 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
 
     @Test
     public void testStdErrOutBasic() throws Exception {
-        final AtomicInteger i = new AtomicInteger();
-        Thread serverThread = new Thread() {
-            @Override
-            public void run() {
-                TikaServerCli.main(
-                        new String[]{
-                                "-p", INTEGRATION_TEST_PORT,
-                                "-taskTimeoutMillis", "60000", "-taskPulseMillis", "500",
-                                "-pingPulseMillis", "100",
-                                "-tmpFilePrefix", "tika-server-stderr"
-
-                        });
-            }
-        };
-        serverThread.start();
+        Process p = null;
         try {
+            p = startProcess(new String[]{"-config",
+                    getConfig("tika-config-server-timeout-10000.xml")});
             awaitServerStartup();
 
             Response response = WebClient
@@ -391,27 +327,19 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
             assertContains("quick brown fox", metadataList.get(0).get("X-TIKA:content"));
             testBaseline();
         } finally {
-            serverThread.interrupt();
+            if (p != null) {
+                p.destroyForcibly();
+            }
         }
     }
 
     @Test
     @Ignore("This works, but prints too much junk to the console.  Figure out how to gobble/redirect.")
     public void testStaticStdErrOutBasic() throws Exception {
-        final AtomicInteger i = new AtomicInteger();
-        Thread serverThread = new Thread() {
-            @Override
-            public void run() {
-                TikaServerCli.main(
-                        new String[]{
-                                "-p", INTEGRATION_TEST_PORT,
-                                "-taskTimeoutMillis", "60000", "-taskPulseMillis", "500",
-                                "-pingPulseMillis", "100"
-                        });
-            }
-        };
-        serverThread.start();
+        Process p = null;
         try {
+            p = startProcess(new String[]{"-config",
+                    getConfig("tika-config-server-timeout-10000.xml")});
             awaitServerStartup();
 
             Response response = WebClient
@@ -425,11 +353,15 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
             assertContains("quick brown fox", metadataList.get(0).get("X-TIKA:content"));
             testBaseline();
         } finally {
-            serverThread.interrupt();
+            if (p != null) {
+                p.destroyForcibly();
+            }
+
         }
     }
 
 
+    @Ignore("TODO needs to write dynamic config file w logfile location")
     @Test
     public void testStdErrOutLogging() throws Exception {
         final AtomicInteger i = new AtomicInteger();
@@ -466,36 +398,6 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         }
     }
 
-    @Test
-    public void testEmitterSysExit() throws Exception {
-
-    }
-
-    private void awaitServerStartup() throws Exception {
-        Instant started = Instant.now();
-        long elapsed = Duration.between(started, Instant.now()).toMillis();
-        WebClient client = WebClient.create(endPoint + "/").accept("text/html");
-        while (elapsed < MAX_WAIT_MS) {
-            try {
-                Response response = client.get();
-                if (response.getStatus() == 200) {
-                    elapsed = Duration.between(started, Instant.now()).toMillis();
-                    LOG.info("client observes server successfully started after " +
-                            elapsed + " ms");
-                    return;
-                }
-                LOG.debug("tika test client failed to connect to server with status: {}", response.getStatus());
-
-            } catch (javax.ws.rs.ProcessingException e) {
-                LOG.debug("tika test client failed to connect to server", e);
-            }
-
-            Thread.sleep(100);
-            elapsed = Duration.between(started, Instant.now()).toMillis();
-        }
-        throw new TimeoutException("couldn't connect to server after " +
-                elapsed + " ms");
-    }
 
     @Test
     @Ignore("turn this into a real test")

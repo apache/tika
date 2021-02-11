@@ -25,6 +25,7 @@
         </forkedJVMArgs>
         <endpoints>
             <endpoint>rmeta</endpoint>
+            <endpoint>status</endpoint>
         </endpoints>
     </server>
 </properties>

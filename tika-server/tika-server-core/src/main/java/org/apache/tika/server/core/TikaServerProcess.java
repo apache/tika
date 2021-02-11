@@ -123,7 +123,7 @@ public class TikaServerProcess {
             CommandLineParser cliParser = new DefaultParser();
             CommandLine line = cliParser.parse(options, args);
             TikaServerConfig tikaServerConfig = TikaServerConfig.load(line);
-
+            LOG.debug("forked config: {}", tikaServerConfig);
             mainLoop(tikaServerConfig);
         } catch (Exception e) {
             e.printStackTrace();
@@ -153,6 +153,7 @@ public class TikaServerProcess {
                 executorCompletionService.submit(new AsyncParser(asyncFetchEmitQueue, asyncEmitData));
             }
         }
+        System.out.println("starting server again? " + tikaServerConfig);
         //start the server
         Server server = serverDetails.sf.create();
         LOG.info("Started Apache Tika server {} at {}",

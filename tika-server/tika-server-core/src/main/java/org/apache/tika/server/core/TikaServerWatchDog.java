@@ -66,39 +66,50 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
 
     private final int port;
     private final String id;
-    private final int restarts;
+    private int restarts = 0;
     private final TikaServerConfig tikaServerConfig;
+    private volatile boolean shutDown = false;
 
-    TikaServerWatchDog(int port, String id, int restarts,
+    TikaServerWatchDog(int port, String id,
                        TikaServerConfig tikaServerConfig) {
         this.port = port;
         this.id  = id;
-        this.restarts = restarts;
         this.tikaServerConfig = tikaServerConfig;
     }
 
 
     @Override
     public WatchDogResult call() throws Exception {
-        LOG.info("server watch dog is starting up");
-        try {
-            forkedProcess = new ForkedProcess(restarts);
-            setForkedStatus(FORKED_STATUS.RUNNING);
-            startPingTimer();
-            while (forkedProcess.ping()) {
-                Thread.sleep(tikaServerConfig.getPingPulseMillis());
+        while (true) {
+            if (tikaServerConfig.getMaxRestarts() > 0 && restarts >=
+                    tikaServerConfig.getMaxRestarts()) {
+                LOG.warn("hit max restarts ({}). Ending processing for {} {}",
+                        restarts, id, port);
+                return new WatchDogResult(port, id, restarts);
             }
-        } catch (InterruptedException e) {
-            //interrupted...shutting down
-        } finally {
-            setForkedStatus(FORKED_STATUS.SHUTTING_DOWN);
-            LOG.debug("about to shutdown");
-            if (forkedProcess != null) {
-                LOG.info("about to shutdown process");
-                forkedProcess.close();
+
+            try {
+                forkedProcess = new ForkedProcess(restarts++);
+                setForkedStatus(FORKED_STATUS.RUNNING);
+                startPingTimer();
+                while (forkedProcess.ping()) {
+                    Thread.sleep(tikaServerConfig.getPingPulseMillis());
+                }
+            } catch (InterruptedException e) {
+                return new WatchDogResult(port, id,restarts);
+            } finally {
+                setForkedStatus(FORKED_STATUS.SHUTTING_DOWN);
+                LOG.debug("about to shutdown");
+                if (forkedProcess != null) {
+                    LOG.info("about to shutdown process");
+                    forkedProcess.close();
+                }
             }
         }
-        return new WatchDogResult(port, id,restarts+1);
+    }
+
+    public void shutDown() {
+        shutDown = true;
     }
 
     private void startPingTimer() {
@@ -151,65 +162,6 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
         synchronized (forkedStatusLock) {
             forkedStatus = status;
         }
-    }
-
-    private static List<String> extractArgs(String[] args) {
-        List<String> argList = new ArrayList<>();
-        for (int i = 0; i < args.length; i++) {
-            if (args[i].startsWith("-J")) {
-                continue;
-            }
-            if (args[i].equals("-javaHome")) {
-                if (i == args.length-1) {
-                    throw new IllegalArgumentException("must specify a value for -javaHome");
-                }
-                i++;//skip argument value
-                continue;
-            }
-
-            argList.add(args[i]);
-        }
-        return argList;
-    }
-
-    private static String extractJavaPath(String[] args) {
-        String javaHome = null;
-        for (int i = 0; i < args.length; i++) {
-            if (args[i].equals("-javaHome")) {
-                if (i == args.length-1) {
-                    throw new IllegalArgumentException("must specify a value for -javaHome");
-                }
-                javaHome = args[i+1];
-                break;
-            }
-        }
-        if (javaHome == null) {
-            javaHome = System.getenv("JAVA_HOME");
-        }
-        if (javaHome != null) {
-            Path jPath = Paths.get(javaHome).resolve("bin").resolve("java");
-            return ProcessUtils.escapeCommandLine(
-                    jPath.toAbsolutePath().toString());
-        }
-        return "java";
-    }
-    private static List<String> extractJVMArgs(String[] args) {
-        List<String> jvmArgs = new ArrayList<>();
-        boolean foundHeadlessOption = false;
-        for (String arg : args) {
-            if (arg.startsWith("-J")) {
-                jvmArgs.add("-" + arg.substring(2));
-            }
-            if (arg.contains("java.awt.headless")) {
-                foundHeadlessOption = true;
-            }
-        }
-        //if user has already specified headless...don't modify
-        if (! foundHeadlessOption) {
-            jvmArgs.add("-Djava.awt.headless=true");
-        }
-
-        return jvmArgs;
     }
 
     private class ForkedProcess {
@@ -326,9 +278,7 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
             throw new RuntimeException("couldn't read from status file after "+elapsed +" millis");
         }
 
-
         private void close() {
-
             try {
                 if (toForked != null) {
                     toForked.writeByte(ServerStatus.DIRECTIVES.SHUTDOWN.getByte());
@@ -357,7 +307,6 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
                     LOG.warn("problem deleting forked process status file", e);
                 }
             }
-
         }
 
         private Process startProcess(int numRestarts, Path forkedStatusFile) throws IOException {

@@ -16,17 +16,30 @@
  */
 package org.apache.tika.server.core;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.cxf.common.logging.LogUtils;
+import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.tika.TikaTest;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.security.Permission;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeoutException;
 
 public class IntegrationTestBase extends TikaTest {
 
@@ -41,6 +54,7 @@ public class IntegrationTestBase extends TikaTest {
     static final String STATUS_PATH = "/status";
 
     static final long MAX_WAIT_MS = 60000;
+    private static final Logger LOG = LoggerFactory.getLogger(IntegrationTestBase.class);
 
     //running into conflicts on 9998 with the CXFTestBase tests
     //TODO: figure out why?!
@@ -51,6 +65,7 @@ public class IntegrationTestBase extends TikaTest {
 
     private SecurityManager existingSecurityManager = null;
     static Path LOG_FILE;
+    static Path STREAMS_DIR;
 
 
     @BeforeClass
@@ -59,12 +74,13 @@ public class IntegrationTestBase extends TikaTest {
         LOG_FILE = Files.createTempFile("tika-server-integration", ".xml");
         Files.copy(TikaServerIntegrationTest.class.getResourceAsStream("/logging/log4j_forked.xml"),
                 LOG_FILE, StandardCopyOption.REPLACE_EXISTING);
+        STREAMS_DIR = Files.createTempDirectory("tika-server-integration");
     }
 
     @Before
     public void setUp() throws Exception {
         existingSecurityManager = System.getSecurityManager();
-        System.setSecurityManager(new SecurityManager() {
+/*        System.setSecurityManager(new SecurityManager() {
             @Override
             public void checkExit(int status) {
                 super.checkExit(status);
@@ -78,12 +94,13 @@ public class IntegrationTestBase extends TikaTest {
             public void checkPermission(Permission perm, Object context) {
                 // all ok
             }
-        });
+        });*/
     }
 
     @AfterClass
     public static void staticTearDown() throws Exception {
         Files.delete(LOG_FILE);
+        FileUtils.deleteDirectory(STREAMS_DIR.toFile());
     }
 
     @After
@@ -101,4 +118,44 @@ public class IntegrationTestBase extends TikaTest {
             return status;
         }
     }
+
+    public Process startProcess(String[] extraArgs) throws IOException {
+        String[] base = new String[] {
+                "java", "-cp", System.getProperty("java.class.path"),
+                "org.apache.tika.server.core.TikaServerCli",
+        };
+        List<String> args = new ArrayList<>(Arrays.asList(base));
+        args.addAll(Arrays.asList(extraArgs));
+        ProcessBuilder pb = new ProcessBuilder(args);
+        pb.redirectInput(Files.createTempFile(STREAMS_DIR, "tika-stream-out", ".log").toFile());
+        pb.redirectError(Files.createTempFile(STREAMS_DIR, "tika-stream-err", ".log").toFile());
+        return pb.start();
+    }
+
+    void awaitServerStartup() throws Exception {
+        Instant started = Instant.now();
+        long elapsed = Duration.between(started, Instant.now()).toMillis();
+        WebClient client = WebClient.create(endPoint + "/").accept("text/html");
+        while (elapsed < MAX_WAIT_MS) {
+            try {
+                Response response = client.get();
+                if (response.getStatus() == 200) {
+                    elapsed = Duration.between(started, Instant.now()).toMillis();
+                    LOG.info("client observes server successfully started after " +
+                            elapsed + " ms");
+                    return;
+                }
+                LOG.debug("tika test client failed to connect to server with status: {}", response.getStatus());
+
+            } catch (javax.ws.rs.ProcessingException e) {
+                LOG.debug("tika test client failed to connect to server", e);
+            }
+
+            Thread.sleep(100);
+            elapsed = Duration.between(started, Instant.now()).toMillis();
+        }
+        throw new TimeoutException("couldn't connect to server after " +
+                elapsed + " ms");
+    }
+
 }

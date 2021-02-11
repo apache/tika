@@ -58,6 +58,8 @@ public class TikaServerCli {
 
         options.addOption("i", "id", true, "id to use for server in" +
                 " the server status endpoint and logging");
+        options.addOption("noFork", false, "runs in legacy 1.x mode -- " +
+                "server runs in process and is not safely isolated in a forked process");
 
         return options;
     }
@@ -97,10 +99,13 @@ public class TikaServerCli {
         List<PortIdPair> portIdPairs = getPortIdPairs(tikaServerConfig);
 
         ExecutorService executorService = Executors.newFixedThreadPool(portIdPairs.size());
-        ExecutorCompletionService<WatchDogResult> executorCompletionService = new ExecutorCompletionService<>(executorService);
+        ExecutorCompletionService<WatchDogResult> executorCompletionService =
+                new ExecutorCompletionService<>(executorService);
+        List<TikaServerWatchDog> watchers = new ArrayList<>();
         for (PortIdPair p : portIdPairs) {
-            executorCompletionService.submit(
-                    new TikaServerWatchDog(p.port, p.id,0, tikaServerConfig));
+            TikaServerWatchDog watcher = new TikaServerWatchDog(p.port, p.id, tikaServerConfig);
+            executorCompletionService.submit(watcher);
+            watchers.add(watcher);
         }
 
         int finished = 0;
@@ -108,26 +113,23 @@ public class TikaServerCli {
             while (finished < portIdPairs.size()) {
                 Future<WatchDogResult> future = executorCompletionService.poll(1, TimeUnit.MINUTES);
                 if (future != null) {
+                    System.err.println("main loop future");
                     LOG.debug("main loop future is available");
                     WatchDogResult result = future.get();
-                    LOG.debug("main loop future: ({}); about to restart", result);
-                    if (tikaServerConfig.getMaxRestarts() < 0 ||
-                            result.getNumRestarts() < tikaServerConfig.getMaxRestarts()) {
-                        System.err.println("starting up again");
-                        executorCompletionService.submit(
-                                new TikaServerWatchDog(result.getPort(),
-                                result.getId(),
-                                result.getNumRestarts(), tikaServerConfig));
-                    } else {
-                        System.err.println("finished!");
-                        LOG.warn("id {} with port {} has exceeded maxRestarts {}. Shutting down and not restarting.",
-                                result.getId(), result.getPort(), tikaServerConfig.getMaxRestarts());
+                    System.err.println("main loop future get");
+                    LOG.debug("main loop future: ({}); finished", result);
                         finished++;
-                    }
                 }
             }
+        } catch (InterruptedException e) {
+            System.err.println("INTERRUPTED");
+            for (TikaServerWatchDog w : watchers) {
+                w.shutDown();
+            }
+            LOG.debug("thread interrupted", e);
         } finally {
             //this is just asking nicely...there is no guarantee!
+            System.err.println("shutting down");
             executorService.shutdownNow();
         }
     }
@@ -156,20 +158,32 @@ public class TikaServerCli {
 
     private static List<PortIdPair> getPortIdPairs(TikaServerConfig tikaServerConfig) {
         List<PortIdPair> pairs = new ArrayList<>();
-        Matcher m = Pattern.compile("^(\\d+)-(\\d+)\\Z").matcher("");
-        for (String val : tikaServerConfig.getPortString().split(",")) {
-            m.reset(val);
-            if (m.find()) {
-                int min = Math.min(Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2)));
-                int max = Math.max(Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2)));
+        Matcher rangeMatcher = Pattern.compile("^(\\d+)-(\\d+)\\Z").matcher("");
+        String[] commaDelimited = tikaServerConfig.getPortString().split(",");
+        List<Integer> indivPorts = new ArrayList<>();
+        for (String val : commaDelimited) {
+            rangeMatcher.reset(val);
+            if (rangeMatcher.find()) {
+                int min = Math.min(Integer.parseInt(rangeMatcher.group(1)), Integer.parseInt(rangeMatcher.group(2)));
+                int max = Math.max(Integer.parseInt(rangeMatcher.group(1)), Integer.parseInt(rangeMatcher.group(2)));
                 for (int i = min; i <= max; i++) {
-                    pairs.add(new PortIdPair(i, tikaServerConfig.getIdBase() + "-" + i));
+                    indivPorts.add(i);
                 }
             } else {
-                pairs.add(new PortIdPair(Integer.parseInt(val),
-                        tikaServerConfig.getIdBase() + "-"+val));
+                indivPorts.add(Integer.parseInt(val));
             }
         }
+        //if there's only one port, use only the idbase, otherwise append -$port
+        if (indivPorts.size() == 0) {
+            throw new IllegalArgumentException("Couldn't find any ports in: "+tikaServerConfig.getPortString());
+        } else if (indivPorts.size() == 1) {
+            pairs.add(new PortIdPair(indivPorts.get(0), tikaServerConfig.getIdBase()));
+        } else {
+            for (int p : indivPorts) {
+                pairs.add(new PortIdPair(p, tikaServerConfig.getIdBase() + "-" + p));
+            }
+        }
+
         return pairs;
     }
 

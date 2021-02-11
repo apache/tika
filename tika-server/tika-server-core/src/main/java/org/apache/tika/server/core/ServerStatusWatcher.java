@@ -42,7 +42,7 @@ public class ServerStatusWatcher implements Runnable {
     private final TikaServerConfig tikaServerConfig;
     private final Path forkedStatusPath;
     private final ByteBuffer statusBuffer = ByteBuffer.allocate(16);
-
+    private volatile boolean shuttingDown = false;
 
 
     private volatile Instant lastPing = null;
@@ -58,8 +58,7 @@ public class ServerStatusWatcher implements Runnable {
         Thread statusWatcher = new Thread(new StatusWatcher());
         statusWatcher.setDaemon(true);
         statusWatcher.start();
-        writeStatus();
-
+        writeStatus(false);
     }
 
     @Override
@@ -81,7 +80,7 @@ public class ServerStatusWatcher implements Runnable {
                     checkForTaskTimeouts();
                 }
                 try {
-                    writeStatus();
+                    writeStatus(false);
                 } catch (Exception e) {
                     LOG.warn("Exception writing to parent", e);
                     serverStatus.setStatus(ServerStatus.STATUS.PARENT_EXCEPTION);
@@ -93,7 +92,7 @@ public class ServerStatusWatcher implements Runnable {
                 shutdown(ServerStatus.STATUS.PARENT_REQUESTED_SHUTDOWN);
             } else if (directive == ServerStatus.DIRECTIVES.PING_ACTIVE_SERVER_TASKS.getByte()) {
                 try {
-                    writeStatus();
+                    writeStatus(false);
                 } catch (Exception e) {
                     LOG.warn("Exception writing to parent", e);
                     serverStatus.setStatus(ServerStatus.STATUS.PARENT_EXCEPTION);
@@ -103,7 +102,14 @@ public class ServerStatusWatcher implements Runnable {
         }
     }
 
-    private void writeStatus() throws IOException {
+    private synchronized void writeStatus(boolean shuttingDown) throws IOException {
+        if (this.shuttingDown == true) {
+            return;
+        }
+        if (shuttingDown == true) {
+            this.shuttingDown = true;
+        }
+
         Instant started = Instant.now();
         long elapsed = Duration.between(started, Instant.now()).toMillis();
         try (FileChannel channel = FileChannel.open(forkedStatusPath,
@@ -147,21 +153,20 @@ public class ServerStatusWatcher implements Runnable {
                     LOG.error("Timeout task {}, millis elapsed {}, file {}" +
                                     "consider increasing the allowable time with the " +
                                     "-taskTimeoutMillis flag",
-                            status.task.toString(), Long.toString(millisElapsed), status.fileName.get());
+                            status.task.toString(), millisElapsed, status.fileName.get());
                 } else {
                     LOG.error("Timeout task {}, millis elapsed {}; " +
                                     "consider increasing the allowable time with the " +
                                     "-taskTimeoutMillis flag",
-                            status.task.toString(), Long.toString(millisElapsed));
+                            status.task.toString(), millisElapsed);
                 }
             }
         }
     }
 
     private void shutdown(ServerStatus.STATUS status) {
-
         try {
-            writeStatus();
+            writeStatus(true);
         } catch (Exception e) {
             LOG.debug("problem writing status before shutdown", e);
         }
