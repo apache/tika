@@ -153,7 +153,6 @@ public class TikaServerProcess {
                 executorCompletionService.submit(new AsyncParser(asyncFetchEmitQueue, asyncEmitData));
             }
         }
-        System.out.println("starting server again? " + tikaServerConfig);
         //start the server
         Server server = serverDetails.sf.create();
         LOG.info("Started Apache Tika server {} at {}",
@@ -367,7 +366,6 @@ public class TikaServerProcess {
             }
             resourceProviders.addAll(loadResourceServices());
         }
-        System.out.println("loaded "+resourceProviders);
         return resourceProviders;
     }
 
@@ -396,24 +394,29 @@ public class TikaServerProcess {
             LOG.info(sb.toString());
         } else {
             if (tika.getEmitterManager().getSupported().size() > 0) {
-                String warn = "-enableUnsecureFeatures has not been specified on the commandline.\n" +
+                String warn = "enableUnsecureFeatures has not been set to 'true' in the server config file.\n" +
                         "The " + tika.getEmitterManager().getSupported().size() + " emitter(s) that you've\n" +
-                        "specified in TikaConfig will not be available on the /emit endpoint\n" +
-                        "To enable your emitters, start tika-server with the -enableUnsecureFeatures flag\n\n";
+                        "specified in TikaConfig will not be available on the /emit or /async endpoints.\n" +
+                        "To enable your emitters, start tika-server with " +
+                        "<enableUnsecureFeatures>true</enableUnsecureFeatures> parameter in " +
+                        "the TikaConfig\n\n";
                 LOG.warn(warn);
             }
             if (tika.getFetcherManager().getSupported().size() > 0) {
-                String warn = "-enableUnsecureFeatures has not been specified on the commandline.\n" +
+                String warn = "enableUnsecureFeatures has not been set to 'true' in the server config file.\n" +
                         "The " + tika.getFetcherManager().getSupported().size() + " fetcher(s) that you've\n" +
-                        "specified in TikaConfig will not be available\n" +
-                        "To enable your fetchers, start tika-server with the -enableUnsecureFeatures flag\n\n";
+                        "specified in TikaConfig will not be available on the /emit or /async endpoints.\n" +
+                        "To enable your emitters, start tika-server with " +
+                        "<enableUnsecureFeatures>true</enableUnsecureFeatures> parameter in " +
+                        "the TikaConfig\n\n";
                 LOG.warn(warn);
             }
         }
     }
 
     private static Collection<? extends ResourceProvider> loadResourceServices() {
-        List<TikaServerResource> resources = new ServiceLoader(TikaServerProcess.class.getClassLoader())
+        List<TikaServerResource> resources = new ServiceLoader(
+                TikaServerProcess.class.getClassLoader())
                 .loadServiceProviders(TikaServerResource.class);
         List<ResourceProvider> providers = new ArrayList<>();
 
@@ -427,14 +430,6 @@ public class TikaServerProcess {
         return new ServiceLoader(TikaServerProcess.class.getClassLoader())
                 .loadServiceProviders(org.apache.tika.server.core.writer.TikaServerWriter.class);
     }
-
-    private static void usage(Options options) {
-        HelpFormatter helpFormatter = new HelpFormatter();
-        helpFormatter.printHelp("tikaserver", options);
-        System.exit(-1);
-    }
-
-
 
     private static class ServerDetails {
         JAXRSServerFactoryBean sf;

@@ -156,16 +156,13 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
 
         try {
             JsonNode response = sendAsync(FILE_LIST);
-            System.out.println(response);
             int expected = (ON_PARSE_EXCEPTION == FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT) ?
                     FILE_LIST.size() : FILE_LIST.size()/2;
             int targets = 0;
             while (targets < FILE_LIST.size()) {
-                System.out.println("targets "+targets);
                 targets = countTargets();
                 Thread.sleep(1000);
             }
-            System.out.println("TARGETS: "+targets);
         } finally {
             serverThread.interrupt();
         }
@@ -187,7 +184,6 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
                 .create(endPoint + "/async")
                 .accept("application/json")
                 .post(json);
-        System.out.println("status: " + response.getStatus());
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         return new ObjectMapper().readTree(reader);
     }

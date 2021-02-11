@@ -420,7 +420,6 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         awaitServerStartup();
         Random r = new Random();
         for (int i = 0; i < 100; i++) {
-            System.out.println("FILE # " + i);
             boolean ex = false;
             Response response = null;
             String file = TEST_HELLO_WORLD;
@@ -432,7 +431,6 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
                 } else if (r.nextFloat() < 0.02) {
                     file = TEST_HEAVY_HANG;
                 }
-                System.out.println("about to process: " + file);
                 response = WebClient
                         .create(endPoint + META_PATH)
                         .accept("application/json")
@@ -443,10 +441,8 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
             }
 
             if (ex || response.getStatus() != 200) {
-                System.out.println("restarting");
                 i--;
                 awaitServerStartup();
-                System.out.println("done awaiting");
                 continue;
             }
             if (file.equals(TEST_HELLO_WORLD)) {

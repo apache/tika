@@ -81,6 +81,9 @@ public class TikaServerCli {
         CommandLineParser cliParser = new DefaultParser();
 
         CommandLine line = cliParser.parse(options, args);
+        if (line.hasOption("help")) {
+            usage(options);
+        }
         TikaServerConfig tikaServerConfig = TikaServerConfig.load(line);
         if (tikaServerConfig.isNoFork()) {
             noFork(tikaServerConfig);
@@ -113,23 +116,19 @@ public class TikaServerCli {
             while (finished < portIdPairs.size()) {
                 Future<WatchDogResult> future = executorCompletionService.poll(1, TimeUnit.MINUTES);
                 if (future != null) {
-                    System.err.println("main loop future");
                     LOG.debug("main loop future is available");
                     WatchDogResult result = future.get();
-                    System.err.println("main loop future get");
                     LOG.debug("main loop future: ({}); finished", result);
                         finished++;
                 }
             }
         } catch (InterruptedException e) {
-            System.err.println("INTERRUPTED");
             for (TikaServerWatchDog w : watchers) {
                 w.shutDown();
             }
             LOG.debug("thread interrupted", e);
         } finally {
             //this is just asking nicely...there is no guarantee!
-            System.err.println("shutting down");
             executorService.shutdownNow();
         }
     }
