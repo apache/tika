@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -87,27 +88,32 @@ public class StringsParser extends AbstractParser {
 			return;
 		}
 
-		TikaInputStream tis = TikaInputStream.get(stream);
-		File input = tis.getFile();
+		TemporaryResources tmp = new TemporaryResources();
+		TikaInputStream tis = TikaInputStream.get(stream, tmp);
+		try {
+			File input = tis.getFile();
 
-		// Metadata
-		metadata.set("strings:min-len", "" + stringsConfig.getMinLength());
-		metadata.set("strings:encoding", stringsConfig.toString());
-		metadata.set("strings:file_output", doFile(input, fileConfig));
+			// Metadata
+			metadata.set("strings:min-len", "" + stringsConfig.getMinLength());
+			metadata.set("strings:encoding", stringsConfig.toString());
+			metadata.set("strings:file_output", doFile(input, fileConfig));
 
-		int totalBytes = 0;
+			int totalBytes = 0;
 
-		// Content
-		XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+			// Content
+			XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
 
-		xhtml.startDocument();
+			xhtml.startDocument();
 
-		totalBytes = doStrings(input, stringsConfig, xhtml);
+			totalBytes = doStrings(input, stringsConfig, xhtml);
 
-		xhtml.endDocument();
+			xhtml.endDocument();
 
-		// Metadata
-		metadata.set("strings:length", "" + totalBytes);
+			// Metadata
+			metadata.set("strings:length", "" + totalBytes);
+		} finally {
+			tmp.close();
+		}
 	}
 
 	/**
