@@ -20,6 +20,7 @@ import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ocr.tess4j.ImageDeskew;
+import org.apache.tika.utils.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,6 +59,9 @@ class ImagePreprocessor implements Serializable {
         if (config.isEnableImagePreprocessing() || config.isApplyRotation() && angle != 0) {
             // process the image - parameter values can be set in TesseractOCRConfig.properties
             CommandLine commandLine = new CommandLine(fullImageMagickPath);
+            if (SystemUtils.IS_OS_WINDOWS) {
+                commandLine.addArgument("convert");
+            }
 
             // Arguments for ImageMagick
             final List<String> density = Arrays.asList("-density", Integer.toString(config.getDensity()));
