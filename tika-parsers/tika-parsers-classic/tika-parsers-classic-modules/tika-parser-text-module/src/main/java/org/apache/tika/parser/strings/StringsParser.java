@@ -92,9 +92,8 @@ public class StringsParser extends AbstractParser implements Initializable {
 		}
 		StringsConfig stringsConfig = context.get(StringsConfig.class, defaultStringsConfig);
 
-		TemporaryResources tmp = new TemporaryResources();
-		TikaInputStream tis = TikaInputStream.get(stream, tmp);
-		try {
+		try (TemporaryResources tmp = new TemporaryResources()) {
+			TikaInputStream tis = TikaInputStream.get(stream, tmp);
 			File input = tis.getFile();
 
 			// Metadata
@@ -115,8 +114,6 @@ public class StringsParser extends AbstractParser implements Initializable {
 
 			// Metadata
 			metadata.set("strings:length", "" + totalBytes);
-		} finally {
-			tmp.close();
 		}
 	}
 

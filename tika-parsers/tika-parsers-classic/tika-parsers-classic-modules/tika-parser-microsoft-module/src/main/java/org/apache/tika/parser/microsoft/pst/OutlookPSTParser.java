@@ -269,7 +269,6 @@ public class OutlookPSTParser extends AbstractParser {
                     try {
                         embeddedExtractor.parseEmbedded(tis, xhtml, attachMeta, true);
                     } finally {
-
                         tis.close();
                     }
                 }

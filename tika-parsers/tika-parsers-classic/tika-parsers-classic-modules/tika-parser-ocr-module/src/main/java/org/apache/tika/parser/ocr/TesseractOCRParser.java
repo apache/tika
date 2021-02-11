@@ -36,6 +36,7 @@ import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.graalvm.compiler.lir.LIRInstruction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
@@ -204,8 +205,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
 
     public void parse(Image image, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException,
             SAXException, TikaException {
-        TemporaryResources tmp = new TemporaryResources();
-        try {
+        try (TemporaryResources tmp = new TemporaryResources()) {
             int w = image.getWidth(null);
             int h = image.getHeight(null);
             BufferedImage bImage = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
@@ -216,8 +216,6 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
             try (TikaInputStream tis = TikaInputStream.get(file)) {
                 parse(tis, handler, metadata, context);
             }
-        } finally {
-            tmp.dispose();
         }
     }
 
@@ -237,8 +235,8 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
             return;
         }
 
-        TemporaryResources tmp = new TemporaryResources();
-        try {
+
+        try (TemporaryResources tmp = new TemporaryResources()) {
             TikaInputStream tikaStream = TikaInputStream.get(stream, tmp);
 
             //trigger the spooling to a tmp file if the stream wasn't
@@ -251,8 +249,6 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
             xhtml.startDocument();
             parse(tikaStream, tmpOCROutputFile, xhtml, metadata, parseContext, config);
             xhtml.endDocument();
-        } finally {
-            tmp.dispose();
         }
     }
 

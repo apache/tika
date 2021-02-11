@@ -444,8 +444,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
 
         PDFRenderer renderer = new PDFRenderer(pdDocument);
-        TemporaryResources tmp = new TemporaryResources();
-        try {
+
+        try (TemporaryResources tmp = new TemporaryResources()) {
 
             int dpi = config.getOcrDPI();
             BufferedImage image = renderer.renderImageWithDPI(pageIndex, dpi, config.getOcrImageType());
@@ -470,8 +470,6 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             handleCatchableIOE(e);
         } catch (SAXException e) {
             throw new IOException("error writing OCR content from PDF", e);
-        } finally {
-            tmp.dispose();
         }
     }
 
