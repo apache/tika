@@ -58,7 +58,6 @@ public class MetadataListMessageBodyWriter implements MessageBodyWriter<Metadata
             WebApplicationException {
         Writer writer = new OutputStreamWriter(entityStream, UTF_8);
         JsonMetadataList.toJson(list.getMetadata(), writer);
-        writer.flush();
         entityStream.flush();
     }
 }

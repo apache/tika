@@ -175,33 +175,6 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
         return TMP_OUTPUT_DIR.toFile().listFiles().length;
     }
 
-
-    private void awaitServerStartup() throws Exception {
-        Instant started = Instant.now();
-        long elapsed = Duration.between(started, Instant.now()).toMillis();
-        WebClient client = WebClient.create(endPoint+"/tika").accept("text/plain");
-        while (elapsed < MAX_WAIT_MS) {
-            try {
-                Response response = client.get();
-                if (response.getStatus() == 200) {
-                    elapsed = Duration.between(started, Instant.now()).toMillis();
-                    LOG.info("client observes server successfully started after " +
-                            elapsed+ " ms");
-                    return;
-                }
-                LOG.debug("tika test client failed to connect to server with status: {}", response.getStatus());
-
-            } catch (ProcessingException e) {
-                LOG.debug("tika test client failed to connect to server", e);
-            }
-
-            Thread.sleep(100);
-            elapsed = Duration.between(started, Instant.now()).toMillis();
-        }
-        throw new TimeoutException("couldn't connect to server after " +
-                elapsed + " ms");
-    }
-
     private JsonNode sendAsync(List<String> fileNames) throws Exception {
         awaitServerStartup();
         List<FetchEmitTuple> tuples = new ArrayList<>();

@@ -26,6 +26,8 @@ import org.apache.tika.metadata.serialization.JsonFetchEmitTuple;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
+import org.apache.tika.utils.ProcessUtils;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -57,8 +59,8 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
 
     private static Path TMP_DIR;
     private static Path TMP_OUTPUT_DIR;
-    private static String TIKA_CONFIG_XML;
     private static Path TIKA_CONFIG;
+    private static Path TIKA_CONFIG_TIMEOUT;
 
     private static final String EMITTER_NAME = "fse";
     private static final String FETCHER_NAME = "fsf";
@@ -83,8 +85,9 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
                     inputDir.resolve(mockFile));
         }
         TIKA_CONFIG = TMP_DIR.resolve("tika-config.xml");
+        TIKA_CONFIG_TIMEOUT = TMP_DIR.resolve("tika-config-timeout.xml");
 
-        TIKA_CONFIG_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
+        String xml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
                 "<properties>" +
                 "<fetchers>" +
                 "<fetcher class=\"org.apache.tika.pipes.fetcher.FileSystemFetcher\">" +
@@ -103,9 +106,24 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
                 "</params>" +
                 "</emitter>" +
                 "</emitters>" +
+                "<server>" +
+                "<enableUnsecureFeatures>true</enableUnsecureFeatures>" +
+                "<port>9999</port>"+
+                "<endpoints>"+
+                "<endpoint>emit</endpoint>"+
+                "<endpoint>status</endpoint>"+
+                "</endpoints>";
+        String xml2 = "</server>"+
                 "</properties>";
 
-        FileUtils.write(TIKA_CONFIG.toFile(), TIKA_CONFIG_XML, UTF_8);
+        String tikaConfigXML = xml1+xml2;
+
+        FileUtils.write(TIKA_CONFIG.toFile(), tikaConfigXML, UTF_8);
+
+        String tikaConfigTimeoutXML = xml1+
+                "<taskTimeoutMillis>10000</taskTimeoutMillis>"+xml2;
+        FileUtils.write(TIKA_CONFIG_TIMEOUT.toFile(), tikaConfigTimeoutXML, UTF_8);
+
     }
 
     @AfterClass
@@ -113,8 +131,14 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
         FileUtils.deleteDirectory(TMP_DIR.toFile());
     }
 
+    @After
+    public void tear() throws Exception {
+        Thread.sleep(500);
+    }
+
     @Before
     public void setUpEachTest() throws Exception {
+
         for (String problemFile : FILES) {
             Path targ = TMP_OUTPUT_DIR.resolve(problemFile + ".json");
 
@@ -127,49 +151,28 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
 
     @Test
     public void testBasic() throws Exception {
-
-        Thread serverThread = new Thread() {
-            @Override
-            public void run() {
-                TikaServerCli.main(
-                        new String[]{
-                                "-enableUnsecureFeatures",
-                                "-maxFiles", "2000",
-                                "-p", INTEGRATION_TEST_PORT,
-                                "-tmpFilePrefix", "basic-",
-                                "-config", TIKA_CONFIG.toAbsolutePath().toString()
-                        });
-            }
-        };
-        serverThread.start();
+        Process p = null;
         try {
+            p = startProcess( new String[]{  "-config",
+                    ProcessUtils.escapeCommandLine(TIKA_CONFIG.toAbsolutePath().toString())});
             JsonNode node = testOne("hello_world.xml", true);
             assertEquals("ok", node.get("status").asText());
         } catch (Exception e) {
             fail("shouldn't have an exception" + e.getMessage());
         } finally {
-            serverThread.interrupt();
+            if (p != null) {
+                p.destroyForcibly();
+            }
         }
     }
 
     @Test
     public void testNPEDefault() throws Exception {
 
-        Thread serverThread = new Thread() {
-            @Override
-            public void run() {
-                TikaServerCli.main(
-                        new String[]{
-                                "-enableUnsecureFeatures",
-                                "-maxFiles", "2000",
-                                "-p", INTEGRATION_TEST_PORT,
-                                "-tmpFilePrefix", "basic-",
-                                "-config", TIKA_CONFIG.toAbsolutePath().toString()
-                        });
-            }
-        };
-        serverThread.start();
+        Process p = null;
         try {
+            p = startProcess( new String[]{  "-config",
+                    ProcessUtils.escapeCommandLine(TIKA_CONFIG.toAbsolutePath().toString())});
             JsonNode node = testOne("null_pointer.xml", true);
             assertEquals("ok", node.get("status").asText());
             assertContains("java.lang.NullPointerException",
@@ -177,28 +180,19 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
         } catch (Exception e) {
             fail("shouldn't have an exception" + e.getMessage());
         } finally {
-            serverThread.interrupt();
+            if (p != null) {
+                p.destroyForcibly();
+            }
         }
     }
 
     @Test
     public void testNPESkip() throws Exception {
 
-        Thread serverThread = new Thread() {
-            @Override
-            public void run() {
-                TikaServerCli.main(
-                        new String[]{
-                                "-enableUnsecureFeatures",
-                                "-maxFiles", "2000",
-                                "-p", INTEGRATION_TEST_PORT,
-                                "-tmpFilePrefix", "basic-",
-                                "-config", TIKA_CONFIG.toAbsolutePath().toString()
-                        });
-            }
-        };
-        serverThread.start();
+        Process p = null;
         try {
+            p = startProcess( new String[]{  "-config",
+                    ProcessUtils.escapeCommandLine(TIKA_CONFIG.toAbsolutePath().toString())});
             JsonNode node = testOne("null_pointer.xml", false,
                     FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
             assertEquals("ok", node.get("status").asText());
@@ -207,53 +201,33 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
         } catch (Exception e) {
             fail("shouldn't have an exception" + e.getMessage());
         } finally {
-            serverThread.interrupt();
+            if (p != null) {
+                p.destroyForcibly();
+            }
         }
     }
 
     @Test(expected = ProcessingException.class)
     public void testSystemExit() throws Exception {
-
-        Thread serverThread = new Thread() {
-            @Override
-            public void run() {
-                TikaServerCli.main(
-                        new String[]{
-                                "-enableUnsecureFeatures",
-                                "-maxFiles", "2000",
-                                "-p", INTEGRATION_TEST_PORT,
-                                "-tmpFilePrefix", "basic-",
-                                "-config", TIKA_CONFIG.toAbsolutePath().toString()
-                        });
-            }
-        };
-        serverThread.start();
+        Process p = null;
         try {
+            p = startProcess( new String[]{  "-config",
+                    ProcessUtils.escapeCommandLine(TIKA_CONFIG.toAbsolutePath().toString())});
             testOne("system_exit.xml", false);
         } finally {
-            serverThread.interrupt();
+            if (p != null) {
+                p.destroyForcibly();
+            }
         }
     }
 
     @Test
     public void testOOM() throws Exception {
 
-        Thread serverThread = new Thread() {
-            @Override
-            public void run() {
-                TikaServerCli.main(
-                        new String[]{
-                                "-enableUnsecureFeatures",
-                                "-JXmx128m",
-                                "-maxFiles", "2000",
-                                "-p", INTEGRATION_TEST_PORT,
-                                "-tmpFilePrefix", "basic-",
-                                "-config", TIKA_CONFIG.toAbsolutePath().toString()
-                        });
-            }
-        };
-        serverThread.start();
+        Process p = null;
         try {
+            p = startProcess( new String[]{  "-config",
+                    ProcessUtils.escapeCommandLine(TIKA_CONFIG.toAbsolutePath().toString())});
             JsonNode response = testOne("fake_oom.xml", false);
             assertContains("oom message", response.get("parse_error").asText());
         } catch (ProcessingException e) {
@@ -261,60 +235,28 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
             // TODO add more of a delay to server shutdown to ensure message is sent
             // before shutdown.
         } finally {
-            serverThread.interrupt();
+            if (p != null) {
+                p.destroyForcibly();
+            }
         }
     }
 
     @Test(expected = ProcessingException.class)
     public void testTimeout() throws Exception {
 
-        Thread serverThread = new Thread() {
-            @Override
-            public void run() {
-                TikaServerCli.main(
-                        new String[]{
-                                "-enableUnsecureFeatures",
-                                "-JXmx128m",
-                                "-taskTimeoutMillis", "2000", "-taskPulseMillis", "100",
-                                "-p", INTEGRATION_TEST_PORT,
-                                "-tmpFilePrefix", "basic-",
-                                "-config", TIKA_CONFIG.toAbsolutePath().toString()
-                        });
-            }
-        };
-        serverThread.start();
+        Process p = null;
         try {
+            p = startProcess( new String[]{  "-config",
+                    ProcessUtils.escapeCommandLine(TIKA_CONFIG_TIMEOUT.toAbsolutePath().toString())});
             JsonNode response = testOne("heavy_hang_30000.xml", false);
         } finally {
-            serverThread.interrupt();
-        }
-    }
-
-    private void awaitServerStartup() throws Exception {
-        Instant started = Instant.now();
-        long elapsed = Duration.between(started, Instant.now()).toMillis();
-        WebClient client = WebClient.create(endPoint + "/tika").accept("text/plain");
-        while (elapsed < MAX_WAIT_MS) {
-            try {
-                Response response = client.get();
-                if (response.getStatus() == 200) {
-                    elapsed = Duration.between(started, Instant.now()).toMillis();
-                    LOG.info("client observes server successfully started after " +
-                            elapsed + " ms");
-                    return;
-                }
-                LOG.debug("tika test client failed to connect to server with status: {}", response.getStatus());
-
-            } catch (javax.ws.rs.ProcessingException e) {
-                LOG.debug("tika test client failed to connect to server", e);
+            if (p != null) {
+                p.destroyForcibly();
             }
-
-            Thread.sleep(100);
-            elapsed = Duration.between(started, Instant.now()).toMillis();
         }
-        throw new TimeoutException("couldn't connect to server after " +
-                elapsed + " ms");
     }
+
+
     private JsonNode testOne(String fileName, boolean shouldFileExist) throws Exception {
         return testOne(fileName, shouldFileExist, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
     }

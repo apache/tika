@@ -223,7 +223,7 @@ public class EmitterResource {
             if (t.getOnParseException() == FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP) {
                 shouldEmit = false;
             }
-            LOG.warn("fetchKey ({}) container parse exception ({})",
+            LOG.warn("fetchKey ({}) caught container parse exception ({})",
                     t.getFetchKey().getKey(), stack);
         }
 
@@ -231,7 +231,7 @@ public class EmitterResource {
             Metadata m = metadataList.get(i);
             String embeddedStack = m.get(TikaCoreProperties.EMBEDDED_EXCEPTION);
             if (embeddedStack != null) {
-                LOG.warn("fetchKey ({}) embedded parse exception ({})",
+                LOG.warn("fetchKey ({}) caught embedded parse exception ({})",
                         t.getFetchKey().getKey(), embeddedStack);
             }
         }
