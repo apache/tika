@@ -29,6 +29,7 @@ import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.cxf.rs.security.cors.CrossOriginResourceSharingFilter;
+import org.apache.cxf.service.factory.ServiceConstructionException;
 import org.apache.cxf.transport.common.gzip.GZIPInInterceptor;
 import org.apache.cxf.transport.common.gzip.GZIPOutInterceptor;
 import org.apache.tika.Tika;
@@ -90,14 +91,9 @@ import java.util.concurrent.TimeUnit;
 public class TikaServerProcess {
 
 
-    //used in fork mode -- restart after processing this many files
-    private static final long DEFAULT_MAX_FILES = 100000;
-    private static String ENABLE_UNSECURE_FEATURES = "enableUnsecureFeatures";
-
-    private static final int DEFAULT_DIGEST_MARK_LIMIT = 20 * 1024 * 1024;
     public static final Set<String> LOG_LEVELS = new HashSet<>(Arrays.asList("debug", "info"));
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerProcess.class);
-
+    public static int DO_NOT_RESTART_EXIT_VALUE = -100;
 
     private static Options getOptions() {
         Options options = new Options();
@@ -126,7 +122,6 @@ public class TikaServerProcess {
             LOG.debug("forked config: {}", tikaServerConfig);
             mainLoop(tikaServerConfig);
         } catch (Exception e) {
-            e.printStackTrace();
             LOG.error("Can't start: ", e);
             System.exit(-1);
         }
@@ -153,8 +148,14 @@ public class TikaServerProcess {
                 executorCompletionService.submit(new AsyncParser(asyncFetchEmitQueue, asyncEmitData));
             }
         }
-        //start the server
-        Server server = serverDetails.sf.create();
+        try {
+            //start the server
+            Server server = serverDetails.sf.create();
+        } catch (ServiceConstructionException e) {
+            LOG.warn("exception starting server", e);
+            System.exit(DO_NOT_RESTART_EXIT_VALUE);
+        }
+
         LOG.info("Started Apache Tika server {} at {}",
                 serverDetails.serverId,
                 serverDetails.url);
@@ -162,7 +163,7 @@ public class TikaServerProcess {
         while (true) {
             Future<Integer> future = executorCompletionService.poll(1, TimeUnit.MINUTES);
             if (future != null) {
-                LOG.warn("future val: " + future.get());
+                LOG.warn("Daemon should not stop: " + future.get());
             }
         }
     }

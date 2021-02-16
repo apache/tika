@@ -19,8 +19,8 @@
     <server>
         <port>9999</port>
         <taskTimeoutMillis>10000</taskTimeoutMillis>
-        <pingTimeoutMillis>30000</pingTimeoutMillis>
-        <pingPulseMillis>100</pingPulseMillis>
+        <taskPulseMillis>100</taskPulseMillis>
+        <maxFiles>20</maxFiles>
         <forkedJVMArgs>
             <arg>-Xmx512m</arg>
         </forkedJVMArgs>

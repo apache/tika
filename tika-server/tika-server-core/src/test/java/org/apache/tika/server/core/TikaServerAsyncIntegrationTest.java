@@ -113,6 +113,7 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
                 "</params>"+
                 "</emitter>"+
                 "</emitters>"+
+                "<server><enableUnsecureFeatures>true</enableUnsecureFeatures></server>"+
                 "</properties>";
 
         FileUtils.write(TIKA_CONFIG.toFile(), TIKA_CONFIG_XML, UTF_8);
@@ -144,10 +145,7 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
             public void run() {
                 TikaServerCli.main(
                         new String[]{
-                                "-enableUnsecureFeatures",
-                                "-maxFiles", "10000",
                                 "-p", INTEGRATION_TEST_PORT,
-                                "-tmpFilePrefix", "basic-",
                                 "-config", TIKA_CONFIG.toAbsolutePath().toString()
                         });
             }

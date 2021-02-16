@@ -147,16 +147,6 @@ public class TikaServerConfig {
 
 
 
-    /**
-     * If the forked process doesn't receive a ping or the parent doesn't
-     * hear back from a ping in this amount of time, terminate and restart the forked process.
-     */
-    public static final long DEFAULT_PING_TIMEOUT_MILLIS = 30000;
-
-    /**
-     * How often should the parent try to ping the forked process to check status
-     */
-    public static final long DEFAULT_PING_PULSE_MILLIS = 100;
 
     /**
      * Number of milliseconds to wait per server task (parse, detect, unpack, translate,
@@ -164,7 +154,10 @@ public class TikaServerConfig {
      */
     public static final long DEFAULT_TASK_TIMEOUT_MILLIS = 120000;
 
-    public static final long DEFAULT_TASK_PULSE_MILLIS = 100;
+    /**
+     * How often to check to see that the task hasn't timed out
+     */
+    public static final long DEFAULT_TASK_PULSE_MILLIS = 10000;
 
     /**
      * Number of milliseconds to wait for forked process to startup
@@ -175,8 +168,6 @@ public class TikaServerConfig {
     private long maxFiles = 100000;
     private long taskTimeoutMillis = DEFAULT_TASK_TIMEOUT_MILLIS;
     private long taskPulseMillis = DEFAULT_TASK_PULSE_MILLIS;
-    private long pingTimeoutMillis = DEFAULT_PING_TIMEOUT_MILLIS;
-    private long pingPulseMillis = DEFAULT_PING_PULSE_MILLIS;
     private long maxforkedStartupMillis = DEFAULT_FORKED_STARTUP_MILLIS;
     private boolean enableUnsecureFeatures = false;
     private String cors = "";
@@ -228,6 +219,7 @@ public class TikaServerConfig {
     public void setPort(int port) {
         this.port = port;
     }
+
     /**
      * How long to wait for a task before shutting down the forked server process
      * and restarting it.
@@ -238,39 +230,21 @@ public class TikaServerConfig {
     }
 
     /**
+     * How often to check to see that a task has timed out
+     * @return
+     */
+    public long getTaskPulseMillis() {
+        return taskPulseMillis;
+    }
+
+
+    /**
      *
      * @param taskTimeoutMillis number of milliseconds to allow per task
      *                          (parse, detection, unzipping, etc.)
      */
     public void setTaskTimeoutMillis(long taskTimeoutMillis) {
         this.taskTimeoutMillis = taskTimeoutMillis;
-    }
-
-    public long getPingTimeoutMillis() {
-        return pingTimeoutMillis;
-    }
-
-    /**
-     *
-     * @param pingTimeoutMillis if the parent doesn't receive a response
-     *                          in this amount of time, or
-     *                          if the forked doesn't receive a ping
-     *                          in this amount of time, restart the forked process
-     */
-    public void setPingTimeoutMillis(long pingTimeoutMillis) {
-        this.pingTimeoutMillis = pingTimeoutMillis;
-    }
-
-    public long getPingPulseMillis() {
-        return pingPulseMillis;
-    }
-
-    /**
-     *
-     * @param pingPulseMillis how often to test that the parent and/or forked is alive
-     */
-    public void setPingPulseMillis(long pingPulseMillis) {
-        this.pingPulseMillis = pingPulseMillis;
     }
 
     public int getMaxRestarts() {
@@ -330,7 +304,8 @@ public class TikaServerConfig {
     }
 
     public List<String> getForkedJvmArgs() {
-        return forkedJvmArgs;
+        //defensively copy
+        return new ArrayList<>(forkedJvmArgs);
     }
 
     public String getTempFilePrefix() {
@@ -515,8 +490,7 @@ public class TikaServerConfig {
                 "maxRestarts=" + maxRestarts +
                 ", maxFiles=" + maxFiles +
                 ", taskTimeoutMillis=" + taskTimeoutMillis +
-                ", pingTimeoutMillis=" + pingTimeoutMillis +
-                ", pingPulseMillis=" + pingPulseMillis +
+                ", taskPulseMillis=" + taskPulseMillis +
                 ", maxforkedStartupMillis=" + maxforkedStartupMillis +
                 ", enableUnsecureFeatures=" + enableUnsecureFeatures +
                 ", cors='" + cors + '\'' +

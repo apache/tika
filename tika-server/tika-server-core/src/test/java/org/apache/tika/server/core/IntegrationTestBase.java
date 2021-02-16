@@ -127,8 +127,9 @@ public class IntegrationTestBase extends TikaTest {
         List<String> args = new ArrayList<>(Arrays.asList(base));
         args.addAll(Arrays.asList(extraArgs));
         ProcessBuilder pb = new ProcessBuilder(args);
-        pb.redirectInput(Files.createTempFile(STREAMS_DIR, "tika-stream-out", ".log").toFile());
-        pb.redirectError(Files.createTempFile(STREAMS_DIR, "tika-stream-err", ".log").toFile());
+        pb.inheritIO();
+//        pb.redirectInput(Files.createTempFile(STREAMS_DIR, "tika-stream-out", ".log").toFile());
+  //      pb.redirectError(Files.createTempFile(STREAMS_DIR, "tika-stream-err", ".log").toFile());
         return pb.start();
     }
 
@@ -151,7 +152,7 @@ public class IntegrationTestBase extends TikaTest {
                 LOG.debug("tika test client failed to connect to server", e);
             }
 
-            Thread.sleep(100);
+            Thread.sleep(1000);
             elapsed = Duration.between(started, Instant.now()).toMillis();
         }
         throw new TimeoutException("couldn't connect to server after " +

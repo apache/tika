@@ -17,8 +17,10 @@
 -->
 <properties>
     <server>
+        <port>9999</port>
         <taskTimeoutMillis>54321</taskTimeoutMillis>
         <enableUnsecureFeatures>true</enableUnsecureFeatures>
+        <maxFiles>20</maxFiles>
         <forkedJVMArgs>
             <arg>-Xmx2g</arg>
         </forkedJVMArgs>

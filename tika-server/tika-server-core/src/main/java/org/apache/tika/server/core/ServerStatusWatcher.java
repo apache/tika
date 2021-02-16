@@ -38,23 +38,20 @@ public class ServerStatusWatcher implements Runnable {
 
     private static final Logger LOG = LoggerFactory.getLogger(ServerStatusWatcher.class);
     private final ServerStatus serverStatus;
-    private final DataInputStream fromParent;
+    private final InputStream fromParent;
     private final TikaServerConfig tikaServerConfig;
     private final Path forkedStatusPath;
     private final ByteBuffer statusBuffer = ByteBuffer.allocate(16);
     private volatile boolean shuttingDown = false;
 
-
-    private volatile Instant lastPing = null;
-
     public ServerStatusWatcher(ServerStatus serverStatus,
                                InputStream inputStream, Path forkedStatusPath,
-                               TikaServerConfig tikaServerConfig) throws IOException {
+                               TikaServerConfig tikaServerConfig) throws InterruptedException {
         this.serverStatus = serverStatus;
         this.tikaServerConfig = tikaServerConfig;
         this.forkedStatusPath = forkedStatusPath;
         serverStatus.setStatus(ServerStatus.STATUS.OPERATING);
-        this.fromParent = new DataInputStream(inputStream);
+        this.fromParent = inputStream;
         Thread statusWatcher = new Thread(new StatusWatcher());
         statusWatcher.setDaemon(true);
         statusWatcher.start();
@@ -64,45 +61,26 @@ public class ServerStatusWatcher implements Runnable {
     @Override
     public void run() {
 
-        byte directive = (byte)-1;
-        while (true) {
-            try {
-                directive = fromParent.readByte();
-                lastPing = Instant.now();
-            } catch (Exception e) {
-                LOG.warn("Exception reading from parent", e);
-                serverStatus.setStatus(ServerStatus.STATUS.PARENT_EXCEPTION);
-                shutdown(ServerStatus.STATUS.PARENT_EXCEPTION);
+
+        try {
+            //this should block forever until the parent dies
+            int directive = fromParent.read();
+            if (directive != -1) {
+                LOG.debug("Read byte ({}) from forking process. Shouldn't have received anything",
+                        directive);
             }
-            if (directive == ServerStatus.DIRECTIVES.PING.getByte()) {
-                if (serverStatus.getStatus().equals(ServerStatus.STATUS.OPERATING)) {
-                    checkForHitMaxFiles();
-                    checkForTaskTimeouts();
-                }
-                try {
-                    writeStatus(false);
-                } catch (Exception e) {
-                    LOG.warn("Exception writing to parent", e);
-                    serverStatus.setStatus(ServerStatus.STATUS.PARENT_EXCEPTION);
-                    shutdown(ServerStatus.STATUS.PARENT_EXCEPTION);
-                }
-            } else if (directive == ServerStatus.DIRECTIVES.SHUTDOWN.getByte()) {
-                LOG.info("Parent requested shutdown");
-                serverStatus.setStatus(ServerStatus.STATUS.PARENT_REQUESTED_SHUTDOWN);
-                shutdown(ServerStatus.STATUS.PARENT_REQUESTED_SHUTDOWN);
-            } else if (directive == ServerStatus.DIRECTIVES.PING_ACTIVE_SERVER_TASKS.getByte()) {
-                try {
-                    writeStatus(false);
-                } catch (Exception e) {
-                    LOG.warn("Exception writing to parent", e);
-                    serverStatus.setStatus(ServerStatus.STATUS.PARENT_EXCEPTION);
-                    shutdown(ServerStatus.STATUS.PARENT_EXCEPTION);
-                }
-            }
+        } catch (Exception e) {
+            LOG.debug("Exception reading from parent", e);
+        } finally {
+            LOG.info("Forking process signalled I should shutdown.");
+            serverStatus.setStatus(ServerStatus.STATUS.PARENT_EXCEPTION);
+            shutdown(ServerStatus.STATUS.PARENT_EXCEPTION);
         }
+
     }
 
-    private synchronized void writeStatus(boolean shuttingDown) throws IOException {
+    private synchronized void writeStatus(boolean shuttingDown)
+            throws InterruptedException {
         if (this.shuttingDown == true) {
             return;
         }
@@ -115,7 +93,7 @@ public class ServerStatusWatcher implements Runnable {
         try (FileChannel channel = FileChannel.open(forkedStatusPath,
                 StandardOpenOption.CREATE,
                 StandardOpenOption.WRITE)) {
-            while (elapsed < tikaServerConfig.getPingTimeoutMillis()) {
+            while (elapsed < tikaServerConfig.getTaskTimeoutMillis()) {
                 try (FileLock lock = channel.tryLock()) {
                     if (lock != null) {
                         ((Buffer) statusBuffer).position(0);
@@ -126,9 +104,14 @@ public class ServerStatusWatcher implements Runnable {
                         channel.force(true);
                         return;
                     }
+                } catch (IOException e) {
+                    LOG.warn("Problem writing to status file", e);
                 }
+                Thread.sleep(100);
                 elapsed = Duration.between(started, Instant.now()).toMillis();
             }
+        } catch (IOException e) {
+            LOG.warn("Couldn't open forked status file for writing", e);
         }
         throw new FatalException("Couldn't write to status file after trying for " + elapsed + " millis.");
     }
@@ -152,12 +135,12 @@ public class ServerStatusWatcher implements Runnable {
                 if (status.fileName.isPresent()) {
                     LOG.error("Timeout task {}, millis elapsed {}, file {}" +
                                     "consider increasing the allowable time with the " +
-                                    "-taskTimeoutMillis flag",
+                                    "<taskTimeoutMillis/> parameter",
                             status.task.toString(), millisElapsed, status.fileName.get());
                 } else {
                     LOG.error("Timeout task {}, millis elapsed {}; " +
                                     "consider increasing the allowable time with the " +
-                                    "-taskTimeoutMillis flag",
+                                    "<taskTimeoutMillis/> parameter",
                             status.task.toString(), millisElapsed);
                 }
             }
@@ -165,12 +148,6 @@ public class ServerStatusWatcher implements Runnable {
     }
 
     private void shutdown(ServerStatus.STATUS status) {
-        try {
-            writeStatus(true);
-        } catch (Exception e) {
-            LOG.debug("problem writing status before shutdown", e);
-        }
-
         //if something went wrong with the parent,
         //the forked process should try to delete the tmp file
         if (status == ServerStatus.STATUS.PARENT_EXCEPTION) {
@@ -179,7 +156,14 @@ public class ServerStatusWatcher implements Runnable {
             } catch (IOException e) {
                 //swallow
             }
+        } else {
+            try {
+                writeStatus(true);
+            } catch (Exception e) {
+                LOG.debug("problem writing status before shutdown", e);
+            }
         }
+
         LOG.info("Shutting down forked process with status: {}", status.name());
         System.exit(status.getShutdownCode());
     }
@@ -191,24 +175,30 @@ public class ServerStatusWatcher implements Runnable {
 
         @Override
         public void run() {
+            Instant lastWrite = Instant.now();
             while (true) {
+                checkForHitMaxFiles();
+                checkForTaskTimeouts();
                 ServerStatus.STATUS currStatus = serverStatus.getStatus();
-
                 if (currStatus != ServerStatus.STATUS.OPERATING) {
-                    LOG.warn("forked process observed "+currStatus.name()+ " and is shutting down.");
+                    LOG.warn("forked process observed " + currStatus.name() + " and is shutting down.");
                     shutdown(currStatus);
-                }
-
-                if (lastPing != null) {
-                    long elapsed = Duration.between(lastPing, Instant.now()).toMillis();
-                    if (elapsed > tikaServerConfig.getPingTimeoutMillis()) {
-                        serverStatus.setStatus(ServerStatus.STATUS.PARENT_EXCEPTION);
-                        shutdown(ServerStatus.STATUS.PARENT_EXCEPTION);
+                } else {
+                    long elapsed = Duration.between(lastWrite, Instant.now()).toMillis();
+                    if (elapsed > tikaServerConfig.getTaskPulseMillis()) {
+                        try {
+                            writeStatus(false);
+                            lastWrite = Instant.now();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
+
                 try {
-                    Thread.sleep(tikaServerConfig.getPingPulseMillis());
+                    Thread.sleep(100);
                 } catch (InterruptedException e) {
+                    LOG.warn("status watcher sees interrupted exception");
                     return;
                 }
             }

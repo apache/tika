@@ -44,7 +44,10 @@ import static org.apache.tika.server.core.TikaServerConfig.DEFAULT_PORT;
 public class TikaServerCli {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerCli.class);
-
+    /**
+     * This value is set to the server's id in the forked process.
+     */
+    public static String TIKA_SERVER_ID_ENV = "tika.server.id";
     private static Options getOptions() {
         Options options = new Options();
         options.addOption("h", "host", true, "host name (default = "
@@ -65,7 +68,6 @@ public class TikaServerCli {
     }
 
     public static void main(String[] args) {
-        LOG.info("Starting {} server", new Tika());
         try {
             execute(args);
         } catch (Exception e) {

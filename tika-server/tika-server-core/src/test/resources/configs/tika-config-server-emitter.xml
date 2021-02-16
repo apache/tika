@@ -23,7 +23,7 @@
         <forkedJVMArgs>
             <arg>-Xmx512m</arg>
         </forkedJVMArgs>
-        <enableUnsecure
+        <enableUnsecure>true</enableUnsecure>
         <endpoints>
             <endpoint>emit</endpoint>
             <endpoint>async</endpoint>

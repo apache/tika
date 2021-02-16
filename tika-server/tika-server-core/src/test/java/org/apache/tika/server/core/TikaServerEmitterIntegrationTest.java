@@ -121,6 +121,7 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
         FileUtils.write(TIKA_CONFIG.toFile(), tikaConfigXML, UTF_8);
 
         String tikaConfigTimeoutXML = xml1+
+                "<taskPulseMillis>100</taskPulseMillis>"+
                 "<taskTimeoutMillis>10000</taskTimeoutMillis>"+xml2;
         FileUtils.write(TIKA_CONFIG_TIMEOUT.toFile(), tikaConfigTimeoutXML, UTF_8);
 
@@ -243,7 +244,6 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
 
     @Test(expected = ProcessingException.class)
     public void testTimeout() throws Exception {
-
         Process p = null;
         try {
             p = startProcess( new String[]{  "-config",

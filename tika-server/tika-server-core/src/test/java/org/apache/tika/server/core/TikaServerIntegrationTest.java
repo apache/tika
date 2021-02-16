@@ -405,25 +405,20 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         //this isn't a real regression test yet.
         //Can watch logs at least for confirmation of behavior
         //TODO: convert to real test
-        Thread serverThread = new Thread() {
-            @Override
-            public void run() {
-                TikaServerCli.main(
-                        new String[]{
-                                "-maxFiles", "10",
-                                "-taskTimeoutMillis", "10000", "-taskPulseMillis", "500",
-                                "-p", INTEGRATION_TEST_PORT
-                        });
-            }
-        };
-        serverThread.start();
-        awaitServerStartup();
-        Random r = new Random();
-        for (int i = 0; i < 100; i++) {
-            boolean ex = false;
-            Response response = null;
-            String file = TEST_HELLO_WORLD;
-            try {
+
+        Process p = null;
+        try {
+            p = startProcess(new String[]{"-config",
+                    getConfig("tika-config-server-timeout-10000.xml")});
+            awaitServerStartup();
+
+
+            Random r = new Random();
+            for (int i = 0; i < 100; i++) {
+                boolean ex = false;
+                Response response = null;
+                String file = TEST_HELLO_WORLD;
+                try {
                 if (r.nextFloat() < 0.01) {
                     file = TEST_SYSTEM_EXIT;
                 } else if (r.nextFloat() < 0.015) {
@@ -431,30 +426,33 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
                 } else if (r.nextFloat() < 0.02) {
                     file = TEST_HEAVY_HANG;
                 }
-                response = WebClient
-                        .create(endPoint + META_PATH)
-                        .accept("application/json")
-                        .put(ClassLoader
-                                .getSystemResourceAsStream(file));
-            } catch (Exception e) {
-                ex = true;
-            }
+                    System.out.println("writing file "+i + " : " +file);
+                    response = WebClient
+                            .create(endPoint + META_PATH)
+                            .accept("application/json")
+                            .put(ClassLoader
+                                    .getSystemResourceAsStream(file));
+                } catch (Exception e) {
+                    ex = true;
+                }
 
-            if (ex || response.getStatus() != 200) {
-                i--;
-                awaitServerStartup();
-                continue;
+                if (ex || response.getStatus() != 200) {
+                    i--;
+                    awaitServerStartup();
+                    continue;
+                }
+                if (file.equals(TEST_HELLO_WORLD)) {
+                    Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+                    List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+                    assertEquals(1, metadataList.size());
+                    assertEquals("Nikolai Lobachevsky", metadataList.get(0).get("author"));
+                    assertContains("hello world", metadataList.get(0).get("X-TIKA:content"));
+                }
+                //assertEquals("a38e6c7b38541af87148dee9634cb811", metadataList.get(10).get("X-TIKA:digest:MD5"));
             }
-            if (file.equals(TEST_HELLO_WORLD)) {
-                Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-                List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-                assertEquals(1, metadataList.size());
-                assertEquals("Nikolai Lobachevsky", metadataList.get(0).get("author"));
-                assertContains("hello world", metadataList.get(0).get("X-TIKA:content"));
-            }
-            //assertEquals("a38e6c7b38541af87148dee9634cb811", metadataList.get(10).get("X-TIKA:digest:MD5"));
+        } finally {
+            p.destroyForcibly();
         }
-        serverThread.interrupt();
 
     }
 
