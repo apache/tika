@@ -105,7 +105,8 @@ public class TesseractOCRConfigTest extends TikaTest {
     @Test
     public void testValidateInvalidLanguage() {
         List<String> invalidLanguages = Arrays.asList(
-                "", "+", "en", "en+", "eng+fra+", "Arabic", "/script/Arabic", "rm -rf *");
+                //"", allow empty string
+                "+", "en", "en+", "eng+fra+", "Arabic", "/script/Arabic", "rm -rf *");
 
         TesseractOCRConfig config = new TesseractOCRConfig();
 

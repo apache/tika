@@ -324,11 +324,14 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
      */
     private void doOCR(File input, File output, TesseractOCRConfig config) throws IOException, TikaException {
 
-
         ArrayList<String> cmd = new ArrayList<>(Arrays.asList(
-                getTesseractPath().toString() + getTesseractProg(), input.getPath(), output.getPath(), "-l",
-                config.getLanguage(), "--psm", config.getPageSegMode()
+                getTesseractPath() + getTesseractProg(), input.getPath(), output.getPath(),
+                "--psm", config.getPageSegMode()
         ));
+        if (! StringUtils.isBlank(config.getLanguage())) {
+            cmd.add("-l");
+            cmd.add(config.getLanguage());
+        }
         for (Map.Entry<String, String> entry : config.getOtherTesseractConfig().entrySet()) {
             cmd.add("-c");
             cmd.add(entry.getKey() + "=" + entry.getValue());
