@@ -256,6 +256,8 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
                        TesseractOCRConfig config)
             throws IOException, SAXException, TikaException {
         warnOnFirstParse();
+        validateLangString(config.getLanguage());
+
         File tmpTxtOutput = null;
         try {
             Path input = tikaInputStream.getPath();
@@ -321,11 +323,8 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
      * @throws IOException   if an input error occurred
      */
     private void doOCR(File input, File output, TesseractOCRConfig config) throws IOException, TikaException {
-        if (langs.size() > 0 && !langs.contains(config.getLanguage())) {
-            throw new IllegalArgumentException("Couldn't find language " +
-                    config.getLanguage() + " upon initialization. I did find: "
-                    + langs);
-        }
+
+
         ArrayList<String> cmd = new ArrayList<>(Arrays.asList(
                 getTesseractPath().toString() + getTesseractProg(), input.getPath(), output.getPath(), "-l",
                 config.getLanguage(), "--psm", config.getPageSegMode()
@@ -468,9 +467,29 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         hasImageMagick = hasImageMagick();
         if (preloadLangs) {
             preloadLangs();
+            if (! StringUtils.isBlank(defaultConfig.getLanguage())) {
+                validateLangString(defaultConfig.getLanguage());
+            }
         }
         imagePreprocessor = new ImagePreprocessor(
                 getImageMagickPath() + getImageMagickProg());
+    }
+
+    private void validateLangString(String language) throws TikaConfigException {
+        Set<String> invalidlangs = new HashSet<>();
+        Set<String> validLangs = new HashSet<>();
+        TesseractOCRConfig.getLangs(language, validLangs, invalidlangs);
+        if (invalidlangs.size() > 0) {
+            throw new TikaConfigException( "Invalid language code(s): " + invalidlangs);
+        }
+        if (langs.size() > 0) {
+            for (String lang : validLangs) {
+                if (!langs.contains(lang)) {
+                    throw new TikaConfigException("tesseract does not have "
+                            + lang + " available. I see only: " + langs);
+                }
+            }
+        }
     }
 
     @Override

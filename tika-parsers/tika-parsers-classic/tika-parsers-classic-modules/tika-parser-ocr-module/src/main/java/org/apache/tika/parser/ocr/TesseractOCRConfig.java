@@ -17,6 +17,7 @@
 package org.apache.tika.parser.ocr;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -136,27 +137,15 @@ public class TesseractOCRConfig implements Serializable {
      * Multiple languages may be specified, separated by plus characters.
      * e.g. "chi_tra+chi_sim+script/Arabic"
      */
-    public void setLanguage(String language) {
-        // Get rid of embedded spaces
-        language = language.replaceAll("\\s", "");
-        // Test for leading or trailing +
-        if (language.matches("\\+.*|.*\\+")) {
-            throw new IllegalArgumentException("Invalid syntax - Can't start or end with +" + language);
-        }
-        // Split on the + sign
-        final String[] langs = language.split("\\+");
-        List<String> invalidCodes = new ArrayList<>();
-        for (String lang : langs) {
-            // First, make sure it conforms to the correct syntax
-            if (!lang.matches("([a-zA-Z]{3}(_[a-zA-Z]{3,4}){0,2})|script(/|\\\\)[A-Z][a-zA-Z_]+")) {
-                invalidCodes.add(lang + " (invalid syntax)");
-            }
-        }
+    public void setLanguage(String languageString) {
+        Set<String> invalidCodes = new HashSet<>();
+        Set<String> validCodes = new HashSet<>();
+        getLangs(languageString, validCodes, invalidCodes);
         if (!invalidCodes.isEmpty()) {
             throw new IllegalArgumentException(
                     "Invalid language code(s): " + invalidCodes);
         }
-        this.language = language;
+        this.language = languageString;
         userConfigured.add("language");
     }
 
@@ -545,5 +534,34 @@ public class TesseractOCRConfig implements Serializable {
             }
         }
         return updated;
+    }
+
+    /**
+     * This takes a language string, parses it and then bins individual langs into
+     * valid or invalid based on regexes against the language codes
+     * @param language
+     * @param validLangs
+     * @param invalidLangs
+     */
+    public static void getLangs(String language, Set<String> validLangs, Set<String> invalidLangs) {
+        if (StringUtils.isBlank(language)) {
+            return;
+        }
+        // Get rid of embedded spaces
+        language = language.replaceAll("\\s", "");
+        // Test for leading or trailing +
+        if (language.matches("\\+.*|.*\\+")) {
+            throw new IllegalArgumentException("Invalid syntax - Can't start or end with +" + language);
+        }
+        // Split on the + sign
+        final String[] langs = language.split("\\+");
+        for (String lang : langs) {
+            // First, make sure it conforms to the correct syntax
+            if (!lang.matches("([a-zA-Z]{3}(_[a-zA-Z]{3,4}){0,2})|script(/|\\\\)[A-Z][a-zA-Z_]+")) {
+                invalidLangs.add(lang + " (invalid syntax)");
+            } else {
+                validLangs.add(lang);
+            }
+        }
     }
 }
