@@ -100,9 +100,12 @@ public class LyricsHandler {
                 int tagLen = Integer.parseInt(
                         lyrics.substring(pos+3, pos+8)
                 );
+                if (tagLen < 1 || tagLen > lyrics.length()) {
+                    //something went wrong
+                    break;
+                }
                 int startPos = pos + 8;
                 int endPos = startPos + tagLen;
-
                 if(tagName.equals("LYR")) {
                     lyricsText = lyrics.substring(startPos, endPos);
                 }
