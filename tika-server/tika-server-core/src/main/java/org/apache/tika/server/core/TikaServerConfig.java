@@ -278,6 +278,8 @@ public class TikaServerConfig {
     public List<String> getForkedProcessArgs(int port, String id) {
         //these are the arguments for the forked process
         List<String> args = new ArrayList<>();
+        args.add("-h");
+        args.add(getHost());
         args.add("-p");
         args.add(Integer.toString(port));
         args.add("-i");
