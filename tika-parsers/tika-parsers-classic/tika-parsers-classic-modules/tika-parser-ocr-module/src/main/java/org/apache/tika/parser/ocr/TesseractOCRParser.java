@@ -26,6 +26,7 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
@@ -222,6 +223,17 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext parseContext)
             throws IOException, SAXException, TikaException {
 
+        //we have to do this so that the temporary ocr-* content type
+        //doesn't show up in the xhtml. We're correctly resetting
+        //it in the AbstractImageParser, but it gets written to xhtml
+        //in the content.
+        String mediaType = metadata.get(Metadata.CONTENT_TYPE);
+        if (mediaType != null) {
+            MediaType mt = MediaType.parse(mediaType);
+            MediaType nonOcr = new MediaType(mt.getType(),
+                    mt.getSubtype().replace("ocr-", ""));
+            metadata.set(Metadata.CONTENT_TYPE, nonOcr.toString());
+        }
         TesseractOCRConfig userConfig = parseContext.get(TesseractOCRConfig.class);
         TesseractOCRConfig config = defaultConfig;
         if (userConfig != null) {
