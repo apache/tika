@@ -72,6 +72,7 @@ import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.DelegatingParser;
 import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -341,8 +342,7 @@ public class TikaGUI extends JFrame
 
         context.set(DocumentSelector.class, new ImageDocumentSelector());
 
-        input = TikaInputStream.get(new ProgressMonitorInputStream(
-                this, "Parsing stream", input));
+        input = TikaInputStream.get(input);
 
         if (input.markSupported()) {
             int mark = -1;
@@ -649,10 +649,9 @@ public class TikaGUI extends JFrame
          wanted.put(embeddedName, tmp);
          return tmp;
       }
-      
+
       public Set<MediaType> getSupportedTypes(ParseContext context) {
-         // Never used in an auto setup
-         return null;
+         return downstreamParser.getSupportedTypes(context);
       }
 
       public void parse(InputStream stream, ContentHandler handler,
