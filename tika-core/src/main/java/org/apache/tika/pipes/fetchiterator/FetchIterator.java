@@ -122,14 +122,11 @@ public abstract class FetchIterator implements Callable<Integer>, Initializable 
         if (queue == null || numConsumers < 0) {
             throw new IllegalStateException("Must call 'init' before calling this object");
         }
-
+        System.out.println("fetch iterator");
         enqueue();
+        System.out.println("fetch iterator finshed enqueing");
         for (int i = 0; i < numConsumers; i++) {
-            try {
-                tryToAdd(COMPLETED_SEMAPHORE);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+            tryToAdd(COMPLETED_SEMAPHORE);
         }
         return added;
     }

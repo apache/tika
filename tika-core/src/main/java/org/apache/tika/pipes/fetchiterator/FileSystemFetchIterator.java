@@ -40,7 +40,6 @@ public class FileSystemFetchIterator
     private Path basePath;
 
     public FileSystemFetchIterator() {
-
     }
 
     public FileSystemFetchIterator(String fetcherName, Path basePath) {

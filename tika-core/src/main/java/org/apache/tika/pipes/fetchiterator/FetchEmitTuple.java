@@ -28,7 +28,7 @@ public class FetchEmitTuple {
     }
     public static final ON_PARSE_EXCEPTION DEFAULT_ON_PARSE_EXCEPTION = ON_PARSE_EXCEPTION.EMIT;
     private final FetchKey fetchKey;
-    private final EmitKey emitKey;
+    private EmitKey emitKey;
     private final Metadata metadata;
     private final ON_PARSE_EXCEPTION onParseException;
 
@@ -59,6 +59,9 @@ public class FetchEmitTuple {
         return onParseException;
     }
 
+    public void setEmitKey(EmitKey emitKey) {
+        this.emitKey = emitKey;
+    }
     @Override
     public String toString() {
         return "FetchEmitTuple{" +
