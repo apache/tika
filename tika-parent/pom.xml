@@ -337,7 +337,7 @@
     <osgi.core.version>6.0.0</osgi.core.version>
     <parso.version>2.0.13</parso.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
-    <poi.version>4.1.2</poi.version>
+    <poi.version>5.0.0</poi.version>
     <rome.version>1.15.0</rome.version>
     <sis.version>1.0</sis.version>
     <slf4j.version>1.7.30</slf4j.version>
