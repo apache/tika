@@ -16,6 +16,8 @@
  */
 package org.apache.tika.pipes.fetchiterator.s3;
 
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -44,8 +46,9 @@ public class S3FetchIterator extends FetchIterator implements Initializable {
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(S3FetchIterator.class);
-    private String s3PathPrefix = "";
+    private String prefix = "";
     private String region;
+    private String credentialsProvider;
     private String profile;
     private String bucket;
 
@@ -67,18 +70,34 @@ public class S3FetchIterator extends FetchIterator implements Initializable {
     }
 
     @Field
-    public void setS3PathPrefix(String s3PathPrefix) {
-        this.s3PathPrefix = s3PathPrefix;
+    public void setPrefix(String prefix) {
+        this.prefix = prefix;
+    }
+
+    @Field
+    public void setCredentialsProvider(String credentialsProvider) {
+        if (! credentialsProvider.equals("profile") && ! credentialsProvider.equals("instance")) {
+            throw new IllegalArgumentException("credentialsProvider must be either 'profile' or instance'");
+        }
+        this.credentialsProvider = credentialsProvider;
     }
 
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
-        //params have already been set
-        //ignore them
+        //params have already been set...ignore them
+        AWSCredentialsProvider provider = null;
+        if ("instance".equals(credentialsProvider)) {
+            provider = InstanceProfileCredentialsProvider.getInstance();
+        } else if ("profile".equals(credentialsProvider)){
+            provider = new ProfileCredentialsProvider(profile);
+        } else {
+            throw new TikaConfigException("credentialsProvider must be set and " +
+                    "must be either 'instance' or 'profile'");
+        }
 
         s3Client = AmazonS3ClientBuilder.standard()
                 .withRegion(region)
-                .withCredentials(new ProfileCredentialsProvider(profile))
+                .withCredentials(provider)
                 .build();
     }
 
@@ -87,7 +106,6 @@ public class S3FetchIterator extends FetchIterator implements Initializable {
             throws TikaConfigException {
         super.checkInitialization(problemHandler);
         mustNotBeEmpty("bucket", this.bucket);
-        mustNotBeEmpty("profile", this.profile);
         mustNotBeEmpty("region", this.region);
     }
 
@@ -96,7 +114,7 @@ public class S3FetchIterator extends FetchIterator implements Initializable {
         String fetcherName = getFetcherName();
         long start = System.currentTimeMillis();
         int count = 0;
-        for (S3ObjectSummary summary : S3Objects.withPrefix(s3Client, bucket, s3PathPrefix)) {
+        for (S3ObjectSummary summary : S3Objects.withPrefix(s3Client, bucket, prefix)) {
 
             long elapsed = System.currentTimeMillis() - start;
             LOGGER.debug("adding ({}) {} in {} ms", count, summary.getKey(),

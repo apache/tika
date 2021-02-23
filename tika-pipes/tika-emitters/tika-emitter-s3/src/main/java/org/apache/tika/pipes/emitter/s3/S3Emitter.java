@@ -17,10 +17,13 @@
 package org.apache.tika.pipes.emitter.s3;
 
 import com.amazonaws.SdkClientException;
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -67,6 +70,8 @@ import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
  *                  &lt;!-- required --&gt;
  *                  &lt;param name="region" type="string"&gt;us-east-1&lt;/param&gt;
  *                  &lt;!-- required --&gt;
+ *                  &lt;param name="credentialsProvider" type="string"&gt;(profile|instance)&lt;/param&gt;
+ *                  &lt;!-- required if credentialsProvider=profile--&gt;
  *                  &lt;param name="profile" type="string"&gt;my-profile&lt;/param&gt;
  *                  &lt;!-- required --&gt;
  *                  &lt;param name="bucket" type="string"&gt;my-bucket&lt;/param&gt;
@@ -88,6 +93,7 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
     private String region;
     private String profile;
     private String bucket;
+    private String credentialsProvider;
     private String fileExtension = "json";
     private boolean spoolToTemp = true;
     private String prefix = null;
@@ -222,6 +228,14 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
         }
     }
 
+    @Field
+    public void setCredentialsProvider(String credentialsProvider) {
+        if (! credentialsProvider.equals("profile") && ! credentialsProvider.equals("instance")) {
+            throw new IllegalArgumentException("credentialsProvider must be either 'profile' or instance'");
+        }
+        this.credentialsProvider = credentialsProvider;
+    }
+
     /**
      * If you want to customize the output file's file extension.
      * Do not include the "."
@@ -232,20 +246,30 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
         this.fileExtension = fileExtension;
     }
 
+
+
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
-        //params have already been set
-        //ignore them
+        //params have already been set...ignore them
+        AWSCredentialsProvider provider = null;
+        if ("instance".equals(credentialsProvider)) {
+            provider = InstanceProfileCredentialsProvider.getInstance();
+        } else if ("profile".equals(credentialsProvider)){
+            provider = new ProfileCredentialsProvider(profile);
+        } else {
+            throw new TikaConfigException("credentialsProvider must be set and " +
+                    "must be either 'instance' or 'profile'");
+        }
+
         s3Client = AmazonS3ClientBuilder.standard()
                 .withRegion(region)
-                .withCredentials(new ProfileCredentialsProvider(profile))
+                .withCredentials(provider)
                 .build();
     }
 
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         mustNotBeEmpty("bucket", this.bucket);
-        mustNotBeEmpty("profile", this.profile);
         mustNotBeEmpty("region", this.region);
     }
 

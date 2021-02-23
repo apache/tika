@@ -16,6 +16,8 @@
  */
 package org.apache.tika.pipes.fetcher.s3;
 
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -52,6 +54,7 @@ public class S3Fetcher extends AbstractFetcher implements Initializable {
     private String region;
     private String bucket;
     private String profile;
+    private String credentialsProvider;
     private boolean extractUserMetadata = true;
     private AmazonS3 s3Client;
     private boolean spoolToTemp = true;
@@ -143,21 +146,36 @@ public class S3Fetcher extends AbstractFetcher implements Initializable {
         this.extractUserMetadata = extractUserMetadata;
     }
 
+    @Field
+    public void setCredentialsProvider(String credentialsProvider) {
+        if (! credentialsProvider.equals("profile") && ! credentialsProvider.equals("instance")) {
+            throw new IllegalArgumentException("credentialsProvider must be either 'profile' or instance'");
+        }
+        this.credentialsProvider = credentialsProvider;
+    }
+
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
-        //params have already been set
-        //ignore them
+        //params have already been set...ignore them
+        AWSCredentialsProvider provider = null;
+        if ("instance".equals(credentialsProvider)) {
+            provider = InstanceProfileCredentialsProvider.getInstance();
+        } else if ("profile".equals(credentialsProvider)){
+            provider = new ProfileCredentialsProvider(profile);
+        } else {
+            throw new TikaConfigException("credentialsProvider must be set and " +
+                    "must be either 'instance' or 'profile'");
+        }
+
         s3Client = AmazonS3ClientBuilder.standard()
                 .withRegion(region)
-                .withCredentials(new ProfileCredentialsProvider(profile))
+                .withCredentials(provider)
                 .build();
     }
 
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         mustNotBeEmpty("bucket", this.bucket);
-        mustNotBeEmpty("profile", this.profile);
         mustNotBeEmpty("region", this.region);
-
     }
 }
