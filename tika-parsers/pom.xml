@@ -264,6 +264,14 @@
           <groupId>org.apache.commons</groupId>
           <artifactId>commons-compress</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.woodstox</groupId>
+          <artifactId>woodstox-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.xmlgraphics</groupId>
+          <artifactId>batik-all</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>

@@ -17,6 +17,7 @@
 
 package org.apache.tika.parser.microsoft.ooxml.xslf;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.Date;
 
@@ -31,7 +32,7 @@ import org.apache.tika.parser.microsoft.ooxml.RunProperties;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
 import org.apache.xmlbeans.XmlException;
 
-public class XSLFEventBasedPowerPointExtractor extends POIXMLTextExtractor {
+public class XSLFEventBasedPowerPointExtractor implements POIXMLTextExtractor {
 
 
     private OPCPackage container;
@@ -42,7 +43,6 @@ public class XSLFEventBasedPowerPointExtractor extends POIXMLTextExtractor {
     }
 
     public XSLFEventBasedPowerPointExtractor(OPCPackage container) throws XmlException, OpenXML4JException, IOException {
-        super((POIXMLDocument) null);
         this.container = container;
         this.properties = new POIXMLProperties(container);
     }
@@ -76,6 +76,11 @@ public class XSLFEventBasedPowerPointExtractor extends POIXMLTextExtractor {
         return this.properties.getCustomProperties();
     }
 
+    @Override
+    public POIXMLDocument getDocument() {
+        return null;
+    }
+
 
     @Override
     public String getText() {
@@ -83,6 +88,20 @@ public class XSLFEventBasedPowerPointExtractor extends POIXMLTextExtractor {
         return "";
     }
 
+    @Override
+    public void setCloseFilesystem(boolean b) {
+
+    }
+
+    @Override
+    public boolean isCloseFilesystem() {
+        return false;
+    }
+
+    @Override
+    public Closeable getFilesystem() {
+        return null;
+    }
 
 
     private class XSLFToTextContentHandler implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
