@@ -30,8 +30,8 @@ public class AmazonTranscribe implements Transcriber {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmazonTranscribe.class);
 
-    boolean available;              // Flag for whether or not translation is available.
-    String clientId, clientSecret;  // Keys used for the API calls.
+    private boolean isAvailable;              // Flag for whether or not translation is available.
+    private String clientId, clientSecret;  // Keys used for the API calls.
 
     public AmazonTranscribe() {
         Properties props = new Properties();
@@ -39,9 +39,26 @@ public class AmazonTranscribe implements Transcriber {
         //TODO
     }
 
+    // transribe function without language specification
     @Override
-    public String transcribe() throws TikaException, IOException {
+    public String transcribe(String filepath) throws TikaException, IOException {
+        if (!this.isAvailable)
+			return "";
         //TODO
         return null;
     }
+
+    // transribe function with language specification
+    @Override
+    public String transcribe(String filepath, String sourceLanguage) throws TikaException, IOException {
+        if (!this.isAvailable)
+			return "";
+        //TODO
+        return null;
+    }
+
+    @Override
+	public boolean isAvailable() {
+		return this.isAvailable;
+	}
 }
