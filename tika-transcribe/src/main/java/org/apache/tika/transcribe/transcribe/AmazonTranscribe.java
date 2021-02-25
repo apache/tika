@@ -26,12 +26,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+
 public class AmazonTranscribe implements Transcriber {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmazonTranscribe.class);
 
     private boolean isAvailable;              // Flag for whether or not translation is available.
     private String clientId, clientSecret;  // Keys used for the API calls.
+    private String[] validSourceLanguages = {"en-US", "en-GB", "es-US", "fr-CA", "fr-FR", "en-AU",
+        "it-IT", "de-DE", "pt-BR", "ja-JP", "ko-KR"}; // Valid inputs to StartStreamTranscription for language of source file (audio)
 
     public AmazonTranscribe() {
         Properties props = new Properties();
@@ -61,4 +64,14 @@ public class AmazonTranscribe implements Transcriber {
 	public boolean isAvailable() {
 		return this.isAvailable;
 	}
+
+    private InputStream getStreamFromFile(String audioFileName) {
+        try {
+            File inputFile = new File(getClass().getClassLoader().getResource(audioFileName).getFile());
+            InputStream audioStream = new FileInputStream(inputFile);
+            return audioStream;
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
