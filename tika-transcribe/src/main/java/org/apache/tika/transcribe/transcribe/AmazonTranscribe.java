@@ -64,14 +64,4 @@ public class AmazonTranscribe implements Transcriber {
 	public boolean isAvailable() {
 		return this.isAvailable;
 	}
-
-    private InputStream getStreamFromFile(String audioFileName) {
-        try {
-            File inputFile = new File(getClass().getClassLoader().getResource(audioFileName).getFile());
-            InputStream audioStream = new FileInputStream(inputFile);
-            return audioStream;
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-    }
 }
