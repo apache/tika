@@ -26,5 +26,6 @@ public class AmazonTranscribeTest {
     public void setUp() {
         transcribe = new AmazonTranscribe();
     }
+
     //TODO
 }
