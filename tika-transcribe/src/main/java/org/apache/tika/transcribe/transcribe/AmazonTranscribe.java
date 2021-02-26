@@ -16,7 +16,8 @@
  */
 
 package org.apache.tika.transcribe.transcribe;
-
+import java.util.HashSet;
+import java.util.Arrays;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.transcribe.Transcriber;
 import org.slf4j.Logger;
@@ -34,8 +35,8 @@ public class AmazonTranscribe implements Transcriber {
 
     private boolean isAvailable;              // Flag for whether or not translation is available.
     private String clientId, clientSecret;  // Keys used for the API calls.
-    private String[] validSourceLanguages = {"en-US", "en-GB", "es-US", "fr-CA", "fr-FR", "en-AU",
-        "it-IT", "de-DE", "pt-BR", "ja-JP", "ko-KR"}; // Valid inputs to StartStreamTranscription for language of source file (audio)
+    private HashSet<String> validSourceLanguages = new HashSet<>(Arrays.asList("en-US", "en-GB", "es-US", "fr-CA", "fr-FR", "en-AU",
+            "it-IT", "de-DE", "pt-BR", "ja-JP", "ko-KR"));  // Valid inputs to StartStreamTranscription for language of source file (audio)
 
     public AmazonTranscribe() {
         Properties props = new Properties();
@@ -71,11 +72,8 @@ public class AmazonTranscribe implements Transcriber {
         if (!this.isAvailable)
 			return "";
 
-        boolean validSourceLanguageFlag = false; // Tracks if we have seen the input sourceLanguage in validSourceLanguages
-        for (int i = 0; i < validSourceLanguages.length; i++){
-            if (validSourceLanguages[i].equals(sourceLanguage)) {
-                validSourceLanguageFlag = true; }
-        }
+        boolean validSourceLanguageFlag = validSourceLanguages.contains(sourceLanguage); // Tracks if we have seen the input sourceLanguage in validSourceLanguages
+
         if (!validSourceLanguageFlag) { // Throws TikaException if the input sourceLanguage is not present in validSourceLanguages
             throw new TikaException("Provided Source Language is Not Valid. Run without language parameter or please select one of: " +
                     "en-US, en-GB, es-US, fr-CA, fr-FR, en-AU, it-IT, de-DE, pt-BR, ja-JP, ko-KR"); }
