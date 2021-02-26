@@ -35,19 +35,29 @@
     <packaging>bundle</packaging>
     <name>Apache Tika transcribe</name>
     <url>http://tika.apache.org/</url>
-
-<dependencies>
-    <dependency>
-        <groupId>org.apache.tika</groupId>
-        <artifactId>tika-core</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <!-- Test dependencies -->
-    <dependency>
-        <groupId>junit</groupId>
-        <artifactId>junit</artifactId>
-    </dependency>
-</dependencies>
+    <!--TODO use latest aws version or the one defined in the tika-parent-->
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-transcribe</artifactId>
+            <version>${aws.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-s3</artifactId>
+            <version>${aws.version}</version>
+        </dependency>
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+    </dependencies>
     <build>
         <plugins>
             <plugin>
@@ -121,7 +131,7 @@
                                         </goals>
                                     </pluginExecutionFilter>
                                     <action>
-                                        <execute />
+                                        <execute/>
                                     </action>
                                 </pluginExecution>
                             </pluginExecutions>
