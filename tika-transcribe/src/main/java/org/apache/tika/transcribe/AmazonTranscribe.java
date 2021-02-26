@@ -70,48 +70,19 @@ public class AmazonTranscribe implements Transcriber {
     }
 
     /**
-     * Call this method in order to upload a file to the Amazon S3 bucket.
+     * Constructs a new
+     * {@link PutObjectRequest} object to upload a file to the
+     * specified bucket and jobName. After constructing the request,
+     * users may optionally specify object metadata or a canned ACL as well.
      *
-     * @param bucketName
-     * @param filePath
-     * @param fullfilePath
+     * @param bucketName The name of an existing bucket to which the new object will be
+     *                   uploaded.
+     * @param jobName    The jobName under which to store the new object.
+     * @param file       The path of the file to upload to Amazon S3.
      */
-    public void uploadFileToBucket(String bucketName, String filePath, String fullfilePath) {
-        PutObjectRequest request = new PutObjectRequest(bucketName, filePath, new File(fullfilePath));
+    private void uploadFileToBucket(String bucketName, String jobName, String file) {
+        PutObjectRequest request = new PutObjectRequest(bucketName, jobName, new File(file));
         amazonS3.putObject(request);
-    }
-
-    /**
-     * Gets Transcription result from AWS S3 bucket given bucketName and key
-     *
-     * @param key
-     * @return
-     */
-    public String getTranscriptResult(String key) {
-        TranscriptionJob transcriptionJob = retrieveObjectWhenJobCompleted(key);
-        if (transcriptionJob != null && !TranscriptionJobStatus.FAILED.equals(transcriptionJob.getTranscriptionJobStatus())) {
-            return amazonS3.getObjectAsString(this.bucketName, key + ".json");
-        } else
-            return null;
-    }
-
-    /**
-     * Private helper function to get object from s3
-     *
-     * @param key
-     * @return
-     */
-    private TranscriptionJob retrieveObjectWhenJobCompleted(String key) {
-        GetTranscriptionJobRequest getTranscriptionJobRequest = new GetTranscriptionJobRequest();
-        getTranscriptionJobRequest.setTranscriptionJobName(key);
-        while (true) {
-            GetTranscriptionJobResult innerResult = amazonTranscribe.getTranscriptionJob(getTranscriptionJobRequest);
-            String status = innerResult.getTranscriptionJob().getTranscriptionJobStatus();
-            if (TranscriptionJobStatus.COMPLETED.name().equals(status) ||
-                    TranscriptionJobStatus.FAILED.name().equals(status)) {
-                return innerResult.getTranscriptionJob();
-            }
-        }
     }
 
     /**
@@ -121,6 +92,7 @@ public class AmazonTranscribe implements Transcriber {
      */
     @Override
     public String startTranscribeAudio(String filePath) throws TikaException, IOException {
+        uploadFileToBucket(this.bucketName, this.jobName, filePath);
         if (!isAvailable) return "";
         StartTranscriptionJobRequest startTranscriptionJobRequest = new StartTranscriptionJobRequest();
         Media media = new Media();
@@ -130,11 +102,13 @@ public class AmazonTranscribe implements Transcriber {
                 .withOutputBucketName(this.bucketName)
                 .setTranscriptionJobName(jobName);
         amazonTranscribe.startTranscriptionJob(startTranscriptionJobRequest);
-        return getTranscriptResult(jobName + ".json");
+//        return getTranscriptResult(jobName + ".json");
+        return getTranscriptResult(jobName);
     }
 
     @Override
     public String startTranscribeAudio(String filePath, String sourceLanguage) throws TikaException, IOException {
+        uploadFileToBucket(this.bucketName, this.jobName, filePath);
         if (!isAvailable) return "";
         StartTranscriptionJobRequest startTranscriptionJobRequest = new StartTranscriptionJobRequest();
         Media media = new Media();
@@ -144,11 +118,13 @@ public class AmazonTranscribe implements Transcriber {
                 .withOutputBucketName(this.bucketName)
                 .setTranscriptionJobName(jobName);
         amazonTranscribe.startTranscriptionJob(startTranscriptionJobRequest);
-        return getTranscriptResult(jobName + ".json");
+//        return getTranscriptResult(jobName + ".json");
+        return getTranscriptResult(jobName);
     }
 
     @Override
     public String startTranscribeVideo(String filePath) throws TikaException, IOException {
+        uploadFileToBucket(this.bucketName, this.jobName, filePath);
         if (!isAvailable) return "";
         //TODO
         return "";
@@ -156,6 +132,7 @@ public class AmazonTranscribe implements Transcriber {
 
     @Override
     public String startTranscribeVideo(String filePath, String sourceLanguage) throws TikaException, IOException {
+        uploadFileToBucket(this.bucketName, this.jobName, filePath);
         if (!isAvailable) return "";
         //TODO
         return "";
@@ -203,5 +180,38 @@ public class AmazonTranscribe implements Transcriber {
                 !clientSecret.equals(DEFAULT_SECRET) &&
                 bucketName != null &&
                 !bucketName.equals(DEFAULT_BUCKET);
+    }
+
+    /**
+     * Gets Transcription result from AWS S3 bucket given bucketName and jobName
+     *
+     * @param jobName
+     * @return
+     */
+    public String getTranscriptResult(String jobName) {
+        TranscriptionJob transcriptionJob = retrieveObjectWhenJobCompleted(jobName);
+        if (transcriptionJob != null && !TranscriptionJobStatus.FAILED.equals(transcriptionJob.getTranscriptionJobStatus())) {
+            return amazonS3.getObjectAsString(this.bucketName, jobName);
+        } else
+            return null;
+    }
+
+    /**
+     * Private helper function to get object from s3
+     *
+     * @param jobName
+     * @return
+     */
+    private TranscriptionJob retrieveObjectWhenJobCompleted(String jobName) {
+        GetTranscriptionJobRequest getTranscriptionJobRequest = new GetTranscriptionJobRequest();
+        getTranscriptionJobRequest.setTranscriptionJobName(jobName);
+        while (true) {
+            GetTranscriptionJobResult innerResult = amazonTranscribe.getTranscriptionJob(getTranscriptionJobRequest);
+            String status = innerResult.getTranscriptionJob().getTranscriptionJobStatus();
+            if (TranscriptionJobStatus.COMPLETED.name().equals(status) ||
+                    TranscriptionJobStatus.FAILED.name().equals(status)) {
+                return innerResult.getTranscriptionJob();
+            }
+        }
     }
 }
