@@ -23,6 +23,15 @@ import org.apache.tika.transcribe.Transcriber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.amazon.transcribe;
+import com.amazon.transcribe.constants.TranscriberConstants;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.transcribe.AmazonTranscribeAsync;
+import com.amazonaws.services.transcribe.model.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -89,7 +98,6 @@ public class AmazonTranscribe implements Transcriber {
     public String transcribeAudio(String filepath, String sourceLanguage) throws TikaException, IOException {
         if (!isAvailable())
 			return "";
-(
         boolean validSourceLanguageFlag = validSourceLanguages.contains(sourceLanguage); // Checks if sourceLanguage in validSourceLanguages O(1) lookup time
 
         if (!validSourceLanguageFlag) { // Throws TikaException if the input sourceLanguage is not present in validSourceLanguages
@@ -119,7 +127,6 @@ public class AmazonTranscribe implements Transcriber {
     public String transcribeVideo(String filepath, String sourceLanguage) throws TikaException, IOException {
         if (!isAvailable())
             return "";
-        (
         boolean validSourceLanguageFlag = validSourceLanguages.contains(sourceLanguage); // Checks if sourceLanguage in validSourceLanguages O(1) lookup time
 
         if (!validSourceLanguageFlag) { // Throws TikaException if the input sourceLanguage is not present in validSourceLanguages
