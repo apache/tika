@@ -33,16 +33,34 @@ public class AmazonTranscribe implements Transcriber {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmazonTranscribe.class);
 
-    private boolean isAvailable;              // Flag for whether or not translation is available.
-    private String clientId, clientSecret;  // Keys used for the API calls.
+    private String bucketName;
+
+    private boolean isAvailable; // Flag for whether or not translation is available.
+
+    private String clientId;
+
+    private String clientSecret;  // Keys used for the API calls.
+
     private HashSet<String> validSourceLanguages = new HashSet<>(Arrays.asList("en-US", "en-GB", "es-US", "fr-CA", "fr-FR", "en-AU",
             "it-IT", "de-DE", "pt-BR", "ja-JP", "ko-KR"));  // Valid inputs to StartStreamTranscription for language of source file (audio)
 
     public AmazonTranscribe() {
-        Properties props = new Properties();
-        InputStream stream;
-        //TODO
+        this.isAvailable = true;
+        Properties config = new Properties();
+        try {
+            config.load(AmazonTranscribe.class
+                    .getResourceAsStream(
+                            "transcribe.amazon.properties"));
+            this.clientId = config.getProperty("transcribe.AWS_ACCESS_KEY");
+            this.clientSecret = config.getProperty("transcribe.AWS_SECRET_KEY");
+            this.bucketName = config.getProperty("transcribe.BUCKET_NAME");
+
+        } catch (Exception e) {
+            LOG.warn("Exception reading config file", e);
+            isAvailable = false;
+        }
     }
+
     
     /**
      * Audio to text function without language specification
@@ -52,7 +70,7 @@ public class AmazonTranscribe implements Transcriber {
      * @throws IOException
      */
     @Override
-    public String transcribe(String filepath) throws TikaException, IOException {
+    public String transcribeAudio(String filepath) throws TikaException, IOException {
         if (!isAvailable())
 			return "";
         //TODO
@@ -68,10 +86,40 @@ public class AmazonTranscribe implements Transcriber {
      * @throws IOException
      */
     @Override
-    public String transcribe(String filepath, String sourceLanguage) throws TikaException, IOException {
+    public String transcribeAudio(String filepath, String sourceLanguage) throws TikaException, IOException {
         if (!isAvailable())
 			return "";
 (
+        boolean validSourceLanguageFlag = validSourceLanguages.contains(sourceLanguage); // Checks if sourceLanguage in validSourceLanguages O(1) lookup time
+
+        if (!validSourceLanguageFlag) { // Throws TikaException if the input sourceLanguage is not present in validSourceLanguages
+            throw new TikaException("Provided Source Language is Not Valid. Run without language parameter or please select one of: " +
+                    "en-US, en-GB, es-US, fr-CA, fr-FR, en-AU, it-IT, de-DE, pt-BR, ja-JP, ko-KR"); }
+        //TODO
+        return null;
+    }
+
+    @Override
+    public String transcribeVideo(String filepath) throws TikaException, IOException {
+        if (!isAvailable())
+            return "";
+        //TODO
+        return null;
+    }
+
+    /**
+     * Audio to text function with language specification
+     * @param filepath
+     * @param sourceLanguage
+     * @return Transcribed text
+     * @throws TikaException
+     * @throws IOException
+     */
+    @Override
+    public String transcribeVideo(String filepath, String sourceLanguage) throws TikaException, IOException {
+        if (!isAvailable())
+            return "";
+        (
         boolean validSourceLanguageFlag = validSourceLanguages.contains(sourceLanguage); // Checks if sourceLanguage in validSourceLanguages O(1) lookup time
 
         if (!validSourceLanguageFlag) { // Throws TikaException if the input sourceLanguage is not present in validSourceLanguages

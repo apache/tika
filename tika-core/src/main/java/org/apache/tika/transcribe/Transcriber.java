@@ -35,7 +35,7 @@ public interface Transcriber {
      * @throws java.io.IOException
      * @since TODO
      */
-    public String transcribe(String filepath) throws TikaException, IOException;
+    public String transcribeAudio(String filepath) throws TikaException, IOException;
 
     /**
      * @return
@@ -45,7 +45,27 @@ public interface Transcriber {
      * @throws java.io.IOException
      * @since TODO
      */
-    public String transcribe(String filepath, String sourceLanguage) throws TikaException, IOException;
+    public String transcribeAudio(String filepath, String sourceLanguage) throws TikaException, IOException;
+
+    /**
+     * @return
+     * @param filepath
+     * @throws TikaException       When there is an error translating.
+     * @throws java.io.IOException
+     * @since TODO
+     */
+    public String transcribeVideo(String filepath) throws TikaException, IOException;
+
+    /**
+     * @return
+     * @param filepath
+     * @param sourceLanguage
+     * @throws TikaException       When there is an error translating.
+     * @throws java.io.IOException
+     * @since TODO
+     */
+    public String transcribeVideo(String filepath, String sourceLanguage) throws TikaException, IOException;
+
 
 
 }
