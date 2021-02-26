@@ -21,6 +21,8 @@ import org.apache.tika.exception.TikaException;
 
 import java.io.IOException;
 
+import com.amazonaws.services.transcribe.model.LanguageCode;
+
 
 /**
  * Interface for Transcriber services.
@@ -30,42 +32,59 @@ import java.io.IOException;
 public interface Transcriber {
     /**
      * @return
-     * @param filepath
+     * @param fileName
+     * @param jobName
      * @throws TikaException       When there is an error translating.
      * @throws java.io.IOException
      * @since TODO
      */
-    public String transcribeAudio(String filepath) throws TikaException, IOException;
+    public void startTranscribeAudio(String fileName, String jobName) throws TikaException, IOException;
 
     /**
      * @return
-     * @param filepath
+     * @param fileName
+     * @param sourceLanguage
+     * @param jobName
+     * @throws TikaException       When there is an error translating.
+     * @throws java.io.IOException
+     * @since TODO
+     */
+    public void startTranscribeAudio(String fileName, LanguageCode sourceLanguage, String jobName) throws TikaException, IOException;
+
+    /**
+     * @return
+     * @param fileName
+     * @param jobName
+     * @throws TikaException       When there is an error translating.
+     * @throws java.io.IOException
+     * @since TODO
+     */
+    public void startTranscribeVideo(String fileName, String jobName) throws TikaException, IOException;
+
+    /**
+     * @return
+     * @param fileName
+     * @param jobName
      * @param sourceLanguage
      * @throws TikaException       When there is an error translating.
      * @throws java.io.IOException
      * @since TODO
      */
-    public String transcribeAudio(String filepath, String sourceLanguage) throws TikaException, IOException;
+    public void startTranscribeVideo(String fileName, LanguageCode sourceLanguage, String jobName) throws TikaException, IOException;
 
     /**
+     * Gets transcription result from S3
+     * @param key
      * @return
-     * @param filepath
-     * @throws TikaException       When there is an error translating.
-     * @throws java.io.IOException
-     * @since TODO
      */
-    public String transcribeVideo(String filepath) throws TikaException, IOException;
+    public String getTranscriptResult(String key);
 
     /**
-     * @return
-     * @param filepath
-     * @param sourceLanguage
-     * @throws TikaException       When there is an error translating.
-     * @throws java.io.IOException
-     * @since TODO
+     * Upload file to s3
+     * @param bucketName
+     * @param fileName
+     * @param filePath
      */
-    public String transcribeVideo(String filepath, String sourceLanguage) throws TikaException, IOException;
-
-
+    public void uploadFileToBucket(String bucketName, String fileName, String filePath);
 
 }
