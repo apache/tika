@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+
 public class AmazonTranscribe implements Transcriber {
 
 
@@ -33,6 +34,8 @@ public class AmazonTranscribe implements Transcriber {
 
     private boolean isAvailable;              // Flag for whether or not translation is available.
     private String clientId, clientSecret;  // Keys used for the API calls.
+    private String[] validSourceLanguages = {"en-US", "en-GB", "es-US", "fr-CA", "fr-FR", "en-AU",
+        "it-IT", "de-DE", "pt-BR", "ja-JP", "ko-KR"}; // Valid inputs to StartStreamTranscription for language of source file (audio)
 
     public AmazonTranscribe() {
         Properties props = new Properties();
@@ -67,6 +70,15 @@ public class AmazonTranscribe implements Transcriber {
     public String transcribe(String filepath, String sourceLanguage) throws TikaException, IOException {
         if (!this.isAvailable)
 			return "";
+
+        boolean validSourceLanguageFlag = false; // Tracks if we have seen the input sourceLanguage in validSourceLanguages
+        for (int i = 0; i < validSourceLanguages.length; i++){
+            if (validSourceLanguages[i].equals(sourceLanguage)) {
+                validSourceLanguageFlag = true; }
+        }
+        if (!validSourceLanguageFlag) { // Throws TikaException if the input sourceLanguage is not present in validSourceLanguages
+            throw new TikaException("Provided Source Language is Not Valid. Please select one of: " +
+                    "en-US, en-GB, es-US, fr-CA, fr-FR, en-AU, it-IT, de-DE, pt-BR, ja-JP, ko-KR"); }
         //TODO
         return null;
     }
