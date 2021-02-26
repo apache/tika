@@ -30,9 +30,22 @@ import java.io.IOException;
 public interface Transcriber {
     /**
      * @return
+     * @param filepath
      * @throws TikaException       When there is an error translating.
      * @throws java.io.IOException
      * @since TODO
      */
-    public String transcribe() throws TikaException, IOException;
+    public String transcribe(String filepath) throws TikaException, IOException;
+
+    /**
+     * @return
+     * @param filepath
+     * @param sourceLanguage
+     * @throws TikaException       When there is an error translating.
+     * @throws java.io.IOException
+     * @since TODO
+     */
+    public String transcribe(String filepath, String sourceLanguage) throws TikaException, IOException;
+
+
 }

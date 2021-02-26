@@ -28,6 +28,7 @@ import java.util.Properties;
 
 public class AmazonTranscribe implements Transcriber {
 
+
     private static final Logger LOG = LoggerFactory.getLogger(AmazonTranscribe.class);
 
     private boolean isAvailable;              // Flag for whether or not translation is available.
@@ -38,8 +39,14 @@ public class AmazonTranscribe implements Transcriber {
         InputStream stream;
         //TODO
     }
-
-    // transribe function without language specification
+    
+    /**
+     * Audio to text function without language specification
+     * @param filepath
+     * @return Transcribed text
+     * @throws TikaException
+     * @throws IOException
+     */
     @Override
     public String transcribe(String filepath) throws TikaException, IOException {
         if (!this.isAvailable)
@@ -48,7 +55,14 @@ public class AmazonTranscribe implements Transcriber {
         return null;
     }
 
-    // transribe function with language specification
+    /**
+     * Audio to text function with language specification
+     * @param filepath
+     * @param sourceLanguage
+     * @return Transcribed text
+     * @throws TikaException
+     * @throws IOException
+     */
     @Override
     public String transcribe(String filepath, String sourceLanguage) throws TikaException, IOException {
         if (!this.isAvailable)
@@ -57,7 +71,6 @@ public class AmazonTranscribe implements Transcriber {
         return null;
     }
 
-    @Override
 	public boolean isAvailable() {
 		return this.isAvailable;
 	}
