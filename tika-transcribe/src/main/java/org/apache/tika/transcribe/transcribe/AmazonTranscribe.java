@@ -77,7 +77,7 @@ public class AmazonTranscribe implements Transcriber {
                 validSourceLanguageFlag = true; }
         }
         if (!validSourceLanguageFlag) { // Throws TikaException if the input sourceLanguage is not present in validSourceLanguages
-            throw new TikaException("Provided Source Language is Not Valid. Please select one of: " +
+            throw new TikaException("Provided Source Language is Not Valid. Run without language parameter or please select one of: " +
                     "en-US, en-GB, es-US, fr-CA, fr-FR, en-AU, it-IT, de-DE, pt-BR, ja-JP, ko-KR"); }
         //TODO
         return null;
