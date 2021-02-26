@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.util.Properties;
 
 
+
 public class AmazonTranscribe implements Transcriber {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmazonTranscribe.class);
@@ -35,6 +36,7 @@ public class AmazonTranscribe implements Transcriber {
     private String clientId, clientSecret;  // Keys used for the API calls.
     private String[] validSourceLanguages = {"en-US", "en-GB", "es-US", "fr-CA", "fr-FR", "en-AU",
         "it-IT", "de-DE", "pt-BR", "ja-JP", "ko-KR"}; // Valid inputs to StartStreamTranscription for language of source file (audio)
+
 
     public AmazonTranscribe() {
         Properties props = new Properties();
@@ -63,7 +65,7 @@ public class AmazonTranscribe implements Transcriber {
                 validSourceLanguageFlag = true; }
         }
         if (!validSourceLanguageFlag) { // Throws TikaException if the input sourceLanguage is not present in validSourceLanguages
-            throw new TikaException("Provided Source Language is Not Valid. Please select one of: " +
+            throw new TikaException("Provided Source Language is Not Valid. Please use one of: " +
                     "en-US, en-GB, es-US, fr-CA, fr-FR, en-AU, it-IT, de-DE, pt-BR, ja-JP, ko-KR"); }
         //TODO
         return null;
