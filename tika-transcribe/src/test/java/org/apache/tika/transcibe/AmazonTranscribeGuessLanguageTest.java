@@ -29,7 +29,7 @@ public class AmazonTranscribeGuessLanguageTest {
 
     @Before
     public void setUp() {
-        transcriber = new AmazonTranscribe();
+        transcriber = new AmazonTranscribe("AmazonTranscriber");
     }
 
     @Test
@@ -48,7 +48,7 @@ public class AmazonTranscribeGuessLanguageTest {
 
         if (transcriber.isAvailable()) {
             try {
-                result = transcriber.transcribeAudio(audioFilePath);
+                result = transcriber.startTranscribeAudio(audioFilePath);
                 assertNotNull(result);
                 assertEquals("Result: [" + result
                                 + "]: not equal to expected: [" + expected + "]",
@@ -69,7 +69,7 @@ public class AmazonTranscribeGuessLanguageTest {
 
         if (transcriber.isAvailable()) {
             try {
-                result = transcriber.transcribeAudio(audioFilePath);
+                result = transcriber.startTranscribeAudio(audioFilePath);
                 assertNotNull(result);
                 assertEquals("Result: [" + result
                                 + "]: not equal to expected: [" + expected + "]",
@@ -90,7 +90,7 @@ public class AmazonTranscribeGuessLanguageTest {
 
         if (transcriber.isAvailable()) {
             try {
-                result = transcriber.transcribeVideo(videoFilePath);
+                result = transcriber.startTranscribeVideo(videoFilePath);
                 assertNotNull(result);
                 assertEquals("Result: [" + result
                                 + "]: not equal to expected: [" + expected + "]",
@@ -111,7 +111,7 @@ public class AmazonTranscribeGuessLanguageTest {
 
         if (transcriber.isAvailable()) {
             try {
-                result = transcriber.transcribeVideo(videoFilePath);
+                result = transcriber.startTranscribeVideo(videoFilePath);
                 assertNotNull(result);
                 assertEquals("Result: [" + result
                                 + "]: not equal to expected: [" + expected + "]",
