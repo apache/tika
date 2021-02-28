@@ -17,6 +17,7 @@
 package org.apache.tika.transcribe;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static junit.framework.TestCase.assertNotNull;
@@ -31,20 +32,21 @@ public class AmazonTranscribeGuessLanguageTest {
         transcriber = new AmazonTranscribe();
     }
 
+    @Ignore
     @Test
     public void AmazonTranscribeGuessLanguageAudioShortTest() {
         String expected = "where is the bus stop? where is the bus stop?";
-        //TODO: "expected" should be changed to reflect the contents of ShortAudioSample.mp3
+        //TODO: "expected" should be changed to reflect the contents of ShortAudioSampleEnglish.mp3
         /*
-        URL res = getClass().getClassLoader().getResource("ShortAudioSample.mp3");
+        URL res = getClass().getClassLoader().getResource("ShortAudioSampleEnglish.mp3");
         File file = Paths.get(res.toURI()).toFile();
         String absolutePath = file.getAbsolutePath();
         Necessary to get the correct file path from our test resource folder? */
         //TODO: is the above commented block necessary to obtain the proper filepath for a file located in the tika-translate/test/resources directory?
 
-        String audioFilePath = "src/test/resources/ShortAudioSample.mp3";
-        String jobName = "";
-        String result = null;
+        String audioFilePath = "src/test/resources/ShortAudioSampleEnglish.mp3";
+        String jobName;
+        String result;
 
         if (transcriber.isAvailable()) {
             try {
@@ -61,13 +63,14 @@ public class AmazonTranscribeGuessLanguageTest {
         }
     }
 
+    @Ignore
     @Test
     public void AmazonTranscribeGuessLanguageAudioLongTest() {
         String expected = "where is the bus stop? where is the bus stop?";
         //TODO: "expected" should be changed to reflect the contents of LongAudioSample.mp3
         String audioFilePath = "src/test/resources/LongAudioSample.mp3";
-        String jobName = "";
-        String result = null;
+        String jobName;
+        String result;
 
         if (transcriber.isAvailable()) {
             try {
@@ -84,13 +87,14 @@ public class AmazonTranscribeGuessLanguageTest {
         }
     }
 
+    @Ignore
     @Test
     public void AmazonTranscribeGuessLanguageShortVideoTest() {
         String expected = "where is the bus stop? where is the bus stop?";
         //TODO: "expected" should be changed to reflect the contents of ShortVideoSample.mp4
         String videoFilePath = "src/test/resources/ShortVideoSample.mp4";
-        String jobName = "";
-        String result = null;
+        String jobName;
+        String result;
 
         if (transcriber.isAvailable()) {
             try {
@@ -107,13 +111,14 @@ public class AmazonTranscribeGuessLanguageTest {
         }
     }
 
+    @Ignore
     @Test
     public void AmazonTranscribeGuessLanguageLongVideoTest() {
         String expected = "hello sir";
         //TODO: "expected" should be changed to reflect the contents of LongVideoSample.mp4
         String videoFilePath = "src/test/resources/LongVideoSample.mp4";
-        String jobName = "";
-        String result = null;
+        String jobName;
+        String result;
 
         if (transcriber.isAvailable()) {
             try {
@@ -128,11 +133,5 @@ public class AmazonTranscribeGuessLanguageTest {
                 fail(e.getMessage());
             }
         }
-    }
-    @Test
-    public void TESTER() {
-        System.out.println("HelloWord");
-        String s = System.getProperty("file.separator");
-        System.out.println(s);
     }
 }
