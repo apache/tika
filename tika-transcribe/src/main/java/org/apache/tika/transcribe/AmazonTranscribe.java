@@ -45,14 +45,12 @@ public class AmazonTranscribe implements Transcriber {
     private AmazonS3 amazonS3;
     private String bucketName;
     private boolean isAvailable; // Flag for whether or not translation is available.
-    private String jobName;
     private String clientId;
     private String clientSecret;  // Keys used for the API calls.
 //    private HashSet<String> validSourceLanguages = new HashSet<>(Arrays.asList("en-US", "en-GB", "es-US", "fr-CA", "fr-FR", "en-AU",
 //            "it-IT", "de-DE", "pt-BR", "ja-JP", "ko-KR"));  // Valid inputs to StartStreamTranscription for language of source file (audio)
 
-    public AmazonTranscribe(String jobName) {
-        this.jobName = jobName;
+    public AmazonTranscribe() {
         Properties config = new Properties();
         try {
             config.load(AmazonTranscribe.class
@@ -69,19 +67,22 @@ public class AmazonTranscribe implements Transcriber {
         }
     }
 
+    private String getFileName(String jobName) {
+        String separator = System.getProperty("file.separator");
+        String[] arr = jobName.split(separator);
+        return arr[arr.length - 1].split(".")[0];
+    }
+
     /**
      * Constructs a new
      * {@link PutObjectRequest} object to upload a file to the
      * specified bucket and jobName. After constructing the request,
      * users may optionally specify object metadata or a canned ACL as well.
-     *
-     * @param bucketName The name of an existing bucket to which the new object will be
-     *                   uploaded.
-     * @param jobName    The jobName under which to store the new object.
-     * @param file       The path of the file to upload to Amazon S3.
+     * @param filePath       The path of the file to upload to Amazon S3.
      */
-    private void uploadFileToBucket(String bucketName, String jobName, String file) {
-        PutObjectRequest request = new PutObjectRequest(bucketName, jobName, new File(file));
+    private void uploadFileToBucket(String filePath) {
+        String jobName = getFileName(filePath);
+        PutObjectRequest request = new PutObjectRequest(this.bucketName, jobName, new File(filePath));
         amazonS3.putObject(request);
     }
 
@@ -91,25 +92,24 @@ public class AmazonTranscribe implements Transcriber {
      * @throws IOException
      */
     @Override
-    public String startTranscribeAudio(String filePath) throws TikaException, IOException {
-        uploadFileToBucket(this.bucketName, this.jobName, filePath);
-        if (!isAvailable) return "";
+    public void startTranscribeAudio(String filePath) throws TikaException, IOException {
+        if (!isAvailable()) return;
+        String jobName = getFileName(filePath);
+        uploadFileToBucket(filePath);
         StartTranscriptionJobRequest startTranscriptionJobRequest = new StartTranscriptionJobRequest();
         Media media = new Media();
         media.setMediaFileUri(amazonS3.getUrl(bucketName, filePath).toString());
         startTranscriptionJobRequest.withMedia(media)
-//                .withLanguageCode(LanguageCode.EnUS)
                 .withOutputBucketName(this.bucketName)
                 .setTranscriptionJobName(jobName);
         amazonTranscribe.startTranscriptionJob(startTranscriptionJobRequest);
-//        return getTranscriptResult(jobName + ".json");
-        return getTranscriptResult(jobName);
     }
 
     @Override
-    public String startTranscribeAudio(String filePath, String sourceLanguage) throws TikaException, IOException {
-        uploadFileToBucket(this.bucketName, this.jobName, filePath);
-        if (!isAvailable) return "";
+    public void startTranscribeAudio(String filePath, String sourceLanguage) throws TikaException, IOException {
+        if (!isAvailable()) return;
+        String jobName = getFileName(filePath);
+        uploadFileToBucket(filePath);
         StartTranscriptionJobRequest startTranscriptionJobRequest = new StartTranscriptionJobRequest();
         Media media = new Media();
         media.setMediaFileUri(amazonS3.getUrl(bucketName, filePath).toString());
@@ -118,29 +118,40 @@ public class AmazonTranscribe implements Transcriber {
                 .withOutputBucketName(this.bucketName)
                 .setTranscriptionJobName(jobName);
         amazonTranscribe.startTranscriptionJob(startTranscriptionJobRequest);
-//        return getTranscriptResult(jobName + ".json");
-        return getTranscriptResult(jobName);
     }
 
     @Override
-    public String startTranscribeVideo(String filePath) throws TikaException, IOException {
-        uploadFileToBucket(this.bucketName, this.jobName, filePath);
-        if (!isAvailable) return "";
-        //TODO
-        return "";
+    public void startTranscribeVideo(String filePath) throws TikaException, IOException {
+        if (!isAvailable()) return;
+        String jobName = getFileName(filePath);
+        uploadFileToBucket(filePath);
+        StartTranscriptionJobRequest startTranscriptionJobRequest = new StartTranscriptionJobRequest();
+        Media media = new Media();
+        media.setMediaFileUri(amazonS3.getUrl(bucketName, filePath).toString());
+        startTranscriptionJobRequest.withMedia(media)
+                .withOutputBucketName(this.bucketName)
+                .setTranscriptionJobName(jobName);
+        amazonTranscribe.startTranscriptionJob(startTranscriptionJobRequest);
     }
 
     @Override
-    public String startTranscribeVideo(String filePath, String sourceLanguage) throws TikaException, IOException {
-        uploadFileToBucket(this.bucketName, this.jobName, filePath);
-        if (!isAvailable) return "";
-        //TODO
-        return "";
+    public void startTranscribeVideo(String filePath, String sourceLanguage) throws TikaException, IOException {
+        if (!isAvailable()) return;
+        String jobName = getFileName(filePath);
+        uploadFileToBucket(filePath);
+        StartTranscriptionJobRequest startTranscriptionJobRequest = new StartTranscriptionJobRequest();
+        Media media = new Media();
+        media.setMediaFileUri(amazonS3.getUrl(bucketName, filePath).toString());
+        startTranscriptionJobRequest.withMedia(media)
+                .withLanguageCode(LanguageCode.valueOf(sourceLanguage))
+                .withOutputBucketName(this.bucketName)
+                .setTranscriptionJobName(jobName);
+        amazonTranscribe.startTranscriptionJob(startTranscriptionJobRequest);
     }
 
     @Override
     public boolean isAvailable() {
-        return isAvailable;
+        return this.isAvailable;
     }
 
     /**
@@ -185,13 +196,14 @@ public class AmazonTranscribe implements Transcriber {
     /**
      * Gets Transcription result from AWS S3 bucket given bucketName and jobName
      *
-     * @param jobName
+     * @param fileNameS3
      * @return
      */
-    public String getTranscriptResult(String jobName) {
-        TranscriptionJob transcriptionJob = retrieveObjectWhenJobCompleted(jobName);
+    @Override
+    public String getTranscriptResult(String fileNameS3) {
+        TranscriptionJob transcriptionJob = retrieveObjectWhenJobCompleted(fileNameS3);
         if (transcriptionJob != null && !TranscriptionJobStatus.FAILED.equals(transcriptionJob.getTranscriptionJobStatus())) {
-            return amazonS3.getObjectAsString(this.bucketName, jobName);
+            return amazonS3.getObjectAsString(this.bucketName, fileNameS3);
         } else
             return null;
     }
