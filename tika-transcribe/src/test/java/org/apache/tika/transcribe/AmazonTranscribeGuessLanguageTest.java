@@ -14,9 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.transcibe;
+package org.apache.tika.transcribe;
 
-import org.apache.tika.transcribe.AmazonTranscribe;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -29,7 +28,7 @@ public class AmazonTranscribeGuessLanguageTest {
 
     @Before
     public void setUp() {
-        transcriber = new AmazonTranscribe("AmazonTranscriber");
+        transcriber = new AmazonTranscribe();
     }
 
     @Test
@@ -44,11 +43,13 @@ public class AmazonTranscribeGuessLanguageTest {
         //TODO: is the above commented block necessary to obtain the proper filepath for a file located in the tika-translate/test/resources directory?
 
         String audioFilePath = "src/test/resources/ShortAudioSample.mp3";
+        String jobName = "";
         String result = null;
 
         if (transcriber.isAvailable()) {
             try {
-                result = transcriber.startTranscribeAudio(audioFilePath);
+                jobName = transcriber.startTranscribeAudio(audioFilePath);
+                result = transcriber.getTranscriptResult(jobName);
                 assertNotNull(result);
                 assertEquals("Result: [" + result
                                 + "]: not equal to expected: [" + expected + "]",
@@ -65,11 +66,13 @@ public class AmazonTranscribeGuessLanguageTest {
         String expected = "where is the bus stop? where is the bus stop?";
         //TODO: "expected" should be changed to reflect the contents of LongAudioSample.mp3
         String audioFilePath = "src/test/resources/LongAudioSample.mp3";
+        String jobName = "";
         String result = null;
 
         if (transcriber.isAvailable()) {
             try {
-                result = transcriber.startTranscribeAudio(audioFilePath);
+                jobName = transcriber.startTranscribeAudio(audioFilePath);
+                result = transcriber.getTranscriptResult(jobName);
                 assertNotNull(result);
                 assertEquals("Result: [" + result
                                 + "]: not equal to expected: [" + expected + "]",
@@ -86,11 +89,13 @@ public class AmazonTranscribeGuessLanguageTest {
         String expected = "where is the bus stop? where is the bus stop?";
         //TODO: "expected" should be changed to reflect the contents of ShortVideoSample.mp4
         String videoFilePath = "src/test/resources/ShortVideoSample.mp4";
+        String jobName = "";
         String result = null;
 
         if (transcriber.isAvailable()) {
             try {
-                result = transcriber.startTranscribeVideo(videoFilePath);
+                jobName = transcriber.startTranscribeAudio(videoFilePath);
+                result = transcriber.getTranscriptResult(jobName);
                 assertNotNull(result);
                 assertEquals("Result: [" + result
                                 + "]: not equal to expected: [" + expected + "]",
@@ -107,11 +112,13 @@ public class AmazonTranscribeGuessLanguageTest {
         String expected = "hello sir";
         //TODO: "expected" should be changed to reflect the contents of LongVideoSample.mp4
         String videoFilePath = "src/test/resources/LongVideoSample.mp4";
+        String jobName = "";
         String result = null;
 
         if (transcriber.isAvailable()) {
             try {
-                result = transcriber.startTranscribeVideo(videoFilePath);
+                jobName = transcriber.startTranscribeAudio(videoFilePath);
+                result = transcriber.getTranscriptResult(jobName);
                 assertNotNull(result);
                 assertEquals("Result: [" + result
                                 + "]: not equal to expected: [" + expected + "]",
@@ -121,5 +128,11 @@ public class AmazonTranscribeGuessLanguageTest {
                 fail(e.getMessage());
             }
         }
+    }
+    @Test
+    public void TESTER() {
+        System.out.println("HelloWord");
+        String s = System.getProperty("file.separator");
+        System.out.println(s);
     }
 }
