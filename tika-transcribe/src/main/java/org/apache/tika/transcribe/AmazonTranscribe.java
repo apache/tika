@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.Properties;
+import java.util.UUID;
 
 
 public class AmazonTranscribe implements Transcriber {
@@ -67,10 +68,9 @@ public class AmazonTranscribe implements Transcriber {
         }
     }
 
-    private String getFileName(String jobName) {
-        String separator = System.getProperty("file.separator");
-        String[] arr = jobName.split(separator);
-        return arr[arr.length - 1].split(".")[0];
+    private String getFileName() {
+        UUID uuid = UUID.randomUUID();
+        return uuid.toString();
     }
 
     /**
@@ -81,20 +81,22 @@ public class AmazonTranscribe implements Transcriber {
      * @param filePath       The path of the file to upload to Amazon S3.
      */
     private void uploadFileToBucket(String filePath) {
-        String jobName = getFileName(filePath);
+        String jobName = getFileName();
         PutObjectRequest request = new PutObjectRequest(this.bucketName, jobName, new File(filePath));
         amazonS3.putObject(request);
     }
 
     /**
+     * Starts AWS Transcribe Job without language specification for Audio
      * @param filePath
+     * @return key for transcription lookup
      * @throws TikaException
      * @throws IOException
      */
     @Override
-    public void startTranscribeAudio(String filePath) throws TikaException, IOException {
-        if (!isAvailable()) return;
-        String jobName = getFileName(filePath);
+    public String startTranscribeAudio(String filePath) throws TikaException, IOException {
+        if (!isAvailable()) return null;
+        String jobName = getFileName();
         uploadFileToBucket(filePath);
         StartTranscriptionJobRequest startTranscriptionJobRequest = new StartTranscriptionJobRequest();
         Media media = new Media();
@@ -103,12 +105,20 @@ public class AmazonTranscribe implements Transcriber {
                 .withOutputBucketName(this.bucketName)
                 .setTranscriptionJobName(jobName);
         amazonTranscribe.startTranscriptionJob(startTranscriptionJobRequest);
+        return jobName;
     }
-
+    /**
+     * Starts AWS Transcribe Job with language specification for Audio
+     * @param filePath
+     * @param sourceLanguage
+     * @return key for transcription lookup
+     * @throws TikaException
+     * @throws IOException
+     */
     @Override
-    public void startTranscribeAudio(String filePath, String sourceLanguage) throws TikaException, IOException {
-        if (!isAvailable()) return;
-        String jobName = getFileName(filePath);
+    public String startTranscribeAudio(String filePath, String sourceLanguage) throws TikaException, IOException {
+        if (!isAvailable()) return null;
+        String jobName = getFileName();
         uploadFileToBucket(filePath);
         StartTranscriptionJobRequest startTranscriptionJobRequest = new StartTranscriptionJobRequest();
         Media media = new Media();
@@ -118,12 +128,20 @@ public class AmazonTranscribe implements Transcriber {
                 .withOutputBucketName(this.bucketName)
                 .setTranscriptionJobName(jobName);
         amazonTranscribe.startTranscriptionJob(startTranscriptionJobRequest);
+        return jobName;
     }
 
+    /**
+     * Starts AWS Transcribe Job without language specification for Video
+     * @param filePath
+     * @return key for transcription lookup
+     * @throws TikaException
+     * @throws IOException
+     */
     @Override
-    public void startTranscribeVideo(String filePath) throws TikaException, IOException {
-        if (!isAvailable()) return;
-        String jobName = getFileName(filePath);
+    public String startTranscribeVideo(String filePath) throws TikaException, IOException {
+        if (!isAvailable()) return null;
+        String jobName = getFileName();
         uploadFileToBucket(filePath);
         StartTranscriptionJobRequest startTranscriptionJobRequest = new StartTranscriptionJobRequest();
         Media media = new Media();
@@ -132,12 +150,21 @@ public class AmazonTranscribe implements Transcriber {
                 .withOutputBucketName(this.bucketName)
                 .setTranscriptionJobName(jobName);
         amazonTranscribe.startTranscriptionJob(startTranscriptionJobRequest);
+        return jobName;
     }
 
+    /**
+     * Starts AWS Transcribe Job with language specification for Audio
+     * @param filePath
+     * @param sourceLanguage
+     * @return key for transcription lookup
+     * @throws TikaException
+     * @throws IOException
+     */
     @Override
-    public void startTranscribeVideo(String filePath, String sourceLanguage) throws TikaException, IOException {
-        if (!isAvailable()) return;
-        String jobName = getFileName(filePath);
+    public String startTranscribeVideo(String filePath, String sourceLanguage) throws TikaException, IOException {
+        if (!isAvailable()) return null;
+        String jobName = getFileName();
         uploadFileToBucket(filePath);
         StartTranscriptionJobRequest startTranscriptionJobRequest = new StartTranscriptionJobRequest();
         Media media = new Media();
@@ -147,6 +174,7 @@ public class AmazonTranscribe implements Transcriber {
                 .withOutputBucketName(this.bucketName)
                 .setTranscriptionJobName(jobName);
         amazonTranscribe.startTranscriptionJob(startTranscriptionJobRequest);
+        return jobName;
     }
 
     @Override

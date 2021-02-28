@@ -37,7 +37,7 @@ public interface Transcriber {
      * @throws IOException
      * @since TODO
      */
-    public void startTranscribeAudio(String filePath) throws TikaException, IOException;
+    public String startTranscribeAudio(String filePath) throws TikaException, IOException;
 
     /**
      * Transcribe the given the audio file and the source language.
@@ -49,7 +49,7 @@ public interface Transcriber {
      * @throws java.io.IOException
      * @since TODO
      */
-    public void startTranscribeAudio(String filePath, String sourceLanguage) throws TikaException, IOException;
+    public String startTranscribeAudio(String filePath, String sourceLanguage) throws TikaException, IOException;
 
     /**
      * Transcribe the given the video file.
@@ -60,7 +60,7 @@ public interface Transcriber {
      * @throws java.io.IOException
      * @since TODO
      */
-    public void startTranscribeVideo(String filePath) throws TikaException, IOException;
+    public String startTranscribeVideo(String filePath) throws TikaException, IOException;
 
     /**
      * Transcribe the given the video file and the source language.
@@ -72,7 +72,7 @@ public interface Transcriber {
      * @throws java.io.IOException
      * @since TODO
      */
-    public void startTranscribeVideo(String filePath, String sourceLanguage) throws TikaException, IOException;
+    public String startTranscribeVideo(String filePath, String sourceLanguage) throws TikaException, IOException;
 
     /**
      * @return true if this Transcriber is probably able to translate right now.
