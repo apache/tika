@@ -34,17 +34,9 @@ public class AmazonTranscribeGuessLanguageTest {
 
     @Ignore
     @Test
-    public void AmazonTranscribeGuessLanguageAudioShortTest() {
-        String expected = "where is the bus stop? where is the bus stop?";
-        //TODO: "expected" should be changed to reflect the contents of ShortAudioSampleEnglish.mp3
-        /*
-        URL res = getClass().getClassLoader().getResource("ShortAudioSampleEnglish.mp3");
-        File file = Paths.get(res.toURI()).toFile();
-        String absolutePath = file.getAbsolutePath();
-        Necessary to get the correct file path from our test resource folder? */
-        //TODO: is the above commented block necessary to obtain the proper filepath for a file located in the tika-translate/test/resources directory?
-
+    public void testSimpleTranscribeUnknownAudioShortEnglish() {
         String audioFilePath = "src/test/resources/ShortAudioSampleEnglish.mp3";
+        String expected = "Where is the bus stop where is the bus stop";
         String jobName;
         String result;
 
@@ -65,10 +57,9 @@ public class AmazonTranscribeGuessLanguageTest {
 
     @Ignore
     @Test
-    public void AmazonTranscribeGuessLanguageAudioLongTest() {
-        String expected = "where is the bus stop? where is the bus stop?";
-        //TODO: "expected" should be changed to reflect the contents of LongAudioSample.mp3
-        String audioFilePath = "src/test/resources/LongAudioSample.mp3";
+    public void testSimpleTranscribeUnknownAudioShortFrench() {
+        String audioFilePath = "src/test/resources/ShortAudioSampleFrench.mp3";
+        String expected = "Où est l’arrêt du bus où est l’arrêt du bus";
         String jobName;
         String result;
 
@@ -89,10 +80,9 @@ public class AmazonTranscribeGuessLanguageTest {
 
     @Ignore
     @Test
-    public void AmazonTranscribeGuessLanguageShortVideoTest() {
-        String expected = "where is the bus stop? where is the bus stop?";
-        //TODO: "expected" should be changed to reflect the contents of ShortVideoSample.mp4
-        String videoFilePath = "src/test/resources/ShortVideoSample.mp4";
+    public void testSimpleTranscribeUnknownVideoShortEnglish() {
+        String videoFilePath = "src/test/resources/ShortVideoSampleEnglish";
+        String expected = "Hi";
         String jobName;
         String result;
 
@@ -113,10 +103,9 @@ public class AmazonTranscribeGuessLanguageTest {
 
     @Ignore
     @Test
-    public void AmazonTranscribeGuessLanguageLongVideoTest() {
-        String expected = "hello sir";
-        //TODO: "expected" should be changed to reflect the contents of LongVideoSample.mp4
-        String videoFilePath = "src/test/resources/LongVideoSample.mp4";
+    public void testSimpleTranscribeUnknownVideoShortKorean() {
+        String videoFilePath = "src/test/resources/ShortVideoSampleKorean";
+        String expected = "안녕하세요"; //TODO: Check whether output is Annyeonghaseyo or 안녕하세요
         String jobName;
         String result;
 
