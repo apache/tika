@@ -68,7 +68,7 @@ public class AmazonTranscribe implements Transcriber {
         }
     }
 
-    private String getFileName() {
+    private String getJobKey() {
         UUID uuid = UUID.randomUUID();
         return uuid.toString();
     }
@@ -80,8 +80,7 @@ public class AmazonTranscribe implements Transcriber {
      * users may optionally specify object metadata or a canned ACL as well.
      * @param filePath       The path of the file to upload to Amazon S3.
      */
-    private void uploadFileToBucket(String filePath) {
-        String jobName = getFileName();
+    private void uploadFileToBucket(String filePath, String jobName) {
         PutObjectRequest request = new PutObjectRequest(this.bucketName, jobName, new File(filePath));
         amazonS3.putObject(request);
     }
@@ -96,8 +95,8 @@ public class AmazonTranscribe implements Transcriber {
     @Override
     public String startTranscribeAudio(String filePath) throws TikaException, IOException {
         if (!isAvailable()) return null;
-        String jobName = getFileName();
-        uploadFileToBucket(filePath);
+        String jobName = getJobKey();
+        uploadFileToBucket(filePath, jobName);
         StartTranscriptionJobRequest startTranscriptionJobRequest = new StartTranscriptionJobRequest();
         Media media = new Media();
         media.setMediaFileUri(amazonS3.getUrl(bucketName, filePath).toString());
@@ -118,8 +117,8 @@ public class AmazonTranscribe implements Transcriber {
     @Override
     public String startTranscribeAudio(String filePath, String sourceLanguage) throws TikaException, IOException {
         if (!isAvailable()) return null;
-        String jobName = getFileName();
-        uploadFileToBucket(filePath);
+        String jobName = getJobKey();
+        uploadFileToBucket(filePath, jobName);
         StartTranscriptionJobRequest startTranscriptionJobRequest = new StartTranscriptionJobRequest();
         Media media = new Media();
         media.setMediaFileUri(amazonS3.getUrl(bucketName, filePath).toString());
@@ -141,8 +140,8 @@ public class AmazonTranscribe implements Transcriber {
     @Override
     public String startTranscribeVideo(String filePath) throws TikaException, IOException {
         if (!isAvailable()) return null;
-        String jobName = getFileName();
-        uploadFileToBucket(filePath);
+        String jobName = getJobKey();
+        uploadFileToBucket(filePath, jobName);
         StartTranscriptionJobRequest startTranscriptionJobRequest = new StartTranscriptionJobRequest();
         Media media = new Media();
         media.setMediaFileUri(amazonS3.getUrl(bucketName, filePath).toString());
@@ -164,8 +163,8 @@ public class AmazonTranscribe implements Transcriber {
     @Override
     public String startTranscribeVideo(String filePath, String sourceLanguage) throws TikaException, IOException {
         if (!isAvailable()) return null;
-        String jobName = getFileName();
-        uploadFileToBucket(filePath);
+        String jobName = getJobKey();
+        uploadFileToBucket(filePath, jobName);
         StartTranscriptionJobRequest startTranscriptionJobRequest = new StartTranscriptionJobRequest();
         Media media = new Media();
         media.setMediaFileUri(amazonS3.getUrl(bucketName, filePath).toString());
