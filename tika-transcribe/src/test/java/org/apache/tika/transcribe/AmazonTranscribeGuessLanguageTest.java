@@ -14,10 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.transcibe;
+package org.apache.tika.transcribe;
 
-import org.apache.tika.transcribe.AmazonTranscribe;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static junit.framework.TestCase.assertNotNull;
@@ -29,21 +29,22 @@ public class AmazonTranscribeGuessLanguageTest {
 
     @Before
     public void setUp() {
-        transcriber = new AmazonTranscribe("AmazonTranscriber");
+        transcriber = new AmazonTranscribe();
     }
 
+    @Ignore
     @Test
     public void AmazonTranscribeGuessLanguageAudioShortTest() {
         String expected = "where is the bus stop? where is the bus stop?";
-        //TODO: "expected" should be changed to reflect the contents of ShortAudioSample.mp3
+        //TODO: "expected" should be changed to reflect the contents of ShortAudioSampleEnglish.mp3
         /*
-        URL res = getClass().getClassLoader().getResource("ShortAudioSample.mp3");
+        URL res = getClass().getClassLoader().getResource("ShortAudioSampleEnglish.mp3");
         File file = Paths.get(res.toURI()).toFile();
         String absolutePath = file.getAbsolutePath();
         Necessary to get the correct file path from our test resource folder? */
         //TODO: is the above commented block necessary to obtain the proper filepath for a file located in the tika-translate/test/resources directory?
 
-        String audioFilePath = "src/test/resources/ShortAudioSample.mp3";
+        String audioFilePath = "src/test/resources/ShortAudioSampleEnglish.mp3";
         String result = null;
 
         if (transcriber.isAvailable()) {
@@ -60,6 +61,7 @@ public class AmazonTranscribeGuessLanguageTest {
         }
     }
 
+    @Ignore
     @Test
     public void AmazonTranscribeGuessLanguageAudioLongTest() {
         String expected = "where is the bus stop? where is the bus stop?";
@@ -81,6 +83,7 @@ public class AmazonTranscribeGuessLanguageTest {
         }
     }
 
+    @Ignore
     @Test
     public void AmazonTranscribeGuessLanguageShortVideoTest() {
         String expected = "where is the bus stop? where is the bus stop?";
@@ -102,6 +105,7 @@ public class AmazonTranscribeGuessLanguageTest {
         }
     }
 
+    @Ignore
     @Test
     public void AmazonTranscribeGuessLanguageLongVideoTest() {
         String expected = "hello sir";
