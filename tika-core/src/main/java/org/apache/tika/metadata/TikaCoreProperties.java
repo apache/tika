@@ -170,8 +170,19 @@ public interface TikaCoreProperties {
     Property CONTENT_TYPE_HINT =
             Property.internalText(HttpHeaders.CONTENT_TYPE+"-Hint");
 
-    Property CONTENT_TYPE_OVERRIDE =
+    /**
+     * This is used by users to override detection with the override detector.
+     */
+    Property CONTENT_TYPE_USER_OVERRIDE =
             Property.internalText(HttpHeaders.CONTENT_TYPE+"-Override");
+
+
+    /**
+     * This is used by parsers to override detection of embedded resources
+     * with the override detector.
+     */
+    Property CONTENT_TYPE_PARSER_OVERRIDE =
+            Property.internalText(HttpHeaders.CONTENT_TYPE+"-Parser-Override");
 
     /**
      * @see DublinCore#FORMAT

@@ -100,7 +100,7 @@ public class MboxParser extends AbstractParser {
                     Queue<String> multiline = new LinkedList<String>();
                     mailMetadata.add(EMAIL_FROMLINE_METADATA, curLine.substring(MBOX_RECORD_DIVIDER.length()));
                     mailMetadata.set(Metadata.CONTENT_TYPE, "message/rfc822");
-                    mailMetadata.set(TikaCoreProperties.CONTENT_TYPE_OVERRIDE, "message/rfc822");
+                    mailMetadata.set(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE, "message/rfc822");
                     curLine = reader.readLine();
                     if (curLine == null) {
                         break;

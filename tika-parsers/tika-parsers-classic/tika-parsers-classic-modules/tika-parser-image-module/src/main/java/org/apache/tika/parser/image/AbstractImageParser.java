@@ -24,7 +24,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
-import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
@@ -84,21 +83,13 @@ public abstract class AbstractImageParser extends AbstractParser {
                 metadataException = e;
             }
 
-            String mime = metadata.get(Metadata.CONTENT_TYPE);
-            String override = metadata.get(TikaCoreProperties.CONTENT_TYPE_OVERRIDE);
             try (InputStream pathStream = Files.newInputStream(path)) {
                 //specify ocr content type
-                metadata.set(TikaCoreProperties.CONTENT_TYPE_OVERRIDE, ocrMediaType.toString());
+                metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, ocrMediaType.toString());
                 //need to use bodycontenthandler to filter out re-dumping of metadata
                 //in xhtmlhandler
                 ocrParser.parse(pathStream, new EmbeddedContentHandler(
                         new BodyContentHandler(xhtml)), metadata, context);
-            } finally {
-                //reset actual mime because AutoDetectParser will set mime to detected
-                //which is the override.
-                metadata.set(Metadata.CONTENT_TYPE, mime);
-                //reset override too
-                metadata.set(TikaCoreProperties.CONTENT_TYPE_OVERRIDE, override);
             }
             xhtml.endDocument();
         } finally {

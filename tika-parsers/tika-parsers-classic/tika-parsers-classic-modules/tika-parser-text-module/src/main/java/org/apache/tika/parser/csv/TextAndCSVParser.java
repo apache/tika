@@ -48,7 +48,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /**
- * Unless the {@link TikaCoreProperties#CONTENT_TYPE_OVERRIDE} is set,
+ * Unless the {@link TikaCoreProperties#CONTENT_TYPE_USER_OVERRIDE} is set,
  * this parser tries to assess whether the file is a text file, csv or tsv.
  * If the detector detects regularity in column numbers and/or encapsulated cells,
  * this parser will apply the {@link org.apache.commons.csv.CSVParser};
@@ -283,7 +283,7 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
     }
 
     private CSVParams getOverride(Metadata metadata) {
-        String override = metadata.get(TikaCoreProperties.CONTENT_TYPE_OVERRIDE);
+        String override = metadata.get(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE);
         if (override == null) {
             return new CSVParams();
         }
