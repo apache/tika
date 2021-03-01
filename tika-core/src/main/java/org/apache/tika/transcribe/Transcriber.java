@@ -31,21 +31,22 @@ public interface Transcriber {
     /**
      * Transcribe the given audio file.
      *
-     * @param filePath
-     * @return
-     * @throws TikaException When there is an error translating.
+     * @param filePath The path of the file to be transcribed.
+     * @return key for transcription lookup
+     * @throws TikaException When there is an error transcribing.
      * @throws IOException
      * @since TODO
      */
+
     public String startTranscribeAudio(String filePath) throws TikaException, IOException;
 
     /**
      * Transcribe the given the audio file and the source language.
      *
-     * @param filePath
-     * @param sourceLanguage
-     * @return
-     * @throws TikaException       When there is an error translating.
+     * @param filePath       The path of the file to be transcribed.
+     * @param sourceLanguage The language code for the language used in the input media file.
+     * @return key for transcription lookup
+     * @throws TikaException       When there is an error transcribing.
      * @throws java.io.IOException
      * @since TODO
      */
@@ -54,9 +55,9 @@ public interface Transcriber {
     /**
      * Transcribe the given the video file.
      *
-     * @param filePath
-     * @return
-     * @throws TikaException       When there is an error translating.
+     * @param filePath The path of the file to be transcribed.
+     * @return key for transcription lookup
+     * @throws TikaException       When there is an error transcribing.
      * @throws java.io.IOException
      * @since TODO
      */
@@ -65,10 +66,10 @@ public interface Transcriber {
     /**
      * Transcribe the given the video file and the source language.
      *
-     * @param filePath
-     * @param sourceLanguage
-     * @return
-     * @throws TikaException       When there is an error translating.
+     * @param filePath       The path of the file to be transcribed.
+     * @param sourceLanguage The language code for the language used in the input media file.
+     * @return key for transcription lookup
+     * @throws TikaException       When there is an error transcribing.
      * @throws java.io.IOException
      * @since TODO
      */
@@ -79,11 +80,4 @@ public interface Transcriber {
      * @since Tika TODO
      */
     public boolean isAvailable();
-
-    /**
-     * Returns transcription result using specific key
-     * @param fileNameS3
-     * @return transcribed text
-     */
-    public String getTranscriptResult(String fileNameS3);
 }
