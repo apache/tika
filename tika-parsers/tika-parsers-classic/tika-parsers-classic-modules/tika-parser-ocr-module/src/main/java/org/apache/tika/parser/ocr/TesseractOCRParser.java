@@ -171,7 +171,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         // Try running Tesseract from there, and see if it exists + works
         String[] checkCmd = {tesseract};
         boolean hasTesseract = ExternalParser.check(checkCmd);
-        LOG.debug("hasTesseract (path: " + checkCmd + "): " + hasTesseract);
+        LOG.debug("hasTesseract (path: " + Arrays.toString(checkCmd) + "): " + hasTesseract);
         return hasTesseract;
     }
 

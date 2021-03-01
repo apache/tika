@@ -29,7 +29,6 @@ import java.util.Map;
 import org.apache.commons.io.ByteOrderMark;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -94,7 +93,7 @@ public class TextAndCSVParserTest extends TikaTest {
     @Test
     public void testCSV_UTF8_TypeOverride() throws Exception {
         Metadata metadata = new Metadata();
-        metadata.set(TikaCoreProperties.CONTENT_TYPE_OVERRIDE, "text/csv; charset=UTF-8");
+        metadata.set(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE, "text/csv; charset=UTF-8");
         XMLResult xmlResult = getXML(new ByteArrayInputStream(CSV_UTF8), PARSER, metadata);
         assertEquals("comma", xmlResult.metadata.get(TextAndCSVParser.DELIMITER_PROPERTY));
         assertMediaTypeEquals("csv", "UTF-8","comma",

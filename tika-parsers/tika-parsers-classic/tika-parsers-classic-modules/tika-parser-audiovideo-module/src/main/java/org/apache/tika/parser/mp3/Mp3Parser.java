@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TailStream;
 import org.apache.tika.metadata.Metadata;
@@ -163,6 +164,16 @@ public class Mp3Parser extends AbstractParser {
         }
 
         xhtml.endDocument();
+    }
+
+    /**
+     * This statically sets the max record size in {@link ID3v2Frame}
+     *
+     * @param maxRecordSize
+     */
+    @Field
+    public void setMaxRecordSize(int maxRecordSize) {
+        ID3v2Frame.setMaxRecordSize(maxRecordSize);
     }
 
     /**

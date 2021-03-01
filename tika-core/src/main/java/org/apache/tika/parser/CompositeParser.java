@@ -19,7 +19,9 @@ package org.apache.tika.parser;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.sax.TaggedContentHandler;
@@ -232,7 +234,12 @@ public class CompositeParser extends AbstractParser {
 
     protected Parser getParser(Metadata metadata, ParseContext context) {
         Map<MediaType, Parser> map = getParsers(context);
-        MediaType type = MediaType.parse(metadata.get(Metadata.CONTENT_TYPE));
+        //check for parser override first
+        String contentTypeString = metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE);
+        if (contentTypeString == null) {
+            contentTypeString = metadata.get(Metadata.CONTENT_TYPE);
+        }
+        MediaType type = MediaType.parse(contentTypeString);
         if (type != null) {
            // We always work on the normalised, canonical form
            type = registry.normalize(type);

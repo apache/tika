@@ -113,6 +113,16 @@ public class TesseractOCRParserTest extends TikaTest {
 
     }
 
+    @Test
+    public void testParserContentTypeOverride() throws Exception {
+        Assume.assumeTrue("can run OCR", canRun());
+        //this tests that the content-type is not overwritten by the ocr parser override content type
+        List<Metadata> metadata = getRecursiveMetadata("testOCR.pdf", AUTO_DETECT_PARSER,
+                BasicContentHandlerFactory.HANDLER_TYPE.XML);
+        assertContains("<meta name=\"Content-Type\" content=\"application/pdf\" />",
+                metadata.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+    }
+
     private void testBasicOCR(String resource, String[] nonOCRContains, int numMetadatas) throws Exception{
         Assume.assumeTrue("can run OCR", canRun());
 

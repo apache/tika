@@ -455,16 +455,11 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 ImageIOUtil.writeImage(image, config.getOcrImageFormatName(),
                         os, dpi, config.getOcrImageQuality());
             }
-            String mime = metadata.get(Metadata.CONTENT_TYPE);
-            String overrideMime = metadata.get(TikaCoreProperties.CONTENT_TYPE_OVERRIDE);
             try (InputStream is = TikaInputStream.get(tmpFile)) {
-                metadata.set(TikaCoreProperties.CONTENT_TYPE_OVERRIDE, ocrImageMediaType.toString());
+                metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, ocrImageMediaType.toString());
                 ocrParser.parse(is,
                         new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
                         metadata, context);
-            } finally {
-                metadata.set(Metadata.CONTENT_TYPE, mime);
-                metadata.set(TikaCoreProperties.CONTENT_TYPE_OVERRIDE, overrideMime);
             }
         } catch (IOException e) {
             handleCatchableIOE(e);

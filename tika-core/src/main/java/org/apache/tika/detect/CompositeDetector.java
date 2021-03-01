@@ -78,7 +78,9 @@ public class CompositeDetector implements Detector {
             //short circuit via OverrideDetector
             //can't rely on ordering because subsequent detector may
             //change Override's to a specialization of Override's
-            if (detector instanceof OverrideDetector && metadata.get(TikaCoreProperties.CONTENT_TYPE_OVERRIDE) != null) {
+            if (detector instanceof OverrideDetector
+                    && (metadata.get(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE) != null ||
+                    metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE) != null)) {
                 return detector.detect(input, metadata);
             }
             MediaType detected = detector.detect(input, metadata);

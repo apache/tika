@@ -17,7 +17,6 @@
 package org.apache.tika.parser.ocr;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
@@ -40,7 +39,6 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.InputStream;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -90,7 +88,7 @@ public class TesseractOCRParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         MediaType ocrMediaType = new MediaType(mediaType.getType(),
                 "OCR-" + mediaType.getSubtype());
-        metadata.set(TikaCoreProperties.CONTENT_TYPE_OVERRIDE,
+        metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
                 ocrMediaType.toString());
         return metadata;
     }

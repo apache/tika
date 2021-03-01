@@ -221,7 +221,7 @@ public class OutlookPSTParser extends AbstractParser {
         //the underlying bytes from the pstMail object...
 
         byte[] mailContent = pstMail.getBody().getBytes(UTF_8);
-        mailMetadata.set(TikaCoreProperties.CONTENT_TYPE_OVERRIDE,
+        mailMetadata.set(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE,
                 MediaType.TEXT_PLAIN.toString());
         embeddedExtractor.parseEmbedded(new ByteArrayInputStream(mailContent),
                 handler, mailMetadata, true);
