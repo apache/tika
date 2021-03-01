@@ -16,7 +16,6 @@
  */
 package org.apache.tika.transcribe;
 
-import org.apache.tika.transcribe.AmazonTranscribe;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -42,11 +41,11 @@ public class AmazonTranscribeSimpleTest {
         String result = null;
         if (transcribe.isAvailable()) {
             try {
-                result = transcribe.startTranscribeAudio(source, "en-GB");
+                result = transcribe.transcribeAudio(source, "en-GB");
                 assertNotNull(result);
                 assertEquals("Result: [" + result
                                 + "]: not equal to expected: [" + expected + "]",
-                                expected, result);
+                        expected, result);
             } catch (Exception e) {
                 e.printStackTrace();
                 fail(e.getMessage());
@@ -63,7 +62,7 @@ public class AmazonTranscribeSimpleTest {
         String result = null;
         if (transcribe.isAvailable()) {
             try {
-                result = transcribe.startTranscribeAudio(source, "fr-FR");
+                result = transcribe.transcribeAudio(source, "fr-FR");
                 assertNotNull(result);
                 assertEquals("Result: [" + result
                                 + "]: not equal to expected: [" + expected + "]",
@@ -84,7 +83,7 @@ public class AmazonTranscribeSimpleTest {
         String result = null;
         if (transcribe.isAvailable()) {
             try {
-                result = transcribe.startTranscribeVideo(source, "en");
+                result = transcribe.transcribeVideo(source, "en");
                 assertNotNull(result);
                 assertEquals("Result: [" + result
                                 + "]: not equal to expected: [" + expected + "]",
@@ -106,7 +105,7 @@ public class AmazonTranscribeSimpleTest {
         String result = null;
         if (transcribe.isAvailable()) {
             try {
-                result = transcribe.startTranscribeVideo(source, "ko-KR");
+                result = transcribe.transcribeVideo(source, "ko-KR");
                 assertNotNull(result);
                 assertEquals("Result: [" + result
                                 + "]: not equal to expected: [" + expected + "]",

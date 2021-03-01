@@ -24,8 +24,9 @@ import java.io.IOException;
 
 /**
  * Interface for Transcriber services.
+ * TODO add documentation
  *
- * @since Tika TODO
+ * @since Tika 2.1
  */
 public interface Transcriber {
     /**
@@ -34,11 +35,11 @@ public interface Transcriber {
      * @param filePath The path of the file to be transcribed.
      * @return key for transcription lookup
      * @throws TikaException When there is an error transcribing.
-     * @throws IOException
-     * @since TODO
+     * @throws IOException   If an I/O exception of some sort has occurred.
+     * @since 2.1
      */
 
-    public String startTranscribeAudio(String filePath) throws TikaException, IOException;
+    public String transcribeAudio(String filePath) throws TikaException, IOException;
 
     /**
      * Transcribe the given the audio file and the source language.
@@ -46,22 +47,22 @@ public interface Transcriber {
      * @param filePath       The path of the file to be transcribed.
      * @param sourceLanguage The language code for the language used in the input media file.
      * @return key for transcription lookup
-     * @throws TikaException       When there is an error transcribing.
-     * @throws java.io.IOException
-     * @since TODO
+     * @throws TikaException When there is an error transcribing.
+     * @throws IOException   If an I/O exception of some sort has occurred.
+     * @since 2.1
      */
-    public String startTranscribeAudio(String filePath, String sourceLanguage) throws TikaException, IOException;
+    public String transcribeAudio(String filePath, String sourceLanguage) throws TikaException, IOException;
 
     /**
      * Transcribe the given the video file.
      *
      * @param filePath The path of the file to be transcribed.
      * @return key for transcription lookup
-     * @throws TikaException       When there is an error transcribing.
-     * @throws java.io.IOException
-     * @since TODO
+     * @throws TikaException When there is an error transcribing.
+     * @throws IOException   If an I/O exception of some sort has occurred.
+     * @since 2.1
      */
-    public String startTranscribeVideo(String filePath) throws TikaException, IOException;
+    public String transcribeVideo(String filePath) throws TikaException, IOException;
 
     /**
      * Transcribe the given the video file and the source language.
@@ -69,15 +70,15 @@ public interface Transcriber {
      * @param filePath       The path of the file to be transcribed.
      * @param sourceLanguage The language code for the language used in the input media file.
      * @return key for transcription lookup
-     * @throws TikaException       When there is an error transcribing.
-     * @throws java.io.IOException
-     * @since TODO
+     * @throws TikaException When there is an error transcribing.
+     * @throws IOException   If an I/O exception of some sort has occurred.
+     * @since 2.1
      */
-    public String startTranscribeVideo(String filePath, String sourceLanguage) throws TikaException, IOException;
+    public String transcribeVideo(String filePath, String sourceLanguage) throws TikaException, IOException;
 
     /**
      * @return true if this Transcriber is probably able to translate right now.
-     * @since Tika TODO
+     * @since Tika 2.1
      */
     public boolean isAvailable();
 }
