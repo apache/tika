@@ -42,8 +42,7 @@ public class FileSystemFetchIterator
     public FileSystemFetchIterator() {
     }
 
-    public FileSystemFetchIterator(String fetcherName, Path basePath) {
-        super(fetcherName);
+    public FileSystemFetchIterator(Path basePath) {
         this.basePath = basePath;
     }
 

@@ -91,24 +91,29 @@ public class TestJDBCFetchIterator {
         int numConsumers = 5;
         FetchIterator fetchIterator = tk.getFetchIterator();
         ExecutorService es = Executors.newFixedThreadPool(numConsumers+1);
-        ExecutorCompletionService<Integer> completionService = new ExecutorCompletionService<>(es);
-        ArrayBlockingQueue<FetchEmitTuple> queue = fetchIterator.init(numConsumers);
-        completionService.submit(fetchIterator);
+        ExecutorCompletionService<Integer> completionService =
+                new ExecutorCompletionService<>(es);
+        ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(100);
         List<MockFetcher> fetchers = new ArrayList<>();
         for (int i = 0; i < numConsumers; i++) {
             MockFetcher mockFetcher = new MockFetcher(queue);
             fetchers.add(mockFetcher);
             completionService.submit(mockFetcher);
         }
+        for (FetchEmitTuple t : fetchIterator) {
+            queue.offer(t);
+        }
+        for (int i = 0; i < numConsumers; i++) {
+            queue.offer(FetchIterator.COMPLETED_SEMAPHORE);
+        }
         int processed = 0;
         int completed = 0;
-        while (completed < numConsumers+1) {
+        while (completed < numConsumers) {
             Future<Integer> f = completionService.take();
             processed += f.get();
             completed++;
         }
-        //fetchiterator added + MockFetcher yields 2x
-        assertEquals(NUM_ROWS * 2, processed);
+        assertEquals(NUM_ROWS, processed);
         int cnt = 0;
         Matcher m = Pattern.compile("fk(\\d+)").matcher("");
         for (MockFetcher f : fetchers) {

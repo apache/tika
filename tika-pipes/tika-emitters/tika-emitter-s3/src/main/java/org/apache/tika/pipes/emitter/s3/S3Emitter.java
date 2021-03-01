@@ -16,6 +16,7 @@
  */
 package org.apache.tika.pipes.emitter.s3;
 
+import com.amazonaws.AmazonClientException;
 import com.amazonaws.SdkClientException;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
@@ -78,7 +79,7 @@ import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
  *                  &lt;!-- optional; prefix to add to the path before emitting; default is no prefix --&gt;
  *                  &lt;param name="prefix" type="string"&gt;my-prefix&lt;/param&gt;
  *                  &lt;!-- optional; default is 'json' this will be added to the SOURCE_PATH
- *                                    if no emitter key is specified --&gt;
+ *                                    if no emitter key is specified. Do not add a "." before the extension --&gt;
  *                  &lt;param name="fileExtension" type="string"&gt;json&lt;/param&gt;
  *                  &lt;!-- optional; default is 'true'-- whether to copy the json to a local file before putting to s3 --&gt;
  *                  &lt;param name="spoolToTemp" type="bool"&gt;true&lt;/param&gt;
@@ -148,7 +149,7 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
      * @param path -- object path, not including the bucket
      * @param is inputStream to copy
      * @param userMetadata this will be written to the s3 ObjectMetadata's userMetadata
-     * @throws TikaEmitterException
+     * @throws TikaEmitterException or IOexception if there is a Runtime s3 client exception
      */
     @Override
     public void emit(String path, InputStream is, Metadata userMetadata) throws IOException, TikaEmitterException {
@@ -173,22 +174,22 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
                 }
             }
         }
-        ObjectMetadata objectMetadata = new ObjectMetadata();
-        if (length > 0) {
-            objectMetadata.setContentLength(length);
-        }
-        for (String n : userMetadata.names()) {
-            String[] vals = userMetadata.getValues(n);
-            if (vals.length > 1) {
-                LOGGER.warn("Can only write the first value for key {}. I see {} values.",
-                        n, vals.length);
-            }
-            objectMetadata.addUserMetadata(n, vals[0]);
-        }
         try {
+            ObjectMetadata objectMetadata = new ObjectMetadata();
+            if (length > 0) {
+                objectMetadata.setContentLength(length);
+            }
+            for (String n : userMetadata.names()) {
+                String[] vals = userMetadata.getValues(n);
+                if (vals.length > 1) {
+                    LOGGER.warn("Can only write the first value for key {}. I see {} values.",
+                            n, vals.length);
+                }
+                objectMetadata.addUserMetadata(n, vals[0]);
+            }
             s3Client.putObject(bucket, path, is, objectMetadata);
-        } catch (SdkClientException e) {
-            throw new TikaEmitterException("problem writing s3object", e);
+        } catch (AmazonClientException e) {
+            throw new IOException("problem writing s3object", e);
         }
     }
 
@@ -248,6 +249,12 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
 
 
 
+    /**
+     * This initializes the s3 client. Note, we wrap S3's RuntimeExceptions,
+     * e.g. AmazonClientException in a TikaConfigException.
+     * @param params params to use for initialization
+     * @throws TikaConfigException
+     */
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         //params have already been set...ignore them
@@ -261,10 +268,14 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
                     "must be either 'instance' or 'profile'");
         }
 
-        s3Client = AmazonS3ClientBuilder.standard()
-                .withRegion(region)
-                .withCredentials(provider)
-                .build();
+        try {
+            s3Client = AmazonS3ClientBuilder.standard()
+                    .withRegion(region)
+                    .withCredentials(provider)
+                    .build();
+        } catch (AmazonClientException e) {
+            throw new TikaConfigException("can't initialize s3 emitter", e);
+        }
     }
 
     @Override

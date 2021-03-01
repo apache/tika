@@ -16,6 +16,7 @@
  */
 package org.apache.tika.pipes.fetcher.s3;
 
+import com.amazonaws.AmazonClientException;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
@@ -66,24 +67,28 @@ public class S3Fetcher extends AbstractFetcher implements Initializable {
         LOGGER.debug("about to fetch fetchkey={} from bucket ({})",
                 fetchKey, bucket);
 
-        S3Object s3Object = s3Client.getObject(new GetObjectRequest(bucket, fetchKey));
-        if (extractUserMetadata) {
-            for (Map.Entry<String, String> e :
-                    s3Object.getObjectMetadata().getUserMetadata().entrySet()) {
-                metadata.add(PREFIX + ":" + e.getKey(), e.getValue());
+        try {
+            S3Object s3Object = s3Client.getObject(new GetObjectRequest(bucket, fetchKey));
+            if (extractUserMetadata) {
+                for (Map.Entry<String, String> e :
+                        s3Object.getObjectMetadata().getUserMetadata().entrySet()) {
+                    metadata.add(PREFIX + ":" + e.getKey(), e.getValue());
+                }
             }
-        }
-        if (! spoolToTemp) {
-            return TikaInputStream.get(
-                    s3Object.getObjectContent());
-        } else {
-            long start = System.currentTimeMillis();
-            TikaInputStream tis = TikaInputStream.get(
-                    s3Object.getObjectContent());
-            tis.getPath();
-            long elapsed = System.currentTimeMillis()-start;
-            LOGGER.debug("took {} ms to copy to local tmp file", elapsed);
-            return tis;
+            if (!spoolToTemp) {
+                return TikaInputStream.get(
+                        s3Object.getObjectContent());
+            } else {
+                long start = System.currentTimeMillis();
+                TikaInputStream tis = TikaInputStream.get(
+                        s3Object.getObjectContent());
+                tis.getPath();
+                long elapsed = System.currentTimeMillis() - start;
+                LOGGER.debug("took {} ms to copy to local tmp file", elapsed);
+                return tis;
+            }
+        } catch (AmazonClientException e) {
+            throw new IOException("s3 client exception", e);
         }
     }
 
@@ -93,26 +98,30 @@ public class S3Fetcher extends AbstractFetcher implements Initializable {
         LOGGER.debug("about to fetch fetchkey={} (start={} end={}) from bucket ({})",
                 fetchKey, startRange, endRange, bucket);
 
-        S3Object s3Object = s3Client.getObject(new GetObjectRequest(bucket, fetchKey)
-                .withRange(startRange, endRange));
+        try {
+            S3Object s3Object = s3Client.getObject(new GetObjectRequest(bucket, fetchKey)
+                    .withRange(startRange, endRange));
 
-        if (extractUserMetadata) {
-            for (Map.Entry<String, String> e :
-                    s3Object.getObjectMetadata().getUserMetadata().entrySet()) {
-                metadata.add(PREFIX + ":" + e.getKey(), e.getValue());
+            if (extractUserMetadata) {
+                for (Map.Entry<String, String> e :
+                        s3Object.getObjectMetadata().getUserMetadata().entrySet()) {
+                    metadata.add(PREFIX + ":" + e.getKey(), e.getValue());
+                }
             }
-        }
-        if (! spoolToTemp) {
-            return TikaInputStream.get(
-                    s3Object.getObjectContent());
-        } else {
-            long start = System.currentTimeMillis();
-            TikaInputStream tis = TikaInputStream.get(
-                    s3Object.getObjectContent());
-            tis.getPath();
-            long elapsed = System.currentTimeMillis()-start;
-            LOGGER.debug("took {} ms to copy to local tmp file", elapsed);
-            return tis;
+            if (!spoolToTemp) {
+                return TikaInputStream.get(
+                        s3Object.getObjectContent());
+            } else {
+                long start = System.currentTimeMillis();
+                TikaInputStream tis = TikaInputStream.get(
+                        s3Object.getObjectContent());
+                tis.getPath();
+                long elapsed = System.currentTimeMillis() - start;
+                LOGGER.debug("took {} ms to copy to local tmp file", elapsed);
+                return tis;
+            }
+        } catch (AmazonClientException e) {
+            throw new IOException(e);
         }
     }
 
@@ -154,6 +163,12 @@ public class S3Fetcher extends AbstractFetcher implements Initializable {
         this.credentialsProvider = credentialsProvider;
     }
 
+    /**
+     * This initializes the s3 client. Note, we wrap S3's RuntimeExceptions,
+     * e.g. AmazonClientException in a TikaConfigException.
+     * @param params params to use for initialization
+     * @throws TikaConfigException
+     */
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         //params have already been set...ignore them
@@ -167,10 +182,14 @@ public class S3Fetcher extends AbstractFetcher implements Initializable {
                     "must be either 'instance' or 'profile'");
         }
 
-        s3Client = AmazonS3ClientBuilder.standard()
-                .withRegion(region)
-                .withCredentials(provider)
-                .build();
+        try {
+            s3Client = AmazonS3ClientBuilder.standard()
+                    .withRegion(region)
+                    .withCredentials(provider)
+                    .build();
+        } catch (AmazonClientException e) {
+            throw new TikaConfigException("can't initialize s3 fetcher", e);
+        }
     }
 
     @Override

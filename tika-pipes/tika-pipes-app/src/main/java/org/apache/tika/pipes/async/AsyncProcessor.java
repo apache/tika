@@ -6,11 +6,13 @@ import org.apache.tika.metadata.serialization.JsonFetchEmitTuple;
 import org.apache.tika.pipes.fetchiterator.EmptyFetchIterator;
 import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
 import org.apache.tika.pipes.fetchiterator.FetchIterator;
+import org.apache.tika.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
+import java.io.Closeable;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
@@ -29,49 +31,64 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-public class AsyncCli {
+public class AsyncProcessor implements Closeable, Callable<Integer> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AsyncCli.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AsyncProcessor.class);
 
-    public static void main(String[] args) throws Exception {
-        Path configPath = Paths.get(args[0]);
-        int maxConsumers = 20;
-        AsyncCli asyncCli = new AsyncCli();
-        Path dbDir = Paths.get("/Users/allison/Desktop/tmp-db");//Files.createTempDirectory("tika-async-db-");
-        try {
-            asyncCli.execute(dbDir, configPath, maxConsumers);
-        } finally {
-            FileUtils.deleteDirectory(dbDir.toFile());
-        }
+    private final Path tikaConfigPath;
+    private AsyncConfig asyncConfig;
+    private final ArrayBlockingQueue<FetchEmitTuple> queue;//tmp directory used if no jdbc string is configured
+
+    public AsyncProcessor (Path tikaConfigPath) {
+        this.tikaConfigPath = tikaConfigPath;
+        this.queue = new ArrayBlockingQueue<FetchEmitTuple>(asyncConfig.getQueueSize());
 
     }
 
-    private void execute(Path dbDir, Path configPath, int maxConsumers) throws Exception {
-        TikaConfig tikaConfig = new TikaConfig(configPath);
+    public synchronized boolean offer(List<FetchEmitTuple> fetchEmitTuples, long offerMs) {
+        if (queue == null) {
+            throw new IllegalStateException("queue hasn't been initialized yet.");
+        }
+        long start = System.currentTimeMillis();
+        long elapsed = System.currentTimeMillis()-start;
+        while (elapsed < offerMs) {
+            if (queue.remainingCapacity() > fetchEmitTuples.size()) {
+                queue.addAll(fetchEmitTuples);
+                return true;
+            }
+            elapsed = System.currentTimeMillis() - start;
+        }
+        return false;
+    }
 
-        String connectionString = setupTables(dbDir);
+    public synchronized boolean offer(FetchEmitTuple t, long offerMs) throws InterruptedException {
+        return queue.offer(t, offerMs, TimeUnit.MILLISECONDS);
+    }
 
-        ExecutorService executorService = Executors.newFixedThreadPool(maxConsumers + 3);
+
+    @Override
+    public Integer call() throws Exception {
+        this.asyncConfig = AsyncConfig.load(tikaConfigPath);
+
+        setupTables();
+
+        ExecutorService executorService = Executors.newFixedThreadPool(
+                asyncConfig.getMaxConsumers() + 2);
         ExecutorCompletionService<Integer> executorCompletionService =
                 new ExecutorCompletionService<>(executorService);
 
-        try (Connection connection = DriverManager.getConnection(connectionString)) {
-            FetchIterator fetchIterator = tikaConfig.getFetchIterator();
-            if (fetchIterator instanceof EmptyFetchIterator) {
-                throw new IllegalArgumentException("can't have empty fetch iterator");
-            }
-            ArrayBlockingQueue<FetchEmitTuple> q = fetchIterator.init(maxConsumers);
-            AsyncTaskEnqueuer enqueuer = new AsyncTaskEnqueuer(q, connection);
-            executorCompletionService.submit(fetchIterator);
+        try (Connection connection = DriverManager.getConnection(asyncConfig.getJdbcString())) {
+            AsyncTaskEnqueuer enqueuer = new AsyncTaskEnqueuer(queue, connection);
+
             executorCompletionService.submit(enqueuer);
             executorCompletionService.submit(new AssignmentManager(connection, enqueuer));
 
-            for (int i = 0; i < maxConsumers; i++) {
+            for (int i = 0; i < asyncConfig.getMaxConsumers(); i++) {
                 executorCompletionService.submit(new AsyncWorker(connection,
-                        connectionString, i, configPath));
+                        asyncConfig.getJdbcString(), i, tikaConfigPath));
             }
             int completed = 0;
-            while (completed < maxConsumers+3) {
+            while (completed < asyncConfig.getMaxConsumers()+2) {
                 Future<Integer> future = executorCompletionService.take();
                 if (future != null) {
                     int val = future.get();
@@ -82,13 +99,11 @@ public class AsyncCli {
         } finally {
             executorService.shutdownNow();
         }
+        return 1;
     }
 
-    private String setupTables(Path dbDir) throws SQLException {
-        Path dbFile = dbDir.resolve("tika-async");
-        String url = "jdbc:h2:file:" + dbFile.toAbsolutePath().toString() +
-                ";AUTO_SERVER=TRUE";
-        Connection connection = DriverManager.getConnection(url);
+    private void setupTables() throws SQLException {
+        Connection connection = DriverManager.getConnection(asyncConfig.getJdbcString());
 
         String sql = "create table parse_queue " +
                 "(id bigint auto_increment primary key," +
@@ -113,7 +128,16 @@ public class AsyncCli {
                 "error_code tinyint)";
         connection.createStatement().execute(sql);
 
-        return url;
+    }
+
+    @Override
+    public void close() throws IOException {
+        //close down processes and db
+
+
+        if (asyncConfig.getTempDBDir() != null) {
+            FileUtils.deleteDirectory(asyncConfig.getTempDBDir().toFile());
+        }
     }
 
 

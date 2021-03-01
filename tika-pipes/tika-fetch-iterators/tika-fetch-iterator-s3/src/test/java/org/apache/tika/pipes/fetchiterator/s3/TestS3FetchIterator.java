@@ -46,16 +46,21 @@ public class TestS3FetchIterator {
         it.setRegion("");//select one
         it.initialize(Collections.EMPTY_MAP);
         int numConsumers = 6;
-        ArrayBlockingQueue<FetchEmitTuple> queue = it.init(numConsumers);
+        ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(10);
 
         ExecutorService es = Executors.newFixedThreadPool(numConsumers+1);
         ExecutorCompletionService c = new ExecutorCompletionService(es);
-        c.submit(it);
         List<MockFetcher> fetchers = new ArrayList<>();
         for (int i = 0; i < numConsumers; i++) {
             MockFetcher fetcher = new MockFetcher(queue);
             fetchers.add(fetcher);
             c.submit(fetcher);
+        }
+        for (FetchEmitTuple t : it) {
+            queue.offer(t);
+        }
+        for (int i = 0; i < numConsumers; i++) {
+            queue.offer(FetchIterator.COMPLETED_SEMAPHORE);
         }
         int finished = 0;
         int completed = 0;

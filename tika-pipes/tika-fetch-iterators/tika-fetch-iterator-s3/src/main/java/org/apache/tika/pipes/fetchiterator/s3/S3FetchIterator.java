@@ -16,6 +16,7 @@
  */
 package org.apache.tika.pipes.fetchiterator.s3;
 
+import com.amazonaws.AmazonClientException;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
@@ -43,7 +44,6 @@ import java.util.concurrent.TimeoutException;
 import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
 
 public class S3FetchIterator extends FetchIterator implements Initializable {
-
 
     private static final Logger LOGGER = LoggerFactory.getLogger(S3FetchIterator.class);
     private String prefix = "";
@@ -82,6 +82,12 @@ public class S3FetchIterator extends FetchIterator implements Initializable {
         this.credentialsProvider = credentialsProvider;
     }
 
+    /**
+     * This initializes the s3 client. Note, we wrap S3's RuntimeExceptions,
+     * e.g. AmazonClientException in a TikaConfigException.
+     * @param params params to use for initialization
+     * @throws TikaConfigException
+     */
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         //params have already been set...ignore them
@@ -95,10 +101,14 @@ public class S3FetchIterator extends FetchIterator implements Initializable {
                     "must be either 'instance' or 'profile'");
         }
 
-        s3Client = AmazonS3ClientBuilder.standard()
-                .withRegion(region)
-                .withCredentials(provider)
-                .build();
+        try {
+            s3Client = AmazonS3ClientBuilder.standard()
+                    .withRegion(region)
+                    .withCredentials(provider)
+                    .build();
+        } catch (AmazonClientException e) {
+            throw new TikaConfigException("can't initialize s3 fetchiterator");
+        }
     }
 
     @Override
@@ -112,6 +122,7 @@ public class S3FetchIterator extends FetchIterator implements Initializable {
     @Override
     protected void enqueue() throws InterruptedException, IOException, TimeoutException {
         String fetcherName = getFetcherName();
+        String emitterName = getEmitterName();
         long start = System.currentTimeMillis();
         int count = 0;
         for (S3ObjectSummary summary : S3Objects.withPrefix(s3Client, bucket, prefix)) {
@@ -121,7 +132,7 @@ public class S3FetchIterator extends FetchIterator implements Initializable {
                     elapsed);
             tryToAdd(new FetchEmitTuple(
                     new FetchKey(fetcherName, summary.getKey()),
-                    new EmitKey(fetcherName, summary.getKey()),
+                    new EmitKey(emitterName, summary.getKey()),
                     new Metadata(), getOnParseException()));
             count++;
         }

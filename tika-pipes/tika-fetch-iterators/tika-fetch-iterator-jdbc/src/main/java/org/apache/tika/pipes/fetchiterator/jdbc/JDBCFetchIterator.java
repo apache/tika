@@ -93,6 +93,10 @@ public class JDBCFetchIterator extends FetchIterator implements Initializable {
         this.select = select;
     }
 
+    public String getSelect() {
+        return select;
+    }
+
     @Override
     protected void enqueue() throws InterruptedException, IOException, TimeoutException {
         String fetcherName = getFetcherName();
@@ -152,14 +156,18 @@ public class JDBCFetchIterator extends FetchIterator implements Initializable {
         for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
             if (i == fetchEmitKeyIndices.fetchKeyIndex) {
                 fetchKey = getString(i, rs);
+                if (fetchKey == null) {
+                    LOGGER.debug("fetchKey is empty for record " + toString(rs));
+                }
                 fetchKey = (fetchKey == null) ? "" : fetchKey;
-                LOGGER.debug("fetchKey is empty for record "+toString(rs));
                 continue;
             }
             if (i == fetchEmitKeyIndices.emitKeyIndex) {
                 emitKey = getString(i, rs);
+                if (emitKey == null) {
+                    LOGGER.debug("emitKey is empty for record "+toString(rs));
+                }
                 emitKey = (emitKey == null) ? "" : emitKey;
-                LOGGER.warn("emitKey is empty for record "+toString(rs));
                 continue;
             }
             String val = getString(i, rs);
