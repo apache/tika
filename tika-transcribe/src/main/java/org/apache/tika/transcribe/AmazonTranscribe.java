@@ -145,17 +145,7 @@ public class AmazonTranscribe implements Transcriber {
      */
     @Override
     public String startTranscribeVideo(String filePath) throws TikaException, IOException {
-        if (!isAvailable()) return null;
-        String jobName = getJobKey();
-        uploadFileToBucket(filePath, jobName);
-        StartTranscriptionJobRequest startTranscriptionJobRequest = new StartTranscriptionJobRequest();
-        Media media = new Media();
-        media.setMediaFileUri(amazonS3.getUrl(bucketName, filePath).toString());
-        startTranscriptionJobRequest.withMedia(media)
-                .withOutputBucketName(this.bucketName)
-                .setTranscriptionJobName(jobName);
-        amazonTranscribe.startTranscriptionJob(startTranscriptionJobRequest);
-        return jobName;
+        return startTranscribeAudio(filePath);
     }
 
     /**
@@ -170,18 +160,7 @@ public class AmazonTranscribe implements Transcriber {
      */
     @Override
     public String startTranscribeVideo(String filePath, String sourceLanguage) throws TikaException, IOException {
-        if (!isAvailable()) return null;
-        String jobName = getJobKey();
-        uploadFileToBucket(filePath, jobName);
-        StartTranscriptionJobRequest startTranscriptionJobRequest = new StartTranscriptionJobRequest();
-        Media media = new Media();
-        media.setMediaFileUri(amazonS3.getUrl(bucketName, filePath).toString());
-        startTranscriptionJobRequest.withMedia(media)
-                .withLanguageCode(LanguageCode.fromValue(sourceLanguage))
-                .withOutputBucketName(this.bucketName)
-                .setTranscriptionJobName(jobName);
-        amazonTranscribe.startTranscriptionJob(startTranscriptionJobRequest);
-        return jobName;
+        return startTranscribeAudio(filePath, sourceLanguage);
     }
 
     @Override
