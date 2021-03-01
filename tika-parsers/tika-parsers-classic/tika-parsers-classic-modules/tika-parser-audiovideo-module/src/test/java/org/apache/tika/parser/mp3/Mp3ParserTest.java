@@ -335,7 +335,7 @@ public class Mp3ParserTest extends TikaTest {
      *  all content) a file with a very very large ID3 frame that
      *  has been truncated before the end of the ID3 tags.
      * In this case, it is a file with JPEG data in the ID3, which
-     *  is trunacted before the end of the JPEG bit of the ID3 frame.
+     *  is truncated before the end of the JPEG bit of the ID3 frame.
      */
     @Test
     public void testTIKA474() throws Exception {

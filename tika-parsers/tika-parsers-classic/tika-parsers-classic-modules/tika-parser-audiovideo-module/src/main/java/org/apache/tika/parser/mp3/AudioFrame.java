@@ -244,7 +244,7 @@ public class AudioFrame implements MP3Frame {
         } else if(version == MPEG_V1) {
             buf.append("1");
         } else {
-            buf.append("(reseved)");
+            buf.append("(reserved)");
         }
         
         return buf.toString();
