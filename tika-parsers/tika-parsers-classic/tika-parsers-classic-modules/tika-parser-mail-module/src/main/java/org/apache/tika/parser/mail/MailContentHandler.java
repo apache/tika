@@ -250,7 +250,7 @@ class MailContentHandler implements ContentHandler {
             MediaType mediaType = detector.detect(tis, submd);
             if (mediaType != null) {
                 //detect only once
-                submd.set(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE, mediaType.toString());
+                submd.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, mediaType.toString());
                 if (mediaType.toString().startsWith("text")) {
                     return true;
                 }
@@ -602,7 +602,7 @@ class MailContentHandler implements ContentHandler {
             try {
                 Metadata inlineMetadata = new Metadata();
                 if (inlineText) {
-                    inlineMetadata.set(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE, MediaType.TEXT_PLAIN.toString());
+                    inlineMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, MediaType.TEXT_PLAIN.toString());
                 }
                 parser.parse(
                         new ByteArrayInputStream(part.bytes),

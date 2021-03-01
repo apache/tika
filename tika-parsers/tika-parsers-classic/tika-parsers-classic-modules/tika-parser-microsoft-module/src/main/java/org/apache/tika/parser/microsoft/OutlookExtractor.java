@@ -377,7 +377,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             byte[] data = getValue(textChunk);
             if (data != null) {
                 Metadata chunkMetadata = new Metadata();
-                chunkMetadata.set(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE,
+                chunkMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
                         MediaType.TEXT_PLAIN.toString());
                 handleEmbeddedResource(
                         TikaInputStream.get(data), chunkMetadata, null,
