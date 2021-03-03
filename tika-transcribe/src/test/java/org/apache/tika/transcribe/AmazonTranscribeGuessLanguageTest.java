@@ -274,7 +274,7 @@ public class AmazonTranscribeGuessLanguageTest {
 
         if (transcriber.isAvailable()) {
             try {
-                jobName = transcriber.transcribeAudio(videoFilePath);
+                jobName = transcriber.transcribe(videoFilePath);
                 result = transcriber.getTranscriptResult(jobName);
                 assertNotNull(result);
                 assertEquals("Result: [" + result
