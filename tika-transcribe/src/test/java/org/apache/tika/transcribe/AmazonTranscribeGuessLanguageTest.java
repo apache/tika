@@ -34,9 +34,9 @@ public class AmazonTranscribeGuessLanguageTest {
 
     @Ignore
     @Test
-    public void testSimpleTranscribeUnknownAudioShortEnglish() {
-        String audioFilePath = "src/test/resources/ShortAudioSampleEnglish.mp3";
-        String expected = "Where is the bus stop where is the bus stop";
+    public void testSimpleTranscribeUnknownAudio_enUS() {
+        String audioFilePath = "src/test/resources/en-US_(A_Little_Bottle_Of_Water).mp3";
+        String expected = "a little bottle of water.";
         String jobName;
         String result;
 
@@ -57,9 +57,9 @@ public class AmazonTranscribeGuessLanguageTest {
 
     @Ignore
     @Test
-    public void testSimpleTranscribeUnknownAudioShortFrench() {
-        String audioFilePath = "src/test/resources/ShortAudioSampleFrench.mp3";
-        String expected = "Où est l’arrêt du bus où est l’arrêt du bus";
+    public void testSimpleTranscribeUnknownAudio_enGB() {
+        String audioFilePath = "src/test/resources/en-GB_(A_Little_Bottle_Of_Water).mp3";
+        String expected = "a little bottle of water.";
         String jobName;
         String result;
 
@@ -80,15 +80,130 @@ public class AmazonTranscribeGuessLanguageTest {
 
     @Ignore
     @Test
-    public void testSimpleTranscribeUnknownVideoShortEnglish() {
-        String videoFilePath = "src/test/resources/ShortVideoSampleEnglish";
-        String expected = "Hi";
+    public void testSimpleTranscribeUnknownVideo_enAU() {
+        String videoFilePath = "src/test/resources/en-AU_(A_Little_Bottle_Of_Water).mp3";
+        String expected = "a little bottle of water.";
         String jobName;
         String result;
 
         if (transcriber.isAvailable()) {
             try {
                 jobName = transcriber.transcribeAudio(videoFilePath);
+                result = transcriber.getTranscriptResult(jobName);
+                assertNotNull(result);
+                assertEquals("Result: [" + result
+                                + "]: not equal to expected: [" + expected + "]",
+                        expected, result);
+            } catch (Exception e) {
+                e.printStackTrace();
+                fail(e.getMessage());
+            }
+        }
+    }
+
+    @Ignore
+    @Test
+    public void testSimpleTranscribeUnknownAudio_deDE() {
+        String audioFilePath = "src/test/resources/de-DE_(We_Are_At_School_x2).mp3";
+        String expected = "Wir sind in der Schule. Wir sind in der Schule.";
+        String jobName;
+        String result;
+
+        if (transcriber.isAvailable()) {
+            try {
+                jobName = transcriber.transcribeAudio(audioFilePath);
+                result = transcriber.getTranscriptResult(jobName);
+                assertNotNull(result);
+                assertEquals("Result: [" + result
+                                + "]: not equal to expected: [" + expected + "]",
+                        expected, result);
+            } catch (Exception e) {
+                e.printStackTrace();
+                fail(e.getMessage());
+            }
+        }
+    }
+
+    @Ignore
+    @Test
+    public void testSimpleTranscribeUnknownAudio_itIT() {
+        String audioFilePath = "src/test/resources/it-IT_(We_Are_Having_Class_x2).mp3";
+        String expected = "stiamo facendo lezione. stiamo facendo lezione.";
+        String jobName;
+        String result;
+
+        if (transcriber.isAvailable()) {
+            try {
+                jobName = transcriber.transcribeAudio(audioFilePath);
+                result = transcriber.getTranscriptResult(jobName);
+                assertNotNull(result);
+                assertEquals("Result: [" + result
+                                + "]: not equal to expected: [" + expected + "]",
+                        expected, result);
+            } catch (Exception e) {
+                e.printStackTrace();
+                fail(e.getMessage());
+            }
+        }
+    }
+
+    @Ignore
+    @Test
+    public void testSimpleTranscribeUnknownAudio_jaJP() {
+        String audioFilePath = "src/test/resources/ja-JP_(We_Are_At_School).mp3";
+        String expected = "私達は学校にいます"; //TODO or Watashitachi wa gakkō ni imasu
+        String jobName;
+        String result;
+
+        if (transcriber.isAvailable()) {
+            try {
+                jobName = transcriber.transcribeAudio(audioFilePath);
+                result = transcriber.getTranscriptResult(jobName);
+                assertNotNull(result);
+                assertEquals("Result: [" + result
+                                + "]: not equal to expected: [" + expected + "]",
+                        expected, result);
+            } catch (Exception e) {
+                e.printStackTrace();
+                fail(e.getMessage());
+            }
+        }
+    }
+
+    @Ignore
+    @Test
+    public void testSimpleTranscribeUnknownAudio_koKR() {
+        String audioFilePath = "src/test/resources/ko-KR_(We_Are_Having_Class_x2).mp3";
+        String expected = "우리는 수업을하고있다"; //TODO or ulineun sueob-eulhagoissda
+        String jobName;
+        String result;
+
+        if (transcriber.isAvailable()) {
+            try {
+                jobName = transcriber.transcribeAudio(audioFilePath);
+                result = transcriber.getTranscriptResult(jobName);
+                assertNotNull(result);
+                assertEquals("Result: [" + result
+                                + "]: not equal to expected: [" + expected + "]",
+                        expected, result);
+            } catch (Exception e) {
+                e.printStackTrace();
+                fail(e.getMessage());
+            }
+        }
+    }
+
+    @Ignore
+    @Test
+    public void testSimpleTranscribeUnknownAudio_ptBR(){
+        String audioFilePath = "src/test/resources/pt-BR_(We_Are_At_School).mp3";
+        String expected = "nós estamos na escola.";
+        String jobName;
+        String result;
+
+        if (transcriber.isAvailable()) {
+            try {
+                jobName = transcriber.transcribeAudio(audioFilePath);
                 result = transcriber.getTranscriptResult(jobName);
                 assertNotNull(result);
                 assertEquals("Result: [" + result
