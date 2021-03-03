@@ -23,7 +23,6 @@ import java.io.IOException;
 
 /**
  * Interface for Transcriber services.
- * TODO add documentation
  *
  * @since Tika 2.1
  */

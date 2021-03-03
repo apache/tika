@@ -38,6 +38,11 @@ import java.io.IOException;
 import java.util.Properties;
 import java.util.UUID;
 
+/**
+ * Wrapper class to access the AWS transcription service.
+ *
+ * @since Tika 2.1
+ */
 public class AmazonTranscribe implements Transcriber {
 
     public static final String PROPERTIES_FILE = "transcribe.amazon.properties";
@@ -55,6 +60,14 @@ public class AmazonTranscribe implements Transcriber {
     private String clientId;
     private String clientSecret;  // Keys used for the API calls.
 
+    /**
+     * Create a new AmazonTranscriber with the client keys specified in
+     * resources/org/apache/tika/transcribe/transcribe.amazon.properties.
+     * Silently becomes unavailable when client keys are unavailable.
+     * transcribe.AWS_ACCESS_KEY, transcribe.AWS_SECRET_KEY, and transcribe.BUCKET_NAME must be set in transcribe.amazon.properties for transcription to work.
+     *
+     * @since Tika 2.1
+     */
     public AmazonTranscribe() {
         Properties config = new Properties();
         try {
@@ -65,13 +78,17 @@ public class AmazonTranscribe implements Transcriber {
             this.clientSecret = config.getProperty(SECRET_PROPERTY);
             this.bucketName = config.getProperty(BUCKET_NAME);
             this.isAvailable = checkAvailable();
-
         } catch (Exception e) {
             LOG.warn("Exception reading config file", e);
             isAvailable = false;
         }
     }
 
+    /**
+     * private method to get a unique job key.
+     *
+     * @return unique job key.
+     */
     private String getJobKey() {
         return UUID.randomUUID().toString();
     }
@@ -94,7 +111,6 @@ public class AmazonTranscribe implements Transcriber {
             throw (new TikaException("File Upload to AWS Failed"));
         }
     }
-
 
     /**
      * Starts AWS Transcribe Job without language specification.
@@ -123,7 +139,7 @@ public class AmazonTranscribe implements Transcriber {
      * Starts AWS Transcribe Job with language specification.
      *
      * @param filePath       The path of the file to upload to Amazon S3.
-     * @param sourceLanguage The language code for the language used in the input media file
+     * @param sourceLanguage <a href="https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/transcribe/model/LanguageCode.html">AWS Language Code</a> for the language used in the input media file.
      * @return key for transcription lookup
      * @throws TikaException When there is an error transcribing.
      * @throws IOException   If an I/O exception of some sort has occurred.
@@ -145,6 +161,10 @@ public class AmazonTranscribe implements Transcriber {
         return jobName;
     }
 
+    /**
+     * @return true if this Transcriber is probably able to translate right now.
+     * @since Tika 2.1
+     */
     @Override
     public boolean isAvailable() {
         return this.isAvailable;
@@ -180,6 +200,11 @@ public class AmazonTranscribe implements Transcriber {
         this.isAvailable = checkAvailable();
     }
 
+    /**
+     * Private method check if the service is available.
+     *
+     * @return if the service is available
+     */
     private boolean checkAvailable() {
         return clientId != null &&
                 !clientId.equals(DEFAULT_ID) &&
@@ -204,7 +229,7 @@ public class AmazonTranscribe implements Transcriber {
     }
 
     /**
-     * Private helper function to get object from s3
+     * Private helper function to get object from s3.
      *
      * @param jobName The unique job name for each job(UUID).
      * @return TranscriptionJob object
