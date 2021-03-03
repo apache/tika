@@ -103,7 +103,7 @@ public class AmazonTranscribe implements Transcriber {
      * @throws IOException
      */
     @Override
-    public String startTranscribe(String filePath) throws TikaException, IOException {
+    public String transcribe(String filePath) throws TikaException, IOException {
         if (!isAvailable()) return null;
         String jobName = getJobKey();
         uploadFileToBucket(filePath, jobName);
@@ -125,7 +125,7 @@ public class AmazonTranscribe implements Transcriber {
      * @throws IOException
      */
     @Override
-    public String startTranscribe(String filePath, String sourceLanguage) throws TikaException, IOException {
+    public String transcribe(String filePath, String sourceLanguage) throws TikaException, IOException {
         if (!isAvailable()) return null;
         String jobName = getJobKey();
         uploadFileToBucket(filePath, jobName);

@@ -38,7 +38,7 @@ public interface Transcriber {
      * @throws IOException   If an I/O exception of some sort has occurred.
      * @since 2.1
      */
-    public String startTranscribe(String filePath) throws TikaException, IOException;
+    public String transcribe(String filePath) throws TikaException, IOException;
 
     /**
      * Transcribe the given the file and the source language.
@@ -50,7 +50,15 @@ public interface Transcriber {
      * @throws IOException   If an I/O exception of some sort has occurred.
      * @since 2.1
      */
-    public String startTranscribe(String filePath, String sourceLanguage) throws TikaException, IOException;
+    public String transcribe(String filePath, String sourceLanguage) throws TikaException, IOException;
+
+    /**
+     * Gets Transcription result from AWS S3 bucket given bucketName and jobName
+     *
+     * @param key
+     * @return
+     */
+    public String getTranscriptResult(String key);
 
 
     /**
