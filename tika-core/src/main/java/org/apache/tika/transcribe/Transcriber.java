@@ -24,44 +24,38 @@ import java.io.IOException;
 
 /**
  * Interface for Transcriber services.
+ * TODO add documentation
  *
- * @since Tika TODO
+ * @since Tika 2.1
  */
 public interface Transcriber {
     /**
-     * Transcribe the given  file.
+     * Transcribe the given file.
      *
-     * @param filePath
-     * @return
-     * @throws TikaException When there is an error translating.
-     * @throws IOException
-     * @since TODO
+     * @param filePath The path of the file to be transcribed.
+     * @return key for transcription lookup
+     * @throws TikaException When there is an error transcribing.
+     * @throws IOException   If an I/O exception of some sort has occurred.
+     * @since 2.1
      */
     public String startTranscribe(String filePath) throws TikaException, IOException;
 
     /**
-     * Transcribe the given the  file and the source language.
+     * Transcribe the given the file and the source language.
      *
-     * @param filePath
-     * @param sourceLanguage
-     * @return
-     * @throws TikaException       When there is an error translating.
-     * @throws java.io.IOException
-     * @since TODO
+     * @param filePath       The path of the file to be transcribed.
+     * @param sourceLanguage The language code for the language used in the input media file.
+     * @return key for transcription lookup
+     * @throws TikaException When there is an error transcribing.
+     * @throws IOException   If an I/O exception of some sort has occurred.
+     * @since 2.1
      */
     public String startTranscribe(String filePath, String sourceLanguage) throws TikaException, IOException;
 
 
     /**
      * @return true if this Transcriber is probably able to translate right now.
-     * @since Tika TODO
+     * @since Tika 2.1
      */
     public boolean isAvailable();
-
-    /**
-     * Returns transcription result using specific key
-     * @param fileNameS3
-     * @return transcribed text
-     */
-    public String getTranscriptResult(String fileNameS3);
 }

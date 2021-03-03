@@ -14,9 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.transcibe;
+package org.apache.tika.transcribe;
 
-import org.apache.tika.transcribe.AmazonTranscribe;
 import org.junit.Before;
 
 public class AmazonTranscribeTest {
