@@ -49,7 +49,7 @@ public class AmazonTranscribeGuessLanguageTest {
 
         if (transcriber.isAvailable()) {
             try {
-                jobName = transcriber.transcribeAudio(audioFilePath);
+                jobName = transcriber.transcribe(audioFilePath);
                 result = transcriber.getTranscriptResult(jobName);
                 assertNotNull(result);
                 assertEquals("Result: [" + result
@@ -74,7 +74,7 @@ public class AmazonTranscribeGuessLanguageTest {
 
         if (transcriber.isAvailable()) {
             try {
-                jobName = transcriber.transcribeAudio(audioFilePath);
+                jobName = transcriber.transcribe(audioFilePath);
                 result = transcriber.getTranscriptResult(jobName);
                 assertNotNull(result);
                 assertEquals("Result: [" + result
@@ -99,7 +99,7 @@ public class AmazonTranscribeGuessLanguageTest {
 
         if (transcriber.isAvailable()) {
             try {
-                jobName = transcriber.transcribeAudio(videoFilePath);
+                jobName = transcriber.transcribe(videoFilePath);
                 result = transcriber.getTranscriptResult(jobName);
                 assertNotNull(result);
                 assertEquals("Result: [" + result
@@ -124,7 +124,7 @@ public class AmazonTranscribeGuessLanguageTest {
 
         if (transcriber.isAvailable()) {
             try {
-                jobName = transcriber.transcribeAudio(audioFilePath);
+                jobName = transcriber.transcribe(audioFilePath);
                 result = transcriber.getTranscriptResult(jobName);
                 assertNotNull(result);
                 assertEquals("Result: [" + result
@@ -149,7 +149,7 @@ public class AmazonTranscribeGuessLanguageTest {
 
         if (transcriber.isAvailable()) {
             try {
-                jobName = transcriber.transcribeAudio(audioFilePath);
+                jobName = transcriber.transcribe(audioFilePath);
                 result = transcriber.getTranscriptResult(jobName);
                 assertNotNull(result);
                 assertEquals("Result: [" + result
@@ -174,7 +174,7 @@ public class AmazonTranscribeGuessLanguageTest {
 
         if (transcriber.isAvailable()) {
             try {
-                jobName = transcriber.transcribeAudio(audioFilePath);
+                jobName = transcriber.transcribe(audioFilePath);
                 result = transcriber.getTranscriptResult(jobName);
                 assertNotNull(result);
                 assertEquals("Result: [" + result
@@ -199,7 +199,7 @@ public class AmazonTranscribeGuessLanguageTest {
 
         if (transcriber.isAvailable()) {
             try {
-                jobName = transcriber.transcribeAudio(audioFilePath);
+                jobName = transcriber.transcribe(audioFilePath);
                 result = transcriber.getTranscriptResult(jobName);
                 assertNotNull(result);
                 assertEquals("Result: [" + result
@@ -224,7 +224,7 @@ public class AmazonTranscribeGuessLanguageTest {
 
         if (transcriber.isAvailable()) {
             try {
-                jobName = transcriber.transcribeAudio(audioFilePath);
+                jobName = transcriber.transcribe(audioFilePath);
                 result = transcriber.getTranscriptResult(jobName);
                 assertNotNull(result);
                 assertEquals("Result: [" + result
@@ -249,7 +249,7 @@ public class AmazonTranscribeGuessLanguageTest {
 
         if (transcriber.isAvailable()) {
             try {
-                jobName = transcriber.transcribeAudio(videoFilePath);
+                jobName = transcriber.transcribe(videoFilePath);
                 result = transcriber.getTranscriptResult(jobName);
                 assertNotNull(result);
                 assertEquals("Result: [" + result

@@ -21,16 +21,14 @@ import org.apache.tika.exception.TikaException;
 
 import java.io.IOException;
 
-
 /**
  * Interface for Transcriber services.
- * TODO add documentation
  *
  * @since Tika 2.1
  */
 public interface Transcriber {
     /**
-     * Transcribe the given audio file.
+     * Transcribe the given file.
      *
      * @param filePath The path of the file to be transcribed.
      * @return key for transcription lookup
@@ -38,11 +36,10 @@ public interface Transcriber {
      * @throws IOException   If an I/O exception of some sort has occurred.
      * @since 2.1
      */
-
-    public String transcribeAudio(String filePath) throws TikaException, IOException;
+    public String transcribe(String filePath) throws TikaException, IOException;
 
     /**
-     * Transcribe the given the audio file and the source language.
+     * Transcribe the given the file and the source language.
      *
      * @param filePath       The path of the file to be transcribed.
      * @param sourceLanguage The language code for the language used in the input media file.
@@ -51,30 +48,7 @@ public interface Transcriber {
      * @throws IOException   If an I/O exception of some sort has occurred.
      * @since 2.1
      */
-    public String transcribeAudio(String filePath, String sourceLanguage) throws TikaException, IOException;
-
-    /**
-     * Transcribe the given the video file.
-     *
-     * @param filePath The path of the file to be transcribed.
-     * @return key for transcription lookup
-     * @throws TikaException When there is an error transcribing.
-     * @throws IOException   If an I/O exception of some sort has occurred.
-     * @since 2.1
-     */
-    public String transcribeVideo(String filePath) throws TikaException, IOException;
-
-    /**
-     * Transcribe the given the video file and the source language.
-     *
-     * @param filePath       The path of the file to be transcribed.
-     * @param sourceLanguage The language code for the language used in the input media file.
-     * @return key for transcription lookup
-     * @throws TikaException When there is an error transcribing.
-     * @throws IOException   If an I/O exception of some sort has occurred.
-     * @since 2.1
-     */
-    public String transcribeVideo(String filePath, String sourceLanguage) throws TikaException, IOException;
+    public String transcribe(String filePath, String sourceLanguage) throws TikaException, IOException;
 
     /**
      * @return true if this Transcriber is probably able to translate right now.

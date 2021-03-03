@@ -34,14 +34,14 @@ public class AmazonTranscribeSimpleTest {
 
     @Ignore
     @Test
-    public void testSimpleTranscribeAudioEnglishShort() {
+    public void testSimpletranscribeEnglishShort() {
         String source = "src/test/resources/ShortAudioSampleEnglish.mp3";
         String expected = "Where is the bus stop where is the bus stop";
 
         String result = null;
         if (transcribe.isAvailable()) {
             try {
-                result = transcribe.transcribeAudio(source, "en-GB");
+                result = transcribe.transcribe(source, "en-GB");
                 assertNotNull(result);
                 assertEquals("Result: [" + result
                                 + "]: not equal to expected: [" + expected + "]",
@@ -55,14 +55,14 @@ public class AmazonTranscribeSimpleTest {
 
     @Ignore
     @Test
-    public void testSimpleTranscribeAudioFrenchShort() {
+    public void testSimpletranscribeFrenchShort() {
         String source = "src/test/resources/ShortAudioSampleFrench.mp3";
         String expected = "Où est l’arrêt du bus où est l’arrêt du bus";
 
         String result = null;
         if (transcribe.isAvailable()) {
             try {
-                result = transcribe.transcribeAudio(source, "fr-FR");
+                result = transcribe.transcribe(source, "fr-FR");
                 assertNotNull(result);
                 assertEquals("Result: [" + result
                                 + "]: not equal to expected: [" + expected + "]",
@@ -83,7 +83,7 @@ public class AmazonTranscribeSimpleTest {
         String result = null;
         if (transcribe.isAvailable()) {
             try {
-                result = transcribe.transcribeVideo(source, "en");
+                result = transcribe.transcribe(source, "en");
                 assertNotNull(result);
                 assertEquals("Result: [" + result
                                 + "]: not equal to expected: [" + expected + "]",
@@ -105,7 +105,7 @@ public class AmazonTranscribeSimpleTest {
         String result = null;
         if (transcribe.isAvailable()) {
             try {
-                result = transcribe.transcribeVideo(source, "ko-KR");
+                result = transcribe.transcribe(source, "ko-KR");
                 assertNotNull(result);
                 assertEquals("Result: [" + result
                                 + "]: not equal to expected: [" + expected + "]",

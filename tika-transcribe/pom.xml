@@ -46,6 +46,12 @@
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-transcribe</artifactId>
             <version>${aws.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>

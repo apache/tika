@@ -17,15 +17,17 @@
 
 package org.apache.tika.transcribe;
 
+import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.transcribe.AmazonTranscribeAsync;
-import com.amazonaws.services.transcribe.model.GetTranscriptionJobRequest;
 import com.amazonaws.services.transcribe.model.Media;
 import com.amazonaws.services.transcribe.model.StartTranscriptionJobRequest;
 import com.amazonaws.services.transcribe.model.TranscriptionJob;
-import com.amazonaws.services.transcribe.model.GetTranscriptionJobResult;
 import com.amazonaws.services.transcribe.model.TranscriptionJobStatus;
+import com.amazonaws.services.transcribe.model.GetTranscriptionJobRequest;
+import com.amazonaws.services.transcribe.model.GetTranscriptionJobResult;
 import com.amazonaws.services.transcribe.model.LanguageCode;
 import org.apache.tika.exception.TikaException;
 import org.slf4j.Logger;
@@ -37,7 +39,9 @@ import java.util.Properties;
 import java.util.UUID;
 
 /**
- * TODO Add description about required configuration and any specific characteristics for this Transcriber.
+ * Wrapper class to access the AWS transcription service.
+ *
+ * @since Tika 2.1
  */
 public class AmazonTranscribe implements Transcriber {
 
@@ -48,7 +52,6 @@ public class AmazonTranscribe implements Transcriber {
     public static final String DEFAULT_SECRET = "dummy-secret";
     public static final String DEFAULT_BUCKET = "dummy-bucket";
     public static final String BUCKET_NAME = "transcribe.BUCKET_NAME";
-
     private static final Logger LOG = LoggerFactory.getLogger(AmazonTranscribe.class);
     private AmazonTranscribeAsync amazonTranscribe;
     private AmazonS3 amazonS3;
@@ -57,6 +60,14 @@ public class AmazonTranscribe implements Transcriber {
     private String clientId;
     private String clientSecret;  // Keys used for the API calls.
 
+    /**
+     * Create a new AmazonTranscriber with the client keys specified in
+     * resources/org/apache/tika/transcribe/transcribe.amazon.properties.
+     * Silently becomes unavailable when client keys are unavailable.
+     * transcribe.AWS_ACCESS_KEY, transcribe.AWS_SECRET_KEY, and transcribe.BUCKET_NAME must be set in transcribe.amazon.properties for transcription to work.
+     *
+     * @since Tika 2.1
+     */
     public AmazonTranscribe() {
         Properties config = new Properties();
         try {
@@ -67,13 +78,17 @@ public class AmazonTranscribe implements Transcriber {
             this.clientSecret = config.getProperty(SECRET_PROPERTY);
             this.bucketName = config.getProperty(BUCKET_NAME);
             this.isAvailable = checkAvailable();
-
         } catch (Exception e) {
             LOG.warn("Exception reading config file", e);
             isAvailable = false;
         }
     }
 
+    /**
+     * private method to get a unique job key.
+     *
+     * @return unique job key.
+     */
     private String getJobKey() {
         return UUID.randomUUID().toString();
     }
@@ -87,13 +102,18 @@ public class AmazonTranscribe implements Transcriber {
      * @param filePath The path of the file to upload to Amazon S3.
      * @param jobName  The unique job name for each job(UUID).
      */
-    private void uploadFileToBucket(String filePath, String jobName) {
+    private void uploadFileToBucket(String filePath, String jobName) throws TikaException {
         PutObjectRequest request = new PutObjectRequest(this.bucketName, jobName, new File(filePath));
-        amazonS3.putObject(request);
+        try {
+            //  Block of code to try
+            PutObjectResult response = amazonS3.putObject(request);
+        } catch (SdkClientException e) {
+            throw (new TikaException("File Upload to AWS Failed"));
+        }
     }
 
     /**
-     * Starts AWS Transcribe Job without language specification for Audio
+     * Starts AWS Transcribe Job without language specification.
      *
      * @param filePath The path of the file to upload to Amazon S3.
      * @return key for transcription lookup
@@ -101,7 +121,7 @@ public class AmazonTranscribe implements Transcriber {
      * @throws IOException   If an I/O exception of some sort has occurred.
      */
     @Override
-    public String transcribeAudio(String filePath) throws TikaException, IOException {
+    public String transcribe(String filePath) throws TikaException, IOException {
         if (!isAvailable()) return null;
         String jobName = getJobKey();
         uploadFileToBucket(filePath, jobName);
@@ -111,26 +131,22 @@ public class AmazonTranscribe implements Transcriber {
         startTranscriptionJobRequest.withMedia(media)
                 .withOutputBucketName(this.bucketName)
                 .setTranscriptionJobName(jobName);
-        try {
-            amazonTranscribe.startTranscriptionJob(startTranscriptionJobRequest);
-        } catch (Exception e) {
-            throw new TikaException("Error occurred while AWS transcribing.: " + e.getMessage());
-        }
+        amazonTranscribe.startTranscriptionJob(startTranscriptionJobRequest);
         return jobName;
     }
 
     /**
-     * Starts AWS Transcribe Job with language specification for Audio
+     * Starts AWS Transcribe Job with language specification.
      *
      * @param filePath       The path of the file to upload to Amazon S3.
-     * @param sourceLanguage The language code for the language used in the input media file
+     * @param sourceLanguage <a href="https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/transcribe/model/LanguageCode.html">AWS Language Code</a> for the language used in the input media file.
      * @return key for transcription lookup
      * @throws TikaException When there is an error transcribing.
      * @throws IOException   If an I/O exception of some sort has occurred.
      * @see <a href="https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/transcribe/model/LanguageCode.html">AWS Language Code</a>
      */
     @Override
-    public String transcribeAudio(String filePath, String sourceLanguage) throws TikaException, IOException {
+    public String transcribe(String filePath, String sourceLanguage) throws TikaException, IOException {
         if (!isAvailable()) return null;
         String jobName = getJobKey();
         uploadFileToBucket(filePath, jobName);
@@ -141,71 +157,14 @@ public class AmazonTranscribe implements Transcriber {
                 .withLanguageCode(LanguageCode.fromValue(sourceLanguage))
                 .withOutputBucketName(this.bucketName)
                 .setTranscriptionJobName(jobName);
-        try {
-            amazonTranscribe.startTranscriptionJob(startTranscriptionJobRequest);
-        } catch (Exception e) {
-            throw new TikaException("Error occurred while AWS transcribing.: " + e.getMessage());
-        }
+        amazonTranscribe.startTranscriptionJob(startTranscriptionJobRequest);
         return jobName;
     }
 
     /**
-     * Starts AWS Transcribe Job without language specification for Video
-     *
-     * @param filePath The path of the file to upload to Amazon S3.
-     * @return key for transcription lookup
-     * @throws TikaException When there is an error transcribing.
-     * @throws IOException   If an I/O exception of some sort has occurred.
+     * @return true if this Transcriber is probably able to translate right now.
+     * @since Tika 2.1
      */
-    @Override
-    public String transcribeVideo(String filePath) throws TikaException, IOException {
-        if (!isAvailable()) return null;
-        String jobName = getJobKey();
-        uploadFileToBucket(filePath, jobName);
-        StartTranscriptionJobRequest startTranscriptionJobRequest = new StartTranscriptionJobRequest();
-        Media media = new Media();
-        media.setMediaFileUri(amazonS3.getUrl(bucketName, filePath).toString());
-        startTranscriptionJobRequest.withMedia(media)
-                .withOutputBucketName(this.bucketName)
-                .setTranscriptionJobName(jobName);
-        try {
-            amazonTranscribe.startTranscriptionJob(startTranscriptionJobRequest);
-        } catch (Exception e) {
-            throw new TikaException("Error occurred while AWS transcribing.: " + e.getMessage());
-        }
-        return jobName;
-    }
-
-    /**
-     * Starts AWS Transcribe Job with language specification for Audio
-     *
-     * @param filePath       The path of the file to upload to Amazon S3.
-     * @param sourceLanguage The language code for the language used in the input media file.
-     * @return key for transcription lookup
-     * @throws TikaException When there is an error transcribing.
-     * @throws IOException   If an I/O exception of some sort has occurred.
-     * @see <a href="https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/transcribe/model/LanguageCode.html">AWS Language Code</a>
-     */
-    @Override
-    public String transcribeVideo(String filePath, String sourceLanguage) throws TikaException, IOException {
-        if (!isAvailable()) return null;
-        String jobName = getJobKey();
-        uploadFileToBucket(filePath, jobName);
-        StartTranscriptionJobRequest startTranscriptionJobRequest = new StartTranscriptionJobRequest();
-        Media media = new Media();
-        media.setMediaFileUri(amazonS3.getUrl(bucketName, filePath).toString());
-        startTranscriptionJobRequest.withMedia(media)
-                .withLanguageCode(LanguageCode.fromValue(sourceLanguage))
-                .withOutputBucketName(this.bucketName)
-                .setTranscriptionJobName(jobName);
-        try {
-            amazonTranscribe.startTranscriptionJob(startTranscriptionJobRequest);
-        } catch (Exception e) {
-            throw new TikaException("Error occurred while AWS transcribing.: " + e.getMessage());
-        }
-        return jobName;
-    }
-
     @Override
     public boolean isAvailable() {
         return this.isAvailable;
@@ -241,6 +200,11 @@ public class AmazonTranscribe implements Transcriber {
         this.isAvailable = checkAvailable();
     }
 
+    /**
+     * Private method check if the service is available.
+     *
+     * @return if the service is available
+     */
     private boolean checkAvailable() {
         return clientId != null &&
                 !clientId.equals(DEFAULT_ID) &&
@@ -265,7 +229,7 @@ public class AmazonTranscribe implements Transcriber {
     }
 
     /**
-     * Private helper function to get object from s3
+     * Private helper function to get object from s3.
      *
      * @param jobName The unique job name for each job(UUID).
      * @return TranscriptionJob object
