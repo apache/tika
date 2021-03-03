@@ -35,6 +35,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.FileOutputStream;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -99,11 +102,11 @@ public class AmazonTranscribe implements Transcriber {
      * specified bucket and jobName. After constructing the request,
      * users may optionally specify object metadata or a canned ACL as well.
      *
-     * @param filePath The path of the file to upload to Amazon S3.
-     * @param jobName  The unique job name for each job(UUID).
+     * @param file    The file to upload to Amazon S3.
+     * @param jobName The unique job name for each job(UUID).
      */
-    private void uploadFileToBucket(String filePath, String jobName) throws TikaException {
-        PutObjectRequest request = new PutObjectRequest(this.bucketName, jobName, new File(filePath));
+    private void uploadFileToBucket(File file, String jobName) throws TikaException {
+        PutObjectRequest request = new PutObjectRequest(this.bucketName, jobName, file);
         try {
             //  Block of code to try
             PutObjectResult response = amazonS3.putObject(request);
@@ -115,50 +118,62 @@ public class AmazonTranscribe implements Transcriber {
     /**
      * Starts AWS Transcribe Job without language specification.
      *
-     * @param filePath The path of the file to upload to Amazon S3.
-     * @return key for transcription lookup
+     * @param inputStream the source input stream.
+     * @return The transcribed string result, NULL if the job failed.
      * @throws TikaException When there is an error transcribing.
      * @throws IOException   If an I/O exception of some sort has occurred.
      */
     @Override
-    public String transcribe(String filePath) throws TikaException, IOException {
+    public String transcribe(InputStream inputStream) throws TikaException, IOException {
         if (!isAvailable()) return null;
         String jobName = getJobKey();
-        uploadFileToBucket(filePath, jobName);
+        byte[] buffer = new byte[inputStream.available()];
+        inputStream.read(buffer);
+        File targetFile = new File("src/main/resources/targetFile.tmp");
+        OutputStream outStream = new FileOutputStream(targetFile);
+        outStream.write(buffer);
+        targetFile.deleteOnExit();
+        uploadFileToBucket(targetFile, jobName);
         StartTranscriptionJobRequest startTranscriptionJobRequest = new StartTranscriptionJobRequest();
         Media media = new Media();
-        media.setMediaFileUri(amazonS3.getUrl(bucketName, filePath).toString());
+        media.setMediaFileUri(amazonS3.getUrl(bucketName, jobName).toString());
         startTranscriptionJobRequest.withMedia(media)
                 .withOutputBucketName(this.bucketName)
                 .setTranscriptionJobName(jobName);
         amazonTranscribe.startTranscriptionJob(startTranscriptionJobRequest);
-        return jobName;
+        return getTranscriptResult(jobName);
     }
 
     /**
      * Starts AWS Transcribe Job with language specification.
      *
-     * @param filePath       The path of the file to upload to Amazon S3.
+     * @param inputStream    the source input stream.
      * @param sourceLanguage <a href="https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/transcribe/model/LanguageCode.html">AWS Language Code</a> for the language used in the input media file.
-     * @return key for transcription lookup
+     * @return The transcribed string result, NULL if the job failed.
      * @throws TikaException When there is an error transcribing.
      * @throws IOException   If an I/O exception of some sort has occurred.
      * @see <a href="https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/transcribe/model/LanguageCode.html">AWS Language Code</a>
      */
     @Override
-    public String transcribe(String filePath, String sourceLanguage) throws TikaException, IOException {
+    public String transcribe(InputStream inputStream, String sourceLanguage) throws TikaException, IOException {
         if (!isAvailable()) return null;
         String jobName = getJobKey();
-        uploadFileToBucket(filePath, jobName);
+        byte[] buffer = new byte[inputStream.available()];
+        inputStream.read(buffer);
+        File targetFile = new File("src/main/resources/targetFile.tmp");
+        OutputStream outStream = new FileOutputStream(targetFile);
+        outStream.write(buffer);
+        targetFile.deleteOnExit();
+        uploadFileToBucket(targetFile, jobName);
         StartTranscriptionJobRequest startTranscriptionJobRequest = new StartTranscriptionJobRequest();
         Media media = new Media();
-        media.setMediaFileUri(amazonS3.getUrl(bucketName, filePath).toString());
+        media.setMediaFileUri(amazonS3.getUrl(bucketName, jobName).toString());
         startTranscriptionJobRequest.withMedia(media)
                 .withLanguageCode(LanguageCode.fromValue(sourceLanguage))
                 .withOutputBucketName(this.bucketName)
                 .setTranscriptionJobName(jobName);
         amazonTranscribe.startTranscriptionJob(startTranscriptionJobRequest);
-        return jobName;
+        return getTranscriptResult(jobName);
     }
 
     /**
@@ -215,14 +230,14 @@ public class AmazonTranscribe implements Transcriber {
     }
 
     /**
-     * Gets Transcription result from AWS S3 bucket given bucketName and jobName
+     * Gets Transcription result from AWS S3 bucket given the jobName.
      *
      * @param fileNameS3 The path of the file to upload to Amazon S3.
-     * @return The transcribed result.
+     * @return The transcribed string result, NULL if the job failed.
      */
-    public String getTranscriptResult(String fileNameS3) {
+    private String getTranscriptResult(String fileNameS3) {
         TranscriptionJob transcriptionJob = retrieveObjectWhenJobCompleted(fileNameS3);
-        if (transcriptionJob != null && !TranscriptionJobStatus.FAILED.equals(transcriptionJob.getTranscriptionJobStatus())) {
+        if (transcriptionJob != null && !TranscriptionJobStatus.FAILED.name().equals(transcriptionJob.getTranscriptionJobStatus())) {
             return amazonS3.getObjectAsString(this.bucketName, fileNameS3);
         } else
             return null;
