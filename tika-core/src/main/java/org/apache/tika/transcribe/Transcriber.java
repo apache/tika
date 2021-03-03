@@ -20,35 +20,37 @@ package org.apache.tika.transcribe;
 import org.apache.tika.exception.TikaException;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Interface for Transcriber services.
  *
+ * @see <a href="https://issues.apache.org/jira/browse/TIKA-94">TIKA-94</a>
  * @since Tika 2.1
  */
 public interface Transcriber {
     /**
      * Transcribe the given file.
      *
-     * @param filePath The path of the file to be transcribed.
-     * @return key for transcription lookup
+     * @param inputStream the source input stream.
+     * @return The transcribed string result, NULL if the job failed.
      * @throws TikaException When there is an error transcribing.
      * @throws IOException   If an I/O exception of some sort has occurred.
      * @since 2.1
      */
-    public String transcribe(String filePath) throws TikaException, IOException;
+    public String transcribe(InputStream inputStream) throws TikaException, IOException;
 
     /**
      * Transcribe the given the file and the source language.
      *
-     * @param filePath       The path of the file to be transcribed.
+     * @param inputStream    the source input stream.
      * @param sourceLanguage The language code for the language used in the input media file.
-     * @return key for transcription lookup
+     * @return The transcribed string result, NULL if the job failed.
      * @throws TikaException When there is an error transcribing.
      * @throws IOException   If an I/O exception of some sort has occurred.
      * @since 2.1
      */
-    public String transcribe(String filePath, String sourceLanguage) throws TikaException, IOException;
+    public String transcribe(InputStream inputStream, String sourceLanguage) throws TikaException, IOException;
 
     /**
      * @return true if this Transcriber is probably able to transcribe right now.

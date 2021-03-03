@@ -20,6 +20,8 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.io.FileInputStream;
+
 import static org.junit.Assert.*;
 
 //TODO: Check whether the expected Strings are correct (does it include punctuation? case?)
@@ -41,7 +43,7 @@ public class AmazonTranscribeSimpleTest {
         String result = null;
         if (transcribe.isAvailable()) {
             try {
-                result = transcribe.transcribe(source, "en-GB");
+                result = transcribe.transcribe(new FileInputStream(source));
                 assertNotNull(result);
                 assertEquals("Result: [" + result
                                 + "]: not equal to expected: [" + expected + "]",
@@ -62,7 +64,7 @@ public class AmazonTranscribeSimpleTest {
         String result = null;
         if (transcribe.isAvailable()) {
             try {
-                result = transcribe.transcribe(source, "fr-FR");
+                result = transcribe.transcribe(new FileInputStream(source));
                 assertNotNull(result);
                 assertEquals("Result: [" + result
                                 + "]: not equal to expected: [" + expected + "]",
@@ -83,7 +85,7 @@ public class AmazonTranscribeSimpleTest {
         String result = null;
         if (transcribe.isAvailable()) {
             try {
-                result = transcribe.transcribe(source, "en");
+                result = transcribe.transcribe(new FileInputStream(source));
                 assertNotNull(result);
                 assertEquals("Result: [" + result
                                 + "]: not equal to expected: [" + expected + "]",
@@ -105,7 +107,7 @@ public class AmazonTranscribeSimpleTest {
         String result = null;
         if (transcribe.isAvailable()) {
             try {
-                result = transcribe.transcribe(source, "ko-KR");
+                result = transcribe.transcribe(new FileInputStream(source));
                 assertNotNull(result);
                 assertEquals("Result: [" + result
                                 + "]: not equal to expected: [" + expected + "]",
