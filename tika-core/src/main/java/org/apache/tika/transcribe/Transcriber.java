@@ -21,7 +21,6 @@ import org.apache.tika.exception.TikaException;
 
 import java.io.IOException;
 
-
 /**
  * Interface for Transcriber services.
  * TODO add documentation
@@ -51,15 +50,6 @@ public interface Transcriber {
      * @since 2.1
      */
     public String transcribe(String filePath, String sourceLanguage) throws TikaException, IOException;
-
-    /**
-     * Gets Transcription result from AWS S3 bucket given bucketName and jobName
-     *
-     * @param key
-     * @return
-     */
-    public String getTranscriptResult(String key);
-
 
     /**
      * @return true if this Transcriber is probably able to translate right now.
