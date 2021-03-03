@@ -17,8 +17,11 @@
 
 package org.apache.tika.transcribe;
 
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.transcribe.AmazonTranscribeAsync;
 import com.amazonaws.services.transcribe.model.*;
 import org.apache.tika.exception.TikaException;
@@ -80,20 +83,27 @@ public class AmazonTranscribe implements Transcriber {
      * users may optionally specify object metadata or a canned ACL as well.
      * @param filePath       The path of the file to upload to Amazon S3.
      */
-    private void uploadFileToBucket(String filePath, String jobName) {
+    private void uploadFileToBucket(String filePath, String jobName) throws TikaException {
         PutObjectRequest request = new PutObjectRequest(this.bucketName, jobName, new File(filePath));
-        amazonS3.putObject(request);
+        try {
+            //  Block of code to try
+            PutObjectResult response = amazonS3.putObject(request);
+        } catch(SdkClientException e) {
+            throw(new TikaException("File Upload to AWS Failed"));
+        }
+
+
     }
 
     /**
-     * Starts AWS Transcribe Job without language specification for Audio
+     * Starts AWS Transcribe Job without language specification
      * @param filePath
      * @return key for transcription lookup
      * @throws TikaException
      * @throws IOException
      */
     @Override
-    public String startTranscribeAudio(String filePath) throws TikaException, IOException {
+    public String startTranscribe(String filePath) throws TikaException, IOException {
         if (!isAvailable()) return null;
         String jobName = getJobKey();
         uploadFileToBucket(filePath, jobName);
@@ -107,7 +117,7 @@ public class AmazonTranscribe implements Transcriber {
         return jobName;
     }
     /**
-     * Starts AWS Transcribe Job with language specification for Audio
+     * Starts AWS Transcribe Job with language specification
      * @param filePath
      * @param sourceLanguage
      * @return key for transcription lookup
@@ -115,7 +125,7 @@ public class AmazonTranscribe implements Transcriber {
      * @throws IOException
      */
     @Override
-    public String startTranscribeAudio(String filePath, String sourceLanguage) throws TikaException, IOException {
+    public String startTranscribe(String filePath, String sourceLanguage) throws TikaException, IOException {
         if (!isAvailable()) return null;
         String jobName = getJobKey();
         uploadFileToBucket(filePath, jobName);
@@ -130,51 +140,6 @@ public class AmazonTranscribe implements Transcriber {
         return jobName;
     }
 
-    /**
-     * Starts AWS Transcribe Job without language specification for Video
-     * @param filePath
-     * @return key for transcription lookup
-     * @throws TikaException
-     * @throws IOException
-     */
-    @Override
-    public String startTranscribeVideo(String filePath) throws TikaException, IOException {
-        if (!isAvailable()) return null;
-        String jobName = getJobKey();
-        uploadFileToBucket(filePath, jobName);
-        StartTranscriptionJobRequest startTranscriptionJobRequest = new StartTranscriptionJobRequest();
-        Media media = new Media();
-        media.setMediaFileUri(amazonS3.getUrl(bucketName, filePath).toString());
-        startTranscriptionJobRequest.withMedia(media)
-                .withOutputBucketName(this.bucketName)
-                .setTranscriptionJobName(jobName);
-        amazonTranscribe.startTranscriptionJob(startTranscriptionJobRequest);
-        return jobName;
-    }
-
-    /**
-     * Starts AWS Transcribe Job with language specification for Audio
-     * @param filePath
-     * @param sourceLanguage
-     * @return key for transcription lookup
-     * @throws TikaException
-     * @throws IOException
-     */
-    @Override
-    public String startTranscribeVideo(String filePath, String sourceLanguage) throws TikaException, IOException {
-        if (!isAvailable()) return null;
-        String jobName = getJobKey();
-        uploadFileToBucket(filePath, jobName);
-        StartTranscriptionJobRequest startTranscriptionJobRequest = new StartTranscriptionJobRequest();
-        Media media = new Media();
-        media.setMediaFileUri(amazonS3.getUrl(bucketName, filePath).toString());
-        startTranscriptionJobRequest.withMedia(media)
-                .withLanguageCode(LanguageCode.valueOf(sourceLanguage))
-                .withOutputBucketName(this.bucketName)
-                .setTranscriptionJobName(jobName);
-        amazonTranscribe.startTranscriptionJob(startTranscriptionJobRequest);
-        return jobName;
-    }
 
     @Override
     public boolean isAvailable() {

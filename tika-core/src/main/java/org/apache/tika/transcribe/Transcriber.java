@@ -29,7 +29,7 @@ import java.io.IOException;
  */
 public interface Transcriber {
     /**
-     * Transcribe the given audio file.
+     * Transcribe the given  file.
      *
      * @param filePath
      * @return
@@ -37,10 +37,10 @@ public interface Transcriber {
      * @throws IOException
      * @since TODO
      */
-    public String startTranscribeAudio(String filePath) throws TikaException, IOException;
+    public String startTranscribe(String filePath) throws TikaException, IOException;
 
     /**
-     * Transcribe the given the audio file and the source language.
+     * Transcribe the given the  file and the source language.
      *
      * @param filePath
      * @param sourceLanguage
@@ -49,30 +49,8 @@ public interface Transcriber {
      * @throws java.io.IOException
      * @since TODO
      */
-    public String startTranscribeAudio(String filePath, String sourceLanguage) throws TikaException, IOException;
+    public String startTranscribe(String filePath, String sourceLanguage) throws TikaException, IOException;
 
-    /**
-     * Transcribe the given the video file.
-     *
-     * @param filePath
-     * @return
-     * @throws TikaException       When there is an error translating.
-     * @throws java.io.IOException
-     * @since TODO
-     */
-    public String startTranscribeVideo(String filePath) throws TikaException, IOException;
-
-    /**
-     * Transcribe the given the video file and the source language.
-     *
-     * @param filePath
-     * @param sourceLanguage
-     * @return
-     * @throws TikaException       When there is an error translating.
-     * @throws java.io.IOException
-     * @since TODO
-     */
-    public String startTranscribeVideo(String filePath, String sourceLanguage) throws TikaException, IOException;
 
     /**
      * @return true if this Transcriber is probably able to translate right now.
