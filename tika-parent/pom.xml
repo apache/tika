@@ -269,7 +269,7 @@
       <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
-        <version>4.13.1</version>
+        <version>4.13.2</version>
         <scope>test</scope>
       </dependency>
       <dependency>
@@ -311,7 +311,7 @@
       <dependency>
         <groupId>org.jvnet.staxex</groupId>
         <artifactId>stax-ex</artifactId>
-        <version>1.8.3</version>
+        <version>2.0.0</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -347,9 +347,9 @@
     <jackson.version>2.12.1</jackson.version>
     <!-- when this is next upgraded, see if we can get rid of
          javax.activation dependency in tika-server -->
-    <jaxb.version>2.3.3</jaxb.version>
+    <jaxb.version>3.0.0</jaxb.version>
     <cli.version>1.4</cli.version>
-    <lucene.version>8.7.0</lucene.version>
+    <lucene.version>8.8.1</lucene.version>
     <mockito.version>3.7.7</mockito.version>
     <opennlp.version>1.9.3</opennlp.version>
   </properties>
