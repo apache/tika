@@ -51,7 +51,7 @@ public interface Transcriber {
     public String transcribe(String filePath, String sourceLanguage) throws TikaException, IOException;
 
     /**
-     * @return true if this Transcriber is probably able to translate right now.
+     * @return true if this Transcriber is probably able to transcribe right now.
      * @since Tika 2.1
      */
     public boolean isAvailable();

@@ -56,7 +56,7 @@ public class AmazonTranscribe implements Transcriber {
     private AmazonTranscribeAsync amazonTranscribe;
     private AmazonS3 amazonS3;
     private String bucketName;
-    private boolean isAvailable; // Flag for whether or not translation is available.
+    private boolean isAvailable; // Flag for whether or not transcription is available.
     private String clientId;
     private String clientSecret;  // Keys used for the API calls.
 
@@ -162,7 +162,7 @@ public class AmazonTranscribe implements Transcriber {
     }
 
     /**
-     * @return true if this Transcriber is probably able to translate right now.
+     * @return true if this Transcriber is probably able to transcribe right now.
      * @since Tika 2.1
      */
     @Override
@@ -171,7 +171,7 @@ public class AmazonTranscribe implements Transcriber {
     }
 
     /**
-     * Sets the client Id for the translator API.
+     * Sets the client Id for the transcriber API.
      *
      * @param id The ID to set.
      */
@@ -181,7 +181,7 @@ public class AmazonTranscribe implements Transcriber {
     }
 
     /**
-     * Sets the client secret for the translator API.
+     * Sets the client secret for the transcriber API.
      *
      * @param secret The secret to set.
      */
@@ -191,7 +191,7 @@ public class AmazonTranscribe implements Transcriber {
     }
 
     /**
-     * Sets the client secret for the translator API.
+     * Sets the client secret for the transcriber API.
      *
      * @param bucket The bucket to set.
      */
