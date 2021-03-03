@@ -133,7 +133,7 @@ public class AmazonTranscribe implements Transcriber {
         Media media = new Media();
         media.setMediaFileUri(amazonS3.getUrl(bucketName, filePath).toString());
         startTranscriptionJobRequest.withMedia(media)
-                .withLanguageCode(LanguageCode.valueOf(sourceLanguage))
+                .withLanguageCode(LanguageCode.fromValue(sourceLanguage))
                 .withOutputBucketName(this.bucketName)
                 .setTranscriptionJobName(jobName);
         amazonTranscribe.startTranscriptionJob(startTranscriptionJobRequest);
