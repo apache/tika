@@ -83,6 +83,7 @@ public class AmazonTranscribe implements Transcriber {
      * users may optionally specify object metadata or a canned ACL as well.
      *
      * @param filePath The path of the file to upload to Amazon S3.
+     * @param jobName  The unique job name for each job(UUID).
      */
     private void uploadFileToBucket(String filePath, String jobName) throws TikaException {
         PutObjectRequest request = new PutObjectRequest(this.bucketName, jobName, new File(filePath));
@@ -94,13 +95,14 @@ public class AmazonTranscribe implements Transcriber {
         }
     }
 
+
     /**
-     * Starts AWS Transcribe Job without language specification
+     * Starts AWS Transcribe Job without language specification.
      *
-     * @param filePath
+     * @param filePath The path of the file to upload to Amazon S3.
      * @return key for transcription lookup
-     * @throws TikaException
-     * @throws IOException
+     * @throws TikaException When there is an error transcribing.
+     * @throws IOException   If an I/O exception of some sort has occurred.
      */
     @Override
     public String transcribe(String filePath) throws TikaException, IOException {
@@ -118,13 +120,14 @@ public class AmazonTranscribe implements Transcriber {
     }
 
     /**
-     * Starts AWS Transcribe Job with language specification
+     * Starts AWS Transcribe Job with language specification.
      *
-     * @param filePath
-     * @param sourceLanguage
+     * @param filePath       The path of the file to upload to Amazon S3.
+     * @param sourceLanguage The language code for the language used in the input media file
      * @return key for transcription lookup
-     * @throws TikaException
-     * @throws IOException
+     * @throws TikaException When there is an error transcribing.
+     * @throws IOException   If an I/O exception of some sort has occurred.
+     * @see <a href="https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/transcribe/model/LanguageCode.html">AWS Language Code</a>
      */
     @Override
     public String transcribe(String filePath, String sourceLanguage) throws TikaException, IOException {
@@ -189,8 +192,8 @@ public class AmazonTranscribe implements Transcriber {
     /**
      * Gets Transcription result from AWS S3 bucket given bucketName and jobName
      *
-     * @param fileNameS3
-     * @return
+     * @param fileNameS3 The path of the file to upload to Amazon S3.
+     * @return The transcribed result.
      */
     public String getTranscriptResult(String fileNameS3) {
         TranscriptionJob transcriptionJob = retrieveObjectWhenJobCompleted(fileNameS3);
@@ -203,8 +206,8 @@ public class AmazonTranscribe implements Transcriber {
     /**
      * Private helper function to get object from s3
      *
-     * @param jobName
-     * @return
+     * @param jobName The unique job name for each job(UUID).
+     * @return TranscriptionJob object
      */
     private TranscriptionJob retrieveObjectWhenJobCompleted(String jobName) {
         GetTranscriptionJobRequest getTranscriptionJobRequest = new GetTranscriptionJobRequest();
