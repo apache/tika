@@ -71,6 +71,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Parser for the MP4 media container format, as well as the older
@@ -85,11 +86,13 @@ public class MP4Parser extends AbstractParser {
     /** TODO Replace this with a 2dp Duration Property Converter */
     private static final DecimalFormat DURATION_FORMAT = 
             (DecimalFormat)NumberFormat.getNumberInstance(Locale.ROOT); 
+
     static {
         DURATION_FORMAT.applyPattern("0.0#");
     }
     // Ensure this stays in Sync with the entries in tika-mimetypes.xml
-    private static final Map<MediaType,List<String>> typesMap = new HashMap<MediaType, List<String>>();
+    private static final Map<MediaType, List<String>> typesMap = new HashMap<>();
+
     static {
        // All types should be 4 bytes long, space padded as needed
        typesMap.put(MediaType.audio("mp4"), Arrays.asList(
@@ -134,8 +137,11 @@ public class MP4Parser extends AbstractParser {
             if (fileType != null) {
                 // Identify the type
                 MediaType type = MediaType.application("mp4");
+                final List<String> compatibleBrands = fileType.getCompatibleBrands();
                 for (Map.Entry<MediaType, List<String>> e : typesMap.entrySet()) {
-                    if (e.getValue().contains(fileType.getMajorBrand())) {
+                    // Find entry which contains the file's major brand or any of the compatible brands
+                    if (e.getValue().contains(fileType.getMajorBrand())
+                            || !e.getValue().stream().filter(compatibleBrands::contains).collect(Collectors.toSet()).isEmpty()) {
                         type = e.getKey();
                         break;
                     }
