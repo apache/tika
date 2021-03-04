@@ -93,7 +93,7 @@ public class TSDParser extends AbstractParser {
                       Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
 
         //Try to parse TSD file
-        try (RereadableInputStream ris = new RereadableInputStream(stream, 2048, true, true)) {
+        try (RereadableInputStream ris = new RereadableInputStream(stream, 2048, true)) {
             Metadata TSDAndEmbeddedMetadata = new Metadata();
 
             List<TSDMetas> tsdMetasList = this.extractMetas(ris);
