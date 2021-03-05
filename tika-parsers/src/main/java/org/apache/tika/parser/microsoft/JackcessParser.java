@@ -24,7 +24,7 @@ import java.util.Collections;
 import java.util.Locale;
 import java.util.Set;
 
-import com.healthmarketscience.jackcess.CryptCodecProvider;
+import com.healthmarketscience.jackcess.crypt.CryptCodecProvider;
 import com.healthmarketscience.jackcess.Database;
 import com.healthmarketscience.jackcess.DatabaseBuilder;
 import com.healthmarketscience.jackcess.DateTimeType;
