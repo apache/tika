@@ -62,6 +62,6 @@ public class ByteFlipper implements Transformer {
     }
 
     public void setPercentCorrupt(float percentCorrupt) {
-        percentCorrupt = percentCorrupt;
+        this.percentCorrupt = percentCorrupt;
     }
 }
