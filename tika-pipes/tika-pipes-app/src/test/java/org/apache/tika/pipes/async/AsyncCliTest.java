@@ -1,6 +1,5 @@
-package org.apache.tika.pipes.driver;
+package org.apache.tika.pipes.async;
 
-import org.apache.tika.pipes.async.AsyncCli;
 import org.junit.Test;
 
 public class AsyncCliTest {

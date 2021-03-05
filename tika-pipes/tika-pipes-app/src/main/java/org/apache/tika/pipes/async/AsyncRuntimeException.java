@@ -14,21 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.emitter;
+package org.apache.tika.pipes.async;
 
-import org.apache.tika.metadata.Metadata;
+/**
+ * Fatal exception that means that something went seriously wrong.
+ */
+public class AsyncRuntimeException extends RuntimeException {
 
-import java.io.IOException;
-import java.util.List;
-
-public interface Emitter {
-
-    String getName();
-
-    void emit(String emitKey, List<Metadata> metadataList) throws IOException, TikaEmitterException;
-
-    void emit(List<? extends EmitData> emitData) throws IOException, TikaEmitterException;
-    //TODO -- add this later for xhtml?
-    //void emit(String txt, Metadata metadata) throws IOException, TikaException;
-
+    public AsyncRuntimeException(Throwable t) {
+        super(t);
+    }
 }

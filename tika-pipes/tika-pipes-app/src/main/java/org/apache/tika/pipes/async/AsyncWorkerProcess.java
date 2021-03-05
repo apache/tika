@@ -1,10 +1,14 @@
 package org.apache.tika.pipes.async;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import net.jpountz.lz4.LZ4Factory;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonFetchEmitTuple;
+import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
@@ -18,10 +22,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -44,19 +51,37 @@ import static org.apache.tika.pipes.async.AsyncWorker.reportAndReset;
 
 public class AsyncWorkerProcess {
 
-    enum STATUS_CODES {
+    enum TASK_STATUS_CODES {
         AVAILABLE,
         SELECTED,
         IN_PROCESS,
     }
 
+    public enum WORKER_STATUS_CODES {
+        ACTIVE,
+        RESTARTING,
+        HIBERNATING,
+        SHOULD_SHUTDOWN,
+        SHUTDOWN
+    }
+
+    public enum EMIT_STATUS_CODES {
+        READY,
+        EMITTING,
+        EMITTED
+    }
     enum ERROR_CODES {
         TIMEOUT,
         SECURITY_EXCEPTION,
         OTHER_EXCEPTION,
         OOM,
         OTHER_ERROR,
-        UNKNOWN
+        UNKNOWN_PARSE,
+        EMIT_SERIALIZATION,
+        EMIT_SQL_INSERT_EXCEPTION,
+        EMIT_SQL_SELECT_EXCEPTION,
+        EMIT_DESERIALIZATION,
+        EMIT_EXCEPTION
     }
 
     private static final Logger LOG = LoggerFactory.getLogger(AsyncWorkerProcess.class);
@@ -64,14 +89,13 @@ public class AsyncWorkerProcess {
     //make these all configurable
     private static final long SHUTDOWN_AFTER_MS = 120000;
     private static long PULSE_MS = 1000;
-    private long emitWithinMs = 1000;
-    private long emitMaxBytes = 10_000_000;
     private long parseTimeoutMs = 60000;
 
     public static void main(String[] args) throws Exception {
-        String db = args[0];
-        int workerId = Integer.parseInt(args[1]);
-        TikaConfig tikaConfig = new TikaConfig(Paths.get(args[2]));
+        Path tikaConfigPath = Paths.get(System.getenv(AsyncProcessor.TIKA_ASYNC_CONFIG_FILE_KEY));
+        String db = System.getenv(AsyncProcessor.TIKA_ASYNC_JDBC_KEY);
+        TikaConfig tikaConfig = new TikaConfig(tikaConfigPath);
+        int workerId = Integer.parseInt(args[0]);
         LOG.debug("trying to get connection {} >{}<", workerId, db);
         try (Connection connection = DriverManager.getConnection(db)) {
             AsyncWorkerProcess asyncWorker = new AsyncWorkerProcess();
@@ -83,18 +107,12 @@ public class AsyncWorkerProcess {
     private void execute(Connection connection,
                          int workerId, TikaConfig tikaConfig) throws SQLException {
 
-        AsyncEmitHook asyncEmitHook = new AsyncPipesEmitHook(connection);
-        AsyncEmitter asyncEmitter = new AsyncEmitter(tikaConfig.getEmitterManager(),
-                asyncEmitHook,
-                emitWithinMs, emitMaxBytes);
-
         ExecutorService service = Executors.newFixedThreadPool(3);
         ExecutorCompletionService<Integer> executorCompletionService =
                 new ExecutorCompletionService<>(service);
 
-        executorCompletionService.submit(new Worker(connection, workerId, asyncEmitter,
+        executorCompletionService.submit(new Worker(connection, workerId,
                 tikaConfig, parseTimeoutMs));
-        executorCompletionService.submit(asyncEmitter);
         executorCompletionService.submit(new ForkWatcher(System.in));
 
         int completed = 0;
@@ -113,7 +131,6 @@ public class AsyncWorkerProcess {
             LOG.error("worker " + workerId + " had a mainloop exception", e);
         } finally {
             service.shutdownNow();
-            asyncEmitter.emitAll();
         }
         return;
     }
@@ -127,29 +144,30 @@ public class AsyncWorkerProcess {
         private final PreparedStatement markForProcessing;
         private final PreparedStatement checkForShutdown;
 
+
         TaskQueue(Connection connection, int workerId) throws SQLException {
             this.connection = connection;
             this.workerId = workerId;
-
             String sql = "update parse_queue set status=" +
-                    STATUS_CODES.SELECTED.ordinal()+
+                    TASK_STATUS_CODES.SELECTED.ordinal()+
                     " where id = " +
                     " (select id from parse_queue where worker_id = " + workerId +
-                    " and status="+STATUS_CODES.AVAILABLE.ordinal()+
+                    " and status="+ TASK_STATUS_CODES.AVAILABLE.ordinal()+
                     " order by time_stamp asc limit 1 for update)";
             markForSelecting = connection.prepareStatement(sql);
             sql = "select id, retry, json from parse_queue where status=" +
-                    STATUS_CODES.SELECTED.ordinal() +
+                    TASK_STATUS_CODES.SELECTED.ordinal() +
                     " and " +
                     " worker_id=" + workerId +
                     " order by time_stamp asc limit 1";
             selectForProcessing = connection.prepareStatement(sql);
             sql = "update parse_queue set status="+
-                    STATUS_CODES.IN_PROCESS.ordinal()+
+                    TASK_STATUS_CODES.IN_PROCESS.ordinal()+
                     " where id=?";
             markForProcessing = connection.prepareStatement(sql);
 
-            sql = "select count(1) from workers_shutdown where worker_id=" + workerId;
+            sql = "select count(1) from workers where worker_id=" + workerId +
+            " and status="+WORKER_STATUS_CODES.SHOULD_SHUTDOWN.ordinal();
             checkForShutdown = connection.prepareStatement(sql);
         }
 
@@ -157,14 +175,12 @@ public class AsyncWorkerProcess {
             long start = System.currentTimeMillis();
             long elapsed = System.currentTimeMillis() - start;
             while (elapsed < pollMs) {
-
                 if (shouldShutdown()) {
                     return SHUTDOWN_SEMAPHORE;
                 }
-
                 int i = markForSelecting.executeUpdate();
                 if (i == 0) {
-                    //debugQueue();
+                    debugQueue();
                     Thread.sleep(PULSE_MS);
                 } else {
                     long taskId = -1;
@@ -200,7 +216,6 @@ public class AsyncWorkerProcess {
                     for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
                         System.out.print(rs.getString(i)+ " ");
                     }
-                    System.out.println("");
                 }
             }
         }
@@ -221,7 +236,6 @@ public class AsyncWorkerProcess {
 
         private final Connection connection;
         private final int workerId;
-        private final AsyncEmitter asyncEmitter;
         private final RecursiveParserWrapper parser;
         private final TikaConfig tikaConfig;
         private final long parseTimeoutMs;
@@ -229,24 +243,27 @@ public class AsyncWorkerProcess {
         private ExecutorCompletionService<AsyncData> executorCompletionService;
         private final PreparedStatement insertErrorLog;
         private final PreparedStatement resetStatus;
-
+        private final PreparedStatement insertEmitData;
+        private final ObjectMapper objectMapper = new ObjectMapper();
+        LZ4Factory factory = LZ4Factory.fastestInstance();
 
         public Worker(Connection connection,
                       int workerId,
-                      AsyncEmitter asyncEmitter,
                       TikaConfig tikaConfig, long parseTimeoutMs) throws SQLException {
             this.connection = connection;
             this.workerId = workerId;
-            this.asyncEmitter = asyncEmitter;
             this.parser = new RecursiveParserWrapper(tikaConfig.getParser());
             this.tikaConfig = tikaConfig;
             this.executorService = Executors.newFixedThreadPool(1);
             this.executorCompletionService = new ExecutorCompletionService<>(executorService);
             this.parseTimeoutMs = parseTimeoutMs;
-            String sql = "insert into workers (worker_id) values (" + workerId + ")";
+            String sql = "insert into workers (worker_id, status) " +
+                    "values (" + workerId + ", "+
+                    WORKER_STATUS_CODES.ACTIVE.ordinal()+")";
             connection.createStatement().execute(sql);
             insertErrorLog = prepareInsertErrorLog(connection);
             resetStatus = prepareReset(connection);
+            insertEmitData = prepareInsertEmitData(connection);
         }
 
 
@@ -275,12 +292,10 @@ public class AsyncWorkerProcess {
                     }
                 }
             } catch (TimeoutException e) {
-                e.printStackTrace();
                 LOG.warn(task.getFetchKey().getKey(), e);
                 reportAndReset(task, ERROR_CODES.TIMEOUT,
                         insertErrorLog, resetStatus, LOG);
             } catch (SecurityException e) {
-                e.printStackTrace();
                 LOG.warn(task.getFetchKey().getKey(), e);
                 reportAndReset(task, ERROR_CODES.SECURITY_EXCEPTION,
                         insertErrorLog, resetStatus, LOG);
@@ -290,17 +305,14 @@ public class AsyncWorkerProcess {
                 reportAndReset(task, ERROR_CODES.OTHER_EXCEPTION,
                         insertErrorLog, resetStatus, LOG);
             } catch (OutOfMemoryError e) {
-                e.printStackTrace();
                 LOG.warn(task.getFetchKey().getKey(), e);
                 reportAndReset(task, ERROR_CODES.OOM,
                         insertErrorLog, resetStatus, LOG);
             } catch (Error e) {
-                e.printStackTrace();
                 LOG.warn(task.getFetchKey().getKey(), e);
                 reportAndReset(task, ERROR_CODES.OTHER_ERROR,
                         insertErrorLog, resetStatus, LOG);
             } finally {
-                asyncEmitter.emitAll();
                 executorService.shutdownNow();
                 return 1;
             }
@@ -324,16 +336,35 @@ public class AsyncWorkerProcess {
                     }
                     boolean shouldEmit = checkForParseException(asyncData);
                     if (shouldEmit) {
-                        boolean offered = asyncEmitter.emit(asyncData, 600000);//parameterize this
-                        if (!offered) {
-                            //TODO: deal with this
-                            LOG.warn("Failed to add ({}) " +
-                                            "to emit queue after 10 minutes.",
-                                    task.getFetchKey().getKey());
+                        try {
+                            emit(asyncData);
+                        } catch (JsonProcessingException e) {
+                            recordBadEmit(task.getTaskId(),
+                                    task.getFetchKey().getKey(),
+                                    ERROR_CODES.EMIT_SERIALIZATION.ordinal());
+                        } catch (SQLException e) {
+                            recordBadEmit(task.getTaskId(),
+                                    task.getFetchKey().getKey(),
+                                    ERROR_CODES.EMIT_SQL_INSERT_EXCEPTION.ordinal());
                         }
                     }
                 }
             }
+        }
+
+        private void recordBadEmit(long taskId, String key, int ordinal) {
+            //stub
+        }
+
+        private void emit(AsyncData asyncData) throws SQLException,
+                JsonProcessingException {
+            insertEmitData.clearParameters();
+            insertEmitData.setLong(1, asyncData.getAsyncTask().getTaskId());
+            byte[] bytes = objectMapper.writeValueAsBytes(asyncData);
+            byte[] compressed = factory.fastCompressor().compress(bytes);
+            insertEmitData.setLong(2, bytes.length);
+            insertEmitData.setBlob(3, new ByteArrayInputStream(compressed));
+            insertEmitData.execute();
         }
 
         private void handleTimeout(long taskId, String key) throws TimeoutException {
@@ -371,6 +402,14 @@ public class AsyncWorkerProcess {
             }
             return shouldEmit;
         }
+
+        static PreparedStatement prepareInsertEmitData(Connection connection) throws SQLException {
+            return connection.prepareStatement(
+                    "insert into emits (status, time_stamp, uncompressed_size, bytes) " +
+                            " values ("+AsyncWorkerProcess.EMIT_STATUS_CODES.READY.ordinal()+
+                            ",CURRENT_TIMESTAMP(),?,?)"
+            );
+        }
     }
 
     private static class TaskProcessor implements Callable<AsyncData> {
@@ -404,7 +443,6 @@ public class AsyncWorkerProcess {
             } catch (SecurityException e) {
                 throw e;
             }
-
             injectUserMetadata(userMetadata, metadataList);
             EmitKey emitKey = task.getEmitKey();
             if (StringUtils.isBlank(emitKey.getKey())) {

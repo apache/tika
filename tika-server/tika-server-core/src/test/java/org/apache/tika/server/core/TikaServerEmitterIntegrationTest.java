@@ -264,6 +264,7 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
     private JsonNode testOne(String fileName, boolean shouldFileExist, FetchEmitTuple.ON_PARSE_EXCEPTION onParseException) throws Exception {
 
         awaitServerStartup();
+        System.out.println(getJsonString(fileName, onParseException));
         Response response = WebClient
                 .create(endPoint + "/emit")
                 .accept("application/json")

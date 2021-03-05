@@ -46,7 +46,7 @@ public abstract class AbstractEmitter implements Emitter {
      * @throws TikaEmitterException
      */
     @Override
-    public void emit(List<EmitData> emitData) throws IOException, TikaEmitterException {
+    public void emit(List<? extends EmitData> emitData) throws IOException, TikaEmitterException {
         for (EmitData d : emitData) {
             emit(d.getEmitKey().getKey(), d.getMetadataList());
         }

@@ -92,11 +92,16 @@ public class PipeIntegrationTests {
         int numConsumers = 1;
         ExecutorService es = Executors.newFixedThreadPool(numConsumers + 1);
         ExecutorCompletionService<Integer> completionService = new ExecutorCompletionService<>(es);
-        ArrayBlockingQueue<FetchEmitTuple> queue = it.init(numConsumers);
-        completionService.submit(it);
+        ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(1000);
         for (int i = 0; i < numConsumers; i++) {
             completionService.submit(new FSFetcherEmitter(
                     queue, tikaConfig.getFetcherManager().getFetcher("s3"), null));
+        }
+        for (FetchEmitTuple t : it) {
+            queue.offer(t);
+        }
+        for (int i = 0; i < numConsumers; i++) {
+            queue.offer(FetchIterator.COMPLETED_SEMAPHORE);
         }
         int finished = 0;
         try {
@@ -112,16 +117,21 @@ public class PipeIntegrationTests {
     @Test
     public void testS3ToS3() throws Exception {
         TikaConfig tikaConfig = getConfig("tika-config-s3Tos3.xml");
-        FetchIterator it = tikaConfig.getFetchIterator();
         int numConsumers = 20;
         ExecutorService es = Executors.newFixedThreadPool(numConsumers + 1);
         ExecutorCompletionService<Integer> completionService = new ExecutorCompletionService<>(es);
-        ArrayBlockingQueue<FetchEmitTuple> queue = it.init(numConsumers);
-        completionService.submit(it);
+        ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(1000);
         for (int i = 0; i < numConsumers; i++) {
             completionService.submit(new S3FetcherEmitter(
                     queue, tikaConfig.getFetcherManager().getFetcher("s3f"),
                     (S3Emitter)tikaConfig.getEmitterManager().getEmitter("s3e")));
+        }
+        FetchIterator it = tikaConfig.getFetchIterator();
+        for (FetchEmitTuple t : it) {
+            queue.offer(t);
+        }
+        for (int i = 0; i < numConsumers; i++) {
+            queue.offer(FetchIterator.COMPLETED_SEMAPHORE);
         }
         int finished = 0;
         try {

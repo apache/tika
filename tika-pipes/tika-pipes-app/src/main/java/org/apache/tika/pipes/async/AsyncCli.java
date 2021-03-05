@@ -60,7 +60,7 @@ public class AsyncCli {
             if (fetchIterator instanceof EmptyFetchIterator) {
                 throw new IllegalArgumentException("can't have empty fetch iterator");
             }
-            ArrayBlockingQueue<FetchEmitTuple> q = fetchIterator.init(maxConsumers);
+            ArrayBlockingQueue<FetchEmitTuple> q = new ArrayBlockingQueue<>(10000);//fetchIterator.init(maxConsumers);
             AsyncTaskEnqueuer enqueuer = new AsyncTaskEnqueuer(q, connection);
             executorCompletionService.submit(fetchIterator);
             executorCompletionService.submit(enqueuer);
@@ -169,7 +169,7 @@ public class AsyncCli {
             int workerId = workers.size() == 1 ? workers.get(0) :
                     workers.get(random.nextInt(workers.size()));
             insert.clearParameters();
-            insert.setByte(1, (byte) AsyncWorkerProcess.STATUS_CODES.AVAILABLE.ordinal());
+            insert.setByte(1, (byte) AsyncWorkerProcess.TASK_STATUS_CODES.AVAILABLE.ordinal());
             insert.setInt(2, workerId);
             insert.setShort(3, (short) 0);
             insert.setString(4, JsonFetchEmitTuple.toJson(t));
@@ -220,7 +220,7 @@ public class AsyncCli {
             reallocate = connection.prepareStatement(sql);
 
             sql = "select count(1) from parse_queue where status="
-                    + AsyncWorkerProcess.STATUS_CODES.AVAILABLE.ordinal();
+                    + AsyncWorkerProcess.TASK_STATUS_CODES.AVAILABLE.ordinal();
             countAvailableTasks = connection.prepareStatement(sql);
 
             sql = "insert into workers_shutdown (worker_id) values (?)";

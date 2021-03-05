@@ -1,4 +1,4 @@
-package org.apache.tika.pipes.async;/*
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -14,6 +14,8 @@ package org.apache.tika.pipes.async;/*
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.pipes.async;
+
 
 import org.apache.tika.pipes.emitter.AbstractEmitter;
 import org.apache.tika.pipes.emitter.EmitData;
@@ -37,10 +39,9 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Worker thread that takes EmitData off the queue, batches it
- * and tries to emit it as a batch
- */
+//TODO -- convert this into a watcher over the AsyncEmitterProcess
+//along the lines of AsyncWorker
+//then add emitters to the main loop in async processor
 public class AsyncEmitter implements Callable<Integer> {
 
     private static final Logger LOG = LoggerFactory.getLogger(AsyncEmitter.class);

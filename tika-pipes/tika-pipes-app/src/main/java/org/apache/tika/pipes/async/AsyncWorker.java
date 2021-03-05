@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.nio.file.Path;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -18,6 +17,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+
+import static org.apache.tika.pipes.async.AsyncProcessor.TIKA_ASYNC_CONFIG_FILE_KEY;
+import static org.apache.tika.pipes.async.AsyncProcessor.TIKA_ASYNC_JDBC_KEY;
 
 /**
  * This controls monitoring of the AsyncWorkerProcess
@@ -32,7 +34,8 @@ public class AsyncWorker implements Callable<Integer> {
     private final int workerId;
     private final Path tikaConfigPath;
     private final Connection connection;
-    private final PreparedStatement delete;
+    private final PreparedStatement finished;
+    private final PreparedStatement restarting;
     private final PreparedStatement selectActiveTasks;
     private final PreparedStatement insertErrorLog;
     private final PreparedStatement resetStatus;
@@ -44,13 +47,19 @@ public class AsyncWorker implements Callable<Integer> {
         this.workerId = workerId;
         this.tikaConfigPath = tikaConfigPath;
         this.connection = connection;
-        String sql = "delete from workers where worker_id = (" + workerId + ")";
-        delete = connection.prepareStatement(sql);
+        String sql = "update workers set status="+
+                AsyncWorkerProcess.WORKER_STATUS_CODES.SHUTDOWN.ordinal()+
+                " where worker_id = (" + workerId + ")";
+        finished = connection.prepareStatement(sql);
 
+        sql = "update workers set status="+
+                AsyncWorkerProcess.WORKER_STATUS_CODES.RESTARTING.ordinal()+
+                " where worker_id = (" + workerId + ")";
+        restarting = connection.prepareStatement(sql);
         //this checks if the process was able to reset the status
         sql = "select id, retry, json from parse_queue where worker_id="
                 + workerId +
-                " and status=" + AsyncWorkerProcess.STATUS_CODES.IN_PROCESS.ordinal();
+                " and status=" + AsyncWorkerProcess.TASK_STATUS_CODES.IN_PROCESS.ordinal();
         selectActiveTasks = connection.prepareStatement(sql);
 
         //if not, this is called to insert into the error log
@@ -66,7 +75,7 @@ public class AsyncWorker implements Callable<Integer> {
         try {
             p = start();
             int restarts = 0;
-            while (restarts++ < 2) {
+            while (true) {
                 boolean finished = p.waitFor(60, TimeUnit.SECONDS);
                 if (finished) {
                     int exitValue = p.exitValue();
@@ -74,7 +83,7 @@ public class AsyncWorker implements Callable<Integer> {
                         LOG.info("child process finished with exitValue=0");
                         return 1;
                     }
-                    reportCrash(exitValue);
+                    reportCrash(++restarts, exitValue);
                     p = start();
                 }
             }
@@ -82,9 +91,8 @@ public class AsyncWorker implements Callable<Integer> {
             if (p != null) {
                 p.destroyForcibly();
             }
-            delete.execute();
+            finished.execute();
         }
-        return -1 * workerId;
     }
 
     private Process start() throws IOException {
@@ -92,17 +100,20 @@ public class AsyncWorker implements Callable<Integer> {
                 "java", "-Djava.awt.headless=true",
                 "-cp", System.getProperty("java.class.path"),
                 "org.apache.tika.pipes.async.AsyncWorkerProcess",
-                connectionString, Integer.toString(workerId),
-                ProcessUtils.escapeCommandLine(tikaConfigPath.toAbsolutePath().toString())
+                Integer.toString(workerId)
         };
         ProcessBuilder pb = new ProcessBuilder(args);
+        pb.environment().put(TIKA_ASYNC_JDBC_KEY, connectionString);
+        pb.environment().put(TIKA_ASYNC_CONFIG_FILE_KEY,
+                tikaConfigPath.toAbsolutePath().toString());
         pb.inheritIO();
         return pb.start();
     }
-    private void reportCrash(int exitValue) throws SQLException, IOException {
+
+    private void reportCrash(int numRestarts, int exitValue) throws SQLException, IOException {
         LOG.warn("worker id={} terminated, exitValue={}",
                 workerId, exitValue);
-        delete.execute();
+        restarting.execute();
         List<AsyncTask> activeTasks = new ArrayList<>();
         try (ResultSet rs = selectActiveTasks.executeQuery()) {
             long taskId = rs.getLong(1);
@@ -120,7 +131,7 @@ public class AsyncWorker implements Callable<Integer> {
         }
 
         for (AsyncTask t : activeTasks) {
-            reportAndReset(t, AsyncWorkerProcess.ERROR_CODES.UNKNOWN,
+            reportAndReset(t, AsyncWorkerProcess.ERROR_CODES.UNKNOWN_PARSE,
                     insertErrorLog, resetStatus, LOG);
         }
 
@@ -142,7 +153,7 @@ public class AsyncWorker implements Callable<Integer> {
 
         try {
             resetStatus.clearParameters();
-            resetStatus.setByte(1, (byte) AsyncWorkerProcess.STATUS_CODES.AVAILABLE.ordinal());
+            resetStatus.setByte(1, (byte) AsyncWorkerProcess.TASK_STATUS_CODES.AVAILABLE.ordinal());
             resetStatus.setShort(2, (short)(task.getRetry()+1));
             resetStatus.setLong(3, task.getTaskId());
             resetStatus.execute();

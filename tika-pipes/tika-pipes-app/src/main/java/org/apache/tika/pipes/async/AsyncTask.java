@@ -8,7 +8,7 @@ public class AsyncTask extends FetchEmitTuple {
     public static final AsyncTask SHUTDOWN_SEMAPHORE
             = new AsyncTask(-1, (short)-1, new FetchEmitTuple(null, null, null));
 
-    private final long taskId;
+    private long taskId;
     private final short retry;
 
     public AsyncTask(long taskId, short retry,
@@ -26,6 +26,9 @@ public class AsyncTask extends FetchEmitTuple {
         return retry;
     }
 
+    public void setTaskId(long taskId) {
+        this.taskId = taskId;
+    }
     @Override
     public String toString() {
         return "AsyncTask{" +

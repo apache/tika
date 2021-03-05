@@ -1,109 +1,142 @@
 package org.apache.tika.pipes.async;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.serialization.JsonFetchEmitTuple;
-import org.apache.tika.pipes.fetchiterator.EmptyFetchIterator;
 import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
 import org.apache.tika.pipes.fetchiterator.FetchIterator;
-import org.apache.tika.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-public class AsyncProcessor implements Closeable, Callable<Integer> {
+public class AsyncProcessor implements Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(AsyncProcessor.class);
-
+    protected static String TIKA_ASYNC_JDBC_KEY = "TIKA_ASYC_JDBC_KEY";
+    protected static String TIKA_ASYNC_CONFIG_FILE_KEY = "TIKA_ASYNC_CONFIG_FILE_KEY";
     private final Path tikaConfigPath;
     private AsyncConfig asyncConfig;
-    private final ArrayBlockingQueue<FetchEmitTuple> queue;//tmp directory used if no jdbc string is configured
+    private final ArrayBlockingQueue<FetchEmitTuple> queue;
+    private final Connection connection;
+    private int finishedThreads = 0;
+    private final int totalThreads;
+    private ExecutorService executorService;
+    private ExecutorCompletionService<Integer> executorCompletionService;
 
-    public AsyncProcessor (Path tikaConfigPath) {
-        this.tikaConfigPath = tikaConfigPath;
-        this.queue = new ArrayBlockingQueue<FetchEmitTuple>(asyncConfig.getQueueSize());
+    public static AsyncProcessor build(Path tikaConfigPath) throws AsyncRuntimeException {
+        try {
+            AsyncProcessor processor = new AsyncProcessor(tikaConfigPath);
 
+            processor.init();
+            return processor;
+        } catch (SQLException|IOException e) {
+            throw new AsyncRuntimeException(e);
+        }
     }
 
-    public synchronized boolean offer(List<FetchEmitTuple> fetchEmitTuples, long offerMs) {
+    private AsyncProcessor(Path tikaConfigPath) throws SQLException, IOException {
+        this.tikaConfigPath = tikaConfigPath;
+        this.asyncConfig = AsyncConfig.load(tikaConfigPath);
+        this.queue = new ArrayBlockingQueue<>(asyncConfig.getQueueSize());
+        this.connection = DriverManager.getConnection(asyncConfig.getJdbcString());
+        this.totalThreads = asyncConfig.getMaxConsumers() + 2;
+    }
+
+    public synchronized boolean offer (
+            List<FetchEmitTuple> fetchEmitTuples, long offerMs) throws
+            AsyncRuntimeException, InterruptedException {
         if (queue == null) {
             throw new IllegalStateException("queue hasn't been initialized yet.");
         }
         long start = System.currentTimeMillis();
-        long elapsed = System.currentTimeMillis()-start;
+        long elapsed = System.currentTimeMillis() - start;
         while (elapsed < offerMs) {
+            checkActive();
             if (queue.remainingCapacity() > fetchEmitTuples.size()) {
-                queue.addAll(fetchEmitTuples);
-                return true;
+                try {
+                    queue.addAll(fetchEmitTuples);
+                    return true;
+                } catch (IllegalStateException e) {
+                    //swallow
+                }
             }
+            Thread.sleep(100);
             elapsed = System.currentTimeMillis() - start;
         }
         return false;
     }
 
-    public synchronized boolean offer(FetchEmitTuple t, long offerMs) throws InterruptedException {
+    public synchronized boolean offer(FetchEmitTuple t, long offerMs)
+            throws AsyncRuntimeException, InterruptedException {
+        checkActive();
         return queue.offer(t, offerMs, TimeUnit.MILLISECONDS);
     }
 
+    /**
+     * This polls the executorcompletionservice to check for execution exceptions
+     * and to make sure that some threads are still active.
+     *
+     * @return
+     * @throws AsyncRuntimeException
+     * @throws InterruptedException
+     */
+    public synchronized boolean checkActive()
+            throws AsyncRuntimeException, InterruptedException {
+        Future<Integer> future = executorCompletionService.poll();
+        if (future != null) {
+            try {
+                future.get();
+            } catch (ExecutionException e) {
+                throw new AsyncRuntimeException(e);
+            }
+            finishedThreads++;
+        }
+        if (finishedThreads == totalThreads) {
+            return false;
+        }
+        return true;
+    }
 
-    @Override
-    public Integer call() throws Exception {
-        this.asyncConfig = AsyncConfig.load(tikaConfigPath);
+    private void init() throws SQLException {
 
         setupTables();
 
-        ExecutorService executorService = Executors.newFixedThreadPool(
-                asyncConfig.getMaxConsumers() + 2);
-        ExecutorCompletionService<Integer> executorCompletionService =
+        executorService = Executors.newFixedThreadPool(
+                totalThreads);
+        executorCompletionService =
                 new ExecutorCompletionService<>(executorService);
 
-        try (Connection connection = DriverManager.getConnection(asyncConfig.getJdbcString())) {
-            AsyncTaskEnqueuer enqueuer = new AsyncTaskEnqueuer(queue, connection);
+        AsyncTaskEnqueuer enqueuer = new AsyncTaskEnqueuer(queue, connection);
 
-            executorCompletionService.submit(enqueuer);
-            executorCompletionService.submit(new AssignmentManager(connection, enqueuer));
-
-            for (int i = 0; i < asyncConfig.getMaxConsumers(); i++) {
-                executorCompletionService.submit(new AsyncWorker(connection,
-                        asyncConfig.getJdbcString(), i, tikaConfigPath));
-            }
-            int completed = 0;
-            while (completed < asyncConfig.getMaxConsumers()+2) {
-                Future<Integer> future = executorCompletionService.take();
-                if (future != null) {
-                    int val = future.get();
-                    completed++;
-                    LOG.debug("finished " + val);
-                }
-            }
-        } finally {
-            executorService.shutdownNow();
+        executorCompletionService.submit(enqueuer);
+        executorCompletionService.submit(new AssignmentManager(connection, enqueuer));
+        //executorCompletionService.submit(new )
+        for (int i = 0; i < asyncConfig.getMaxConsumers(); i++) {
+            executorCompletionService.submit(new AsyncWorker(connection,
+                    asyncConfig.getJdbcString(), i, tikaConfigPath));
         }
-        return 1;
     }
 
     private void setupTables() throws SQLException {
-        Connection connection = DriverManager.getConnection(asyncConfig.getJdbcString());
 
         String sql = "create table parse_queue " +
                 "(id bigint auto_increment primary key," +
@@ -112,31 +145,81 @@ public class AsyncProcessor implements Closeable, Callable<Integer> {
                 "retry smallint," + //short
                 "time_stamp timestamp," +
                 "json varchar(64000))";
-        connection.createStatement().execute(sql);
+        try (Statement st = connection.createStatement()) {
+            st.execute(sql);
+        }
         //no clear benefit to creating an index on timestamp
 //        sql = "CREATE INDEX IF NOT EXISTS status_timestamp on status (time_stamp)";
-        sql = "create table workers (worker_id int primary key)";
-        connection.createStatement().execute(sql);
-
-        sql = "create table workers_shutdown (worker_id int primary key)";
-        connection.createStatement().execute(sql);
+        sql = "create table workers (worker_id int primary key, status tinyint)";
+        try (Statement st = connection.createStatement()) {
+            st.execute(sql);
+        }
 
         sql = "create table error_log (task_id bigint, " +
                 "fetch_key varchar(10000)," +
                 "time_stamp timestamp," +
                 "retry integer," +
                 "error_code tinyint)";
-        connection.createStatement().execute(sql);
+        try (Statement st = connection.createStatement()) {
+            st.execute(sql);
+        }
 
+        sql = "create table emits (" +
+                "emit_id bigint auto_increment primary key, " +
+                "status tinyint, " +
+                "worker_id integer, " +
+                "time_stamp timestamp, " +
+                "uncompressed_size bigint, " +
+                "bytes blob)";
+        try (Statement st = connection.createStatement()) {
+            st.execute(sql);
+        }
     }
 
+    public void shutdownNow() throws IOException, AsyncRuntimeException {
+        try {
+            executorService.shutdownNow();
+        } finally {
+            //close down processes and db
+            if (asyncConfig.getTempDBDir() != null) {
+                FileUtils.deleteDirectory(asyncConfig.getTempDBDir().toFile());
+            }
+        }
+    }
+
+    /**
+     * This is a blocking close.  If you need to shutdown immediately,
+     * try {@link #shutdownNow()}.
+     * @throws IOException
+     */
     @Override
     public void close() throws IOException {
-        //close down processes and db
-
-
-        if (asyncConfig.getTempDBDir() != null) {
-            FileUtils.deleteDirectory(asyncConfig.getTempDBDir().toFile());
+        try {
+            for (int i = 0; i < asyncConfig.getMaxConsumers(); i++) {
+                try {
+                    //blocking
+                    queue.put(FetchIterator.COMPLETED_SEMAPHORE);
+                } catch (InterruptedException e) {
+                    //swallow
+                }
+            }
+            long start = System.currentTimeMillis();
+            long elapsed = System.currentTimeMillis() - start;
+            try {
+                boolean isActive = checkActive();
+                while (isActive) {
+                    isActive = checkActive();
+                    elapsed = System.currentTimeMillis();
+                }
+            } catch (InterruptedException e) {
+                return;
+            }
+        } finally {
+            executorService.shutdownNow();
+            //close down processes and db
+            if (asyncConfig.getTempDBDir() != null) {
+                FileUtils.deleteDirectory(asyncConfig.getTempDBDir().toFile());
+            }
         }
     }
 
@@ -166,7 +249,7 @@ public class AsyncProcessor implements Closeable, Callable<Integer> {
             List<Integer> workers = new ArrayList<>();
             while (true) {
                 FetchEmitTuple t = queue.poll(1, TimeUnit.SECONDS);
-                LOG.debug("enqueing to db "+t);
+                LOG.debug("enqueing to db " + t);
                 if (t == null) {
                     //log.trace?
                 } else if (t == FetchIterator.COMPLETED_SEMAPHORE) {
@@ -179,7 +262,7 @@ public class AsyncProcessor implements Closeable, Callable<Integer> {
                     while (workers.size() == 0 && elapsed < 600000) {
                         workers = getActiveWorkers(connection);
                         Thread.sleep(100);
-                        elapsed = System.currentTimeMillis()-start;
+                        elapsed = System.currentTimeMillis() - start;
                     }
                     insert(t, workers);
                 }
@@ -189,11 +272,12 @@ public class AsyncProcessor implements Closeable, Callable<Integer> {
         boolean isComplete() {
             return isComplete;
         }
+
         private void insert(FetchEmitTuple t, List<Integer> workers) throws IOException, SQLException {
             int workerId = workers.size() == 1 ? workers.get(0) :
                     workers.get(random.nextInt(workers.size()));
             insert.clearParameters();
-            insert.setByte(1, (byte) AsyncWorkerProcess.STATUS_CODES.AVAILABLE.ordinal());
+            insert.setByte(1, (byte) AsyncWorkerProcess.TASK_STATUS_CODES.AVAILABLE.ordinal());
             insert.setInt(2, workerId);
             insert.setShort(3, (short) 0);
             insert.setString(4, JsonFetchEmitTuple.toJson(t));
@@ -210,7 +294,7 @@ public class AsyncProcessor implements Closeable, Callable<Integer> {
         private final PreparedStatement allocateNonworkersToWorkers;
         private final PreparedStatement reallocate;
         private final PreparedStatement countAvailableTasks;
-        private final PreparedStatement insertWorkersShutdown;
+        private final PreparedStatement shutdownWorker;
         private final Random random = new Random();
 
 
@@ -244,11 +328,13 @@ public class AsyncProcessor implements Closeable, Callable<Integer> {
             reallocate = connection.prepareStatement(sql);
 
             sql = "select count(1) from parse_queue where status="
-                    + AsyncWorkerProcess.STATUS_CODES.AVAILABLE.ordinal();
+                    + AsyncWorkerProcess.TASK_STATUS_CODES.AVAILABLE.ordinal();
             countAvailableTasks = connection.prepareStatement(sql);
 
-            sql = "insert into workers_shutdown (worker_id) values (?)";
-            insertWorkersShutdown = connection.prepareStatement(sql);
+            sql = "update workers set status="+
+                    AsyncWorkerProcess.WORKER_STATUS_CODES.SHOULD_SHUTDOWN.ordinal() +
+                " where worker_id = ?";
+            shutdownWorker = connection.prepareStatement(sql);
         }
 
         @Override
@@ -262,20 +348,20 @@ public class AsyncProcessor implements Closeable, Callable<Integer> {
                     notifyWorkers();
                     return 1;
                 }
-                Thread.sleep(100);
+                Thread.sleep(200);
             }
         }
 
         private void notifyWorkers() throws SQLException {
             for (int workerId : getActiveWorkers(connection)) {
-                insertWorkersShutdown.clearParameters();
-                insertWorkersShutdown.setInt(1, workerId);
-                insertWorkersShutdown.execute();
+                shutdownWorker.clearParameters();
+                shutdownWorker.setInt(1, workerId);
+                shutdownWorker.execute();
             }
         }
 
         private boolean isComplete() throws SQLException {
-            if (! enqueuer.isComplete) {
+            if (!enqueuer.isComplete) {
                 return false;
             }
             try (ResultSet rs = countAvailableTasks.executeQuery()) {

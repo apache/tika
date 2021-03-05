@@ -104,7 +104,7 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
     }
 
     @Override
-    public void emit(List<EmitData> batch) throws IOException,
+    public void emit(List<? extends EmitData> batch) throws IOException,
             TikaEmitterException {
         if (batch == null || batch.size() == 0) {
             LOG.warn("batch is null or empty");
