@@ -350,7 +350,7 @@
     <jaxb.version>3.0.0</jaxb.version>
     <cli.version>1.4</cli.version>
     <lucene.version>8.8.1</lucene.version>
-    <mockito.version>3.7.7</mockito.version>
+    <mockito.version>3.8.0</mockito.version>
     <opennlp.version>1.9.3</opennlp.version>
   </properties>
 
