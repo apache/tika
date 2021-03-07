@@ -66,12 +66,6 @@ public class RereadableInputStream extends InputStream {
      */
     private boolean readingFromBuffer;
 
-    /**
-     * Whether or not we are currently reading from the file
-     * Bytes are read until we've exhausted the bytes that have been written to the file and then we proceed to read from the original input stream
-     * Once we start reading from a file, we'll always read from a file.  We won't go back to reading from a buffer.
-     */
-    private boolean readingFromFile;
 
     /**
      * The buffer used to store the stream's content; this storage is moved
@@ -184,13 +178,12 @@ public class RereadableInputStream extends InputStream {
         }
 
         int inputByte = inputStream.read();
-        if (inputByte == -1) {
+        if (inputByte == -1 && inputStream != originalInputStream) {
             // If we got EOF reading from buffer or file, switch to the original stream and get the next byte from there instead
             if (readingFromBuffer) {
                 readingFromBuffer = false;
                 inputStream.close();  // Close the input byte stream
-            } else if (readingFromFile) {
-                readingFromFile = false;
+            } else {
                 inputStream.close();  // Close the input file stream
                 // start appending to the file
                 storeOutputStream = new BufferedOutputStream(new FileOutputStream(storeFile, true));
@@ -200,7 +193,7 @@ public class RereadableInputStream extends InputStream {
             inputByte = inputStream.read();
         }
 
-        if (inputByte != -1 && !readingFromBuffer && !readingFromFile) {
+        if (inputByte != -1 && inputStream == originalInputStream) {
             // If not EOF and reading from original stream, save the bytes we read
             saveByte(inputByte);
         }
@@ -261,7 +254,6 @@ public class RereadableInputStream extends InputStream {
                 inputStream = new ByteArrayInputStream(byteBuffer, 0, bufferHighWaterMark);
             } else {
                 // No buffer, which means we've switched to a file
-                readingFromFile = true;
                 inputStream = new BufferedInputStream(new FileInputStream(storeFile));
             }
         } else {
