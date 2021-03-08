@@ -148,7 +148,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
         while (it.hasNext()) {
             Table table = it.next();
             if (table == null) {
-                break;
+                continue;
             }
             String tableName = table.getName();
             List<? extends Column> columns = table.getColumns();
