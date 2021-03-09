@@ -45,6 +45,7 @@
                 description="EXPERT: prefix for table names"/>
         <option opt="drop" hasArg="false" description="drop tables if they exist"/>
         <option opt="maxFilesToAdd" hasArg="true" description="maximum number of files to add to the crawler"/>
+        <option opt="timeoutThresholdMillis" hasArg="true" description="timeout per file in milliseconds"/>
 
     </commandline>
 
