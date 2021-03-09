@@ -1,4 +1,6 @@
-Release 1.26 - xx/xx/xxxx
+Release 1.26 - 03/09/2021
+
+   * General depedency upgrades (TIKA-3244).
 
    * Great optimization in ForkParser (TIKA-3237).
    
