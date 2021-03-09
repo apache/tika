@@ -14,3 +14,4 @@
 # limitations under the License.
 "\u2018" => "'"
 "\u2019" => "'"
+"\u00AD" => "-"
