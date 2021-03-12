@@ -103,6 +103,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.ExceptionUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -448,12 +449,24 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         try (TemporaryResources tmp = new TemporaryResources()) {
 
             int dpi = config.getOcrDPI();
-            BufferedImage image = renderer.renderImageWithDPI(pageIndex, dpi, config.getOcrImageType());
-            Path tmpFile = tmp.createTempFile();
-            try (OutputStream os = Files.newOutputStream(tmpFile)) {
-                //TODO: get output format from TesseractConfig
-                ImageIOUtil.writeImage(image, config.getOcrImageFormatName(),
-                        os, dpi, config.getOcrImageQuality());
+            Path tmpFile = null;
+            try {
+                BufferedImage image = renderer.renderImageWithDPI(pageIndex, dpi, config.getOcrImageType());
+                tmpFile = tmp.createTempFile();
+                try (OutputStream os = Files.newOutputStream(tmpFile)) {
+                    //TODO: get output format from TesseractConfig
+                    ImageIOUtil.writeImage(image, config.getOcrImageFormatName(),
+                            os, dpi, config.getOcrImageQuality());
+                }
+            } catch (SecurityException e) {
+                //throw SecurityExceptions immediately
+                throw e;
+            } catch (IOException|RuntimeException e) {
+                //image rendering can throw a variety of runtime exceptions, not just IOExceptions...
+                //need to have a wide catch
+                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM,
+                        ExceptionUtils.getStackTrace(e));
+                return;
             }
             try (InputStream is = TikaInputStream.get(tmpFile)) {
                 metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, ocrImageMediaType.toString());
