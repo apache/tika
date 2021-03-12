@@ -1,5 +1,6 @@
 package org.apache.tika.pipes.async;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
 
@@ -11,8 +12,8 @@ public class AsyncTask extends FetchEmitTuple {
     private long taskId;
     private final short retry;
 
-    public AsyncTask(long taskId, short retry,
-                     FetchEmitTuple fetchEmitTuple) {
+    public AsyncTask(@JsonProperty("taskId") long taskId, @JsonProperty("retry") short retry,
+                     @JsonProperty("fetchEmitTuple") FetchEmitTuple fetchEmitTuple) {
         super(fetchEmitTuple.getFetchKey(), fetchEmitTuple.getEmitKey(), fetchEmitTuple.getMetadata());
         this.taskId = taskId;
         this.retry = retry;

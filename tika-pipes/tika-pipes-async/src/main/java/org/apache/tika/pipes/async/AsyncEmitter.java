@@ -1,8 +1,30 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.tika.pipes.async;
 
+
 import org.apache.tika.metadata.serialization.JsonFetchEmitTuple;
+import org.apache.tika.pipes.emitter.AbstractEmitter;
+import org.apache.tika.pipes.emitter.EmitData;
+import org.apache.tika.pipes.emitter.Emitter;
+import org.apache.tika.pipes.emitter.EmitterManager;
+import org.apache.tika.pipes.emitter.TikaEmitterException;
 import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
-import org.apache.tika.utils.ProcessUtils;
+import org.apache.tika.utils.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,21 +35,24 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import static org.apache.tika.pipes.async.AsyncProcessor.TIKA_ASYNC_CONFIG_FILE_KEY;
 import static org.apache.tika.pipes.async.AsyncProcessor.TIKA_ASYNC_JDBC_KEY;
 
-/**
- * This controls monitoring of the AsyncWorkerProcess
- * and updates to the db on crashes etc.
- */
-public class AsyncWorker implements Callable<Integer> {
+public class AsyncEmitter implements Callable<Integer> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AsyncWorker.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AsyncEmitter.class);
 
 
     private final String connectionString;
@@ -40,7 +65,7 @@ public class AsyncWorker implements Callable<Integer> {
     private final PreparedStatement insertErrorLog;
     private final PreparedStatement resetStatus;
 
-    public AsyncWorker(Connection connection,
+    public AsyncEmitter(Connection connection,
                        String connectionString, int workerId,
                        Path tikaConfigPath) throws SQLException {
         this.connectionString = connectionString;
@@ -57,7 +82,7 @@ public class AsyncWorker implements Callable<Integer> {
                 " where worker_id = (" + workerId + ")";
         restarting = connection.prepareStatement(sql);
         //this checks if the process was able to reset the status
-        sql = "select id, retry, json from parse_queue where worker_id="
+        sql = "select id, retry, json from task_queue where worker_id="
                 + workerId +
                 " and status=" + AsyncWorkerProcess.TASK_STATUS_CODES.IN_PROCESS.ordinal();
         selectActiveTasks = connection.prepareStatement(sql);
@@ -80,7 +105,7 @@ public class AsyncWorker implements Callable<Integer> {
                 if (finished) {
                     int exitValue = p.exitValue();
                     if (exitValue == 0) {
-                        LOG.info("child process finished with exitValue=0");
+                        LOG.info("forked emitter process finished with exitValue=0");
                         return 1;
                     }
                     reportCrash(++restarts, exitValue);
@@ -99,7 +124,7 @@ public class AsyncWorker implements Callable<Integer> {
         String[] args = new String[]{
                 "java", "-Djava.awt.headless=true",
                 "-cp", System.getProperty("java.class.path"),
-                "org.apache.tika.pipes.async.AsyncWorkerProcess",
+                "org.apache.tika.pipes.async.AsyncEmitterProcess",
                 Integer.toString(workerId)
         };
         ProcessBuilder pb = new ProcessBuilder(args);
@@ -138,8 +163,8 @@ public class AsyncWorker implements Callable<Integer> {
     }
 
     static void reportAndReset(AsyncTask task, AsyncWorkerProcess.ERROR_CODES errorCode,
-                             PreparedStatement insertErrorLog, PreparedStatement resetStatus,
-                             Logger logger) {
+                               PreparedStatement insertErrorLog, PreparedStatement resetStatus,
+                               Logger logger) {
         try {
             insertErrorLog.clearParameters();
             insertErrorLog.setLong(1, task.getTaskId());
@@ -166,14 +191,14 @@ public class AsyncWorker implements Callable<Integer> {
         //if not, this is called to insert into the error log
         return connection.prepareStatement(
                 "insert into error_log (task_id, fetch_key, time_stamp, retry, error_code) " +
-                " values (?,?,CURRENT_TIMESTAMP(),?,?)"
+                        " values (?,?,CURRENT_TIMESTAMP(),?,?)"
         );
     }
 
     static PreparedStatement prepareReset(Connection connection) throws SQLException {
         //and this is called to reset the status on error
         return connection.prepareStatement(
-                "update parse_queue set " +
+                "update task_queue set " +
                         "status=?, " +
                         "time_stamp=CURRENT_TIMESTAMP(), " +
                         "retry=? " +

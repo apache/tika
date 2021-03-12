@@ -15,7 +15,7 @@ public class AsyncPipesEmitHook implements AsyncEmitHook {
     private final PreparedStatement markFailure;
 
     public AsyncPipesEmitHook(Connection connection) throws SQLException  {
-        String sql = "delete from parse_queue where id=?";
+        String sql = "delete from task_queue where id=?";
         markSuccess = connection.prepareStatement(sql);
         //TODO --fix this
         markFailure = connection.prepareStatement(sql);

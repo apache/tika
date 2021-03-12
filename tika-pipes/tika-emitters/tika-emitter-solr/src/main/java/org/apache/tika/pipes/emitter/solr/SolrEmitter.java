@@ -34,12 +34,10 @@ import org.apache.tika.pipes.emitter.TikaEmitterException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -120,7 +118,7 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
         try (JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
             jsonGenerator.writeStartArray();
             for (EmitData d : batch) {
-                jsonify(jsonGenerator, d.getEmitKey().getKey(), d.getMetadataList());
+                jsonify(jsonGenerator, d.getEmitKey().getEmitKey(), d.getMetadataList());
             }
             jsonGenerator.writeEndArray();
         }

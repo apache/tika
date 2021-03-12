@@ -135,8 +135,8 @@ public class JsonFetchEmitTuple {
         jsonGenerator.writeStringField(FETCHER, t.getFetchKey().getFetcherName());
         jsonGenerator.writeStringField(FETCHKEY, t.getFetchKey().getKey());
         jsonGenerator.writeStringField(EMITTER, t.getEmitKey().getEmitterName());
-        if (!StringUtils.isBlank(t.getEmitKey().getKey())) {
-            jsonGenerator.writeStringField(EMITKEY, t.getEmitKey().getKey());
+        if (!StringUtils.isBlank(t.getEmitKey().getEmitKey())) {
+            jsonGenerator.writeStringField(EMITKEY, t.getEmitKey().getEmitKey());
         }
         if (t.getMetadata().size() > 0) {
             jsonGenerator.writeFieldName(METADATAKEY);

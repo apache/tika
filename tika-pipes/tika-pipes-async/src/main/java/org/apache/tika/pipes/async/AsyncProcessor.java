@@ -58,7 +58,7 @@ public class AsyncProcessor implements Closeable {
         this.asyncConfig = AsyncConfig.load(tikaConfigPath);
         this.queue = new ArrayBlockingQueue<>(asyncConfig.getQueueSize());
         this.connection = DriverManager.getConnection(asyncConfig.getJdbcString());
-        this.totalThreads = asyncConfig.getMaxConsumers() + 2;
+        this.totalThreads = asyncConfig.getMaxConsumers() + 2 + 1;
     }
 
     public synchronized boolean offer (
@@ -134,17 +134,20 @@ public class AsyncProcessor implements Closeable {
             executorCompletionService.submit(new AsyncWorker(connection,
                     asyncConfig.getJdbcString(), i, tikaConfigPath));
         }
+        executorCompletionService.submit(new AsyncEmitter(connection,
+                asyncConfig.getJdbcString(), asyncConfig.getMaxConsumers(),
+                tikaConfigPath));
     }
 
     private void setupTables() throws SQLException {
 
-        String sql = "create table parse_queue " +
+        String sql = "create table task_queue " +
                 "(id bigint auto_increment primary key," +
                 "status tinyint," +//byte
                 "worker_id integer," +
                 "retry smallint," + //short
                 "time_stamp timestamp," +
-                "json varchar(64000))";
+                "json varchar(64000))";//this is the AsyncTask ... not the emit data!
         try (Statement st = connection.createStatement()) {
             st.execute(sql);
         }
@@ -165,10 +168,8 @@ public class AsyncProcessor implements Closeable {
         }
 
         sql = "create table emits (" +
-                "emit_id bigint auto_increment primary key, " +
-                "status tinyint, " +
-                "worker_id integer, " +
-                "time_stamp timestamp, " +
+                "id bigint primary key, " +
+                "time_stamp timestamp, "+
                 "uncompressed_size bigint, " +
                 "bytes blob)";
         try (Statement st = connection.createStatement()) {
@@ -202,6 +203,15 @@ public class AsyncProcessor implements Closeable {
                 } catch (InterruptedException e) {
                     //swallow
                 }
+            }
+            //TODO: clean this up
+            String sql = "update workers set status="+
+                    AsyncWorkerProcess.WORKER_STATUS_CODES.SHUTDOWN.ordinal()+
+                    " where worker_id = (" + asyncConfig.getMaxConsumers() + ")";
+            try {
+                connection.prepareStatement(sql).execute();
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
             }
             long start = System.currentTimeMillis();
             long elapsed = System.currentTimeMillis() - start;
@@ -239,7 +249,7 @@ public class AsyncProcessor implements Closeable {
                           Connection connection) throws SQLException {
             this.queue = queue;
             this.connection = connection;
-            String sql = "insert into parse_queue (status, time_stamp, worker_id, retry, json) " +
+            String sql = "insert into task_queue (status, time_stamp, worker_id, retry, json) " +
                     "values (?,CURRENT_TIMESTAMP(),?,?,?)";
             insert = connection.prepareStatement(sql);
         }
@@ -304,30 +314,30 @@ public class AsyncProcessor implements Closeable {
             //this gets workers and # of tasks in desc order of number of tasks
             String sql = "select w.worker_id, p.cnt " +
                     "from workers w " +
-                    "left join (select worker_id, count(1) as cnt from parse_queue " +
+                    "left join (select worker_id, count(1) as cnt from task_queue " +
                     "where status=0 group by worker_id)" +
                     " p on p.worker_id=w.worker_id order by p.cnt desc";
             getQueueDistribution = connection.prepareStatement(sql);
             //find workers that have assigned tasks but are not in the
             //workers table
-            sql = "select p.worker_id, count(1) as cnt from parse_queue p " +
+            sql = "select p.worker_id, count(1) as cnt from task_queue p " +
                     "left join workers w on p.worker_id=w.worker_id " +
                     "where w.worker_id is null group by p.worker_id";
             findMissingWorkers = connection.prepareStatement(sql);
 
-            sql = "update parse_queue set worker_id=? where worker_id=?";
+            sql = "update task_queue set worker_id=? where worker_id=?";
             allocateNonworkersToWorkers = connection.prepareStatement(sql);
 
             //current strategy reallocate tasks from longest queue to shortest
             //TODO: might consider randomly shuffling or other algorithms
-            sql = "update parse_queue set worker_id= ? where id in " +
-                    "(select id from parse_queue where " +
+            sql = "update task_queue set worker_id= ? where id in " +
+                    "(select id from task_queue where " +
                     "worker_id = ? and " +
                     "rand() < 0.8 " +
                     "and status=0 for update)";
             reallocate = connection.prepareStatement(sql);
 
-            sql = "select count(1) from parse_queue where status="
+            sql = "select count(1) from task_queue where status="
                     + AsyncWorkerProcess.TASK_STATUS_CODES.AVAILABLE.ordinal();
             countAvailableTasks = connection.prepareStatement(sql);
 

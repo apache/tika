@@ -90,7 +90,7 @@ public class AsyncCli {
                 ";AUTO_SERVER=TRUE";
         Connection connection = DriverManager.getConnection(url);
 
-        String sql = "create table parse_queue " +
+        String sql = "create table task_queue " +
                 "(id bigint auto_increment primary key," +
                 "status tinyint," +//byte
                 "worker_id integer," +
@@ -132,7 +132,7 @@ public class AsyncCli {
                           Connection connection) throws SQLException {
             this.queue = queue;
             this.connection = connection;
-            String sql = "insert into parse_queue (status, time_stamp, worker_id, retry, json) " +
+            String sql = "insert into task_queue (status, time_stamp, worker_id, retry, json) " +
                     "values (?,CURRENT_TIMESTAMP(),?,?,?)";
             insert = connection.prepareStatement(sql);
         }
@@ -196,30 +196,30 @@ public class AsyncCli {
             //this gets workers and # of tasks in desc order of number of tasks
             String sql = "select w.worker_id, p.cnt " +
                     "from workers w " +
-                    "left join (select worker_id, count(1) as cnt from parse_queue " +
+                    "left join (select worker_id, count(1) as cnt from task_queue " +
                     "where status=0 group by worker_id)" +
                     " p on p.worker_id=w.worker_id order by p.cnt desc";
             getQueueDistribution = connection.prepareStatement(sql);
             //find workers that have assigned tasks but are not in the
             //workers table
-            sql = "select p.worker_id, count(1) as cnt from parse_queue p " +
+            sql = "select p.worker_id, count(1) as cnt from task_queue p " +
                     "left join workers w on p.worker_id=w.worker_id " +
                     "where w.worker_id is null group by p.worker_id";
             findMissingWorkers = connection.prepareStatement(sql);
 
-            sql = "update parse_queue set worker_id=? where worker_id=?";
+            sql = "update task_queue set worker_id=? where worker_id=?";
             allocateNonworkersToWorkers = connection.prepareStatement(sql);
 
             //current strategy reallocate tasks from longest queue to shortest
             //TODO: might consider randomly shuffling or other algorithms
-            sql = "update parse_queue set worker_id= ? where id in " +
-                    "(select id from parse_queue where " +
+            sql = "update task_queue set worker_id= ? where id in " +
+                    "(select id from task_queue where " +
                     "worker_id = ? and " +
                     "rand() < 0.8 " +
                     "and status=0 for update)";
             reallocate = connection.prepareStatement(sql);
 
-            sql = "select count(1) from parse_queue where status="
+            sql = "select count(1) from task_queue where status="
                     + AsyncWorkerProcess.TASK_STATUS_CODES.AVAILABLE.ordinal();
             countAvailableTasks = connection.prepareStatement(sql);
 

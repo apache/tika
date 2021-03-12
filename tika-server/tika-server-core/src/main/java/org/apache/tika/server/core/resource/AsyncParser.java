@@ -124,7 +124,7 @@ public class AsyncParser implements Callable<Integer> {
 
         injectUserMetadata(userMetadata, metadataList);
         EmitKey emitKey = t.getEmitKey();
-        if (StringUtils.isBlank(emitKey.getKey())) {
+        if (StringUtils.isBlank(emitKey.getEmitKey())) {
             emitKey = new EmitKey(emitKey.getEmitterName(), fetchKey);
         }
         return new EmitData(emitKey, metadataList);

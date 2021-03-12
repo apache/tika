@@ -2,13 +2,14 @@ package org.apache.tika.pipes.async;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import net.jpountz.lz4.LZ4Factory;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonFetchEmitTuple;
-import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.metadata.serialization.JsonMetadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
@@ -27,7 +28,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
@@ -55,6 +55,11 @@ public class AsyncWorkerProcess {
         AVAILABLE,
         SELECTED,
         IN_PROCESS,
+        AVAILABLE_EMIT,
+        SELECTED_EMIT,
+        IN_PROCESS_EMIT,
+        FAILED_EMIT,
+        EMITTED
     }
 
     public enum WORKER_STATUS_CODES {
@@ -65,11 +70,6 @@ public class AsyncWorkerProcess {
         SHUTDOWN
     }
 
-    public enum EMIT_STATUS_CODES {
-        READY,
-        EMITTING,
-        EMITTED
-    }
     enum ERROR_CODES {
         TIMEOUT,
         SECURITY_EXCEPTION,
@@ -148,21 +148,24 @@ public class AsyncWorkerProcess {
         TaskQueue(Connection connection, int workerId) throws SQLException {
             this.connection = connection;
             this.workerId = workerId;
-            String sql = "update parse_queue set status=" +
+            //TODO -- need to update timestamp
+            String sql = "update task_queue set status=" +
                     TASK_STATUS_CODES.SELECTED.ordinal()+
+                    ", time_stamp=CURRENT_TIMESTAMP()"+
                     " where id = " +
-                    " (select id from parse_queue where worker_id = " + workerId +
+                    " (select id from task_queue where worker_id = " + workerId +
                     " and status="+ TASK_STATUS_CODES.AVAILABLE.ordinal()+
                     " order by time_stamp asc limit 1 for update)";
             markForSelecting = connection.prepareStatement(sql);
-            sql = "select id, retry, json from parse_queue where status=" +
+            sql = "select id, retry, json from task_queue where status=" +
                     TASK_STATUS_CODES.SELECTED.ordinal() +
                     " and " +
                     " worker_id=" + workerId +
                     " order by time_stamp asc limit 1";
             selectForProcessing = connection.prepareStatement(sql);
-            sql = "update parse_queue set status="+
+            sql = "update task_queue set status="+
                     TASK_STATUS_CODES.IN_PROCESS.ordinal()+
+                    ", time_stamp=CURRENT_TIMESTAMP()"+
                     " where id=?";
             markForProcessing = connection.prepareStatement(sql);
 
@@ -211,11 +214,12 @@ public class AsyncWorkerProcess {
 
         private void debugQueue() throws SQLException {
             try (ResultSet rs = connection.createStatement().executeQuery(
-                    "select * from parse_queue limit 10")) {
+                    "select * from task_queue limit 10")) {
                 while (rs.next()) {
                     for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
                         System.out.print(rs.getString(i)+ " ");
                     }
+                    System.out.println("");
                 }
             }
         }
@@ -244,6 +248,7 @@ public class AsyncWorkerProcess {
         private final PreparedStatement insertErrorLog;
         private final PreparedStatement resetStatus;
         private final PreparedStatement insertEmitData;
+        private final PreparedStatement updateStatusForEmit;
         private final ObjectMapper objectMapper = new ObjectMapper();
         LZ4Factory factory = LZ4Factory.fastestInstance();
 
@@ -257,6 +262,10 @@ public class AsyncWorkerProcess {
             this.executorService = Executors.newFixedThreadPool(1);
             this.executorCompletionService = new ExecutorCompletionService<>(executorService);
             this.parseTimeoutMs = parseTimeoutMs;
+
+            SimpleModule module = new SimpleModule();
+            module.addSerializer(Metadata.class, new JsonMetadata());
+            objectMapper.registerModule(module);
             String sql = "insert into workers (worker_id, status) " +
                     "values (" + workerId + ", "+
                     WORKER_STATUS_CODES.ACTIVE.ordinal()+")";
@@ -264,6 +273,11 @@ public class AsyncWorkerProcess {
             insertErrorLog = prepareInsertErrorLog(connection);
             resetStatus = prepareReset(connection);
             insertEmitData = prepareInsertEmitData(connection);
+            sql = "update task_queue set status="+
+                    TASK_STATUS_CODES.AVAILABLE_EMIT.ordinal()+
+                    ", time_stamp=CURRENT_TIMESTAMP()" +
+                    " where id=?";
+            updateStatusForEmit = connection.prepareStatement(sql);
         }
 
 
@@ -339,10 +353,12 @@ public class AsyncWorkerProcess {
                         try {
                             emit(asyncData);
                         } catch (JsonProcessingException e) {
+                            e.printStackTrace();
                             recordBadEmit(task.getTaskId(),
                                     task.getFetchKey().getKey(),
                                     ERROR_CODES.EMIT_SERIALIZATION.ordinal());
                         } catch (SQLException e) {
+                            e.printStackTrace();
                             recordBadEmit(task.getTaskId(),
                                     task.getFetchKey().getKey(),
                                     ERROR_CODES.EMIT_SQL_INSERT_EXCEPTION.ordinal());
@@ -365,6 +381,10 @@ public class AsyncWorkerProcess {
             insertEmitData.setLong(2, bytes.length);
             insertEmitData.setBlob(3, new ByteArrayInputStream(compressed));
             insertEmitData.execute();
+            updateStatusForEmit.clearParameters();
+            updateStatusForEmit.setLong(1,
+                    asyncData.getAsyncTask().getTaskId());
+            updateStatusForEmit.execute();
         }
 
         private void handleTimeout(long taskId, String key) throws TimeoutException {
@@ -405,9 +425,8 @@ public class AsyncWorkerProcess {
 
         static PreparedStatement prepareInsertEmitData(Connection connection) throws SQLException {
             return connection.prepareStatement(
-                    "insert into emits (status, time_stamp, uncompressed_size, bytes) " +
-                            " values ("+AsyncWorkerProcess.EMIT_STATUS_CODES.READY.ordinal()+
-                            ",CURRENT_TIMESTAMP(),?,?)"
+                    "insert into emits (id, time_stamp, uncompressed_size, bytes) " +
+                            " values (?,CURRENT_TIMESTAMP(),?,?)"
             );
         }
     }
@@ -445,7 +464,7 @@ public class AsyncWorkerProcess {
             }
             injectUserMetadata(userMetadata, metadataList);
             EmitKey emitKey = task.getEmitKey();
-            if (StringUtils.isBlank(emitKey.getKey())) {
+            if (StringUtils.isBlank(emitKey.getEmitKey())) {
                 emitKey = new EmitKey(emitKey.getEmitterName(), fetchKey);
                 task.setEmitKey(emitKey);
             }

@@ -28,7 +28,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>tika-pipes-app</artifactId>
+    <artifactId>tika-pipes-async</artifactId>
     <packaging>pom</packaging>
     <name>Apache Tika emitters</name>
     <url>http://tika.apache.org/</url>

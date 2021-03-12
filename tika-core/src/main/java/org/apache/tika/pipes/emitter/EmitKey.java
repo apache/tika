@@ -18,9 +18,13 @@ package org.apache.tika.pipes.emitter;
 
 public class EmitKey {
 
-    private final String emitterName;
-    private final String emitKey;
+    private String emitterName;
+    private String emitKey;
 
+    //for serialization only...yuck.
+    public EmitKey() {
+
+    }
     public EmitKey(String emitterName, String emitKey) {
         this.emitterName = emitterName;
         this.emitKey = emitKey;
@@ -30,7 +34,7 @@ public class EmitKey {
         return emitterName;
     }
 
-    public String getKey() {
+    public String getEmitKey() {
         return emitKey;
     }
 
