@@ -1,5 +1,7 @@
 Release 1.26 - 03/09/2021
 
+   * Improve detection and parsing of XPS files (TIKA-3316).
+
    * General dependency upgrades (TIKA-3244).
 
    * Great optimization in ForkParser (TIKA-3237).

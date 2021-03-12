@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Locale;
 
+import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.poi.ooxml.POIXMLDocument;
 import org.apache.poi.ooxml.extractor.ExtractorFactory;
@@ -109,10 +110,10 @@ public class OOXMLExtractorFactory {
                                 true, false)) {
                     try {
                         pkg = OPCPackage.open(rereadableInputStream);
-                    } catch (EOFException e) {
+                    } catch (EOFException|UnsupportedZipFeatureException e) {
                         rereadableInputStream.rewind();
                         tmpRepairedCopy = File.createTempFile("tika-ooxml-repair-", "");
-                        ZipSalvager.salvageCopy(rereadableInputStream, tmpRepairedCopy);
+                        ZipSalvager.salvageCopy(rereadableInputStream, tmpRepairedCopy, false);
                         //if there isn't enough left to be opened as a package
                         //throw an exception -- we may want to fall back to streaming
                         //parsing

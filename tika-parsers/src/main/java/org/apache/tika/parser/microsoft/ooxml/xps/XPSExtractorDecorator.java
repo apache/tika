@@ -51,6 +51,8 @@ import java.util.Map;
 public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
 
     private static String XPS_DOCUMENT = "http://schemas.microsoft.com/xps/2005/06/fixedrepresentation";
+    private static final String OPEN_XPS_DOCUMENT =
+            "http://schemas.openxps.org/oxps/v1.0/fixedrepresentation";
 
     private final ParseContext context;
     private final ZipPackage pkg;
@@ -76,6 +78,9 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
     protected void buildXHTML(XHTMLContentHandler xhtml) throws SAXException, IOException {
 
         PackageRelationshipCollection prc = pkg.getRelationshipsByType(XPS_DOCUMENT);
+        if (prc.size() == 0) {
+            prc = pkg.getRelationshipsByType(OPEN_XPS_DOCUMENT);
+        }
         for (int i = 0; i < prc.size(); i++) {
             PackageRelationship pr = prc.getRelationship(i);
 
