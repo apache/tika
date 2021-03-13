@@ -42,7 +42,7 @@
     -->
     <codec.version>1.15</codec.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
-    <tukaani.version>1.8</tukaani.version>
+    <tukaani.version>1.9</tukaani.version>
     <!-- NOTE: sync brotli version with commons-compress in tika-parent-->
     <brotli.version>0.1.2</brotli.version>
     <mime4j.version>0.8.3</mime4j.version>
