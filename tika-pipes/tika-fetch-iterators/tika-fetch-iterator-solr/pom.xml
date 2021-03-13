@@ -54,22 +54,12 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.rat</groupId>
-                <artifactId>apache-rat-plugin</artifactId>
-                <version>${rat.version}</version>
-                <configuration>
-                    <excludes>
-                        <exclude>src/test/resources/test-simple.csv</exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Automatic-Module-Name>org.apache.tika.pipes.fetchiterator.csv</Automatic-Module-Name>
+                            <Automatic-Module-Name>org.apache.tika.pipes.fetchiterator.solr</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
                 </configuration>
