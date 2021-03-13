@@ -37,7 +37,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <dl4j.version>1.0.0-beta6</dl4j.version>
-    <twelvemonkeys.version>3.6.1</twelvemonkeys.version>
+    <twelvemonkeys.version>3.6.4</twelvemonkeys.version>
   </properties>
 
   <dependencies>
@@ -341,7 +341,7 @@
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
-      <version>1.18.16</version>
+      <version>1.18.18</version>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
