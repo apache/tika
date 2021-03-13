@@ -1,0 +1,184 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.tika.pipes.fetchiterator.solr;
+
+import org.apache.solr.client.solrj.SolrClient;
+import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.impl.LBHttpSolrClient;
+import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.common.SolrDocument;
+import org.apache.solr.common.params.CursorMarkParams;
+import org.apache.tika.config.Field;
+import org.apache.tika.config.Initializable;
+import org.apache.tika.config.InitializableProblemHandler;
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.pipes.emitter.EmitKey;
+import org.apache.tika.pipes.fetcher.FetchKey;
+import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
+import org.apache.tika.pipes.fetchiterator.FetchIterator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeoutException;
+
+import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
+
+/**
+ * Iterates through results from a Solr query.
+ */
+public class SolrFetchIterator extends FetchIterator implements Initializable {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SolrFetchIterator.class);
+
+    private String solrCollection;
+    private List<String> solrUrls;
+    private List<String> filters;
+    private String urlFieldName;
+    private String parsingIdFieldName;
+    private String failCountFieldName;
+    private String sizeFieldName;
+    private List<String> additionalFields;
+    private int maxParseFailures;
+    private int rows = 5000;
+
+    @Field
+    public void setSolrCollection(String solrCollection) {
+        this.solrCollection = solrCollection;
+    }
+
+    @Field
+    public void setSolrUrls(List<String> solrUrls) {
+        this.solrUrls = solrUrls;
+    }
+
+    @Field
+    public void setFilters(List<String> filters) {
+        this.filters = filters;
+    }
+
+    @Field
+    public void setAdditionalFields(List<String> additionalFields) {
+        this.additionalFields = additionalFields;
+    }
+
+    @Field
+    public void setUrlFieldName(String urlFieldName) {
+        this.urlFieldName = urlFieldName;
+    }
+
+    @Field
+    public void setParsingIdFieldName(String parsingIdFieldName) {
+        this.parsingIdFieldName = parsingIdFieldName;
+    }
+
+    @Field
+    public void setFailCountFieldName(String failCountFieldName) {
+        this.failCountFieldName = failCountFieldName;
+    }
+
+    @Field
+    public void setSizeFieldName(String sizeFieldName) {
+        this.sizeFieldName = sizeFieldName;
+    }
+
+    @Field
+    public void setMaxParseFailures(int maxParseFailures) {
+        this.maxParseFailures = maxParseFailures;
+    }
+
+    @Field
+    public void setRows(int rows) {
+        this.rows = rows;
+    }
+
+    @Override
+    protected void enqueue() throws InterruptedException, IOException, TimeoutException {
+        String fetcherName = getFetcherName();
+        String emitterName = getEmitterName();
+
+        try (SolrClient solrClient = new LBHttpSolrClient.Builder()
+                .withConnectionTimeout(10000)
+                .withSocketTimeout(60000)
+                .withBaseSolrUrls(solrUrls.toArray(new String[]{})).build()) {
+            int fileCount = 0;
+
+            SolrQuery query = new SolrQuery();
+            query.set("q", "*:*");
+            query.setRows(rows);
+
+            Set<String> allFields = new HashSet<>();
+            allFields.add("id");
+            allFields.add(urlFieldName);
+            allFields.add(parsingIdFieldName);
+            allFields.add(failCountFieldName);
+            allFields.add(sizeFieldName);
+            allFields.addAll(additionalFields);
+
+            query.setFields(allFields.toArray(new String[]{}));
+            query.setFilterQueries(filters.toArray(new String[]{}));
+            query.setSort(SolrQuery.SortClause.asc(parsingIdFieldName));
+            query.addSort(SolrQuery.SortClause.asc("id"));
+            query.setFilterQueries(filters.toArray(new String[]{}));
+
+            String cursorMark = CursorMarkParams.CURSOR_MARK_START;
+            boolean done = false;
+            while (!done) {
+                query.set(CursorMarkParams.CURSOR_MARK_PARAM, cursorMark);
+                QueryResponse qr = solrClient.query(solrCollection, query);
+                long totalToFetch = qr.getResults().getNumFound();
+                String nextCursorMark = qr.getNextCursorMark();
+                LOGGER.info("Query to fetch files to parse collection={}, q={}, onCount={}, totalCount={}", solrCollection, query, fileCount, totalToFetch);
+                for (SolrDocument sd : qr.getResults()) {
+                    ++fileCount;
+                    String fetchKey = (String) sd.getFieldValue(urlFieldName);
+                    String emitKey = (String) sd.getFieldValue(urlFieldName);
+                    Metadata metadata = new Metadata();
+                    for (String nextField : allFields) {
+                        metadata.add(nextField, (String) sd.getFieldValue(nextField));
+                    }
+                    tryToAdd(new FetchEmitTuple(
+                            new FetchKey(fetcherName, fetchKey),
+                            new EmitKey(emitterName, emitKey), metadata,
+                            getOnParseException()));
+                }
+                if (cursorMark.equals(nextCursorMark)) {
+                    done = true;
+                }
+                cursorMark = nextCursorMark;
+            }
+        } catch (SolrServerException e) {
+            LOGGER.error("Could not iterate through solr", e);
+        }
+    }
+
+    @Override
+    public void checkInitialization(InitializableProblemHandler problemHandler)
+            throws TikaConfigException {
+        super.checkInitialization(problemHandler);
+        mustNotBeEmpty("solrCollection", this.solrCollection);
+        mustNotBeEmpty("urlFieldName", this.urlFieldName);
+        mustNotBeEmpty("parsingIdFieldName", this.parsingIdFieldName);
+        mustNotBeEmpty("failCountFieldName", this.failCountFieldName);
+        mustNotBeEmpty("sizeFieldName", this.sizeFieldName);
+    }
+}

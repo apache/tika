@@ -39,5 +39,6 @@
         <module>tika-fetch-iterator-csv</module>
         <module>tika-fetch-iterator-jdbc</module>
         <module>tika-fetch-iterator-s3</module>
+        <module>tika-fetch-iterator-solr</module>
     </modules>
 </project>
