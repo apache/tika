@@ -8,26 +8,18 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.pipes.PipeIntegrationTests;
 import org.apache.tika.pipes.fetchiterator.FetchIterator;
 import org.junit.Assert;
-import org.junit.experimental.theories.Theories;
-import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-@RunWith(Theories.class)
 public abstract class SolrFetchIteratorTestBase {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SolrFetchIteratorTestBase.class);
-
     private final String collection = "testcol";
+    private final int numDocs = 42;
 
     protected GenericContainer<?> solr;
-
-    private final int numDocs = 42;
 
     protected void setupSolr(GenericContainer<?> solr) throws Exception {
         this.solr = solr;
