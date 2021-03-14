@@ -39,7 +39,7 @@ public class Mp3ParserTest extends TikaTest {
      */
     private static void checkDuration(Metadata metadata, int expected) {
         assertEquals("Wrong duration", expected,
-                Math.round(Float.valueOf(metadata.get(XMPDM.DURATION)) / 1000));
+                Math.round(Float.valueOf(metadata.get(XMPDM.DURATION))));
     }
 
     /**
@@ -126,7 +126,7 @@ public class Mp3ParserTest extends TikaTest {
         String content = getXML("testMP3id3v1.mp3").xml;
         assertContains("<meta name=\"xmpDM:audioSampleRate\" content=\"44100\"",
                 content);
-        assertContains("<meta name=\"xmpDM:duration\" content=\"2455",
+        assertContains("<meta name=\"xmpDM:duration\" content=\"2.455",
                 content);
         assertContains("meta name=\"xmpDM:audioChannelType\" content=\"Mono\"", content);
     }
@@ -306,7 +306,7 @@ public class Mp3ParserTest extends TikaTest {
 
     @Test
     public void testTIKA1589_noId3ReturnsDurationCorrectly() throws Exception {
-        assertEquals("2455.510986328125",
+        assertEquals("2.4555110931396484",
                 getXML("testMP3noid3.mp3").metadata.get(XMPDM.DURATION));
     }
     
