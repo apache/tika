@@ -1,4 +1,4 @@
-package org.apache.tika.pipes.solr;
+package org.apache.tika.pipes.fetchiterator.solr;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.solr.client.solrj.SolrClient;

@@ -1,4 +1,4 @@
-package org.apache.tika.pipes.solr;
+package org.apache.tika.pipes.fetchiterator.solr;
 
 import org.junit.Before;
 import org.junit.Rule;
