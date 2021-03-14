@@ -97,7 +97,6 @@ public class OPCPackageDetector implements ZipContainerDetector {
     static final MediaType XPS =
             MediaType.application("vnd.ms-xpsdocument");
 
-
     static final Set<String> OOXML_HINTS = fillSet(
             "word/document.xml",
             "_rels/.rels",
@@ -156,6 +155,9 @@ public class OPCPackageDetector implements ZipContainerDetector {
     private static final String XPS_DOCUMENT =
             "http://schemas.microsoft.com/xps/2005/06/fixedrepresentation";
 
+    private static final String OPEN_XPS_DOCUMENT =
+            "http://schemas.openxps.org/oxps/v1.0/fixedrepresentation";
+
     private static final String STAR_OFFICE_6_WRITER = "application/vnd.sun.xml.writer";
 
 
@@ -207,6 +209,10 @@ public class OPCPackageDetector implements ZipContainerDetector {
         }
         if (core.size() == 0) {
             core = pkg.getRelationshipsByType(XPS_DOCUMENT);
+            if (core.size() == 1) {
+                return MediaType.application("vnd.ms-xpsdocument");
+            }
+            core = pkg.getRelationshipsByType(OPEN_XPS_DOCUMENT);
             if (core.size() == 1) {
                 return MediaType.application("vnd.ms-xpsdocument");
             }
