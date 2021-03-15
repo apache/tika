@@ -24,6 +24,7 @@ import org.apache.solr.client.solrj.impl.LBHttpSolrClient;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.params.CursorMarkParams;
+import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -68,6 +69,11 @@ public class SolrFetchIterator extends FetchIterator implements Initializable {
     private int rows = 5000;
     private int connectionTimeout = 10000;
     private int socketTimeout = 60000;
+    private HttpClientFactory httpClientFactory;
+
+    public SolrFetchIterator() throws TikaConfigException {
+        httpClientFactory = new HttpClientFactory();
+    }
 
     @Field
     public void setSolrZkHosts(List<String> solrZkHosts) {
@@ -134,6 +140,32 @@ public class SolrFetchIterator extends FetchIterator implements Initializable {
         this.socketTimeout = socketTimeout;
     }
 
+    //TODO -- add other httpclient configurations??
+    @Field
+    public void setUserName(String userName) {
+        httpClientFactory.setUserName(userName);
+    }
+
+    @Field
+    public void setPassword(String password) {
+        httpClientFactory.setPassword(password);
+    }
+
+    @Field
+    public void setAuthScheme(String authScheme) {
+        httpClientFactory.setAuthScheme(authScheme);
+    }
+
+    @Field
+    public void setProxyHost(String proxyHost) {
+        httpClientFactory.setProxyHost(proxyHost);
+    }
+
+    @Field
+    public void setProxyPort(int proxyPort) {
+        httpClientFactory.setProxyPort(proxyPort);
+    }
+
     @Override
     protected void enqueue() throws InterruptedException, IOException, TimeoutException {
         String fetcherName = getFetcherName();
@@ -186,14 +218,15 @@ public class SolrFetchIterator extends FetchIterator implements Initializable {
                 }
                 cursorMark = nextCursorMark;
             }
-        } catch (SolrServerException e) {
+        } catch (SolrServerException | TikaConfigException e) {
             LOGGER.error("Could not iterate through solr", e);
         }
     }
 
-    private SolrClient createSolrClient() {
+    private SolrClient createSolrClient() throws TikaConfigException {
         if (solrUrls == null || solrUrls.isEmpty()) {
             return new CloudSolrClient.Builder(solrZkHosts, Optional.ofNullable(solrZkChroot))
+                    .withHttpClient(httpClientFactory.build())
                     .withConnectionTimeout(connectionTimeout)
                     .withSocketTimeout(socketTimeout)
                     .build();
@@ -201,6 +234,7 @@ public class SolrFetchIterator extends FetchIterator implements Initializable {
         return new LBHttpSolrClient.Builder()
                 .withConnectionTimeout(connectionTimeout)
                 .withSocketTimeout(socketTimeout)
+                .withHttpClient(httpClientFactory.build())
                 .withBaseSolrUrls(solrUrls.toArray(new String[]{})).build();
     }
 
