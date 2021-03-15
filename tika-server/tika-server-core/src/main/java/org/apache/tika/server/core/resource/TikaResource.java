@@ -165,15 +165,21 @@ public class TikaResource {
         val = val.trim();
 
         try {
-            String property = StringUtils.removeStart(key, prefix);
+            String property = StringUtils.removeStartIgnoreCase(key, prefix);
             Field field = null;
             try {
                 field = object.getClass().getDeclaredField(StringUtils.uncapitalize(property));
             } catch (NoSuchFieldException e) {
-                //swallow
+                // try to match field case-insensitive way
+                for(Field aField : object.getClass().getDeclaredFields()) {
+                    if (aField.getName().equalsIgnoreCase(property)) {
+                        field = aField;
+                        break;
+                    }
+                }
             }
-            String setter = property;
-            setter = "set"+setter.substring(0,1).toUpperCase(Locale.US)+setter.substring(1);
+            String setter = field != null ? field.getName() : property;
+            setter = "set" + setter.substring(0, 1).toUpperCase(Locale.US) + setter.substring(1);
             //default assume string class
             //if there's a more specific type, e.g. double, int, boolean
             //try that.

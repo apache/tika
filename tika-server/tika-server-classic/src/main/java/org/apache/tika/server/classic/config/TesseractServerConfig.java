@@ -40,7 +40,7 @@ public class TesseractServerConfig implements ParseContextConfig {
         TesseractOCRConfig ocrConfig = null;
         DocumentSelector documentSelector = null;
         for (String key : httpHeaders.keySet()) {
-            if (StringUtils.startsWith(key, X_TIKA_OCR_HEADER_PREFIX)) {
+            if (StringUtils.startsWithIgnoreCase(key, X_TIKA_OCR_HEADER_PREFIX)) {
                 ocrConfig = (ocrConfig == null) ? new TesseractOCRConfig() : ocrConfig;
                 processHeaderConfig(httpHeaders, ocrConfig, key, X_TIKA_OCR_HEADER_PREFIX);
             }

@@ -42,6 +42,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import static org.apache.cxf.helpers.HttpHeaderHelper.CONTENT_ENCODING;
 import static org.junit.Assert.assertEquals;
@@ -347,6 +348,52 @@ public class TikaResourceTest extends CXFTestBase {
                 .type("application/pdf")
                 .accept("text/plain")
                 .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "OcrStrategy", "non-sense-value")
+                .put(ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"));
+        assertEquals(400, response.getStatus());
+    }
+
+    // TIKA-3320
+    @Test
+    public void testPDFLowerCaseOCRConfig() throws Exception {
+        if (! new TesseractOCRParser().hasTesseract()) {
+            return;
+        }
+
+        Response response = WebClient.create(endPoint + TIKA_PATH)
+                .type("application/pdf")
+                .accept("text/plain")
+                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX.toLowerCase(Locale.ROOT)+"ocrstrategy", "no_ocr")
+                .put(ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"));
+        String responseMsg = getStringFromInputStream((InputStream) response
+                .getEntity());
+
+        assertTrue(responseMsg.trim().equals(""));
+
+        response = WebClient.create(endPoint + TIKA_PATH)
+                .type("application/pdf")
+                .accept("text/plain")
+                .header(TesseractServerConfig.X_TIKA_OCR_HEADER_PREFIX.toLowerCase(Locale.ROOT)+"skipocr", "true")
+                .put(ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"));
+        responseMsg = getStringFromInputStream((InputStream) response
+                .getEntity());
+
+        assertTrue(responseMsg.trim().equals(""));
+
+
+        response = WebClient.create(endPoint + TIKA_PATH)
+                .type("application/pdf")
+                .accept("text/plain")
+                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX.toLowerCase(Locale.ROOT)+"ocrstrategy", "ocr_only")
+                .put(ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"));
+        responseMsg = getStringFromInputStream((InputStream) response
+                .getEntity());
+        assertContains("Happy New Year 2003!", responseMsg);
+
+        //now try a bad value
+        response = WebClient.create(endPoint + TIKA_PATH)
+                .type("application/pdf")
+                .accept("text/plain")
+                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX.toLowerCase(Locale.ROOT) + "ocrstrategy", "non-sense-value")
                 .put(ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"));
         assertEquals(400, response.getStatus());
     }

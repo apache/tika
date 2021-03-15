@@ -40,7 +40,7 @@ public class PDFServerConfig implements ParseContextConfig {
         //upon server startup will be ignored.
         PDFParserConfig pdfParserConfig = null;
         for (String key : httpHeaders.keySet()) {
-            if (StringUtils.startsWith(key, X_TIKA_PDF_HEADER_PREFIX)) {
+            if (StringUtils.startsWithIgnoreCase(key, X_TIKA_PDF_HEADER_PREFIX)) {
                 pdfParserConfig = (pdfParserConfig == null) ? new PDFParserConfig() : pdfParserConfig;
                 processHeaderConfig(httpHeaders, pdfParserConfig, key, X_TIKA_PDF_HEADER_PREFIX);
             }
