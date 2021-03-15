@@ -16,36 +16,28 @@
  */
 package org.apache.tika.pipes.emitter.solr;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import org.apache.http.client.HttpClient;
+import org.apache.solr.client.solrj.SolrClient;
+import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.impl.CloudSolrClient;
+import org.apache.solr.client.solrj.impl.LBHttpSolrClient;
+import org.apache.solr.common.SolrInputDocument;
 import org.apache.tika.client.HttpClientFactory;
-import org.apache.tika.client.HttpClientUtil;
-import org.apache.tika.client.TikaClientException;
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
-import org.apache.tika.pipes.emitter.AbstractEmitter;
-import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.pipes.emitter.AbstractEmitter;
+import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.StringWriter;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.zip.GZIPOutputStream;
+import java.util.*;
+
+import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
 
 public class SolrEmitter extends AbstractEmitter implements Initializable {
 
@@ -55,91 +47,49 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
         PARENT_CHILD,
         //anything else?
     }
-    private static final String ATTACHMENTS = "attachments";
-    private static final String UPDATE_PATH = "/update";
+
     private static final Logger LOG = LoggerFactory.getLogger(SolrEmitter.class);
     //one day this will be allowed or can be configured?
     private final boolean gzipJson = false;
 
     private AttachmentStrategy attachmentStrategy = AttachmentStrategy.PARENT_CHILD;
-    private String url;
+    private String solrCollection;
+    /**
+     * You can specify solrUrls, or you can specify solrZkHosts and use use zookeeper to determine the solr server urls.
+     */
+    private List<String> solrUrls;
+    private List<String> solrZkHosts;
+    private String solrZkChroot;
     private String contentField = "content";
     private String idField = "id";
-    private int commitWithin = 100;
-    private HttpClientFactory httpClientFactory;
-    private HttpClient httpClient;
+    private int commitWithin = 1000;
+    private int connectionTimeout = 10000;
+    private int socketTimeout = 60000;
+    private final HttpClientFactory httpClientFactory;
+    private SolrClient solrClient;
 
     public SolrEmitter() throws TikaConfigException {
         httpClientFactory = new HttpClientFactory();
     }
+
     @Override
     public void emit(String emitKey, List<Metadata> metadataList) throws IOException,
             TikaEmitterException {
-
         if (metadataList == null || metadataList.size() == 0) {
             LOG.warn("metadataList is null or empty");
             return;
         }
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        Writer writer = gzipJson ?
-                new BufferedWriter(
-                        new OutputStreamWriter(
-                                new GZIPOutputStream(bos), StandardCharsets.UTF_8)) :
-                new BufferedWriter(
-                        new OutputStreamWriter(bos, StandardCharsets.UTF_8));
-        try (
-            JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
-            jsonGenerator.writeStartArray();
-            jsonify(jsonGenerator, emitKey, metadataList);
-            jsonGenerator.writeEndArray();
-        }
-        LOG.debug("emitting json ({})",
-                new String(bos.toByteArray(), StandardCharsets.UTF_8));
-        try {
-            HttpClientUtil.postJson(httpClient,
-                    url+UPDATE_PATH+"?commitWithin="+getCommitWithin(), bos.toByteArray(), gzipJson);
-        } catch (TikaClientException e) {
-            throw new TikaEmitterException("can't post", e);
-        }
+        List<SolrInputDocument> docsToUpdate = new ArrayList<>();
+        addMetadataAsSolrInputDocuments(emitKey, metadataList, docsToUpdate);
+        emitSolrBatch(docsToUpdate);
     }
 
-    @Override
-    public void emit(List<EmitData> batch) throws IOException,
-            TikaEmitterException {
-        if (batch == null || batch.size() == 0) {
-            LOG.warn("batch is null or empty");
-            return;
-        }
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        Writer writer = gzipJson ?
-                new BufferedWriter(
-                        new OutputStreamWriter(
-                                new GZIPOutputStream(bos), StandardCharsets.UTF_8)) :
-            new BufferedWriter(
-                new OutputStreamWriter(bos, StandardCharsets.UTF_8));
-        try (JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
-            jsonGenerator.writeStartArray();
-            for (EmitData d : batch) {
-                jsonify(jsonGenerator, d.getEmitKey().getKey(), d.getMetadataList());
-            }
-            jsonGenerator.writeEndArray();
-        }
-        LOG.debug("emitting json ({})",
-                new String(bos.toByteArray(), StandardCharsets.UTF_8));
-        try {
-            HttpClientUtil.postJson(httpClient,
-                    url+UPDATE_PATH+"?commitWithin="+getCommitWithin(),
-                    bos.toByteArray(), gzipJson);
-        } catch (TikaClientException e) {
-            throw new TikaEmitterException("can't post", e);
-        }
-    }
-
-    private void jsonify(JsonGenerator jsonGenerator, String emitKey, List<Metadata> metadataList) throws IOException {
-        metadataList.get(0).set(idField, emitKey);
+    private void addMetadataAsSolrInputDocuments(String emitKey, List<Metadata> metadataList, List<SolrInputDocument> docsToUpdate) throws IOException, TikaEmitterException {
+        SolrInputDocument solrInputDocument = new SolrInputDocument();
+        solrInputDocument.setField(idField, emitKey);
         if (attachmentStrategy == AttachmentStrategy.SKIP ||
-            metadataList.size() == 1) {
-            jsonify(metadataList.get(0), jsonGenerator);
+                metadataList.size() == 1) {
+            addMetadataToSolrInputDocument(metadataList.get(0), solrInputDocument);
         } else if (attachmentStrategy == AttachmentStrategy.CONCATENATE_CONTENT) {
             //this only handles text for now, not xhtml
             StringBuilder sb = new StringBuilder();
@@ -151,47 +101,60 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
             }
             Metadata parent = metadataList.get(0);
             parent.set(getContentField(), sb.toString());
-            jsonify(parent, jsonGenerator);
+            addMetadataToSolrInputDocument(parent, solrInputDocument);
         } else if (attachmentStrategy == AttachmentStrategy.PARENT_CHILD) {
-            jsonify(metadataList.get(0), jsonGenerator, false);
-            jsonGenerator.writeArrayFieldStart(ATTACHMENTS);
-
+            addMetadataToSolrInputDocument(metadataList.get(0), solrInputDocument);
             for (int i = 1; i < metadataList.size(); i++) {
+                SolrInputDocument childSolrInputDocument = new SolrInputDocument();
                 Metadata m = metadataList.get(i);
-                m.set(idField, UUID.randomUUID().toString());
-                jsonify(m, jsonGenerator);
+                childSolrInputDocument.setField(idField, UUID.randomUUID().toString());
+                addMetadataToSolrInputDocument(m, childSolrInputDocument);
             }
-            jsonGenerator.writeEndArray();
-            jsonGenerator.writeEndObject();
         } else {
             throw new IllegalArgumentException("I don't yet support this attachment strategy: "
                     + attachmentStrategy);
         }
+        docsToUpdate.add(solrInputDocument);
     }
 
-    private void jsonify(Metadata metadata, JsonGenerator jsonGenerator, boolean writeEndObject) throws IOException {
-        jsonGenerator.writeStartObject();
+    @Override
+    public void emit(List<EmitData> batch) throws IOException,
+            TikaEmitterException {
+        if (batch == null || batch.size() == 0) {
+            LOG.warn("batch is null or empty");
+            return;
+        }
+        List<SolrInputDocument> docsToUpdate = new ArrayList<>();
+        for (EmitData d : batch) {
+            addMetadataAsSolrInputDocuments(d.getEmitKey().getKey(), d.getMetadataList(), docsToUpdate);
+        }
+        emitSolrBatch(docsToUpdate);
+    }
+
+    private void emitSolrBatch(List<SolrInputDocument> docsToUpdate) throws IOException, TikaEmitterException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Emitting solr doc batch: {}", docsToUpdate);
+        }
+        if (!docsToUpdate.isEmpty()) {
+            try {
+                solrClient.add(solrCollection, docsToUpdate);
+            } catch (SolrServerException e) {
+                throw new TikaEmitterException("Could not add batch to solr", e);
+            }
+        }
+    }
+
+    private void addMetadataToSolrInputDocument(Metadata metadata, SolrInputDocument solrInputDocument) throws IOException {
         for (String n : metadata.names()) {
             String[] vals = metadata.getValues(n);
             if (vals.length == 0) {
                 continue;
             } else if (vals.length == 1) {
-                jsonGenerator.writeStringField(n, vals[0]);
+                solrInputDocument.setField(n, vals[0]);
             } else if (vals.length > 1) {
-                jsonGenerator.writeArrayFieldStart(n);
-                for (String val : vals) {
-                    jsonGenerator.writeString(val);
-                }
-                jsonGenerator.writeEndArray();
+                solrInputDocument.setField(n, vals);
             }
         }
-        if (writeEndObject) {
-            jsonGenerator.writeEndObject();
-        }
-    }
-
-    private void jsonify(Metadata metadata, JsonGenerator jsonGenerator) throws IOException {
-        jsonify(metadata, jsonGenerator, true);
     }
 
     /**
@@ -215,29 +178,28 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
         } else if (attachmentStrategy.equals("parent-child")) {
             this.attachmentStrategy = AttachmentStrategy.PARENT_CHILD;
         } else {
-            throw new IllegalArgumentException("Expected 'skip', 'concatenate-content' or "+
+            throw new IllegalArgumentException("Expected 'skip', 'concatenate-content' or " +
                     "'parent-child'. I regret I do not recognize: " + attachmentStrategy);
         }
     }
 
-    /**
-     * Specify the url for Solr
-     * @param url
-     */
     @Field
-    public void setUrl(String url) {
-        if (url.endsWith("/")) {
-            url = url.substring(0, url.length()-1);
-        }
-        this.url = url;
+    public void setConnectionTimeout(int connectionTimeout) {
+        this.connectionTimeout = connectionTimeout;
+    }
+
+    @Field
+    public void setSocketTimeout(int socketTimeout) {
+        this.socketTimeout = socketTimeout;
     }
 
     /**
      * This is the field _after_ metadata mappings have been applied
      * that contains the "content" for each metadata object.
-     *
+     * <p>
      * This is the field that is used if {@link #attachmentStrategy}
      * is {@link AttachmentStrategy#CONCATENATE_CONTENT}.
+     *
      * @param contentField
      */
     @Field
@@ -269,7 +231,27 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
         this.idField = idField;
     }
 
-    //TODO -- add other httpclient configurations
+    @Field
+    public void setSolrCollection(String solrCollection) {
+        this.solrCollection = solrCollection;
+    }
+
+    @Field
+    public void setSolrUrls(List<String> solrUrls) {
+        this.solrUrls = solrUrls;
+    }
+
+    @Field
+    public void setSolrZkHosts(List<String> solrZkHosts) {
+        this.solrZkHosts = solrZkHosts;
+    }
+
+    @Field
+    public void setSolrZkChroot(String solrZkChroot) {
+        this.solrZkChroot = solrZkChroot;
+    }
+
+    //TODO -- add other httpclient configurations??
     @Field
     public void setUserName(String userName) {
         httpClientFactory.setUserName(userName);
@@ -297,13 +279,30 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
 
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
-        //TODO: build the client here?
-        httpClient = httpClientFactory.build();
+        if (solrUrls == null || solrUrls.isEmpty()) {
+            solrClient = new CloudSolrClient.Builder(solrZkHosts, Optional.ofNullable(solrZkChroot))
+                    .withConnectionTimeout(connectionTimeout)
+                    .withSocketTimeout(socketTimeout)
+                    .withHttpClient(httpClientFactory.build())
+                    .build();
+        } else {
+            solrClient = new LBHttpSolrClient.Builder()
+                    .withConnectionTimeout(connectionTimeout)
+                    .withSocketTimeout(socketTimeout)
+                    .withHttpClient(httpClientFactory.build())
+                    .withBaseSolrUrls(solrUrls.toArray(new String[]{})).build();
+        }
     }
 
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
-
+        mustNotBeEmpty("solrCollection", this.solrCollection);
+        mustNotBeEmpty("urlFieldName", this.idField);
+        if ((this.solrUrls == null || this.solrUrls.isEmpty()) && (this.solrZkHosts == null || this.solrZkHosts.isEmpty())) {
+            throw new IllegalArgumentException("expected either param solrUrls or param solrZkHosts, but neither was specified");
+        }
+        if (this.solrUrls != null && !this.solrUrls.isEmpty() && this.solrZkHosts != null && !this.solrZkHosts.isEmpty()) {
+            throw new IllegalArgumentException("expected either param solrUrls or param solrZkHosts, but both were specified");
+        }
     }
-
 }

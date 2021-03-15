@@ -18,25 +18,21 @@
   under the License.
 -->
 <properties>
-    <fetchIterators>
-        <fetchIterator class="org.apache.tika.pipes.fetchiterator.solr.SolrFetchIterator">
+    <emitters>
+        <emitter class="org.apache.tika.pipes.emitter.solr.SolrEmitter">
             <params>
-                <param name="name" type="string">solr-fetch-iterator-1</param>
+                <param name="name" type="string">solr-emitter-1</param>
                 <param name="solrCollection" type="string">testcol</param>
                 <param name="solrZkHosts" type="list">
                     <string>{ZK_HOST}</string>
                 </param>
-                <param name="filters" type="list">
-                </param>
-                <param name="additionalFields" type="list">
-                </param>
-                <param name="idField" type="string">url_s</param>
+                <param name="idField" type="string">id</param>
                 <param name="parsingIdField" type="string">parsing_id_i</param>
                 <param name="failCountField" type="string">fail_count_i</param>
                 <param name="sizeFieldName" type="string">size_i</param>
                 <param name="maxParseFailures" type="int">5</param>
                 <param name="rows" type="int">10</param>
             </params>
-        </fetchIterator>
-    </fetchIterators>
+        </emitter>
+    </emitters>
 </properties>

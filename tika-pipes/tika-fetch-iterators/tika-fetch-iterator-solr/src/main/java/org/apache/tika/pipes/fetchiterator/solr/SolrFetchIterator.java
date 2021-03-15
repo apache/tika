@@ -60,12 +60,14 @@ public class SolrFetchIterator extends FetchIterator implements Initializable {
     private List<String> solrZkHosts;
     private String solrZkChroot;
     private List<String> filters;
-    private String urlFieldName;
-    private String parsingIdFieldName;
-    private String failCountFieldName;
+    private String idField;
+    private String parsingIdField;
+    private String failCountField;
     private String sizeFieldName;
     private List<String> additionalFields;
     private int rows = 5000;
+    private int connectionTimeout = 10000;
+    private int socketTimeout = 60000;
 
     @Field
     public void setSolrZkHosts(List<String> solrZkHosts) {
@@ -98,18 +100,18 @@ public class SolrFetchIterator extends FetchIterator implements Initializable {
     }
 
     @Field
-    public void setUrlFieldName(String urlFieldName) {
-        this.urlFieldName = urlFieldName;
+    public void setIdField(String idField) {
+        this.idField = idField;
     }
 
     @Field
-    public void setParsingIdFieldName(String parsingIdFieldName) {
-        this.parsingIdFieldName = parsingIdFieldName;
+    public void setParsingIdField(String parsingIdField) {
+        this.parsingIdField = parsingIdField;
     }
 
     @Field
-    public void setFailCountFieldName(String failCountFieldName) {
-        this.failCountFieldName = failCountFieldName;
+    public void setFailCountField(String failCountField) {
+        this.failCountField = failCountField;
     }
 
     @Field
@@ -120,6 +122,16 @@ public class SolrFetchIterator extends FetchIterator implements Initializable {
     @Field
     public void setRows(int rows) {
         this.rows = rows;
+    }
+
+    @Field
+    public void setConnectionTimeout(int connectionTimeout) {
+        this.connectionTimeout = connectionTimeout;
+    }
+
+    @Field
+    public void setSocketTimeout(int socketTimeout) {
+        this.socketTimeout = socketTimeout;
     }
 
     @Override
@@ -136,15 +148,15 @@ public class SolrFetchIterator extends FetchIterator implements Initializable {
 
             Set<String> allFields = new HashSet<>();
             allFields.add("id");
-            allFields.add(urlFieldName);
-            allFields.add(parsingIdFieldName);
-            allFields.add(failCountFieldName);
+            allFields.add(idField);
+            allFields.add(parsingIdField);
+            allFields.add(failCountField);
             allFields.add(sizeFieldName);
             allFields.addAll(additionalFields);
 
             query.setFields(allFields.toArray(new String[]{}));
             query.setFilterQueries(filters.toArray(new String[]{}));
-            query.setSort(SolrQuery.SortClause.asc(parsingIdFieldName));
+            query.setSort(SolrQuery.SortClause.asc(parsingIdField));
             query.addSort(SolrQuery.SortClause.asc("id"));
             query.setFilterQueries(filters.toArray(new String[]{}));
 
@@ -158,8 +170,8 @@ public class SolrFetchIterator extends FetchIterator implements Initializable {
                 LOGGER.info("Query to fetch files to parse collection={}, q={}, onCount={}, totalCount={}", solrCollection, query, fileCount, totalToFetch);
                 for (SolrDocument sd : qr.getResults()) {
                     ++fileCount;
-                    String fetchKey = (String) sd.getFieldValue(urlFieldName);
-                    String emitKey = (String) sd.getFieldValue(urlFieldName);
+                    String fetchKey = (String) sd.getFieldValue(idField);
+                    String emitKey = (String) sd.getFieldValue(idField);
                     Metadata metadata = new Metadata();
                     for (String nextField : allFields) {
                         metadata.add(nextField, (String) sd.getFieldValue(nextField));
@@ -182,13 +194,13 @@ public class SolrFetchIterator extends FetchIterator implements Initializable {
     private SolrClient createSolrClient() {
         if (solrUrls == null || solrUrls.isEmpty()) {
             return new CloudSolrClient.Builder(solrZkHosts, Optional.ofNullable(solrZkChroot))
-                    .withConnectionTimeout(10000)
-                    .withSocketTimeout(60000)
+                    .withConnectionTimeout(connectionTimeout)
+                    .withSocketTimeout(socketTimeout)
                     .build();
         }
         return new LBHttpSolrClient.Builder()
-                .withConnectionTimeout(10000)
-                .withSocketTimeout(60000)
+                .withConnectionTimeout(connectionTimeout)
+                .withSocketTimeout(socketTimeout)
                 .withBaseSolrUrls(solrUrls.toArray(new String[]{})).build();
     }
 
@@ -197,9 +209,9 @@ public class SolrFetchIterator extends FetchIterator implements Initializable {
             throws TikaConfigException {
         super.checkInitialization(problemHandler);
         mustNotBeEmpty("solrCollection", this.solrCollection);
-        mustNotBeEmpty("urlFieldName", this.urlFieldName);
-        mustNotBeEmpty("parsingIdFieldName", this.parsingIdFieldName);
-        mustNotBeEmpty("failCountFieldName", this.failCountFieldName);
+        mustNotBeEmpty("urlFieldName", this.idField);
+        mustNotBeEmpty("parsingIdField", this.parsingIdField);
+        mustNotBeEmpty("failCountField", this.failCountField);
         mustNotBeEmpty("sizeFieldName", this.sizeFieldName);
         if ((this.solrUrls == null || this.solrUrls.isEmpty()) && (this.solrZkHosts == null || this.solrZkHosts.isEmpty())) {
             throw new IllegalArgumentException("expected either param solrUrls or param solrZkHosts, but neither was specified");

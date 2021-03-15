@@ -30,9 +30,9 @@
                 </param>
                 <param name="additionalFields" type="list">
                 </param>
-                <param name="urlFieldName" type="string">url_s</param>
-                <param name="parsingIdFieldName" type="string">parsing_id_i</param>
-                <param name="failCountFieldName" type="string">fail_count_i</param>
+                <param name="idField" type="string">url_s</param>
+                <param name="parsingIdField" type="string">parsing_id_i</param>
+                <param name="failCountField" type="string">fail_count_i</param>
                 <param name="sizeFieldName" type="string">size_i</param>
                 <param name="maxParseFailures" type="int">5</param>
                 <param name="rows" type="int">10</param>
