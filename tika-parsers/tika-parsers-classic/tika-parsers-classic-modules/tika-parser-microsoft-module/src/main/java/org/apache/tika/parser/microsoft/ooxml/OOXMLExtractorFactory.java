@@ -105,8 +105,7 @@ public class OOXMLExtractorFactory {
                 //OPCPackage slurps rris into memory so we can close rris
                 //without apparent problems
                 try (RereadableInputStream rereadableInputStream =
-                        new RereadableInputStream(stream, MAX_BUFFER_LENGTH,
-                                true, false)) {
+                        new RereadableInputStream(stream, MAX_BUFFER_LENGTH, false)) {
                     try {
                         pkg = OPCPackage.open(rereadableInputStream);
                     } catch (EOFException e) {
