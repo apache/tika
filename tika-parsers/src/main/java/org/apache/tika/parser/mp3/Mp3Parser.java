@@ -69,10 +69,10 @@ public class Mp3Parser extends AbstractParser {
         // Create handlers for the various kinds of ID3 tags
         ID3TagsAndAudio audioAndTags = getAllTagHandlers(stream, handler);
 
-        //process as much metadata as possible before
-        //writing to xhtml
+        // Before we start on the XHTML output, process and store
+        //  as much metadata as possible
         if (audioAndTags.duration > 0) {
-            metadata.set(XMPDM.DURATION, audioAndTags.duration);
+           metadata.set(XMPDM.DURATION, audioAndTags.durationSeconds());
         }
 
         if (audioAndTags.audio != null) {
@@ -151,7 +151,7 @@ public class Mp3Parser extends AbstractParser {
             xhtml.element("p", tag.getYear());
             xhtml.element("p", tag.getGenre());
         }
-        xhtml.element("p", String.valueOf(audioAndTags.duration));
+        xhtml.element("p", String.valueOf(audioAndTags.durationSeconds()));
         for (String comment : comments) {
             xhtml.element("p", comment);
         }
@@ -250,7 +250,10 @@ public class Mp3Parser extends AbstractParser {
         private ID3Tags[] tags;
         private AudioFrame audio;
         private LyricsHandler lyrics;
-        private float duration;
+        private float duration; // Milliseconds
+        private float durationSeconds() {
+           return duration / 1000;
+        }
     }
 
 }

@@ -11,6 +11,12 @@ Release 1.26 - 03/09/2021
    
    * Fix parsing of emails attached to other emails in PST files (TIKA-3004).
 
+   * MP3 parser should output the xmpDM:duration metadata as seconds not 
+     milliseconds, consistent with the other Audio and Video parsers (TIKA-3318).
+
+   * MP4 parser check if any of the Compatible Brands match when identifying 
+     the subtype (TIKA-3310).
+
 Release 1.25 - 11/25/2020
 
    * Fix inconsistent license in xmpcore (TIKA-3204).

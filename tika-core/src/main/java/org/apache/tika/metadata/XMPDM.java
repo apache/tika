@@ -173,6 +173,7 @@ public interface XMPDM {
 
     /**
      * "The duration of the media file."
+     * Value is in Seconds, unless xmpDM:scale is also set.
      */
     Property DURATION = Property.externalReal("xmpDM:duration");
 
