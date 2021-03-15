@@ -38,6 +38,7 @@ import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.html.BoilerpipeContentHandler;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
+import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ExpandedTitleContentHandler;
@@ -156,10 +157,10 @@ public class TikaResource {
         PDFParserConfig pdfParserConfig = null;
         DocumentSelector documentSelector = null;
         for (String key : httpHeaders.keySet()) {
-            if (StringUtils.startsWith(key, X_TIKA_OCR_HEADER_PREFIX)) {
+            if (StringUtils.startsWithIgnoreCase(key, X_TIKA_OCR_HEADER_PREFIX)) {
                 ocrConfig = (ocrConfig == null) ? new TesseractOCRConfig() : ocrConfig;
                 processHeaderConfig(httpHeaders, ocrConfig, key, X_TIKA_OCR_HEADER_PREFIX);
-            } else if (StringUtils.startsWith(key, X_TIKA_PDF_HEADER_PREFIX)) {
+            } else if (StringUtils.startsWithIgnoreCase(key, X_TIKA_PDF_HEADER_PREFIX)) {
                 pdfParserConfig = (pdfParserConfig == null) ? new PDFParserConfig() : pdfParserConfig;
                 processHeaderConfig(httpHeaders, pdfParserConfig, key, X_TIKA_PDF_HEADER_PREFIX);
             } else if (StringUtils.endsWithIgnoreCase(key, X_TIKA_SKIP_EMBEDDED_HEADER)) {
@@ -202,15 +203,23 @@ public class TikaResource {
      */
     private static void processHeaderConfig(MultivaluedMap<String, String> httpHeaders, Object object, String key, String prefix) {
 
-        try {String property = StringUtils.removeStart(key, prefix);
+        try {
+            String property = StringUtils.removeStartIgnoreCase(key, prefix);
             Field field = null;
             try {
                 field = object.getClass().getDeclaredField(StringUtils.uncapitalize(property));
             } catch (NoSuchFieldException e) {
-                //swallow
+                // try to match field case-insensitive way
+                for(Field aField : object.getClass().getDeclaredFields()) {
+                    if (aField.getName().equalsIgnoreCase(property)) {
+                        field = aField;
+                        break;
+                    }
+                }
             }
-            String setter = property;
-            setter = "set"+setter.substring(0,1).toUpperCase(Locale.US)+setter.substring(1);
+
+            String setter = field != null ? field.getName() : property;
+            setter = "set" + setter.substring(0, 1).toUpperCase(Locale.US) + setter.substring(1);
             //default assume string class
             //if there's a more specific type, e.g. double, int, boolean
             //try that.
