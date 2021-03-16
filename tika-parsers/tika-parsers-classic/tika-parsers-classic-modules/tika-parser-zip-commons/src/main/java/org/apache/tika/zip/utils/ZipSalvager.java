@@ -28,9 +28,11 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.io.IOUtils;
-import org.apache.tika.utils.RereadableInputStream;
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.tika.utils.RereadableInputStream;
 
 public class ZipSalvager {
 
@@ -42,25 +44,29 @@ public class ZipSalvager {
      * may be truncated, but the result should be a valid zip file.
      * <p>
      * This does nothing fancy to fix the underlying broken zip.
+     * <p>
+     * This will close the inputstream
      *
      * @param brokenZip
      * @param salvagedZip
      */
-    public static void salvageCopy(InputStream brokenZip, File salvagedZip, boolean allowStoredEntries) throws IOException {
-        if (!(brokenZip instanceof RereadableInputStream)) {
-            brokenZip = new RereadableInputStream(brokenZip, 50000,
-                    true);
-        }
+    public static void salvageCopy(InputStream brokenZip, File salvagedZip,
+                                   boolean allowStoredEntries) throws IOException {
+
         try {
+            if (!(brokenZip instanceof RereadableInputStream)) {
+                brokenZip = new RereadableInputStream(brokenZip, 50000, true);
+            }
+
             try (ZipArchiveOutputStream outputStream = new ZipArchiveOutputStream(salvagedZip);
-                 ZipArchiveInputStream zipArchiveInputStream = new ZipArchiveInputStream(brokenZip,
+                 ZipArchiveInputStream zipArchiveInputStream = new ZipArchiveInputStream(
+                         new CloseShieldInputStream(brokenZip),
                          "UTF8", false, allowStoredEntries)) {
                 ZipArchiveEntry zae = zipArchiveInputStream.getNextZipEntry();
                 try {
                     processZAE(zae, zipArchiveInputStream, outputStream);
                 } catch (UnsupportedZipFeatureException uzfe) {
-                    if (uzfe.getFeature() ==
-                            UnsupportedZipFeatureException.Feature.DATA_DESCRIPTOR) {
+                    if (uzfe.getFeature() == UnsupportedZipFeatureException.Feature.DATA_DESCRIPTOR) {
                         //percolate up to allow for retry
                         throw uzfe;
                     }
@@ -71,17 +77,19 @@ public class ZipSalvager {
                 outputStream.flush();
                 outputStream.finish();
             } catch (UnsupportedZipFeatureException e) {
-                //percolate up to allow for retry
-                throw e;
+                //now retry
+                if (allowStoredEntries == false && e.getFeature() ==
+                        UnsupportedZipFeatureException.Feature.DATA_DESCRIPTOR) {
+                    ((RereadableInputStream) brokenZip).rewind();
+                    salvageCopy(brokenZip, salvagedZip, true);
+                } else {
+                    throw e;
+                }
             } catch (IOException e) {
                 LOG.warn("problem fixing zip", e);
             }
-        } catch (UnsupportedZipFeatureException e) {
-            //now retry
-            if (allowStoredEntries == false) {
-                ((RereadableInputStream) brokenZip).rewind();
-                salvageCopy(brokenZip, salvagedZip, true);
-            }
+        } finally {
+            brokenZip.close();
         }
     }
 
