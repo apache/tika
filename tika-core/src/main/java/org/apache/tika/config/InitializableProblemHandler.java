@@ -17,8 +17,9 @@
 package org.apache.tika.config;
 
 
-import org.apache.tika.exception.TikaConfigException;
 import org.slf4j.LoggerFactory;
+
+import org.apache.tika.exception.TikaConfigException;
 
 
 /**
@@ -28,20 +29,18 @@ import org.slf4j.LoggerFactory;
 public interface InitializableProblemHandler {
 
 
-    void handleInitializableProblem(String className, String message) throws TikaConfigException;
-
     /**
      * Strategy that simply ignores all problems.
      */
     InitializableProblemHandler IGNORE = new InitializableProblemHandler() {
         public void handleInitializableProblem(String className, String message) {
         }
+
         @Override
         public String toString() {
             return "IGNORE";
         }
     };
-
     /**
      * Strategy that logs warnings of all problems using a {@link org.slf4j.Logger}
      * created using the given class name.
@@ -50,13 +49,12 @@ public interface InitializableProblemHandler {
         public void handleInitializableProblem(String classname, String message) {
             LoggerFactory.getLogger(classname).info(message);
         }
+
         @Override
         public String toString() {
             return "INFO";
         }
     };
-
-
     /**
      * Strategy that logs warnings of all problems using a {@link org.slf4j.Logger}
      * created using the given class name.
@@ -65,22 +63,25 @@ public interface InitializableProblemHandler {
         public void handleInitializableProblem(String classname, String message) {
             LoggerFactory.getLogger(classname).warn(message);
         }
+
         @Override
         public String toString() {
             return "WARN";
         }
     };
-
     InitializableProblemHandler THROW = new InitializableProblemHandler() {
-        public void handleInitializableProblem(String classname, String message) throws TikaConfigException {
+        public void handleInitializableProblem(String classname, String message)
+                throws TikaConfigException {
             throw new TikaConfigException(message);
         }
+
         @Override
         public String toString() {
             return "THROW";
         }
     };
-
     InitializableProblemHandler DEFAULT = WARN;
+
+    void handleInitializableProblem(String className, String message) throws TikaConfigException;
 
 }

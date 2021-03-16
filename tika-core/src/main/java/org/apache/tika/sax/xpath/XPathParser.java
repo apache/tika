@@ -65,10 +65,9 @@ public class XPathParser {
             return TextMatcher.INSTANCE;
         } else if (xpath.equals("/node()")) {
             return NodeMatcher.INSTANCE;
-        } else if (xpath.equals("/descendant::node()")
-                || xpath.equals("/descendant:node()")) { // for compatibility
-            return new CompositeMatcher(
-                    TextMatcher.INSTANCE,
+        } else if (xpath.equals("/descendant::node()") ||
+                xpath.equals("/descendant:node()")) { // for compatibility
+            return new CompositeMatcher(TextMatcher.INSTANCE,
                     new ChildMatcher(new SubtreeMatcher(NodeMatcher.INSTANCE)));
         } else if (xpath.equals("/@*")) {
             return AttributeMatcher.INSTANCE;
@@ -106,8 +105,7 @@ public class XPathParser {
                 name = name.substring(colon + 1);
             }
             if (prefixes.containsKey(prefix)) {
-                return new NamedElementMatcher(
-                        prefixes.get(prefix), name,
+                return new NamedElementMatcher(prefixes.get(prefix), name,
                         parse(xpath.substring(slash)));
             } else {
                 return Matcher.FAIL;

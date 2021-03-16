@@ -23,21 +23,22 @@ package org.apache.tika.exception;
 public class ZeroByteFileException extends TikaException {
 
 
-    public static class IgnoreZeroByteFileException {}
-
-    //If this is in the parse context, the AutoDetectParser and the
-    //RecursiveParserWrapper should ignore zero byte files
-    //and not throw a Zero}
     /**
      * If this is in the {@link org.apache.tika.parser.ParseContext}, the
      * {@link org.apache.tika.parser.AutoDetectParser} and the
      * {@link org.apache.tika.parser.RecursiveParserWrapper} will
      * ignore embedded files with zero-byte length inputstreams
      */
-    public static IgnoreZeroByteFileException IGNORE_ZERO_BYTE_FILE_EXCEPTION
-            = new IgnoreZeroByteFileException();
+    public static IgnoreZeroByteFileException IGNORE_ZERO_BYTE_FILE_EXCEPTION =
+            new IgnoreZeroByteFileException();
 
+    //If this is in the parse context, the AutoDetectParser and the
+    //RecursiveParserWrapper should ignore zero byte files
+    //and not throw a Zero}
     public ZeroByteFileException(String msg) {
         super(msg);
+    }
+
+    public static class IgnoreZeroByteFileException {
     }
 }

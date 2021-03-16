@@ -16,6 +16,8 @@
  */
 package org.apache.tika;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -23,10 +25,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.tika.utils.RereadableInputStream;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import org.apache.tika.utils.RereadableInputStream;
 
 public class TestRereadableInputStream {
 
@@ -40,13 +41,13 @@ public class TestRereadableInputStream {
     public void test() throws IOException {
 
         InputStream is = createTestInputStream();
-        try (RereadableInputStream ris = new RereadableInputStream(is, MEMORY_THRESHOLD, true, true)) {
+        try (RereadableInputStream ris = new RereadableInputStream(is, MEMORY_THRESHOLD, true,
+                true)) {
             for (int pass = 0; pass < NUM_PASSES; pass++) {
                 for (int byteNum = 0; byteNum < TEST_SIZE; byteNum++) {
                     int byteRead = ris.read();
-                    assertEquals("Pass = " + pass + ", byte num should be "
-                            + byteNum + " but is " + byteRead + ".", byteNum,
-                            byteRead);
+                    assertEquals("Pass = " + pass + ", byte num should be " + byteNum + " but is " +
+                            byteRead + ".", byteNum, byteRead);
                 }
                 ris.rewind();
             }
@@ -56,7 +57,7 @@ public class TestRereadableInputStream {
     /**
      * Test that the constructor's readToEndOfStreamOnFirstRewind parameter
      * correctly determines the behavior.
-     * 
+     *
      * @throws IOException
      */
     @Test
@@ -86,9 +87,7 @@ public class TestRereadableInputStream {
     }
 
     private TestInputStream createTestInputStream() throws IOException {
-        return new TestInputStream(
-                new BufferedInputStream(
-                        new FileInputStream(createTestFile())));
+        return new TestInputStream(new BufferedInputStream(new FileInputStream(createTestFile())));
     }
 
     private File createTestFile() throws IOException {
@@ -111,12 +110,11 @@ public class TestRereadableInputStream {
     private void doACloseBehaviorTest(boolean wantToClose) throws IOException {
 
         TestInputStream tis = createTestInputStream();
-        RereadableInputStream ris =
-                new RereadableInputStream(tis, 5, true, wantToClose);
+        RereadableInputStream ris = new RereadableInputStream(tis, 5, true, wantToClose);
         ris.close();
         assertEquals(wantToClose, tis.isClosed());
 
-        if (! tis.isClosed()) {
+        if (!tis.isClosed()) {
             tis.close();
         }
     }

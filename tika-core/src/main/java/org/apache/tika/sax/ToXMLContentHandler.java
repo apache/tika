@@ -35,60 +35,17 @@ import org.xml.sax.SAXException;
  */
 public class ToXMLContentHandler extends ToTextContentHandler {
 
-    private static class ElementInfo {
-
-        private final ElementInfo parent;
-
-        private final Map<String, String> namespaces;
-
-        public ElementInfo(ElementInfo parent, Map<String, String> namespaces) {
-            this.parent = parent;
-            if (namespaces.isEmpty()) {
-                this.namespaces = Collections.emptyMap();
-            } else {
-                this.namespaces = new HashMap<String, String>(namespaces);
-            }
-        }
-
-        public String getPrefix(String uri) throws SAXException {
-            String prefix = namespaces.get(uri);
-            if (prefix != null) {
-                return prefix;
-            } else if (parent != null) {
-                return parent.getPrefix(uri);
-            } else if (uri == null || uri.length() == 0) {
-                return "";
-            } else {
-                throw new SAXException("Namespace " + uri + " not declared");
-            }
-        }
-
-        public String getQName(String uri, String localName)
-                throws SAXException {
-            String prefix = getPrefix(uri);
-            if (prefix.length() > 0) {
-                return prefix + ":" + localName;
-            } else {
-                return localName;
-            }
-        }
-
-    }
-
+    protected final Map<String, String> namespaces = new HashMap<String, String>();
     private final String encoding;
 
     protected boolean inStartElement = false;
-
-    protected final Map<String, String> namespaces =
-        new HashMap<String, String>();
-
     private ElementInfo currentElement;
 
     /**
      * Creates an XML serializer that writes to the given byte stream
      * using the given character encoding.
      *
-     * @param stream output stream
+     * @param stream   output stream
      * @param encoding output encoding
      * @throws UnsupportedEncodingException if the encoding is unsupported
      */
@@ -124,11 +81,9 @@ public class ToXMLContentHandler extends ToTextContentHandler {
     }
 
     @Override
-    public void startPrefixMapping(String prefix, String uri)
-            throws SAXException {
+    public void startPrefixMapping(String prefix, String uri) throws SAXException {
         try {
-            if (currentElement != null
-                    && prefix.equals(currentElement.getPrefix(uri))) {
+            if (currentElement != null && prefix.equals(currentElement.getPrefix(uri))) {
                 return;
             }
         } catch (SAXException ignore) {
@@ -137,8 +92,7 @@ public class ToXMLContentHandler extends ToTextContentHandler {
     }
 
     @Override
-    public void startElement(
-            String uri, String localName, String qName, Attributes atts)
+    public void startElement(String uri, String localName, String qName, Attributes atts)
             throws SAXException {
         lazyCloseStartElement();
 
@@ -177,8 +131,7 @@ public class ToXMLContentHandler extends ToTextContentHandler {
     }
 
     @Override
-    public void endElement(String uri, String localName, String qName)
-            throws SAXException {
+    public void endElement(String uri, String localName, String qName) throws SAXException {
         if (inStartElement) {
             write(" />");
             inStartElement = false;
@@ -196,8 +149,7 @@ public class ToXMLContentHandler extends ToTextContentHandler {
     }
 
     @Override
-    public void characters(char[] ch, int start, int length)
-            throws SAXException {
+    public void characters(char[] ch, int start, int length) throws SAXException {
         lazyCloseStartElement();
         writeEscaped(ch, start, start + length, false);
     }
@@ -216,7 +168,7 @@ public class ToXMLContentHandler extends ToTextContentHandler {
      * @throws SAXException if the character could not be written
      */
     protected void write(char ch) throws SAXException {
-        super.characters(new char[] { ch }, 0, 1);
+        super.characters(new char[]{ch}, 0, 1);
     }
 
     /**
@@ -232,12 +184,12 @@ public class ToXMLContentHandler extends ToTextContentHandler {
     /**
      * Writes the given characters as-is followed by the given entity.
      *
-     * @param ch character array
-     * @param from start position in the array
-     * @param to end position in the array
+     * @param ch     character array
+     * @param from   start position in the array
+     * @param to     end position in the array
      * @param entity entity code
      * @return next position in the array,
-     *         after the characters plus one entity
+     * after the characters plus one entity
      * @throws SAXException if the characters could not be written
      */
     private int writeCharsAndEntity(char[] ch, int from, int to, String entity)
@@ -252,15 +204,14 @@ public class ToXMLContentHandler extends ToTextContentHandler {
     /**
      * Writes the given characters with XML meta characters escaped.
      *
-     * @param ch character array
-     * @param from start position in the array
-     * @param to end position in the array
+     * @param ch        character array
+     * @param from      start position in the array
+     * @param to        end position in the array
      * @param attribute whether the characters should be escaped as
      *                  an attribute value or normal character content
      * @throws SAXException if the characters could not be written
      */
-    private void writeEscaped(char[] ch, int from, int to, boolean attribute)
-            throws SAXException {
+    private void writeEscaped(char[] ch, int from, int to, boolean attribute) throws SAXException {
         int pos = from;
         while (pos < to) {
             if (ch[pos] == '<') {
@@ -276,6 +227,45 @@ public class ToXMLContentHandler extends ToTextContentHandler {
             }
         }
         super.characters(ch, from, to - from);
+    }
+
+    private static class ElementInfo {
+
+        private final ElementInfo parent;
+
+        private final Map<String, String> namespaces;
+
+        public ElementInfo(ElementInfo parent, Map<String, String> namespaces) {
+            this.parent = parent;
+            if (namespaces.isEmpty()) {
+                this.namespaces = Collections.emptyMap();
+            } else {
+                this.namespaces = new HashMap<String, String>(namespaces);
+            }
+        }
+
+        public String getPrefix(String uri) throws SAXException {
+            String prefix = namespaces.get(uri);
+            if (prefix != null) {
+                return prefix;
+            } else if (parent != null) {
+                return parent.getPrefix(uri);
+            } else if (uri == null || uri.length() == 0) {
+                return "";
+            } else {
+                throw new SAXException("Namespace " + uri + " not declared");
+            }
+        }
+
+        public String getQName(String uri, String localName) throws SAXException {
+            String prefix = getPrefix(uri);
+            if (prefix.length() > 0) {
+                return prefix + ":" + localName;
+            } else {
+                return localName;
+            }
+        }
+
     }
 
 }

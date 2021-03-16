@@ -22,14 +22,16 @@ public interface XMPMM {
 
     String PREFIX = "xmpMM";
 
-    /** The xmpMM prefix followed by the colon delimiter */
+    /**
+     * The xmpMM prefix followed by the colon delimiter
+     */
     String PREFIX_ = PREFIX + ":";
 
     /**
      * A reference to the resource from which this one is derived.
      * This should be a minimal reference, in which missing
      * components can be assumed to be unchanged.
-     * 
+     *
      * TODO This property is of type RessourceRef which is a struct
      */
 //    Property DERIVED_FROM = Property.externalText(PREFIX_ + "DerivedFrom");
@@ -53,67 +55,53 @@ public interface XMPMM {
      * xmpMM:DocumentID that uniquely identifies the resource in
      * that format, but should retain the ID of the source file here.
      */
-    Property ORIGINAL_DOCUMENTID = Property.externalText(
-            PREFIX_ + "OriginalDocumentID");
+    Property ORIGINAL_DOCUMENTID = Property.externalText(PREFIX_ + "OriginalDocumentID");
 
     /**
      * The rendition class name for this resource. This property
      * should be absent or set to default for a resource that is not
      * a derived rendition
      */
-    Property RENDITION_CLASS = Property.externalOpenChoise(
-            PREFIX_ + "RenditionClass",
-            "default", "draft", "low-res", "proof", "screen", "thumbnail");
+    Property RENDITION_CLASS =
+            Property.externalOpenChoise(PREFIX_ + "RenditionClass", "default", "draft", "low-res",
+                    "proof", "screen", "thumbnail");
 
     /**
      * Can be used to provide additional rendition parameters that
      * are too complex or verbose to encode in xmpMM:RenditionClass
      */
-    Property RENDITION_PARAMS = Property.externalText(
-            PREFIX_ + "RenditionParams");
+    Property RENDITION_PARAMS = Property.externalText(PREFIX_ + "RenditionParams");
 
     /**
      * Instance id in the XMPMM's history section
      */
-    Property HISTORY_EVENT_INSTANCEID = Property.externalTextBag(
-            PREFIX_+"History:InstanceID"
-    );
+    Property HISTORY_EVENT_INSTANCEID = Property.externalTextBag(PREFIX_ + "History:InstanceID");
 
     /**
      * Action in the XMPMM's history section
      */
-    Property HISTORY_ACTION = Property.externalTextBag(
-            PREFIX_+"History:Action"
-    );
+    Property HISTORY_ACTION = Property.externalTextBag(PREFIX_ + "History:Action");
     /**
      * When the action occurred in the XMPMM's history section
      */
-    Property HISTORY_WHEN = Property.externalTextBag(
-            PREFIX_+"History:When"
-    );
+    Property HISTORY_WHEN = Property.externalTextBag(PREFIX_ + "History:When");
 
     /**
      * Software agent that created the action in the XMPMM's
      * history section
      */
-    Property HISTORY_SOFTWARE_AGENT = Property.externalTextBag(
-            PREFIX_+"History:SoftwareAgent"
-    );
+    Property HISTORY_SOFTWARE_AGENT = Property.externalTextBag(PREFIX_ + "History:SoftwareAgent");
 
     /**
      * Document id for the document that this document
      * was derived from
      */
-    Property DERIVED_FROM_DOCUMENTID = Property.externalText(
-            PREFIX_+"DerivedFrom:DocumentID"
-    );
+    Property DERIVED_FROM_DOCUMENTID = Property.externalText(PREFIX_ + "DerivedFrom:DocumentID");
 
     /**
      * Instance id for the document instance that this
      * document was derived from
      */
-    Property DERIVED_FROM_INSTANCEID = Property.externalText(
-            PREFIX_+"DerivedFrom:InstanceID"
-    );
+    Property DERIVED_FROM_INSTANCEID = Property.externalText(PREFIX_ + "DerivedFrom:InstanceID");
 
 }

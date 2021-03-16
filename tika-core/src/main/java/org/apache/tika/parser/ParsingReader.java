@@ -30,11 +30,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Executor;
 
+import org.xml.sax.ContentHandler;
+
 import org.apache.tika.exception.ZeroByteFileException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.BodyContentHandler;
-import org.xml.sax.ContentHandler;
 
 /**
  * Reader for the text content from a given binary stream. This class
@@ -84,21 +85,6 @@ public class ParsingReader extends Reader {
     private transient Throwable throwable;
 
     /**
-     * Utility method that returns a {@link Metadata} instance
-     * for a document with the given name.
-     *
-     * @param name resource name (or <code>null</code>)
-     * @return metadata instance
-     */
-    private static Metadata getMetadata(String name) {
-        Metadata metadata = new Metadata();
-        if (name != null && name.length() > 0) {
-            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
-        }
-        return metadata;
-    }
-
-    /**
      * Creates a reader for the text content of the given binary stream.
      *
      * @param stream binary stream
@@ -114,7 +100,7 @@ public class ParsingReader extends Reader {
      * with the given name.
      *
      * @param stream binary stream
-     * @param name document name
+     * @param name   document name
      * @throws IOException if the document can not be parsed
      */
     public ParsingReader(InputStream stream, String name) throws IOException {
@@ -127,7 +113,7 @@ public class ParsingReader extends Reader {
      *
      * @param path path
      * @throws FileNotFoundException if the given file does not exist
-     * @throws IOException if the document can not be parsed
+     * @throws IOException           if the document can not be parsed
      */
     public ParsingReader(Path path) throws IOException {
         this(Files.newInputStream(path), path.getFileName().toString());
@@ -138,7 +124,7 @@ public class ParsingReader extends Reader {
      *
      * @param file file
      * @throws FileNotFoundException if the given file does not exist
-     * @throws IOException if the document can not be parsed
+     * @throws IOException           if the document can not be parsed
      * @see #ParsingReader(Path)
      */
     public ParsingReader(File file) throws FileNotFoundException, IOException {
@@ -154,14 +140,13 @@ public class ParsingReader extends Reader {
      * The stream and any associated resources will be closed at or before
      * the time when the {@link #close()} method is called on this reader.
      *
-     * @param parser parser instance
-     * @param stream binary stream
+     * @param parser   parser instance
+     * @param stream   binary stream
      * @param metadata document metadata
      * @throws IOException if the document can not be parsed
      */
-    public ParsingReader(
-            Parser parser, InputStream stream, final Metadata metadata,
-            ParseContext context) throws IOException {
+    public ParsingReader(Parser parser, InputStream stream, final Metadata metadata,
+                         ParseContext context) throws IOException {
         this(parser, stream, metadata, context, new Executor() {
             public void execute(Runnable command) {
                 String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
@@ -189,17 +174,16 @@ public class ParsingReader extends Reader {
      * The stream and any associated resources will be closed at or before
      * the time when the {@link #close()} method is called on this reader.
      *
-     * @param parser parser instance
-     * @param stream binary stream
+     * @param parser   parser instance
+     * @param stream   binary stream
      * @param metadata document metadata
-     * @param context parsing context
+     * @param context  parsing context
      * @param executor executor for the parsing task
      * @throws IOException if the document can not be parsed
      * @since Apache Tika 0.4
      */
-    public ParsingReader(
-            Parser parser, InputStream stream, Metadata metadata,
-            ParseContext context, Executor executor) throws IOException {
+    public ParsingReader(Parser parser, InputStream stream, Metadata metadata, ParseContext context,
+                         Executor executor) throws IOException {
         this.parser = parser;
         PipedReader pipedReader = new PipedReader();
         this.reader = new BufferedReader(pipedReader);
@@ -218,6 +202,56 @@ public class ParsingReader extends Reader {
         reader.mark(1);
         reader.read();
         reader.reset();
+    }
+
+    /**
+     * Utility method that returns a {@link Metadata} instance
+     * for a document with the given name.
+     *
+     * @param name resource name (or <code>null</code>)
+     * @return metadata instance
+     */
+    private static Metadata getMetadata(String name) {
+        Metadata metadata = new Metadata();
+        if (name != null && name.length() > 0) {
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
+        }
+        return metadata;
+    }
+
+    /**
+     * Reads parsed text from the pipe connected to the parsing thread.
+     * Fails if the parsing thread has thrown an exception.
+     *
+     * @param cbuf character buffer
+     * @param off  start offset within the buffer
+     * @param len  maximum number of characters to read
+     * @throws IOException if the parsing thread has failed or
+     *                     if for some reason the pipe does not work properly
+     */
+    @Override
+    public int read(char[] cbuf, int off, int len) throws IOException {
+        if (throwable instanceof ZeroByteFileException) {
+            return -1;
+        } else if (throwable instanceof IOException) {
+            throw (IOException) throwable;
+        } else if (throwable != null) {
+            IOException exception = new IOException("", throwable);
+            throw exception;
+        }
+        return reader.read(cbuf, off, len);
+    }
+
+    /**
+     * Closes the read end of the pipe. If the parsing thread is still
+     * running, next write to the pipe will fail and cause the thread
+     * to stop. Thus there is no need to explicitly terminate the thread.
+     *
+     * @throws IOException if the pipe can not be closed
+     */
+    @Override
+    public void close() throws IOException {
+        reader.close();
     }
 
     /**
@@ -256,42 +290,6 @@ public class ParsingReader extends Reader {
             }
         }
 
-    }
-
-    /**
-     * Reads parsed text from the pipe connected to the parsing thread.
-     * Fails if the parsing thread has thrown an exception.
-     *
-     * @param cbuf character buffer
-     * @param off start offset within the buffer
-     * @param len maximum number of characters to read
-     * @throws IOException if the parsing thread has failed or
-     *                     if for some reason the pipe does not work properly
-     */
-    @Override
-    public int read(char[] cbuf, int off, int len) throws IOException {
-        if (throwable instanceof ZeroByteFileException) {
-            return -1;
-        } else if (throwable instanceof IOException) {
-            throw (IOException) throwable;
-        } else if (throwable != null) {
-            IOException exception = new IOException("");
-            exception.initCause(throwable);
-            throw exception;
-        }
-        return reader.read(cbuf, off, len);
-    }
-
-    /**
-     * Closes the read end of the pipe. If the parsing thread is still
-     * running, next write to the pipe will fail and cause the thread
-     * to stop. Thus there is no need to explicitly terminate the thread.
-     *
-     * @throws IOException if the pipe can not be closed
-     */
-    @Override
-    public void close() throws IOException {
-        reader.close();
     }
 
 }

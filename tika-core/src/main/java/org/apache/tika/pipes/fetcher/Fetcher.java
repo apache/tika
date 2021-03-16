@@ -16,20 +16,18 @@
  */
 package org.apache.tika.pipes.fetcher;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Set;
+
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
 
 /**
  * Interface for an object that will fetch an InputStream given
  * a fetch string.  This will also update the metadata object
  * based on the fetch.
- *
+ * <p>
  * Implementations of Fetcher must be thread safe.
- *
  */
 public interface Fetcher {
 

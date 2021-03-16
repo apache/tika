@@ -17,7 +17,7 @@
 package org.apache.tika.exception;
 
 /**
- * Tika exception 
+ * Tika exception
  */
 public class TikaException extends Exception {
 

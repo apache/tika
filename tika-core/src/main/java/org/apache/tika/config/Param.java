@@ -16,22 +16,6 @@
  */
 package org.apache.tika.config;
 
-import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.parser.multiple.AbstractMultipleParser;
-import org.apache.tika.utils.XMLReaderUtils;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,12 +30,29 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.parser.multiple.AbstractMultipleParser;
+import org.apache.tika.utils.XMLReaderUtils;
 
 
 /**
  * This is a serializable model class for parameters from configuration file.
  *
- * @param <T> value type. Should be serializable to string and have a constructor with string param
+ * @param <T> value type. Should be serializable to string and have a constructor
+ *            with string param
  * @since Apache Tika 1.14
  */
 public class Param<T> implements Serializable {
@@ -81,15 +82,12 @@ public class Param<T> implements Serializable {
         wellKnownMap.put("metadataPolicy", AbstractMultipleParser.MetadataPolicy.class);
     }
 
+    private final List<String> valueStrings = new ArrayList<>();
     private Class<T> type;
-
     private String name;
-
-    private List<String> valueStrings = new ArrayList<>();
-
     private T actualValue;
 
-    public Param(){
+    public Param() {
     }
 
     public Param(String name, Class<T> type, T value) {
@@ -97,117 +95,30 @@ public class Param<T> implements Serializable {
         this.type = type;
         this.actualValue = value;
         if (List.class.isAssignableFrom(value.getClass())) {
-            this.valueStrings.addAll((List)value);
+            this.valueStrings.addAll((List) value);
         } else {
             this.valueStrings.add(value.toString());
         }
         if (this.type == null) {
-            this.type = (Class<T>)wellKnownMap.get(name);
+            this.type = (Class<T>) wellKnownMap.get(name);
         }
     }
 
-    public Param(String name, T value){
+    public Param(String name, T value) {
         this(name, (Class<T>) value.getClass(), value);
     }
 
-    public String getName() {
-        return name;
-    }
+    public static <T> Param<T> load(InputStream stream)
+            throws SAXException, IOException, TikaException {
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Class<T> getType() {
-        return type;
-    }
-
-    public void setType(Class<T> type) {
-        this.type = type;
-    }
-
-    public String getTypeString(){
-        if (type == null) {
-            return null;
-        }
-        if (List.class.isAssignableFrom(type)) {
-            return LIST;
-        }
-        if (map.containsKey(type)){
-            return map.get(type);
-        }
-        return type.getName();
-    }
-
-    public void setTypeString(String type){
-        if (type == null || type.isEmpty()){
-            return;
-        }
-        
-        this.type = classFromType(type);
-        this.actualValue = null;
-    }
-
-    public T getValue(){
-        return actualValue;
-    }
-
-    @Override
-    public String toString() {
-        return "Param{" +
-                "name='" + name + '\'' +
-                ", valueStrings='" + valueStrings + '\'' +
-                ", actualValue=" + actualValue +
-                '}';
-    }
-
-    public void save(OutputStream stream) throws TransformerException, TikaException {
-        
-        
-        DocumentBuilder builder = XMLReaderUtils.getDocumentBuilder();
-        Document doc = builder.newDocument();
-        Element paramEl = doc.createElement("param");
-        doc.appendChild(paramEl);
-        
-        save(doc, paramEl);
-        
-        Transformer transformer = XMLReaderUtils.getTransformer();
-        transformer.transform(new DOMSource(paramEl), new StreamResult(stream));
-    }
-
-    public void save(Document doc, Node node) {
-
-        if ( !(node instanceof Element) ) {
-            throw new IllegalArgumentException("Not an Element : " + node);
-        }
-        
-        Element el = (Element) node;
-        
-        el.setAttribute("name",  getName());
-        el.setAttribute("type", getTypeString());
-        if (List.class.isAssignableFrom(actualValue.getClass())) {
-            for (int i = 0; i < valueStrings.size(); i++) {
-                String val = valueStrings.get(i);
-                String typeString = map.get(((List)actualValue).get(i).getClass());
-                Node item = doc.createElement(typeString);
-                item.setTextContent(val);
-                el.appendChild(item);
-            }
-        } else {
-            el.setTextContent(valueStrings.get(0));
-        }
-    }
-
-    public static <T> Param<T> load(InputStream stream) throws SAXException, IOException, TikaException {
-        
         DocumentBuilder db = XMLReaderUtils.getDocumentBuilder();
         Document document = db.parse(stream);
-        
+
         return load(document.getFirstChild());
     }
 
-    public static <T> Param<T> load(Node node) throws TikaConfigException{
-        
+    public static <T> Param<T> load(Node node) throws TikaConfigException {
+
         Node nameAttr = node.getAttributes().getNamedItem("name");
         Node typeAttr = node.getAttributes().getNamedItem("type");
         Node valueAttr = node.getAttributes().getNamedItem("value");
@@ -220,11 +131,11 @@ public class Param<T> implements Serializable {
         }
 
         Param<T> ret = new Param<T>();
-        ret.name  = nameAttr.getTextContent();
+        ret.name = nameAttr.getTextContent();
         if (typeAttr != null) {
             ret.setTypeString(typeAttr.getTextContent());
         } else {
-            ret.type = (Class<T>)wellKnownMap.get(ret.name);
+            ret.type = (Class<T>) wellKnownMap.get(ret.name);
             if (ret.type == null) {
                 throw new TikaConfigException("Must specify a \"type\" in: " + node.getLocalName());
             }
@@ -246,7 +157,7 @@ public class Param<T> implements Serializable {
 
     private static <T> void loadList(Param<T> ret, Node root) {
         Node child = root.getFirstChild();
-        ret.actualValue = (T)new ArrayList<>();
+        ret.actualValue = (T) new ArrayList<>();
         while (child != null) {
             if (child.getNodeType() == Node.ELEMENT_NODE) {
                 Class type = classFromType(child.getLocalName());
@@ -258,30 +169,118 @@ public class Param<T> implements Serializable {
     }
 
     private static <T> Class<T> classFromType(String type) {
-        if (reverseMap.containsKey(type)){
+        if (reverseMap.containsKey(type)) {
             return (Class<T>) reverseMap.get(type);
-        } else try {
-            return (Class<T>) Class.forName(type);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
+        } else {
+            try {
+                return (Class<T>) Class.forName(type);
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
-    
+
     private static <T> T getTypedValue(Class<T> type, String value) {
         try {
             if (type.isEnum()) {
-                Object val = Enum.valueOf((Class)type, value);
-                return (T)val;
+                Object val = Enum.valueOf((Class) type, value);
+                return (T) val;
             }
-            
+
             Constructor<T> constructor = type.getConstructor(String.class);
             constructor.setAccessible(true);
             return constructor.newInstance(value);
         } catch (NoSuchMethodException e) {
-            throw new RuntimeException(type + " doesnt have a constructor that takes String arg", e);
+            throw new RuntimeException(type + " doesnt have a constructor that takes String arg",
+                    e);
         } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
             throw new RuntimeException(e);
-        }        
+        }
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Class<T> getType() {
+        return type;
+    }
+
+    public void setType(Class<T> type) {
+        this.type = type;
+    }
+
+    public String getTypeString() {
+        if (type == null) {
+            return null;
+        }
+        if (List.class.isAssignableFrom(type)) {
+            return LIST;
+        }
+        if (map.containsKey(type)) {
+            return map.get(type);
+        }
+        return type.getName();
+    }
+
+    public void setTypeString(String type) {
+        if (type == null || type.isEmpty()) {
+            return;
+        }
+
+        this.type = classFromType(type);
+        this.actualValue = null;
+    }
+
+    public T getValue() {
+        return actualValue;
+    }
+
+    @Override
+    public String toString() {
+        return "Param{" + "name='" + name + '\'' + ", valueStrings='" + valueStrings + '\'' +
+                ", actualValue=" + actualValue + '}';
+    }
+
+    public void save(OutputStream stream) throws TransformerException, TikaException {
+
+
+        DocumentBuilder builder = XMLReaderUtils.getDocumentBuilder();
+        Document doc = builder.newDocument();
+        Element paramEl = doc.createElement("param");
+        doc.appendChild(paramEl);
+
+        save(doc, paramEl);
+
+        Transformer transformer = XMLReaderUtils.getTransformer();
+        transformer.transform(new DOMSource(paramEl), new StreamResult(stream));
+    }
+
+    public void save(Document doc, Node node) {
+
+        if (!(node instanceof Element)) {
+            throw new IllegalArgumentException("Not an Element : " + node);
+        }
+
+        Element el = (Element) node;
+
+        el.setAttribute("name", getName());
+        el.setAttribute("type", getTypeString());
+        if (List.class.isAssignableFrom(actualValue.getClass())) {
+            for (int i = 0; i < valueStrings.size(); i++) {
+                String val = valueStrings.get(i);
+                String typeString = map.get(((List) actualValue).get(i).getClass());
+                Node item = doc.createElement(typeString);
+                item.setTextContent(val);
+                el.appendChild(item);
+            }
+        } else {
+            el.setTextContent(valueStrings.get(0));
+        }
     }
 
 }

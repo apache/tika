@@ -16,10 +16,6 @@
  */
 package org.apache.tika.fork;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.parser.ParserFactory;
-import org.xml.sax.SAXException;
-
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -27,13 +23,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.NotSerializableException;
 import java.io.OutputStream;
-import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
-import java.util.zip.CheckedInputStream;
-import java.util.zip.CheckedOutputStream;
-import java.util.zip.Checksum;
+
+import org.xml.sax.SAXException;
+
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.parser.ParserFactory;
 
 class ForkServer implements Runnable {
 
@@ -54,21 +51,53 @@ class ForkServer implements Runnable {
     public static final byte INIT_PARSER_FACTORY_FACTORY = 6;
     public static final byte INIT_LOADER_PARSER = 7;
     public static final byte INIT_PARSER_FACTORY_FACTORY_LOADER = 8;
-
+    private final Object[] lock = new Object[0];
+    /**
+     * Input stream for reading from the parent process
+     */
+    private final DataInputStream input;
+    /**
+     * Output stream for writing to the parent process
+     */
+    private final DataOutputStream output;
+    private final boolean active = true;
     //milliseconds to sleep before checking to see if there has been any reading/writing
     //If no reading or writing in this time, shutdown the server.
     private long serverPulseMillis = 5000;
     private long serverParserTimeoutMillis = 60000;
     private long serverWaitTimeoutMillis = 60000;
-
-    private Object[] lock = new Object[0];
+    //can't be class Parser because then you'd
+    //have to include that in bootstrap jar (legacy mode)
+    private Object parser;
+    private ClassLoader classLoader;
+    private boolean parsing = false;
+    private long since;
+    /**
+     * Sets up a forked server instance using the given stdin/out
+     * communication channel.
+     *
+     * @param input  input stream for reading from the parent process
+     * @param output output stream for writing to the parent process
+     * @throws IOException if the server instance could not be created
+     */
+    public ForkServer(InputStream input, OutputStream output, long serverPulseMillis,
+                      long serverParserTimeoutMillis, long serverWaitTimeoutMillis)
+            throws IOException {
+        this.input = new DataInputStream(input);
+        this.output = new DataOutputStream(output);
+        this.serverPulseMillis = serverPulseMillis;
+        this.serverParserTimeoutMillis = serverParserTimeoutMillis;
+        this.serverWaitTimeoutMillis = serverWaitTimeoutMillis;
+        this.parsing = false;
+        this.since = System.currentTimeMillis();
+    }
 
     /**
      * Starts a forked server process using the standard input and output
      * streams for communication with the parent process. Any attempts by
      * stray code to read from standard input or write to standard output
      * is redirected to avoid interfering with the communication channel.
-     * 
+     *
      * @param args command line arguments, ignored
      * @throws Exception if the server could not be started
      */
@@ -79,8 +108,9 @@ class ForkServer implements Runnable {
 
         URL.setURLStreamHandlerFactory(new MemoryURLStreamHandlerFactory());
 
-        ForkServer server = new ForkServer(System.in, System.out,
-                serverPulseMillis, serverParseTimeoutMillis, serverWaitTimeoutMillis);
+        ForkServer server =
+                new ForkServer(System.in, System.out, serverPulseMillis, serverParseTimeoutMillis,
+                        serverWaitTimeoutMillis);
         System.setIn(new ByteArrayInputStream(new byte[0]));
         System.setOut(System.err);
 
@@ -91,52 +121,15 @@ class ForkServer implements Runnable {
         server.processRequests();
     }
 
-    /** Input stream for reading from the parent process */
-    private final DataInputStream input;
-
-    /** Output stream for writing to the parent process */
-    private final DataOutputStream output;
-
-    private volatile boolean active = true;
-
-    //can't be class Parser because then you'd
-    //have to include that in bootstrap jar (legacy mode)
-    private Object parser;
-    private ClassLoader classLoader;
-
-    private boolean parsing = false;
-    private long since;
-
-    /**
-     * Sets up a forked server instance using the given stdin/out
-     * communication channel.
-     *
-     * @param input input stream for reading from the parent process
-     * @param output output stream for writing to the parent process
-     * @throws IOException if the server instance could not be created
-     */
-    public ForkServer(InputStream input, OutputStream output,
-                      long serverPulseMillis, long serverParserTimeoutMillis, long serverWaitTimeoutMillis)
-            throws IOException {
-        this.input =
-            new DataInputStream(input);
-        this.output =
-            new DataOutputStream(output);
-        this.serverPulseMillis = serverPulseMillis;
-        this.serverParserTimeoutMillis = serverParserTimeoutMillis;
-        this.serverWaitTimeoutMillis = serverWaitTimeoutMillis;
-        this.parsing = false;
-        this.since = System.currentTimeMillis();
-    }
-
     public void run() {
         try {
             while (true) {
                 synchronized (lock) {
-                    long elapsed = System.currentTimeMillis()-since;
+                    long elapsed = System.currentTimeMillis() - since;
                     if (parsing && elapsed > serverParserTimeoutMillis) {
                         break;
-                    } else if (!parsing && serverWaitTimeoutMillis > 0 && elapsed > serverWaitTimeoutMillis) {
+                    } else if (!parsing && serverWaitTimeoutMillis > 0 &&
+                            elapsed > serverWaitTimeoutMillis) {
                         break;
                     }
                 }
@@ -144,6 +137,7 @@ class ForkServer implements Runnable {
             }
             System.exit(0);
         } catch (InterruptedException e) {
+            //swallow
         }
     }
 
@@ -184,8 +178,8 @@ class ForkServer implements Runnable {
         System.err.flush();
     }
 
-    private void initializeParserAndLoader() throws IOException, ClassNotFoundException,
-            TikaException, SAXException {
+    private void initializeParserAndLoader()
+            throws IOException, ClassNotFoundException, TikaException, SAXException {
         output.writeByte(READY);
         output.flush();
 
@@ -194,8 +188,7 @@ class ForkServer implements Runnable {
             throw new TikaException("eof! pipe closed?!");
         }
 
-        Object firstObject = readObject(
-                ForkServer.class.getClassLoader());
+        Object firstObject = readObject(ForkServer.class.getClassLoader());
         switch (configIndex) {
             case INIT_PARSER_FACTORY_FACTORY:
                 if (firstObject instanceof ParserFactoryFactory) {
@@ -204,7 +197,8 @@ class ForkServer implements Runnable {
                     ParserFactory parserFactory = ((ParserFactoryFactory) firstObject).build();
                     parser = parserFactory.build();
                 } else {
-                    throw new IllegalArgumentException("Expecting only one object of class ParserFactoryFactory");
+                    throw new IllegalArgumentException(
+                            "Expecting only one object of class ParserFactoryFactory");
                 }
                 break;
             case INIT_LOADER_PARSER:
@@ -214,7 +208,8 @@ class ForkServer implements Runnable {
                     //parser from parent process
                     parser = readObject(classLoader);
                 } else {
-                    throw new IllegalArgumentException("Expecting ClassLoader followed by a Parser");
+                    throw new IllegalArgumentException(
+                            "Expecting ClassLoader followed by a Parser");
                 }
                 break;
             case INIT_PARSER_FACTORY_FACTORY_LOADER:
@@ -225,7 +220,8 @@ class ForkServer implements Runnable {
                     classLoader = (ClassLoader) readObject(ForkServer.class.getClassLoader());
                     Thread.currentThread().setContextClassLoader(classLoader);
                 } else {
-                    throw new IllegalStateException("Expecing ParserFactoryFactory followed by a class loader");
+                    throw new IllegalStateException(
+                            "Expecing ParserFactoryFactory followed by a class loader");
                 }
                 break;
         }
@@ -240,8 +236,7 @@ class ForkServer implements Runnable {
         }
         try {
             Method method = getMethod(object, input.readUTF());
-            Object[] args =
-                    new Object[method.getParameterTypes().length];
+            Object[] args = new Object[method.getParameterTypes().length];
             for (int i = 0; i < args.length; i++) {
                 args[i] = readObject(loader);
             }
@@ -291,11 +286,10 @@ class ForkServer implements Runnable {
      * the entire serialization into a memory before deserializing it.
      *
      * @param loader class loader to be used for loading referenced classes
-     * @throws IOException if the object could not be deserialized
+     * @throws IOException            if the object could not be deserialized
      * @throws ClassNotFoundException if a referenced class is not found
      */
-    private Object readObject(ClassLoader loader)
-            throws IOException, ClassNotFoundException {
+    private Object readObject(ClassLoader loader) throws IOException, ClassNotFoundException {
         Object object = ForkObjectInputStream.readObject(input, loader);
         if (object instanceof ForkProxy) {
             ((ForkProxy) object).init(input, output);

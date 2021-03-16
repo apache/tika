@@ -31,12 +31,12 @@ public class LanguageHandler extends WriteOutContentHandler {
     private final LanguageWriter writer;
 
     public LanguageHandler() throws IOException {
-    	this(new LanguageWriter(LanguageDetector.getDefaultLanguageDetector().loadModels()));
+        this(new LanguageWriter(LanguageDetector.getDefaultLanguageDetector().loadModels()));
     }
-    
+
     public LanguageHandler(LanguageWriter writer) {
         super(writer);
-        
+
         this.writer = writer;
     }
 
@@ -57,10 +57,10 @@ public class LanguageHandler extends WriteOutContentHandler {
 
     /**
      * Returns the detected language based on text handled thus far.
-     * 
+     *
      * @return LanguageResult
      */
     public LanguageResult getLanguage() {
-    	return writer.getLanguage();
+        return writer.getLanguage();
     }
 }

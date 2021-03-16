@@ -1,5 +1,3 @@
-package org.apache.tika.parser;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,15 @@ package org.apache.tika.parser;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.parser;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Set;
+
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.TikaException;
@@ -27,26 +34,17 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
-import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.sax.SecureContentHandler;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.ParserUtils;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
-import java.util.Set;
 
 /**
  * This is a helper class that wraps a parser in a recursive handler.
- * It takes care of setting the embedded parser in the ParseContext 
+ * It takes care of setting the embedded parser in the ParseContext
  * and handling the embedded path calculations.
  * <p>
- * After parsing a document, call getMetadata() to retrieve a list of 
+ * After parsing a document, call getMetadata() to retrieve a list of
  * Metadata objects, one for each embedded resource.  The first item
  * in the list will contain the Metadata for the outer container file.
  * <p>
@@ -56,12 +54,12 @@ import java.util.Set;
  * <p>
  * If a WriteLimitReachedException is encountered, the wrapper will stop
  * processing the current resource, and it will not process
- * any of the child resources for the given resource.  However, it will try to 
- * parse as much as it can.  If a WLRE is reached in the parent document, 
+ * any of the child resources for the given resource.  However, it will try to
+ * parse as much as it can.  If a WLRE is reached in the parent document,
  * no child resources will be parsed.
  * <p>
  * The implementation is based on Jukka's RecursiveMetadataParser
- * and Nick's additions. See: 
+ * and Nick's additions. See:
  * <a href="http://wiki.apache.org/tika/RecursiveMetadata#Jukka.27s_RecursiveMetadata_Parser">RecursiveMetadataParser</a>.
  * <p>
  * Note that this wrapper holds all data in memory and is not appropriate
@@ -71,7 +69,7 @@ import java.util.Set;
  * </p>
  */
 public class RecursiveParserWrapper extends ParserDecorator {
-    
+
     /**
      * Generated serial version
      */
@@ -91,12 +89,12 @@ public class RecursiveParserWrapper extends ParserDecorator {
     }
 
     /**
-     *
-     * @param wrappedParser parser to wrap
+     * @param wrappedParser           parser to wrap
      * @param catchEmbeddedExceptions whether or not to catch+record embedded exceptions.
-     *                                If set to <code>false</code>, embedded exceptions will be thrown and
-     *                                the rest of the file will not be parsed. The following will not be ignored:
-     *                                  {@link CorruptedFileException}, {@link RuntimeException}
+     *                                If set to <code>false</code>, embedded exceptions will be
+     *                                thrown and the rest of the file will not be parsed. The
+     *                                following will not be ignored:
+     *                                {@link CorruptedFileException}, {@link RuntimeException}
      */
     public RecursiveParserWrapper(Parser wrappedParser, boolean catchEmbeddedExceptions) {
         super(wrappedParser);
@@ -111,9 +109,9 @@ public class RecursiveParserWrapper extends ParserDecorator {
 
 
     /**
-     *
      * @param stream
-     * @param recursiveParserWrapperHandler -- handler must implement {@link RecursiveParserWrapperHandler}
+     * @param recursiveParserWrapperHandler -- handler must implement
+     * {@link RecursiveParserWrapperHandler}
      * @param metadata
      * @param context
      * @throws IOException
@@ -123,25 +121,29 @@ public class RecursiveParserWrapper extends ParserDecorator {
      */
     @Override
     public void parse(InputStream stream, ContentHandler recursiveParserWrapperHandler,
-            Metadata metadata, ParseContext context) throws IOException,
-            SAXException, TikaException {
+                      Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         //this tracks the state of the parent parser, per call to #parse
         ParserState parserState;
         if (recursiveParserWrapperHandler instanceof AbstractRecursiveParserWrapperHandler) {
-            parserState = new ParserState((AbstractRecursiveParserWrapperHandler)recursiveParserWrapperHandler);
+            parserState = new ParserState(
+                    (AbstractRecursiveParserWrapperHandler) recursiveParserWrapperHandler);
         } else {
-           throw new IllegalStateException("ContentHandler must implement RecursiveParserWrapperHandler");
+            throw new IllegalStateException(
+                    "ContentHandler must implement RecursiveParserWrapperHandler");
         }
-        EmbeddedParserDecorator decorator = new EmbeddedParserDecorator(getWrappedParser(), "/", parserState);
+        EmbeddedParserDecorator decorator =
+                new EmbeddedParserDecorator(getWrappedParser(), "/", parserState);
         context.set(Parser.class, decorator);
-        ContentHandler localHandler = parserState.recursiveParserWrapperHandler.getNewContentHandler();
+        ContentHandler localHandler =
+                parserState.recursiveParserWrapperHandler.getNewContentHandler();
         long started = System.currentTimeMillis();
         parserState.recursiveParserWrapperHandler.startDocument();
         TemporaryResources tmp = new TemporaryResources();
         try {
             TikaInputStream tis = TikaInputStream.get(stream, tmp);
             RecursivelySecureContentHandler secureContentHandler =
-                        new RecursivelySecureContentHandler(localHandler, tis);
+                    new RecursivelySecureContentHandler(localHandler, tis);
             context.set(RecursivelySecureContentHandler.class, secureContentHandler);
             getWrappedParser().parse(tis, secureContentHandler, metadata, context);
         } catch (SAXException e) {
@@ -166,14 +168,15 @@ public class RecursiveParserWrapper extends ParserDecorator {
     }
 
     /**
-     * Copied/modified from WriteOutContentHandler.  Couldn't make that 
-     * static, and we need to have something that will work 
+     * Copied/modified from WriteOutContentHandler.  Couldn't make that
+     * static, and we need to have something that will work
      * with exceptions thrown from both BodyContentHandler and WriteOutContentHandler
+     *
      * @param t
      * @return
      */
     private boolean isWriteLimitReached(Throwable t) {
-        if (t.getMessage() != null && 
+        if (t.getMessage() != null &&
                 t.getMessage().indexOf("Your document contained more than") == 0) {
             return true;
         } else {
@@ -196,28 +199,26 @@ public class RecursiveParserWrapper extends ParserDecorator {
         return objectName;
     }
 
-    
-    private class EmbeddedParserDecorator extends StatefulParser {
-        
-        private static final long serialVersionUID = 207648200464263337L;
-        
-        private String location = null;
-        private final ParserState parserState;
 
-        
+    private class EmbeddedParserDecorator extends StatefulParser {
+
+        private static final long serialVersionUID = 207648200464263337L;
+        private final ParserState parserState;
+        private String location = null;
+
+
         private EmbeddedParserDecorator(Parser parser, String location, ParserState parseState) {
             super(parser);
             this.location = location;
-            if (! this.location.endsWith("/")) {
-               this.location += "/";
+            if (!this.location.endsWith("/")) {
+                this.location += "/";
             }
             this.parserState = parseState;
         }
 
         @Override
-        public void parse(InputStream stream, ContentHandler ignore,
-                Metadata metadata, ParseContext context) throws IOException,
-                SAXException, TikaException {
+        public void parse(InputStream stream, ContentHandler ignore, Metadata metadata,
+                          ParseContext context) throws IOException, SAXException, TikaException {
             //Test to see if we should avoid parsing
             if (parserState.recursiveParserWrapperHandler.hasHitMaximumEmbeddedResources()) {
                 return;
@@ -225,16 +226,18 @@ public class RecursiveParserWrapper extends ParserDecorator {
             // Work out what this thing is
             String objectName = getResourceName(metadata, parserState);
             String objectLocation = this.location + objectName;
-      
+
             metadata.add(TikaCoreProperties.EMBEDDED_RESOURCE_PATH, objectLocation);
 
 
             //get a fresh handler
-            ContentHandler localHandler = parserState.recursiveParserWrapperHandler.getNewContentHandler();
+            ContentHandler localHandler =
+                    parserState.recursiveParserWrapperHandler.getNewContentHandler();
             parserState.recursiveParserWrapperHandler.startEmbeddedDocument(localHandler, metadata);
 
             Parser preContextParser = context.get(Parser.class);
-            context.set(Parser.class, new EmbeddedParserDecorator(getWrappedParser(), objectLocation, parserState));
+            context.set(Parser.class,
+                    new EmbeddedParserDecorator(getWrappedParser(), objectLocation, parserState));
             long started = System.currentTimeMillis();
             RecursivelySecureContentHandler secureContentHandler =
                     context.get(RecursivelySecureContentHandler.class);
@@ -255,11 +258,11 @@ public class RecursiveParserWrapper extends ParserDecorator {
                         throw e;
                     }
                 }
-            } catch(CorruptedFileException e) {
+            } catch (CorruptedFileException e) {
                 throw e;
             } catch (TikaException e) {
-                if (context.get(ZeroByteFileException.IgnoreZeroByteFileException.class) != null
-                        && e instanceof ZeroByteFileException) {
+                if (context.get(ZeroByteFileException.IgnoreZeroByteFileException.class) != null &&
+                        e instanceof ZeroByteFileException) {
                     //do nothing
                 } else if (catchEmbeddedExceptions) {
                     ParserUtils.recordParserFailure(this, e, metadata);
@@ -271,7 +274,8 @@ public class RecursiveParserWrapper extends ParserDecorator {
                 secureContentHandler.updateContentHandler(preContextHandler);
                 long elapsedMillis = System.currentTimeMillis() - started;
                 metadata.set(TikaCoreProperties.PARSE_TIME_MILLIS, Long.toString(elapsedMillis));
-                parserState.recursiveParserWrapperHandler.endEmbeddedDocument(localHandler, metadata);
+                parserState.recursiveParserWrapperHandler
+                        .endEmbeddedDocument(localHandler, metadata);
             }
         }
     }
@@ -281,16 +285,17 @@ public class RecursiveParserWrapper extends ParserDecorator {
      * In future versions, this will allow the RecursiveParserWrapper to be thread safe.
      */
     private class ParserState {
-        private int unknownCount = 0;
         private final AbstractRecursiveParserWrapperHandler recursiveParserWrapperHandler;
+        private int unknownCount = 0;
+
         private ParserState(AbstractRecursiveParserWrapperHandler handler) {
             this.recursiveParserWrapperHandler = handler;
         }
     }
 
-    private class RecursivelySecureContentHandler
-            extends SecureContentHandler {
+    private class RecursivelySecureContentHandler extends SecureContentHandler {
         private ContentHandler handler;
+
         public RecursivelySecureContentHandler(ContentHandler handler, TikaInputStream stream) {
             super(handler, stream);
             this.handler = handler;
@@ -302,12 +307,12 @@ public class RecursiveParserWrapper extends ParserDecorator {
         }
 
         /**
-         *  Bypass the SecureContentHandler...
-         *
-         *  This handler only looks at zip bomb via zip expansion.
-         *  Users should be protected within entries against nested
-         *  nested xml entities.  We don't want to carry
-         *  those stats _across_ entries.
+         * Bypass the SecureContentHandler...
+         * <p>
+         * This handler only looks at zip bomb via zip expansion.
+         * Users should be protected within entries against nested
+         * nested xml entities.  We don't want to carry
+         * those stats _across_ entries.
          *
          * @param uri
          * @param localName
@@ -316,15 +321,13 @@ public class RecursiveParserWrapper extends ParserDecorator {
          * @throws SAXException
          */
         @Override
-        public void startElement(
-                String uri, String localName, String name, Attributes atts)
+        public void startElement(String uri, String localName, String name, Attributes atts)
                 throws SAXException {
             this.handler.startElement(uri, localName, name, atts);
         }
 
         @Override
-        public void endElement(
-                String uri, String localName, String name) throws SAXException {
+        public void endElement(String uri, String localName, String name) throws SAXException {
             this.handler.endElement(uri, localName, name);
         }
     }

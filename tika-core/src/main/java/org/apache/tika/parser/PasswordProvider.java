@@ -20,13 +20,14 @@ import org.apache.tika.metadata.Metadata;
 
 /**
  * Interface for providing a password to a Parser for handling Encrypted
- *  and Password Protected Documents.
+ * and Password Protected Documents.
  * An implementation of this should be set on the {@link ParseContext}
- *  supplied to {@link Parser#parse(java.io.InputStream, org.xml.sax.ContentHandler, Metadata, ParseContext)}
- *  to provide a way to get the document password. 
+ * supplied to {@link Parser#parse(java.io.InputStream, org.xml.sax.ContentHandler,
+ * Metadata, ParseContext)}
+ * to provide a way to get the document password.
  * An implementation of this interface defines some specific selection
- *  or lookup criteria, to be applied against the document metadata passed
- *  to the {@link #getPassword(Metadata)} method.
+ * or lookup criteria, to be applied against the document metadata passed
+ * to the {@link #getPassword(Metadata)} method.
  *
  * @since Apache Tika 1.1
  */

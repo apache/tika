@@ -18,7 +18,8 @@ package org.apache.tika.detect;
 
 
 public abstract class TrainedModel {
-	
-	public abstract double predict(double[] input);
-	public abstract float predict(float[] input);
+
+    public abstract double predict(double[] input);
+
+    public abstract float predict(float[] input);
 }

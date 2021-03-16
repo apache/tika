@@ -44,57 +44,12 @@ public class RereadableInputStream extends InputStream {
     /**
      * Input stream originally passed to the constructor.
      */
-    private InputStream originalInputStream;
-
-    /**
-     * The inputStream currently being used by this object to read contents;
-     * may be the original stream passed in, or a stream that reads
-     * the saved copy.
-     */
-    private InputStream inputStream;
-
+    private final InputStream originalInputStream;
     /**
      * Maximum number of bytes that can be stored in memory before
      * storage will be moved to a temporary file.
      */
-    private int maxBytesInMemory;
-
-    /**
-     * True when the original stream is being read; set to false when
-     * reading is set to use the stored data instead.
-     */
-    private boolean firstPass = true;
-
-    /**
-     * Whether or not the stream's contents are being stored in a file
-     * as opposed to memory.
-     */
-    private boolean bufferIsInFile;
-
-    /**
-     * The buffer used to store the stream's content; this storage is moved
-     * to a file when the stored data's size exceeds maxBytesInMemory.
-     */
-    private byte[] byteBuffer;
-
-    /**
-     * The total number of bytes read from the original stream at the time.
-     */
-    private int size;
-
-    /**
-     * File used to store the stream's contents; is null until the stored
-     * content's size exceeds maxBytesInMemory.
-     */
-    private File storeFile;
-
-    /**
-     * OutputStream used to save the content of the input stream in a
-     * temporary file.
-     */
-    private OutputStream storeOutputStream;
-
-
+    private final int maxBytesInMemory;
     /**
      * Specifies whether or not to read to the end of stream on first
      * rewind.  This defaults to true.  If this is set to false,
@@ -102,13 +57,46 @@ public class RereadableInputStream extends InputStream {
      * already read from the original stream will be available from then on.
      */
     private final boolean readToEndOfStreamOnFirstRewind;
-
-
     /**
      * Specifies whether or not to close the original input stream
      * when close() is called.  Defaults to true.
      */
     private final boolean closeOriginalStreamOnClose;
+    /**
+     * The inputStream currently being used by this object to read contents;
+     * may be the original stream passed in, or a stream that reads
+     * the saved copy.
+     */
+    private InputStream inputStream;
+    /**
+     * True when the original stream is being read; set to false when
+     * reading is set to use the stored data instead.
+     */
+    private boolean firstPass = true;
+    /**
+     * Whether or not the stream's contents are being stored in a file
+     * as opposed to memory.
+     */
+    private boolean bufferIsInFile;
+    /**
+     * The buffer used to store the stream's content; this storage is moved
+     * to a file when the stored data's size exceeds maxBytesInMemory.
+     */
+    private byte[] byteBuffer;
+    /**
+     * The total number of bytes read from the original stream at the time.
+     */
+    private int size;
+    /**
+     * File used to store the stream's contents; is null until the stored
+     * content's size exceeds maxBytesInMemory.
+     */
+    private File storeFile;
+    /**
+     * OutputStream used to save the content of the input stream in a
+     * temporary file.
+     */
+    private OutputStream storeOutputStream;
 
 
     // TODO: At some point it would be better to replace the current approach
@@ -130,8 +118,9 @@ public class RereadableInputStream extends InputStream {
 
 
     /**
-     * Creates a rereadable input stream  with defaults of 512*1024*1024 bytes (500M) for maxBytesInMemory
-     * and both readToEndOfStreamOnFirstRewind and closeOriginalStreamOnClose set to true
+     * Creates a rereadable input stream  with defaults of 512*1024*1024 bytes
+     * (500M) for maxBytesInMemory and both readToEndOfStreamOnFirstRewind and
+     * closeOriginalStreamOnClose set to true
      *
      * @param inputStream stream containing the source of data
      */
@@ -140,16 +129,20 @@ public class RereadableInputStream extends InputStream {
     }
 
     /**
-     * Creates a rereadable input stream  defaulting to 512*1024*1024 bytes (500M) for maxBytesInMemory
+     * Creates a rereadable input stream  defaulting to 512*1024*1024 bytes (500M) for
+     * maxBytesInMemory
      *
      * @param inputStream                    stream containing the source of data
      * @param readToEndOfStreamOnFirstRewind Specifies whether or not to
-     *                                       read to the end of stream on first rewind.  If this is set to false,
-     *                                       then when rewind() is first called, only those bytes already read
-     *                                       from the original stream will be available from then on.
+     *                                       read to the end of stream on first rewind. If this
+     *                                       is set to false, then when rewind() is first called,
+     *                                       only those bytes already read from the original
+     *                                       stream will be available from then on.
      */
-    public RereadableInputStream(InputStream inputStream, boolean readToEndOfStreamOnFirstRewind, boolean closeOriginalStreamOnClose) {
-        this(inputStream, DEFAULT_MAX_BYTES_IN_MEMORY, readToEndOfStreamOnFirstRewind, closeOriginalStreamOnClose);
+    public RereadableInputStream(InputStream inputStream, boolean readToEndOfStreamOnFirstRewind,
+                                 boolean closeOriginalStreamOnClose) {
+        this(inputStream, DEFAULT_MAX_BYTES_IN_MEMORY, readToEndOfStreamOnFirstRewind,
+                closeOriginalStreamOnClose);
     }
 
     /**
@@ -174,16 +167,19 @@ public class RereadableInputStream extends InputStream {
      *
      * @param inputStream                    stream containing the source of data
      * @param maxBytesInMemory               maximum number of bytes to use to store
-     *                                       the stream's contents in memory before switching to disk; note that
-     *                                       the instance will preallocate a byte array whose size is
-     *                                       maxBytesInMemory.  This byte array will be made available for
-     *                                       garbage collection (i.e. its reference set to null) when the
-     *                                       content size exceeds the array's size, when close() is called, or
+     *                                       the stream's contents in memory before switching to
+     *                                       disk; note that the instance will preallocate a byte
+     *                                       array whose size is maxBytesInMemory.  This byte
+     *                                       array will be made available for
+     *                                       garbage collection (i.e. its reference set to null)
+     *                                       when the content size exceeds the array's size, when
+     *                                       close() is called, or
      *                                       when there are no more references to the instance.
      * @param readToEndOfStreamOnFirstRewind Specifies whether or not to
-     *                                       read to the end of stream on first rewind.  If this is set to false,
-     *                                       then when rewind() is first called, only those bytes already read
-     *                                       from the original stream will be available from then on.
+     *                                       read to the end of stream on first rewind.
+     *                                       If this is set to false, then when rewind() is first
+     *                                       called, only those bytes already read from the
+     *                                       original stream will be available from then on.
      */
     public RereadableInputStream(InputStream inputStream, int maxBytesInMemory,
                                  boolean readToEndOfStreamOnFirstRewind,
@@ -234,9 +230,8 @@ public class RereadableInputStream extends InputStream {
         }
         firstPass = false;
         boolean newStreamIsInMemory = (size < maxBytesInMemory);
-        inputStream = newStreamIsInMemory
-                ? new ByteArrayInputStream(byteBuffer)
-                : new BufferedInputStream(new FileInputStream(storeFile));
+        inputStream = newStreamIsInMemory ? new ByteArrayInputStream(byteBuffer) :
+                new BufferedInputStream(new FileInputStream(storeFile));
     }
 
     /**
@@ -247,10 +242,8 @@ public class RereadableInputStream extends InputStream {
      */
     // Does anyone need/want for this to be public?
     private void closeStream() throws IOException {
-        if (inputStream != null
-                &&
-                (inputStream != originalInputStream
-                        || closeOriginalStreamOnClose)) {
+        if (inputStream != null &&
+                (inputStream != originalInputStream || closeOriginalStreamOnClose)) {
             inputStream.close();
             inputStream = null;
         }
@@ -298,8 +291,7 @@ public class RereadableInputStream extends InputStream {
             if (switchToFile) {
                 storeFile = File.createTempFile("TIKA_streamstore_", ".tmp");
                 bufferIsInFile = true;
-                storeOutputStream = new BufferedOutputStream(
-                        new FileOutputStream(storeFile));
+                storeOutputStream = new BufferedOutputStream(new FileOutputStream(storeFile));
                 storeOutputStream.write(byteBuffer, 0, size);
                 storeOutputStream.write(inputByte);
                 byteBuffer = null; // release for garbage collection

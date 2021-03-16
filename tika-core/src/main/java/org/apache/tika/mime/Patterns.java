@@ -43,36 +43,14 @@ class Patterns implements Serializable {
     /**
      * Index of extension patterns of the form "*extension".
      */
-    private final Map<String, MimeType> extensions =
-        new HashMap<String, MimeType>();
-
-    private int minExtensionLength = Integer.MAX_VALUE;
-
-    private int maxExtensionLength = 0;
-
+    private final Map<String, MimeType> extensions = new HashMap<String, MimeType>();
     /**
      * Index of generic glob patterns, sorted by length.
      */
     private final SortedMap<String, MimeType> globs =
-        new TreeMap<String, MimeType>(new LengthComparator());
-
-    private static final class LengthComparator
-            implements Comparator<String>, Serializable {
-
-        /**
-         * Serial version UID.
-         */
-        private static final long serialVersionUID = 8468289702915532359L;
-
-        public int compare(String a, String b) {
-            int diff = b.length() - a.length();
-            if (diff == 0) {
-                diff = a.compareTo(b);
-            }
-            return diff;
-        }
-
-    }
+            new TreeMap<String, MimeType>(new LengthComparator());
+    private int minExtensionLength = Integer.MAX_VALUE;
+    private int maxExtensionLength = 0;
 
     public Patterns(MediaTypeRegistry registry) {
         this.registry = registry;
@@ -81,25 +59,23 @@ class Patterns implements Serializable {
     public void add(String pattern, MimeType type) throws MimeTypeException {
         this.add(pattern, false, type);
     }
-   
-    public void add(String pattern, boolean isJavaRegex, MimeType type)
-            throws MimeTypeException {
+
+    public void add(String pattern, boolean isJavaRegex, MimeType type) throws MimeTypeException {
         if (pattern == null || type == null) {
-            throw new IllegalArgumentException(
-                    "Pattern and/or mime type is missing");
+            throw new IllegalArgumentException("Pattern and/or mime type is missing");
         }
-        
+
         if (isJavaRegex) {
             // in this case, we don't need to build a regex pattern
             // it's already there for us, so just add the pattern as is
             addGlob(pattern, type);
         } else {
 
-            if (pattern.indexOf('*') == -1 && pattern.indexOf('?') == -1
-                    && pattern.indexOf('[') == -1) {
+            if (pattern.indexOf('*') == -1 && pattern.indexOf('?') == -1 &&
+                    pattern.indexOf('[') == -1) {
                 addName(pattern, type);
-            } else if (pattern.startsWith("*") && pattern.indexOf('*', 1) == -1
-                    && pattern.indexOf('?') == -1 && pattern.indexOf('[') == -1) {
+            } else if (pattern.startsWith("*") && pattern.indexOf('*', 1) == -1 &&
+                    pattern.indexOf('?') == -1 && pattern.indexOf('[') == -1) {
                 String extension = pattern.substring(1);
                 addExtension(extension, type);
                 type.addExtension(extension);
@@ -108,46 +84,40 @@ class Patterns implements Serializable {
             }
         }
     }
-    
+
     private void addName(String name, MimeType type) throws MimeTypeException {
         MimeType previous = names.get(name);
-        if (previous == null
-                || registry.isSpecializationOf(previous.getType(), type.getType())) {
+        if (previous == null || registry.isSpecializationOf(previous.getType(), type.getType())) {
             names.put(name, type);
-        } else if (previous == type
-                || registry.isSpecializationOf(type.getType(), previous.getType())) {
+        } else if (previous == type ||
+                registry.isSpecializationOf(type.getType(), previous.getType())) {
             // do nothing
         } else {
             throw new MimeTypeException("Conflicting name pattern: " + name);
         }
     }
 
-    private void addExtension(String extension, MimeType type)
-            throws MimeTypeException {
+    private void addExtension(String extension, MimeType type) throws MimeTypeException {
         MimeType previous = extensions.get(extension);
-        if (previous == null
-                || registry.isSpecializationOf(previous.getType(), type.getType())) {
+        if (previous == null || registry.isSpecializationOf(previous.getType(), type.getType())) {
             extensions.put(extension, type);
             int length = extension.length();
             minExtensionLength = Math.min(minExtensionLength, length);
             maxExtensionLength = Math.max(maxExtensionLength, length);
-        } else if (previous == type
-                || registry.isSpecializationOf(type.getType(), previous.getType())) {
+        } else if (previous == type ||
+                registry.isSpecializationOf(type.getType(), previous.getType())) {
             // do nothing
         } else {
-            throw new MimeTypeException(
-                    "Conflicting extension pattern: " + extension);
+            throw new MimeTypeException("Conflicting extension pattern: " + extension);
         }
     }
 
-    private void addGlob(String glob, MimeType type)
-            throws MimeTypeException {
+    private void addGlob(String glob, MimeType type) throws MimeTypeException {
         MimeType previous = globs.get(glob);
-        if (previous == null
-                || registry.isSpecializationOf(previous.getType(), type.getType())) {
+        if (previous == null || registry.isSpecializationOf(previous.getType(), type.getType())) {
             globs.put(glob, type);
-        } else if (previous == type
-                || registry.isSpecializationOf(type.getType(), previous.getType())) {
+        } else if (previous == type ||
+                registry.isSpecializationOf(type.getType(), previous.getType())) {
             // do nothing
         } else {
             throw new MimeTypeException("Conflicting glob pattern: " + glob);
@@ -156,7 +126,7 @@ class Patterns implements Serializable {
 
     /**
      * Find the MimeType corresponding to a resource name.
-     * 
+     * <p>
      * It applies the recommendations detailed in FreeDesktop Shared MIME-info
      * Database for guessing MimeType from a resource name: It first tries a
      * case-sensitive match, then try again with the resource name converted to
@@ -215,6 +185,23 @@ class Patterns implements Serializable {
         }
         pattern.append("\\z");
         return pattern.toString();
+    }
+
+    private static final class LengthComparator implements Comparator<String>, Serializable {
+
+        /**
+         * Serial version UID.
+         */
+        private static final long serialVersionUID = 8468289702915532359L;
+
+        public int compare(String a, String b) {
+            int diff = b.length() - a.length();
+            if (diff == 0) {
+                diff = a.compareTo(b);
+            }
+            return diff;
+        }
+
     }
 
 }

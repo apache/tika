@@ -41,21 +41,21 @@ public class InputStreamDigester implements DigestingParser.Digester {
     private final DigestingParser.Encoder encoder;
     private final int markLimit;
 
-    public InputStreamDigester(int markLimit, String algorithm,
-                               DigestingParser.Encoder encoder) {
+    public InputStreamDigester(int markLimit, String algorithm, DigestingParser.Encoder encoder) {
         this(markLimit, algorithm, algorithm, encoder);
     }
 
     /**
-     *
-     * @param markLimit limit in bytes to allow for mark/reset.  If the inputstream is longer
-     *                  than this limit, the stream will be reset and then spooled to a temporary file.
-     *                  Throws IllegalArgumentException if < 0.
-     * @param algorithm name of the digest algorithm to retrieve from the Provider
+     * @param markLimit        limit in bytes to allow for mark/reset.  If the inputstream is longer
+     *                         than this limit, the stream will be reset and then spooled to a
+     *                         temporary file.
+     *                         Throws IllegalArgumentException if < 0.
+     * @param algorithm        name of the digest algorithm to retrieve from the Provider
      * @param algorithmKeyName name of the algorithm to store
      *                         as part of the key in the metadata
      *                         when {@link #digest(InputStream, Metadata, ParseContext)} is called
-     * @param encoder encoder to convert the byte array returned from the digester to a string
+     * @param encoder          encoder to convert the byte array returned from the digester to a
+     *                         string
      */
     public InputStreamDigester(int markLimit, String algorithm, String algorithmKeyName,
                                DigestingParser.Encoder encoder) {
@@ -67,6 +67,20 @@ public class InputStreamDigester implements DigestingParser.Digester {
         if (markLimit < 0) {
             throw new IllegalArgumentException("markLimit must be >= 0");
         }
+    }
+
+    /**
+     * Copied from commons-codec
+     */
+    private static MessageDigest updateDigest(MessageDigest digest, InputStream data)
+            throws IOException {
+        byte[] buffer = new byte[1024];
+
+        for (int read = data.read(buffer, 0, 1024); read > -1; read = data.read(buffer, 0, 1024)) {
+            digest.update(buffer, 0, read);
+        }
+
+        return digest;
     }
 
     private MessageDigest newMessageDigest() {
@@ -83,10 +97,8 @@ public class InputStreamDigester implements DigestingParser.Digester {
     }
 
     /**
-     *
      * When subclassing this, becare to ensure that your provider is
      * thread-safe (not likely) or return a new provider with each call.
-     *
      *
      * @return provider to use to get the MessageDigest from the algorithm name.
      * Default is to return null.
@@ -96,17 +108,16 @@ public class InputStreamDigester implements DigestingParser.Digester {
     }
 
     /**
-     *
-     * @param is InputStream to digest. Best to use a TikaInputStream because
-     *           of potential need to spool to disk.  InputStream must
-     *           support mark/reset.
-     * @param metadata metadata in which to store the digest information
+     * @param is           InputStream to digest. Best to use a TikaInputStream because
+     *                     of potential need to spool to disk.  InputStream must
+     *                     support mark/reset.
+     * @param metadata     metadata in which to store the digest information
      * @param parseContext ParseContext -- not actually used yet, but there for future expansion
      * @throws IOException on IO problem or IllegalArgumentException if algorithm couldn't be found
      */
     @Override
-    public void digest(InputStream is, Metadata metadata,
-                       ParseContext parseContext) throws IOException {
+    public void digest(InputStream is, Metadata metadata, ParseContext parseContext)
+            throws IOException {
         TikaInputStream tis = TikaInputStream.cast(is);
         if (tis != null && tis.hasFile()) {
             long sz = -1;
@@ -154,9 +165,8 @@ public class InputStreamDigester implements DigestingParser.Digester {
     }
 
     private String getMetadataKey() {
-        return TikaCoreProperties.TIKA_META_PREFIX +
-                "digest" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
-                algorithmKeyName;
+        return TikaCoreProperties.TIKA_META_PREFIX + "digest" +
+                TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + algorithmKeyName;
     }
 
     private void digestFile(File f, Metadata m) throws IOException {
@@ -185,20 +195,6 @@ public class InputStreamDigester implements DigestingParser.Digester {
         }
         metadata.set(getMetadataKey(), encoder.encode(digestBytes));
         return true;
-    }
-
-
-    /**
-     * Copied from commons-codec
-     */
-    private static MessageDigest updateDigest(MessageDigest digest, InputStream data) throws IOException {
-        byte[] buffer = new byte[1024];
-
-        for (int read = data.read(buffer, 0, 1024); read > -1; read = data.read(buffer, 0, 1024)) {
-            digest.update(buffer, 0, read);
-        }
-
-        return digest;
     }
 
 }

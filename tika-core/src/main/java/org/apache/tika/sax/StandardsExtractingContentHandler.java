@@ -20,97 +20,94 @@ package org.apache.tika.sax;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.tika.metadata.Metadata;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.metadata.Metadata;
+
 /**
  * StandardsExtractingContentHandler is a Content Handler used to extract
  * standard references while parsing.
- *
  */
 public class StandardsExtractingContentHandler extends ContentHandlerDecorator {
-	public static final String STANDARD_REFERENCES = "standard_references";
-	private Metadata metadata;
-	private StringBuilder stringBuilder;
-	private double threshold = 0;
+    public static final String STANDARD_REFERENCES = "standard_references";
+    private final Metadata metadata;
+    private final StringBuilder stringBuilder;
+    private double threshold = 0;
 
-	/**
-	 * Creates a decorator for the given SAX event handler and Metadata object.
-	 * 
-	 * @param handler
-	 *            SAX event handler to be decorated.
-	 * @param metadata
-	 *            {@link Metadata} object.
-	 */
-	public StandardsExtractingContentHandler(ContentHandler handler, Metadata metadata) {
-		super(handler);
-		this.metadata = metadata;
-		this.stringBuilder = new StringBuilder();
-	}
+    /**
+     * Creates a decorator for the given SAX event handler and Metadata object.
+     *
+     * @param handler  SAX event handler to be decorated.
+     * @param metadata {@link Metadata} object.
+     */
+    public StandardsExtractingContentHandler(ContentHandler handler, Metadata metadata) {
+        super(handler);
+        this.metadata = metadata;
+        this.stringBuilder = new StringBuilder();
+    }
 
-	/**
-	 * Creates a decorator that by default forwards incoming SAX events to a
-	 * dummy content handler that simply ignores all the events. Subclasses
-	 * should use the {@link #setContentHandler(ContentHandler)} method to
-	 * switch to a more usable underlying content handler. Also creates a dummy
-	 * Metadata object to store phone numbers in.
-	 */
-	protected StandardsExtractingContentHandler() {
-		this(new DefaultHandler(), new Metadata());
-	}
+    /**
+     * Creates a decorator that by default forwards incoming SAX events to a
+     * dummy content handler that simply ignores all the events. Subclasses
+     * should use the {@link #setContentHandler(ContentHandler)} method to
+     * switch to a more usable underlying content handler. Also creates a dummy
+     * Metadata object to store phone numbers in.
+     */
+    protected StandardsExtractingContentHandler() {
+        this(new DefaultHandler(), new Metadata());
+    }
 
-	/**
-	 * Gets the threshold to be used for selecting the standard references found
-	 * within the text based on their score.
-	 * 
-	 * @return the threshold to be used for selecting the standard references
-	 *         found within the text based on their score.
-	 */
-	public double getThreshold() {
-		return threshold;
-	}
+    /**
+     * Gets the threshold to be used for selecting the standard references found
+     * within the text based on their score.
+     *
+     * @return the threshold to be used for selecting the standard references
+     * found within the text based on their score.
+     */
+    public double getThreshold() {
+        return threshold;
+    }
 
-	/**
-	 * Sets the score to be used as threshold.
-	 * 
-	 * @param score
-	 *            the score to be used as threshold.
-	 */
-	public void setThreshold(double score) {
-		this.threshold = score;
-	}
+    /**
+     * Sets the score to be used as threshold.
+     *
+     * @param score the score to be used as threshold.
+     */
+    public void setThreshold(double score) {
+        this.threshold = score;
+    }
 
-	/**
-	 * The characters method is called whenever a Parser wants to pass raw
-	 * characters to the ContentHandler. However, standard references are often
-	 * split across different calls to characters, depending on the specific
-	 * Parser used. Therefore, we simply add all characters to a StringBuilder
-	 * and analyze it once the document is finished.
-	 */
-	@Override
-	public void characters(char[] ch, int start, int length) throws SAXException {
-		try {
-			String text = new String(Arrays.copyOfRange(ch, start, start + length));
-			stringBuilder.append(text);
-			super.characters(ch, start, length);
-		} catch (SAXException e) {
-			handleException(e);
-		}
-	}
+    /**
+     * The characters method is called whenever a Parser wants to pass raw
+     * characters to the ContentHandler. However, standard references are often
+     * split across different calls to characters, depending on the specific
+     * Parser used. Therefore, we simply add all characters to a StringBuilder
+     * and analyze it once the document is finished.
+     */
+    @Override
+    public void characters(char[] ch, int start, int length) throws SAXException {
+        try {
+            String text = new String(Arrays.copyOfRange(ch, start, start + length));
+            stringBuilder.append(text);
+            super.characters(ch, start, length);
+        } catch (SAXException e) {
+            handleException(e);
+        }
+    }
 
-	/**
-	 * This method is called whenever the Parser is done parsing the file. So,
-	 * we check the output for any standard references.
-	 */
-	@Override
-	public void endDocument() throws SAXException {
-		super.endDocument();
-		List<StandardReference> standards = StandardsText.extractStandardReferences(stringBuilder.toString(),
-				threshold);
-		for (StandardReference standardReference : standards) {
-			metadata.add(STANDARD_REFERENCES, standardReference.toString());
-		}
-	}
+    /**
+     * This method is called whenever the Parser is done parsing the file. So,
+     * we check the output for any standard references.
+     */
+    @Override
+    public void endDocument() throws SAXException {
+        super.endDocument();
+        List<StandardReference> standards =
+                StandardsText.extractStandardReferences(stringBuilder.toString(), threshold);
+        for (StandardReference standardReference : standards) {
+            metadata.add(STANDARD_REFERENCES, standardReference.toString());
+        }
+    }
 }

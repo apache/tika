@@ -16,21 +16,12 @@
  */
 package org.apache.tika.metadata.filter;
 
-import org.apache.tika.config.ServiceLoader;
-import org.apache.tika.mime.MimeTypes;
-import org.apache.tika.utils.ServiceLoaderUtils;
-
 import java.util.List;
 
+import org.apache.tika.config.ServiceLoader;
+import org.apache.tika.utils.ServiceLoaderUtils;
+
 public class DefaultMetadataFilter extends CompositeMetadataFilter {
-
-    private static List<MetadataFilter> getDefaultFilters(
-            ServiceLoader loader) {
-        List<MetadataFilter> detectors = loader.loadStaticServiceProviders(MetadataFilter.class);
-        ServiceLoaderUtils.sortLoadedClasses(detectors);
-
-        return detectors;
-    }
 
     public DefaultMetadataFilter(ServiceLoader serviceLoader) {
         super(getDefaultFilters(serviceLoader));
@@ -42,5 +33,12 @@ public class DefaultMetadataFilter extends CompositeMetadataFilter {
 
     public DefaultMetadataFilter() {
         this(new ServiceLoader());
+    }
+
+    private static List<MetadataFilter> getDefaultFilters(ServiceLoader loader) {
+        List<MetadataFilter> detectors = loader.loadStaticServiceProviders(MetadataFilter.class);
+        ServiceLoaderUtils.sortLoadedClasses(detectors);
+
+        return detectors;
     }
 }

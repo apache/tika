@@ -23,9 +23,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 
-import org.apache.tika.metadata.Metadata;
 import org.junit.Test;
 import org.xml.sax.helpers.AttributesImpl;
+
+import org.apache.tika.metadata.Metadata;
 
 /**
  * Test cases for the {@link RichTextContentHandler} class.
@@ -39,10 +40,8 @@ public class RichTextContentHandlerTest {
     public void aTagTest() throws Exception {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(
-                new RichTextContentHandler(
-                    new OutputStreamWriter(buffer, Charset.defaultCharset())),
-                new Metadata());
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(new RichTextContentHandler(
+                new OutputStreamWriter(buffer, Charset.defaultCharset())), new Metadata());
         xhtml.startDocument();
         AttributesImpl attributes = new AttributesImpl();
         attributes.addAttribute("", "", "name", "", "value");
@@ -59,10 +58,8 @@ public class RichTextContentHandlerTest {
     public void imgTagTest() throws Exception {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(
-                new RichTextContentHandler(
-                    new OutputStreamWriter(buffer, Charset.defaultCharset())),
-                new Metadata());
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(new RichTextContentHandler(
+                new OutputStreamWriter(buffer, Charset.defaultCharset())), new Metadata());
         xhtml.startDocument();
         AttributesImpl attributes = new AttributesImpl();
         attributes.addAttribute("", "", "alt", "", "value");

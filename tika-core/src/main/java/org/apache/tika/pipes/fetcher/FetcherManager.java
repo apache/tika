@@ -16,15 +16,13 @@
  */
 package org.apache.tika.pipes.fetcher;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.apache.tika.exception.TikaException;
 
 /**
  * Utility class to hold multiple fetchers.
@@ -43,20 +41,18 @@ public class FetcherManager {
             }
             if (fetcherMap.containsKey(fetcher.getName())) {
                 throw new IllegalArgumentException(
-                        "Multiple fetchers cannot support the same prefix: "
-                                + fetcher.getName());
+                        "Multiple fetchers cannot support the same prefix: " + fetcher.getName());
             }
             fetcherMap.put(fetcher.getName(), fetcher);
         }
     }
 
-    public Fetcher getFetcher(String fetcherName)
-            throws IOException, TikaException {
+    public Fetcher getFetcher(String fetcherName) throws IOException, TikaException {
         Fetcher fetcher = fetcherMap.get(fetcherName);
         if (fetcher == null) {
-            throw new IllegalArgumentException("Can't find fetcher for fetcherName: " +
-                    fetcherName +
-                    ". I've loaded: "+fetcherMap.keySet());
+            throw new IllegalArgumentException(
+                    "Can't find fetcher for fetcherName: " + fetcherName + ". I've loaded: " +
+                            fetcherMap.keySet());
         }
         return fetcher;
     }

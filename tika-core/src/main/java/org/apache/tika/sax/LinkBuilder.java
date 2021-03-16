@@ -19,14 +19,10 @@ package org.apache.tika.sax;
 class LinkBuilder {
 
     private final String type;
-
-    private String uri = "";
-
-    private String title = "";
-
-    private String rel = "";
-
     private final StringBuilder text = new StringBuilder();
+    private String uri = "";
+    private String title = "";
+    private String rel = "";
 
     public LinkBuilder(String type) {
         this.type = type;
@@ -67,14 +63,14 @@ class LinkBuilder {
     public Link getLink() {
         return getLink(false);
     }
-    
+
     public Link getLink(boolean collapseWhitespace) {
         String anchor = text.toString();
-        
+
         if (collapseWhitespace) {
             anchor = anchor.replaceAll("\\s+", " ").trim();
         }
-        
+
         return new Link(type, uri, title, anchor, rel);
     }
 }

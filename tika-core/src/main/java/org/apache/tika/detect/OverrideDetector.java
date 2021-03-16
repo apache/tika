@@ -16,20 +16,19 @@
  */
 package org.apache.tika.detect;
 
+import java.io.IOException;
+import java.io.InputStream;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 
-import java.io.IOException;
-import java.io.InputStream;
-
 /**
  * Use this to force a content type detection via the
  * {@link TikaCoreProperties#CONTENT_TYPE_USER_OVERRIDE} key in the metadata object.
- *
+ * <p>
  * This is also required to override detection by some parsers
  * via {@link TikaCoreProperties#CONTENT_TYPE_PARSER_OVERRIDE}.
- *
  */
 public class OverrideDetector implements Detector {
 

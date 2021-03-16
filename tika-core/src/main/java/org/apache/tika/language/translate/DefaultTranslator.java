@@ -25,7 +25,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.utils.CompareUtils;
 
 /**
- * A translator which picks the first available {@link Translator} 
+ * A translator which picks the first available {@link Translator}
  * implementations available through the
  * {@link javax.imageio.spi.ServiceRegistry service provider mechanism}.
  *
@@ -37,6 +37,7 @@ public class DefaultTranslator implements Translator {
     public DefaultTranslator(ServiceLoader loader) {
         this.loader = loader;
     }
+
     public DefaultTranslator() {
         this(new ServiceLoader());
     }
@@ -53,12 +54,15 @@ public class DefaultTranslator implements Translator {
         translators.sort(CompareUtils::compareClassName);
         return translators;
     }
+
     /**
      * Returns the first available translator, or null if none are
      */
     private static Translator getFirstAvailable(ServiceLoader loader) {
         for (Translator t : getDefaultTranslators(loader)) {
-            if (t.isAvailable()) return t;
+            if (t.isAvailable()) {
+                return t;
+            }
         }
         return null;
     }
@@ -66,7 +70,8 @@ public class DefaultTranslator implements Translator {
     /**
      * Translate, using the first available service-loaded translator
      */
-    public String translate(String text, String sourceLanguage, String targetLanguage) throws TikaException, IOException {
+    public String translate(String text, String sourceLanguage, String targetLanguage)
+            throws TikaException, IOException {
         Translator t = getFirstAvailable(loader);
         if (t != null) {
             return t.translate(text, sourceLanguage, targetLanguage);
@@ -84,13 +89,14 @@ public class DefaultTranslator implements Translator {
         }
         throw new TikaException("No translators currently available");
     }
-    
+
     /**
      * Returns all available translators
      */
     public List<Translator> getTranslators() {
         return getDefaultTranslators(loader);
     }
+
     /**
      * Returns the current translator
      */

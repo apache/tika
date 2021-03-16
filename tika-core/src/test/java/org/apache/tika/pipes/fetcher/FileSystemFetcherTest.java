@@ -16,16 +16,16 @@
  */
 package org.apache.tika.pipes.fetcher;
 
-import org.apache.tika.config.InitializableProblemHandler;
-import org.junit.Test;
-
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import org.junit.Test;
+
+import org.apache.tika.config.InitializableProblemHandler;
 
 
 public class FileSystemFetcherTest {
