@@ -25,6 +25,7 @@ import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.server.resource.TikaResource;
@@ -40,6 +41,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 import static org.apache.cxf.helpers.HttpHeaderHelper.CONTENT_ENCODING;
@@ -522,6 +524,43 @@ public class TikaResourceTest extends CXFTestBase {
                 .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
         responseMsg = getStringFromInputStream((InputStream) response.getEntity());
         assertNotFound("embed4.txt", responseMsg);
+    }
+
+    // TIKA-3320
+    @Test
+    public void testPDFLowerCaseOCRConfig() throws Exception {
+        if (! new TesseractOCRParser().hasTesseract(new TesseractOCRConfig())) {
+            return;
+        }
+
+        Response response = WebClient.create(endPoint + TIKA_PATH)
+                .type("application/pdf")
+                .accept("text/plain")
+                .header(TikaResource.X_TIKA_PDF_HEADER_PREFIX.toLowerCase(Locale.ROOT)+"ocrstrategy", "no_ocr")
+                .put(ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"));
+        String responseMsg = getStringFromInputStream((InputStream) response
+                .getEntity());
+
+        assertTrue(responseMsg.trim().equals(""));
+
+
+
+        response = WebClient.create(endPoint + TIKA_PATH)
+                .type("application/pdf")
+                .accept("text/plain")
+                .header(TikaResource.X_TIKA_PDF_HEADER_PREFIX.toLowerCase(Locale.ROOT)+"ocrstrategy", "ocr_only")
+                .put(ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"));
+        responseMsg = getStringFromInputStream((InputStream) response
+                .getEntity());
+        assertContains("Happy New Year 2003!", responseMsg);
+
+        //now try a bad value
+        response = WebClient.create(endPoint + TIKA_PATH)
+                .type("application/pdf")
+                .accept("text/plain")
+                .header(TikaResource.X_TIKA_PDF_HEADER_PREFIX.toLowerCase(Locale.ROOT) + "ocrstrategy", "non-sense-value")
+                .put(ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"));
+        assertEquals(400, response.getStatus());
     }
 
 }
