@@ -26,12 +26,29 @@ import org.apache.tika.server.core.ParseContextConfig;
 
 import javax.ws.rs.core.MultivaluedMap;
 
+import java.util.List;
+import java.util.Map;
+
 import static org.apache.tika.server.core.resource.TikaResource.processHeaderConfig;
 
+/**
+ * PDF parser configuration, for the request
+ */
 public class PDFServerConfig implements ParseContextConfig {
 
+    /**
+     * The HTTP header prefix required (case-insensitive) by this config.
+     */
     public static final String X_TIKA_PDF_HEADER_PREFIX = "X-Tika-PDF";
 
+    /**
+     * Configures the parseContext with present headers.
+     * Note: only first value of header is considered.
+     *
+     * @param httpHeaders the headers.
+     * @param metadata  the metadata.
+     * @param parseContext  the parse context to configure.
+     */
     @Override
     public void configure(MultivaluedMap<String, String> httpHeaders,
                           Metadata metadata, ParseContext parseContext) {
@@ -39,14 +56,15 @@ public class PDFServerConfig implements ParseContextConfig {
         //if a header is submitted, any params set in --tika-config tika-config.xml
         //upon server startup will be ignored.
         PDFParserConfig pdfParserConfig = null;
-        for (String key : httpHeaders.keySet()) {
-            if (StringUtils.startsWithIgnoreCase(key, X_TIKA_PDF_HEADER_PREFIX)) {
+        for (Map.Entry<String, List<String>> kvp : httpHeaders.entrySet()) {
+            if (StringUtils.startsWithIgnoreCase(kvp.getKey(), X_TIKA_PDF_HEADER_PREFIX)) {
                 pdfParserConfig = (pdfParserConfig == null) ? new PDFParserConfig() : pdfParserConfig;
-                processHeaderConfig(httpHeaders, pdfParserConfig, key, X_TIKA_PDF_HEADER_PREFIX);
+                processHeaderConfig(pdfParserConfig, kvp.getKey(), kvp.getValue().get(0).trim(), X_TIKA_PDF_HEADER_PREFIX);
             }
         }
         if (pdfParserConfig != null) {
             parseContext.set(PDFParserConfig.class, pdfParserConfig);
         }
     }
+
 }
