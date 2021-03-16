@@ -76,6 +76,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -148,6 +149,13 @@ public class TikaResource {
         return httpHeaders.getFirst("File-Name");
     }
 
+    /**
+     * Fills the parse context.
+     *
+     * @param parseContext the parse context to fil.
+     * @param httpHeaders the HTTP headers for the request.
+     * @param embeddedParser the embedded parser.
+     */
     public static void fillParseContext(ParseContext parseContext, MultivaluedMap<String, String> httpHeaders,
                                         Parser embeddedParser) {
         //lazily initialize configs
@@ -156,15 +164,15 @@ public class TikaResource {
         TesseractOCRConfig ocrConfig = null;
         PDFParserConfig pdfParserConfig = null;
         DocumentSelector documentSelector = null;
-        for (String key : httpHeaders.keySet()) {
-            if (StringUtils.startsWithIgnoreCase(key, X_TIKA_OCR_HEADER_PREFIX)) {
+        for (Map.Entry<String, List<String>> kvp : httpHeaders.entrySet()) {
+            if (StringUtils.startsWithIgnoreCase(kvp.getKey(), X_TIKA_OCR_HEADER_PREFIX)) {
                 ocrConfig = (ocrConfig == null) ? new TesseractOCRConfig() : ocrConfig;
-                processHeaderConfig(httpHeaders, ocrConfig, key, X_TIKA_OCR_HEADER_PREFIX);
-            } else if (StringUtils.startsWithIgnoreCase(key, X_TIKA_PDF_HEADER_PREFIX)) {
+                processHeaderConfig(ocrConfig, kvp.getKey(), kvp.getValue().get(0).trim(), X_TIKA_OCR_HEADER_PREFIX);
+            } else if (StringUtils.startsWithIgnoreCase(kvp.getKey(), X_TIKA_PDF_HEADER_PREFIX)) {
                 pdfParserConfig = (pdfParserConfig == null) ? new PDFParserConfig() : pdfParserConfig;
-                processHeaderConfig(httpHeaders, pdfParserConfig, key, X_TIKA_PDF_HEADER_PREFIX);
-            } else if (StringUtils.endsWithIgnoreCase(key, X_TIKA_SKIP_EMBEDDED_HEADER)) {
-                String skipEmbedded = httpHeaders.getFirst(key);
+                processHeaderConfig(pdfParserConfig, kvp.getKey(), kvp.getValue().get(0).trim(), X_TIKA_PDF_HEADER_PREFIX);
+            } else if (StringUtils.endsWithIgnoreCase(kvp.getKey(), X_TIKA_SKIP_EMBEDDED_HEADER)) {
+                String skipEmbedded = kvp.getValue().get(0);
                 if (Boolean.parseBoolean(skipEmbedded)) {
                     documentSelector = metadata -> false;
                 }
@@ -195,14 +203,13 @@ public class TikaResource {
     /**
      * Utility method to set a property on a class via reflection.
      *
-     * @param httpHeaders the HTTP headers set.
      * @param object      the <code>Object</code> to set the property on.
      * @param key         the key of the HTTP Header.
+     * @param val         the value of HTTP header.
      * @param prefix      the name of the HTTP Header prefix used to find property.
      * @throws WebApplicationException thrown when field cannot be found.
      */
-    private static void processHeaderConfig(MultivaluedMap<String, String> httpHeaders, Object object, String key, String prefix) {
-
+    private static void processHeaderConfig(Object object, String key, String val, String prefix) {
         try {
             String property = StringUtils.removeStartIgnoreCase(key, prefix);
             Field field = null;
@@ -254,8 +261,6 @@ public class TikaResource {
             }
 
             if (m != null) {
-                String val = httpHeaders.getFirst(key);
-                val = val.trim();
                 if (clazz == String.class) {
                     checkTrustWorthy(setter, val);
                     m.invoke(object, val);
@@ -273,7 +278,7 @@ public class TikaResource {
                     throw new IllegalArgumentException("setter must be String, int, float, double or boolean...for now");
                 }
             } else {
-                throw new NoSuchMethodException("Couldn't find: "+setter);
+                throw new NoSuchMethodException("Couldn't find: " + setter);
             }
 
         } catch (Throwable ex) {
