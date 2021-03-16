@@ -16,24 +16,37 @@
  */
 package org.apache.tika.pipes.emitter;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.metadata.Metadata;
-
 import java.io.IOException;
 import java.util.List;
+
+import org.apache.tika.config.Field;
+import org.apache.tika.metadata.Metadata;
 
 public abstract class AbstractEmitter implements Emitter {
 
     private String name;
 
-    @Field
-    public void setName(String name) {
-        this.name = name;
+    public static long estimateSizeInBytes(String id, List<Metadata> metadataList) {
+        long sz = 36 + id.length() * 2;
+        for (Metadata m : metadataList) {
+            for (String n : m.names()) {
+                sz += 36 + n.length() * 2;
+                for (String v : m.getValues(n)) {
+                    sz += 36 + v.length() * 2;
+                }
+            }
+        }
+        return sz;
     }
 
     @Override
     public String getName() {
         return name;
+    }
+
+    @Field
+    public void setName(String name) {
+        this.name = name;
     }
 
     /**
@@ -50,18 +63,5 @@ public abstract class AbstractEmitter implements Emitter {
         for (EmitData d : emitData) {
             emit(d.getEmitKey().getKey(), d.getMetadataList());
         }
-    }
-
-    public static long estimateSizeInBytes(String id, List<Metadata> metadataList) {
-        long sz = 36 + id.length() * 2;
-        for (Metadata m : metadataList) {
-            for (String n : m.names()) {
-                sz += 36 + n.length() * 2;
-                for (String v : m.getValues(n)) {
-                    sz += 36 + v.length() * 2;
-                }
-            }
-        }
-        return sz;
     }
 }

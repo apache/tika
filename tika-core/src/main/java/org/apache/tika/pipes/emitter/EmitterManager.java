@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Utility class that will apply the appropriate fetcher
  * to the fetcherString based on the prefix.
- *
+ * <p>
  * This does not allow multiple fetchers supporting the same prefix.
  */
 public class EmitterManager {
@@ -34,12 +34,11 @@ public class EmitterManager {
 
     public EmitterManager(List<Emitter> emitters) {
         for (Emitter emitter : emitters) {
-                if (emitterMap.containsKey(emitter.getName())) {
-                    throw new IllegalArgumentException(
-                            "Multiple emitters cannot support the same name: "
-                            + emitter.getName());
-                }
-                emitterMap.put(emitter.getName(), emitter);
+            if (emitterMap.containsKey(emitter.getName())) {
+                throw new IllegalArgumentException(
+                        "Multiple emitters cannot support the same name: " + emitter.getName());
+            }
+            emitterMap.put(emitter.getName(), emitter);
 
         }
     }
@@ -52,8 +51,7 @@ public class EmitterManager {
     public Emitter getEmitter(String emitterName) {
         Emitter emitter = emitterMap.get(emitterName);
         if (emitter == null) {
-            throw new IllegalArgumentException("Can't find emitter for prefix: "+
-                    emitterName);
+            throw new IllegalArgumentException("Can't find emitter for prefix: " + emitterName);
         }
         return emitter;
     }

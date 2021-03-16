@@ -28,13 +28,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
 
 public class CompositeParserTest {
 
@@ -57,10 +58,10 @@ public class CompositeParserTest {
             }
         };
 
-        CompositeParser composite = new CompositeParser(
-                MediaTypeRegistry.getDefaultRegistry(), a, b, c);
+        CompositeParser composite =
+                new CompositeParser(MediaTypeRegistry.getDefaultRegistry(), a, b, c);
         Map<MediaType, List<Parser>> duplicates =
-            composite.findDuplicateParsers(new ParseContext());
+                composite.findDuplicateParsers(new ParseContext());
         assertEquals(1, duplicates.size());
         List<Parser> parsers = duplicates.get(MediaType.TEXT_PLAIN);
         assertNotNull(parsers);
@@ -71,86 +72,83 @@ public class CompositeParserTest {
 
     @Test
     public void testDefaultParser() throws Exception {
-       TikaConfig config = TikaConfig.getDefaultConfig();
+        TikaConfig config = TikaConfig.getDefaultConfig();
 
-       CompositeParser parser = (CompositeParser) config.getParser();
+        CompositeParser parser = (CompositeParser) config.getParser();
 
-       // Check it has the full registry
-       assertEquals(config.getMediaTypeRegistry(), parser.getMediaTypeRegistry());
+        // Check it has the full registry
+        assertEquals(config.getMediaTypeRegistry(), parser.getMediaTypeRegistry());
     }
 
     @Test
     public void testMimeTypeAliases() throws Exception {
-       MediaType bmpCanonical = MediaType.image("bmp");
-       Map<String,String> bmpCanonicalMetadata = new HashMap<String, String>();
-       bmpCanonicalMetadata.put("BMP", "True");
-       bmpCanonicalMetadata.put("Canonical", "True");
-       Parser bmpCanonicalParser = new DummyParser(
-             new HashSet<MediaType>(Arrays.asList(bmpCanonical)),
-             bmpCanonicalMetadata, null
-       );
-       
-       MediaType bmpAlias = MediaType.image("x-ms-bmp");
-       Map<String,String> bmpAliasMetadata = new HashMap<String, String>();
-       bmpAliasMetadata.put("BMP", "True");
-       bmpAliasMetadata.put("Alias", "True");
-       Parser bmpAliasParser = new DummyParser(
-             new HashSet<MediaType>(Arrays.asList(bmpAlias)),
-             bmpAliasMetadata, null
-       );
-       
-       TikaConfig config = TikaConfig.getDefaultConfig();
-       CompositeParser canonical = new CompositeParser(
-             config.getMediaTypeRegistry(), bmpCanonicalParser
-       );
-       CompositeParser alias = new CompositeParser(
-             config.getMediaTypeRegistry(), bmpAliasParser
-       );
-       CompositeParser both = new CompositeParser(
-             config.getMediaTypeRegistry(), bmpCanonicalParser, bmpAliasParser
-       );
-       
-       ContentHandler handler = new BodyContentHandler();
-       Metadata metadata;
-       
-       // Canonical and Canonical
-       metadata = new Metadata();
-       metadata.add(Metadata.CONTENT_TYPE, bmpCanonical.toString());
-       canonical.parse(new ByteArrayInputStream(new byte[0]), handler, metadata, new ParseContext());
-       assertEquals("True", metadata.get("BMP"));
-       assertEquals("True", metadata.get("Canonical"));
-       
-       
-       // Alias and Alias
-       metadata = new Metadata();
-       metadata.add(Metadata.CONTENT_TYPE, bmpAlias.toString());
-       alias.parse(new ByteArrayInputStream(new byte[0]), handler, metadata, new ParseContext());
-       assertEquals("True", metadata.get("BMP"));
-       assertEquals("True", metadata.get("Alias"));
-       
-       
-       // Alias type and Canonical parser
-       metadata = new Metadata();
-       metadata.add(Metadata.CONTENT_TYPE, bmpAlias.toString());
-       canonical.parse(new ByteArrayInputStream(new byte[0]), handler, metadata, new ParseContext());
-       assertEquals("True", metadata.get("BMP"));
-       assertEquals("True", metadata.get("Canonical"));
-       
-       
-       // Canonical type and Alias parser
-       metadata = new Metadata();
-       metadata.add(Metadata.CONTENT_TYPE, bmpCanonical.toString());
-       alias.parse(new ByteArrayInputStream(new byte[0]), handler, metadata, new ParseContext());
-       assertEquals("True", metadata.get("BMP"));
-       assertEquals("True", metadata.get("Alias"));
-       
-       
-       // And when both are there, will go for the last one
-       //  to be registered (which is the alias one)
-       metadata = new Metadata();
-       metadata.add(Metadata.CONTENT_TYPE, bmpCanonical.toString());
-       both.parse(new ByteArrayInputStream(new byte[0]), handler, metadata, new ParseContext());
-       assertEquals("True", metadata.get("BMP"));
-       assertEquals("True", metadata.get("Alias"));
+        MediaType bmpCanonical = MediaType.image("bmp");
+        Map<String, String> bmpCanonicalMetadata = new HashMap<String, String>();
+        bmpCanonicalMetadata.put("BMP", "True");
+        bmpCanonicalMetadata.put("Canonical", "True");
+        Parser bmpCanonicalParser =
+                new DummyParser(new HashSet<MediaType>(Arrays.asList(bmpCanonical)),
+                        bmpCanonicalMetadata, null);
+
+        MediaType bmpAlias = MediaType.image("x-ms-bmp");
+        Map<String, String> bmpAliasMetadata = new HashMap<String, String>();
+        bmpAliasMetadata.put("BMP", "True");
+        bmpAliasMetadata.put("Alias", "True");
+        Parser bmpAliasParser =
+                new DummyParser(new HashSet<MediaType>(Arrays.asList(bmpAlias)), bmpAliasMetadata,
+                        null);
+
+        TikaConfig config = TikaConfig.getDefaultConfig();
+        CompositeParser canonical =
+                new CompositeParser(config.getMediaTypeRegistry(), bmpCanonicalParser);
+        CompositeParser alias = new CompositeParser(config.getMediaTypeRegistry(), bmpAliasParser);
+        CompositeParser both =
+                new CompositeParser(config.getMediaTypeRegistry(), bmpCanonicalParser,
+                        bmpAliasParser);
+
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata;
+
+        // Canonical and Canonical
+        metadata = new Metadata();
+        metadata.add(Metadata.CONTENT_TYPE, bmpCanonical.toString());
+        canonical.parse(new ByteArrayInputStream(new byte[0]), handler, metadata,
+                new ParseContext());
+        assertEquals("True", metadata.get("BMP"));
+        assertEquals("True", metadata.get("Canonical"));
+
+
+        // Alias and Alias
+        metadata = new Metadata();
+        metadata.add(Metadata.CONTENT_TYPE, bmpAlias.toString());
+        alias.parse(new ByteArrayInputStream(new byte[0]), handler, metadata, new ParseContext());
+        assertEquals("True", metadata.get("BMP"));
+        assertEquals("True", metadata.get("Alias"));
+
+
+        // Alias type and Canonical parser
+        metadata = new Metadata();
+        metadata.add(Metadata.CONTENT_TYPE, bmpAlias.toString());
+        canonical.parse(new ByteArrayInputStream(new byte[0]), handler, metadata,
+                new ParseContext());
+        assertEquals("True", metadata.get("BMP"));
+        assertEquals("True", metadata.get("Canonical"));
+
+
+        // Canonical type and Alias parser
+        metadata = new Metadata();
+        metadata.add(Metadata.CONTENT_TYPE, bmpCanonical.toString());
+        alias.parse(new ByteArrayInputStream(new byte[0]), handler, metadata, new ParseContext());
+        assertEquals("True", metadata.get("BMP"));
+        assertEquals("True", metadata.get("Alias"));
+
+
+        // And when both are there, will go for the last one
+        //  to be registered (which is the alias one)
+        metadata = new Metadata();
+        metadata.add(Metadata.CONTENT_TYPE, bmpCanonical.toString());
+        both.parse(new ByteArrayInputStream(new byte[0]), handler, metadata, new ParseContext());
+        assertEquals("True", metadata.get("BMP"));
+        assertEquals("True", metadata.get("Alias"));
     }
 }

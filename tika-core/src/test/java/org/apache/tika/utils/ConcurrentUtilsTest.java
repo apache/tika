@@ -16,15 +16,15 @@
  */
 package org.apache.tika.utils;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNull;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.junit.Test;
+
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.parser.ParseContext;
-import org.junit.Before;
-import org.junit.Test;
 
 public class ConcurrentUtilsTest {
 
@@ -32,31 +32,31 @@ public class ConcurrentUtilsTest {
     public void testExecuteThread() throws Exception {
         ParseContext context = new ParseContext();
         Future result = ConcurrentUtils.execute(context, new Runnable() {
-            
+
             @Override
             public void run() {
                 //Do nothing
-                
+
             }
         });
-        
+
         assertNull(result.get());
     }
-    
+
     @Test
     public void testExecuteExecutor() throws Exception {
         TikaConfig config = TikaConfig.getDefaultConfig();
         ParseContext context = new ParseContext();
         context.set(ExecutorService.class, config.getExecutorService());
         Future result = ConcurrentUtils.execute(context, new Runnable() {
-            
+
             @Override
             public void run() {
                 //Do nothing
-                
+
             }
         });
-        
+
         assertNull(result.get());
     }
 

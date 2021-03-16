@@ -40,7 +40,8 @@ public class RichTextContentHandler extends WriteOutContentHandler {
     }
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes attributes)
+            throws SAXException {
         super.startElement(uri, localName, qName, attributes);
 
         if ("img".equals(localName) && attributes.getValue("alt") != null) {

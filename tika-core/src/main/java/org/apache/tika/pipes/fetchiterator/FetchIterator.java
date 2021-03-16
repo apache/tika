@@ -16,18 +16,18 @@
  */
 package org.apache.tika.pipes.fetchiterator;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
-import org.apache.tika.exception.TikaConfigException;
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import org.apache.tika.config.Field;
+import org.apache.tika.config.Initializable;
+import org.apache.tika.config.InitializableProblemHandler;
+import org.apache.tika.config.Param;
+import org.apache.tika.exception.TikaConfigException;
 
 /**
  * Abstract class that handles the testing for timeouts/thread safety
@@ -39,8 +39,7 @@ public abstract class FetchIterator implements Callable<Integer>, Initializable 
 
     public static final long DEFAULT_MAX_WAIT_MS = 300_000;
     public static final int DEFAULT_QUEUE_SIZE = 1000;
-    public static final FetchEmitTuple COMPLETED_SEMAPHORE =
-            new FetchEmitTuple(null, null, null);
+    public static final FetchEmitTuple COMPLETED_SEMAPHORE = new FetchEmitTuple(null, null, null);
 
     private long maxWaitMs = DEFAULT_MAX_WAIT_MS;
     private int numConsumers = -1;
@@ -49,7 +48,8 @@ public abstract class FetchIterator implements Callable<Integer>, Initializable 
     private String fetcherName;
     private String emitterName;
     private int added = 0;
-    private FetchEmitTuple.ON_PARSE_EXCEPTION onParseException = FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT;
+    private FetchEmitTuple.ON_PARSE_EXCEPTION onParseException =
+            FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT;
 
     public FetchIterator() {
 
@@ -61,6 +61,7 @@ public abstract class FetchIterator implements Callable<Integer>, Initializable 
 
     /**
      * This must be called before 'calling' this object.
+     *
      * @param numConsumers
      */
     public ArrayBlockingQueue<FetchEmitTuple> init(int numConsumers) {
@@ -69,22 +70,22 @@ public abstract class FetchIterator implements Callable<Integer>, Initializable 
         return queue;
     }
 
-    @Field
-    public void setFetcherName(String fetcherName) {
-        this.fetcherName = fetcherName;
-    }
-
     public String getFetcherName() {
         return fetcherName;
     }
 
     @Field
-    public void setEmitterName(String emitterName) {
-        this.emitterName = emitterName;
+    public void setFetcherName(String fetcherName) {
+        this.fetcherName = fetcherName;
     }
 
     public String getEmitterName() {
         return emitterName;
+    }
+
+    @Field
+    public void setEmitterName(String emitterName) {
+        this.emitterName = emitterName;
     }
 
     @Field
@@ -97,6 +98,10 @@ public abstract class FetchIterator implements Callable<Integer>, Initializable 
         this.queueSize = queueSize;
     }
 
+    public FetchEmitTuple.ON_PARSE_EXCEPTION getOnParseException() {
+        return onParseException;
+    }
+
     @Field
     public void setOnParseException(String onParseException) throws TikaConfigException {
         if ("skip".equalsIgnoreCase(onParseException)) {
@@ -104,17 +109,12 @@ public abstract class FetchIterator implements Callable<Integer>, Initializable 
         } else if ("emit".equalsIgnoreCase(onParseException)) {
             setOnParseException(FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
         } else {
-            throw new TikaConfigException("must be either 'skip' or 'emit': "
-                    + onParseException);
+            throw new TikaConfigException("must be either 'skip' or 'emit': " + onParseException);
         }
     }
 
     public void setOnParseException(FetchEmitTuple.ON_PARSE_EXCEPTION onParseException) {
         this.onParseException = onParseException;
-    }
-
-    public FetchEmitTuple.ON_PARSE_EXCEPTION getOnParseException() {
-        return onParseException;
     }
 
     @Override
@@ -152,7 +152,8 @@ public abstract class FetchIterator implements Callable<Integer>, Initializable 
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler)
+            throws TikaConfigException {
         //no-op
     }
 

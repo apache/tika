@@ -19,106 +19,107 @@ package org.apache.tika.sax;
 
 /**
  * Class that represents a standard reference.
- *
  */
 public class StandardReference {
-	private String mainOrganization;
-	private String separator;
-	private String secondOrganization;
-	private String identifier;
-	private double score;
-	
-	private StandardReference(String mainOrganizationAcronym, String separator, String secondOrganizationAcronym,
-			String identifier, double score) {
-		super();
-		this.mainOrganization = mainOrganizationAcronym;
-		this.separator = separator;
-		this.secondOrganization = secondOrganizationAcronym;
-		this.identifier = identifier;
-		this.score = score;
-	}
+    private String mainOrganization;
+    private String separator;
+    private String secondOrganization;
+    private String identifier;
+    private double score;
 
-	public String getMainOrganizationAcronym() {
-		return mainOrganization;
-	}
+    private StandardReference(String mainOrganizationAcronym, String separator,
+                              String secondOrganizationAcronym, String identifier, double score) {
+        super();
+        this.mainOrganization = mainOrganizationAcronym;
+        this.separator = separator;
+        this.secondOrganization = secondOrganizationAcronym;
+        this.identifier = identifier;
+        this.score = score;
+    }
 
-	public void setMainOrganizationAcronym(String mainOrganizationAcronym) {
-		this.mainOrganization = mainOrganizationAcronym;
-	}
+    public String getMainOrganizationAcronym() {
+        return mainOrganization;
+    }
 
-	public String getSeparator() {
-		return separator;
-	}
+    public void setMainOrganizationAcronym(String mainOrganizationAcronym) {
+        this.mainOrganization = mainOrganizationAcronym;
+    }
 
-	public void setSeparator(String separator) {
-		this.separator = separator;
-	}
+    public String getSeparator() {
+        return separator;
+    }
 
-	public String getSecondOrganizationAcronym() {
-		return secondOrganization;
-	}
+    public void setSeparator(String separator) {
+        this.separator = separator;
+    }
 
-	public void setSecondOrganizationAcronym(String secondOrganizationAcronym) {
-		this.secondOrganization = secondOrganizationAcronym;
-	}
+    public String getSecondOrganizationAcronym() {
+        return secondOrganization;
+    }
 
-	public String getIdentifier() {
-		return identifier;
-	}
+    public void setSecondOrganizationAcronym(String secondOrganizationAcronym) {
+        this.secondOrganization = secondOrganizationAcronym;
+    }
 
-	public void setIdentifier(String identifier) {
-		this.identifier = identifier;
-	}
+    public String getIdentifier() {
+        return identifier;
+    }
 
-	public double getScore() {
-		return score;
-	}
+    public void setIdentifier(String identifier) {
+        this.identifier = identifier;
+    }
 
-	public void setScore(double score) {
-		this.score = score;
-	}
+    public double getScore() {
+        return score;
+    }
 
-	@Override
-	public String toString() {
-		String standardReference = mainOrganization;
-		
-		if (separator != null && !separator.isEmpty()) {
-			standardReference += separator + secondOrganization; 
-		}
-		
-		standardReference += " " + identifier;
-		
-		return standardReference;
-	}
-	
-	public static class StandardReferenceBuilder {
-		private String mainOrganization;
-		private String separator;
-		private String secondOrganization;
-		private String identifier;
-		private double score;
-		
-		public StandardReferenceBuilder(String mainOrganization, String identifier) {
-			this.mainOrganization = mainOrganization;
-			this.separator = null;
-			this.secondOrganization = null;
-			this.identifier = identifier;
-			this.score = 0;
-		}
-		
-		public StandardReferenceBuilder setSecondOrganization(String separator, String secondOrganization) {
-			this.separator = separator;
-			this.secondOrganization = secondOrganization;
-			return this;
-		}
-		
-		public StandardReferenceBuilder setScore(double score) {
-			this.score = score;
-			return this;
-		}
-		
-		public StandardReference build() {
-			return new StandardReference(mainOrganization, separator, secondOrganization, identifier, score);
-		}
-	}
+    public void setScore(double score) {
+        this.score = score;
+    }
+
+    @Override
+    public String toString() {
+        String standardReference = mainOrganization;
+
+        if (separator != null && !separator.isEmpty()) {
+            standardReference += separator + secondOrganization;
+        }
+
+        standardReference += " " + identifier;
+
+        return standardReference;
+    }
+
+    public static class StandardReferenceBuilder {
+        private final String mainOrganization;
+        private final String identifier;
+        private String separator;
+        private String secondOrganization;
+        private double score;
+
+        public StandardReferenceBuilder(String mainOrganization, String identifier) {
+            this.mainOrganization = mainOrganization;
+            this.separator = null;
+            this.secondOrganization = null;
+            this.identifier = identifier;
+            this.score = 0;
+        }
+
+        public StandardReferenceBuilder setSecondOrganization(String separator,
+                                                              String secondOrganization) {
+            this.separator = separator;
+            this.secondOrganization = secondOrganization;
+            return this;
+        }
+
+        public StandardReferenceBuilder setScore(double score) {
+            this.score = score;
+            return this;
+        }
+
+        public StandardReference build() {
+            return new StandardReference(mainOrganization, separator, secondOrganization,
+                    identifier, score);
+        }
+    }
 }

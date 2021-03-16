@@ -5,9 +5,9 @@
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,13 +16,13 @@
  */
 package org.apache.tika.io;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;;
 
 /**
  * Test cases for the {@link LookaheadInputStream} class.
@@ -46,8 +46,7 @@ public class LookaheadInputStreamTest {
 
     @Test
     public void testBasicLookahead() throws IOException {
-        InputStream stream =
-            new ByteArrayInputStream(new byte[] { 'a', 'b', 'c' });
+        InputStream stream = new ByteArrayInputStream(new byte[]{'a', 'b', 'c'});
         InputStream lookahead = new LookaheadInputStream(stream, 2);
         assertEquals('a', lookahead.read());
         assertEquals('b', lookahead.read());
@@ -61,8 +60,7 @@ public class LookaheadInputStreamTest {
 
     @Test
     public void testZeroLookahead() throws IOException {
-        InputStream stream =
-            new ByteArrayInputStream(new byte[] { 'a', 'b', 'c' });
+        InputStream stream = new ByteArrayInputStream(new byte[]{'a', 'b', 'c'});
         InputStream lookahead = new LookaheadInputStream(stream, 0);
         assertEquals(-1, lookahead.read());
         lookahead.close();
@@ -74,8 +72,7 @@ public class LookaheadInputStreamTest {
 
     @Test
     public void testMarkLookahead() throws IOException {
-        InputStream stream =
-            new ByteArrayInputStream(new byte[] { 'a', 'b', 'c' });
+        InputStream stream = new ByteArrayInputStream(new byte[]{'a', 'b', 'c'});
         InputStream lookahead = new LookaheadInputStream(stream, 2);
         lookahead.mark(1);
         assertEquals('a', lookahead.read());
@@ -96,8 +93,7 @@ public class LookaheadInputStreamTest {
 
     @Test
     public void testSkipLookahead() throws IOException {
-        InputStream stream =
-            new ByteArrayInputStream(new byte[] { 'a', 'b', 'c' });
+        InputStream stream = new ByteArrayInputStream(new byte[]{'a', 'b', 'c'});
         InputStream lookahead = new LookaheadInputStream(stream, 2);
         assertEquals(1, lookahead.skip(1));
         assertEquals('b', lookahead.read());

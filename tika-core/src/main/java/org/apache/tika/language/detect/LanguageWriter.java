@@ -46,16 +46,16 @@ public class LanguageWriter extends Writer {
 
     /**
      * Returns the detected language based on text written thus far.
-     * 
+     *
      * @return LanguageResult
      */
     public LanguageResult getLanguage() {
-    	return detector.detect();
+        return detector.detect();
     }
-    
+
     @Override
     public void write(char[] cbuf, int off, int len) {
-    	detector.addText(cbuf, off, len);
+        detector.addText(cbuf, off, len);
     }
 
     /**
@@ -73,6 +73,6 @@ public class LanguageWriter extends Writer {
     }
 
     public void reset() {
-    	detector.reset();
+        detector.reset();
     }
 }

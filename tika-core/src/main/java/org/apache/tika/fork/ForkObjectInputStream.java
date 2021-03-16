@@ -39,34 +39,22 @@ import java.io.ObjectStreamClass;
  */
 class ForkObjectInputStream extends ObjectInputStream {
 
-    /** The class loader used when deserializing objects. */
+    /**
+     * The class loader used when deserializing objects.
+     */
     private final ClassLoader loader;
 
     /**
      * Creates a new object input stream that uses the given class loader
      * when deserializing objects.
      *
-     * @param input underlying input stream
+     * @param input  underlying input stream
      * @param loader class loader used when deserializing objects
      * @throws IOException if this stream could not be initiated
      */
-    public ForkObjectInputStream(InputStream input, ClassLoader loader)
-            throws IOException {
+    public ForkObjectInputStream(InputStream input, ClassLoader loader) throws IOException {
         super(input);
         this.loader = loader;
-    }
-
-    /**
-     * Loads the identified class from the specified class loader.
-     *
-     * @param desc class description
-     * @return class loaded class
-     * @throws ClassNotFoundException if the class can not be found
-     */
-    @Override
-    protected Class<?> resolveClass(ObjectStreamClass desc)
-            throws ClassNotFoundException {
-        return Class.forName(desc.getName(), false, loader);
     }
 
     /**
@@ -77,8 +65,7 @@ class ForkObjectInputStream extends ObjectInputStream {
      * @param output output stream
      * @throws IOException if the object could not be serialized
      */
-    public static void sendObject(Object object, DataOutputStream output)
-            throws IOException {
+    public static void sendObject(Object object, DataOutputStream output) throws IOException {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         ObjectOutputStream serializer = new ObjectOutputStream(buffer);
         serializer.writeObject(object);
@@ -94,9 +81,9 @@ class ForkObjectInputStream extends ObjectInputStream {
      * is expected to be preceded by a size integer, that is used for reading
      * the entire serialization into a memory before deserializing it.
      *
-     * @param input input stream from which the serialized object is read
+     * @param input  input stream from which the serialized object is read
      * @param loader class loader to be used for loading referenced classes
-     * @throws IOException if the object could not be deserialized
+     * @throws IOException            if the object could not be deserialized
      * @throws ClassNotFoundException if a referenced class is not found
      */
     public static Object readObject(DataInputStream input, ClassLoader loader)
@@ -106,8 +93,20 @@ class ForkObjectInputStream extends ObjectInputStream {
         input.readFully(data);
 
         ObjectInputStream deserializer =
-            new ForkObjectInputStream(new ByteArrayInputStream(data), loader);
+                new ForkObjectInputStream(new ByteArrayInputStream(data), loader);
         return deserializer.readObject();
+    }
+
+    /**
+     * Loads the identified class from the specified class loader.
+     *
+     * @param desc class description
+     * @return class loaded class
+     * @throws ClassNotFoundException if the class can not be found
+     */
+    @Override
+    protected Class<?> resolveClass(ObjectStreamClass desc) throws ClassNotFoundException {
+        return Class.forName(desc.getName(), false, loader);
     }
 
 }

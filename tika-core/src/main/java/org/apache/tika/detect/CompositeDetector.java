@@ -43,8 +43,8 @@ public class CompositeDetector implements Detector {
 
     private final List<Detector> detectors;
 
-    public CompositeDetector(MediaTypeRegistry registry, 
-            List<Detector> detectors, Collection<Class<? extends Detector>> excludeDetectors) {
+    public CompositeDetector(MediaTypeRegistry registry, List<Detector> detectors,
+                             Collection<Class<? extends Detector>> excludeDetectors) {
         if (excludeDetectors == null || excludeDetectors.isEmpty()) {
             this.detectors = detectors;
         } else {
@@ -57,9 +57,8 @@ public class CompositeDetector implements Detector {
         }
         this.registry = registry;
     }
-    
-    public CompositeDetector(MediaTypeRegistry registry, 
-                             List<Detector> detectors) {
+
+    public CompositeDetector(MediaTypeRegistry registry, List<Detector> detectors) {
         this(registry, detectors, null);
     }
 
@@ -71,16 +70,16 @@ public class CompositeDetector implements Detector {
         this(Arrays.asList(detectors));
     }
 
-    public MediaType detect(InputStream input, Metadata metadata)
-            throws IOException { 
+    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
         MediaType type = MediaType.OCTET_STREAM;
         for (Detector detector : getDetectors()) {
             //short circuit via OverrideDetector
             //can't rely on ordering because subsequent detector may
             //change Override's to a specialization of Override's
-            if (detector instanceof OverrideDetector
-                    && (metadata.get(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE) != null ||
-                    metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE) != null)) {
+            if (detector instanceof OverrideDetector &&
+                    (metadata.get(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE) != null ||
+                            metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE) !=
+                                    null)) {
                 return detector.detect(input, metadata);
             }
             MediaType detected = detector.detect(input, metadata);
@@ -95,15 +94,20 @@ public class CompositeDetector implements Detector {
      * Returns the component detectors.
      */
     public List<Detector> getDetectors() {
-       return Collections.unmodifiableList(detectors);
+        return Collections.unmodifiableList(detectors);
     }
-    
-    private boolean isExcluded(Collection<Class<? extends Detector>> excludeDetectors, Class<? extends Detector> d) {
+
+    private boolean isExcluded(Collection<Class<? extends Detector>> excludeDetectors,
+                               Class<? extends Detector> d) {
         return excludeDetectors.contains(d) || assignableFrom(excludeDetectors, d);
     }
-    private boolean assignableFrom(Collection<Class<? extends Detector>> excludeDetectors, Class<? extends Detector> d) {
+
+    private boolean assignableFrom(Collection<Class<? extends Detector>> excludeDetectors,
+                                   Class<? extends Detector> d) {
         for (Class<? extends Detector> e : excludeDetectors) {
-            if (e.isAssignableFrom(d)) return true;
+            if (e.isAssignableFrom(d)) {
+                return true;
+            }
         }
         return false;
     }

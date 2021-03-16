@@ -16,25 +16,24 @@
  */
 package org.apache.tika.parser;
 
-import org.apache.tika.Tika;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.xml.sax.SAXException;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.junit.Test;
+import org.xml.sax.SAXException;
+
+import org.apache.tika.Tika;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
 
 public class ParameterizedParserTest {
 
@@ -62,7 +61,8 @@ public class ParameterizedParserTest {
     public void testConfigurableParserTypes() throws Exception {
         Metadata md = getMetadata("TIKA-1986-parameterized.xml");
         for (Map.Entry<String, String> entry : expcted.entrySet()) {
-            assertEquals("mismatch for " + entry.getKey(), entry.getValue(), md.get(entry.getKey()));
+            assertEquals("mismatch for " + entry.getKey(), entry.getValue(),
+                    md.get(entry.getKey()));
         }
     }
 
@@ -70,7 +70,8 @@ public class ParameterizedParserTest {
     public void testConfigurableParserTypesDecorated() throws Exception {
         Metadata md = getMetadata("TIKA-1986-parameterized-decorated.xml");
         for (Map.Entry<String, String> entry : expcted.entrySet()) {
-            assertEquals("mismatch for " + entry.getKey(), entry.getValue(), md.get(entry.getKey()));
+            assertEquals("mismatch for " + entry.getKey(), entry.getValue(),
+                    md.get(entry.getKey()));
         }
     }
 
@@ -113,8 +114,8 @@ public class ParameterizedParserTest {
     //but that has params in the config file
 
     private Metadata getMetadata(String name) throws TikaException, IOException, SAXException {
-        URL url = this.getClass().getResource("/org/apache/tika/config/"+name);
-        assertNotNull("couldn't find: "+name, url);
+        URL url = this.getClass().getResource("/org/apache/tika/config/" + name);
+        assertNotNull("couldn't find: " + name, url);
         TikaConfig tikaConfig = new TikaConfig(url);
         Tika tika = new Tika(tikaConfig);
         Metadata metadata = new Metadata();

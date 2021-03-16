@@ -17,6 +17,7 @@
 package org.apache.tika.language;
 
 // JDK imports
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.BufferedInputStream;
@@ -36,75 +37,91 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.tika.exception.TikaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.tika.exception.TikaException;
 
 /**
  * This class runs a ngram analysis over submitted text, results might be used
  * for automatic language identification.
- * 
+ * <p>
  * The similarity calculation is at experimental level. You have been warned.
- * 
+ * <p>
  * Methods are provided to build new NGramProfiles profiles.
- * 
+ *
  * @author Sami Siren
  * @author Jerome Charron - http://frutch.free.fr/
  * @deprecated
  */
 @Deprecated
 public class LanguageProfilerBuilder {
-    private static final Logger LOG = LoggerFactory.getLogger(LanguageProfilerBuilder.class);
-
-    /** The minimum length allowed for a ngram. */
+    /**
+     * The minimum length allowed for a ngram.
+     */
     final static int ABSOLUTE_MIN_NGRAM_LENGTH = 3; /* was 1 */
-
-    /** The maximum length allowed for a ngram. */
+    /**
+     * The maximum length allowed for a ngram.
+     */
     final static int ABSOLUTE_MAX_NGRAM_LENGTH = 3; /* was 4 */
-
-    /** The default min length of ngram */
+    /**
+     * The default min length of ngram
+     */
     final static int DEFAULT_MIN_NGRAM_LENGTH = 3;
-
-    /** The default max length of ngram */
+    /**
+     * The default max length of ngram
+     */
     final static int DEFAULT_MAX_NGRAM_LENGTH = 3;
-
-    /** The ngram profile file extension */
+    /**
+     * The ngram profile file extension
+     */
     final static String FILE_EXTENSION = "ngp";
-
-    /** The profile max size (number of ngrams of the same size) */
+    /**
+     * The profile max size (number of ngrams of the same size)
+     */
     final static int MAX_SIZE = 1000;
-
-    /** separator char */
+    /**
+     * separator char
+     */
     final static char SEPARATOR = '_';
-    /** The String form of the separator char */
-    private final static String SEP_CHARSEQ = new String(
-            new char[] { SEPARATOR });
-
-    /** The profile's name */
+    private static final Logger LOG = LoggerFactory.getLogger(LanguageProfilerBuilder.class);
+    /**
+     * The String form of the separator char
+     */
+    private final static String SEP_CHARSEQ = new String(new char[]{SEPARATOR});
+    /**
+     * A StringBuffer used during analysis
+     */
+    private final QuickStringBuffer word = new QuickStringBuffer();
+    /**
+     * The profile's name
+     */
     private String name = null;
-
-    /** The NGrams of this profile sorted on the number of occurrences */
+    /**
+     * The NGrams of this profile sorted on the number of occurrences
+     */
     private List<NGramEntry> sorted = null;
-
-    /** The min length of ngram */
+    /**
+     * The min length of ngram
+     */
     private int minLength = DEFAULT_MIN_NGRAM_LENGTH;
-
-    /** The max length of ngram */
+    /**
+     * The max length of ngram
+     */
     private int maxLength = DEFAULT_MAX_NGRAM_LENGTH;
-
-    /** The total number of ngrams occurences */
+    /**
+     * The total number of ngrams occurences
+     */
     private int[] ngramcounts = null;
-
-    /** An index of the ngrams of the profile */
+    /**
+     * An index of the ngrams of the profile
+     */
     private Map<CharSequence, NGramEntry> ngrams = null;
-
-    /** A StringBuffer used during analysis */
-    private QuickStringBuffer word = new QuickStringBuffer();
 
     /**
      * Constructs a new ngram profile
-     * 
-     * @param name is the name of the profile
+     *
+     * @param name   is the name of the profile
      * @param minlen is the min length of ngram sequences
      * @param maxlen is the max length of ngram sequences
      */
@@ -115,10 +132,10 @@ public class LanguageProfilerBuilder {
         this.maxLength = maxlen;
         this.name = name;
     }
-  
+
     /**
      * Constructs a new ngram profile where minlen=3, maxlen=3
-     * 
+     *
      * @param name is a name of profile, usually two length string
      * @since Tika 1.0
      */
@@ -127,254 +144,20 @@ public class LanguageProfilerBuilder {
     }
 
     /**
-     * @return Returns the name.
-     */
-    public String getName() {
-        return name;
-    }
-  
-    // This method was commented because it depends on org.apache.lucene.analysis.Token
-    // that is not a part of the Tika
-    // /**
-    // * Adds ngrams from a token to this profile
-    // *
-    // * @param t is the Token to be added
-    // */
-    // public void add(Token t) {
-    // add(new StringBuffer().append(SEPARATOR)
-    // .append(t.term())
-    // .append(SEPARATOR));
-    // }
-
-    /**
-     * Adds ngrams from a single word to this profile
-     * 
-     * @param word is the word to add
-     */
-    public void add(StringBuffer word) {
-        for (int i = minLength; (i <= maxLength) && (i < word.length()); i++) {
-            add(word, i);
-        }
-    }
-
-    /**
-     * Adds the last NGrams from the specified word.
-     */
-    private void add(QuickStringBuffer word) {
-        int wlen = word.length();
-        if (wlen >= minLength) {
-            int max = Math.min(maxLength, wlen);
-            for (int i = minLength; i <= max; i++) {
-                add(word.subSequence(wlen - i, wlen));
-            }
-        }
-    }
-
-    /**
-     * Adds ngrams from a single word in this profile
-     * 
-     * @param cs char sequence to add
-     */
-    private void add(CharSequence cs) {
-
-        if (cs.equals(SEP_CHARSEQ)) {
-            return;
-        }
-        NGramEntry nge = ngrams.get(cs);
-        if (nge == null) {
-            nge = new NGramEntry(cs);
-            ngrams.put(cs, nge);
-        }
-        nge.inc();
-    }
-
-    /**
-     * Analyzes a piece of text
-     * 
-     * @param text
-     *            the text to be analyzed
-     */
-    public void analyze(StringBuilder text) {
-
-        if (ngrams != null) {
-            ngrams.clear();
-            sorted = null;
-            ngramcounts = null;
-        }
-
-        word.clear().append(SEPARATOR);
-        for (int i = 0; i < text.length(); i++) {
-            char c = Character.toLowerCase(text.charAt(i));
-
-            if (Character.isLetter(c)) {
-                add(word.append(c));
-            } else {
-                // found word boundary
-                if (word.length() > 1) {
-                    // we have a word!
-                    add(word.append(SEPARATOR));
-                    word.clear().append(SEPARATOR);
-                }
-            }
-        }
-
-        if (word.length() > 1) {
-            // we have a word!
-            add(word.append(SEPARATOR));
-        }
-        normalize();
-    }
-
-    /**
-     * @param word
-     * @param n sequence length
-     */
-    private void add(StringBuffer word, int n) {
-        for (int i = 0; i <= word.length() - n; i++) {
-            add(word.subSequence(i, i + n));
-        }
-    }
-    
-    /**
-     * Normalizes the profile (calculates the ngrams frequencies)
-     */
-    protected void normalize() {
-        NGramEntry e = null;
-        Iterator<NGramEntry> i = ngrams.values().iterator();
-
-        // Calculates ngram count if not already done
-        if (ngramcounts == null) {
-            ngramcounts = new int[maxLength + 1];
-            while (i.hasNext()) {
-                e = i.next();
-                ngramcounts[e.size()] += e.count;
-            }
-        }
-
-        i = ngrams.values().iterator();
-        while (i.hasNext()) {
-            e = i.next();
-            e.frequency = (float) e.count / (float) ngramcounts[e.size()];
-        }
-    }
-
-    /**
-     * Returns a sorted list of ngrams (sort done by 1. frequency 2. sequence)
-     * 
-     * @return sorted vector of ngrams
-     */
-    public List<NGramEntry> getSorted() {
-        // make sure sorting is done only once
-        if (sorted == null) {
-            sorted = new ArrayList<>(ngrams.values());
-            Collections.sort(sorted);
-
-            // trim at NGRAM_LENGTH entries
-            if (sorted.size() > MAX_SIZE) {
-                sorted = sorted.subList(0, MAX_SIZE);
-            }
-        }
-        return sorted;
-    }
-
-    // Inherited JavaDoc
-    public String toString() {
-
-        StringBuffer s = new StringBuffer().append("NGramProfile: ")
-                                           .append(name).append("\n");
-
-        for (NGramEntry entry : getSorted()) {
-            s.append("[").append(entry.seq).append("/").append(entry.count)
-                         .append("/").append(entry.frequency).append("]\n");
-        }
-        return s.toString();
-    }
-
-    /**
-     * Calculates a score how well NGramProfiles match each other
-     * 
-     * @param another
-     *            ngram profile to compare against
-     * @return similarity 0=exact match
-     * @throws TikaException
-     *             if could not calculate a score
-     */
-    public float getSimilarity(LanguageProfilerBuilder another)
-            throws TikaException {
-
-        float sum = 0;
-
-        try {
-            Iterator<NGramEntry> i = another.getSorted().iterator();
-            while (i.hasNext()) {
-                NGramEntry other = i.next();
-                if (ngrams.containsKey(other.seq)) {
-                    sum += Math.abs((other.frequency - ngrams.get(other.seq).frequency)) / 2;
-                } else {
-                    sum += other.frequency;
-                }
-            }
-            i = getSorted().iterator();
-            while (i.hasNext()) {
-                NGramEntry other = i.next();
-                if (another.ngrams.containsKey(other.seq)) {
-                    sum += Math.abs((other.frequency - another.ngrams
-                            .get(other.seq).frequency)) / 2;
-                } else {
-                    sum += other.frequency;
-                }
-            }
-        } catch (Exception e) {
-            throw new TikaException("Could not calculate a score how well NGramProfiles match each other");
-        }
-        return sum;
-    }
-
-    /**
-     * Loads a ngram profile from an InputStream (assumes UTF-8 encoded content)
-     * 
-     * @param is the InputStream to read
-     */
-    public void load(InputStream is) throws IOException {
-
-        ngrams.clear();
-        ngramcounts = new int[maxLength + 1];
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is, UTF_8));
-        String line = null;
-
-        while ((line = reader.readLine()) != null) {
-
-            // # starts a comment line
-            if (line.charAt(0) != '#') {
-                int spacepos = line.indexOf(' ');
-                String ngramsequence = line.substring(0, spacepos).trim();
-                int len = ngramsequence.length();
-                if ((len >= minLength) && (len <= maxLength)) {
-                    int ngramcount = Integer.parseInt(line.substring(spacepos + 1));
-                    NGramEntry en = new NGramEntry(ngramsequence, ngramcount);
-                    ngrams.put(en.getSeq(), en);
-                    ngramcounts[len] += ngramcount;
-                }
-            }
-        }
-        normalize();
-    }
-    
-    /**
      * Creates a new Language profile from (preferably quite large - 5-10k of
      * lines) text file
-     * 
-     * @param name to be given for the profile
-     * @param is a stream to be read
+     *
+     * @param name     to be given for the profile
+     * @param is       a stream to be read
      * @param encoding is the encoding of stream
-     * 
      * @throws TikaException if could not create a language profile
-     *  
      */
-    public static LanguageProfilerBuilder create(String name, InputStream is, String encoding) throws TikaException {
+    public static LanguageProfilerBuilder create(String name, InputStream is, String encoding)
+            throws TikaException {
 
-        LanguageProfilerBuilder newProfile = new LanguageProfilerBuilder(name,
-                ABSOLUTE_MIN_NGRAM_LENGTH, ABSOLUTE_MAX_NGRAM_LENGTH);
+        LanguageProfilerBuilder newProfile =
+                new LanguageProfilerBuilder(name, ABSOLUTE_MIN_NGRAM_LENGTH,
+                        ABSOLUTE_MAX_NGRAM_LENGTH);
         BufferedInputStream bis = new BufferedInputStream(is);
 
         byte[] buffer = new byte[4096];
@@ -393,59 +176,30 @@ public class LanguageProfilerBuilder {
         return newProfile;
     }
 
-    /**
-     * Writes NGramProfile content into OutputStream, content is outputted with
-     * UTF-8 encoding
-     * 
-     * @param os the Stream to output to
-     * 
-     * @throws IOException
-     */
-    public void save(OutputStream os) throws IOException {
-        os.write(("# NgramProfile generated at " + new Date() + 
-                  " for Apache Tika Language Identification\n").getBytes(UTF_8));
-
-        // And then each ngram
-
-        // First dispatch ngrams in many lists depending on their size
-        // (one list for each size, in order to store MAX_SIZE ngrams for each
-        // size of ngram)
-        List<NGramEntry> list = new ArrayList<>();
-        List<NGramEntry> sublist = new ArrayList<>();
-        NGramEntry[] entries = ngrams.values().toArray(new NGramEntry[0]);
-        for (int i = minLength; i <= maxLength; i++) {
-            for (NGramEntry entry : entries) {
-                if (entry.getSeq().length() == i) {
-                    sublist.add(entry);
-                }
-            }
-            Collections.sort(sublist);
-            if (sublist.size() > MAX_SIZE) {
-                sublist = sublist.subList(0, MAX_SIZE);
-            }
-            list.addAll(sublist);
-            sublist.clear();
-        }
-        for (NGramEntry e : list) {
-            String line = e.toString() + " " + e.getCount() + "\n";
-            os.write(line.getBytes(UTF_8));
-        }
-        os.flush();
-    }
+    // This method was commented because it depends on org.apache.lucene.analysis.Token
+    // that is not a part of the Tika
+    // /**
+    // * Adds ngrams from a token to this profile
+    // *
+    // * @param t is the Token to be added
+    // */
+    // public void add(Token t) {
+    // add(new StringBuffer().append(SEPARATOR)
+    // .append(t.term())
+    // .append(SEPARATOR));
+    // }
 
     /**
      * main method used for testing only
-     * 
+     *
      * @param args
      */
-    public static void main(String args[]) {
+    public static void main(String[] args) {
 
         // -create he sample_he.txt utf-8
 
-        String usage = "Usage: NGramProfile "
-                + "[-create profilename filename encoding] "
-                + "[-similarity file1 file2] "
-                + "[-score profile-name filename encoding]";
+        String usage = "Usage: NGramProfile " + "[-create profilename filename encoding] " +
+                "[-similarity file1 file2] " + "[-score profile-name filename encoding]";
         int command = 0;
 
         final int CREATE = 1;
@@ -489,52 +243,48 @@ public class LanguageProfilerBuilder {
 
             switch (command) {
 
-            case CREATE:
+                case CREATE:
 
-                File f = new File(filename);
-                FileInputStream fis = new FileInputStream(f);
-                LanguageProfilerBuilder newProfile = LanguageProfilerBuilder
-                        .create(profilename, fis, encoding);
-                fis.close();
-                f = new File(profilename + "." + FILE_EXTENSION);
-                FileOutputStream fos = new FileOutputStream(f);
-                newProfile.save(fos);
-                System.out.println("new profile " + profilename + "."
-                        + FILE_EXTENSION + " was created.");
-                break;
+                    File f = new File(filename);
+                    FileInputStream fis = new FileInputStream(f);
+                    LanguageProfilerBuilder newProfile =
+                            LanguageProfilerBuilder.create(profilename, fis, encoding);
+                    fis.close();
+                    f = new File(profilename + "." + FILE_EXTENSION);
+                    FileOutputStream fos = new FileOutputStream(f);
+                    newProfile.save(fos);
+                    System.out.println(
+                            "new profile " + profilename + "." + FILE_EXTENSION + " was created.");
+                    break;
 
-            case SIMILARITY:
+                case SIMILARITY:
 
-                f = new File(filename);
-                fis = new FileInputStream(f);
-                newProfile = LanguageProfilerBuilder.create(filename, fis,
-                        encoding);
-                newProfile.normalize();
+                    f = new File(filename);
+                    fis = new FileInputStream(f);
+                    newProfile = LanguageProfilerBuilder.create(filename, fis, encoding);
+                    newProfile.normalize();
 
-                f = new File(filename2);
-                fis = new FileInputStream(f);
-                LanguageProfilerBuilder newProfile2 = LanguageProfilerBuilder
-                        .create(filename2, fis, encoding);
-                newProfile2.normalize();
-                System.out.println("Similarity is "
-                        + newProfile.getSimilarity(newProfile2));
-                break;
+                    f = new File(filename2);
+                    fis = new FileInputStream(f);
+                    LanguageProfilerBuilder newProfile2 =
+                            LanguageProfilerBuilder.create(filename2, fis, encoding);
+                    newProfile2.normalize();
+                    System.out.println("Similarity is " + newProfile.getSimilarity(newProfile2));
+                    break;
 
-            case SCORE:
-                f = new File(filename);
-                fis = new FileInputStream(f);
-                newProfile = LanguageProfilerBuilder.create(filename, fis,
-                        encoding);
+                case SCORE:
+                    f = new File(filename);
+                    fis = new FileInputStream(f);
+                    newProfile = LanguageProfilerBuilder.create(filename, fis, encoding);
 
-                f = new File(profilename + "." + FILE_EXTENSION);
-                fis = new FileInputStream(f);
-                LanguageProfilerBuilder compare = new LanguageProfilerBuilder(
-                        profilename, DEFAULT_MIN_NGRAM_LENGTH,
-                        DEFAULT_MAX_NGRAM_LENGTH);
-                compare.load(fis);
-                System.out.println("Score is "
-                        + compare.getSimilarity(newProfile));
-                break;
+                    f = new File(profilename + "." + FILE_EXTENSION);
+                    fis = new FileInputStream(f);
+                    LanguageProfilerBuilder compare =
+                            new LanguageProfilerBuilder(profilename, DEFAULT_MIN_NGRAM_LENGTH,
+                                    DEFAULT_MAX_NGRAM_LENGTH);
+                    compare.load(fis);
+                    System.out.println("Score is " + compare.getSimilarity(newProfile));
+                    break;
 
             }
 
@@ -543,27 +293,288 @@ public class LanguageProfilerBuilder {
         }
     }
 
-  
+    /**
+     * @return Returns the name.
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * Adds ngrams from a single word to this profile
+     *
+     * @param word is the word to add
+     */
+    public void add(StringBuffer word) {
+        for (int i = minLength; (i <= maxLength) && (i < word.length()); i++) {
+            add(word, i);
+        }
+    }
+
+    /**
+     * Adds the last NGrams from the specified word.
+     */
+    private void add(QuickStringBuffer word) {
+        int wlen = word.length();
+        if (wlen >= minLength) {
+            int max = Math.min(maxLength, wlen);
+            for (int i = minLength; i <= max; i++) {
+                add(word.subSequence(wlen - i, wlen));
+            }
+        }
+    }
+
+    /**
+     * Adds ngrams from a single word in this profile
+     *
+     * @param cs char sequence to add
+     */
+    private void add(CharSequence cs) {
+
+        if (cs.equals(SEP_CHARSEQ)) {
+            return;
+        }
+        NGramEntry nge = ngrams.get(cs);
+        if (nge == null) {
+            nge = new NGramEntry(cs);
+            ngrams.put(cs, nge);
+        }
+        nge.inc();
+    }
+
+    /**
+     * Analyzes a piece of text
+     *
+     * @param text the text to be analyzed
+     */
+    public void analyze(StringBuilder text) {
+
+        if (ngrams != null) {
+            ngrams.clear();
+            sorted = null;
+            ngramcounts = null;
+        }
+
+        word.clear().append(SEPARATOR);
+        for (int i = 0; i < text.length(); i++) {
+            char c = Character.toLowerCase(text.charAt(i));
+
+            if (Character.isLetter(c)) {
+                add(word.append(c));
+            } else {
+                // found word boundary
+                if (word.length() > 1) {
+                    // we have a word!
+                    add(word.append(SEPARATOR));
+                    word.clear().append(SEPARATOR);
+                }
+            }
+        }
+
+        if (word.length() > 1) {
+            // we have a word!
+            add(word.append(SEPARATOR));
+        }
+        normalize();
+    }
+
+    /**
+     * @param word
+     * @param n    sequence length
+     */
+    private void add(StringBuffer word, int n) {
+        for (int i = 0; i <= word.length() - n; i++) {
+            add(word.subSequence(i, i + n));
+        }
+    }
+
+    /**
+     * Normalizes the profile (calculates the ngrams frequencies)
+     */
+    protected void normalize() {
+        NGramEntry e = null;
+        Iterator<NGramEntry> i = ngrams.values().iterator();
+
+        // Calculates ngram count if not already done
+        if (ngramcounts == null) {
+            ngramcounts = new int[maxLength + 1];
+            while (i.hasNext()) {
+                e = i.next();
+                ngramcounts[e.size()] += e.count;
+            }
+        }
+
+        i = ngrams.values().iterator();
+        while (i.hasNext()) {
+            e = i.next();
+            e.frequency = (float) e.count / (float) ngramcounts[e.size()];
+        }
+    }
+
+    /**
+     * Returns a sorted list of ngrams (sort done by 1. frequency 2. sequence)
+     *
+     * @return sorted vector of ngrams
+     */
+    public List<NGramEntry> getSorted() {
+        // make sure sorting is done only once
+        if (sorted == null) {
+            sorted = new ArrayList<>(ngrams.values());
+            Collections.sort(sorted);
+
+            // trim at NGRAM_LENGTH entries
+            if (sorted.size() > MAX_SIZE) {
+                sorted = sorted.subList(0, MAX_SIZE);
+            }
+        }
+        return sorted;
+    }
+
+    // Inherited JavaDoc
+    public String toString() {
+
+        StringBuffer s = new StringBuffer().append("NGramProfile: ").append(name).append("\n");
+
+        for (NGramEntry entry : getSorted()) {
+            s.append("[").append(entry.seq).append("/").append(entry.count).append("/")
+                    .append(entry.frequency).append("]\n");
+        }
+        return s.toString();
+    }
+
+    /**
+     * Calculates a score how well NGramProfiles match each other
+     *
+     * @param another ngram profile to compare against
+     * @return similarity 0=exact match
+     * @throws TikaException if could not calculate a score
+     */
+    public float getSimilarity(LanguageProfilerBuilder another) throws TikaException {
+
+        float sum = 0;
+
+        try {
+            Iterator<NGramEntry> i = another.getSorted().iterator();
+            while (i.hasNext()) {
+                NGramEntry other = i.next();
+                if (ngrams.containsKey(other.seq)) {
+                    sum += Math.abs((other.frequency - ngrams.get(other.seq).frequency)) / 2;
+                } else {
+                    sum += other.frequency;
+                }
+            }
+            i = getSorted().iterator();
+            while (i.hasNext()) {
+                NGramEntry other = i.next();
+                if (another.ngrams.containsKey(other.seq)) {
+                    sum += Math.abs((other.frequency - another.ngrams.get(other.seq).frequency)) /
+                            2;
+                } else {
+                    sum += other.frequency;
+                }
+            }
+        } catch (Exception e) {
+            throw new TikaException(
+                    "Could not calculate a score how well NGramProfiles match each other");
+        }
+        return sum;
+    }
+
+    /**
+     * Loads a ngram profile from an InputStream (assumes UTF-8 encoded content)
+     *
+     * @param is the InputStream to read
+     */
+    public void load(InputStream is) throws IOException {
+
+        ngrams.clear();
+        ngramcounts = new int[maxLength + 1];
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is, UTF_8));
+        String line = null;
+
+        while ((line = reader.readLine()) != null) {
+
+            // # starts a comment line
+            if (line.charAt(0) != '#') {
+                int spacepos = line.indexOf(' ');
+                String ngramsequence = line.substring(0, spacepos).trim();
+                int len = ngramsequence.length();
+                if ((len >= minLength) && (len <= maxLength)) {
+                    int ngramcount = Integer.parseInt(line.substring(spacepos + 1));
+                    NGramEntry en = new NGramEntry(ngramsequence, ngramcount);
+                    ngrams.put(en.getSeq(), en);
+                    ngramcounts[len] += ngramcount;
+                }
+            }
+        }
+        normalize();
+    }
+
+    /**
+     * Writes NGramProfile content into OutputStream, content is outputted with
+     * UTF-8 encoding
+     *
+     * @param os the Stream to output to
+     * @throws IOException
+     */
+    public void save(OutputStream os) throws IOException {
+        os.write(("# NgramProfile generated at " + new Date() +
+                " for Apache Tika Language Identification\n").getBytes(UTF_8));
+
+        // And then each ngram
+
+        // First dispatch ngrams in many lists depending on their size
+        // (one list for each size, in order to store MAX_SIZE ngrams for each
+        // size of ngram)
+        List<NGramEntry> list = new ArrayList<>();
+        List<NGramEntry> sublist = new ArrayList<>();
+        NGramEntry[] entries = ngrams.values().toArray(new NGramEntry[0]);
+        for (int i = minLength; i <= maxLength; i++) {
+            for (NGramEntry entry : entries) {
+                if (entry.getSeq().length() == i) {
+                    sublist.add(entry);
+                }
+            }
+            Collections.sort(sublist);
+            if (sublist.size() > MAX_SIZE) {
+                sublist = sublist.subList(0, MAX_SIZE);
+            }
+            list.addAll(sublist);
+            sublist.clear();
+        }
+        for (NGramEntry e : list) {
+            String line = e.toString() + " " + e.getCount() + "\n";
+            os.write(line.getBytes(UTF_8));
+        }
+        os.flush();
+    }
+
     /**
      * Inner class that describes a NGram
      */
     static class NGramEntry implements Comparable<NGramEntry> {
 
-        /** The NGRamProfile this NGram is related to */
-        private LanguageProfilerBuilder profile = null;
-
-        /** The sequence of characters of the ngram */
+        /**
+         * The sequence of characters of the ngram
+         */
         CharSequence seq = null;
-
-        /** The number of occurences of this ngram in its profile */
+        /**
+         * The NGRamProfile this NGram is related to
+         */
+        private LanguageProfilerBuilder profile = null;
+        /**
+         * The number of occurences of this ngram in its profile
+         */
         private int count = 0;
 
-        /** The frequency of this ngram in its profile */
+        /**
+         * The frequency of this ngram in its profile
+         */
         private float frequency = 0.0F;
 
         /**
          * Constructs a new NGramEntry
-         * 
+         *
          * @param seq is the sequence of characters of the ngram
          */
         public NGramEntry(CharSequence seq) {
@@ -572,8 +583,8 @@ public class LanguageProfilerBuilder {
 
         /**
          * Constructs a new NGramEntry
-         * 
-         * @param seq is the sequence of characters of the ngram
+         *
+         * @param seq   is the sequence of characters of the ngram
          * @param count is the number of occurrences of this ngram
          */
         public NGramEntry(String seq, int count) {
@@ -583,7 +594,7 @@ public class LanguageProfilerBuilder {
 
         /**
          * Returns the number of occurrences of this ngram in its profile
-         * 
+         *
          * @return the number of occurrences of this ngram in its profile
          */
         public int getCount() {
@@ -592,7 +603,7 @@ public class LanguageProfilerBuilder {
 
         /**
          * Returns the frequency of this ngram in its profile
-         * 
+         *
          * @return the frequency of this ngram in its profile
          */
         public float getFrequency() {
@@ -601,7 +612,7 @@ public class LanguageProfilerBuilder {
 
         /**
          * Returns the sequence of characters of this ngram
-         * 
+         *
          * @return the sequence of characters of this ngram
          */
         public CharSequence getSeq() {
@@ -610,7 +621,7 @@ public class LanguageProfilerBuilder {
 
         /**
          * Returns the size of this ngram
-         * 
+         *
          * @return the size of this ngram
          */
         public int size() {
@@ -635,22 +646,21 @@ public class LanguageProfilerBuilder {
         }
 
         /**
-         * Associated a profile to this ngram
-         * 
-         * @param profile
-         *            is the profile associated to this ngram
-         */
-        public void setProfile(LanguageProfilerBuilder profile) {
-            this.profile = profile;
-        }
-
-        /**
          * Returns the profile associated to this ngram
-         * 
+         *
          * @return the profile associated to this ngram
          */
         public LanguageProfilerBuilder getProfile() {
             return profile;
+        }
+
+        /**
+         * Associated a profile to this ngram
+         *
+         * @param profile is the profile associated to this ngram
+         */
+        public void setProfile(LanguageProfilerBuilder profile) {
+            this.profile = profile;
         }
 
         // Inherited JavaDoc
@@ -679,7 +689,7 @@ public class LanguageProfilerBuilder {
 
     private static class QuickStringBuffer implements CharSequence {
 
-        private char value[];
+        private char[] value;
 
         private int count;
 
@@ -713,7 +723,7 @@ public class LanguageProfilerBuilder {
                 newCapacity = minimumCapacity;
             }
 
-            char newValue[] = new char[newCapacity];
+            char[] newValue = new char[newCapacity];
             System.arraycopy(value, 0, newValue, 0, count);
             value = newValue;
         }

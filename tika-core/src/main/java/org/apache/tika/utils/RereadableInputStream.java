@@ -61,8 +61,9 @@ public class RereadableInputStream extends InputStream {
 
     /**
      * Whether or not we are currently reading from the byte buffer in memory
-     * Bytes are read until we've exhausted the buffered bytes and then we proceed to read from the original input stream.
-     * If the numbers of bytes read from the original stream eventually exceed maxBytesInMemory, then we'll switch to reading from a file.
+     * Bytes are read until we've exhausted the buffered bytes and then we proceed to read from
+     * the original input stream. If the numbers of bytes read from the original stream
+     * eventually exceed maxBytesInMemory, then we'll switch to reading from a file.
      */
     private boolean readingFromBuffer;
 
@@ -110,8 +111,9 @@ public class RereadableInputStream extends InputStream {
 
 
     /**
-     * Creates a rereadable input stream  with defaults of 512*1024*1024 bytes (500M) for maxBytesInMemory
-     * and both readToEndOfStreamOnFirstRewind and closeOriginalStreamOnClose set to true
+     * Creates a rereadable input stream  with defaults of 512*1024*1024 bytes (500M) for
+     * maxBytesInMemory and both readToEndOfStreamOnFirstRewind and closeOriginalStreamOnClose
+     * set to true
      *
      * @param inputStream stream containing the source of data
      */
@@ -120,7 +122,8 @@ public class RereadableInputStream extends InputStream {
     }
 
     /**
-     * Creates a rereadable input stream defaulting to 512*1024*1024 bytes (500M) for maxBytesInMemory
+     * Creates a rereadable input stream defaulting to 512*1024*1024 bytes (500M) for
+     * maxBytesInMemory
      *
      * @param inputStream stream containing the source of data
      */
@@ -156,7 +159,8 @@ public class RereadableInputStream extends InputStream {
      *                         content size exceeds the array's size, when close() is called, or
      *                         when there are no more references to the instance.
      */
-    public RereadableInputStream(InputStream inputStream, int maxBytesInMemory, boolean closeOriginalStreamOnClose) {
+    public RereadableInputStream(InputStream inputStream, int maxBytesInMemory,
+                                 boolean closeOriginalStreamOnClose) {
         this.inputStream = inputStream;
         this.originalInputStream = inputStream;
         this.maxBytesInMemory = maxBytesInMemory;
@@ -179,7 +183,8 @@ public class RereadableInputStream extends InputStream {
 
         int inputByte = inputStream.read();
         if (inputByte == -1 && inputStream != originalInputStream) {
-            // If we got EOF reading from buffer or file, switch to the original stream and get the next byte from there instead
+            // If we got EOF reading from buffer or file, switch to the original stream and get
+            // the next byte from there instead
             if (readingFromBuffer) {
                 readingFromBuffer = false;
                 inputStream.close();  // Close the input byte stream

@@ -5,9 +5,9 @@
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -72,7 +72,7 @@ public class TaggedContentHandler extends ContentHandlerDecorator {
      *
      * @param exception an exception
      * @return <code>true</code> if the exception was thrown by this handler,
-     *         <code>false</code> otherwise
+     * <code>false</code> otherwise
      */
     public boolean isCauseOf(SAXException exception) {
         if (exception instanceof TaggedSAXException) {
@@ -104,7 +104,7 @@ public class TaggedContentHandler extends ContentHandlerDecorator {
 
     /**
      * Tags any {@link SAXException}s thrown, wrapping and re-throwing.
-     * 
+     *
      * @param e The SAXException thrown
      * @throws SAXException if an XML error occurs
      */

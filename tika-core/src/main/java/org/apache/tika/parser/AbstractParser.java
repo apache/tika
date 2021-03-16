@@ -19,10 +19,11 @@ package org.apache.tika.parser;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
 
 /**
  * Abstract base class for new parsers. This method implements the old
@@ -45,10 +46,10 @@ public abstract class AbstractParser implements Parser {
      * existed in the {@link Parser} interface. No new code should call this
      * method anymore, it's only here for backwards compatibility.
      *
-     * @deprecated use the {@link Parser#parse(InputStream, ContentHandler, Metadata, ParseContext)} method instead
+     * @deprecated use the {@link Parser#parse(InputStream, ContentHandler,
+     * Metadata, ParseContext)} method instead
      */
-    public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
         parse(stream, handler, metadata, new ParseContext());
     }

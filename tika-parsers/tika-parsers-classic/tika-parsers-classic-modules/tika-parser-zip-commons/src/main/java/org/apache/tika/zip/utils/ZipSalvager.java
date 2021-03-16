@@ -49,7 +49,7 @@ public class ZipSalvager {
     public static void salvageCopy(InputStream brokenZip, File salvagedZip, boolean allowStoredEntries) throws IOException {
         if (!(brokenZip instanceof RereadableInputStream)) {
             brokenZip = new RereadableInputStream(brokenZip, 50000,
-                    true, false);
+                    true);
         }
         try {
             try (ZipArchiveOutputStream outputStream = new ZipArchiveOutputStream(salvagedZip);

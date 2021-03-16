@@ -38,7 +38,9 @@ import org.apache.tika.mime.MediaType;
  */
 public class TextDetector implements Detector {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = 4774601079503507765L;
 
     /**
@@ -82,7 +84,7 @@ public class TextDetector implements Detector {
     }
 
     private final int bytesToTest;
-    
+
     /**
      * Constructs a {@link TextDetector} which will look at the default number
      * of bytes from the beginning of the document.
@@ -98,18 +100,17 @@ public class TextDetector implements Detector {
     public TextDetector(int bytesToTest) {
         this.bytesToTest = bytesToTest;
     }
-    
+
     /**
      * Looks at the beginning of the document input stream to determine
      * whether the document is text or not.
      *
-     * @param input document input stream, or <code>null</code>
+     * @param input    document input stream, or <code>null</code>
      * @param metadata ignored
      * @return "text/plain" if the input stream suggest a text document,
-     *         "application/octet-stream" otherwise
+     * "application/octet-stream" otherwise
      */
-    public MediaType detect(InputStream input, Metadata metadata)
-            throws IOException {
+    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
         if (input == null) {
             return MediaType.OCTET_STREAM;
         }

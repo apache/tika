@@ -51,7 +51,7 @@ public class Link {
     public boolean isImage() {
         return "img".equals(type);
     }
-    
+
     public boolean isLink() {
         return "link".equals(type);
     }
@@ -81,7 +81,7 @@ public class Link {
     }
 
     public String getRel() {
-      return rel;
+        return rel;
     }
 
     public String toString() {
