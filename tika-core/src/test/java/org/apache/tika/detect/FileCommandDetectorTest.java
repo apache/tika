@@ -16,7 +16,7 @@
  */
 package org.apache.tika.detect;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
 import java.io.InputStream;
@@ -46,17 +46,23 @@ public class FileCommandDetectorTest {
 
         try (InputStream is = getClass()
                 .getResourceAsStream("/test-documents/basic_embedded.xml")) {
-            assertEquals(MediaType.text("xml"), DETECTOR.detect(is, new Metadata()));
-            //make sure that the detector is resetting the stream
-            assertEquals(MediaType.text("xml"), DETECTOR.detect(is, new Metadata()));
+            //run more than once to ensure that the input stream is reset
+            for (int i = 0; i < 2; i++) {
+                MediaType answer = DETECTOR.detect(is, new Metadata());
+                assertTrue(MediaType.text("xml").equals(answer) ||
+                        MediaType.application("xml").equals(answer));
+            }
         }
 
         //now try with TikaInputStream
         try (InputStream is = TikaInputStream
                 .get(getClass().getResourceAsStream("/test-documents/basic_embedded.xml"))) {
-            assertEquals(MediaType.text("xml"), DETECTOR.detect(is, new Metadata()));
-            //make sure that the detector is resetting the stream
-            assertEquals(MediaType.text("xml"), DETECTOR.detect(is, new Metadata()));
+            //run more than once to ensure that the input stream is reset
+            for (int i = 0; i < 2; i++) {
+                MediaType answer = DETECTOR.detect(is, new Metadata());
+                assertTrue(MediaType.text("xml").equals(answer) ||
+                        MediaType.application("xml").equals(answer));
+            }
         }
     }
 }
