@@ -154,16 +154,13 @@ public class TikaResource {
     /**
      * Utility method to set a property on a class via reflection.
      *
-     * @param httpHeaders the HTTP headers set.
      * @param object      the <code>Object</code> to set the property on.
      * @param key         the key of the HTTP Header.
+     * @param val         the value of HTTP header.
      * @param prefix      the name of the HTTP Header prefix used to find property.
      * @throws WebApplicationException thrown when field cannot be found.
      */
-    public static void processHeaderConfig(MultivaluedMap<String, String> httpHeaders, Object object, String key, String prefix) {
-        String val = httpHeaders.getFirst(key);
-        val = val.trim();
-
+    public static void processHeaderConfig(Object object, String key, String val, String prefix) {
         try {
             String property = StringUtils.removeStartIgnoreCase(key, prefix);
             Field field = null;
@@ -259,18 +256,17 @@ public class TikaResource {
     /**
      * Tries to get method. Silently swallows NoMethodException and returns
      * <code>null</code> if not found.
-     * @param object
-     * @param method
-     * @param clazz
-     * @return
+     * @param object the object to get method from.
+     * @param method the name of the method to get.
+     * @param clazz the parameter type of the method to get.
+     * @return the found method instance
      */
     private static Method tryToGetMethod(Object object, String method, Class clazz) {
         try {
             return object.getClass().getMethod(method, clazz);
         } catch (NoSuchMethodException e) {
-            //swallow
+            return null;
         }
-        return null;
     }
 
     @SuppressWarnings("serial")

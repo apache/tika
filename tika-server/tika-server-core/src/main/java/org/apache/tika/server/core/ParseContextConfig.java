@@ -45,6 +45,13 @@ import javax.ws.rs.core.MultivaluedMap;
  */
 public interface ParseContextConfig {
 
+    /**
+     * Configures the parseContext with present headers.
+     *
+     * @param headers the headers.
+     * @param metadata  the metadata.
+     * @param context  the parse context to configure.
+     */
     void configure(MultivaluedMap<String, String> headers,
                    Metadata metadata, ParseContext context);
 }

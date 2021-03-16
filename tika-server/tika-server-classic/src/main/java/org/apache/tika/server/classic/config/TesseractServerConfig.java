@@ -26,11 +26,29 @@ import org.apache.tika.server.core.ParseContextConfig;
 
 import javax.ws.rs.core.MultivaluedMap;
 
+import java.util.List;
+import java.util.Map;
+
 import static org.apache.tika.server.core.resource.TikaResource.processHeaderConfig;
 
+/**
+ * Tesseract configuration, for the request
+ */
 public class TesseractServerConfig implements ParseContextConfig {
 
+    /**
+     * The HTTP header prefix required (case-insensitive) by this config.
+     */
     public static final String X_TIKA_OCR_HEADER_PREFIX = "X-Tika-OCR";
+
+    /**
+     * Configures the parseContext with present headers.
+     * Note: only first value of header is considered.
+     *
+     * @param httpHeaders the headers.
+     * @param metadata  the metadata.
+     * @param parseContext  the parse context to configure.
+     */
     @Override
     public void configure(MultivaluedMap<String, String> httpHeaders,
                           Metadata metadata, ParseContext parseContext) {
@@ -38,15 +56,15 @@ public class TesseractServerConfig implements ParseContextConfig {
         //if a header is submitted, any params set in --tika-config tika-config.xml
         //upon server startup will be ignored.
         TesseractOCRConfig ocrConfig = null;
-        DocumentSelector documentSelector = null;
-        for (String key : httpHeaders.keySet()) {
-            if (StringUtils.startsWithIgnoreCase(key, X_TIKA_OCR_HEADER_PREFIX)) {
+        for (Map.Entry<String, List<String>> kvp : httpHeaders.entrySet()) {
+            if (StringUtils.startsWithIgnoreCase(kvp.getKey(), X_TIKA_OCR_HEADER_PREFIX)) {
                 ocrConfig = (ocrConfig == null) ? new TesseractOCRConfig() : ocrConfig;
-                processHeaderConfig(httpHeaders, ocrConfig, key, X_TIKA_OCR_HEADER_PREFIX);
+                processHeaderConfig(ocrConfig, kvp.getKey(), kvp.getValue().get(0).trim(), X_TIKA_OCR_HEADER_PREFIX);
             }
         }
         if (ocrConfig != null) {
             parseContext.set(TesseractOCRConfig.class, ocrConfig);
         }
     }
+
 }
