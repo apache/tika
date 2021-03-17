@@ -19,6 +19,7 @@ package org.apache.tika.server;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.lang.management.ManagementFactory;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,6 +47,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.utils.BouncyCastleDigester;
 import org.apache.tika.parser.utils.CommonsDigester;
+import org.apache.tika.server.mbean.ServerStatusExporter;
 import org.apache.tika.server.resource.DetectorResource;
 import org.apache.tika.server.resource.LanguageResource;
 import org.apache.tika.server.resource.MetadataResource;
@@ -69,6 +71,8 @@ import org.apache.tika.server.writer.XMPMessageBodyWriter;
 import org.apache.tika.server.writer.ZipWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.management.*;
 
 public class TikaServerCli {
 
@@ -316,6 +320,7 @@ public class TikaServerCli {
             rCoreProviders.add(new SingletonResourceProvider(new TikaVersion()));
             if (line.hasOption("status")) {
                 rCoreProviders.add(new SingletonResourceProvider(new TikaServerStatus(serverStatus)));
+                registerServerStatusMBean(serverStatus);
             }
             List<ResourceProvider> rAllProviders = new ArrayList<>(rCoreProviders);
             rAllProviders.add(new SingletonResourceProvider(new TikaWelcome(rCoreProviders)));
@@ -398,6 +403,27 @@ public class TikaServerCli {
         }
 
         return serverTimeouts;
+    }
+
+    /**
+     * Registers MBean server bean for server status (via exporter).
+     *
+     * @param serverStatus the server status to expose.
+     */
+    private static void registerServerStatusMBean(ServerStatus serverStatus) {
+        try {
+            MBeanServer server = ManagementFactory.getPlatformMBeanServer();
+            ServerStatusExporter mbean = new ServerStatusExporter(serverStatus);
+            final Class<? extends ServerStatusExporter> objectClass = mbean.getClass();
+            // Construct the ObjectName for the MBean we will register
+            ObjectName mbeanName = new ObjectName(
+                    String.format("%s:type=basic,name=%s", objectClass.getPackage().getName(), objectClass.getSimpleName())
+            );
+            server.registerMBean(mbean, mbeanName);
+            LOG.info("Registered Server Status MBean with objectname : {}", mbeanName);
+        } catch (Exception e) {
+            LOG.warn("Error registering MBean for status", e);
+        }
     }
 
 }

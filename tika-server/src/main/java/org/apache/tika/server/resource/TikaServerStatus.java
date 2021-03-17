@@ -26,6 +26,17 @@ import java.util.Map;
 
 @Path("/status")
 public class TikaServerStatus {
+
+    public static final String SERVER_ID = "server_id";
+
+    public static final String STATUS = "status";
+
+    public static final String LAST_PARSE_MILLIS = "millis_since_last_parse_started";
+
+    public static final String PROCESSED = "files_processed";
+
+    public static final String RESTARTS = "num_restarts";
+
     private final ServerStatus serverStatus;
 
     public TikaServerStatus(ServerStatus serverStatus) {
@@ -36,11 +47,11 @@ public class TikaServerStatus {
     @Produces("application/json")
     public Map<String, Object> getStatus() {
         Map<String, Object> map = new LinkedHashMap<>();
-        map.put("server_id", serverStatus.getServerId());
-        map.put("status", serverStatus.getStatus());
-        map.put("millis_since_last_parse_started", serverStatus.getMillisSinceLastParseStarted());
-        map.put("files_processed", serverStatus.getFilesProcessed());
-        map.put("num_restarts", serverStatus.getNumRestarts());
+        map.put(SERVER_ID, serverStatus.getServerId());
+        map.put(STATUS, serverStatus.getStatus());
+        map.put(LAST_PARSE_MILLIS, serverStatus.getMillisSinceLastParseStarted());
+        map.put(PROCESSED, serverStatus.getFilesProcessed());
+        map.put(RESTARTS, serverStatus.getNumRestarts());
         return map;
     }
 }
