@@ -527,7 +527,7 @@ public class Tika {
             parser.parse(
                     stream, new BodyContentHandler(handler), metadata, context);
         } catch (SAXException e) {
-            if (!handler.isWriteLimitReached(e)) {
+            if (!handler.isWriteLimitReached(e) && !handler.isMaxParseTimeReached(e)) {
                 // This should never happen with BodyContentHandler...
                 throw new TikaException("Unexpected SAX processing failure", e);
             }
@@ -568,7 +568,7 @@ public class Tika {
             parser.parse(
                          stream, new BodyContentHandler(handler), metadata, context);
         } catch (SAXException e) {
-            if (!handler.isWriteLimitReached(e)) {
+            if (!handler.isWriteLimitReached(e) && !handler.isMaxParseTimeReached(e)) {
                 // This should never happen with BodyContentHandler...
                 throw new TikaException("Unexpected SAX processing failure", e);
             }

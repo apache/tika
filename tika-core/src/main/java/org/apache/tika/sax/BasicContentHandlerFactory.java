@@ -70,6 +70,7 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory {
 
     private final HANDLER_TYPE type;
     private final int writeLimit;
+    private final long maxParseTime;
 
     /**
      *
@@ -79,6 +80,20 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory {
     public BasicContentHandlerFactory(HANDLER_TYPE type, int writeLimit) {
         this.type = type;
         this.writeLimit = writeLimit;
+        this.maxParseTime = -1L;
+    }
+
+    /**
+     *
+     * @param type basic type of handler
+     * @param writeLimit max number of characters to store; if < 0, the handler will store all characters
+     * @param maxParseTime if > -1, stop writing characters to store if this many milliseconds has elapsed since
+     *                     first characters were written.
+     */
+    public BasicContentHandlerFactory(HANDLER_TYPE type, int writeLimit, long maxParseTime) {
+        this.type = type;
+        this.writeLimit = writeLimit;
+        this.maxParseTime = maxParseTime;
     }
 
     @Override
@@ -89,25 +104,23 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory {
         } else if (type == HANDLER_TYPE.IGNORE) {
             return new DefaultHandler();
         }
-        if (writeLimit > -1) {
+        if (writeLimit > -1 || maxParseTime > -1L) {
             switch(type) {
-                case TEXT:
-                    return new WriteOutContentHandler(new ToTextContentHandler(), writeLimit);
                 case HTML:
-                    return new WriteOutContentHandler(new ToHTMLContentHandler(), writeLimit);
+                    return new WriteOutContentHandler(new ToHTMLContentHandler(), writeLimit, maxParseTime);
                 case XML:
-                    return new WriteOutContentHandler(new ToXMLContentHandler(), writeLimit);
+                    return new WriteOutContentHandler(new ToXMLContentHandler(), writeLimit, maxParseTime);
                 default:
-                    return new WriteOutContentHandler(new ToTextContentHandler(), writeLimit);
+                case TEXT:
+                    return new WriteOutContentHandler(new ToTextContentHandler(), writeLimit, maxParseTime);
             }
         } else {
             switch (type) {
-                case TEXT:
-                    return new ToTextContentHandler();
                 case HTML:
                     return new ToHTMLContentHandler();
                 case XML:
                     return new ToXMLContentHandler();
+                case TEXT:
                 default:
                     return new ToTextContentHandler();
 
@@ -127,31 +140,29 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory {
             return new DefaultHandler();
         }
         try {
-            if (writeLimit > -1) {
+            if (writeLimit > -1 || maxParseTime > -1L) {
                 switch (type) {
                     case BODY:
                         return new WriteOutContentHandler(
                                 new BodyContentHandler(
-                                        new OutputStreamWriter(os, charset)), writeLimit);
-                    case TEXT:
-                        return new WriteOutContentHandler(new ToTextContentHandler(os, charset.name()), writeLimit);
+                                        new OutputStreamWriter(os, charset)), writeLimit, maxParseTime);
                     case HTML:
-                        return new WriteOutContentHandler(new ToHTMLContentHandler(os, charset.name()), writeLimit);
+                        return new WriteOutContentHandler(new ToHTMLContentHandler(os, charset.name()), writeLimit, maxParseTime);
                     case XML:
-                        return new WriteOutContentHandler(new ToXMLContentHandler(os, charset.name()), writeLimit);
+                        return new WriteOutContentHandler(new ToXMLContentHandler(os, charset.name()), writeLimit, maxParseTime);
+                    case TEXT:
                     default:
-                        return new WriteOutContentHandler(new ToTextContentHandler(os, charset.name()), writeLimit);
+                        return new WriteOutContentHandler(new ToTextContentHandler(os, charset.name()), writeLimit, maxParseTime);
                 }
             } else {
                 switch (type) {
                     case BODY:
                         return new BodyContentHandler(new OutputStreamWriter(os, charset));
-                    case TEXT:
-                        return new ToTextContentHandler(os, charset.name());
                     case HTML:
                         return new ToHTMLContentHandler(os, charset.name());
                     case XML:
                         return new ToXMLContentHandler(os, charset.name());
+                    case TEXT:
                     default:
                         return new ToTextContentHandler(os, charset.name());
 

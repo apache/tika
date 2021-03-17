@@ -376,4 +376,37 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
                 metadataList.get(6).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
 
     }
+
+    @Test
+    public void testMaxParseTimeLimit() throws Exception {
+        long maxParseTime = 1L;
+        Response response = WebClient
+            .create(endPoint + META_PATH)
+            .accept("application/json")
+            .header("maxParseTime", Long.toString(maxParseTime))
+            .put(ClassLoader
+                .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+
+        assertEquals(200, response.getStatus());
+        // Check results
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+        assertEquals("true", metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.MAX_PARSE_TIME_REACHED));
+
+        // now test with -1L
+        maxParseTime = -1L;
+        response = WebClient
+            .create(endPoint + META_PATH)
+            .accept("application/json")
+            .header("maxParseTime", Long.toString(maxParseTime))
+            .put(ClassLoader
+                .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+
+        assertEquals(200, response.getStatus());
+        // Check results
+        reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        metadataList = JsonMetadataList.fromJson(reader);
+        assertNull(metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.MAX_PARSE_TIME_REACHED));
+
+    }
 }

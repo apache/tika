@@ -43,6 +43,8 @@ public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandl
     public final static Property PARSE_TIME_MILLIS = Property.internalText(TikaCoreProperties.TIKA_META_PREFIX + "parse_time_millis");
     public final static Property WRITE_LIMIT_REACHED =
             Property.internalBoolean(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "write_limit_reached");
+    public final static Property MAX_PARSE_TIME_REACHED =
+        Property.internalBoolean(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "max_parse_time_reached");
     public final static Property EMBEDDED_RESOURCE_LIMIT_REACHED =
             Property.internalBoolean(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "embedded_resource_limit_reached");
 

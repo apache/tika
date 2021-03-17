@@ -45,9 +45,20 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
     private final int writeLimit;
 
     /**
+     * The maximum amount of time that can be spent parsing in milliseconds.
+     * Set to -1 for no limit.
+     */
+    private final long maxParseTime;
+
+    /**
      * Number of characters written so far.
      */
     private int writeCount = 0;
+
+    /**
+     * Time the parse started.
+     */
+    private long parseStartedMs = 0;
 
     /**
      * Creates a content handler that writes content up to the given
@@ -60,6 +71,36 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
     public WriteOutContentHandler(ContentHandler handler, int writeLimit) {
         super(handler);
         this.writeLimit = writeLimit;
+        this.maxParseTime = -1L;
+    }
+
+    /**
+     * Creates a content handler that writes content up to the given
+     * write limit to the given character stream.
+     *
+     * @since Apache Tika 1.25
+     * @param writer character stream
+     * @param writeLimit If > -1, stop writing chars to content handler if exceeded this value.
+     * @param maxParseTime The max time in milliseconds that can be spent parsing this file before we stop parsing.
+     */
+    public WriteOutContentHandler(Writer writer, int writeLimit, long maxParseTime) {
+        this(new ToTextContentHandler(writer), writeLimit, maxParseTime);
+    }
+
+    /**
+     * Creates a content handler that writes content up to the given
+     * write limit to the given content handler.
+     *
+     * @since Apache Tika 1.25
+     * @param handler content handler to be decorated
+     * @param writeLimit write limit
+     * @param maxParseTime if > -1, stop writing characters to handler if this many milliseconds has elapsed since 
+     *                     first characters were written.
+     */
+    public WriteOutContentHandler(ContentHandler handler, int writeLimit, long maxParseTime) {
+        super(handler);
+        this.writeLimit = writeLimit;
+        this.maxParseTime = maxParseTime;
     }
 
     /**
@@ -71,7 +112,7 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
      * @param writeLimit write limit
      */
     public WriteOutContentHandler(Writer writer, int writeLimit) {
-        this(new ToTextContentHandler(writer), writeLimit);
+        this(new ToTextContentHandler(writer), writeLimit, -1L);
     }
 
     /**
@@ -81,7 +122,7 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
      * @param writer writer
      */
     public WriteOutContentHandler(Writer writer) {
-        this(writer, -1);
+        this(writer, -1, -1L);
     }
 
     /**
@@ -109,7 +150,7 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
      *                   or -1 to disable the write limit
      */
     public WriteOutContentHandler(int writeLimit) {
-        this(new StringWriter(), writeLimit);
+        this(new StringWriter(), writeLimit, -1L);
     }
 
     /**
@@ -132,9 +173,19 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
     @Override
     public void characters(char[] ch, int start, int length)
             throws SAXException {
+        if (parseStartedMs == 0) {
+            parseStartedMs = System.currentTimeMillis();
+        }
         if (writeLimit == -1 || writeCount + length <= writeLimit) {
             super.characters(ch, start, length);
             writeCount += length;
+            if (maxParseTime > -1 && System.currentTimeMillis() - parseStartedMs > maxParseTime) {
+                throw new MaxParseTimeReachedException(
+                    "Your document took more than " + maxParseTime
+                        + " ms to parse. To receive the full text of the document,"
+                        + " increase your max parse limit. (Text up to the limit is"
+                        + " however available).", tag);
+            }
         } else {
             super.characters(ch, start, writeLimit - writeCount);
             writeCount = writeLimit;
@@ -183,6 +234,23 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
     }
 
     /**
+     * Checks whether the given exception (or any of it's root causes) was
+     * thrown by this handler as a signal of reaching the max parse time.
+     *
+     * @since Apache Tika 1.25
+     * @param t throwable
+     * @return <code>true</code> if the write limit was reached,
+     *         <code>false</code> otherwise
+     */
+    public boolean isMaxParseTimeReached(Throwable t) {
+        if (t instanceof MaxParseTimeReachedException) {
+            return tag.equals(((MaxParseTimeReachedException) t).tag);
+        } else {
+            return t.getCause() != null && isMaxParseTimeReached(t.getCause());
+        }
+    }
+
+    /**
      * The exception used as a signal when the write limit has been reached.
      */
     private static class WriteLimitReachedException extends SAXException {
@@ -196,6 +264,24 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
         public WriteLimitReachedException(String message, Serializable tag) {
            super(message);
            this.tag = tag;
+        }
+
+    }
+
+    /**
+     * The exception used as a signal when the max parse time has been reached.
+     */
+    private static class MaxParseTimeReachedException extends SAXException {
+
+        /** Serial version UID */
+        private static final long serialVersionUID = -5860681246457428931L;
+
+        /** Serializable tag of the handler that caused this exception */
+        private final Serializable tag;
+
+        public MaxParseTimeReachedException(String message, Serializable tag) {
+            super(message);
+            this.tag = tag;
         }
 
     }

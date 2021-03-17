@@ -233,11 +233,13 @@ public class RecursiveParserWrapper extends ParserDecorator {
             context.set(RecursivelySecureContentHandler.class, secureContentHandler);
             getWrappedParser().parse(tis, secureContentHandler, metadata, context);
         } catch (SAXException e) {
-            boolean wlr = isWriteLimitReached(e);
-            if (wlr == false) {
+            if (isWriteLimitReached(e)) {
+                metadata.set(RecursiveParserWrapperHandler.WRITE_LIMIT_REACHED, "true");
+            } else if (isMaxParseTimeReached(e)) {
+                metadata.set(RecursiveParserWrapperHandler.MAX_PARSE_TIME_REACHED, "true");
+            } else {
                 throw e;
             }
-            metadata.set(RecursiveParserWrapperHandler.WRITE_LIMIT_REACHED, "true");
         } catch (Throwable e) {
             //try our best to record the problem in the metadata object
             //then rethrow
@@ -323,6 +325,22 @@ public class RecursiveParserWrapper extends ParserDecorator {
         }
     }
 
+    /**
+     * Copied/modified from WriteOutContentHandler.  Couldn't make that
+     * static, and we need to have something that will work
+     * with exceptions thrown from both BodyContentHandler and WriteOutContentHandler
+     * @param t The exception to check.
+     * @return True if this is a MaxParseTimeReachedException exception.
+     */
+    private boolean isMaxParseTimeReached(Throwable t) {
+        if (t.getMessage() != null &&
+            t.getMessage().indexOf("Your document took more than ") == 0) {
+            return true;
+        } else {
+            return t.getCause() != null && isMaxParseTimeReached(t.getCause());
+        }
+    }
+
     private String getResourceName(Metadata metadata, ParserState state) {
         String objectName = "";
         if (metadata.get(Metadata.RESOURCE_NAME_KEY) != null) {
@@ -387,15 +405,14 @@ public class RecursiveParserWrapper extends ParserDecorator {
             try {
                 super.parse(stream, secureContentHandler, metadata, context);
             } catch (SAXException e) {
-                boolean wlr = isWriteLimitReached(e);
-                if (wlr == true) {
+                if (isWriteLimitReached(e)) {
                     metadata.add(WRITE_LIMIT_REACHED, "true");
+                } else if (isMaxParseTimeReached(e)) {
+                    metadata.set(RecursiveParserWrapperHandler.MAX_PARSE_TIME_REACHED, "true");
+                } else if (catchEmbeddedExceptions) {
+                    ParserUtils.recordParserFailure(this, e, metadata);
                 } else {
-                    if (catchEmbeddedExceptions) {
-                        ParserUtils.recordParserFailure(this, e, metadata);
-                    } else {
-                        throw e;
-                    }
+                    throw e;
                 }
             } catch(CorruptedFileException e) {
                 throw e;
