@@ -19,7 +19,6 @@ package org.apache.tika.parser.microsoft.ooxml.xps;
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -102,7 +101,8 @@ public class XPSParserTest extends TikaTest {
     @Test
     public void testXPSWithDataDescriptor() throws Exception {
         Path path = Paths.get(
-                XPSParserTest.class.getResource("/test-documents/testXPSWithDataDescriptor.xps").toURI());
+                XPSParserTest.class.getResource(
+                        "/test-documents/testXPSWithDataDescriptor.xps").toURI());
         //test both path and stream based
         List<Metadata> metadataList = getRecursiveMetadata(path, true);
         assertEquals(2, metadataList.size());
@@ -123,7 +123,8 @@ public class XPSParserTest extends TikaTest {
     @Test
     public void testOpenXPSWithDataDescriptor() throws Exception {
         Path path = Paths.get(
-                XPSParserTest.class.getResource("/test-documents/testXPSWithDataDescriptor2.xps").toURI());
+                XPSParserTest.class.getResource(
+                        "/test-documents/testXPSWithDataDescriptor2.xps").toURI());
         List<Metadata> metadataList = getRecursiveMetadata(path, true);
         assertEquals(2, metadataList.size());
         assertContains("How was I supposed to know",
