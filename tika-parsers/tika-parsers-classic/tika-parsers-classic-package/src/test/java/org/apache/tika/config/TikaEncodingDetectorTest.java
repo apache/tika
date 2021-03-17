@@ -43,6 +43,7 @@ import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.html.HtmlEncodingDetector;
+import org.apache.tika.parser.html.charsetdetector.StandardHtmlEncodingDetector;
 import org.apache.tika.parser.txt.Icu4jEncodingDetector;
 import org.apache.tika.parser.txt.TXTParser;
 import org.apache.tika.parser.txt.UniversalEncodingDetector;
@@ -56,7 +57,7 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
         assertTrue(detector instanceof CompositeEncodingDetector);
         List<EncodingDetector> detectors = ((CompositeEncodingDetector) detector).getDetectors();
         assertEquals(3, detectors.size());
-        assertTrue(detectors.get(0) instanceof HtmlEncodingDetector);
+        assertTrue(detectors.get(0) instanceof StandardHtmlEncodingDetector);
         assertTrue(detectors.get(1) instanceof UniversalEncodingDetector);
         assertTrue(detectors.get(2) instanceof Icu4jEncodingDetector);
     }

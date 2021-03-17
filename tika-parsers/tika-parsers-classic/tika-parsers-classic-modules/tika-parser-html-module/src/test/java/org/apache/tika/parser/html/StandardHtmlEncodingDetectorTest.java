@@ -177,8 +177,7 @@ public class StandardHtmlEncodingDetectorTest {
 
     @Test
     public void iso88591() throws IOException {
-        // In the spec, iso-8859-1 is an alias for WINDOWS-1252
-        assertWindows1252("<meta charset='iso-8859-1'>");
+        assertCharset("<meta charset='iso-8859-1'>", StandardCharsets.ISO_8859_1);
     }
 
     @Test
@@ -294,10 +293,9 @@ public class StandardHtmlEncodingDetectorTest {
     @Test
     public void withCharsetInContentType() throws IOException {
         metadata.set(Metadata.CONTENT_TYPE, "text/html; Charset=ISO-8859-1");
-        // ISO-8859-1 is an alias for WINDOWS-1252, even if it's set at the transport layer level
-        assertWindows1252("");
-        assertWindows1252("<meta charset='UTF-8'>");
-        assertWindows1252("<meta http-equiv='content-type' content='charset=utf-8'>");
+        assertCharset("", StandardCharsets.ISO_8859_1);
+        assertCharset("<meta charset='UTF-8'>", StandardCharsets.ISO_8859_1);
+        assertCharset("<meta http-equiv='content-type' content='charset=utf-8'>", StandardCharsets.ISO_8859_1);
         // if a BOM is present, it has precedence over transport layer information
         assertCharset("\ufeff<meta charset='WINDOWS-1252'>", StandardCharsets.UTF_8);
         assertCharset("\ufeff<meta charset='WINDOWS-1252'>", StandardCharsets.UTF_16LE);

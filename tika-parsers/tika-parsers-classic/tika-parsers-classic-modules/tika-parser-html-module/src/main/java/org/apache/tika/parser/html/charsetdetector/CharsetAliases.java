@@ -98,8 +98,9 @@ final class CharsetAliases {
         addCharset(charset("windows-1250"), "cp1250", "windows-1250", "x-cp1250");
         addCharset(charset("windows-1251"), "cp1251", "windows-1251", "x-cp1251");
         addCharset(charset("windows-1252"), "ansi_x3.4-1968", "ascii", "cp1252", "cp819", "csisolatin1",
-                "ibm819", "iso-8859-1", "iso-ir-100", "iso8859-1", "iso88591", "iso_8859-1", "iso_8859-1:1987",
-                "l1", "latin1", "us-ascii", "windows-1252", "x-cp1252");
+                "ibm819", "l1", "latin1", "us-ascii", "windows-1252", "x-cp1252");
+        addCharset(charset("ISO-8859-1"), "iso-8859-1", "iso-ir-100", "iso8859-1", "iso88591",
+                "iso_8859-1", "iso_8859-1:1987");
         addCharset(charset("windows-1253"), "cp1253", "windows-1253", "x-cp1253");
         addCharset(charset("windows-1254"), "cp1254", "csisolatin5", "iso-8859-9", "iso-ir-148",
                 "iso8859-9", "iso88599", "iso_8859-9", "iso_8859-9:1989", "l5", "latin5", "windows-1254", "x-cp1254");
