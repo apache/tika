@@ -405,6 +405,11 @@ public class TikaServerCli {
         return serverTimeouts;
     }
 
+    /**
+     * Registers MBean server bean for server status (via exporter).
+     *
+     * @param serverStatus the server status to expose.
+     */
     private static void registerServerStatusMBean(ServerStatus serverStatus) {
         try {
             MBeanServer server = ManagementFactory.getPlatformMBeanServer();
