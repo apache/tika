@@ -21,13 +21,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -417,7 +411,7 @@ public class TikaServerCli {
             final Class<? extends ServerStatusExporter> objectClass = mbean.getClass();
             // Construct the ObjectName for the MBean we will register
             ObjectName mbeanName = new ObjectName(
-                    String.format("%s:type=basic,name=%s", objectClass.getPackage().getName(), objectClass.getSimpleName())
+                    String.format(Locale.ROOT, "%s:type=basic,name=%s", objectClass.getPackage().getName(), objectClass.getSimpleName())
             );
             server.registerMBean(mbean, mbeanName);
             LOG.info("Registered Server Status MBean with objectname : {}", mbeanName);
