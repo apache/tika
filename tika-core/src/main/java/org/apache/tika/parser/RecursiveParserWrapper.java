@@ -28,6 +28,7 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
+import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.sax.SecureContentHandler;
@@ -226,10 +227,17 @@ public class RecursiveParserWrapper extends ParserDecorator {
         long started = System.currentTimeMillis();
         parserState.recursiveParserWrapperHandler.startDocument();
         TemporaryResources tmp = new TemporaryResources();
+        int writeLimit = -1;
+        //TODO -- rely on a new interface WriteLimiting...?
+        //It'd be better not to tie this to a specific class
+        if (recursiveParserWrapperHandler instanceof BasicContentHandlerFactory) {
+            writeLimit =
+                    ((BasicContentHandlerFactory)recursiveParserWrapperHandler).getWriteLimit();
+        }
         try {
             TikaInputStream tis = TikaInputStream.get(stream, tmp);
             RecursivelySecureContentHandler secureContentHandler =
-                        new RecursivelySecureContentHandler(localHandler, tis);
+                        new RecursivelySecureContentHandler(localHandler, tis, writeLimit);
             context.set(RecursivelySecureContentHandler.class, secureContentHandler);
             getWrappedParser().parse(tis, secureContentHandler, metadata, context);
         } catch (SAXException e) {
@@ -315,7 +323,9 @@ public class RecursiveParserWrapper extends ParserDecorator {
      * @return
      */
     private boolean isWriteLimitReached(Throwable t) {
-        if (t.getMessage() != null &&
+        if (t instanceof WriteLimitReached) {
+            return true;
+        } else if (t.getMessage() != null &&
                 t.getMessage().indexOf("Your document contained more than") == 0) {
             return true;
         } else {
@@ -430,12 +440,19 @@ public class RecursiveParserWrapper extends ParserDecorator {
         }
     }
 
-    private class RecursivelySecureContentHandler
-            extends SecureContentHandler {
+    private class RecursivelySecureContentHandler extends SecureContentHandler {
         private ContentHandler handler;
-        public RecursivelySecureContentHandler(ContentHandler handler, TikaInputStream stream) {
+
+        //total allowable chars across all handlers
+        private final int totalWriteLimit;
+
+        //total chars written to all handlers
+        private int totalChars = 0;
+        public RecursivelySecureContentHandler(ContentHandler handler, TikaInputStream stream,
+                                               int totalWriteLimit) {
             super(handler, stream);
             this.handler = handler;
+            this.totalWriteLimit = totalWriteLimit;
         }
 
         public void updateContentHandler(ContentHandler handler) {
@@ -444,12 +461,12 @@ public class RecursiveParserWrapper extends ParserDecorator {
         }
 
         /**
-         *  Bypass the SecureContentHandler...
-         *
-         *  This handler only looks at zip bomb via zip expansion.
-         *  Users should be protected within entries against nested
-         *  nested xml entities.  We don't want to carry
-         *  those stats _across_ entries.
+         * Bypass the SecureContentHandler...
+         * <p>
+         * This handler only looks at zip bomb via zip expansion.
+         * Users should be protected within entries against nested
+         * nested xml entities.  We don't want to carry
+         * those stats _across_ entries.
          *
          * @param uri
          * @param localName
@@ -458,16 +475,48 @@ public class RecursiveParserWrapper extends ParserDecorator {
          * @throws SAXException
          */
         @Override
-        public void startElement(
-                String uri, String localName, String name, Attributes atts)
+        public void startElement(String uri, String localName, String name, Attributes atts)
                 throws SAXException {
             this.handler.startElement(uri, localName, name, atts);
         }
 
         @Override
-        public void endElement(
-                String uri, String localName, String name) throws SAXException {
+        public void endElement(String uri, String localName, String name) throws SAXException {
             this.handler.endElement(uri, localName, name);
         }
+
+        @Override
+        public void characters(char[] ch, int start, int length) throws SAXException {
+            if (totalWriteLimit < 0) {
+                advance(length);
+                super.characters(ch, start, length);
+                return;
+            }
+            int availableLength = Math.min(totalWriteLimit - totalChars, length);
+            advance(availableLength);
+            super.characters(ch, start, availableLength);
+            if (availableLength < length) {
+                throw new WriteLimitReached();
+            }
+        }
+
+        @Override
+        public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
+            if (totalWriteLimit < 0) {
+                advance(length);
+                super.ignorableWhitespace(ch, start, length);
+                return;
+            }
+            int availableLength = Math.min(totalWriteLimit - totalChars, length);
+            advance(availableLength);
+            super.ignorableWhitespace(ch, start, availableLength);
+            if (availableLength < length) {
+                throw new WriteLimitReached();
+            }
+        }
+    }
+
+    private static class WriteLimitReached extends SAXException {
+
     }
 }
