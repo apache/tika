@@ -21,10 +21,15 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -39,6 +44,9 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.opendocument.OpenOfficeParser;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BodyContentHandler;
+
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
@@ -616,6 +624,27 @@ public class ODFParserTest extends TikaTest {
         assertContains("If WsGQFM Or 2 Then", macro.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
         assertEquals("test", macro.get(Metadata.RESOURCE_NAME_KEY));
 
+    }
+
+    @Test(expected = EncryptedDocumentException.class)
+    public void testEncryptedODTFile() throws Exception {
+        Path p =
+                Paths.get(
+                        ODFParserTest.class.getResource(
+                                "/test-documents/testODTEncrypted.odt").toURI());
+        getRecursiveMetadata(p, false);
+    }
+
+    //this, of course, should throw an EncryptedDocumentException
+    //but the file can't be read by Java's ZipInputStream or
+    //by commons compress, unless you enable descriptors.
+    //https://issues.apache.org/jira/browse/ODFTOOLKIT-402
+    @Test(expected = TikaException.class)
+    public void testEncryptedODTStream() throws Exception {
+        try (InputStream is = ODFParserTest.class.getResourceAsStream(
+                                "/test-documents/testODTEncrypted.odt")) {
+            getRecursiveMetadata(is, false);
+        }
     }
 
     private ParseContext getNonRecursingParseContext() {
