@@ -20,15 +20,15 @@
  */
 package org.apache.tika.parser.ocr.tess4j;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ImageUtil {
     private static final Logger LOG = LoggerFactory.getLogger(ImageUtil.class);
@@ -57,7 +57,7 @@ public class ImageUtil {
                 int var7 = var4 & 255;
                 var8 = (double) var5 * 0.299D + (double) var6 * 0.587D + (double) var7 * 0.114D;
             } catch (Exception var11) {
-                   LOG.warn("", var11);
+                LOG.warn("", var11);
             }
 
             return var8 < (double) var3;
@@ -77,8 +77,10 @@ public class ImageUtil {
         double var12 = Math.toRadians(var1);
 
         for (int var14 = 0; var14 < var11.length; var14 += 2) {
-            int var15 = (int) (Math.cos(var12) * (double) (var11[var14] - var3) - Math.sin(var12) * (double) (var11[var14 + 1] - var4) + (double) var3);
-            int var16 = (int) (Math.sin(var12) * (double) (var11[var14] - var3) + Math.cos(var12) * (double) (var11[var14 + 1] - var4) + (double) var4);
+            int var15 = (int) (Math.cos(var12) * (double) (var11[var14] - var3) -
+                    Math.sin(var12) * (double) (var11[var14 + 1] - var4) + (double) var3);
+            int var16 = (int) (Math.sin(var12) * (double) (var11[var14] - var3) +
+                    Math.cos(var12) * (double) (var11[var14 + 1] - var4) + (double) var4);
             if (var15 > var9) {
                 var9 = var15;
             }
@@ -100,7 +102,8 @@ public class ImageUtil {
         var4 -= var8;
         BufferedImage var17 = new BufferedImage(var9 - var7, var10 - var8, var0.getType());
         Graphics2D var18 = var17.createGraphics();
-        var18.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        var18.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                RenderingHints.VALUE_INTERPOLATION_BICUBIC);
         var18.setBackground(Color.white);
         var18.fillRect(0, 0, var17.getWidth(), var17.getHeight());
         AffineTransform var19 = new AffineTransform();

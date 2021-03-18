@@ -32,16 +32,14 @@ public class UniversalEncodingDetector implements EncodingDetector {
 
     private int markLimit = DEFAULT_MARK_LIMIT;
 
-    public Charset detect(InputStream input, Metadata metadata)
-            throws IOException {
+    public Charset detect(InputStream input, Metadata metadata) throws IOException {
         if (input == null) {
             return null;
         }
 
         input.mark(markLimit);
         try {
-            UniversalEncodingListener listener =
-                    new UniversalEncodingListener(metadata);
+            UniversalEncodingListener listener = new UniversalEncodingListener(metadata);
 
             byte[] b = new byte[BUFSIZE];
             int n = 0;
@@ -49,7 +47,7 @@ public class UniversalEncodingDetector implements EncodingDetector {
             while (m != -1 && n < markLimit && !listener.isDone()) {
                 n += m;
                 listener.handleData(b, 0, m);
-                m = input.read(b, 0, Math.min(b.length,markLimit - n));
+                m = input.read(b, 0, Math.min(b.length, markLimit - n));
             }
 
             return listener.dataEnd();
@@ -58,6 +56,10 @@ public class UniversalEncodingDetector implements EncodingDetector {
         } finally {
             input.reset();
         }
+    }
+
+    public int getMarkLimit() {
+        return markLimit;
     }
 
     /**
@@ -69,9 +71,5 @@ public class UniversalEncodingDetector implements EncodingDetector {
     @Field
     public void setMarkLimit(int markLimit) {
         this.markLimit = markLimit;
-    }
-
-    public int getMarkLimit() {
-        return markLimit;
     }
 }

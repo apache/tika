@@ -27,6 +27,18 @@ class Revision {
     ExtendedGUID gosid = ExtendedGUID.nil();
     ExtendedGUID dependent = ExtendedGUID.nil();
 
+    public Revision() {
+
+    }
+
+    public Revision(Map<Long, GUID> globalId, List<FileNodePtr> manifestList, ExtendedGUID gosid,
+                    ExtendedGUID dependent) {
+        this.globalId = globalId;
+        this.manifestList = manifestList;
+        this.gosid = gosid;
+        this.dependent = dependent;
+    }
+
     public Map<Long, GUID> getGlobalId() {
         return globalId;
     }
@@ -56,17 +68,6 @@ class Revision {
     }
 
     public void setDependent(ExtendedGUID dependent) {
-        this.dependent = dependent;
-    }
-
-    public Revision() {
-
-    }
-
-    public Revision(Map<Long, GUID> globalId, List<FileNodePtr> manifestList, ExtendedGUID gosid, ExtendedGUID dependent) {
-        this.globalId = globalId;
-        this.manifestList = manifestList;
-        this.gosid = gosid;
         this.dependent = dependent;
     }
 }

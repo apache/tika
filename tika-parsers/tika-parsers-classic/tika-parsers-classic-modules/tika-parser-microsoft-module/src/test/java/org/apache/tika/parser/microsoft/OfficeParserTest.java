@@ -20,12 +20,12 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
 
+import org.junit.Test;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.microsoft.ooxml.OOXMLParserTest;
-import org.junit.Test;
 
 
 public class OfficeParserTest extends TikaTest {

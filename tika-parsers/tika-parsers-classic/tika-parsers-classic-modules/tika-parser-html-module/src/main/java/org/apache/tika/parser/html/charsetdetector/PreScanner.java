@@ -33,10 +33,12 @@ import java.util.regex.Pattern;
  */
 class PreScanner {
 
-    private static final Pattern CHARSET_PATTERN = Pattern.compile("charset\\s*=\\s*([\"']?)([^\"'\\s;]+)\\1");
+    private static final Pattern CHARSET_PATTERN =
+            Pattern.compile("charset\\s*=\\s*([\"']?)([^\"'\\s;]+)\\1");
     private static final byte[] COMMENT_START = {(byte) '<', (byte) '!', (byte) '-', (byte) '-'};
     private static final byte[] COMMENT_END = {(byte) '-', (byte) '-', (byte) '>'};
-    private static final byte[] META_TAG_START = {(byte) '<', (byte) 'm', (byte) 'e', (byte) 't', (byte) 'a'};
+    private static final byte[] META_TAG_START =
+            {(byte) '<', (byte) 'm', (byte) 'e', (byte) 't', (byte) 'a'};
     private static final byte SLASH = (byte) '/';
     private static final byte EQUAL = (byte) '=';
     private static final byte TAG_START = (byte) '<';
@@ -76,7 +78,9 @@ class PreScanner {
 
     static String getEncodingFromMeta(String attributeValue) {
         Matcher matcher = CHARSET_PATTERN.matcher(attributeValue);
-        if (!matcher.find()) return null;
+        if (!matcher.find()) {
+            return null;
+        }
         return matcher.group(2);
     }
 
@@ -95,19 +99,20 @@ class PreScanner {
 
     Charset detectBOM() {
         try {
-            if (expect(UTF8_BOM)) return StandardCharsets.UTF_8;
-            else if (expect(UTF16_BE_BOM)) return StandardCharsets.UTF_16BE;
-            else if (expect(UTF16_LE_BOM)) return StandardCharsets.UTF_16LE;
+            if (expect(UTF8_BOM)) {
+                return StandardCharsets.UTF_8;
+            } else if (expect(UTF16_BE_BOM)) {
+                return StandardCharsets.UTF_16BE;
+            } else if (expect(UTF16_LE_BOM)) {
+                return StandardCharsets.UTF_16LE;
+            }
         } catch (IOException e) { /* stream could not be read, also return null */ }
         return null;
     }
 
     private boolean processAtLeastOneByte() {
         try {
-            return processComment() ||
-                    processMeta() ||
-                    processTag() ||
-                    processSpecialTag() ||
+            return processComment() || processMeta() || processTag() || processSpecialTag() ||
                     processAny();
         } catch (IOException e) {
             return false;
@@ -123,11 +128,13 @@ class PreScanner {
         stream.mark(3);
         if (read() == TAG_START) {
             int read = stream.read();
-            if (read == SLASH) read = stream.read();
-            if ((LOWER_A <= read && read <= LOWER_Z) ||
-                    (UPPER_A <= read && read <= UPPER_Z)) {
-                do stream.mark(1);
-                while (!contains(SPACE_OR_TAG_END, read()));
+            if (read == SLASH) {
+                read = stream.read();
+            }
+            if ((LOWER_A <= read && read <= LOWER_Z) || (UPPER_A <= read && read <= UPPER_Z)) {
+                do {
+                    stream.mark(1);
+                } while (!contains(SPACE_OR_TAG_END, read()));
                 stream.reset();
                 while (getAttribute() != null) {/* ignore the attribute*/}
                 return true;
@@ -151,7 +158,8 @@ class PreScanner {
         stream.mark(6); // len("<meta ") == 6
         if (readCaseInsensitive(META_TAG_START) && contains(SPACE_OR_SLASH, read())) {
             MetaProcessor metaProcessor = new MetaProcessor();
-            for (Map.Entry<String, String> attribute = getAttribute(); attribute != null; attribute = getAttribute()) {
+            for (Map.Entry<String, String> attribute = getAttribute(); attribute != null;
+                    attribute = getAttribute()) {
                 metaProcessor.processAttribute(attribute);
             }
             metaProcessor.updateDetectedCharset(detectedCharset);
@@ -169,9 +177,13 @@ class PreScanner {
      */
     private Map.Entry<String, String> getAttribute() throws IOException {
         String name = getAttributeName();
-        if (name == null) return null;
+        if (name == null) {
+            return null;
+        }
 
-        if (!expect(EQUAL)) return new AbstractMap.SimpleEntry<>(name, "");
+        if (!expect(EQUAL)) {
+            return new AbstractMap.SimpleEntry<>(name, "");
+        }
         skipAll(WHITESPACE);
 
         String value = getAttributeValue();
@@ -180,10 +192,11 @@ class PreScanner {
 
     private String getAttributeName() throws IOException {
         skipAll(SPACE_OR_SLASH);
-        if (expect(TAG_END)) return null;
+        if (expect(TAG_END)) {
+            return null;
+        }
         StringBuilder name = new StringBuilder();
-        while (!(peek() == EQUAL && name.length() > 0) &&
-                !(peek() == TAG_END || peek() == SLASH) &&
+        while (!(peek() == EQUAL && name.length() > 0) && !(peek() == TAG_END || peek() == SLASH) &&
                 !skipAll(WHITESPACE)) {
             name.append((char) getLowerCaseChar());
         }
@@ -200,7 +213,8 @@ class PreScanner {
             }
         } else {
             stream.reset();
-            for (byte b = getLowerCaseChar(); !contains(SPACE_OR_TAG_END, b); b = getLowerCaseChar()) {
+            for (byte b = getLowerCaseChar(); !contains(SPACE_OR_TAG_END, b);
+                    b = getLowerCaseChar()) {
                 value.append((char) b);
                 stream.mark(1);
             }
@@ -222,13 +236,19 @@ class PreScanner {
 
     private byte getLowerCaseChar() throws IOException {
         byte nextPoint = read();
-        if (nextPoint >= 'A' && nextPoint <= 'Z') nextPoint += 0x20; // lowercase
+        if (nextPoint >= 'A' && nextPoint <= 'Z') {
+            nextPoint += 0x20; // lowercase
+        }
         return nextPoint;
     }
 
     private boolean processComment() throws IOException {
-        if (!expect(COMMENT_START)) return false;
-        if (!expect(TAG_END)) skipUntil(COMMENT_END);
+        if (!expect(COMMENT_START)) {
+            return false;
+        }
+        if (!expect(TAG_END)) {
+            skipUntil(COMMENT_END);
+        }
         return true;
     }
 
@@ -246,18 +266,25 @@ class PreScanner {
 
     private void skipUntil(byte... expected) throws IOException {
         while (!expect(expected)) {
-            if (stream.read() == -1) return;
+            if (stream.read() == -1) {
+                return;
+            }
         }
     }
 
     private boolean readCaseInsensitive(byte... bs) throws IOException {
-        for (byte b : bs) if (getLowerCaseChar() != b) return false;
+        for (byte b : bs)
+            if (getLowerCaseChar() != b) {
+                return false;
+            }
         return true;
     }
 
     private byte read() throws IOException {
         int r = stream.read();
-        if (r == -1) throw new IOException();
+        if (r == -1) {
+            throw new IOException();
+        }
         return (byte) r;
     }
 

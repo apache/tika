@@ -25,6 +25,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
 
+import com.pff.PSTAttachment;
+import com.pff.PSTException;
+import com.pff.PSTFile;
+import com.pff.PSTFolder;
+import com.pff.PSTMessage;
+import com.pff.PSTRecipient;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -38,25 +48,15 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.OutlookExtractor;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-
-import com.pff.PSTAttachment;
-import com.pff.PSTException;
-import com.pff.PSTFile;
-import com.pff.PSTFolder;
-import com.pff.PSTMessage;
-import com.pff.PSTRecipient;
 
 /**
  * Parser for MS Outlook PST email storage files
  */
 public class OutlookPSTParser extends AbstractParser {
 
+    public static final MediaType MS_OUTLOOK_PST_MIMETYPE =
+            MediaType.application("vnd.ms-outlook-pst");
     private static final long serialVersionUID = 620998217748364063L;
-
-    public static final MediaType MS_OUTLOOK_PST_MIMETYPE = MediaType.application("vnd.ms-outlook-pst");
     private static final Set<MediaType> SUPPORTED_TYPES = singleton(MS_OUTLOOK_PST_MIMETYPE);
 
     private static AttributesImpl createAttribute(String attName, String attValue) {
@@ -70,11 +70,12 @@ public class OutlookPSTParser extends AbstractParser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
 
         // Use the delegate parser to parse the contained document
-        EmbeddedDocumentExtractor embeddedExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        EmbeddedDocumentExtractor embeddedExtractor =
+                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
         metadata.set(Metadata.CONTENT_TYPE, MS_OUTLOOK_PST_MIMETYPE.toString());
 
@@ -88,8 +89,9 @@ public class OutlookPSTParser extends AbstractParser {
             metadata.set(Metadata.CONTENT_LENGTH, valueOf(pstFile.getFileHandle().length()));
             boolean isValid = pstFile.getFileHandle().getFD().valid();
             metadata.set("isValid", valueOf(isValid));
-            if(pstFile.getPSTFileType() == PSTFile.PST_TYPE_2013_UNICODE) {
-                throw new TikaException("OST 2013 support not added yet. It will be when https://github.com/rjohnsondev/java-libpst/issues/60 is fixed.");
+            if (pstFile.getPSTFileType() == PSTFile.PST_TYPE_2013_UNICODE) {
+                throw new TikaException(
+                        "OST 2013 support not added yet. It will be when https://github.com/rjohnsondev/java-libpst/issues/60 is fixed.");
             }
             if (isValid) {
                 parseFolder(xhtml, pstFile.getRootFolder(), embeddedExtractor);
@@ -111,8 +113,8 @@ public class OutlookPSTParser extends AbstractParser {
         xhtml.endDocument();
     }
 
-    private void parseFolder(XHTMLContentHandler handler, PSTFolder pstFolder, EmbeddedDocumentExtractor embeddedExtractor)
-            throws Exception {
+    private void parseFolder(XHTMLContentHandler handler, PSTFolder pstFolder,
+                             EmbeddedDocumentExtractor embeddedExtractor) throws Exception {
         if (pstFolder.getContentCount() > 0) {
             PSTMessage pstMail = (PSTMessage) pstFolder.getNextChild();
             while (pstMail != null) {
@@ -132,7 +134,8 @@ public class OutlookPSTParser extends AbstractParser {
     }
 
     private void parseMailAndAttachments(XHTMLContentHandler handler, PSTMessage pstMail,
-            EmbeddedDocumentExtractor embeddedExtractor) throws SAXException, IOException, TikaException {
+                                         EmbeddedDocumentExtractor embeddedExtractor)
+            throws SAXException, IOException, TikaException {
         AttributesImpl attributes = new AttributesImpl();
         attributes.addAttribute("", "class", "class", "CDATA", "embedded");
         attributes.addAttribute("", "id", "id", "CDATA", pstMail.getInternetMessageId());
@@ -151,10 +154,12 @@ public class OutlookPSTParser extends AbstractParser {
         handler.endElement("div");
     }
 
-    private void parserMailItem(XHTMLContentHandler handler, PSTMessage pstMail, Metadata mailMetadata,
-                                EmbeddedDocumentExtractor embeddedExtractor) throws SAXException, IOException {
+    private void parserMailItem(XHTMLContentHandler handler, PSTMessage pstMail,
+                                Metadata mailMetadata, EmbeddedDocumentExtractor embeddedExtractor)
+            throws SAXException, IOException {
         mailMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, pstMail.getInternetMessageId());
-        mailMetadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, pstMail.getInternetMessageId());
+        mailMetadata
+                .set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, pstMail.getInternetMessageId());
         mailMetadata.set(TikaCoreProperties.IDENTIFIER, pstMail.getInternetMessageId());
         mailMetadata.set(TikaCoreProperties.TITLE, pstMail.getSubject());
         mailMetadata.set(Metadata.MESSAGE_FROM, pstMail.getSenderName());
@@ -187,7 +192,8 @@ public class OutlookPSTParser extends AbstractParser {
         try {
             for (int i = 0; i < pstMail.getNumberOfRecipients(); i++) {
                 PSTRecipient recipient = pstMail.getRecipient(i);
-                switch (OutlookExtractor.RECIPIENT_TYPE.getTypeFromVal(recipient.getRecipientType())) {
+                switch (OutlookExtractor.RECIPIENT_TYPE
+                        .getTypeFromVal(recipient.getRecipientType())) {
                     case TO:
                         OutlookExtractor.addEvenIfNull(Message.MESSAGE_TO_DISPLAY_NAME,
                                 recipient.getDisplayName(), mailMetadata);
@@ -223,12 +229,12 @@ public class OutlookPSTParser extends AbstractParser {
         byte[] mailContent = pstMail.getBody().getBytes(UTF_8);
         mailMetadata.set(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE,
                 MediaType.TEXT_PLAIN.toString());
-        embeddedExtractor.parseEmbedded(new ByteArrayInputStream(mailContent),
-                handler, mailMetadata, true);
+        embeddedExtractor
+                .parseEmbedded(new ByteArrayInputStream(mailContent), handler, mailMetadata, true);
     }
 
     private void parseMailAttachments(XHTMLContentHandler xhtml, PSTMessage email,
-                                     final Metadata mailMetadata,
+                                      final Metadata mailMetadata,
                                       EmbeddedDocumentExtractor embeddedExtractor)
             throws TikaException {
         int numberOfAttachments = email.getNumberOfAttachments();
@@ -261,7 +267,7 @@ public class OutlookPSTParser extends AbstractParser {
                     TikaInputStream tis = null;
                     try {
                         tis = TikaInputStream.get(attach.getFileInputStream());
-                    } catch (NullPointerException e) {//TIKA-2488
+                    } catch (NullPointerException e) { //TIKA-2488
                         EmbeddedDocumentUtil.recordEmbeddedStreamException(e, mailMetadata);
                         continue;
                     }

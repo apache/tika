@@ -20,18 +20,19 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
 
+import org.junit.Before;
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Before;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
 
 /**
  * Limited testing for the iWorks 13 format parser, which
- *  currently doesn't do anything more than detection....
+ * currently doesn't do anything more than detection....
  */
 public class IWork13ParserTest extends TikaTest {
     private IWork13PackageParser iWorkParser;
@@ -43,42 +44,42 @@ public class IWork13ParserTest extends TikaTest {
         parseContext = new ParseContext();
         parseContext.set(Parser.class, AUTO_DETECT_PARSER);
     }
-    
+
     @Test
     public void testParseKeynote13() throws Exception {
         InputStream input = getResourceAsStream("/test-documents/testKeynote2013.key");
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
         iWorkParser.parse(input, handler, metadata, parseContext);
-        
+
         // Currently parsing is a no-op, so will only get the Type
         assertEquals(1, metadata.size());
         assertEquals("", handler.toString());
         assertEquals(IWork13PackageParser.IWork13DocumentType.KEYNOTE13.getType().toString(),
-                     metadata.get(Metadata.CONTENT_TYPE));
+                metadata.get(Metadata.CONTENT_TYPE));
     }
-    
+
     @Test
     public void testParseNumbers13() throws Exception {
         InputStream input = getResourceAsStream("/test-documents/testNumbers2013.numbers");
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
         iWorkParser.parse(input, handler, metadata, parseContext);
-        
+
         // Currently parsing is a no-op, and we can't get the type without
         //  decoding the Snappy stream
         // TODO Test properly when a full Parser is added
         assertEquals(0, metadata.size());
         assertEquals("", handler.toString());
     }
-    
+
     @Test
     public void testParsePages13() throws Exception {
         InputStream input = getResourceAsStream("/test-documents/testPages2013.pages");
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
         iWorkParser.parse(input, handler, metadata, parseContext);
-        
+
         // Currently parsing is a no-op, and we can't get the type without
         //  decoding the Snappy stream
         // TODO Test properly when a full Parser is added

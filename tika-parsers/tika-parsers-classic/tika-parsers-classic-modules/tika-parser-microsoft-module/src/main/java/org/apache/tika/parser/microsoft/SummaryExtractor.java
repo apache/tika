@@ -25,7 +25,6 @@ import java.util.Set;
 
 import org.apache.poi.hpsf.CustomProperties;
 import org.apache.poi.hpsf.DocumentSummaryInformation;
-import org.apache.poi.hpsf.MarkUnsupportedException;
 import org.apache.poi.hpsf.NoPropertySetStreamException;
 import org.apache.poi.hpsf.PropertySet;
 import org.apache.poi.hpsf.SummaryInformation;
@@ -34,6 +33,9 @@ import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -42,8 +44,6 @@ import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Extractor for Common OLE2 (HPSF) metadata
@@ -51,8 +51,7 @@ import org.slf4j.LoggerFactory;
 public class SummaryExtractor {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractPOIFSExtractor.class);
 
-    private static final String SUMMARY_INFORMATION =
-            SummaryInformation.DEFAULT_STREAM_NAME;
+    private static final String SUMMARY_INFORMATION = SummaryInformation.DEFAULT_STREAM_NAME;
 
     private static final String DOCUMENT_SUMMARY_INFORMATION =
             DocumentSummaryInformation.DEFAULT_STREAM_NAME;
@@ -63,28 +62,44 @@ public class SummaryExtractor {
         this.metadata = metadata;
     }
 
-    public void parseSummaries(POIFSFileSystem filesystem)
-            throws IOException, TikaException {
+    //MS stores values that should be multiple values (e.g. dc:creator)
+    //as a semicolon-delimited list.  We need to split
+    //on semicolon to add each value.
+    public static void addMulti(Metadata metadata, Property property, String string) {
+        if (string == null) {
+            return;
+        }
+        String[] parts = string.split(";");
+        String[] current = metadata.getValues(property);
+        Set<String> seen = new HashSet<>();
+        if (current != null) {
+            seen.addAll(Arrays.asList(current));
+        }
+        for (String part : parts) {
+            if (!seen.contains(part)) {
+                metadata.add(property, part);
+                seen.add(part);
+            }
+        }
+    }
+
+    public void parseSummaries(POIFSFileSystem filesystem) throws IOException, TikaException {
         parseSummaries(filesystem.getRoot());
     }
 
-    public void parseSummaries(DirectoryNode root)
-            throws IOException, TikaException {
+    public void parseSummaries(DirectoryNode root) throws IOException, TikaException {
         parseSummaryEntryIfExists(root, SUMMARY_INFORMATION);
         parseSummaryEntryIfExists(root, DOCUMENT_SUMMARY_INFORMATION);
     }
 
-    private void parseSummaryEntryIfExists(
-            DirectoryNode root, String entryName)
+    private void parseSummaryEntryIfExists(DirectoryNode root, String entryName)
             throws IOException, TikaException {
         try {
-            if (! root.hasEntry(entryName)) {
+            if (!root.hasEntry(entryName)) {
                 return;
             }
-            DocumentEntry entry =
-                    (DocumentEntry) root.getEntry(entryName);
-            PropertySet properties =
-                    new PropertySet(new DocumentInputStream(entry));
+            DocumentEntry entry = (DocumentEntry) root.getEntry(entryName);
+            PropertySet properties = new PropertySet(new DocumentInputStream(entry));
             if (properties.isSummaryInformation()) {
                 parse(new SummaryInformation(properties));
             }
@@ -225,27 +240,6 @@ public class SummaryExtractor {
     private void set(String name, long value) {
         if (value > 0) {
             metadata.set(name, Long.toString(value));
-        }
-    }
-
-    //MS stores values that should be multiple values (e.g. dc:creator)
-    //as a semicolon-delimited list.  We need to split
-    //on semicolon to add each value.
-    public static void addMulti(Metadata metadata, Property property, String string) {
-        if (string == null) {
-            return;
-        }
-        String[] parts = string.split(";");
-        String[] current = metadata.getValues(property);
-        Set<String> seen = new HashSet<>();
-        if (current != null) {
-            seen.addAll(Arrays.asList(current));
-        }
-        for (String part : parts) {
-            if (! seen.contains(part)) {
-                metadata.add(property, part);
-                seen.add(part);
-            }
         }
     }
 

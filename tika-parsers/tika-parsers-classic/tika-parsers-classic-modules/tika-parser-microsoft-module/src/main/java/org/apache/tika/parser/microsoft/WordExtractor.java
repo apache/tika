@@ -52,6 +52,9 @@ import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -59,16 +62,16 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
 
 public class WordExtractor extends AbstractPOIFSExtractor {
 
     private static final char UNICODECHAR_NONBREAKING_HYPHEN = '\u2011';
     private static final char UNICODECHAR_ZERO_WIDTH_SPACE = '\u200b';
-    // could be improved by using the real delimiter in xchFollow [MS-DOC], v20140721, 2.4.6.3, Part 3, Step 3
+    // could be improved by using the real delimiter in xchFollow
+    //  [MS-DOC], v20140721, 2.4.6.3, Part 3, Step 3
     private static final String LIST_DELIMITER = " ";
-    private static final Map<String, TagAndStyle> fixedParagraphStyles = new HashMap<String, TagAndStyle>();
+    private static final Map<String, TagAndStyle> fixedParagraphStyles =
+            new HashMap<String, TagAndStyle>();
     private static final TagAndStyle defaultParagraphStyle = new TagAndStyle("p", null);
 
     static {
@@ -126,36 +129,33 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             // "Heading 3" or "Heading2" or "heading 4"
             int num = 1;
             try {
-                num = Integer.parseInt(
-                        styleName.substring(styleName.length() - 1)
-                );
+                num = Integer.parseInt(styleName.substring(styleName.length() - 1));
             } catch (NumberFormatException e) {
+                //swallow
             }
             // Turn it into a H1 - H6 (H7+ isn't valid!)
             tag = "h" + Math.min(num, 6);
         } else {
             styleClass = styleName.replace(' ', '_');
-            styleClass = styleClass.substring(0, 1).toLowerCase(Locale.ROOT) +
-                    styleClass.substring(1);
+            styleClass =
+                    styleClass.substring(0, 1).toLowerCase(Locale.ROOT) + styleClass.substring(1);
         }
 
         return new TagAndStyle(tag, styleClass);
     }
 
-    protected void parse(
-            POIFSFileSystem filesystem, XHTMLContentHandler xhtml)
+    protected void parse(POIFSFileSystem filesystem, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
         parse(filesystem.getRoot(), xhtml);
     }
 
-    protected void parse(
-            DirectoryNode root, XHTMLContentHandler xhtml)
+    protected void parse(DirectoryNode root, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
         HWPFDocument document;
         try {
             document = new HWPFDocument(root);
         } catch (org.apache.poi.EncryptedDocumentException e) {
-                throw new EncryptedDocumentException(e);
+            throw new EncryptedDocumentException(e);
         } catch (OldWordFileFormatException e) {
             parseWord6(root, xhtml);
             return;
@@ -184,7 +184,8 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         ListManager listManager = new ListManager(document);
         for (int i = 0; i < r.numParagraphs(); i++) {
             Paragraph p = r.getParagraph(i);
-            i += handleParagraph(p, 0, r, document, FieldsDocumentPart.MAIN, pictures, pictureTable, listManager, xhtml);
+            i += handleParagraph(p, 0, r, document, FieldsDocumentPart.MAIN, pictures, pictureTable,
+                    listManager, xhtml);
         }
 
         if (officeParserConfig.isIncludeShapeBasedContent()) {
@@ -214,9 +215,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         }
         // Handle any pictures that we haven't output yet
         for (Picture p = pictures.nextUnclaimed(); p != null; ) {
-            handlePictureCharacterRun(
-                    null, p, pictures, xhtml
-            );
+            handlePictureCharacterRun(null, p, pictures, xhtml);
             p = pictures.nextUnclaimed();
         }
 
@@ -224,12 +223,12 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         try {
             DirectoryEntry op = (DirectoryEntry) root.getEntry("ObjectPool");
             for (Entry entry : op) {
-                if (entry.getName().startsWith("_")
-                        && entry instanceof DirectoryEntry) {
+                if (entry.getName().startsWith("_") && entry instanceof DirectoryEntry) {
                     handleEmbeddedOfficeDoc((DirectoryEntry) entry, xhtml);
                 }
             }
         } catch (FileNotFoundException e) {
+            //swallow
         }
     }
 
@@ -244,7 +243,8 @@ public class WordExtractor extends AbstractPOIFSExtractor {
     }
 
     private void handleHeaderFooter(Range[] ranges, String type, HWPFDocument document,
-                                    PicturesSource pictures, PicturesTable pictureTable, XHTMLContentHandler xhtml)
+                                    PicturesSource pictures, PicturesTable pictureTable,
+                                    XHTMLContentHandler xhtml)
             throws SAXException, IOException, TikaException {
         if (countParagraphs(ranges) > 0) {
             xhtml.startElement("div", "class", type);
@@ -254,8 +254,8 @@ public class WordExtractor extends AbstractPOIFSExtractor {
                     for (int i = 0; i < r.numParagraphs(); i++) {
                         Paragraph p = r.getParagraph(i);
 
-                        i += handleParagraph(p, 0, r, document,
-                                FieldsDocumentPart.HEADER, pictures, pictureTable, listManager, xhtml);
+                        i += handleParagraph(p, 0, r, document, FieldsDocumentPart.HEADER, pictures,
+                                pictureTable, listManager, xhtml);
                     }
                 }
             }
@@ -264,8 +264,10 @@ public class WordExtractor extends AbstractPOIFSExtractor {
     }
 
     private int handleParagraph(Paragraph p, int parentTableLevel, Range r, HWPFDocument document,
-                                FieldsDocumentPart docPart, PicturesSource pictures, PicturesTable pictureTable, ListManager listManager,
-                                XHTMLContentHandler xhtml) throws SAXException, IOException, TikaException {
+                                FieldsDocumentPart docPart, PicturesSource pictures,
+                                PicturesTable pictureTable, ListManager listManager,
+                                XHTMLContentHandler xhtml)
+            throws SAXException, IOException, TikaException {
         // Note - a poi bug means we can't currently properly recurse
         //  into nested tables, so currently we don't
         if (p.isInTable() && p.getTableLevel() > parentTableLevel && parentTableLevel == 0) {
@@ -281,7 +283,8 @@ public class WordExtractor extends AbstractPOIFSExtractor {
 
                     for (int pn = 0; pn < cell.numParagraphs(); pn++) {
                         Paragraph cellP = cell.getParagraph(pn);
-                        handleParagraph(cellP, p.getTableLevel(), cell, document, docPart, pictures, pictureTable, listManager, xhtml);
+                        handleParagraph(cellP, p.getTableLevel(), cell, document, docPart, pictures,
+                                pictureTable, listManager, xhtml);
                     }
                     xhtml.endElement("td");
                 }
@@ -331,7 +334,8 @@ public class WordExtractor extends AbstractPOIFSExtractor {
 
             // FIELD_BEGIN_MARK:
             if (cr.text().getBytes(UTF_8)[0] == 0x13) {
-                Field field = document.getFields().getFieldByStartOffset(docPart, cr.getStartOffset());
+                Field field =
+                        document.getFields().getFieldByStartOffset(docPart, cr.getStartOffset());
                 // 58 is an embedded document
                 // 56 is a document link
                 if (field != null && (field.getType() == 58 || field.getType() == 56)) {
@@ -355,7 +359,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
 
             if (cr.text().equals("\u0013")) {
                 j += handleSpecialCharacterRuns(p, j, tas.isHeading(), pictures, xhtml);
-            } else if (cr.text().startsWith("\u0008")) {
+            } else if (cr.text().startsWith("\b")) { //\u0008"
                 // Floating Picture(s)
                 for (int pn = 0; pn < cr.text().length(); pn++) {
                     // Assume they're in the order from the unclaimed list...
@@ -374,7 +378,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         }
 
         closeStyleElements(false, xhtml);
-        
+
         xhtml.endElement(tas.getTag());
 
         return 0;
@@ -383,11 +387,13 @@ public class WordExtractor extends AbstractPOIFSExtractor {
     private void handleCharacterRun(CharacterRun cr, boolean skipStyling, XHTMLContentHandler xhtml)
             throws SAXException {
         // Skip trailing newlines
-        if (!isRendered(cr) || cr.text().equals("\r"))
+        if (!isRendered(cr) || cr.text().equals("\r")) {
             return;
+        }
 
         if (!skipStyling) {
-            FormattingUtils.ensureFormattingState(xhtml, FormattingUtils.toTags(cr), formattingState);
+            FormattingUtils
+                    .ensureFormattingState(xhtml, FormattingUtils.toTags(cr), formattingState);
         }
 
         // Clean up the text
@@ -416,7 +422,8 @@ public class WordExtractor extends AbstractPOIFSExtractor {
      * Nesting is allowed
      */
     private int handleSpecialCharacterRuns(Paragraph p, int index, boolean skipStyling,
-                                           PicturesSource pictures, XHTMLContentHandler xhtml) throws SAXException, TikaException, IOException {
+                                           PicturesSource pictures, XHTMLContentHandler xhtml)
+            throws SAXException, TikaException, IOException {
         List<CharacterRun> controls = new ArrayList<CharacterRun>();
         List<CharacterRun> texts = new ArrayList<CharacterRun>();
         boolean has14 = false;
@@ -455,8 +462,8 @@ public class WordExtractor extends AbstractPOIFSExtractor {
                 text += controls.get(j).text();
             }
 
-            if ((text.startsWith("HYPERLINK") || text.startsWith(" HYPERLINK"))
-                    && text.indexOf('"') > -1) {
+            if ((text.startsWith("HYPERLINK") || text.startsWith(" HYPERLINK")) &&
+                    text.indexOf('"') > -1) {
                 int start = text.indexOf('"') + 1;
                 int end = findHyperlinkEnd(text, start);
                 String url = "";
@@ -494,7 +501,8 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         return i - index;
     }
 
-    private void closeStyleElements(boolean skipStyling, XHTMLContentHandler xhtml) throws SAXException {
+    private void closeStyleElements(boolean skipStyling, XHTMLContentHandler xhtml)
+            throws SAXException {
         if (skipStyling) {
             return;
         }
@@ -526,7 +534,8 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         return text.length();
     }
 
-    private void handlePictureCharacterRun(CharacterRun cr, Picture picture, PicturesSource pictures, XHTMLContentHandler xhtml)
+    private void handlePictureCharacterRun(CharacterRun cr, Picture picture,
+                                           PicturesSource pictures, XHTMLContentHandler xhtml)
             throws SAXException, IOException, TikaException {
         if (!isRendered(cr) || picture == null) {
             // Oh dear, we've run out...
@@ -571,8 +580,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
      * @param text    text to be emitted, if any
      * @throws SAXException if an error occurs
      */
-    private void addTextIfAny(
-            XHTMLContentHandler xhtml, String section, String text)
+    private void addTextIfAny(XHTMLContentHandler xhtml, String section, String text)
             throws SAXException {
         if (text != null && text.length() > 0) {
             xhtml.startElement("div", "class", section);
@@ -581,14 +589,12 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         }
     }
 
-    protected void parseWord6(
-            POIFSFileSystem filesystem, XHTMLContentHandler xhtml)
+    protected void parseWord6(POIFSFileSystem filesystem, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
         parseWord6(filesystem.getRoot(), xhtml);
     }
 
-    protected void parseWord6(
-            DirectoryNode root, XHTMLContentHandler xhtml)
+    protected void parseWord6(DirectoryNode root, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
         HWPFOldDocument doc = new HWPFOldDocument(root);
         Word6Extractor extractor = new Word6Extractor(doc);
@@ -637,9 +643,9 @@ public class WordExtractor extends AbstractPOIFSExtractor {
     /**
      * Provides access to the pictures both by offset, iteration
      * over the un-claimed, and peeking forward
-     * 
+     * <p>
      * TODO When POI 3.18 is out, replace this with PictureRunMapper,
-     *  which is this class ported over into POI core
+     * which is this class ported over into POI core
      */
     private static class PicturesSource {
         private PicturesTable picturesTable;
@@ -706,7 +712,9 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             while (pn < nonU1based.size()) {
                 p = nonU1based.get(pn);
                 pn++;
-                if (p != null) return p;
+                if (p != null) {
+                    return p;
+                }
             }
             return null;
         }

@@ -16,14 +16,15 @@
  */
 package org.apache.tika.parser.microsoft.onenote;
 
-import org.apache.tika.TikaTest;
-import org.apache.tika.metadata.Metadata;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
+
+import org.junit.Assert;
+import org.junit.Test;
+
+import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.Metadata;
 
 public class OneNoteParserTest extends TikaTest {
 
@@ -50,9 +51,12 @@ public class OneNoteParserTest extends TikaTest {
         List<String> originalAuthors = Arrays.asList(metadata.getValues("originalAuthors"));
         assertContains("Microsoft\u0000", originalAuthors);
 
-        Assert.assertEquals(Instant.ofEpochSecond(1336059427), Instant.ofEpochSecond(Long.parseLong(metadata.get("creationTimestamp"))));
-        Assert.assertEquals(Instant.ofEpochMilli(1383613114000L), Instant.ofEpochMilli(Long.parseLong(metadata.get("lastModifiedTimestamp"))));
-        Assert.assertEquals(Instant.ofEpochSecond(1446572147), Instant.ofEpochSecond(Long.parseLong(metadata.get("lastModified"))));
+        Assert.assertEquals(Instant.ofEpochSecond(1336059427),
+                Instant.ofEpochSecond(Long.parseLong(metadata.get("creationTimestamp"))));
+        Assert.assertEquals(Instant.ofEpochMilli(1383613114000L),
+                Instant.ofEpochMilli(Long.parseLong(metadata.get("lastModifiedTimestamp"))));
+        Assert.assertEquals(Instant.ofEpochSecond(1446572147),
+                Instant.ofEpochSecond(Long.parseLong(metadata.get("lastModified"))));
     }
 
     @Test
@@ -81,9 +85,12 @@ public class OneNoteParserTest extends TikaTest {
         assertContains("Microsoft\u0000", originalAuthors);
         assertContains("ndipiazza\u0000", mostRecentAuthors);
 
-        Assert.assertEquals(Instant.ofEpochSecond(1336059427), Instant.ofEpochSecond(Long.parseLong(metadata.get("creationTimestamp"))));
-        Assert.assertEquals(Instant.ofEpochMilli(1574426629000L), Instant.ofEpochMilli(Long.parseLong(metadata.get("lastModifiedTimestamp"))));
-        Assert.assertEquals(Instant.ofEpochSecond(1574426628), Instant.ofEpochSecond(Long.parseLong(metadata.get("lastModified"))));
+        Assert.assertEquals(Instant.ofEpochSecond(1336059427),
+                Instant.ofEpochSecond(Long.parseLong(metadata.get("creationTimestamp"))));
+        Assert.assertEquals(Instant.ofEpochMilli(1574426629000L),
+                Instant.ofEpochMilli(Long.parseLong(metadata.get("lastModifiedTimestamp"))));
+        Assert.assertEquals(Instant.ofEpochSecond(1574426628),
+                Instant.ofEpochSecond(Long.parseLong(metadata.get("lastModified"))));
     }
 
     @Test
@@ -112,9 +119,12 @@ public class OneNoteParserTest extends TikaTest {
         assertNotContained("Microsoft\u0000", originalAuthors);
         assertContains("ndipiazza\u0000", mostRecentAuthors);
 
-        Assert.assertEquals(Instant.ofEpochSecond(1574426349), Instant.ofEpochSecond(Long.parseLong(metadata.get("creationTimestamp"))));
-        Assert.assertEquals(Instant.ofEpochMilli(1574426623000L), Instant.ofEpochMilli(Long.parseLong(metadata.get("lastModifiedTimestamp"))));
-        Assert.assertEquals(Instant.ofEpochSecond(1574426624), Instant.ofEpochSecond(Long.parseLong(metadata.get("lastModified"))));
+        Assert.assertEquals(Instant.ofEpochSecond(1574426349),
+                Instant.ofEpochSecond(Long.parseLong(metadata.get("creationTimestamp"))));
+        Assert.assertEquals(Instant.ofEpochMilli(1574426623000L),
+                Instant.ofEpochMilli(Long.parseLong(metadata.get("lastModifiedTimestamp"))));
+        Assert.assertEquals(Instant.ofEpochSecond(1574426624),
+                Instant.ofEpochSecond(Long.parseLong(metadata.get("lastModified"))));
     }
 
     @Test
@@ -143,9 +153,12 @@ public class OneNoteParserTest extends TikaTest {
         assertNotContained("Microsoft\u0000", originalAuthors);
         assertContains("ndipiazza\u0000", mostRecentAuthors);
 
-        Assert.assertEquals(Instant.ofEpochSecond(1574426385), Instant.ofEpochSecond(Long.parseLong(metadata.get("creationTimestamp"))));
-        Assert.assertEquals(Instant.ofEpochMilli(1574426548000L), Instant.ofEpochMilli(Long.parseLong(metadata.get("lastModifiedTimestamp"))));
-        Assert.assertEquals(Instant.ofEpochSecond(1574426547), Instant.ofEpochSecond(Long.parseLong(metadata.get("lastModified"))));
+        Assert.assertEquals(Instant.ofEpochSecond(1574426385),
+                Instant.ofEpochSecond(Long.parseLong(metadata.get("creationTimestamp"))));
+        Assert.assertEquals(Instant.ofEpochMilli(1574426548000L),
+                Instant.ofEpochMilli(Long.parseLong(metadata.get("lastModifiedTimestamp"))));
+        Assert.assertEquals(Instant.ofEpochSecond(1574426547),
+                Instant.ofEpochSecond(Long.parseLong(metadata.get("lastModified"))));
     }
 
     @Test
@@ -166,9 +179,12 @@ public class OneNoteParserTest extends TikaTest {
         List<String> originalAuthors = Arrays.asList(metadata.getValues("originalAuthors"));
         assertContains("nicholas dipiazza\u0000", originalAuthors);
 
-        Assert.assertEquals(Instant.ofEpochSecond(1576107472), Instant.ofEpochSecond(Long.parseLong(metadata.get("creationTimestamp"))));
-        Assert.assertEquals(Instant.ofEpochMilli(1576107481000L), Instant.ofEpochMilli(Long.parseLong(metadata.get("lastModifiedTimestamp"))));
-        Assert.assertEquals(Instant.ofEpochSecond(1576107480), Instant.ofEpochSecond(Long.parseLong(metadata.get("lastModified"))));
+        Assert.assertEquals(Instant.ofEpochSecond(1576107472),
+                Instant.ofEpochSecond(Long.parseLong(metadata.get("creationTimestamp"))));
+        Assert.assertEquals(Instant.ofEpochMilli(1576107481000L),
+                Instant.ofEpochMilli(Long.parseLong(metadata.get("lastModifiedTimestamp"))));
+        Assert.assertEquals(Instant.ofEpochSecond(1576107480),
+                Instant.ofEpochSecond(Long.parseLong(metadata.get("lastModified"))));
     }
 
     @Test
@@ -177,11 +193,18 @@ public class OneNoteParserTest extends TikaTest {
         String txt = getText("testOneNote2007OrEarlier1.one", metadata);
 
         // utf-16 LE text
-        assertContains("One note is the application.  The notebooks are the files within the application.  " +
-            "Each notebook can have an unlimited amount of sections and pages.  To create a new notebook, go to file, new, computer, " +
-            "and name it.  It will go to my documents, oneNote Notebooks folder.  The notebook doesn't close and you don't have to save.  " +
-            "If it closes, you can go back to it and it will open at the same place you left off.  If you are offline and the notebook is " +
-            "being stored on a sharepoint site, you can work on it and it will sync when you go back online.", txt);
+        assertContains(
+                "One note is the application.  The notebooks are the files within the application" +
+                        ".  " +
+                        "Each notebook can have an unlimited amount of sections and pages.  To " +
+                        "create a new notebook, go to file, new, computer, " +
+                        "and name it.  It will go to my documents, oneNote Notebooks folder.  The" +
+                        " notebook doesn't close and you don't have to save.  " +
+                        "If it closes, you can go back to it and it will open at the same place " +
+                        "you left off.  If you are offline and the notebook is " +
+                        "being stored on a sharepoint site, you can work on it and it will sync " +
+                        "when you go back online.",
+                txt);
         // ascii text
         assertContains("Correlation between Outlook and OneNote", txt);
     }
@@ -192,7 +215,10 @@ public class OneNoteParserTest extends TikaTest {
         String txt = getText("testOneNote2007OrEarlier2.one", metadata);
 
         // ascii text
-        assertContains("In Outlook meeting notice, select One Note Meeting Notes and then select the \"page\" you want to link/share", txt);
+        assertContains(
+                "In Outlook meeting notice, select One Note Meeting Notes and then select the " +
+                        "\"page\" you want to link/share",
+                txt);
 
     }
 
@@ -200,8 +226,9 @@ public class OneNoteParserTest extends TikaTest {
     public void testOneNoteEmbeddedWordDoc() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testOneNoteEmbeddedWordDoc.one");
 
-        Assert.assertTrue(metadataList.stream().anyMatch(ml ->
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document".equals(ml.get("Content-Type"))));
+        Assert.assertTrue(metadataList.stream().anyMatch(
+                ml -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        .equals(ml.get("Content-Type"))));
     }
 
     private void assertNoJunk(String txt) {

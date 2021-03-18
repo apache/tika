@@ -18,13 +18,6 @@ package org.apache.tika.parser.audio;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
-import javax.sound.midi.InvalidMidiDataException;
-import javax.sound.midi.MetaMessage;
-import javax.sound.midi.MidiMessage;
-import javax.sound.midi.MidiSystem;
-import javax.sound.midi.Patch;
-import javax.sound.midi.Sequence;
-import javax.sound.midi.Track;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,6 +25,16 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import javax.sound.midi.InvalidMidiDataException;
+import javax.sound.midi.MetaMessage;
+import javax.sound.midi.MidiMessage;
+import javax.sound.midi.MidiSystem;
+import javax.sound.midi.Patch;
+import javax.sound.midi.Sequence;
+import javax.sound.midi.Track;
+
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -39,34 +42,31 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 public class MidiParser extends AbstractParser {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = 6343278584336189432L;
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-        Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
-                MediaType.application("x-midi"),
-                MediaType.audio("midi"))));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
+            new HashSet<MediaType>(
+                    Arrays.asList(MediaType.application("x-midi"), MediaType.audio("midi"))));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
         metadata.set(Metadata.CONTENT_TYPE, "audio/midi");
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
         // MidiSystem expects the stream to support the mark feature
-        if (! stream.markSupported()) {
+        if (!stream.markSupported()) {
             stream = new BufferedInputStream(stream);
         }
         try {
@@ -103,8 +103,7 @@ public class MidiParser extends AbstractParser {
                         // Types 1-15 are reserved for text events
                         if (meta.getType() >= 1 && meta.getType() <= 15) {
                             // FIXME: What's the encoding?
-                            xhtml.characters(
-                                    new String(meta.getData(), ISO_8859_1));
+                            xhtml.characters(new String(meta.getData(), ISO_8859_1));
                         }
                     }
                 }

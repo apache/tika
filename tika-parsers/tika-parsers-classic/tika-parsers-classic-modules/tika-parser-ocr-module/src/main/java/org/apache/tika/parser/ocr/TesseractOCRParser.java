@@ -16,35 +16,9 @@
  */
 package org.apache.tika.parser.ocr;
 
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
-import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TemporaryResources;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.external.ExternalParser;
-import org.apache.tika.sax.OfflineContentHandler;
-import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.utils.StringUtils;
-import org.apache.tika.utils.XMLReaderUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-import org.xml.sax.helpers.DefaultHandler;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
 
-import javax.imageio.ImageIO;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -68,9 +42,36 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import javax.imageio.ImageIO;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+import org.xml.sax.helpers.DefaultHandler;
+
+import org.apache.tika.config.Field;
+import org.apache.tika.config.Initializable;
+import org.apache.tika.config.InitializableProblemHandler;
+import org.apache.tika.config.Param;
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.external.ExternalParser;
+import org.apache.tika.sax.OfflineContentHandler;
+import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.StringUtils;
+import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * TesseractOCRParser powered by tesseract-ocr engine. To enable this parser,
@@ -88,33 +89,30 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
 
     public static final String TESS_META = "tess:";
     public static final Property IMAGE_ROTATION = Property.externalRealSeq(TESS_META + "rotation");
-    public static final Property IMAGE_MAGICK = Property.externalBooleanSeq(TESS_META + "image_magick_processed");
+    public static final Property IMAGE_MAGICK =
+            Property.externalBooleanSeq(TESS_META + "image_magick_processed");
     private static final String OCR = "ocr-";
     private static final Logger LOG = LoggerFactory.getLogger(TesseractOCRParser.class);
-
-    private static volatile boolean HAS_WARNED = false;
     private static final Object[] LOCK = new Object[0];
-
-
     private static final long serialVersionUID = -8167538283213097265L;
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList(new MediaType[]{
-                    MediaType.image(OCR + "png"),
-                    MediaType.image(OCR + "jpeg"),
-                    MediaType.image(OCR + "tiff"),
-                    MediaType.image(OCR + "bmp"),
-                    MediaType.image(OCR + "gif"),
-                    //these are not currently covered by other parsers
-                    MediaType.image("jp2"),
-                    MediaType.image("jpx"),
-                    MediaType.image("x-portable-pixmap"),
-                    //add the ocr- versions as well
-                    MediaType.image(OCR + "jp2"),
-                    MediaType.image(OCR + "jpx"),
-                    MediaType.image(OCR + "x-portable-pixmap"),
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(new HashSet<>(
+            Arrays.asList(
+                    new MediaType[]{MediaType.image(OCR + "png"), MediaType.image(OCR + "jpeg"),
+                            MediaType.image(OCR + "tiff"), MediaType.image(OCR + "bmp"),
+                            MediaType.image(OCR + "gif"),
+                            //these are not currently covered by other parsers
+                            MediaType.image("jp2"), MediaType.image("jpx"),
+                            MediaType.image("x-portable-pixmap"),
+                            //add the ocr- versions as well
+                            MediaType.image(OCR + "jp2"), MediaType.image(OCR + "jpx"),
+                            MediaType.image(OCR + "x-portable-pixmap"),
 
-            })));
-
+                    })));
+    private static volatile boolean HAS_WARNED = false;
+    //if a user specifies a custom tess path or tessdata path
+    //load the available languages at initialization time
+    private final Set<String> langs = new HashSet<>();
+    private final TesseractOCRConfig defaultConfig = new TesseractOCRConfig();
     private String tesseractPath = "";
     private String tessdataPath = "";
     private String imageMagickPath = "";
@@ -122,15 +120,17 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     //at initialization and then check langs
     //at parse time
     private boolean preloadLangs = false;
-    //if a user specifies a custom tess path or tessdata path
-    //load the available languages at initialization time
-    private final Set<String> langs = new HashSet<>();
-
-    private final TesseractOCRConfig defaultConfig = new TesseractOCRConfig();
-
     private boolean hasTesseract;
     private boolean hasImageMagick;
     private ImagePreprocessor imagePreprocessor;
+
+    public static String getImageMagickProg() {
+        return System.getProperty("os.name").startsWith("Windows") ? "magick" : "convert";
+    }
+
+    public static String getTesseractProg() {
+        return System.getProperty("os.name").startsWith("Windows") ? "tesseract.exe" : "tesseract";
+    }
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -161,8 +161,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         // Fetch where the config says to find Tesseract
         String tesseract = getTesseractPath() + getTesseractProg();
 
-        if (!StringUtils.isBlank(tesseractPath) &&
-                !Files.isDirectory(Paths.get(tesseractPath))) {
+        if (!StringUtils.isBlank(tesseractPath) && !Files.isDirectory(Paths.get(tesseractPath))) {
             throw new TikaConfigException("tesseractPath (" + tesseractPath + ") " +
                     "doesn't point to an existing directory");
         }
@@ -189,21 +188,16 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         String[] checkCmd = {fullImageMagickPath};
         boolean hasImageMagick = ExternalParser.check(checkCmd);
         if (!hasImageMagick) {
-            LOG.debug("ImageMagick does not appear to be installed " +
-                    "(commandline: " + fullImageMagickPath + ")");
+            LOG.debug("ImageMagick does not appear to be installed " + "(commandline: " +
+                    fullImageMagickPath + ")");
         }
 
         return hasImageMagick;
 
     }
 
-    public static String getImageMagickProg() {
-        return System.getProperty("os.name").startsWith("Windows") ?
-                "magick" : "convert";
-    }
-
-    public void parse(Image image, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException,
-            SAXException, TikaException {
+    public void parse(Image image, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         try (TemporaryResources tmp = new TemporaryResources()) {
             int w = image.getWidth(null);
             int h = image.getHeight(null);
@@ -219,8 +213,8 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext parseContext)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext parseContext) throws IOException, SAXException, TikaException {
 
         TesseractOCRConfig userConfig = parseContext.get(TesseractOCRConfig.class);
         TesseractOCRConfig config = defaultConfig;
@@ -252,8 +246,8 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     }
 
     private void parse(TikaInputStream tikaInputStream, File tmpOCROutputFile,
-                       ContentHandler xhtml, Metadata metadata, ParseContext parseContext,
-                       TesseractOCRConfig config)
+                       ContentHandler xhtml,
+                       Metadata metadata, ParseContext parseContext, TesseractOCRConfig config)
             throws IOException, SAXException, TikaException {
         warnOnFirstParse();
         validateLangString(config.getLanguage());
@@ -268,8 +262,10 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
                 // Process image
                 if (config.isEnableImagePreprocessing() || config.isApplyRotation()) {
                     if (!hasImageMagick) {
-                        LOG.warn("User has selected to preprocess images, but I can't find ImageMagick." +
-                                "Backing off to original file.");
+                        LOG.warn(
+                                "User has selected to preprocess images, " +
+                                        "but I can't find ImageMagick." +
+                                        "Backing off to original file.");
                         doOCR(input.toFile(), tmpOCROutputFile, config);
                     } else {
                         // copy the contents of the original input file into a temporary file
@@ -322,13 +318,13 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
      * @throws TikaException if the extraction timed out
      * @throws IOException   if an input error occurred
      */
-    private void doOCR(File input, File output, TesseractOCRConfig config) throws IOException, TikaException {
+    private void doOCR(File input, File output, TesseractOCRConfig config)
+            throws IOException, TikaException {
 
-        ArrayList<String> cmd = new ArrayList<>(Arrays.asList(
-                getTesseractPath() + getTesseractProg(), input.getPath(), output.getPath(),
-                "--psm", config.getPageSegMode()
-        ));
-        if (! StringUtils.isBlank(config.getLanguage())) {
+        ArrayList<String> cmd = new ArrayList<>(
+                Arrays.asList(getTesseractPath() + getTesseractProg(), input.getPath(),
+                        output.getPath(), "--psm", config.getPageSegMode()));
+        if (!StringUtils.isBlank(config.getLanguage())) {
             cmd.add("-l");
             cmd.add(config.getLanguage());
         }
@@ -336,12 +332,10 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
             cmd.add("-c");
             cmd.add(entry.getKey() + "=" + entry.getValue());
         }
-        cmd.addAll(Arrays.asList(
-                "-c", "page_separator=" + config.getPageSeparator(),
-                "-c",
-                (config.isPreserveInterwordSpacing()) ? "preserve_interword_spaces=1" : "preserve_interword_spaces=0",
-                config.getOutputType().name().toLowerCase(Locale.US)
-        ));
+        cmd.addAll(Arrays.asList("-c", "page_separator=" + config.getPageSeparator(), "-c",
+                (config.isPreserveInterwordSpacing()) ? "preserve_interword_spaces=1" :
+                        "preserve_interword_spaces=0",
+                config.getOutputType().name().toLowerCase(Locale.US)));
         LOG.debug("Tesseract command: " + String.join(" ", cmd));
 
         ProcessBuilder pb = new ProcessBuilder(cmd);
@@ -366,7 +360,8 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         StringBuilder errBuilder = new StringBuilder();
         Thread outThread = logStream(out, outBuilder);
         Thread errThread = logStream(err, errBuilder);
-        outThread.start(); errThread.start();
+        outThread.start();
+        errThread.start();
 
         int exitValue = Integer.MIN_VALUE;
         try {
@@ -389,8 +384,9 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
             } catch (InterruptedException e) {
                 //swallow
             }
-            throw new TikaException("TesseractOCRParser bad exit value " +
-                    exitValue + " err msg: " + errBuilder.toString());
+            throw new TikaException(
+                    "TesseractOCRParser bad exit value " + exitValue + " err msg: " +
+                            errBuilder.toString());
         }
 
     }
@@ -404,7 +400,8 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
      * @throws SAXException if the XHTML SAX events could not be handled
      * @throws IOException  if an input error occurred
      */
-    private void extractOutput(InputStream stream, ContentHandler xhtml) throws SAXException, IOException {
+    private void extractOutput(InputStream stream, ContentHandler xhtml)
+            throws SAXException, IOException {
         //        <div class="ocr"
         AttributesImpl attrs = new AttributesImpl();
         attrs.addAttribute("", "class", "class", "CDATA", "ocr");
@@ -420,8 +417,8 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         xhtml.endElement(XHTML, "div", "div");
     }
 
-    private void extractHOCROutput(InputStream is, ParseContext parseContext,
-                                   ContentHandler xhtml) throws TikaException, IOException, SAXException {
+    private void extractHOCROutput(InputStream is, ParseContext parseContext, ContentHandler xhtml)
+            throws TikaException, IOException, SAXException {
         if (parseContext == null) {
             parseContext = new ParseContext();
         }
@@ -430,7 +427,8 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         AttributesImpl attrs = new AttributesImpl();
         attrs.addAttribute("", "class", "class", "CDATA", "ocr");
         xhtml.startElement(XHTML, "div", "div", attrs);
-        XMLReaderUtils.parseSAX(is, new OfflineContentHandler(new HOCRPassThroughHandler(xhtml)), parseContext);
+        XMLReaderUtils.parseSAX(is, new OfflineContentHandler(new HOCRPassThroughHandler(xhtml)),
+                parseContext);
         xhtml.endElement(XHTML, "div", "div");
 
     }
@@ -450,7 +448,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
                         out.append(buffer, 0, n);
                     }
                 } catch (IOException e) {
-
+                    //swallow
                 } finally {
                     IOUtils.closeQuietly(stream);
                 }
@@ -460,22 +458,17 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         };
     }
 
-    public static String getTesseractProg() {
-        return System.getProperty("os.name").startsWith("Windows") ? "tesseract.exe" : "tesseract";
-    }
-
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         hasTesseract = hasTesseract();
         hasImageMagick = hasImageMagick();
         if (preloadLangs) {
             preloadLangs();
-            if (! StringUtils.isBlank(defaultConfig.getLanguage())) {
+            if (!StringUtils.isBlank(defaultConfig.getLanguage())) {
                 validateLangString(defaultConfig.getLanguage());
             }
         }
-        imagePreprocessor = new ImagePreprocessor(
-                getImageMagickPath() + getImageMagickProg());
+        imagePreprocessor = new ImagePreprocessor(getImageMagickPath() + getImageMagickProg());
     }
 
     private void validateLangString(String language) throws TikaConfigException {
@@ -483,13 +476,13 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         Set<String> validLangs = new HashSet<>();
         TesseractOCRConfig.getLangs(language, validLangs, invalidlangs);
         if (invalidlangs.size() > 0) {
-            throw new TikaConfigException( "Invalid language code(s): " + invalidlangs);
+            throw new TikaConfigException("Invalid language code(s): " + invalidlangs);
         }
         if (langs.size() > 0) {
             for (String lang : validLangs) {
                 if (!langs.contains(lang)) {
-                    throw new TikaConfigException("tesseract does not have "
-                            + lang + " available. I see only: " + langs);
+                    throw new TikaConfigException(
+                            "tesseract does not have " + lang + " available. I see only: " + langs);
                 }
             }
         }
@@ -499,67 +492,16 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     public void checkInitialization(InitializableProblemHandler problemHandler)
             throws TikaConfigException {
 
-        if (langs.size() > 0 &&
-                ! StringUtils.isBlank(defaultConfig.getLanguage())) {
-            if (! langs.contains(defaultConfig.getLanguage())) {
-                throw new TikaConfigException(
-                        "It doesn't look like tesseract has lang data for "
-                                + defaultConfig.getLanguage() + ". " +
-                                "I see only: "+langs
-                );
+        if (langs.size() > 0 && !StringUtils.isBlank(defaultConfig.getLanguage())) {
+            if (!langs.contains(defaultConfig.getLanguage())) {
+                throw new TikaConfigException("It doesn't look like tesseract has lang data for " +
+                        defaultConfig.getLanguage() + ". " + "I see only: " + langs);
             }
         }
     }
 
     public Set<String> getLangs() {
         return langs;
-    }
-
-    private static class HOCRPassThroughHandler extends DefaultHandler {
-        private final ContentHandler xhtml;
-        public static final Set<String> IGNORE = unmodifiableSet(
-                "html", "head", "title", "meta", "body");
-
-        public HOCRPassThroughHandler(ContentHandler xhtml) {
-            this.xhtml = xhtml;
-        }
-
-        /**
-         * Starts the given element. Table cells and list items are automatically
-         * indented by emitting a tab character as ignorable whitespace.
-         */
-        @Override
-        public void startElement(
-                String uri, String local, String name, Attributes attributes)
-                throws SAXException {
-            if (!IGNORE.contains(name)) {
-                xhtml.startElement(uri, local, name, attributes);
-            }
-        }
-
-        /**
-         * Ends the given element. Block elements are automatically followed
-         * by a newline character.
-         */
-        @Override
-        public void endElement(String uri, String local, String name) throws SAXException {
-            if (!IGNORE.contains(name)) {
-                xhtml.endElement(uri, local, name);
-            }
-        }
-
-        /**
-         * @see <a href="https://issues.apache.org/jira/browse/TIKA-210">TIKA-210</a>
-         */
-        @Override
-        public void characters(char[] ch, int start, int length) throws SAXException {
-            xhtml.characters(ch, start, length);
-        }
-
-        private static Set<String> unmodifiableSet(String... elements) {
-            return Collections.unmodifiableSet(
-                    new HashSet<>(Arrays.asList(elements)));
-        }
     }
 
     protected boolean hasWarned() {
@@ -582,6 +524,10 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         HAS_WARNED = true;
     }
 
+    public String getTesseractPath() {
+        return tesseractPath;
+    }
+
     /**
      * Set the path to the Tesseract executable's directory, needed if it is not on system path.
      * <p>
@@ -598,26 +544,28 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         this.tesseractPath = tesseractPath;
     }
 
-    public String getTesseractPath() {
-        return tesseractPath;
+    public String getTessdataPath() {
+        return this.tessdataPath;
     }
 
     /**
-     * Set the path to the 'tessdata' folder, which contains language files and config files. In some cases (such
+     * Set the path to the 'tessdata' folder, which contains language files and config files. In
+     * some cases (such
      * as on Windows), this folder is found in the Tesseract installation, but in other cases
      * (such as when Tesseract is built from source), it may be located elsewhere.
      */
     @Field
     public void setTessdataPath(String tessdataPath) {
         tessdataPath = FilenameUtils.normalize(tessdataPath);
-        if (!tessdataPath.isEmpty() && !tessdataPath.endsWith(File.separator))
+        if (!tessdataPath.isEmpty() && !tessdataPath.endsWith(File.separator)) {
             tessdataPath += File.separator;
+        }
 
         this.tessdataPath = tessdataPath;
     }
 
-    public String getTessdataPath() {
-        return this.tessdataPath;
+    public String getImageMagickPath() {
+        return imageMagickPath;
     }
 
     /**
@@ -634,17 +582,14 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         this.imageMagickPath = imageMagickPath;
     }
 
-    public String getImageMagickPath() {
-        return imageMagickPath;
-    }
-
     @Field
     public void setOtherTesseractSettings(List<String> settings) throws TikaConfigException {
         for (String s : settings) {
             String[] bits = s.trim().split("\\s+");
             if (bits.length != 2) {
-                throw new TikaConfigException("Expected space delimited key value pair." +
-                        " However, I found " + bits.length + " bits.");
+                throw new TikaConfigException(
+                        "Expected space delimited key value pair." + " However, I found " +
+                                bits.length + " bits.");
             }
             defaultConfig.addOtherTesseractConfig(bits[0], bits[1]);
         }
@@ -748,10 +693,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     }
 
     private void preloadLangs() {
-        String[] args = new String[]{
-                getTesseractPath() + getTesseractProg(),
-                "--list-langs"
-        };
+        String[] args = new String[]{getTesseractPath() + getTesseractProg(), "--list-langs"};
 
         ProcessBuilder pb = new ProcessBuilder(args);
 
@@ -770,8 +712,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         }
     }
 
-    private void getLangs(Process process, int timeoutSeconds)
-            throws IOException, TikaException {
+    private void getLangs(Process process, int timeoutSeconds) throws IOException, TikaException {
         process.getOutputStream().close();
         InputStream out = process.getInputStream();
         InputStream err = process.getErrorStream();
@@ -779,7 +720,8 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         StringBuilder errBuilder = new StringBuilder();
         Thread outThread = logStream(out, outBuilder);
         Thread errThread = logStream(err, errBuilder);
-        outThread.start(); errThread.start();
+        outThread.start();
+        errThread.start();
 
         int exitValue = Integer.MIN_VALUE;
         try {
@@ -797,14 +739,60 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
             throw new TikaException("TesseractOCRParser timeout");
         }
         if (exitValue > 0) {
-            throw new TikaException("TesseractOCRParser bad exit value " +
-                    exitValue + " err msg: " + errBuilder.toString());
+            throw new TikaException(
+                    "TesseractOCRParser bad exit value " + exitValue + " err msg: " +
+                            errBuilder.toString());
         }
         for (String line : outBuilder.toString().split("[\r\n]+")) {
             if (line.startsWith("List of available")) {
                 continue;
             }
             langs.add(line.trim());
+        }
+    }
+
+    private static class HOCRPassThroughHandler extends DefaultHandler {
+        public static final Set<String> IGNORE =
+                unmodifiableSet("html", "head", "title", "meta", "body");
+        private final ContentHandler xhtml;
+
+        public HOCRPassThroughHandler(ContentHandler xhtml) {
+            this.xhtml = xhtml;
+        }
+
+        private static Set<String> unmodifiableSet(String... elements) {
+            return Collections.unmodifiableSet(new HashSet<>(Arrays.asList(elements)));
+        }
+
+        /**
+         * Starts the given element. Table cells and list items are automatically
+         * indented by emitting a tab character as ignorable whitespace.
+         */
+        @Override
+        public void startElement(String uri, String local, String name, Attributes attributes)
+                throws SAXException {
+            if (!IGNORE.contains(name)) {
+                xhtml.startElement(uri, local, name, attributes);
+            }
+        }
+
+        /**
+         * Ends the given element. Block elements are automatically followed
+         * by a newline character.
+         */
+        @Override
+        public void endElement(String uri, String local, String name) throws SAXException {
+            if (!IGNORE.contains(name)) {
+                xhtml.endElement(uri, local, name);
+            }
+        }
+
+        /**
+         * @see <a href="https://issues.apache.org/jira/browse/TIKA-210">TIKA-210</a>
+         */
+        @Override
+        public void characters(char[] ch, int start, int length) throws SAXException {
+            xhtml.characters(ch, start, length);
         }
     }
 }

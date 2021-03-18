@@ -59,14 +59,15 @@ public class ZipSalvager {
             }
 
             try (ZipArchiveOutputStream outputStream = new ZipArchiveOutputStream(salvagedZip);
-                 ZipArchiveInputStream zipArchiveInputStream = new ZipArchiveInputStream(
-                         new CloseShieldInputStream(brokenZip),
-                         "UTF8", false, allowStoredEntries)) {
+                    ZipArchiveInputStream zipArchiveInputStream = new ZipArchiveInputStream(
+                            new CloseShieldInputStream(brokenZip), "UTF8", false,
+                            allowStoredEntries)) {
                 ZipArchiveEntry zae = zipArchiveInputStream.getNextZipEntry();
                 try {
                     processZAE(zae, zipArchiveInputStream, outputStream);
                 } catch (UnsupportedZipFeatureException uzfe) {
-                    if (uzfe.getFeature() == UnsupportedZipFeatureException.Feature.DATA_DESCRIPTOR) {
+                    if (uzfe.getFeature() ==
+                            UnsupportedZipFeatureException.Feature.DATA_DESCRIPTOR) {
                         //percolate up to allow for retry
                         throw uzfe;
                     }
@@ -78,8 +79,8 @@ public class ZipSalvager {
                 outputStream.finish();
             } catch (UnsupportedZipFeatureException e) {
                 //now retry
-                if (allowStoredEntries == false && e.getFeature() ==
-                        UnsupportedZipFeatureException.Feature.DATA_DESCRIPTOR) {
+                if (allowStoredEntries == false &&
+                        e.getFeature() == UnsupportedZipFeatureException.Feature.DATA_DESCRIPTOR) {
                     ((RereadableInputStream) brokenZip).rewind();
                     salvageCopy(brokenZip, salvagedZip, true);
                 } else {

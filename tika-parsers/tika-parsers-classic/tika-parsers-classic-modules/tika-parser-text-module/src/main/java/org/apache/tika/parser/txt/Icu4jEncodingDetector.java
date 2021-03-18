@@ -34,8 +34,7 @@ public class Icu4jEncodingDetector implements EncodingDetector {
     @Field
     private int markLimit = CharsetDetector.DEFAULT_MARK_LIMIT;
 
-    public Charset detect(InputStream input, Metadata metadata)
-            throws IOException {
+    public Charset detect(InputStream input, Metadata metadata) throws IOException {
         if (input == null) {
             return null;
         }
@@ -78,11 +77,15 @@ public class Icu4jEncodingDetector implements EncodingDetector {
         return null;
     }
 
+    public boolean isStripMarkup() {
+        return stripMarkup;
+    }
+
     /**
      * Whether or not to attempt to strip html-ish markup
      * from the stream before sending it to the underlying
      * detector.
-     *
+     * <p>
      * The underlying detector may still apply its own stripping
      * if this is set to <code>false</code>.
      *
@@ -94,8 +97,8 @@ public class Icu4jEncodingDetector implements EncodingDetector {
         this.stripMarkup = stripMarkup;
     }
 
-    public boolean isStripMarkup() {
-        return stripMarkup;
+    public int getMarkLimit() {
+        return markLimit;
     }
 
     /**
@@ -107,9 +110,5 @@ public class Icu4jEncodingDetector implements EncodingDetector {
     @Field
     public void setMarkLimit(int markLimit) {
         this.markLimit = markLimit;
-    }
-
-    public int getMarkLimit() {
-        return markLimit;
     }
 }

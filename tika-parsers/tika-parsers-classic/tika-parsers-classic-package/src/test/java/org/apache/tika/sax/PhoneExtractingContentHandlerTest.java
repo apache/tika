@@ -17,20 +17,19 @@
 
 package org.apache.tika.sax;
 
+import java.io.InputStream;
+
+import org.junit.Test;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.junit.Test;
-
-import java.io.InputStream;
-
-import static org.apache.tika.TikaTest.assertContains;
 
 /**
  * Test class for the {@link org.apache.tika.sax.PhoneExtractingContentHandler}
  * class. This demonstrates how to parse a document and retrieve any phone numbers
  * found within.
- *
+ * <p>
  * The phone numbers are added to a multivalued Metadata object under the key, "phonenumbers".
  * You can get an array of phone numbers by calling metadata.getValues("phonenumber").
  */
@@ -39,10 +38,13 @@ public class PhoneExtractingContentHandlerTest extends TikaTest {
     public void testExtractPhoneNumbers() throws Exception {
 
         Metadata metadata = new Metadata();
-        // The PhoneExtractingContentHandler will examine any characters for phone numbers before passing them
+        // The PhoneExtractingContentHandler will examine any characters for phone numbers
+        // before passing them
         // to the underlying Handler.
-        PhoneExtractingContentHandler handler = new PhoneExtractingContentHandler(new BodyContentHandler(), metadata);
-        try (InputStream stream = getResourceAsStream("/test-documents/testPhoneNumberExtractor.odt")) {
+        PhoneExtractingContentHandler handler =
+                new PhoneExtractingContentHandler(new BodyContentHandler(), metadata);
+        try (InputStream stream = getResourceAsStream(
+                "/test-documents/testPhoneNumberExtractor.odt")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
         }
         String[] phoneNumbers = metadata.getValues("phonenumbers");

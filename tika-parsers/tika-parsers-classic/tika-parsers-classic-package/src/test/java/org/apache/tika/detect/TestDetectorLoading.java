@@ -16,12 +16,13 @@
  */
 package org.apache.tika.detect;
 
-import org.apache.tika.config.TikaConfig;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+
+import org.apache.tika.config.TikaConfig;
 
 public class TestDetectorLoading {
 
@@ -30,16 +31,14 @@ public class TestDetectorLoading {
     public void testBasic() throws Exception {
         //integration test
         Detector detector = TikaConfig.getDefaultConfig().getDetector();
-        List<Detector> detectors = ((CompositeDetector)detector).getDetectors();
+        List<Detector> detectors = ((CompositeDetector) detector).getDetectors();
         assertEquals(7, detectors.size());
         assertEquals("org.apache.tika.detect.OverrideDetector",
                 detectors.get(0).getClass().getName());
-        assertEquals("org.gagravarr.tika.OggDetector",
-                detectors.get(1).getClass().getName());
+        assertEquals("org.gagravarr.tika.OggDetector", detectors.get(1).getClass().getName());
 
         assertEquals("org.apache.tika.detect.microsoft.POIFSContainerDetector",
                 detectors.get(3).getClass().getName());
-        assertEquals("org.apache.tika.mime.MimeTypes",
-                detectors.get(6).getClass().getName());
+        assertEquals("org.apache.tika.mime.MimeTypes", detectors.get(6).getClass().getName());
     }
 }

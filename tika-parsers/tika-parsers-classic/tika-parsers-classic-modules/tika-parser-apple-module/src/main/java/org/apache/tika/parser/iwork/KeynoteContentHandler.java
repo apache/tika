@@ -16,13 +16,14 @@
  */
 package org.apache.tika.parser.iwork;
 
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
 
 class KeynoteContentHandler extends DefaultHandler {
 
@@ -59,8 +60,7 @@ class KeynoteContentHandler extends DefaultHandler {
     }
 
     @Override
-    public void startElement(
-            String uri, String localName, String qName, Attributes attributes)
+    public void startElement(String uri, String localName, String qName, Attributes attributes)
             throws SAXException {
         if ("key:theme".equals(qName)) {
             inTheme = true;
@@ -114,8 +114,7 @@ class KeynoteContentHandler extends DefaultHandler {
     }
 
     @Override
-    public void endElement(String uri, String localName, String qName)
-            throws SAXException {
+    public void endElement(String uri, String localName, String qName) throws SAXException {
         if ("key:theme".equals(qName)) {
             inTheme = false;
         } else if ("key:slide".equals(qName)) {
@@ -153,24 +152,23 @@ class KeynoteContentHandler extends DefaultHandler {
     }
 
     @Override
-    public void characters(char[] ch, int start, int length)
-            throws SAXException {
+    public void characters(char[] ch, int start, int length) throws SAXException {
         if (inParsableText && inSlide && length != 0) {
             xhtml.characters(ch, start, length);
         }
     }
 
     private void parseTableData(String value) throws SAXException {
-      if (currentColumn == 0) {
-          xhtml.startElement("tr");
-      }
-      xhtml.element("td", value);
+        if (currentColumn == 0) {
+            xhtml.startElement("tr");
+        }
+        xhtml.element("td", value);
 
-      currentColumn++;
-      if (currentColumn.equals(numberOfColumns)) {
-          xhtml.endElement("tr");
-          currentColumn = 0;
-      }
+        currentColumn++;
+        if (currentColumn.equals(numberOfColumns)) {
+            xhtml.endElement("tr");
+            currentColumn = 0;
+        }
     }
 
 }

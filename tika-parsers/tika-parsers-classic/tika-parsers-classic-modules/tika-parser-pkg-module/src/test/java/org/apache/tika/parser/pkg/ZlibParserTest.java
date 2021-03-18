@@ -20,10 +20,11 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
+
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.sax.BodyContentHandler;
 
 /**
  * Test case for parsing zlib compressed
@@ -32,26 +33,26 @@ public class ZlibParserTest extends AbstractPkgTest {
 
     /**
      * Tests that the ParseContext parser is correctly
-     *  fired for all the embedded entries.
+     * fired for all the embedded entries.
      */
     @Test
     public void testEmbedded() throws Exception {
-       ContentHandler handler = new BodyContentHandler();
-       Metadata metadata = new Metadata();
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
 
         try (InputStream stream = getResourceAsStream("/test-documents/testTXT.zlib")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
         }
-       
-       // Should have found a single text document inside
-       assertEquals(1, tracker.filenames.size());
-       assertEquals(1, tracker.mediatypes.size());
-       assertEquals(1, tracker.modifiedAts.size());
-       
-       // Won't have names, dates or types, as zlib doesn't have that 
-       assertEquals(null, tracker.filenames.get(0));
-       assertEquals(null, tracker.mediatypes.get(0));
-       assertEquals(null, tracker.createdAts.get(0));
-       assertEquals(null, tracker.modifiedAts.get(0));
+
+        // Should have found a single text document inside
+        assertEquals(1, tracker.filenames.size());
+        assertEquals(1, tracker.mediatypes.size());
+        assertEquals(1, tracker.modifiedAts.size());
+
+        // Won't have names, dates or types, as zlib doesn't have that
+        assertEquals(null, tracker.filenames.get(0));
+        assertEquals(null, tracker.mediatypes.get(0));
+        assertEquals(null, tracker.createdAts.get(0));
+        assertEquals(null, tracker.modifiedAts.get(0));
     }
 }

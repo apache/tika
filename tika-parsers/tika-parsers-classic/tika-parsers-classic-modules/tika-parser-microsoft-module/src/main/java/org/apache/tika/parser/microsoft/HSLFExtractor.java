@@ -16,6 +16,11 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.poi.common.usermodel.Hyperlink;
 import org.apache.poi.hslf.exceptions.EncryptedPowerPointFileException;
@@ -43,6 +48,9 @@ import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.sl.usermodel.Comment;
 import org.apache.poi.sl.usermodel.ShapeContainer;
 import org.apache.poi.sl.usermodel.SimpleShape;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -51,13 +59,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
 
 public class HSLFExtractor extends AbstractPOIFSExtractor {
 
@@ -65,42 +66,47 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
         super(context, metadata);
     }
 
-    protected void parse(
-            POIFSFileSystem filesystem, XHTMLContentHandler xhtml)
+    // remove trailing paragraph break
+    private static String removePBreak(String fragment) {
+        // the last text run of a text paragraph contains the paragraph break (\r)
+        // line breaks (\\u000b) can happen more often
+        return fragment.replaceFirst("\\r$", "");
+    }
+
+    protected void parse(POIFSFileSystem filesystem, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
         parse(filesystem.getRoot(), xhtml);
     }
 
-    protected void parse(
-            DirectoryNode root, XHTMLContentHandler xhtml)
+    protected void parse(DirectoryNode root, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
         HSLFSlideShow ss;
         List<HSLFSlide> _slides;
-        
+
         try {
             ss = new HSLFSlideShow(root);
         } catch (EncryptedPowerPointFileException e) {
             throw new EncryptedDocumentException(e);
         }
-        
+
         _slides = ss.getSlides();
 
         xhtml.startElement("div", "class", "slideShow");
 
-      /* Iterate over slides and extract text */
+        /* Iterate over slides and extract text */
         for (HSLFSlide slide : _slides) {
             xhtml.startElement("div", "class", "slide");
             HeadersFooters slideHeaderFooters =
-                    (officeParserConfig.isIncludeHeadersAndFooters()) ?
-                            slide.getHeadersFooters() : null;
+                    (officeParserConfig.isIncludeHeadersAndFooters()) ? slide.getHeadersFooters() :
+                            null;
 
-            HeadersFooters notesHeadersFooters =
-                    (officeParserConfig.isIncludeHeadersAndFooters()) ?
-                            ss.getNotesHeadersFooters() : null;
+            HeadersFooters notesHeadersFooters = (officeParserConfig.isIncludeHeadersAndFooters()) ?
+                    ss.getNotesHeadersFooters() : null;
 
             if (officeParserConfig.isIncludeHeadersAndFooters()) {
                 // Slide header, if present
-                if (slideHeaderFooters != null && slideHeaderFooters.isHeaderVisible() && slideHeaderFooters.getHeaderText() != null) {
+                if (slideHeaderFooters != null && slideHeaderFooters.isHeaderVisible() &&
+                        slideHeaderFooters.getHeaderText() != null) {
                     xhtml.startElement("p", "class", "slide-header");
 
                     xhtml.characters(slideHeaderFooters.getHeaderText());
@@ -132,7 +138,8 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
 
             if (officeParserConfig.isIncludeHeadersAndFooters()) {
                 // Slide footer, if present
-                if (slideHeaderFooters != null && slideHeaderFooters.isFooterVisible() && slideHeaderFooters.getFooterText() != null) {
+                if (slideHeaderFooters != null && slideHeaderFooters.isFooterVisible() &&
+                        slideHeaderFooters.getFooterText() != null) {
                     xhtml.startElement("p", "class", "slide-footer");
                     xhtml.characters(slideHeaderFooters.getFooterText());
                     xhtml.endElement("p");
@@ -194,8 +201,9 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
         xhtml.endElement("div");
     }
 
-    private void handleNotes(HSLFSlide slide,
-                             HeadersFooters notesHeaderFooters, XHTMLContentHandler xhtml) throws SAXException, TikaException, IOException {
+    private void handleNotes(HSLFSlide slide, HeadersFooters notesHeaderFooters,
+                             XHTMLContentHandler xhtml)
+            throws SAXException, TikaException, IOException {
 
         if (!officeParserConfig.isIncludeSlideNotes()) {
             return;
@@ -209,8 +217,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
         xhtml.startElement("div", "class", "notes");
 
         // Repeat the Notes header, if set
-        if (officeParserConfig.isIncludeHeadersAndFooters() &&
-                notesHeaderFooters != null &&
+        if (officeParserConfig.isIncludeHeadersAndFooters() && notesHeaderFooters != null &&
                 notesHeaderFooters.isHeaderVisible() &&
                 notesHeaderFooters.getHeaderText() != null) {
             xhtml.startElement("p", "class", "slide-note-header");
@@ -235,8 +242,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
         xhtml.endElement("div");
 
         // Repeat the Notes footer, if set
-        if (officeParserConfig.isIncludeHeadersAndFooters() &&
-                notesHeaderFooters != null &&
+        if (officeParserConfig.isIncludeHeadersAndFooters() && notesHeaderFooters != null &&
                 notesHeaderFooters.isFooterVisible() &&
                 notesHeaderFooters.getFooterText() != null) {
             xhtml.startElement("p", "class", "slide-note-footer");
@@ -251,7 +257,8 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
 
     //Extract any text that's within an HSLFTextShape that's a descendant of
     //an HSLFGroupShape.
-    private void extractGroupText(XHTMLContentHandler xhtml, ShapeContainer shapeContainer, int depth) throws SAXException {
+    private void extractGroupText(XHTMLContentHandler xhtml, ShapeContainer shapeContainer,
+                                  int depth) throws SAXException {
         List<HSLFShape> shapes = getShapes(shapeContainer);
         if (shapes == null) {
             return;
@@ -269,10 +276,10 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
         for (HSLFShape shape : shapes) {
             if (shape instanceof HSLFGroupShape) {
                 //work recursively, HSLFGroupShape can contain HSLFGroupShape
-                extractGroupText(xhtml, ((HSLFGroupShape)shape), depth+1);
-            } else if (shape instanceof HSLFTextShape
-                    && ! (shape instanceof HSLFTableCell) && depth > 0) {
-                paragraphList.add(((HSLFTextShape)shape).getTextParagraphs());
+                extractGroupText(xhtml, ((HSLFGroupShape) shape), depth + 1);
+            } else if (shape instanceof HSLFTextShape && !(shape instanceof HSLFTableCell) &&
+                    depth > 0) {
+                paragraphList.add(((HSLFTextShape) shape).getTextParagraphs());
             }
         }
         textRunsToText(xhtml, paragraphList);
@@ -281,26 +288,29 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
     private void extractMacros(HSLFSlideShow ppt, XHTMLContentHandler xhtml) {
 
         //get macro persist id
-        DocInfoListContainer list = (DocInfoListContainer)ppt.getDocumentRecord().findFirstOfType(RecordTypes.List.typeID);
+        DocInfoListContainer list = (DocInfoListContainer) ppt.getDocumentRecord()
+                .findFirstOfType(RecordTypes.List.typeID);
         if (list == null) {
             return;
         }
-        VBAInfoContainer vbaInfo = (VBAInfoContainer)list.findFirstOfType(RecordTypes.VBAInfo.typeID);
+        VBAInfoContainer vbaInfo =
+                (VBAInfoContainer) list.findFirstOfType(RecordTypes.VBAInfo.typeID);
         if (vbaInfo == null) {
             return;
         }
-        VBAInfoAtom vbaAtom = (VBAInfoAtom)vbaInfo.findFirstOfType(RecordTypes.VBAInfoAtom.typeID);
+        VBAInfoAtom vbaAtom = (VBAInfoAtom) vbaInfo.findFirstOfType(RecordTypes.VBAInfoAtom.typeID);
         if (vbaAtom == null) {
             return;
         }
         long persistId = vbaAtom.getPersistIdRef();
         for (HSLFObjectData objData : ppt.getEmbeddedObjects()) {
             if (objData.getExOleObjStg().getPersistId() == persistId) {
-                try (POIFSFileSystem poifsFileSystem = new POIFSFileSystem(objData.getInputStream())) {
+                try (POIFSFileSystem poifsFileSystem = new POIFSFileSystem(
+                        objData.getInputStream())) {
                     try {
                         OfficeParser.extractMacros(poifsFileSystem, xhtml,
                                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context));
-                    } catch (IOException|SAXException inner) {
+                    } catch (IOException | SAXException inner) {
                         EmbeddedDocumentUtil.recordException(inner, parentMetadata);
                     }
                 } catch (IOException e) {
@@ -311,7 +321,8 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
 
     }
 
-    private void extractMaster(XHTMLContentHandler xhtml, HSLFMasterSheet master) throws SAXException {
+    private void extractMaster(XHTMLContentHandler xhtml, HSLFMasterSheet master)
+            throws SAXException {
         if (master == null) {
             return;
         }
@@ -322,7 +333,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
 
         xhtml.startElement("div", "class", "slide-master-content");
         for (HSLFShape shape : shapes) {
-            if (shape != null && ! isPlaceholder(shape)) {
+            if (shape != null && !isPlaceholder(shape)) {
                 if (shape instanceof HSLFTextShape) {
                     HSLFTextShape tsh = (HSLFTextShape) shape;
                     String text = tsh.getText();
@@ -336,7 +347,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
     }
 
     private boolean isPlaceholder(HSLFShape shape) {
-        return shape instanceof SimpleShape && ((SimpleShape)shape).isPlaceholder();
+        return shape instanceof SimpleShape && ((SimpleShape) shape).isPlaceholder();
     }
 
     private void extractTableText(XHTMLContentHandler xhtml, HSLFTable shape) throws SAXException {
@@ -357,7 +368,8 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
         xhtml.endElement("table");
     }
 
-    private void textRunsToText(XHTMLContentHandler xhtml, List<List<HSLFTextParagraph>> paragraphsList) throws SAXException {
+    private void textRunsToText(XHTMLContentHandler xhtml,
+                                List<List<HSLFTextParagraph>> paragraphsList) throws SAXException {
         if (paragraphsList == null) {
             return;
         }
@@ -392,7 +404,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                     Hyperlink link = htr.getHyperlink();
                     if (link != null) {
                         String address = link.getAddress();
-                        if (address != null && ! address.startsWith("_ftn")) {
+                        if (address != null && !address.startsWith("_ftn")) {
                             xhtml.startElement("a", "href", link.getAddress());
                             runIsHyperLink = true;
                         }
@@ -426,13 +438,6 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
         }
     }
 
-    // remove trailing paragraph break
-    private static String removePBreak(String fragment) {
-        // the last text run of a text paragraph contains the paragraph break (\r)
-        // line breaks (\\u000b) can happen more often
-        return fragment.replaceFirst("\\r$", "");
-    }
-
     private void handleSlideEmbeddedPictures(HSLFSlideShow slideshow, XHTMLContentHandler xhtml)
             throws TikaException, SAXException, IOException {
         for (HSLFPictureData pic : slideshow.getPictureData()) {
@@ -459,15 +464,14 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
                 continue;
             }
-            try (TikaInputStream picIs = TikaInputStream.get(data)){
-                handleEmbeddedResource(
-                        picIs, null, null,
-                        mediaType, xhtml, false);
+            try (TikaInputStream picIs = TikaInputStream.get(data)) {
+                handleEmbeddedResource(picIs, null, null, mediaType, xhtml, false);
             }
         }
     }
 
-    private void handleSlideEmbeddedResources(ShapeContainer shapeContainer, XHTMLContentHandler xhtml)
+    private void handleSlideEmbeddedResources(ShapeContainer shapeContainer,
+                                              XHTMLContentHandler xhtml)
             throws TikaException, SAXException, IOException {
         List<HSLFShape> shapes = getShapes(shapeContainer);
         if (shapes == null) {
@@ -510,11 +514,13 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                         if ("Excel.Chart.8".equals(oleShape.getProgId())) {
                             mediaType = "application/vnd.ms-excel";
                         } else {
-                            MediaType mt = getTikaConfig().getDetector().detect(stream, new Metadata());
+                            MediaType mt =
+                                    getTikaConfig().getDetector().detect(stream, new Metadata());
                             mediaType = mt.toString();
                         }
-                        if (mediaType.equals("application/x-tika-msoffice-embedded; format=comp_obj")
-                                || mediaType.equals("application/x-tika-msoffice")) {
+                        if (mediaType
+                                .equals("application/x-tika-msoffice-embedded; format=comp_obj") ||
+                                mediaType.equals("application/x-tika-msoffice")) {
                             POIFSFileSystem poifs = null;
 
                             try {
@@ -530,9 +536,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                                 }
                             }
                         } else {
-                            handleEmbeddedResource(
-                                    stream, objID, objID,
-                                    mediaType, xhtml, false);
+                            handleEmbeddedResource(stream, objID, objID, mediaType, xhtml, false);
                         }
                     } catch (IOException e) {
                         EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);

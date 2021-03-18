@@ -22,13 +22,14 @@ import static org.junit.Assert.assertNotNull;
 import java.io.InputStream;
 import java.util.List;
 
+import org.junit.Test;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
-import org.junit.Test;
 
 public class EpubParserTest extends TikaTest {
 
@@ -37,14 +38,11 @@ public class EpubParserTest extends TikaTest {
 
         XMLResult xmlResult = getXML("testEPUB.epub");
 
-        assertEquals("application/epub+zip",
-                xmlResult.metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("en",
-                xmlResult.metadata.get(TikaCoreProperties.LANGUAGE));
+        assertEquals("application/epub+zip", xmlResult.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("en", xmlResult.metadata.get(TikaCoreProperties.LANGUAGE));
         assertEquals("This is an ePub test publication for Tika.",
                 xmlResult.metadata.get(TikaCoreProperties.DESCRIPTION));
-        assertEquals("Apache",
-                xmlResult.metadata.get(TikaCoreProperties.PUBLISHER));
+        assertEquals("Apache", xmlResult.metadata.get(TikaCoreProperties.PUBLISHER));
 
         String content = xmlResult.xml;
         assertContains("Plus a simple div", content);
@@ -75,10 +73,10 @@ public class EpubParserTest extends TikaTest {
         int tocIndex = xml.indexOf("h3 class=\"toc_heading\">Table of Contents<");
         int ch1 = xml.indexOf("<h1>Chapter 1");
         int ch2 = xml.indexOf("<h1>Chapter 2");
-        assert(tocIndex > -1 && ch1 > -1 && ch2 > -1);
-        assert(tocIndex < ch1);
-        assert(tocIndex < ch2);
-        assert(ch1 < ch2);
+        assert (tocIndex > -1 && ch1 > -1 && ch2 > -1);
+        assert (tocIndex < ch1);
+        assert (tocIndex < ch2);
+        assert (ch1 < ch2);
 
         try (InputStream is = getResourceAsStream("/org/apache/tika/parser/epub/tika-config.xml")) {
             assertNotNull(is);
@@ -87,10 +85,10 @@ public class EpubParserTest extends TikaTest {
             tocIndex = xml.indexOf("h3 class=\"toc_heading\">Table of Contents<");
             ch1 = xml.indexOf("<h1>Chapter 1");
             ch2 = xml.indexOf("<h1>Chapter 2");
-            assert(tocIndex > -1 && ch1 > -1 && ch2 > -1);
-            assert(tocIndex > ch1);
-            assert(tocIndex > ch2);
-            assert(ch1 < ch2);
+            assert (tocIndex > -1 && ch1 > -1 && ch2 > -1);
+            assert (tocIndex > ch1);
+            assert (tocIndex > ch2);
+            assert (ch1 < ch2);
         }
     }
 
@@ -105,7 +103,7 @@ public class EpubParserTest extends TikaTest {
         String xml = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         int ch1 = xml.indexOf("<h1>Chapter 1");
         int ch2 = xml.indexOf("<h1>Chapter 2");
-        assert(ch1 < ch2);
+        assert (ch1 < ch2);
     }
 
     @Test

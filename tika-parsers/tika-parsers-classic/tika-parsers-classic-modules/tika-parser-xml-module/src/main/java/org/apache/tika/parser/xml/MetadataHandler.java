@@ -16,19 +16,20 @@
  */
 package org.apache.tika.parser.xml;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
 import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
+
 /**
  * This adds Metadata entries with a specified name for
- *  the textual content of a node (if present), and 
- *  all attribute values passed through the matcher
- *  (but not their names). 
+ * the textual content of a node (if present), and
+ * all attribute values passed through the matcher
+ * (but not their names).
  *
  * @deprecated Use the {@link AttributeMetadataHandler} and
- *             {@link ElementMetadataHandler} classes instead
+ * {@link ElementMetadataHandler} classes instead
  */
 public class MetadataHandler extends DefaultHandler {
 
@@ -44,11 +45,12 @@ public class MetadataHandler extends DefaultHandler {
         this.property = null;
         this.name = name;
     }
+
     public MetadataHandler(Metadata metadata, Property property) {
-       this.metadata = metadata;
-       this.property = property;
-       this.name = property.getName();
-   }
+        this.metadata = metadata;
+        this.property = property;
+        this.name = property.getName();
+    }
 
     public void addMetadata(String value) {
         if (value.length() > 0) {
@@ -56,11 +58,11 @@ public class MetadataHandler extends DefaultHandler {
             if (previous != null && previous.length() > 0) {
                 value = previous + ", " + value;
             }
-            
+
             if (this.property != null) {
-               metadata.set(property, value);
+                metadata.set(property, value);
             } else {
-               metadata.set(name, value);
+                metadata.set(name, value);
             }
         }
     }
@@ -70,14 +72,13 @@ public class MetadataHandler extends DefaultHandler {
         buffer.setLength(0);
     }
 
-    public void startElement(
-            String uri, String localName, String name, Attributes attributes) {
+    public void startElement(String uri, String localName, String name, Attributes attributes) {
         for (int i = 0; i < attributes.getLength(); i++) {
             addMetadata(attributes.getValue(i));
         }
     }
 
-    
+
     public void characters(char[] ch, int start, int length) {
         buffer.append(ch, start, length);
     }

@@ -16,15 +16,16 @@
  */
 package org.apache.tika.parser.internal;
 
-import org.apache.tika.detect.DefaultDetector;
-import org.apache.tika.detect.Detector;
-import org.apache.tika.parser.DefaultParser;
-import org.apache.tika.parser.Parser;
+import java.util.Hashtable;
+
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 
-import java.util.Hashtable;
+import org.apache.tika.detect.DefaultDetector;
+import org.apache.tika.detect.Detector;
+import org.apache.tika.parser.DefaultParser;
+import org.apache.tika.parser.Parser;
 
 public class Activator implements BundleActivator {
 
@@ -34,15 +35,10 @@ public class Activator implements BundleActivator {
 
     @Override
     public void start(BundleContext context) throws Exception {
-        detectorService = context.registerService(
-                Detector.class.getName(),
-                new DefaultDetector(Activator.class.getClassLoader()),
-                new Hashtable<>());
+        detectorService = context.registerService(Detector.class.getName(),
+                new DefaultDetector(Activator.class.getClassLoader()), new Hashtable<>());
         Parser parser = new DefaultParser(Activator.class.getClassLoader());
-        parserService = context.registerService(
-                Parser.class.getName(),
-                parser,
-                new Hashtable<>());
+        parserService = context.registerService(Parser.class.getName(), parser, new Hashtable<>());
     }
 
     @Override

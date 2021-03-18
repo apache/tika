@@ -16,15 +16,6 @@
  */
 package org.apache.tika.parser.ocr;
 
-import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.DefaultExecutor;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ocr.tess4j.ImageDeskew;
-import org.apache.tika.utils.SystemUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.Serializable;
@@ -35,6 +26,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Stream;
+import javax.imageio.ImageIO;
+
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecutor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ocr.tess4j.ImageDeskew;
+import org.apache.tika.utils.SystemUtils;
 
 class ImagePreprocessor implements Serializable {
 
@@ -42,19 +43,18 @@ class ImagePreprocessor implements Serializable {
     private static final double MINIMUM_DESKEW_THRESHOLD = 1.0D;
 
     private final String fullImageMagickPath;
+
     ImagePreprocessor(String fullImageMagickPath) {
         this.fullImageMagickPath = fullImageMagickPath;
     }
 
 
     //this assumes that image magick is available
-    void process(Path sourceFile, Path targFile, Metadata metadata,
-                 TesseractOCRConfig config) throws IOException {
+    void process(Path sourceFile, Path targFile, Metadata metadata, TesseractOCRConfig config)
+            throws IOException {
 
 
-        double angle = config.isApplyRotation()
-                ? getAngle(sourceFile, metadata)
-                : 0d;
+        double angle = config.isApplyRotation() ? getAngle(sourceFile, metadata) : 0d;
 
         if (config.isEnableImagePreprocessing() || config.isApplyRotation() && angle != 0) {
             // process the image - parameter values can be set in TesseractOCRConfig.properties
@@ -64,46 +64,34 @@ class ImagePreprocessor implements Serializable {
             }
 
             // Arguments for ImageMagick
-            final List<String> density = Arrays.asList("-density", Integer.toString(config.getDensity()));
+            final List<String> density =
+                    Arrays.asList("-density", Integer.toString(config.getDensity()));
             final List<String> depth = Arrays.asList("-depth", Integer.toString(config.getDepth()));
             final List<String> colorspace = Arrays.asList("-colorspace", config.getColorspace());
             final List<String> filter = Arrays.asList("-filter", config.getFilter());
             final List<String> resize = Arrays.asList("-resize", config.getResize() + "%");
             final List<String> rotate = Arrays.asList("-rotate", Double.toString(-angle));
-            final List<String> sourceFileArg = Collections.singletonList(sourceFile.toAbsolutePath().toString());
-            final List<String> targFileArg = Collections.singletonList(targFile.toAbsolutePath().toString());
+            final List<String> sourceFileArg =
+                    Collections.singletonList(sourceFile.toAbsolutePath().toString());
+            final List<String> targFileArg =
+                    Collections.singletonList(targFile.toAbsolutePath().toString());
 
             Stream<List<String>> stream = Stream.empty();
             if (angle == 0) {
                 if (config.isEnableImagePreprocessing()) {
                     // Do pre-processing, but don't do any rotation
-                    stream = Stream.of(
-                            density,
-                            depth,
-                            colorspace,
-                            filter,
-                            resize,
-                            sourceFileArg,
+                    stream = Stream.of(density, depth, colorspace, filter, resize, sourceFileArg,
                             targFileArg);
                 }
             } else if (config.isEnableImagePreprocessing()) {
                 // Do pre-processing with rotation
-                stream = Stream.of(
-                        density,
-                        depth,
-                        colorspace,
-                        filter,
-                        resize,
-                        rotate,
-                        sourceFileArg,
-                        targFileArg);
+                stream =
+                        Stream.of(density, depth, colorspace, filter, resize, rotate, sourceFileArg,
+                                targFileArg);
 
             } else if (config.isApplyRotation()) {
                 // Just rotation
-                stream = Stream.of(
-                        rotate,
-                        sourceFileArg,
-                        targFileArg);
+                stream = Stream.of(rotate, sourceFileArg, targFileArg);
             }
             final String[] args = stream.flatMap(Collection::stream).toArray(String[]::new);
             commandLine.addArguments(args, true);
@@ -128,10 +116,11 @@ class ImagePreprocessor implements Serializable {
         double angle = id.getSkewAngle();
 
         if (angle < MINIMUM_DESKEW_THRESHOLD && angle > -MINIMUM_DESKEW_THRESHOLD) {
-            LOG.debug("Changing angle " + angle  + " to 0.0");
+            LOG.debug("Changing angle " + angle + " to 0.0");
             angle = 0d;
         } else {
-            metadata.add(TesseractOCRParser.IMAGE_ROTATION, String.format(Locale.getDefault(), "%.3f", angle));
+            metadata.add(TesseractOCRParser.IMAGE_ROTATION,
+                    String.format(Locale.getDefault(), "%.3f", angle));
         }
 
         return angle;

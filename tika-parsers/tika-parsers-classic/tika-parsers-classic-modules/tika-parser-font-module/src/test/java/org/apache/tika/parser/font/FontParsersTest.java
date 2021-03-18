@@ -16,18 +16,24 @@
  */
 package org.apache.tika.parser.font;
 
+import static org.apache.tika.parser.font.AdobeFontMetricParser.MET_FONT_FAMILY_NAME;
+import static org.apache.tika.parser.font.AdobeFontMetricParser.MET_FONT_FULL_NAME;
+import static org.apache.tika.parser.font.AdobeFontMetricParser.MET_FONT_NAME;
+import static org.apache.tika.parser.font.AdobeFontMetricParser.MET_FONT_SUB_FAMILY_NAME;
+import static org.apache.tika.parser.font.AdobeFontMetricParser.MET_FONT_VERSION;
+import static org.apache.tika.parser.font.AdobeFontMetricParser.MET_FONT_WEIGHT;
+import static org.apache.tika.parser.font.AdobeFontMetricParser.MET_PS_NAME;
+import static org.junit.Assert.assertEquals;
+
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
-
-
-import static org.apache.tika.parser.font.AdobeFontMetricParser.*;
-import static org.junit.Assert.assertEquals;
 
 /**
  * Test case for parsing various different font files.
@@ -39,7 +45,8 @@ public class FontParsersTest extends TikaTest {
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
 
-        try (TikaInputStream stream = TikaInputStream.get(getResourceAsUrl("/test-documents/testAFM.afm"))) {
+        try (TikaInputStream stream = TikaInputStream
+                .get(getResourceAsUrl("/test-documents/testAFM.afm"))) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, context);
         }
 
@@ -49,9 +56,9 @@ public class FontParsersTest extends TikaTest {
 
         assertEquals("TestFontName", metadata.get(MET_FONT_NAME));
         assertEquals("TestFullName", metadata.get(MET_FONT_FULL_NAME));
-        assertEquals("TestSymbol",   metadata.get(MET_FONT_FAMILY_NAME));
+        assertEquals("TestSymbol", metadata.get(MET_FONT_FAMILY_NAME));
 
-        assertEquals("Medium",  metadata.get(MET_FONT_WEIGHT));
+        assertEquals("Medium", metadata.get(MET_FONT_WEIGHT));
         assertEquals("001.008", metadata.get(MET_FONT_VERSION));
 
         String content = handler.toString();
@@ -71,7 +78,8 @@ public class FontParsersTest extends TikaTest {
         //http://www.google.com/fonts/specimen/Open+Sans
         //...despite the copyright in the file's metadata.
 
-        try (TikaInputStream stream = TikaInputStream.get(getResourceAsUrl("/test-documents/testTrueType3.ttf"))) {
+        try (TikaInputStream stream = TikaInputStream
+                .get(getResourceAsUrl("/test-documents/testTrueType3.ttf"))) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, context);
         }
 

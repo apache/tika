@@ -20,17 +20,19 @@ import static org.apache.tika.TikaTest.assertContains;
 
 import java.io.InputStream;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.BodyContentHandler;
+
 public class FictionBookParserTest {
-  
+
     @Test
     public void testFB2() throws Exception {
-        try (InputStream input = FictionBookParserTest.class.getResourceAsStream("/test-documents/test.fb2")) {
+        try (InputStream input = FictionBookParserTest.class
+                .getResourceAsStream("/test-documents/test.fb2")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             new FictionBookParser().parse(input, handler, metadata, new ParseContext());
