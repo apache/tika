@@ -21,6 +21,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
@@ -28,6 +30,8 @@ import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.exception.EncryptedDocumentException;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -380,6 +384,27 @@ public class ODFParserTest extends TikaTest {
         }
     }
 
+    @Test(expected = EncryptedDocumentException.class)
+    public void testEncryptedODTFile() throws Exception {
+        //the password to this file is "tika"
+        Path p =
+                Paths.get(
+                        ODFParserTest.class.getResource(
+                                "/test-documents/testODTEncrypted.odt").toURI());
+        getRecursiveMetadata(p, false);
+    }
+
+    //this, of course, should throw an EncryptedDocumentException
+    //but the file can't be read by Java's ZipInputStream or
+    //by commons compress, unless you enable descriptors.
+    //https://issues.apache.org/jira/browse/ODFTOOLKIT-402
+    @Test(expected = TikaException.class)
+    public void testEncryptedODTStream() throws Exception {
+        try (InputStream is = ODFParserTest.class.getResourceAsStream(
+                "/test-documents/testODTEncrypted.odt")) {
+            getRecursiveMetadata(is, false);
+        }
+    }
 
     private ParseContext getNonRecursingParseContext() {
         ParseContext parseContext = new ParseContext();
