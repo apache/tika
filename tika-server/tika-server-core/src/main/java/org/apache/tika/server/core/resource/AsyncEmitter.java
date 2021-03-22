@@ -16,14 +16,6 @@
  */
 package org.apache.tika.server.core.resource;
 
-import org.apache.tika.pipes.emitter.AbstractEmitter;
-import org.apache.tika.pipes.emitter.EmitData;
-import org.apache.tika.pipes.emitter.Emitter;
-import org.apache.tika.pipes.emitter.TikaEmitterException;
-import org.apache.tika.utils.ExceptionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -35,6 +27,15 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.tika.pipes.emitter.AbstractEmitter;
+import org.apache.tika.pipes.emitter.EmitData;
+import org.apache.tika.pipes.emitter.Emitter;
+import org.apache.tika.pipes.emitter.TikaEmitterException;
+import org.apache.tika.utils.ExceptionUtils;
+
 /**
  * Worker thread that takes EmitData off the queue, batches it
  * and tries to emit it as a batch
@@ -45,12 +46,9 @@ public class AsyncEmitter implements Callable<Integer> {
 
     //TODO -- need to configure these
     private final long emitWithinMs = 1000;
-
-    private long maxEstimatedBytes = 10_000_000;
-
     private final ArrayBlockingQueue<EmitData> emitDataQueue;
-
     Instant lastEmitted = Instant.now();
+    private long maxEstimatedBytes = 10_000_000;
 
     public AsyncEmitter(ArrayBlockingQueue<EmitData> emitData) {
         this.emitDataQueue = emitData;
@@ -68,12 +66,10 @@ public class AsyncEmitter implements Callable<Integer> {
             } else {
                 LOG.trace("Nothing on the async queue");
             }
-            LOG.debug("cache size: ({}) bytes and count: {}",
-                    cache.estimatedSize, cache.size);
+            LOG.debug("cache size: ({}) bytes and count: {}", cache.estimatedSize, cache.size);
             long elapsed = ChronoUnit.MILLIS.between(lastEmitted, Instant.now());
             if (elapsed > emitWithinMs) {
-                LOG.debug("{} elapsed > {}, going to emitAll",
-                        elapsed, emitWithinMs);
+                LOG.debug("{} elapsed > {}, going to emitAll", elapsed, emitWithinMs);
                 //this can block
                 cache.emitAll();
             }
@@ -97,10 +93,11 @@ public class AsyncEmitter implements Callable<Integer> {
 
         void add(EmitData data) {
             size++;
-            long sz = AbstractEmitter.estimateSizeInBytes(data.getEmitKey().getKey(), data.getMetadataList());
+            long sz = AbstractEmitter
+                    .estimateSizeInBytes(data.getEmitKey().getKey(), data.getMetadataList());
             if (estimatedSize + sz > maxBytes) {
                 LOG.debug("estimated size ({}) > maxBytes({}), going to emitAll",
-                        (estimatedSize+sz), maxBytes);
+                        (estimatedSize + sz), maxBytes);
                 emitAll();
             }
             List<EmitData> cached = map.get(data.getEmitKey().getEmitterName());
@@ -116,8 +113,8 @@ public class AsyncEmitter implements Callable<Integer> {
             int emitted = 0;
             LOG.debug("about to emit {}", size);
             for (Map.Entry<String, List<EmitData>> e : map.entrySet()) {
-                Emitter emitter = TikaResource.getConfig()
-                        .getEmitterManager().getEmitter(e.getKey());
+                Emitter emitter =
+                        TikaResource.getConfig().getEmitterManager().getEmitter(e.getKey());
                 tryToEmit(emitter, e.getValue());
                 emitted += e.getValue().size();
             }
@@ -132,7 +129,7 @@ public class AsyncEmitter implements Callable<Integer> {
 
             try {
                 emitter.emit(cachedEmitData);
-            } catch (IOException|TikaEmitterException e) {
+            } catch (IOException | TikaEmitterException e) {
                 LOG.warn("emitter class ({}): {}", emitter.getClass(),
                         ExceptionUtils.getStackTrace(e));
             }

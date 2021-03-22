@@ -32,14 +32,14 @@
  */
 package org.apache.tika.server.core;
 
+import javax.ws.rs.core.MultivaluedMap;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 
-import javax.ws.rs.core.MultivaluedMap;
-
 /**
  * Implementations must be thread-safe!
- *
+ * <p>
  * This class translates http headers into objects/configurations set
  * via the ParseContext
  */
@@ -48,10 +48,9 @@ public interface ParseContextConfig {
     /**
      * Configures the parseContext with present headers.
      *
-     * @param headers the headers.
-     * @param metadata  the metadata.
+     * @param headers  the headers.
+     * @param metadata the metadata.
      * @param context  the parse context to configure.
      */
-    void configure(MultivaluedMap<String, String> headers,
-                   Metadata metadata, ParseContext context);
+    void configure(MultivaluedMap<String, String> headers, Metadata metadata, ParseContext context);
 }

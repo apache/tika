@@ -1,5 +1,3 @@
-package org.apache.tika.server.core;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,10 +14,11 @@ package org.apache.tika.server.core;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import org.apache.tika.metadata.Metadata;
+package org.apache.tika.server.core;
 
 import java.util.List;
+
+import org.apache.tika.metadata.Metadata;
 
 /**
  * wrapper class to make isWriteable in MetadataListMBW simpler

@@ -16,14 +16,6 @@
  */
 package org.apache.tika.server.client;
 
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
-import org.apache.tika.pipes.fetchiterator.FetchIterator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.SAXException;
-
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -40,6 +32,15 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
+
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
+import org.apache.tika.pipes.fetchiterator.FetchIterator;
 
 public class TikaClientCLI {
 
@@ -60,8 +61,9 @@ public class TikaClientCLI {
             throws TikaException, IOException, SAXException {
         TikaConfig config = new TikaConfig(tikaConfigPath);
 
-        ExecutorService executorService = Executors.newFixedThreadPool(numThreads+1);
-        ExecutorCompletionService<Integer> completionService = new ExecutorCompletionService<>(executorService);
+        ExecutorService executorService = Executors.newFixedThreadPool(numThreads + 1);
+        ExecutorCompletionService<Integer> completionService =
+                new ExecutorCompletionService<>(executorService);
         final FetchIterator fetchIterator = config.getFetchIterator();
         final ArrayBlockingQueue<FetchEmitTuple> queue = fetchIterator.init(numThreads);
 
@@ -69,8 +71,8 @@ public class TikaClientCLI {
         if (tikaServerUrls.size() == numThreads) {
             logDiffSizes(tikaServerUrls.size(), numThreads);
             for (int i = 0; i < numThreads; i++) {
-                TikaClient client = TikaClient.get(config,
-                        Collections.singletonList(tikaServerUrls.get(i)));
+                TikaClient client =
+                        TikaClient.get(config, Collections.singletonList(tikaServerUrls.get(i)));
                 completionService.submit(new FetchWorker(queue, client));
             }
         } else {
@@ -81,7 +83,7 @@ public class TikaClientCLI {
         }
 
         int finished = 0;
-        while (finished < numThreads+1) {
+        while (finished < numThreads + 1) {
             Future<Integer> future = null;
             try {
                 future = completionService.poll(maxWaitMs, TimeUnit.MILLISECONDS);
@@ -94,7 +96,7 @@ public class TikaClientCLI {
                 finished++;
                 try {
                     future.get();
-                } catch (InterruptedException|ExecutionException e) {
+                } catch (InterruptedException | ExecutionException e) {
                     //stop the world
                     LOGGER.error("", e);
                     throw new RuntimeException(e);
@@ -105,13 +107,13 @@ public class TikaClientCLI {
 
     private void logDiffSizes(int servers, int numThreads) {
         LOGGER.info("tika server count ({}) != numThreads ({}). " +
-                        "Each client will randomly select a server from this list",
-                servers, numThreads);
+                "Each client will randomly select a server from this list", servers, numThreads);
     }
 
     private class AsyncFetchWorker implements Callable<Integer> {
         private final ArrayBlockingQueue<FetchEmitTuple> queue;
         private final TikaClient client;
+
         public AsyncFetchWorker(ArrayBlockingQueue<FetchEmitTuple> queue, TikaClient client) {
             this.queue = queue;
             this.client = client;
@@ -148,6 +150,7 @@ public class TikaClientCLI {
     private class FetchWorker implements Callable<Integer> {
         private final ArrayBlockingQueue<FetchEmitTuple> queue;
         private final TikaClient client;
+
         public FetchWorker(ArrayBlockingQueue<FetchEmitTuple> queue, TikaClient client) {
             this.queue = queue;
             this.client = client;

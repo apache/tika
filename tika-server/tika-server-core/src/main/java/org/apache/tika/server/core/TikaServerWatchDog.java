@@ -17,21 +17,15 @@
 
 package org.apache.tika.server.core;
 
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.utils.ProcessUtils;
-import org.apache.tika.utils.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.nio.file.StandardOpenOption.READ;
+import static java.nio.file.StandardOpenOption.WRITE;
+import static org.apache.tika.server.core.TikaServerCli.TIKA_SERVER_ID_ENV;
 
 import java.io.BufferedReader;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -40,7 +34,6 @@ import java.nio.channels.OverlappingFileLockException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -48,50 +41,76 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-import static java.nio.file.StandardOpenOption.READ;
-import static java.nio.file.StandardOpenOption.WRITE;
-import static org.apache.tika.server.core.TikaServerCli.TIKA_SERVER_ID_ENV;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.utils.ProcessUtils;
 
 public class TikaServerWatchDog implements Callable<WatchDogResult> {
 
-    private enum FORKED_STATUS {
-        INITIALIZING,
-        RUNNING,
-        SHUTTING_DOWN,
-        FAILED_COMMUNICATION
-    }
-
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerWatchDog.class);
-    private static final String DEFAULT_FORKED_STATUS_FILE_PREFIX = "tika-server-forked-process-mmap-";
-
+    private static final String DEFAULT_FORKED_STATUS_FILE_PREFIX =
+            "tika-server-forked-process-mmap-";
+    private final int port;
+    private final String id;
+    private final TikaServerConfig tikaServerConfig;
     private Object[] forkedStatusLock = new Object[0];
     private volatile FORKED_STATUS forkedStatus = FORKED_STATUS.INITIALIZING;
     private volatile Instant lastPing = null;
     private ForkedProcess forkedProcess = null;
-
-    private final int port;
-    private final String id;
     private int restarts = 0;
-    private final TikaServerConfig tikaServerConfig;
     private volatile boolean shutDown = false;
-
-    TikaServerWatchDog(int port, String id,
-                       TikaServerConfig tikaServerConfig) {
+    TikaServerWatchDog(int port, String id, TikaServerConfig tikaServerConfig) {
         this.port = port;
         this.id = id;
         this.tikaServerConfig = tikaServerConfig;
     }
 
+    private static void redirectIO(final InputStream src, final PrintStream targ) {
+        Thread gobbler = new Thread(new Runnable() {
+            public void run() {
+                BufferedReader reader =
+                        new BufferedReader(new InputStreamReader(src, StandardCharsets.UTF_8));
+                String line = null;
+                try {
+                    line = reader.readLine();
+                    while (line != null) {
+                        targ.println(line);
+                        line = reader.readLine();
+                    }
+                } catch (IOException e) {
+                    //swallow
+                }
+            }
+        });
+        gobbler.setDaemon(true);
+        gobbler.start();
+    }
+
+    private static synchronized void destroyForkedForcibly(Process process) {
+        process = process.destroyForcibly();
+        try {
+            boolean destroyed = process.waitFor(60, TimeUnit.SECONDS);
+            if (!destroyed) {
+                LOG.error("Forked process still alive after 60 seconds. " +
+                        "Shutting down the forking process.");
+                System.exit(1);
+            }
+        } catch (InterruptedException e) {
+            //swallow
+        }
+    }
 
     @Override
     public WatchDogResult call() throws Exception {
         boolean mustRestart = true;
         try {
             while (true) {
-                if (tikaServerConfig.getMaxRestarts() > 0
-                        && restarts >= tikaServerConfig.getMaxRestarts()) {
-                    LOG.warn("hit max restarts ({}). Ending processing for {} {}",
-                            restarts, id, port);
+                if (tikaServerConfig.getMaxRestarts() > 0 &&
+                        restarts >= tikaServerConfig.getMaxRestarts()) {
+                    LOG.warn("hit max restarts ({}). Ending processing for {} {}", restarts, id,
+                            port);
                     return new WatchDogResult(port, id, restarts);
                 }
 
@@ -101,8 +120,8 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
                         setForkedStatus(FORKED_STATUS.RUNNING);
                         mustRestart = false;
                     }
-                    boolean exited = forkedProcess.process.waitFor(tikaServerConfig.getTaskPulseMillis(),
-                            TimeUnit.MILLISECONDS);
+                    boolean exited = forkedProcess.process
+                            .waitFor(tikaServerConfig.getTaskPulseMillis(), TimeUnit.MILLISECONDS);
                     if (exited) {
                         LOG.info("forked process exited with exit value {}",
                                 forkedProcess.process.exitValue());
@@ -121,11 +140,13 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
                             forkedProcess.close();
                             mustRestart = true;
                         } else {
-                            Long elapsed = Duration.between(Instant.ofEpochMilli(status.timestamp), Instant.now()).toMillis();
+                            Long elapsed = Duration.between(Instant.ofEpochMilli(status.timestamp),
+                                    Instant.now()).toMillis();
                             if (elapsed > tikaServerConfig.getTaskTimeoutMillis()) {
-                                LOG.info("{} ms have elapsed since forked process last updated status. " +
-                                                "Shutting down and restarting.",
-                                        elapsed);
+                                LOG.info(
+                                        "{} ms have elapsed since forked process " +
+                                                "last updated status. " +
+                                                "Shutting down and restarting.", elapsed);
                                 forkedProcess.close();
                                 mustRestart = true;
                             }
@@ -145,7 +166,6 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
         }
     }
 
-
     public void shutDown() {
         shutDown = true;
     }
@@ -156,13 +176,45 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
         }
     }
 
-    private class ForkedProcess {
-        private Thread SHUTDOWN_HOOK = null;
+    private enum FORKED_STATUS {
+        INITIALIZING, RUNNING, SHUTTING_DOWN, FAILED_COMMUNICATION
+    }
 
+    private static class ForkedStatus {
+        private final long timestamp;
+        private final int status;
+        private final int numTasks;
+
+        public ForkedStatus(long timestamp, int status, int numTasks) {
+            this.timestamp = timestamp;
+            this.status = status;
+            this.numTasks = numTasks;
+        }
+
+        @Override
+        public String toString() {
+            return "ForkedStatus{" + "timestamp=" + timestamp + ", status=" + status +
+                    ", numTasks=" + numTasks + '}';
+        }
+    }
+
+    private static class DoNotRestartException extends TikaException {
+
+        public DoNotRestartException(String msg) {
+            super(msg);
+        }
+
+        public DoNotRestartException(String msg, Throwable cause) {
+            super(msg, cause);
+        }
+    }
+
+    private class ForkedProcess {
         private final Process process;
-//        private final DataOutputStream toForked;
+        //        private final DataOutputStream toForked;
         private final Path forkedStatusFile;
         private final ByteBuffer statusBuffer = ByteBuffer.allocate(16);
+        private Thread SHUTDOWN_HOOK = null;
 
         private ForkedProcess(int numRestarts) throws Exception {
             String prefix = tikaServerConfig.getTempFilePrefix();
@@ -174,8 +226,8 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
             Instant start = Instant.now();
             long elapsed = Duration.between(start, Instant.now()).toMillis();
             try {
-                while (process.isAlive() && Files.size(forkedStatusFile) < 12
-                        && elapsed < tikaServerConfig.getMaxForkedStartupMillis()) {
+                while (process.isAlive() && Files.size(forkedStatusFile) < 12 &&
+                        elapsed < tikaServerConfig.getMaxForkedStartupMillis()) {
                     Thread.sleep(50);
                     elapsed = Duration.between(start, Instant.now()).toMillis();
                 }
@@ -187,7 +239,8 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
 
             if (elapsed > tikaServerConfig.getMaxForkedStartupMillis()) {
                 close();
-                throw new RuntimeException("Forked process failed to start after " + elapsed + " (ms)");
+                throw new RuntimeException(
+                        "Forked process failed to start after " + elapsed + " (ms)");
             }
             if (!process.isAlive()) {
                 close();
@@ -195,7 +248,8 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
             }
             if (!Files.exists(forkedStatusFile)) {
                 close();
-                throw new RuntimeException("Failed to start forked process -- forked status file does not exist");
+                throw new RuntimeException(
+                        "Failed to start forked process -- forked status file does not exist");
             }
 
             lastPing = Instant.now();
@@ -237,7 +291,7 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
                             throw new DoNotRestartException("Forked exited with: " + exit);
                         }
                     } catch (IllegalThreadStateException e) {
-
+                        //swallow
                     }
                 }
                 destroyForkedForcibly(process);
@@ -264,7 +318,8 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
             List<String> jvmArgs = tikaServerConfig.getForkedJvmArgs();
             List<String> forkedArgs = tikaServerConfig.getForkedProcessArgs(port, id);
             forkedArgs.add("-forkedStatusFile");
-            forkedArgs.add(ProcessUtils.escapeCommandLine(forkedStatusFile.toAbsolutePath().toString()));
+            forkedArgs.add(ProcessUtils
+                    .escapeCommandLine(forkedStatusFile.toAbsolutePath().toString()));
 
             argList.add(javaPath);
             if (!jvmArgs.contains("-cp") && !jvmArgs.contains("--classpath")) {
@@ -294,7 +349,8 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
             }
             Process process = builder.start();
             //redirect stdout to parent stderr to avoid error msgs
-            //from maven during build: Corrupted STDOUT by directly writing to native stream in forked
+            //from maven during build: Corrupted STDOUT by directly writing to
+            // native stream in forked
             redirectIO(process.getInputStream(), System.err);
             redirectIO(process.getErrorStream(), System.err);
             if (SHUTDOWN_HOOK != null) {
@@ -311,72 +367,6 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
             Runtime.getRuntime().addShutdownHook(SHUTDOWN_HOOK);
 
             return process;
-        }
-    }
-
-    private static void redirectIO(final InputStream src, final PrintStream targ) {
-        Thread gobbler = new Thread(new Runnable() {
-            public void run() {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(src, StandardCharsets.UTF_8));
-                String line = null;
-                try {
-                    line = reader.readLine();
-                    while (line != null) {
-                        targ.println(line);
-                        line = reader.readLine();
-                    }
-                } catch (IOException e) {
-                    //swallow
-                }
-            }
-        });
-        gobbler.setDaemon(true);
-        gobbler.start();
-    }
-
-    private static synchronized void destroyForkedForcibly(Process process) {
-        process = process.destroyForcibly();
-        try {
-            boolean destroyed = process.waitFor(60, TimeUnit.SECONDS);
-            if (!destroyed) {
-                LOG.error("Forked process still alive after 60 seconds. " +
-                        "Shutting down the forking process.");
-                System.exit(1);
-            }
-        } catch (InterruptedException e) {
-            //swallow
-        }
-    }
-
-    private static class ForkedStatus {
-        private final long timestamp;
-        private final int status;
-        private final int numTasks;
-
-        public ForkedStatus(long timestamp, int status, int numTasks) {
-            this.timestamp = timestamp;
-            this.status = status;
-            this.numTasks = numTasks;
-        }
-
-        @Override
-        public String toString() {
-            return "ForkedStatus{" +
-                    "timestamp=" + timestamp +
-                    ", status=" + status +
-                    ", numTasks=" + numTasks +
-                    '}';
-        }
-    }
-
-    private static class DoNotRestartException extends TikaException {
-
-        public DoNotRestartException(String msg) {
-            super(msg);
-        }
-
-        public DoNotRestartException(String msg, Throwable cause) {
-            super(msg, cause);
         }
     }
 }

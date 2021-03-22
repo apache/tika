@@ -5,9 +5,9 @@
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,29 +16,11 @@
  */
 package org.apache.tika.server.core;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.io.FileUtils;
-import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
-import org.apache.cxf.jaxrs.client.WebClient;
-import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
-import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.serialization.JsonFetchEmitTuple;
-import org.apache.tika.metadata.serialization.JsonMetadataList;
-import org.apache.tika.pipes.emitter.EmitKey;
-import org.apache.tika.pipes.fetcher.FetchKey;
-import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
-import org.apache.tika.server.core.resource.EmitterResource;
-import org.apache.tika.server.core.writer.JSONObjWriter;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
-import javax.ws.rs.core.Response;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -49,11 +31,30 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import javax.ws.rs.core.Response;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.io.FileUtils;
+import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
+import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
+import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.serialization.JsonFetchEmitTuple;
+import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.pipes.emitter.EmitKey;
+import org.apache.tika.pipes.fetcher.FetchKey;
+import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
+import org.apache.tika.server.core.resource.EmitterResource;
+import org.apache.tika.server.core.writer.JSONObjWriter;
 
 /**
  * This offers basic integration tests with fetchers and emitters.
@@ -70,11 +71,8 @@ public class TikaEmitterTest extends CXFTestBase {
     private static String HELLO_WORLD = "hello_world.xml";
     private static String HELLO_WORLD_JSON = "hello_world.xml.json";
 
-    private static String[] VALUE_ARRAY = new String[]{
-            "my-value-1",
-            "my-value-2",
-            "my-value-3"
-    };
+    private static String[] VALUE_ARRAY = new String[]{"my-value-1", "my-value-2", "my-value-3"};
+
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
         TMP_DIR = Files.createTempDirectory("tika-emitter-test-");
@@ -84,32 +82,23 @@ public class TikaEmitterTest extends CXFTestBase {
         Files.createDirectories(inputDir);
         Files.createDirectories(TMP_OUTPUT_DIR);
 
-        for (String mockFile : new String[]{
-                "hello_world.xml", "null_pointer.xml"}) {
-            Files.copy(TikaEmitterTest.class.getResourceAsStream(
-                    "/test-documents/mock/"+mockFile),
+        for (String mockFile : new String[]{"hello_world.xml", "null_pointer.xml"}) {
+            Files.copy(
+                    TikaEmitterTest.class.getResourceAsStream("/test-documents/mock/" + mockFile),
                     inputDir.resolve(mockFile));
         }
 
-        TIKA_CONFIG_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"+
-                "<properties>"+
-                    "<fetchers>"+
-                        "<fetcher class=\"org.apache.tika.pipes.fetcher.FileSystemFetcher\">"+
-                            "<params>"+
-                                "<param name=\"name\" type=\"string\">fsf</param>"+
-                                "<param name=\"basePath\" type=\"string\">"+inputDir.toAbsolutePath()+"</param>"+
-                            "</params>"+
-                        "</fetcher>"+
-                    "</fetchers>"+
-                    "<emitters>"+
-                        "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">"+
-                            "<params>"+
-                                "<param name=\"name\" type=\"string\">fse</param>"+
-                                "<param name=\"basePath\" type=\"string\">"+ TMP_OUTPUT_DIR.toAbsolutePath()+"</param>"+
-                            "</params>"+
-                        "</emitter>"+
-                    "</emitters>"+
-                "</properties>";
+        TIKA_CONFIG_XML =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" +
+                        "<fetcher class=\"org.apache.tika.pipes.fetcher.FileSystemFetcher\">" +
+                        "<params>" + "<param name=\"name\" type=\"string\">fsf</param>" +
+                        "<param name=\"basePath\" type=\"string\">" + inputDir.toAbsolutePath() +
+                        "</param>" + "</params>" + "</fetcher>" + "</fetchers>" + "<emitters>" +
+                        "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" +
+                        "<params>" + "<param name=\"name\" type=\"string\">fse</param>" +
+                        "<param name=\"basePath\" type=\"string\">" +
+                        TMP_OUTPUT_DIR.toAbsolutePath() + "</param>" + "</params>" + "</emitter>" +
+                        "</emitters>" + "</properties>";
     }
 
     @AfterClass
@@ -154,10 +143,8 @@ public class TikaEmitterTest extends CXFTestBase {
     public void testGet() throws Exception {
 
         String q = "?fn=fsf&fk=hello_world.xml";
-        String getUrl = endPoint+EMITTER_PATH_AND_FS+q;
-        Response response = WebClient
-                .create(getUrl)
-                .accept("application/json").get();
+        String getUrl = endPoint + EMITTER_PATH_AND_FS + q;
+        Response response = WebClient.create(getUrl).accept("application/json").get();
         assertEquals(200, response.getStatus());
         List<Metadata> metadataList = null;
         try (Reader reader = Files.newBufferedReader(TMP_OUTPUT_FILE)) {
@@ -165,8 +152,7 @@ public class TikaEmitterTest extends CXFTestBase {
         }
         assertEquals(1, metadataList.size());
         Metadata metadata = metadataList.get(0);
-        assertEquals("hello world",
-                metadata.get(TikaCoreProperties.TIKA_CONTENT).trim());
+        assertEquals("hello world", metadata.get(TikaCoreProperties.TIKA_CONTENT).trim());
         assertEquals("Nikolai Lobachevsky", metadata.get("author"));
         assertEquals("你好，世界", metadata.get("title"));
         assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
@@ -181,18 +167,15 @@ public class TikaEmitterTest extends CXFTestBase {
             userMetadata.add("my-key-multi", VALUE_ARRAY[i]);
         }
 
-        FetchEmitTuple t = new FetchEmitTuple(
-                new FetchKey("fsf", "hello_world.xml"),
-                new EmitKey("fse", ""),
-                userMetadata);
+        FetchEmitTuple t =
+                new FetchEmitTuple(new FetchKey("fsf", "hello_world.xml"), new EmitKey("fse", ""),
+                        userMetadata);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
 
-        String getUrl = endPoint+EMITTER_PATH;
-        Response response = WebClient
-                .create(getUrl)
-                .accept("application/json")
-                .post(writer.toString());
+        String getUrl = endPoint + EMITTER_PATH;
+        Response response =
+                WebClient.create(getUrl).accept("application/json").post(writer.toString());
         assertEquals(200, response.getStatus());
 
         List<Metadata> metadataList = null;
@@ -201,8 +184,7 @@ public class TikaEmitterTest extends CXFTestBase {
         }
         assertEquals(1, metadataList.size());
         Metadata metadata = metadataList.get(0);
-        assertEquals("hello world",
-                metadata.get(TikaCoreProperties.TIKA_CONTENT).trim());
+        assertEquals("hello world", metadata.get(TikaCoreProperties.TIKA_CONTENT).trim());
         assertEquals("Nikolai Lobachevsky", metadata.get("author"));
         assertEquals("你好，世界", metadata.get("title"));
         assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
@@ -213,17 +195,12 @@ public class TikaEmitterTest extends CXFTestBase {
     @Test
     public void testPut() throws Exception {
 
-        String getUrl = endPoint+EMITTER_PATH_AND_FS;
+        String getUrl = endPoint + EMITTER_PATH_AND_FS;
         String metaPathKey = EmitterResource.EMIT_KEY_FOR_HTTP_HEADER;
 
-        Response response = WebClient
-                .create(getUrl)
-                .accept("application/json")
+        Response response = WebClient.create(getUrl).accept("application/json")
                 .header(metaPathKey, "hello_world.xml")
-                .put(
-                        ClassLoader
-                                .getSystemResourceAsStream("test-documents/mock/hello_world.xml")
-                );
+                .put(ClassLoader.getSystemResourceAsStream("test-documents/mock/hello_world.xml"));
         assertEquals(200, response.getStatus());
         List<Metadata> metadataList = null;
         try (Reader reader = Files.newBufferedReader(TMP_OUTPUT_FILE)) {
@@ -231,8 +208,7 @@ public class TikaEmitterTest extends CXFTestBase {
         }
         assertEquals(1, metadataList.size());
         Metadata metadata = metadataList.get(0);
-        assertEquals("hello world",
-                metadata.get(TikaCoreProperties.TIKA_CONTENT).trim());
+        assertEquals("hello world", metadata.get(TikaCoreProperties.TIKA_CONTENT).trim());
         assertEquals("Nikolai Lobachevsky", metadata.get("author"));
         assertEquals("你好，世界", metadata.get("title"));
         assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
@@ -246,31 +222,30 @@ public class TikaEmitterTest extends CXFTestBase {
             userMetadata.add("my-key-multi", VALUE_ARRAY[i]);
         }
 
-        FetchEmitTuple t = new FetchEmitTuple(
-                new FetchKey("fsf", "null_pointer.xml"),
-                new EmitKey("fse", ""),
-                userMetadata);
+        FetchEmitTuple t =
+                new FetchEmitTuple(new FetchKey("fsf", "null_pointer.xml"), new EmitKey("fse", ""),
+                        userMetadata);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
 
-        String getUrl = endPoint+EMITTER_PATH;
-        Response response = WebClient
-                .create(getUrl)
-                .accept("application/json")
-                .post(writer.toString());
+        String getUrl = endPoint + EMITTER_PATH;
+        Response response =
+                WebClient.create(getUrl).accept("application/json").post(writer.toString());
         assertEquals(200, response.getStatus());
 
         JsonNode jsonResponse;
-        try (Reader reader = new InputStreamReader(
-                (InputStream)response.getEntity(), StandardCharsets.UTF_8)) {
+        try (Reader reader = new InputStreamReader((InputStream) response.getEntity(),
+                StandardCharsets.UTF_8)) {
             jsonResponse = new ObjectMapper().readTree(reader);
-        };
+        }
+        ;
         String parseException = jsonResponse.get("parse_exception").asText();
         assertNotNull(parseException);
         assertContains("NullPointerException", parseException);
 
         List<Metadata> metadataList = null;
-        try (Reader reader = Files.newBufferedReader(TMP_OUTPUT_DIR.resolve("null_pointer.xml.json"))) {
+        try (Reader reader = Files
+                .newBufferedReader(TMP_OUTPUT_DIR.resolve("null_pointer.xml.json"))) {
             metadataList = JsonMetadataList.fromJson(reader);
         }
         assertEquals(1, metadataList.size());
@@ -278,7 +253,8 @@ public class TikaEmitterTest extends CXFTestBase {
         assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("my-value", metadata.get("my-key"));
         assertArrayEquals(VALUE_ARRAY, metadata.getValues("my-key-multi"));
-        assertContains("NullPointerException", metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION));
+        assertContains("NullPointerException",
+                metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION));
     }
 
     //can't test system_exit here because server is in same process

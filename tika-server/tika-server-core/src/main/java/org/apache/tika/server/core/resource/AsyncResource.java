@@ -17,29 +17,8 @@
 
 package org.apache.tika.server.core.resource;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.serialization.JsonFetchEmitTupleList;
-import org.apache.tika.pipes.emitter.EmitData;
-import org.apache.tika.pipes.emitter.EmitKey;
-import org.apache.tika.pipes.emitter.EmitterManager;
-import org.apache.tika.pipes.fetcher.FetchKey;
-import org.apache.tika.pipes.fetcher.FetcherManager;
-import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.InputStream;
-
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
@@ -51,6 +30,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.UriInfo;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.serialization.JsonFetchEmitTupleList;
+import org.apache.tika.pipes.emitter.EmitData;
+import org.apache.tika.pipes.emitter.EmitKey;
+import org.apache.tika.pipes.emitter.EmitterManager;
+import org.apache.tika.pipes.fetcher.FetchKey;
+import org.apache.tika.pipes.fetcher.FetcherManager;
+import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
 
 @Path("/async")
 public class AsyncResource {
@@ -69,6 +68,7 @@ public class AsyncResource {
     public ArrayBlockingQueue<EmitData> getEmitDataQueue(int size) {
         return new ArrayBlockingQueue<>(size);
     }
+
     /**
      * The client posts a json request.  At a minimum, this must be a
      * json object that contains an emitter and a fetcherString key with
@@ -87,10 +87,8 @@ public class AsyncResource {
      */
     @POST
     @Produces("application/json")
-    public Map<String, Object> post(InputStream is,
-                                         @Context HttpHeaders httpHeaders,
-                                         @Context UriInfo info
-    ) throws Exception {
+    public Map<String, Object> post(InputStream is, @Context HttpHeaders httpHeaders,
+                                    @Context UriInfo info) throws Exception {
 
         AsyncRequest request = deserializeASyncRequest(is);
 
@@ -100,10 +98,10 @@ public class AsyncResource {
         FetcherManager fetcherManager = TikaResource.getConfig().getFetcherManager();
         EmitterManager emitterManager = TikaResource.getConfig().getEmitterManager();
         for (FetchEmitTuple t : request.getTuples()) {
-            if (! fetcherManager.getSupported().contains(t.getFetchKey().getFetcherName())) {
+            if (!fetcherManager.getSupported().contains(t.getFetchKey().getFetcherName())) {
                 return badFetcher(t.getFetchKey());
             }
-            if (! emitterManager.getSupported().contains(t.getEmitKey().getEmitterName())) {
+            if (!emitterManager.getSupported().contains(t.getEmitKey().getEmitterName())) {
                 return badEmitter(t.getEmitKey());
             }
         }
@@ -117,7 +115,7 @@ public class AsyncResource {
                 offered = queue.offer(t, 10, TimeUnit.MILLISECONDS);
                 elapsed = ChronoUnit.MILLIS.between(start, Instant.now());
             }
-            if (! offered) {
+            if (!offered) {
                 notAdded.add(t);
             } else {
                 addedCount++;
@@ -151,7 +149,7 @@ public class AsyncResource {
     }
 
     private Map<String, Object> badEmitter(EmitKey emitKey) {
-        throw new BadRequestException("can't find emitter for "+emitKey.getEmitterName());
+        throw new BadRequestException("can't find emitter for " + emitKey.getEmitterName());
     }
 
     private Map<String, Object> badFetcher(FetchKey fetchKey) {

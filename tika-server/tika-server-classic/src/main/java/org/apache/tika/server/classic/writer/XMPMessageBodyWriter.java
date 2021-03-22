@@ -17,11 +17,7 @@
 
 package org.apache.tika.server.classic.writer;
 
-import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.ext.Provider;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -29,13 +25,16 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.ext.Provider;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.server.core.writer.TikaServerWriter;
 import org.apache.tika.xmp.XMPMetadata;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 @Provider
 @Produces("application/rdf+xml")
@@ -43,18 +42,21 @@ public class XMPMessageBodyWriter implements TikaServerWriter<Metadata> {
 
     private static MediaType RDF_XML = MediaType.valueOf("application/rdf+xml");
 
-    public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
+    public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations,
+                               MediaType mediaType) {
         return mediaType.equals(RDF_XML) && Metadata.class.isAssignableFrom(type);
     }
 
-    public long getSize(Metadata data, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
+    public long getSize(Metadata data, Class<?> type, Type genericType, Annotation[] annotations,
+                        MediaType mediaType) {
         return -1;
     }
 
     @Override
-    public void writeTo(Metadata metadata, Class<?> type, Type genericType, Annotation[] annotations,
-                        MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream) throws IOException,
-            WebApplicationException {
+    public void writeTo(Metadata metadata, Class<?> type, Type genericType,
+                        Annotation[] annotations, MediaType mediaType,
+                        MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream)
+            throws IOException, WebApplicationException {
         try {
             Writer writer = new OutputStreamWriter(entityStream, UTF_8);
             XMPMetadata xmp = new XMPMetadata(metadata);
