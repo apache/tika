@@ -1,4 +1,9 @@
-Release 1.26 - 03/09/2021
+Release 1.26 - ??/??/????
+
+   * The "writeLimit" header now pertains to the combined characters
+     written per container document (and embedded documents) in the /rmeta
+     endpoint in tika-server (TIKA-3325); it no longer functions only
+     per container or embedded document.
 
    * Extract more embedded files in PDFs by recursively processing the
      embedded file tree (TIKA-3332).

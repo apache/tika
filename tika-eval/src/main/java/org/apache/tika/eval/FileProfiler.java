@@ -76,6 +76,8 @@ public class FileProfiler extends AbstractProfiler {
                 .addOption("drop", false, "drop tables if they exist")
                 .addOption("maxFilesToAdd", true, "maximum number of files to add to the crawler")
                 .addOption("timeoutThresholdMillis", true, "timeout per file in milliseconds")
+                .addOption("maxConsecWaitMillis", true,
+                        "max time for the crawler to wait to add a file to queue")
         ;
 
     }
