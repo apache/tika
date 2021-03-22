@@ -1334,4 +1334,13 @@ public class PDFParserTest extends TikaTest {
             return true;
         }
     }
+
+    @Test
+    public void testDeeplyEmbeddedAttachments() throws Exception {
+        //test file comes from pdfcpu issue #120: https://github.com/pdfcpu/pdfcpu/issues/201
+        //in our regression corpus: pdfcpu-201-0.zip-0.pdf");
+        List<Metadata> metadataList = getRecursiveMetadata(
+                "testPDF_deeplyEmbeddedAttachments.pdf");
+        assertEquals(21, metadataList.size());
+    }
 }

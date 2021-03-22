@@ -50,6 +50,9 @@ Release 1.26 - ??/??/????
      endpoint in tika-server (TIKA-3325); it no longer functions only
      per container or embedded document.
 
+   * Extract more embedded files in PDFs by recursively processing the
+     embedded file tree (TIKA-3332).
+
    * Allow for case insensitive headers for configuration of the PDFParser
      and the TesseractOCRParser in tika-server via Subhajit Das (TIKA-3320).
 

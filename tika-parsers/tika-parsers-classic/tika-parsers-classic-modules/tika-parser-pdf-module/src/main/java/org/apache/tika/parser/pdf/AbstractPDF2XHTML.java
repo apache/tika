@@ -36,6 +36,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
@@ -115,10 +116,11 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
     public static final String XMP_PAGE_LOCATION_PREFIX = "page ";
     /**
-     * Maximum recursive depth during AcroForm processing.
-     * Prevents theoretical AcroForm recursion bomb.
+     * Maximum recursive depth to prevent cycles/recursion bombs.
+     * This applies to AcroForm processing and processing
+     * the embedded document tree.
      */
-    private final static int MAX_ACROFORM_RECURSIONS = 10;
+    private final static int MAX_RECURSION_DEPTH = 100;
     private static final MediaType XFA_MEDIA_TYPE = MediaType.application("vnd.adobe.xdp+xml");
     private static final MediaType XMP_MEDIA_TYPE = MediaType.application("rdf+xml");
     final List<IOException> exceptions = new ArrayList<>();
@@ -297,23 +299,37 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             return;
         }
 
-        Map<String, PDComplexFileSpecification> embeddedFileNames = efTree.getNames();
-        //For now, try to get the embeddedFileNames out of embeddedFiles or its kids.
-        //This code follows: pdfbox/examples/pdmodel/ExtractEmbeddedFiles.java
-        //If there is a need we could add a fully recursive search to find a non-null
-        //Map<String, COSObjectable> that contains the doc info.
-        if (embeddedFileNames != null) {
-            processEmbeddedDocNames(embeddedFileNames);
-        } else {
-            List<PDNameTreeNode<PDComplexFileSpecification>> kids = efTree.getKids();
-            if (kids == null) {
-                return;
+        Map<String, PDComplexFileSpecification> embeddedFileNames = new HashMap<>();
+        int depth = 0;
+        //recursively find embedded files
+        extractFilesfromEFTree(efTree, embeddedFileNames, depth);
+        processEmbeddedDocNames(embeddedFileNames);
+
+    }
+
+    private void extractFilesfromEFTree(PDNameTreeNode efTree, Map<String,
+            PDComplexFileSpecification> embeddedFileNames, int depth) throws IOException {
+        if (depth > MAX_RECURSION_DEPTH) {
+            throw new IOException("Hit max recursion depth");
+        }
+        Map<String, PDComplexFileSpecification> names = null;
+        try {
+            names = efTree.getNames();
+        } catch (IOException e) {
+            //LOG?
+        }
+        if (names != null) {
+            for (Map.Entry<String, PDComplexFileSpecification> e : names.entrySet()) {
+                embeddedFileNames.put(e.getKey(), e.getValue());
             }
+        }
+
+        List<PDNameTreeNode<PDComplexFileSpecification>> kids = efTree.getKids();
+        if (kids == null) {
+            return;
+        } else {
             for (PDNameTreeNode<PDComplexFileSpecification> node : kids) {
-                embeddedFileNames = node.getNames();
-                if (embeddedFileNames != null) {
-                    processEmbeddedDocNames(embeddedFileNames);
-                }
+                extractFilesfromEFTree(node, embeddedFileNames, depth+1);
             }
         }
     }
@@ -843,7 +859,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     private void processAcroField(PDField field, final int currentRecursiveDepth)
             throws SAXException, IOException, TikaException {
 
-        if (currentRecursiveDepth >= MAX_ACROFORM_RECURSIONS) {
+        if (currentRecursiveDepth >= MAX_RECURSION_DEPTH) {
             return;
         }
 
