@@ -329,7 +329,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             return;
         } else {
             for (PDNameTreeNode<PDComplexFileSpecification> node : kids) {
-                extractFilesfromEFTree(node, embeddedFileNames, depth+1);
+                extractFilesfromEFTree(node, embeddedFileNames, depth + 1);
             }
         }
     }
