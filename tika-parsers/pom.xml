@@ -588,7 +588,7 @@
     <dependency>
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna</artifactId>
-      <version>5.7.0</version>
+      <version>5.8.0</version>
     </dependency>
 
     <!-- grib's current jsoup is vulnerable to xss
@@ -601,7 +601,7 @@
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
-      <version>3.14.0</version>
+      <version>3.15.6</version>
     </dependency>
     <dependency>
       <groupId>edu.ucar</groupId>
