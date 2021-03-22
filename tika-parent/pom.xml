@@ -273,6 +273,7 @@
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.surefire.version>3.0.0-M4</maven.surefire.version>
     <maven.shade.version>3.2.4</maven.shade.version>
+    <puppycrawl.version>8.41</puppycrawl.version>
     <rat.version>0.13</rat.version>
 
     <!-- dependency versions -->

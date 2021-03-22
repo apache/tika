@@ -18,18 +18,20 @@
 package org.apache.tika.parser.grib;
 
 //JDK imports
-import static org.junit.Assert.*;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.InputStream;
 
-//TIKA imports
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
-import java.io.File;
+
 /**
  * Test cases to exercise the {@link org.apache.tika.parser.grib.GribParser}.
  */
@@ -41,7 +43,8 @@ public class GribParserTest {
         Parser parser = new GribParser();
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
-        try (InputStream stream = GribParser.class.getResourceAsStream("/test-documents/gdas1.forecmwf.2014062612.grib2")) {
+        try (InputStream stream = GribParser.class
+                .getResourceAsStream("/test-documents/gdas1.forecmwf.2014062612.grib2")) {
             parser.parse(stream, handler, metadata, new ParseContext());
         }
         assertNotNull(metadata);

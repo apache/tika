@@ -19,12 +19,13 @@ package org.apache.tika.dl.imagerec;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
+import java.io.InputStream;
+
+import org.junit.Test;
+
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
-import org.junit.Test;
-
-import java.io.InputStream;
 
 public class DL4JInceptionV3NetTest {
 
@@ -34,9 +35,8 @@ public class DL4JInceptionV3NetTest {
         try (InputStream is = getClass().getResourceAsStream("dl4j-inception3-config.xml")) {
             config = new TikaConfig(is);
         } catch (Exception e) {
-            if (e.getMessage() != null
-                    && (e.getMessage().contains("Connection refused")
-                    || e.getMessage().contains("connect timed out"))) {
+            if (e.getMessage() != null && (e.getMessage().contains("Connection refused") ||
+                    e.getMessage().contains("connect timed out"))) {
                 assumeTrue("skipping test because of connection issue", false);
             }
             throw e;

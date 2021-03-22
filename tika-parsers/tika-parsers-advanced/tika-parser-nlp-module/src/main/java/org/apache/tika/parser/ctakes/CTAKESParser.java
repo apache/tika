@@ -19,6 +19,9 @@ package org.apache.tika.parser.ctakes;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -26,28 +29,26 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * CTAKESParser decorates a {@link Parser} and leverages on
  * {@link CTAKESContentHandler} to extract biomedical information from
  * clinical text using Apache cTAKES.
- * <p>It is normally called by supplying an instance to 
- *  {@link AutoDetectParser}, such as:
+ * <p>It is normally called by supplying an instance to
+ * {@link AutoDetectParser}, such as:
  * <code>AutoDetectParser parser = new AutoDetectParser(new CTAKESParser());</code>
  * <p>It can also be used by giving a Tika Config file similar to:
  * <code>
- *  <properties>
- *    <parsers>
- *      <parser class="org.apache.tika.parser.ctakes.CTAKESParser">
- *        <parser class="org.apache.tika.parser.DefaultParser"/>
- *      </parser>
- *    </parsers>
- *  </properties>
+ * <properties>
+ * <parsers>
+ * <parser class="org.apache.tika.parser.ctakes.CTAKESParser">
+ * <parser class="org.apache.tika.parser.DefaultParser"/>
+ * </parser>
+ * </parsers>
+ * </properties>
  * </code>
  * <p>Because this is a Parser Decorator, and not a normal Parser in
- *  it's own right, it isn't normally selected via the Parser Service Loader.
+ * it's own right, it isn't normally selected via the Parser Service Loader.
  */
 public class CTAKESParser extends ParserDecorator {
     /**
@@ -61,12 +62,14 @@ public class CTAKESParser extends ParserDecorator {
     public CTAKESParser() {
         this(TikaConfig.getDefaultConfig());
     }
+
     /**
      * Wraps the default Parser for this Config
      */
     public CTAKESParser(TikaConfig config) {
         this(config.getParser());
     }
+
     /**
      * Wraps the specified Parser
      */
@@ -75,18 +78,15 @@ public class CTAKESParser extends ParserDecorator {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context) throws IOException,
-            SAXException, TikaException {
-        CTAKESConfig config = context.get(CTAKESConfig.class,
-                new CTAKESConfig());
-        CTAKESContentHandler ctakesHandler = new CTAKESContentHandler(handler,
-                metadata, config);
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
+        CTAKESConfig config = context.get(CTAKESConfig.class, new CTAKESConfig());
+        CTAKESContentHandler ctakesHandler = new CTAKESContentHandler(handler, metadata, config);
         super.parse(stream, ctakesHandler, metadata, context);
     }
-    
+
     //@Override
     public String getDecorationName() {
         return "CTakes";
-    }            
+    }
 }
