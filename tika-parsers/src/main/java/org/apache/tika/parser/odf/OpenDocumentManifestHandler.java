@@ -34,6 +34,14 @@ import org.apache.tika.sax.ContentHandlerDecorator;
  */
 class OpenDocumentManifestHandler extends ContentHandlerDecorator {
 
+    /**
+     *
+     * @param namespaceURI
+     * @param localName
+     * @param qName
+     * @param attrs
+     * @throws SAXException wrapping a {@link EncryptedDocumentException} if the file is encrypted
+     */
     @Override
     public void startElement(
             String namespaceURI, String localName, String qName,

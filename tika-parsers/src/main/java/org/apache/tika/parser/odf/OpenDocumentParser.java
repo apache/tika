@@ -256,7 +256,14 @@ public class OpenDocumentParser extends AbstractParser {
             return;
         }
         if (entry.getName().contains("manifest.xml")) {
-            checkForEncryption(zip, context);
+            try {
+                checkForEncryption(zip, context);
+            } catch (SAXException e) {
+                if (e.getCause() != null && e.getCause() instanceof EncryptedDocumentException) {
+                    throw e;
+                }
+                //else, swallow for now
+            }
         }
         if (entry.getName().equals("mimetype")) {
             String type = IOUtils.toString(zip, UTF_8).trim();
