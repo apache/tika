@@ -1,5 +1,7 @@
 Release 1.26 - ??/??/????
 
+   * Fix thread safety bug in OpenOffice parser (TIKA-3334).
+
    * The "writeLimit" header now pertains to the combined characters
      written per container document (and embedded documents) in the /rmeta
      endpoint in tika-server (TIKA-3325); it no longer functions only
