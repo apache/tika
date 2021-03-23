@@ -488,12 +488,10 @@ public class RecursiveParserWrapper extends ParserDecorator {
         @Override
         public void characters(char[] ch, int start, int length) throws SAXException {
             if (totalWriteLimit < 0) {
-                advance(length);
                 super.characters(ch, start, length);
                 return;
             }
             int availableLength = Math.min(totalWriteLimit - totalChars, length);
-            advance(availableLength);
             super.characters(ch, start, availableLength);
             if (availableLength < length) {
                 throw new WriteLimitReached();
@@ -503,12 +501,10 @@ public class RecursiveParserWrapper extends ParserDecorator {
         @Override
         public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
             if (totalWriteLimit < 0) {
-                advance(length);
                 super.ignorableWhitespace(ch, start, length);
                 return;
             }
             int availableLength = Math.min(totalWriteLimit - totalChars, length);
-            advance(availableLength);
             super.ignorableWhitespace(ch, start, availableLength);
             if (availableLength < length) {
                 throw new WriteLimitReached();
