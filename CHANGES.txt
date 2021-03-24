@@ -1,4 +1,4 @@
-Release 1.26 - ??/??/????
+Release 1.26 - 03/24/2021
 
    * Fix thread safety bug in OpenOffice parser (TIKA-3334).
 
