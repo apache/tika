@@ -22,16 +22,16 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
+import org.junit.Before;
+import org.junit.Test;
+
 import org.apache.tika.Tika;
+import org.apache.tika.detect.microsoft.POIFSContainerDetector;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.microsoft.AbstractPOIContainerExtractionTest;
-import org.apache.tika.detect.microsoft.POIFSContainerDetector;
-import org.apache.tika.utils.ParserUtils;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * Tests that the various POI OOXML powered parsers are
@@ -43,8 +43,7 @@ public class OOXMLContainerExtractionTest extends AbstractPOIContainerExtraction
     @Before
     public void setUp() {
         Tika tika = new Tika();
-        extractor = new ParserContainerExtractor(
-                tika.getParser(), tika.getDetector());
+        extractor = new ParserContainerExtractor(tika.getParser(), tika.getDetector());
     }
 
     /**
@@ -279,8 +278,7 @@ public class OOXMLContainerExtractionTest extends AbstractPOIContainerExtraction
 
     @Test
     public void testEmbeddedOutlook() throws Exception {
-        TrackingHandler handler =
-                process("EmbeddedOutlook.docx", extractor, false);
+        TrackingHandler handler = process("EmbeddedOutlook.docx", extractor, false);
 
         assertEquals(2, handler.filenames.size());
         assertEquals(2, handler.mediaTypes.size());
@@ -294,8 +292,7 @@ public class OOXMLContainerExtractionTest extends AbstractPOIContainerExtraction
 
     @Test
     public void testEmbeddedPDF() throws Exception {
-        TrackingHandler handler =
-                process("EmbeddedPDF.docx", extractor, false);
+        TrackingHandler handler = process("EmbeddedPDF.docx", extractor, false);
 
         assertEquals(2, handler.filenames.size());
         assertEquals(2, handler.mediaTypes.size());
@@ -312,15 +309,16 @@ public class OOXMLContainerExtractionTest extends AbstractPOIContainerExtraction
         //docx converts a chart to a actual xlsx file
         //so we only need to look in pptx and xlsx
         for (String suffix : new String[]{"pptx", "xlsx"}) {
-            List<Metadata> list = getRecursiveMetadata("testMSChart-govdocs-428996."+suffix);
+            List<Metadata> list = getRecursiveMetadata("testMSChart-govdocs-428996." + suffix);
             boolean found = false;
             for (Metadata m : list) {
-                if (m.get(Metadata.CONTENT_TYPE).equals(POIFSContainerDetector.MS_GRAPH_CHART.toString())) {
+                if (m.get(Metadata.CONTENT_TYPE)
+                        .equals(POIFSContainerDetector.MS_GRAPH_CHART.toString())) {
                     found = true;
                 }
                 assertNull(m.get(TikaCoreProperties.EMBEDDED_EXCEPTION));
             }
-            assertTrue("didn't find chart in "+suffix, found);
+            assertTrue("didn't find chart in " + suffix, found);
         }
     }
 }

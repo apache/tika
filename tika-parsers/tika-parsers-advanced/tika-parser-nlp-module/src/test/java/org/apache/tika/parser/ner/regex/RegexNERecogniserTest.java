@@ -16,11 +16,7 @@
  */
 package org.apache.tika.parser.ner.regex;
 
-import org.apache.tika.Tika;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ner.NamedEntityParser;
-import org.junit.Test;
+import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -28,7 +24,12 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.junit.Assert.assertTrue;
+import org.junit.Test;
+
+import org.apache.tika.Tika;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ner.NamedEntityParser;
 
 public class RegexNERecogniserTest {
 
@@ -38,7 +39,8 @@ public class RegexNERecogniserTest {
         String text = "Hey, Lets meet on this Sunday or MONDAY because i am busy on Saturday";
         System.setProperty(NamedEntityParser.SYS_PROP_NER_IMPL, RegexNERecogniser.class.getName());
 
-        Tika tika = new Tika(new TikaConfig(NamedEntityParser.class.getResourceAsStream("tika-config.xml")));
+        Tika tika = new Tika(
+                new TikaConfig(NamedEntityParser.class.getResourceAsStream("tika-config.xml")));
         Metadata md = new Metadata();
         tika.parse(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)), md);
 

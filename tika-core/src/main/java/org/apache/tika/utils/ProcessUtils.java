@@ -43,7 +43,7 @@ public class ProcessUtils {
     public static String unescapeCommandLine(String arg) {
         if (arg.contains(" ") && SystemUtils.IS_OS_WINDOWS &&
                 (arg.startsWith("\"") && arg.endsWith("\""))) {
-            arg = arg.substring(1,arg.length()-1);
+            arg = arg.substring(1, arg.length() - 1);
         }
         return arg;
     }

@@ -1,11 +1,11 @@
 // © 2016 and later: Unicode, Inc. and others.
 // License & terms of use: http://www.unicode.org/copyright.html#License
 /*
-*******************************************************************************
-* Copyright (C) 2005 - 2012, International Business Machines Corporation and  *
-* others. All Rights Reserved.                                                *
-*******************************************************************************
-*/
+ *******************************************************************************
+ * Copyright (C) 2005 - 2012, International Business Machines Corporation and  *
+ * others. All Rights Reserved.                                                *
+ *******************************************************************************
+ */
 package org.apache.tika.parser.txt;
 
 /**
@@ -95,8 +95,7 @@ abstract class CharsetRecog_2022 extends CharsetRecognizer {
 
 
     static class CharsetRecog_2022JP extends CharsetRecog_2022 {
-        private byte[][] escapeSequences = {
-                {0x1b, 0x24, 0x28, 0x43},   // KS X 1001:1992
+        private byte[][] escapeSequences = {{0x1b, 0x24, 0x28, 0x43},   // KS X 1001:1992
                 {0x1b, 0x24, 0x28, 0x44},   // JIS X 212-1990
                 {0x1b, 0x24, 0x40},         // JIS C 6226-1978
                 {0x1b, 0x24, 0x41},         // GB 2312-80
@@ -121,9 +120,7 @@ abstract class CharsetRecog_2022 extends CharsetRecognizer {
     }
 
     static class CharsetRecog_2022KR extends CharsetRecog_2022 {
-        private byte[][] escapeSequences = {
-                {0x1b, 0x24, 0x29, 0x43}
-        };
+        private byte[][] escapeSequences = {{0x1b, 0x24, 0x29, 0x43}};
 
         String getName() {
             return "ISO-2022-KR";
@@ -136,8 +133,7 @@ abstract class CharsetRecog_2022 extends CharsetRecognizer {
     }
 
     static class CharsetRecog_2022CN extends CharsetRecog_2022 {
-        private byte[][] escapeSequences = {
-                {0x1b, 0x24, 0x29, 0x41},   // GB 2312-80
+        private byte[][] escapeSequences = {{0x1b, 0x24, 0x29, 0x41},   // GB 2312-80
                 {0x1b, 0x24, 0x29, 0x47},   // CNS 11643-1992 Plane 1
                 {0x1b, 0x24, 0x2A, 0x48},   // CNS 11643-1992 Plane 2
                 {0x1b, 0x24, 0x29, 0x45},   // ISO-IR-165

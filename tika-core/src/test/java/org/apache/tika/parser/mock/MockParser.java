@@ -1,5 +1,3 @@
-package org.apache.tika.parser.mock;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,11 +14,11 @@ package org.apache.tika.parser.mock;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.parser.mock;
 
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import javax.xml.parsers.DocumentBuilder;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,6 +32,14 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.xml.parsers.DocumentBuilder;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -46,12 +52,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.w3c.dom.Document;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * This class enables mocking of parser behavior for use in testing
@@ -69,14 +69,17 @@ public class MockParser extends AbstractParser {
 
 
     private static final long serialVersionUID = 1L;
-    private static PrintStream ORIG_STDERR;
-    private static PrintStream ORIG_STDOUT;
-    private static AtomicInteger TIMES_INITIATED = new AtomicInteger(0);
+    private static final PrintStream ORIG_STDERR;
+    private static final PrintStream ORIG_STDOUT;
+    private static final AtomicInteger TIMES_INITIATED = new AtomicInteger(0);
+
     static {
         ORIG_STDERR = System.err;
         ORIG_STDOUT = System.out;
     }
+
     private final Random random = new Random();
+
     public MockParser() {
         TIMES_INITIATED.incrementAndGet();
     }
@@ -98,9 +101,8 @@ public class MockParser extends AbstractParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler,
-                      Metadata metadata, ParseContext context) throws IOException,
-            SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
         if (Thread.currentThread().isInterrupted()) {
             throw new TikaException("interrupted", new InterruptedException());
         }
@@ -123,8 +125,8 @@ public class MockParser extends AbstractParser {
     }
 
     private void executeAction(Node action, Metadata metadata, ParseContext context,
-                               XHTMLContentHandler xhtml) throws SAXException,
-            IOException, TikaException {
+                               XHTMLContentHandler xhtml)
+            throws SAXException, IOException, TikaException {
 
         if (action.getNodeType() != 1) {
             return;
@@ -133,7 +135,7 @@ public class MockParser extends AbstractParser {
         String name = action.getNodeName();
         if ("metadata".equals(name)) {
             metadata(action, metadata);
-        } else if("write".equals(name)) {
+        } else if ("write".equals(name)) {
             write(action, xhtml);
         } else if ("throw".equals(name)) {
             throwIt(action);
@@ -141,7 +143,7 @@ public class MockParser extends AbstractParser {
             hang(action);
         } else if ("oom".equals(name)) {
             kabOOM();
-        } else if ("print_out".equals(name) || "print_err".equals(name)){
+        } else if ("print_out".equals(name) || "print_err".equals(name)) {
             print(action, name);
         } else if ("embedded".equals(name)) {
             handleEmbedded(action, xhtml, context);
@@ -152,7 +154,7 @@ public class MockParser extends AbstractParser {
         } else if ("thread_interrupt".equals(name)) {
             Thread.currentThread().interrupt();
         } else {
-            throw new IllegalArgumentException("Didn't recognize mock action: "+name);
+            throw new IllegalArgumentException("Didn't recognize mock action: " + name);
         }
     }
 
@@ -180,22 +182,18 @@ public class MockParser extends AbstractParser {
         EmbeddedDocumentExtractor extractor = getEmbeddedDocumentExtractor(context);
         Metadata m = new Metadata();
         m.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileName);
-        if (! "".equals(contentType)) {
+        if (!"".equals(contentType)) {
             m.set(Metadata.CONTENT_TYPE, contentType);
         }
         InputStream is = new ByteArrayInputStream(embeddedText.getBytes(UTF_8));
 
-        extractor.parseEmbedded(
-                is,
-                new EmbeddedContentHandler(handler),
-                m, true);
+        extractor.parseEmbedded(is, new EmbeddedContentHandler(handler), m, true);
 
 
     }
 
     protected EmbeddedDocumentExtractor getEmbeddedDocumentExtractor(ParseContext context) {
-        EmbeddedDocumentExtractor extractor =
-                context.get(EmbeddedDocumentExtractor.class);
+        EmbeddedDocumentExtractor extractor = context.get(EmbeddedDocumentExtractor.class);
         if (extractor == null) {
             Parser p = context.get(Parser.class);
             if (p == null) {
@@ -272,7 +270,8 @@ public class MockParser extends AbstractParser {
         if (heavy) {
             Node pNode = attrs.getNamedItem("pulse_millis");
             if (pNode == null) {
-                throw new RuntimeException("Must specify attribute \"pulse_millis\" if the hang is \"heavy\"");
+                throw new RuntimeException(
+                        "Must specify attribute \"pulse_millis\" if the hang is \"heavy\"");
             }
             String pulseMillisString = mNode.getNodeValue();
             try {
@@ -288,8 +287,7 @@ public class MockParser extends AbstractParser {
         }
     }
 
-    private void throwIt(Node action) throws IOException,
-            SAXException, TikaException {
+    private void throwIt(Node action) throws IOException, SAXException, TikaException {
         NamedNodeMap attrs = action.getAttributes();
         String className = attrs.getNamedItem("class").getNodeValue();
         String msg = action.getTextContent();
@@ -327,14 +325,14 @@ public class MockParser extends AbstractParser {
     }
 
 
-    private void throwIt(String className, String msg) throws IOException,
-            SAXException, TikaException {
+    private void throwIt(String className, String msg)
+            throws IOException, SAXException, TikaException {
         Throwable t = null;
         if (msg == null || msg.equals("")) {
             try {
                 t = (Throwable) Class.forName(className).newInstance();
             } catch (Exception e) {
-                throw new RuntimeException("couldn't create throwable class:"+className, e);
+                throw new RuntimeException("couldn't create throwable class:" + className, e);
             }
         } else {
             try {
@@ -346,7 +344,7 @@ public class MockParser extends AbstractParser {
             }
         }
         if (t instanceof SAXException) {
-            throw (SAXException)t;
+            throw (SAXException) t;
         } else if (t instanceof IOException) {
             throw (IOException) t;
         } else if (t instanceof TikaException) {
@@ -383,13 +381,13 @@ public class MockParser extends AbstractParser {
                 for (int j = 1; j < Integer.MAX_VALUE; j++) {
                     double div = (double) i / (double) j;
 
-                    long elapsedSinceLastCheck = new Date().getTime()-lastChecked;
+                    long elapsedSinceLastCheck = new Date().getTime() - lastChecked;
                     if (elapsedSinceLastCheck > pulseCheckMillis) {
                         lastChecked = new Date().getTime();
                         if (interruptible && Thread.currentThread().isInterrupted()) {
                             return;
                         }
-                        long elapsed = new Date().getTime()-start;
+                        long elapsed = new Date().getTime() - start;
                         if (elapsed > maxMillis) {
                             return;
                         }
@@ -410,7 +408,7 @@ public class MockParser extends AbstractParser {
                     return;
                 }
             }
-            long elapsed = System.currentTimeMillis()-start;
+            long elapsed = System.currentTimeMillis() - start;
             millisRemaining = maxMillis - elapsed;
             if (millisRemaining <= 0) {
                 break;

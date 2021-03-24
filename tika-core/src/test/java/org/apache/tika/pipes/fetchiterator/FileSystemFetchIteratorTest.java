@@ -16,7 +16,7 @@
  */
 package org.apache.tika.pipes.fetchiterator;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -28,10 +28,20 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 
 public class FileSystemFetchIteratorTest {
+
+    public static List<Path> listFiles(Path path) throws IOException {
+
+        List<Path> result;
+        try (Stream<Path> walk = Files.walk(path)) {
+            result = walk.filter(Files::isRegularFile).collect(Collectors.toList());
+        }
+        return result;
+
+    }
 
     @Test(timeout = 30000)
     public void testBasic() throws Exception {
@@ -55,16 +65,5 @@ public class FileSystemFetchIteratorTest {
         }
 
         assertEquals(truthSet, iteratorSet);
-    }
-
-    public static List<Path> listFiles(Path path) throws IOException {
-
-        List<Path> result;
-        try (Stream<Path> walk = Files.walk(path)) {
-            result = walk.filter(Files::isRegularFile)
-                    .collect(Collectors.toList());
-        }
-        return result;
-
     }
 }

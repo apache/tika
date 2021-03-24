@@ -16,24 +16,18 @@
  */
 package org.apache.tika.pipes.fetchiterator;
 
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.exception.TikaTimeoutException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /**
  * Abstract class that handles the testing for timeouts/thread safety
@@ -97,8 +91,7 @@ public abstract class FetchIterator implements Callable<Integer>,
         } else if ("emit".equalsIgnoreCase(onParseException)) {
             setOnParseException(FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
         } else {
-            throw new TikaConfigException("must be either 'skip' or 'emit': "
-                    + onParseException);
+            throw new TikaConfigException("must be either 'skip' or 'emit': " + onParseException);
         }
     }
 
@@ -132,7 +125,8 @@ public abstract class FetchIterator implements Callable<Integer>,
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler)
+            throws TikaConfigException {
         //no-op
     }
 

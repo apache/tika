@@ -16,26 +16,30 @@
  */
 package org.apache.tika.server.core.config;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+import javax.ws.rs.core.MultivaluedMap;
+
 import org.apache.commons.codec.binary.Base64;
-import org.apache.tika.exception.TikaException;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.server.core.ParseContextConfig;
 
-import javax.ws.rs.core.MultivaluedMap;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 public class PasswordProviderConfig implements ParseContextConfig {
-    private static final Base64 BASE_64 = new Base64();
-
     public static final String PASSWORD = "Password";
     public static final String PASSWORD_BASE64_UTF8 = "Password_Base64_UTF-8";
+    private static final Base64 BASE_64 = new Base64();
+
+    private static String decodeBase64UTF8(String s) {
+        byte[] bytes = BASE_64.decode(s);
+        return new String(bytes, UTF_8);
+    }
 
     @Override
-    public void configure(MultivaluedMap<String, String> httpHeaders,
-                          Metadata metadata, ParseContext context) {
+    public void configure(MultivaluedMap<String, String> httpHeaders, Metadata metadata,
+                          ParseContext context) {
         String tmpPassword = httpHeaders.getFirst(PASSWORD_BASE64_UTF8);
         if (tmpPassword != null) {
             tmpPassword = decodeBase64UTF8(tmpPassword);
@@ -51,11 +55,6 @@ public class PasswordProviderConfig implements ParseContextConfig {
                 }
             });
         }
-    }
-
-    private static String decodeBase64UTF8(String s) {
-        byte[] bytes = BASE_64.decode(s);
-        return new String(bytes, UTF_8);
     }
 
 }

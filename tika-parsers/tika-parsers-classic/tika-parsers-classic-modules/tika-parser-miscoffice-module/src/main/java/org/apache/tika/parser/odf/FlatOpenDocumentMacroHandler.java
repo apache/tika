@@ -16,7 +16,15 @@
  */
 package org.apache.tika.parser.odf;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+
 import org.apache.commons.lang3.StringUtils;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
@@ -25,13 +33,6 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.ContentHandlerDecorator;
 import org.apache.tika.utils.XMLReaderUtils;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 
 /**
  * Handler for macros in flat open documents
@@ -39,15 +40,14 @@ import java.nio.charset.StandardCharsets;
 class FlatOpenDocumentMacroHandler extends ContentHandlerDecorator {
 
     static String MODULE = "module";
-    private static String SOURCE_CODE = "source-code";
     static String NAME = "name";
-
+    private static String SOURCE_CODE = "source-code";
     private final ContentHandler contentHandler;
     private final ParseContext parseContext;
-    private EmbeddedDocumentExtractor embeddedDocumentExtractor;
     private final StringBuilder macroBuffer = new StringBuilder();
     String macroName = null;
     boolean inMacro = false;
+    private EmbeddedDocumentExtractor embeddedDocumentExtractor;
 
     FlatOpenDocumentMacroHandler(ContentHandler contentHandler, ParseContext parseContext) {
         super(contentHandler);
@@ -56,9 +56,8 @@ class FlatOpenDocumentMacroHandler extends ContentHandlerDecorator {
     }
 
     @Override
-    public void startElement(
-            String namespaceURI, String localName, String qName,
-            Attributes attrs) throws SAXException {
+    public void startElement(String namespaceURI, String localName, String qName, Attributes attrs)
+            throws SAXException {
         if (MODULE.equals(localName)) {
             macroName = XMLReaderUtils.getAttrValue(NAME, attrs);
         } else if (SOURCE_CODE.equals(localName)) {
@@ -67,16 +66,15 @@ class FlatOpenDocumentMacroHandler extends ContentHandlerDecorator {
     }
 
     @Override
-    public void characters(char[] ch, int start, int length)
-            throws SAXException {
+    public void characters(char[] ch, int start, int length) throws SAXException {
         if (inMacro) {
             macroBuffer.append(ch, start, length);
         }
     }
 
     @Override
-    public void endElement(
-            String namespaceURI, String localName, String qName) throws SAXException {
+    public void endElement(String namespaceURI, String localName, String qName)
+            throws SAXException {
         if (SOURCE_CODE.equals(localName)) {
             try {
                 handleMacro();
@@ -93,15 +91,17 @@ class FlatOpenDocumentMacroHandler extends ContentHandlerDecorator {
         macroName = null;
         inMacro = false;
     }
+
     protected void handleMacro() throws IOException, SAXException {
 
         byte[] bytes = macroBuffer.toString().getBytes(StandardCharsets.UTF_8);
 
         if (embeddedDocumentExtractor == null) {
-            embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
+            embeddedDocumentExtractor =
+                    EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
         }
         Metadata embeddedMetadata = new Metadata();
-        if (! StringUtils.isBlank(macroName)) {
+        if (!StringUtils.isBlank(macroName)) {
             embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, macroName);
         }
         embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
@@ -109,9 +109,8 @@ class FlatOpenDocumentMacroHandler extends ContentHandlerDecorator {
 
         if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
             try (InputStream is = TikaInputStream.get(bytes)) {
-                embeddedDocumentExtractor.parseEmbedded(
-                        is, contentHandler, embeddedMetadata, false
-                );
+                embeddedDocumentExtractor
+                        .parseEmbedded(is, contentHandler, embeddedMetadata, false);
             }
         }
     }

@@ -26,6 +26,10 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
@@ -38,9 +42,6 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.ToHTMLContentHandler;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 public class OutlookPSTParserTest extends TikaTest {
 
@@ -48,7 +49,8 @@ public class OutlookPSTParserTest extends TikaTest {
 
     @Test
     public void testAccept() throws Exception {
-        assertTrue((parser.getSupportedTypes(null).contains(MediaType.application("vnd.ms-outlook-pst"))));
+        assertTrue((parser.getSupportedTypes(null)
+                .contains(MediaType.application("vnd.ms-outlook-pst"))));
     }
 
     @Test
@@ -61,20 +63,29 @@ public class OutlookPSTParserTest extends TikaTest {
         context.set(EmbeddedDocumentExtractor.class, trackingExtrator);
         context.set(Parser.class, new AutoDetectParser());
 
-        AUTO_DETECT_PARSER.parse(getResourceAsStream("/test-documents/testPST.pst"), handler, metadata, context);
+        AUTO_DETECT_PARSER
+                .parse(getResourceAsStream("/test-documents/testPST.pst"), handler, metadata,
+                        context);
 
         String output = handler.toString();
 
         assertFalse(output.isEmpty());
         assertTrue(output.contains("<meta name=\"Content-Length\" content=\"2302976\">"));
-        assertTrue(output.contains("<meta name=\"Content-Type\" content=\"application/vnd.ms-outlook-pst\">"));
+        assertTrue(output.contains(
+                "<meta name=\"Content-Type\" content=\"application/vnd.ms-outlook-pst\">"));
 
         assertTrue(output.contains("<body><div class=\"email-folder\"><h1>"));
-        assertTrue(output.contains("<div class=\"embedded\" id=\"&lt;530D9CAC.5080901@gmail.com&gt;\"><h1>Re: Feature Generators</h1>"));
-        assertTrue(output.contains("<div class=\"embedded\" id=\"&lt;1393363252.28814.YahooMailNeo@web140906.mail.bf1.yahoo.com&gt;\"><h1>Re: init tokenizer fails: \"Bad type in putfield/putstatic\"</h1>"));
+        assertTrue(output.contains(
+                "<div class=\"embedded\" id=\"&lt;530D9CAC.5080901@gmail.com&gt;\">" +
+                        "<h1>Re: Feature Generators</h1>"));
+        assertTrue(output.contains(
+                "<div class=\"embedded\" id=\"&lt;1393363252.28814.YahooMailNeo@web140906.mail" +
+                        ".bf1.yahoo.com&gt;\"><h1>Re: init tokenizer fails: \"Bad type in " +
+                        "putfield/putstatic\"</h1>"));
         assertTrue(output.contains("Gary Murphy commented on TIKA-1250:"));
 
-        assertTrue(output.contains("<div class=\"email-folder\"><h1>Racine (pour la recherche)</h1>"));
+        assertTrue(
+                output.contains("<div class=\"email-folder\"><h1>Racine (pour la recherche)</h1>"));
 
         assertTrue(output.contains("This is a docx attachment."));
 
@@ -89,26 +100,6 @@ public class OutlookPSTParserTest extends TikaTest {
         assertEquals("", firstMail.get("displayCC"));
         assertEquals("", firstMail.get("displayBCC"));
 
-    }
-
-
-    private class EmbeddedTrackingExtrator extends ParsingEmbeddedDocumentExtractor {
-        List<Metadata> trackingMetadata = new ArrayList<Metadata>();
-
-        public EmbeddedTrackingExtrator(ParseContext context) {
-            super(context);
-        }
-
-        @Override
-        public boolean shouldParseEmbedded(Metadata metadata) {
-            return true;
-        }
-
-        @Override
-        public void parseEmbedded(InputStream stream, ContentHandler handler, Metadata metadata, boolean outputHtml) throws SAXException, IOException {
-            this.trackingMetadata.add(metadata);
-            super.parseEmbedded(stream, handler, metadata, outputHtml);
-        }
     }
 
     @Test
@@ -128,12 +119,13 @@ public class OutlookPSTParserTest extends TikaTest {
         assertEquals("couchbase@couchbase.com", m6.get(Office.MAPI_FROM_REPRESENTING_EMAIL));
         assertEquals("NOTE", m1.get(Office.MAPI_MESSAGE_CLASS));
         //test full EX email
-        assertEquals("/o=ExchangeLabs/ou=Exchange Administrative Group (FYDIBOHF23SPDLT)/cn=Recipients/cn=polyspot1.onmicrosoft.com-50609-Hong-Thai.Ng",
+        assertEquals(
+                "/o=ExchangeLabs/ou=Exchange Administrative Group (FYDIBOHF23SPDLT)" +
+                        "/cn=Recipients/cn=polyspot1.onmicrosoft.com-50609-Hong-Thai.Ng",
                 m6.get(Message.MESSAGE_TO_EMAIL));
-        assertEquals("Hong-Thai Nguyen",
-                m6.get(Message.MESSAGE_TO_DISPLAY_NAME));
+        assertEquals("Hong-Thai Nguyen", m6.get(Message.MESSAGE_TO_DISPLAY_NAME));
 
-        assertEquals("Couchbase",m6.get(Message.MESSAGE_FROM_NAME));
+        assertEquals("Couchbase", m6.get(Message.MESSAGE_FROM_NAME));
         assertEquals("couchbase@couchbase.com", m6.get(Message.MESSAGE_FROM_EMAIL));
         assertContains("2014-02-26", m1.get(Office.MAPI_MESSAGE_CLIENT_SUBMIT_TIME));
     }
@@ -141,7 +133,8 @@ public class OutlookPSTParserTest extends TikaTest {
     @Test
     public void testOverrideDetector() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testPST_variousBodyTypes.pst");
-        assertEquals(5, metadataList.size());//before the fix that prevents the RFC parser, this was 6
+        assertEquals(5,
+                metadataList.size());//before the fix that prevents the RFC parser, this was 6
         for (Metadata metadata : metadataList) {
             for (String v : metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY)) {
                 if (v.contains("RFC822Parser")) {
@@ -149,6 +142,27 @@ public class OutlookPSTParserTest extends TikaTest {
                 }
             }
         }
-        //TODO: figure out why the bold markup isn't coming through if we do extract then parse the bodyhtml
+        //TODO: figure out why the bold markup isn't coming through if we do extract then parse
+        // the bodyhtml
+    }
+
+    private class EmbeddedTrackingExtrator extends ParsingEmbeddedDocumentExtractor {
+        List<Metadata> trackingMetadata = new ArrayList<Metadata>();
+
+        public EmbeddedTrackingExtrator(ParseContext context) {
+            super(context);
+        }
+
+        @Override
+        public boolean shouldParseEmbedded(Metadata metadata) {
+            return true;
+        }
+
+        @Override
+        public void parseEmbedded(InputStream stream, ContentHandler handler, Metadata metadata,
+                                  boolean outputHtml) throws SAXException, IOException {
+            this.trackingMetadata.add(metadata);
+            super.parseEmbedded(stream, handler, metadata, outputHtml);
+        }
     }
 }

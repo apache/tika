@@ -27,12 +27,13 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+import org.junit.Test;
+
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.zip.PackageConstants;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.ParseContext;
-import org.junit.Test;
 
 public class PackageParserTest {
 
@@ -41,7 +42,8 @@ public class PackageParserTest {
         //test that the package parser covers all inputstreams handled
         //by ArchiveStreamFactory.  When we update commons-compress, and they add
         //a new stream type, we want to make sure that we're handling it.
-        ArchiveStreamFactory archiveStreamFactory = new ArchiveStreamFactory(StandardCharsets.UTF_8.name());
+        ArchiveStreamFactory archiveStreamFactory =
+                new ArchiveStreamFactory(StandardCharsets.UTF_8.name());
         PackageParser packageParser = new PackageParser();
         ParseContext parseContext = new ParseContext();
         for (String name : archiveStreamFactory.getInputStreamArchiveNames()) {
@@ -49,11 +51,11 @@ public class PackageParserTest {
             //use this instead of assertNotEquals so that we report the
             //name of the missing stream
             if (mt.equals(MediaType.OCTET_STREAM)) {
-                fail("getting octet-stream for: "+name);
+                fail("getting octet-stream for: " + name);
             }
 
-            if (! packageParser.getSupportedTypes(parseContext).contains(mt)) {
-                fail("PackageParser should support: "+mt.toString());
+            if (!packageParser.getSupportedTypes(parseContext).contains(mt)) {
+                fail("PackageParser should support: " + mt.toString());
             }
         }
     }
@@ -67,14 +69,15 @@ public class PackageParserTest {
         Set<MediaType> currentSpecializations = new HashSet<>();
         MediaType tar = MediaType.parse("application/x-tar");
         for (MediaType type : mediaTypeRegistry.getTypes()) {
-            if (mediaTypeRegistry.isSpecializationOf(type, MediaType.APPLICATION_ZIP)
-                    || mediaTypeRegistry.isSpecializationOf(type, tar)) {
+            if (mediaTypeRegistry.isSpecializationOf(type, MediaType.APPLICATION_ZIP) ||
+                    mediaTypeRegistry.isSpecializationOf(type, tar)) {
                 currentSpecializations.add(type);
 //                System.out.println("\""+type.toString()+"\",");
             }
         }
         for (MediaType mediaType : currentSpecializations) {
-            assertTrue("missing: "+mediaType, PackageParser.PACKAGE_SPECIALIZATIONS.contains(mediaType));
+            assertTrue("missing: " + mediaType,
+                    PackageParser.PACKAGE_SPECIALIZATIONS.contains(mediaType));
         }
         assertEquals(currentSpecializations.size(), PackageParser.PACKAGE_SPECIALIZATIONS.size());
     }

@@ -17,20 +17,14 @@
 
 package org.apache.tika.server.core.resource;
 
-import org.apache.tika.metadata.serialization.JsonFetchEmitTuple;
-import org.apache.tika.pipes.emitter.EmitKey;
-import org.apache.tika.pipes.emitter.Emitter;
-import org.apache.tika.pipes.emitter.TikaEmitterException;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.pipes.fetcher.Fetcher;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
-import org.apache.tika.utils.ExceptionUtils;
-import org.apache.tika.utils.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -41,18 +35,30 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriInfo;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.serialization.JsonFetchEmitTuple;
+import org.apache.tika.pipes.emitter.EmitKey;
+import org.apache.tika.pipes.emitter.Emitter;
+import org.apache.tika.pipes.emitter.TikaEmitterException;
+import org.apache.tika.pipes.fetcher.Fetcher;
+import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
+import org.apache.tika.utils.ExceptionUtils;
+import org.apache.tika.utils.StringUtils;
 
 @Path("/emit")
 public class EmitterResource {
 
+    /**
+     * key that is safe to pass through http header.
+     * The user _must_ specify this for the fsemitter if calling 'put'
+     */
+    public static final String EMIT_KEY_FOR_HTTP_HEADER = "emit-key";
     private static final String EMITTER_PARAM = "emitter";
     private static final String FETCHER_NAME_ABBREV = "fn";
     private static final String FETCH_KEY_ABBREV = "fk";
@@ -65,6 +71,15 @@ public class EmitterResource {
     public static final String EMIT_KEY_FOR_HTTP_HEADER = "emit-key";
     private static final Logger LOG = LoggerFactory.getLogger(EmitterResource.class);
 
+    static EmitKey calcEmitKey(FetchEmitTuple t) {
+        //use fetch key if emitter key is not specified
+        //TODO: clean this up?
+        EmitKey emitKey = t.getEmitKey();
+        if (StringUtils.isBlank(emitKey.getKey())) {
+            emitKey = new EmitKey(emitKey.getEmitterName(), t.getFetchKey().getKey());
+        }
+        return emitKey;
+    }
 
     /**
      * @param is          input stream is ignored in 'get'
@@ -84,15 +99,15 @@ public class EmitterResource {
                                         @PathParam(EMITTER_PARAM) String emitterName,
                                         @QueryParam(FETCHER_NAME_ABBREV) String fetcherName,
                                         @QueryParam(FETCH_KEY_ABBREV) String fetchKey,
-                                        @QueryParam(EMIT_KEY_ABBREV) String emitKey) throws Exception {
+                                        @QueryParam(EMIT_KEY_ABBREV) String emitKey)
+            throws Exception {
         Metadata metadata = new Metadata();
         Fetcher fetcher = TikaResource.getConfig().getFetcherManager().getFetcher(fetcherName);
         List<Metadata> metadataList;
         try (InputStream fetchedIs = fetcher.fetch(fetchKey, metadata)) {
-            metadataList =
-                    RecursiveMetadataResource.parseMetadata(fetchedIs,
-                            metadata,
-                            httpHeaders.getRequestHeaders(), info, "text");
+            metadataList = RecursiveMetadataResource
+                    .parseMetadata(fetchedIs, metadata, httpHeaders.getRequestHeaders(), info,
+                            "text");
         }
         emitKey = StringUtils.isBlank(emitKey) ? fetchKey : emitKey;
         return emit(new EmitKey(emitterName, emitKey), metadataList);
@@ -150,10 +165,8 @@ public class EmitterResource {
      */
     @POST
     @Produces("application/json")
-    public Map<String, String> postRmeta(InputStream is,
-                                         @Context HttpHeaders httpHeaders,
-                                         @Context UriInfo info
-    ) throws Exception {
+    public Map<String, String> postRmeta(InputStream is, @Context HttpHeaders httpHeaders,
+                                         @Context UriInfo info) throws Exception {
         FetchEmitTuple t = null;
         try (Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8)) {
             t = JsonFetchEmitTuple.fromJson(reader);
@@ -161,29 +174,25 @@ public class EmitterResource {
         Metadata metadata = new Metadata();
 
         List<Metadata> metadataList = null;
-        try (InputStream stream =
-                     TikaResource.getConfig().getFetcherManager()
-                             .getFetcher(t.getFetchKey().getFetcherName())
-                             .fetch(t.getFetchKey().getKey(), metadata)) {
+        try (InputStream stream = TikaResource.getConfig().getFetcherManager()
+                .getFetcher(t.getFetchKey().getFetcherName())
+                .fetch(t.getFetchKey().getKey(), metadata)) {
 
-            metadataList = RecursiveMetadataResource.parseMetadata(
-                    stream,
-                    metadata,
-                    httpHeaders.getRequestHeaders(), info, "text");
+            metadataList = RecursiveMetadataResource
+                    .parseMetadata(stream, metadata, httpHeaders.getRequestHeaders(), info, "text");
         } catch (Error error) {
             return returnError(t.getEmitKey().getEmitterName(), error);
         }
 
         boolean shouldEmit = checkParseException(t, metadataList);
-        if (! shouldEmit) {
+        if (!shouldEmit) {
             return skip(t, metadataList);
         }
 
         injectUserMetadata(t.getMetadata(), metadataList.get(0));
 
         for (String n : metadataList.get(0).names()) {
-            LOG.debug("post parse/pre emit metadata {}: {}",
-                    n, metadataList.get(0).get(n));
+            LOG.debug("post parse/pre emit metadata {}: {}", n, metadataList.get(0).get(n));
         }
         return emit(calcEmitKey(t), metadataList);
     }
@@ -192,20 +201,20 @@ public class EmitterResource {
         //use fetch key if emitter key is not specified
         //TODO: clean this up?
         EmitKey emitKey = t.getEmitKey();
-        if (StringUtils.isBlank(emitKey.getEmitKey())) {
+        if (StringUtils.isBlank(emitKey.getKey())) {
             emitKey = new EmitKey(emitKey.getEmitterName(), t.getFetchKey().getKey());
         }
         return emitKey;
     }
 
     private Map<String, String> skip(FetchEmitTuple t, List<Metadata> metadataList) {
-            Map<String, String> statusMap = new HashMap<>();
-            statusMap.put("status", "ok");
-            statusMap.put("emitter", t.getEmitKey().getEmitterName());
-            statusMap.put("emitKey", t.getEmitKey().getEmitKey());
-            String msg = metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION);
-            statusMap.put("parse_exception", msg);
-            return statusMap;
+        Map<String, String> statusMap = new HashMap<>();
+        statusMap.put("status", "ok");
+        statusMap.put("emitter", t.getEmitKey().getEmitterName());
+        statusMap.put("emitKey", t.getEmitKey().getKey());
+        String msg = metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION);
+        statusMap.put("parse_exception", msg);
+        return statusMap;
     }
 
     private boolean checkParseException(FetchEmitTuple t, List<Metadata> metadataList) {
@@ -253,14 +262,16 @@ public class EmitterResource {
         return statusMap;
     }
 
-    private Map<String, String> emit(EmitKey emitKey, List<Metadata> metadataList) throws TikaException {
-        Emitter emitter = TikaResource.getConfig().getEmitterManager().getEmitter(emitKey.getEmitterName());
+    private Map<String, String> emit(EmitKey emitKey, List<Metadata> metadataList)
+            throws TikaException {
+        Emitter emitter =
+                TikaResource.getConfig().getEmitterManager().getEmitter(emitKey.getEmitterName());
         String status = "ok";
         String exceptionMsg = "";
         try {
-            emitter.emit(emitKey.getEmitKey(), metadataList);
+            emitter.emit(emitKey.getKey(), metadataList);
         } catch (IOException | TikaEmitterException e) {
-            LOG.warn("problem emitting ("+emitKey.getEmitKey()+")", e);
+            LOG.warn("problem emitting (" + emitKey.getKey() + ")", e);
             status = "emitter_exception";
             exceptionMsg = ExceptionUtils.getStackTrace(e);
         }
@@ -270,8 +281,7 @@ public class EmitterResource {
         if (exceptionMsg.length() > 0) {
             statusMap.put("emitter_exception", exceptionMsg);
         }
-        String parseStackTrace = metadataList.get(0).get(
-                TikaCoreProperties.CONTAINER_EXCEPTION);
+        String parseStackTrace = metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION);
         if (parseStackTrace != null) {
             statusMap.put("parse_exception", parseStackTrace);
         }

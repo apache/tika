@@ -53,9 +53,9 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
      * Creates a content handler that writes content up to the given
      * write limit to the given content handler.
      *
-     * @since Apache Tika 0.10
-     * @param handler content handler to be decorated
+     * @param handler    content handler to be decorated
      * @param writeLimit write limit
+     * @since Apache Tika 0.10
      */
     public WriteOutContentHandler(ContentHandler handler, int writeLimit) {
         super(handler);
@@ -66,9 +66,9 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
      * Creates a content handler that writes content up to the given
      * write limit to the given character stream.
      *
-     * @since Apache Tika 0.10
-     * @param writer character stream
+     * @param writer     character stream
      * @param writeLimit write limit
+     * @since Apache Tika 0.10
      */
     public WriteOutContentHandler(Writer writer, int writeLimit) {
         this(new ToTextContentHandler(writer), writeLimit);
@@ -104,9 +104,9 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
      * The {@link #isWriteLimitReached(Throwable)} method can be used to
      * detect this case.
      *
-     * @since Apache Tika 0.7
      * @param writeLimit maximum number of characters to include in the string,
      *                   or -1 to disable the write limit
+     * @since Apache Tika 0.7
      */
     public WriteOutContentHandler(int writeLimit) {
         this(new StringWriter(), writeLimit);
@@ -130,38 +130,32 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
      * Writes the given characters to the given character stream.
      */
     @Override
-    public void characters(char[] ch, int start, int length)
-            throws SAXException {
+    public void characters(char[] ch, int start, int length) throws SAXException {
         if (writeLimit == -1 || writeCount + length <= writeLimit) {
             super.characters(ch, start, length);
             writeCount += length;
         } else {
             super.characters(ch, start, writeLimit - writeCount);
             writeCount = writeLimit;
-            throw new WriteLimitReachedException(
-                    "Your document contained more than " + writeLimit
-                    + " characters, and so your requested limit has been"
-                    + " reached. To receive the full text of the document,"
-                    + " increase your limit. (Text up to the limit is"
-                    + " however available).", tag);
+            throw new WriteLimitReachedException("Your document contained more than " + writeLimit +
+                    " characters, and so your requested limit has been" +
+                    " reached. To receive the full text of the document," +
+                    " increase your limit. (Text up to the limit is" + " however available).", tag);
         }
     }
 
     @Override
-    public void ignorableWhitespace(char[] ch, int start, int length)
-            throws SAXException {
+    public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
         if (writeLimit == -1 || writeCount + length <= writeLimit) {
             super.ignorableWhitespace(ch, start, length);
             writeCount += length;
         } else {
             super.ignorableWhitespace(ch, start, writeLimit - writeCount);
             writeCount = writeLimit;
-            throw new WriteLimitReachedException(
-                    "Your document contained more than " + writeLimit
-                    + " characters, and so your requested limit has been"
-                    + " reached. To receive the full text of the document,"
-                    + " increase your limit. (Text up to the limit is"
-                    + " however available).", tag);
+            throw new WriteLimitReachedException("Your document contained more than " + writeLimit +
+                    " characters, and so your requested limit has been" +
+                    " reached. To receive the full text of the document," +
+                    " increase your limit. (Text up to the limit is" + " however available).", tag);
         }
     }
 
@@ -169,10 +163,10 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
      * Checks whether the given exception (or any of it's root causes) was
      * thrown by this handler as a signal of reaching the write limit.
      *
-     * @since Apache Tika 0.7
      * @param t throwable
      * @return <code>true</code> if the write limit was reached,
-     *         <code>false</code> otherwise
+     * <code>false</code> otherwise
+     * @since Apache Tika 0.7
      */
     public boolean isWriteLimitReached(Throwable t) {
         if (t instanceof WriteLimitReachedException) {
@@ -187,15 +181,19 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
      */
     private static class WriteLimitReachedException extends SAXException {
 
-        /** Serial version UID */
+        /**
+         * Serial version UID
+         */
         private static final long serialVersionUID = -1850581945459429943L;
 
-        /** Serializable tag of the handler that caused this exception */
+        /**
+         * Serializable tag of the handler that caused this exception
+         */
         private final Serializable tag;
 
         public WriteLimitReachedException(String message, Serializable tag) {
-           super(message);
-           this.tag = tag;
+            super(message);
+            this.tag = tag;
         }
 
     }

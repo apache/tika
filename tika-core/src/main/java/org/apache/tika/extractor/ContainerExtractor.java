@@ -25,12 +25,13 @@ import org.apache.tika.io.TikaInputStream;
 /**
  * Tika container extractor interface.
  * Container Extractors provide access to the embedded
- *  resources within container formats such as .zip and .doc 
+ * resources within container formats such as .zip and .doc
  */
 public interface ContainerExtractor extends Serializable {
     /**
      * Is this Container Extractor able to process the
-     *  supplied container?
+     * supplied container?
+     *
      * @since Apache Tika 0.8
      */
     boolean isSupported(TikaInputStream input) throws IOException;
@@ -41,7 +42,7 @@ public interface ContainerExtractor extends Serializable {
      * <p>
      * The {@link EmbeddedResourceHandler} you supply will
      * be called for each embedded resource in the container. It is
-     * up to you whether you process the contents of the resource or not. 
+     * up to you whether you process the contents of the resource or not.
      * <p>
      * The given document stream is consumed but not closed by this method.
      * The responsibility to close the stream remains on the caller.
@@ -51,15 +52,13 @@ public interface ContainerExtractor extends Serializable {
      * no recurseExtractor is given, the nested containers will be
      * treated as with any other embedded resources.
      *
-     * @since Apache Tika 0.8
-     * @param stream the document stream (input)
-     * @param recurseExtractor the extractor to use on any embedded containers 
-     * @param handler handler for the embedded files (output)
-     * @throws IOException if the document stream could not be read
+     * @param stream           the document stream (input)
+     * @param recurseExtractor the extractor to use on any embedded containers
+     * @param handler          handler for the embedded files (output)
+     * @throws IOException   if the document stream could not be read
      * @throws TikaException if the container could not be parsed
+     * @since Apache Tika 0.8
      */
-    void extract(
-            TikaInputStream stream, ContainerExtractor recurseExtractor,
-            EmbeddedResourceHandler handler)
-            throws IOException, TikaException;
+    void extract(TikaInputStream stream, ContainerExtractor recurseExtractor,
+                 EmbeddedResourceHandler handler) throws IOException, TikaException;
 }

@@ -16,12 +16,13 @@
  */
 package org.apache.tika.parser.microsoft.xml;
 
-import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
+
+import org.apache.tika.sax.XHTMLContentHandler;
 
 class HyperlinkHandler extends DefaultHandler {
     private final ContentHandler handler;
@@ -51,7 +52,7 @@ class HyperlinkHandler extends DefaultHandler {
     }
 
     @Override
-    public void characters(char[] str , int offset, int len) throws SAXException {
+    public void characters(char[] str, int offset, int len) throws SAXException {
         if (inLink) {
             linkCache.append(str, offset, len);
         }
@@ -59,30 +60,24 @@ class HyperlinkHandler extends DefaultHandler {
 
     @Override
     public void endElement(String uri, String localName, String qName) throws SAXException {
-        if (! namespace.equals(uri)) {
+        if (!namespace.equals(uri)) {
             return;
         }
         if (AbstractXML2003Parser.HLINK.equals(localName)) {
             AttributesImpl attrs = new AttributesImpl();
             if (href != null) {
-                attrs.addAttribute(XHTMLContentHandler.XHTML,
-                        AbstractXML2003Parser.HREF,
-                        AbstractXML2003Parser.HREF,
-                        AbstractXML2003Parser.CDATA,
-                        href);
+                attrs.addAttribute(XHTMLContentHandler.XHTML, AbstractXML2003Parser.HREF,
+                        AbstractXML2003Parser.HREF, AbstractXML2003Parser.CDATA, href);
             }
-            handler.startElement(XHTMLContentHandler.XHTML,
-                    AbstractXML2003Parser.A,
-                    AbstractXML2003Parser.A,
-                    attrs);
+            handler.startElement(XHTMLContentHandler.XHTML, AbstractXML2003Parser.A,
+                    AbstractXML2003Parser.A, attrs);
             String linkString = linkCache.toString();
             //can't be null I don't think
             if (linkString != null) {
                 char[] chars = linkString.trim().toCharArray();
                 handler.characters(chars, 0, chars.length);
             }
-            handler.endElement(XHTMLContentHandler.XHTML,
-                    AbstractXML2003Parser.A,
+            handler.endElement(XHTMLContentHandler.XHTML, AbstractXML2003Parser.A,
                     AbstractXML2003Parser.A);
             //reset link cache and inLink
             linkCache.setLength(0);

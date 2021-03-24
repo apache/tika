@@ -18,6 +18,15 @@
 
 package org.apache.tika.parser.microsoft.rtf;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.util.Locale;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.commons.io.FilenameUtils;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
@@ -28,6 +37,7 @@ import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.util.IOUtils;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -37,15 +47,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.RTFMetadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.microsoft.OfficeParser.POIFSDocumentType;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.util.Locale;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Many thanks to Simon Mourier for:
@@ -60,15 +61,20 @@ class RTFObjDataParser {
     RTFObjDataParser(int memoryLimitInKb) {
         this.memoryLimitInKb = memoryLimitInKb;
     }
+
     /**
      * Parses the embedded object/pict string
      *
-     * @param bytes actual bytes (already converted from the 
-     *  hex pair string stored in the embedded object data into actual bytes or read
-     *  as raw binary bytes)
+     * @param bytes actual bytes (already converted from the
+     *              hex pair string stored in the embedded object data into actual bytes or read
+     *              as raw binary bytes)
      * @return a SimpleRTFEmbObj or null
      * @throws IOException if there are any surprise surprises during parsing
      */
+
+    private static boolean hasPOIFSHeader(InputStream is) throws IOException {
+        return FileMagic.valueOf(is) == FileMagic.OLE2;
+    }
 
     /**
      * @param bytes
@@ -132,7 +138,6 @@ class RTFObjDataParser {
         return embObjBytes;
     }
 
-
     //will throw IOException if not actually POIFS
     //can return null byte[]
     private byte[] handleEmbeddedPOIFS(InputStream is, Metadata metadata,
@@ -151,12 +156,12 @@ class RTFObjDataParser {
             if (root.hasEntry("Package")) {
                 Entry ooxml = root.getEntry("Package");
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
-                try (BoundedInputStream bis = new BoundedInputStream(memoryLimitInKb*1024,
-                            new DocumentInputStream((DocumentEntry)ooxml))) {
+                try (BoundedInputStream bis = new BoundedInputStream(memoryLimitInKb * 1024,
+                        new DocumentInputStream((DocumentEntry) ooxml))) {
                     IOUtils.copy(bis, out);
                     if (bis.hasHitBound()) {
-                        throw new TikaMemoryLimitException(
-                                (memoryLimitInKb*1024+1), (memoryLimitInKb*1024));
+                        throw new TikaMemoryLimitException((memoryLimitInKb * 1024 + 1),
+                                (memoryLimitInKb * 1024));
                     }
                 }
                 ret = out.toByteArray();
@@ -188,13 +193,16 @@ class RTFObjDataParser {
 
                     ByteArrayOutputStream out = new ByteArrayOutputStream();
                     is.reset();
-                    BoundedInputStream bis = new BoundedInputStream(memoryLimitInKb*1024, is);
+                    BoundedInputStream bis = new BoundedInputStream(memoryLimitInKb * 1024, is);
                     IOUtils.copy(is, out);
                     if (bis.hasHitBound()) {
-                        throw new TikaMemoryLimitException(memoryLimitInKb*1024+1, memoryLimitInKb*1024);
+                        throw new TikaMemoryLimitException(memoryLimitInKb * 1024 + 1,
+                                memoryLimitInKb * 1024);
                     }
                     ret = out.toByteArray();
-                    metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "file_" + unknownFilenameCount.getAndIncrement() + "." + type.getExtension());
+                    metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
+                            "file_" + unknownFilenameCount.getAndIncrement() + "." +
+                                    type.getExtension());
                     metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
                 }
             }
@@ -202,12 +210,12 @@ class RTFObjDataParser {
         return ret;
     }
 
-
     /**
      * can return null if there is a linked object
      * instead of an embedded file
      */
-    private byte[] handlePackage(byte[] pkgBytes, Metadata metadata) throws IOException, TikaException {
+    private byte[] handlePackage(byte[] pkgBytes, Metadata metadata)
+            throws IOException, TikaException {
         //now parse the package header
         ByteArrayInputStream is = new ByteArrayInputStream(pkgBytes);
         readUShort(is);
@@ -273,7 +281,6 @@ class RTFObjDataParser {
         return objBytes;
     }
 
-
     private int readUShort(InputStream is) throws IOException {
         try {
             return EndianUtils.readUShortLE(is);
@@ -314,7 +321,6 @@ class RTFObjDataParser {
         }
     }
 
-
     private byte[] readBytes(InputStream is, long len) throws IOException, TikaException {
         //initByteArray tests for "reading of too many bytes"
         byte[] bytes = initByteArray(len);
@@ -325,18 +331,14 @@ class RTFObjDataParser {
     private byte[] initByteArray(long len) throws IOException, TikaException {
         if (len < 0) {
             throw new IOException("Requested length for reading bytes < 0?!: " + len);
-        } else if (memoryLimitInKb > -1 && len > memoryLimitInKb*1024) {
-            throw new TikaMemoryLimitException(len, memoryLimitInKb*1024);
+        } else if (memoryLimitInKb > -1 && len > memoryLimitInKb * 1024) {
+            throw new TikaMemoryLimitException(len, memoryLimitInKb * 1024);
         } else if (len > Integer.MAX_VALUE) {
             throw new TikaMemoryLimitException(len, Integer.MAX_VALUE);
         }
 
         return new byte[(int) len];
 
-    }
-
-    private static boolean hasPOIFSHeader(InputStream is) throws IOException {
-        return FileMagic.valueOf(is) == FileMagic.OLE2;
     }
 }
 

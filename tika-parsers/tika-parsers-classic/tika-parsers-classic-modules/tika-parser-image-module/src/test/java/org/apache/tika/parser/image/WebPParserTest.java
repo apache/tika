@@ -19,9 +19,10 @@ package org.apache.tika.parser.image;
 
 import static org.junit.Assert.assertEquals;
 
+import org.junit.Test;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
-import org.junit.Test;
 
 
 public class WebPParserTest extends TikaTest {

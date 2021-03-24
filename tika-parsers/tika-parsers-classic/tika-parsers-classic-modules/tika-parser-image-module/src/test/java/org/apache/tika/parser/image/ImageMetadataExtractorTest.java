@@ -22,7 +22,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-
 import java.util.Arrays;
 import java.util.GregorianCalendar;
 import java.util.Iterator;
@@ -36,10 +35,11 @@ import com.drew.metadata.Tag;
 import com.drew.metadata.exif.ExifIFD0Directory;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.drew.metadata.jpeg.JpegCommentDirectory;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.junit.Test;
 import org.mockito.Mockito;
+
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 public class ImageMetadataExtractorTest {
 
@@ -47,7 +47,8 @@ public class ImageMetadataExtractorTest {
     @Test
     public void testHandleDirectories() throws MetadataException {
         Metadata metadata = Mockito.mock(Metadata.class);
-        ImageMetadataExtractor.DirectoryHandler handler1 = Mockito.mock(ImageMetadataExtractor.DirectoryHandler.class);
+        ImageMetadataExtractor.DirectoryHandler handler1 =
+                Mockito.mock(ImageMetadataExtractor.DirectoryHandler.class);
         ImageMetadataExtractor e = new ImageMetadataExtractor(metadata, handler1);
 
         Directory directory = new JpegCommentDirectory();
@@ -76,8 +77,8 @@ public class ImageMetadataExtractorTest {
         GregorianCalendar calendar = new GregorianCalendar(TimeZone.getDefault(), Locale.ROOT);
         calendar.setTimeInMillis(0);
         calendar.set(2000, 0, 1, 0, 0, 0);
-        Mockito.when(exif.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)).thenReturn(
-                calendar.getTime()); // jvm default timezone as in Metadata Extractor
+        Mockito.when(exif.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL))
+                .thenReturn(calendar.getTime()); // jvm default timezone as in Metadata Extractor
         Metadata metadata = new Metadata();
 
         new ImageMetadataExtractor.ExifHandler().handle(exif, metadata);
@@ -92,8 +93,8 @@ public class ImageMetadataExtractorTest {
         GregorianCalendar calendar = new GregorianCalendar(TimeZone.getDefault(), Locale.ROOT);
         calendar.setTimeInMillis(0);
         calendar.set(1999, 0, 1, 0, 0, 0);
-        Mockito.when(exif.getDate(ExifIFD0Directory.TAG_DATETIME)).thenReturn(
-                calendar.getTime()); // jvm default timezone as in Metadata Extractor
+        Mockito.when(exif.getDate(ExifIFD0Directory.TAG_DATETIME))
+                .thenReturn(calendar.getTime()); // jvm default timezone as in Metadata Extractor
         Metadata metadata = new Metadata();
 
         new ImageMetadataExtractor.ExifHandler().handle(exif, metadata);

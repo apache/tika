@@ -16,15 +16,7 @@
  */
 package org.apache.tika.parser.microsoft.ooxml.xps;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -32,6 +24,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
+
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
+
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.sax.XHTMLContentHandler;
 
 
 /**
@@ -73,43 +73,49 @@ class XPSPageContentHandler extends DefaultHandler {
     private static final String P = "p";
     private static final String HREF = "href";
     private static final String A = "a";
-
-
+    //sort based on y coordinate of first element in each row
+    //this requires every row to have at least one element
+    private static Comparator<? super List<GlyphRun>> ROW_SORTER =
+            new Comparator<List<GlyphRun>>() {
+                @Override
+                public int compare(List<GlyphRun> o1, List<GlyphRun> o2) {
+                    if (o1.get(0).originY < o2.get(0).originY) {
+                        return -1;
+                    } else if (o1.get(0).originY > o2.get(0).originY) {
+                        return 1;
+                    }
+                    return 0;
+                }
+            };
     private final XHTMLContentHandler xhml;
-
+    private final Map<String, Metadata> embeddedInfos;
     //path in zip file for an image rendered on this page
     private String imageSourcePathInZip = null;
     //embedded images sometimes include full path info of original image
     private String originalLocationOnDrive = null;
-
     //buffer for the glyph runs within a given canvas
     //in insertion order
     private Map<String, List<GlyphRun>> canvases = new LinkedHashMap<>();
-
     private Set<String> urls = new LinkedHashSet();
     private Stack<String> canvasStack = new Stack<>();
-    private final Map<String, Metadata> embeddedInfos;
-    //sort based on y coordinate of first element in each row
-    //this requires every row to have at least one element
-    private static Comparator<? super List<GlyphRun>> ROW_SORTER = new Comparator<List<GlyphRun>>() {
-        @Override
-        public int compare(List<GlyphRun> o1, List<GlyphRun> o2) {
-            if (o1.get(0).originY < o2.get(0).originY) {
-                return -1;
-            } else if (o1.get(0).originY > o2.get(0).originY) {
-                return 1;
-            }
-            return 0;
-        }
-    };
 
     public XPSPageContentHandler(XHTMLContentHandler xhtml, Map<String, Metadata> embeddedInfos) {
         this.xhml = xhtml;
         this.embeddedInfos = embeddedInfos;
     }
 
+    private static String getVal(String localName, Attributes atts) {
+        for (int i = 0; i < atts.getLength(); i++) {
+            if (localName.equals(atts.getLocalName(i))) {
+                return atts.getValue(i);
+            }
+        }
+        return null;
+    }
+
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes atts)
+            throws SAXException {
         if (CANVAS.equals(localName)) {
             String clip = getVal(CLIP, atts);
             if (clip == null) {
@@ -187,7 +193,7 @@ class XPSPageContentHandler extends DefaultHandler {
     @Override
     public void endElement(String uri, String localName, String qName) throws SAXException {
         if (CANVAS.equals(localName)) {
-            if (! canvasStack.isEmpty()) {
+            if (!canvasStack.isEmpty()) {
                 canvasStack.pop();
             }
         } else if (PATH.equals(localName)) {
@@ -213,6 +219,7 @@ class XPSPageContentHandler extends DefaultHandler {
             originalLocationOnDrive = null;
         }
     }
+
     @Override
     public void startDocument() throws SAXException {
         xhml.startElement(DIV, CLASS, PAGE);
@@ -223,7 +230,6 @@ class XPSPageContentHandler extends DefaultHandler {
         writePage();
         xhml.endElement(DIV);
     }
-
 
     private final void writePage() throws SAXException {
         if (canvases.size() == 0) {
@@ -304,10 +310,10 @@ class XPSPageContentHandler extends DefaultHandler {
             } else {
                 boolean addedNewRow = false;
                 //can rely on the last row having the highest y
-                List<GlyphRun> row = rows.get(rows.size()-1);
+                List<GlyphRun> row = rows.get(rows.size() - 1);
                 //0.5 is a purely heuristic/magical number that should be derived
                 //from the data, not made up. TODO: fix this
-                if (Math.abs(glyphRun.originY -row.get(0).originY) < 0.5) {
+                if (Math.abs(glyphRun.originY - row.get(0).originY) < 0.5) {
                     row.add(glyphRun);
                 } else {
                     row = new ArrayList<>();
@@ -329,34 +335,22 @@ class XPSPageContentHandler extends DefaultHandler {
         return rows;
     }
 
-    private static String getVal(String localName, Attributes atts) {
-        for (int i = 0; i < atts.getLength(); i++) {
-            if (localName.equals(atts.getLocalName(i))) {
-                return atts.getValue(i);
-            }
-        }
-        return null;
-    }
-
     final static class GlyphRun {
-
-        private enum DIRECTION {
-            LTR,
-            RTL
-        }
 
         //TODO: use name in conjunction with Frag information
         //to do a better job of extracting paragraph and table structure
         private final String name;
         private final float originY;
-        private final float originX;//not currently used, but could be used for bidi text calculations
+        private final float originX;
+        //not currently used, but could be used for bidi text calculations
         private final String unicodeString;
-        private final String indicesString;//not currently used, but could be used for width calculations
-
+        private final String indicesString;
         //not used yet
         private final DIRECTION direction;
+//not currently used, but could be used for width calculations
 
-        private GlyphRun(String name, float originY, float originX, String unicodeString, Integer bidiLevel, String indicesString) {
+        private GlyphRun(String name, float originY, float originX, String unicodeString,
+                         Integer bidiLevel, String indicesString) {
             this.name = name;
             this.unicodeString = unicodeString;
             this.originY = originY;
@@ -371,6 +365,10 @@ class XPSPageContentHandler extends DefaultHandler {
                 }
             }
             this.indicesString = indicesString;
+        }
+
+        private enum DIRECTION {
+            LTR, RTL
         }
     }
 

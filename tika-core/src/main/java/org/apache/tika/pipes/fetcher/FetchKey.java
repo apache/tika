@@ -44,21 +44,27 @@ public class FetchKey {
 
     @Override
     public String toString() {
-        return "FetcherKeyPair{" +
-                "fetcherName='" + fetcherName + '\'' +
-                ", fetchKey='" + fetchKey + '\'' +
-                '}';
+        return "FetcherKeyPair{" + "fetcherName='" + fetcherName + '\'' + ", fetchKey='" +
+                fetchKey + '\'' + '}';
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         FetchKey fetchKey = (FetchKey) o;
 
-        if (fetcherName != null ? !fetcherName.equals(fetchKey.fetcherName) : fetchKey.fetcherName != null) return false;
-        return this.fetchKey != null ? this.fetchKey.equals(fetchKey.fetchKey) : fetchKey.fetchKey == null;
+        if (fetcherName != null ? !fetcherName.equals(fetchKey.fetcherName) :
+                fetchKey.fetcherName != null) {
+            return false;
+        }
+        return this.fetchKey != null ? this.fetchKey.equals(fetchKey.fetchKey) :
+                fetchKey.fetchKey == null;
     }
 
     @Override

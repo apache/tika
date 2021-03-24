@@ -21,6 +21,10 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
+import org.junit.Assert;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.fork.unusedpackage.ClassInUnusedPackage;
 import org.apache.tika.metadata.Metadata;
@@ -28,23 +32,20 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.junit.Assert;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 class ForkTestParser extends AbstractParser {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = -5492269783593452319L;
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return Collections.singleton(MediaType.TEXT_PLAIN);
     }
 
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
         stream.read();
 
         metadata.set(Metadata.CONTENT_TYPE, "text/plain");
@@ -59,7 +60,7 @@ class ForkTestParser extends AbstractParser {
     static class ForkTestParserAccessingPackage extends ForkTestParser {
         @Override
         public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                ParseContext context) throws IOException, SAXException, TikaException {
+                          ParseContext context) throws IOException, SAXException, TikaException {
             Assert.assertNotNull(ClassInUnusedPackage.class.getPackage());
             super.parse(stream, handler, metadata, context);
         }

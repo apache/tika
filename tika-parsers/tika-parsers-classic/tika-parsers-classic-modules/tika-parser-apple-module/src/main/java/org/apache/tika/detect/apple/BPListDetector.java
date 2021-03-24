@@ -16,31 +16,33 @@
  */
 package org.apache.tika.detect.apple;
 
-import com.dd.plist.NSDictionary;
-import com.dd.plist.NSObject;
-import com.dd.plist.PropertyListFormatException;
-import com.dd.plist.PropertyListParser;
-import org.apache.commons.io.IOUtils;
-import org.apache.tika.detect.Detector;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.xml.sax.SAXException;
-
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import javax.xml.parsers.ParserConfigurationException;
+
+import com.dd.plist.NSDictionary;
+import com.dd.plist.NSObject;
+import com.dd.plist.PropertyListFormatException;
+import com.dd.plist.PropertyListParser;
+import org.apache.commons.io.IOUtils;
+import org.xml.sax.SAXException;
+
+import org.apache.tika.detect.Detector;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 
 /**
  * Detector for BPList with utility functions for PList.
- *
+ * <p>
  * Without significant refactoring, this can't easily work as a true
  * detector on plist subtypes.  Rather, for now, we require the file to be
  * parsed and then the parser adds the subtype for xml-based plists.
+ *
  * @since 1.25
  */
 public class BPListDetector implements Detector {
@@ -65,6 +67,25 @@ public class BPListDetector implements Detector {
         BINARY_TO_XML.put(BWEBARCHIVE, WEBARCHIVE);
         BINARY_TO_XML.put(BPLIST, PLIST);
         BINARY_TO_XML.put(BITUNES, ITUNES);
+    }
+
+    public static MediaType detectOnKeys(Set<String> keySet) {
+        if (keySet.contains("nodes") && keySet.contains("edges") &&
+                keySet.contains("graphEncodingVersion")) {
+            return BMEMGRAPH;
+        } else if (keySet.contains(
+                "WebMainResource")) { //&& keySet.contains ("WebSubresources") should we require
+            // this?
+            return BWEBARCHIVE;
+        } else if (keySet.contains("Playlists") && keySet.contains("Tracks") &&
+                keySet.contains("Music Folder")) {
+            return BITUNES;
+        } //if it contains $archiver and $objects, it is a bplist inside a webarchive
+        return BPLIST;
+    }
+
+    public static MediaType detectXMLOnKeys(Set<String> keySet) {
+        return BINARY_TO_XML.get(detectOnKeys(keySet));
     }
 
     /**
@@ -93,9 +114,8 @@ public class BPListDetector implements Detector {
         }
 
         int i = 0;
-        if (bytes[i++] != 'b' || bytes[i++] != 'p'
-                || bytes[i++] != 'l' || bytes[i++] != 'i'
-                || bytes[i++] != 's' || bytes[i++] != 't') {
+        if (bytes[i++] != 'b' || bytes[i++] != 'p' || bytes[i++] != 'l' || bytes[i++] != 'i' ||
+                bytes[i++] != 's' || bytes[i++] != 't') {
             return MediaType.OCTET_STREAM;
         }
         //TODO: extract the version with the next two bytes if they were read
@@ -109,29 +129,13 @@ public class BPListDetector implements Detector {
             if (input instanceof TikaInputStream) {
                 ((TikaInputStream) input).setOpenContainer(rootObj);
             }
-        } catch (PropertyListFormatException | ParseException | ParserConfigurationException | SAXException e) {
+        } catch (PropertyListFormatException | ParseException |
+                ParserConfigurationException | SAXException e) {
             throw new IOException("problem parsing root", e);
         }
         if (rootObj instanceof NSDictionary) {
             return detectOnKeys(((NSDictionary) rootObj).getHashMap().keySet());
         }
         return BPLIST;
-    }
-
-    public static MediaType detectOnKeys(Set<String> keySet) {
-        if (keySet.contains("nodes") && keySet.contains("edges")
-                && keySet.contains("graphEncodingVersion")) {
-            return BMEMGRAPH;
-        } else if (keySet.contains("WebMainResource")){ //&& keySet.contains("WebSubresources") should we require this?
-            return BWEBARCHIVE;
-        } else if (keySet.contains("Playlists") && keySet.contains("Tracks")
-                && keySet.contains("Music Folder")) {
-            return BITUNES;
-        } //if it contains $archiver and $objects, it is a bplist inside a webarchive
-        return BPLIST;
-    }
-
-    public static MediaType detectXMLOnKeys(Set<String> keySet) {
-        return BINARY_TO_XML.get(detectOnKeys(keySet));
     }
 }

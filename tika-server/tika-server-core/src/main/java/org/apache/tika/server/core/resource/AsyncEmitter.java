@@ -16,14 +16,6 @@
  */
 package org.apache.tika.server.core.resource;
 
-import org.apache.tika.pipes.emitter.AbstractEmitter;
-import org.apache.tika.pipes.emitter.EmitData;
-import org.apache.tika.pipes.emitter.Emitter;
-import org.apache.tika.pipes.emitter.TikaEmitterException;
-import org.apache.tika.utils.ExceptionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -34,6 +26,15 @@ import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.tika.pipes.emitter.AbstractEmitter;
+import org.apache.tika.pipes.emitter.EmitData;
+import org.apache.tika.pipes.emitter.Emitter;
+import org.apache.tika.pipes.emitter.TikaEmitterException;
+import org.apache.tika.utils.ExceptionUtils;
 
 /**
  * Worker thread that takes EmitData off the queue, batches it
@@ -68,12 +69,10 @@ public class AsyncEmitter implements Callable<Integer> {
             } else {
                 LOG.trace("Nothing on the async queue");
             }
-            LOG.debug("cache size: ({}) bytes and count: {}",
-                    cache.estimatedSize, cache.size);
+            LOG.debug("cache size: ({}) bytes and count: {}", cache.estimatedSize, cache.size);
             long elapsed = ChronoUnit.MILLIS.between(lastEmitted, Instant.now());
             if (elapsed > emitWithinMs) {
-                LOG.debug("{} elapsed > {}, going to emitAll",
-                        elapsed, emitWithinMs);
+                LOG.debug("{} elapsed > {}, going to emitAll", elapsed, emitWithinMs);
                 //this can block
                 cache.emitAll();
             }
@@ -97,10 +96,11 @@ public class AsyncEmitter implements Callable<Integer> {
 
         void add(EmitData data) {
             size++;
-            long sz = AbstractEmitter.estimateSizeInBytes(data.getEmitKey().getEmitKey(), data.getMetadataList());
+            long sz = AbstractEmitter
+                    .estimateSizeInBytes(data.getEmitKey().getKey(), data.getMetadataList());
             if (estimatedSize + sz > maxBytes) {
                 LOG.debug("estimated size ({}) > maxBytes({}), going to emitAll",
-                        (estimatedSize+sz), maxBytes);
+                        (estimatedSize + sz), maxBytes);
                 emitAll();
             }
             List<EmitData> cached = map.get(data.getEmitKey().getEmitterName());
@@ -132,7 +132,7 @@ public class AsyncEmitter implements Callable<Integer> {
 
             try {
                 emitter.emit(cachedEmitData);
-            } catch (IOException|TikaEmitterException e) {
+            } catch (IOException | TikaEmitterException e) {
                 LOG.warn("emitter class ({}): {}", emitter.getClass(),
                         ExceptionUtils.getStackTrace(e));
             }

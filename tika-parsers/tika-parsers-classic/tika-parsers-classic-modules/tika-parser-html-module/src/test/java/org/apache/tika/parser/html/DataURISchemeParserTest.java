@@ -17,18 +17,19 @@
 
 package org.apache.tika.parser.html;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.tika.TikaTest;
-import org.apache.tika.mime.MediaType;
-import org.junit.Test;
-
-import java.io.ByteArrayOutputStream;
-import java.nio.charset.StandardCharsets;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+
+import org.apache.commons.io.IOUtils;
+import org.junit.Test;
+
+import org.apache.tika.TikaTest;
+import org.apache.tika.mime.MediaType;
 
 public class DataURISchemeParserTest extends TikaTest {
     DataURISchemeUtil dataURISchemeUtil = new DataURISchemeUtil();
@@ -68,7 +69,7 @@ public class DataURISchemeParserTest extends TikaTest {
     @Test
     public void testUTF8() throws Exception {
         String utf8 = "\u0628\u0631\u0646\u0633\u062A\u0648\u0646";
-        String data = "data:text/plain;charset=UTF-8;page=21,the%20data:"+utf8;
+        String data = "data:text/plain;charset=UTF-8;page=21,the%20data:" + utf8;
         DataURIScheme dataURIScheme = dataURISchemeUtil.parse(data);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         IOUtils.copy(dataURIScheme.getInputStream(), bos);

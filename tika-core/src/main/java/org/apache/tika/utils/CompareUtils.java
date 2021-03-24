@@ -21,7 +21,9 @@ public class CompareUtils {
     /**
      * Compare two classes by class names.
      * If both classes are Tika's or both are not Tika's class, compare by name String.
-     * Otherwise one of these two class is Tika's class. Then the non-Tika's class comes before Tika's class.
+     * Otherwise one of these two class is Tika's class.
+     * Then the non-Tika's class comes before Tika's class.
+     *
      * @param o1 the object 1 to be compared
      * @param o2 the object 2 to be compared
      * @return a negative integer, zero, or a positive integer
@@ -35,12 +37,14 @@ public class CompareUtils {
         boolean tika1 = n1.startsWith("org.apache.tika.");
         boolean tika2 = n2.startsWith("org.apache.tika.");
 
-        // If both classes are Tika's class or both are not Tika's class, compare by name String.
+        // If both classes are Tika's class or both are not Tika's class,
+        // compare by name String.
         if (tika1 == tika2) {
             return n1.compareTo(n2);
         }
 
-        // Otherwise one of these two class is Tika's class. Then the non-Tika's class comes before Tika's class.
+        // Otherwise one of these two class is Tika's class.
+        // Then the non-Tika's class comes before Tika's class.
         return tika1 ? 1 : -1;
     }
 }

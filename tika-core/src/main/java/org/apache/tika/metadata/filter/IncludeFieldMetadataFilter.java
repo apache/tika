@@ -16,13 +16,13 @@
  */
 package org.apache.tika.metadata.filter;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.apache.tika.config.Field;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
 
 public class IncludeFieldMetadataFilter implements MetadataFilter {
     private final Set<String> includeSet;
@@ -36,7 +36,6 @@ public class IncludeFieldMetadataFilter implements MetadataFilter {
     }
 
     /**
-     *
      * @param include comma-delimited list of fields to include
      */
     @Field
@@ -48,7 +47,7 @@ public class IncludeFieldMetadataFilter implements MetadataFilter {
     public void filter(Metadata metadata) throws TikaException {
 
         for (String n : metadata.names()) {
-            if (! includeSet.contains(n)) {
+            if (!includeSet.contains(n)) {
                 metadata.remove(n);
             }
         }

@@ -36,20 +36,20 @@ import org.xml.sax.helpers.DefaultHandler;
  * <p>
  * As of Tika 1.20, this handler ignores content within &lt;script&gt; and
  * &lt;style&gt; tags.
- *</p>
+ * </p>
+ *
  * @since Apache Tika 0.10
  */
 public class ToTextContentHandler extends DefaultHandler {
 
     private static final String STYLE = "STYLE";
     private static final String SCRIPT = "SCRIPT";
-    private int styleDepth = 0;
-    private int scriptDepth = 0;
-
     /**
      * The character stream.
      */
     private final Writer writer;
+    private int styleDepth = 0;
+    private int scriptDepth = 0;
 
     /**
      * Creates a content handler that writes character events to
@@ -75,7 +75,7 @@ public class ToTextContentHandler extends DefaultHandler {
      * Creates a content handler that writes character events to
      * the given output stream using the given encoding.
      *
-     * @param stream output stream
+     * @param stream   output stream
      * @param encoding output encoding
      * @throws UnsupportedEncodingException if the encoding is unsupported
      */
@@ -97,18 +97,16 @@ public class ToTextContentHandler extends DefaultHandler {
      * Writes the given characters to the given character stream.
      */
     @Override
-    public void characters(char[] ch, int start, int length)
-            throws SAXException {
+    public void characters(char[] ch, int start, int length) throws SAXException {
 
-        if (styleDepth+scriptDepth != 0) {
+        if (styleDepth + scriptDepth != 0) {
             return;
         }
 
         try {
             writer.write(ch, start, length);
         } catch (IOException e) {
-            throw new SAXException(
-                    "Error writing: " + new String(ch, start, length), e);
+            throw new SAXException("Error writing: " + new String(ch, start, length), e);
         }
     }
 
@@ -119,8 +117,7 @@ public class ToTextContentHandler extends DefaultHandler {
      * {@link #characters(char[], int, int)} method.
      */
     @Override
-    public void ignorableWhitespace(char[] ch, int start, int length)
-            throws SAXException {
+    public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
         characters(ch, start, length);
     }
 
@@ -128,8 +125,8 @@ public class ToTextContentHandler extends DefaultHandler {
      * Flushes the character stream so that no characters are forgotten
      * in internal buffers.
      *
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-179">TIKA-179</a>
      * @throws SAXException if the stream can not be flushed
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-179">TIKA-179</a>
      */
     @Override
     public void endDocument() throws SAXException {
@@ -141,8 +138,7 @@ public class ToTextContentHandler extends DefaultHandler {
     }
 
     @Override
-    public void startElement(
-            String uri, String localName, String qName, Attributes atts)
+    public void startElement(String uri, String localName, String qName, Attributes atts)
             throws SAXException {
         String uc = (qName == null) ? "" : qName.toUpperCase(Locale.ENGLISH);
         if (uc.equals(STYLE)) {
@@ -154,9 +150,7 @@ public class ToTextContentHandler extends DefaultHandler {
     }
 
     @Override
-    public void endElement(
-            String uri, String localName, String qName)
-            throws SAXException {
+    public void endElement(String uri, String localName, String qName) throws SAXException {
         String uc = (qName == null) ? "" : qName.toUpperCase(Locale.ENGLISH);
         if (uc.equals(STYLE)) {
             styleDepth--;

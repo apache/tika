@@ -24,9 +24,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.tika.exception.TikaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.tika.exception.TikaException;
 
 /**
  * Holds chm listing entries
@@ -44,36 +45,45 @@ public class ChmDirectoryListingSet {
 
     private boolean isNotControlDataFound = true;
     private boolean isNotResetTableFound = true;
+    private ChmPmglHeader PMGLheader;
 
     /**
      * Constructs chm directory listing set
-     * 
-     * @param data
-     *            byte[]
+     *
+     * @param data          byte[]
      * @param chmItsHeader
      * @param chmItspHeader
-     * @throws TikaException 
+     * @throws TikaException
      */
     public ChmDirectoryListingSet(byte[] data, ChmItsfHeader chmItsHeader,
-            ChmItspHeader chmItspHeader) throws TikaException {
+                                  ChmItspHeader chmItspHeader) throws TikaException {
         setDirectoryListingEntryList(new ArrayList<DirectoryListingEntry>());
         ChmCommons.assertByteArrayNotNull(data);
         setData(data);
         enumerateChmDirectoryListingList(chmItsHeader, chmItspHeader);
     }
 
+    public static final boolean startsWith(byte[] data, String prefix) {
+        for (int i = 0; i < prefix.length(); i++) {
+            if (data[i] != prefix.charAt(i)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("list:=" + getDirectoryListingEntryList().toString()
-                + System.getProperty("line.separator"));
-        sb.append("number of list items:="
-                + getDirectoryListingEntryList().size());
+        sb.append("list:=" + getDirectoryListingEntryList().toString() +
+                System.getProperty("line.separator"));
+        sb.append("number of list items:=" + getDirectoryListingEntryList().size());
         return sb.toString();
     }
 
     /**
      * Returns control data index that located in List
-     * 
+     *
      * @return control data index
      */
     public int getControlDataIndex() {
@@ -82,7 +92,7 @@ public class ChmDirectoryListingSet {
 
     /**
      * Sets control data index
-     * 
+     *
      * @param controlDataIndex
      */
     protected void setControlDataIndex(int controlDataIndex) {
@@ -91,7 +101,7 @@ public class ChmDirectoryListingSet {
 
     /**
      * Return index of reset table
-     * 
+     *
      * @return reset table index
      */
     public int getResetTableIndex() {
@@ -100,7 +110,7 @@ public class ChmDirectoryListingSet {
 
     /**
      * Sets reset table index
-     * 
+     *
      * @param resetTableIndex
      */
     protected void setResetTableIndex(int resetTableIndex) {
@@ -109,40 +119,36 @@ public class ChmDirectoryListingSet {
 
     /**
      * Sets place holder
-     * 
+     *
      * @param placeHolder
      */
     private void setPlaceHolder(int placeHolder) {
         this.placeHolder = placeHolder;
     }
 
-    private ChmPmglHeader PMGLheader;
     /**
      * Enumerates chm directory listing entries
-     * 
-     * @param chmItsHeader
-     *            chm itsf PMGLheader
-     * @param chmItspHeader
-     *            chm itsp PMGLheader
+     *
+     * @param chmItsHeader  chm itsf PMGLheader
+     * @param chmItspHeader chm itsp PMGLheader
      */
     private void enumerateChmDirectoryListingList(ChmItsfHeader chmItsHeader,
-            ChmItspHeader chmItspHeader) throws TikaException {
+                                                  ChmItspHeader chmItspHeader)
+            throws TikaException {
         try {
             int startPmgl = chmItspHeader.getIndex_head();
             int stopPmgl = chmItspHeader.getUnknown_0024();
-            int dir_offset = (int) (chmItsHeader.getDirOffset() + chmItspHeader
-                    .getHeader_len());
+            int dir_offset = (int) (chmItsHeader.getDirOffset() + chmItspHeader.getHeader_len());
             setDataOffset(chmItsHeader.getDataOffset());
 
             /* loops over all pmgls */
             byte[] dir_chunk = null;
             Set<Integer> processed = new HashSet<>();
-            for (int i = startPmgl; i>=0; ) {
+            for (int i = startPmgl; i >= 0; ) {
                 dir_chunk = new byte[(int) chmItspHeader.getBlock_len()];
                 int start = i * (int) chmItspHeader.getBlock_len() + dir_offset;
                 dir_chunk = ChmCommons
-                        .copyOfRange(getData(), start,
-                                start +(int) chmItspHeader.getBlock_len());
+                        .copyOfRange(getData(), start, start + (int) chmItspHeader.getBlock_len());
 
                 PMGLheader = new ChmPmglHeader();
                 PMGLheader.parse(dir_chunk, PMGLheader);
@@ -152,7 +158,7 @@ public class ChmDirectoryListingSet {
                 if (processed.contains(nextBlock)) {
                     throw new ChmParsingException("already processed block; avoiding cycle");
                 }
-                i=nextBlock;
+                i = nextBlock;
                 dir_chunk = null;
             }
 
@@ -165,9 +171,8 @@ public class ChmDirectoryListingSet {
 
     /**
      * Checks control data
-     * 
-     * @param dle
-     *            chm directory listing entry
+     *
+     * @param dle chm directory listing entry
      */
     private void checkControlData(DirectoryListingEntry dle) {
         if (isNotControlDataFound) {
@@ -180,9 +185,8 @@ public class ChmDirectoryListingSet {
 
     /**
      * Checks reset table
-     * 
-     * @param dle
-     *            chm directory listing entry
+     *
+     * @param dle chm directory listing entry
      */
     private void checkResetTable(DirectoryListingEntry dle) {
         if (isNotResetTableFound) {
@@ -193,79 +197,65 @@ public class ChmDirectoryListingSet {
         }
     }
 
-    public static final boolean startsWith(byte[] data, String prefix) {
-        for (int i=0; i<prefix.length(); i++) {
-            if (data[i]!=prefix.charAt(i)) {
-                return false;
-            }
-        }
-        
-        return true;
-    }
     /**
      * Enumerates chm directory listing entries in single chm segment
-     * 
+     *
      * @param dir_chunk
      */
     private void enumerateOneSegment(byte[] dir_chunk) throws ChmParsingException, TikaException {
 //        try {
-            if (dir_chunk != null) {
-                int header_len;
-                if (startsWith(dir_chunk, ChmConstants.CHM_PMGI_MARKER)) {
-                    header_len = ChmConstants.CHM_PMGI_LEN;
-                    return; //skip PMGI
+        if (dir_chunk != null) {
+            int header_len;
+            if (startsWith(dir_chunk, ChmConstants.CHM_PMGI_MARKER)) {
+                header_len = ChmConstants.CHM_PMGI_LEN;
+                return; //skip PMGI
+            } else if (startsWith(dir_chunk, ChmConstants.PMGL)) {
+                header_len = ChmConstants.CHM_PMGL_LEN;
+            } else {
+                throw new ChmParsingException("Bad dir entry block.");
+            }
+
+            placeHolder = header_len;
+            //setPlaceHolder(header_len);
+            while (placeHolder > 0 && placeHolder < dir_chunk.length - PMGLheader.getFreeSpace()
+                /*&& dir_chunk[placeHolder - 1] != 115*/) {
+                //get entry name length
+                int strlen = 0;// = getEncint(data);
+                byte temp;
+                while ((temp = dir_chunk[placeHolder++]) >= 0x80) {
+                    strlen <<= 7;
+                    strlen += temp & 0x7f;
                 }
-                else if (startsWith(dir_chunk, ChmConstants.PMGL)) {
-                    header_len = ChmConstants.CHM_PMGL_LEN;
+
+                strlen = (strlen << 7) + temp & 0x7f;
+
+                if (strlen > dir_chunk.length) {
+                    throw new ChmParsingException("Bad data of a string length.");
                 }
-                else {
-                    throw new ChmParsingException("Bad dir entry block.");
+
+                DirectoryListingEntry dle = new DirectoryListingEntry();
+                dle.setNameLength(strlen);
+                dle.setName(new String(ChmCommons
+                        .copyOfRange(dir_chunk, placeHolder, (placeHolder + dle.getNameLength())),
+                        UTF_8));
+
+                checkControlData(dle);
+                checkResetTable(dle);
+                setPlaceHolder(placeHolder + dle.getNameLength());
+
+                /* Sets entry type */
+                if (placeHolder < dir_chunk.length && dir_chunk[placeHolder] == 0) {
+                    dle.setEntryType(ChmCommons.EntryType.UNCOMPRESSED);
+                } else {
+                    dle.setEntryType(ChmCommons.EntryType.COMPRESSED);
                 }
 
-                placeHolder = header_len;
-                //setPlaceHolder(header_len);
-                while (placeHolder > 0 && placeHolder < dir_chunk.length - PMGLheader.getFreeSpace()
-                        /*&& dir_chunk[placeHolder - 1] != 115*/) 
-                {
-                    //get entry name length
-                    int strlen = 0;// = getEncint(data);
-                    byte temp;
-                    while ((temp=dir_chunk[placeHolder++]) >= 0x80)
-                    {
-                        strlen <<= 7;
-                        strlen += temp & 0x7f;
-                    }
+                setPlaceHolder(placeHolder + 1);
+                dle.setOffset(getEncint(dir_chunk));
+                dle.setLength(getEncint(dir_chunk));
+                getDirectoryListingEntryList().add(dle);
+            }
 
-                    strlen = (strlen << 7) + temp & 0x7f;
-                    
-                    if (strlen>dir_chunk.length) {
-                        throw new ChmParsingException("Bad data of a string length.");
-                    }
-                    
-                    DirectoryListingEntry dle = new DirectoryListingEntry();
-                    dle.setNameLength(strlen);
-                    dle.setName(new String(ChmCommons.copyOfRange(
-                                dir_chunk, placeHolder,
-                                (placeHolder + dle.getNameLength())), UTF_8));
-
-                    checkControlData(dle);
-                    checkResetTable(dle);
-                    setPlaceHolder(placeHolder
-                            + dle.getNameLength());
-
-                    /* Sets entry type */
-                    if (placeHolder < dir_chunk.length
-                            && dir_chunk[placeHolder] == 0)
-                        dle.setEntryType(ChmCommons.EntryType.UNCOMPRESSED);
-                    else
-                        dle.setEntryType(ChmCommons.EntryType.COMPRESSED);
-
-                    setPlaceHolder(placeHolder + 1);
-                    dle.setOffset(getEncint(dir_chunk));
-                    dle.setLength(getEncint(dir_chunk));
-                    getDirectoryListingEntryList().add(dle);
-                }
-                
 //                int indexWorkData = ChmCommons.indexOf(dir_chunk,
 //                        "::".getBytes(UTF_8));
 //                int indexUserData = ChmCommons.indexOf(dir_chunk,
@@ -319,7 +309,7 @@ public class ChmDirectoryListingSet {
 //
 //                    } while (nextEntry(dir_chunk));
 //                }
-            }
+        }
 
 //        } catch (Exception e) {
 //                LOG.warn("problem parsing", e);
@@ -329,9 +319,8 @@ public class ChmDirectoryListingSet {
 
     /**
      * Returns encrypted integer
-     * 
+     *
      * @param data_chunk
-     * 
      * @return
      */
     private int getEncint(byte[] data_chunk) {
@@ -353,18 +342,8 @@ public class ChmDirectoryListingSet {
     }
 
     /**
-     * Sets chm directory listing entry list
-     * 
-     * @param dlel
-     *            chm directory listing entry list
-     */
-    public void setDirectoryListingEntryList(List<DirectoryListingEntry> dlel) {
-        this.dlel = dlel;
-    }
-
-    /**
      * Returns chm directory listing entry list
-     * 
+     *
      * @return List<DirectoryListingEntry>
      */
     public List<DirectoryListingEntry> getDirectoryListingEntryList() {
@@ -372,17 +351,17 @@ public class ChmDirectoryListingSet {
     }
 
     /**
-     * Sets data
-     * 
-     * @param data
+     * Sets chm directory listing entry list
+     *
+     * @param dlel chm directory listing entry list
      */
-    private void setData(byte[] data) {
-        this.data = data;
+    public void setDirectoryListingEntryList(List<DirectoryListingEntry> dlel) {
+        this.dlel = dlel;
     }
 
     /**
      * Returns data
-     * 
+     *
      * @return
      */
     private byte[] getData() {
@@ -390,20 +369,29 @@ public class ChmDirectoryListingSet {
     }
 
     /**
-     * Sets data offset
-     * 
-     * @param dataOffset
+     * Sets data
+     *
+     * @param data
      */
-    private void setDataOffset(long dataOffset) {
-        this.dataOffset = dataOffset;
+    private void setData(byte[] data) {
+        this.data = data;
     }
 
     /**
      * Returns data offset
-     * 
+     *
      * @return dataOffset
      */
     public long getDataOffset() {
         return dataOffset;
+    }
+
+    /**
+     * Sets data offset
+     *
+     * @param dataOffset
+     */
+    private void setDataOffset(long dataOffset) {
+        this.dataOffset = dataOffset;
     }
 }

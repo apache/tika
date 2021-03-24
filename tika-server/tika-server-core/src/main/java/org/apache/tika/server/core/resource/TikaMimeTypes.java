@@ -16,9 +16,6 @@
  */
 package org.apache.tika.server.core.resource;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,8 +23,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.CompositeParser;
@@ -45,6 +46,14 @@ public class TikaMimeTypes {
 
     public TikaMimeTypes() {
         this.html = new HTMLHelper();
+    }
+
+    private static String[] copyToStringArray(MediaType[] aliases) {
+        String[] strings = new String[aliases.length];
+        for (int i = 0; i < aliases.length; i++) {
+            strings[i] = aliases[i].toString();
+        }
+        return strings;
     }
 
     @GET
@@ -65,7 +74,8 @@ public class TikaMimeTypes {
         }
         h.append("<ul>");
         for (String section : firstType.keySet()) {
-            h.append("<li><a href=\"#").append(firstType.get(section)).append("\">").append(section).append("</a></li>\n");
+            h.append("<li><a href=\"#").append(firstType.get(section)).append("\">").append(section)
+                    .append("</a></li>\n");
         }
         h.append("</ul>");
 
@@ -78,7 +88,8 @@ public class TikaMimeTypes {
                 h.append("<div>Alias: ").append(alias).append("</div>\n");
             }
             if (type.supertype != null) {
-                h.append("<div>Super Type: <a href=\"#").append(type.supertype).append("\">").append(type.supertype).append("</a></div>\n");
+                h.append("<div>Super Type: <a href=\"#").append(type.supertype).append("\">")
+                        .append(type.supertype).append("</a></div>\n");
             }
 
             if (type.parser != null) {
@@ -92,7 +103,7 @@ public class TikaMimeTypes {
 
     @GET
     @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
-    public String getMimeTypesJSON() throws IOException  {
+    public String getMimeTypesJSON() throws IOException {
         Map<String, Object> details = new HashMap<String, Object>();
 
         for (MediaTypeDetails type : getMediaTypes()) {
@@ -109,16 +120,7 @@ public class TikaMimeTypes {
             details.put(type.type.toString(), typeDets);
         }
 
-        return new ObjectMapper().writerWithDefaultPrettyPrinter()
-                .writeValueAsString(details);
-    }
-
-    private static String[] copyToStringArray(MediaType[] aliases) {
-        String[] strings = new String[aliases.length];
-        for (int i = 0; i < aliases.length; i++) {
-            strings[i] = aliases[i].toString();
-        }
-        return strings;
+        return new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(details);
     }
 
     @GET
@@ -147,7 +149,8 @@ public class TikaMimeTypes {
 
     protected List<MediaTypeDetails> getMediaTypes() {
         MediaTypeRegistry registry = TikaResource.getConfig().getMediaTypeRegistry();
-        Map<MediaType, Parser> parsers = ((CompositeParser) TikaResource.getConfig().getParser()).getParsers();
+        Map<MediaType, Parser> parsers =
+                ((CompositeParser) TikaResource.getConfig().getParser()).getParsers();
         List<MediaTypeDetails> types =
                 new ArrayList<TikaMimeTypes.MediaTypeDetails>(registry.getTypes().size());
 

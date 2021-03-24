@@ -16,15 +16,16 @@
  */
 package org.apache.tika.parser.xml;
 
-import org.apache.tika.metadata.Metadata;
 import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
+
+import org.apache.tika.metadata.Metadata;
 
 /**
  * This adds a Metadata entry for a given node.
  * The textual content of the node is used as the
- *  value, and the Metadata name is taken from
- *  an attribute, with a prefix if required. 
+ * value, and the Metadata name is taken from
+ * an attribute, with a prefix if required.
  */
 public class AttributeDependantMetadataHandler extends DefaultHandler {
 
@@ -32,20 +33,20 @@ public class AttributeDependantMetadataHandler extends DefaultHandler {
 
     private final String nameHoldingAttribute;
     private final String namePrefix;
+    private final StringBuilder buffer = new StringBuilder();
     private String name;
 
-    private final StringBuilder buffer = new StringBuilder();
-
-    public AttributeDependantMetadataHandler(Metadata metadata, String nameHoldingAttribute, String namePrefix) {
+    public AttributeDependantMetadataHandler(Metadata metadata, String nameHoldingAttribute,
+                                             String namePrefix) {
         this.metadata = metadata;
         this.nameHoldingAttribute = nameHoldingAttribute;
         this.namePrefix = namePrefix;
     }
 
     public void addMetadata(String value) {
-        if(name == null || name.length() == 0) {
-           // We didn't find the attribute which holds the name
-           return;
+        if (name == null || name.length() == 0) {
+            // We didn't find the attribute which holds the name
+            return;
         }
         if (value.length() > 0) {
             String previous = metadata.get(name);
@@ -61,20 +62,19 @@ public class AttributeDependantMetadataHandler extends DefaultHandler {
         buffer.setLength(0);
     }
 
-    public void startElement(
-            String uri, String localName, String name, Attributes attributes) {
+    public void startElement(String uri, String localName, String name, Attributes attributes) {
         String rawName = attributes.getValue(nameHoldingAttribute);
         if (rawName != null) {
-           if (namePrefix == null) {
-              this.name = rawName;
-           } else {
-              this.name = namePrefix + rawName;
-           }
+            if (namePrefix == null) {
+                this.name = rawName;
+            } else {
+                this.name = namePrefix + rawName;
+            }
         }
         // All other attributes are ignored
     }
 
-    
+
     public void characters(char[] ch, int start, int length) {
         buffer.append(ch, start, length);
     }

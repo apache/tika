@@ -16,17 +16,17 @@
  */
 package org.apache.tika.parser.ctakes;
 
+import static org.apache.commons.io.output.NullOutputStream.NULL_OUTPUT_STREAM;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.Properties;
 
-import static org.apache.commons.io.output.NullOutputStream.NULL_OUTPUT_STREAM;
-
 /**
  * Configuration for {@link CTAKESContentHandler}.
- * 
+ * <p>
  * This class allows to enable cTAKES and set its parameters.
  */
 public class CTAKESConfig implements Serializable {
@@ -36,7 +36,8 @@ public class CTAKESConfig implements Serializable {
     private static final long serialVersionUID = -1599741171775528923L;
 
     // Path to XML descriptor for AnalysisEngine
-    private String aeDescriptorPath = "/ctakes-core/desc/analysis_engine/SentencesAndTokensAggregate.xml";
+    private String aeDescriptorPath =
+            "/ctakes-core/desc/analysis_engine/SentencesAndTokensAggregate.xml";
 
     // UMLS username
     private String UMLSUser = "";
@@ -45,7 +46,7 @@ public class CTAKESConfig implements Serializable {
     private String UMLSPass = "";
 
     // Enables formatted output
-    private boolean prettyPrint = true; 
+    private boolean prettyPrint = true;
 
     // Type of cTAKES (UIMA) serializer
     private CTAKESSerializer serializerType = CTAKESSerializer.XMI;
@@ -77,6 +78,7 @@ public class CTAKESConfig implements Serializable {
 
     /**
      * Loads properties from InputStream and then tries to close InputStream.
+     *
      * @param stream {@link InputStream} object used to read properties.
      */
     public CTAKESConfig(InputStream stream) {
@@ -108,12 +110,15 @@ public class CTAKESConfig implements Serializable {
         setUMLSPass(props.getProperty("UMLSPass", getUMLSPass()));
         setText(Boolean.valueOf(props.getProperty("text", Boolean.toString(isText()))));
         setMetadata(props.getProperty("metadata", getMetadataAsString()).split(","));
-        setAnnotationProps(props.getProperty("annotationProps", getAnnotationPropsAsString()).split(","));
-        setSeparatorChar(props.getProperty("separatorChar", Character.toString(getSeparatorChar())).charAt(0));
+        setAnnotationProps(
+                props.getProperty("annotationProps", getAnnotationPropsAsString()).split(","));
+        setSeparatorChar(props.getProperty("separatorChar", Character.toString(getSeparatorChar()))
+                .charAt(0));
     }
 
     /**
      * Returns the path to XML descriptor for AnalysisEngine.
+     *
      * @return the path to XML descriptor for AnalysisEngine.
      */
     public String getAeDescriptorPath() {
@@ -121,7 +126,17 @@ public class CTAKESConfig implements Serializable {
     }
 
     /**
+     * Sets the path to XML descriptor for AnalysisEngine.
+     *
+     * @param aeDescriptorPath the path to XML descriptor for AnalysisEngine.
+     */
+    public void setAeDescriptorPath(String aeDescriptorPath) {
+        this.aeDescriptorPath = aeDescriptorPath;
+    }
+
+    /**
      * Returns the UMLS username.
+     *
      * @return the UMLS username.
      */
     public String getUMLSUser() {
@@ -129,7 +144,17 @@ public class CTAKESConfig implements Serializable {
     }
 
     /**
+     * Sets the UMLS username.
+     *
+     * @param uMLSUser the UMLS username.
+     */
+    public void setUMLSUser(String uMLSUser) {
+        this.UMLSUser = uMLSUser;
+    }
+
+    /**
      * Returns the UMLS password.
+     *
      * @return the UMLS password.
      */
     public String getUMLSPass() {
@@ -137,7 +162,17 @@ public class CTAKESConfig implements Serializable {
     }
 
     /**
+     * Sets the UMLS password.
+     *
+     * @param uMLSPass the UMLS password.
+     */
+    public void setUMLSPass(String uMLSPass) {
+        this.UMLSPass = uMLSPass;
+    }
+
+    /**
      * Returns {@code true} if formatted output is enabled, {@code false} otherwise.
+     *
      * @return {@code true} if formatted output is enabled, {@code false} otherwise.
      */
     public boolean isPrettyPrint() {
@@ -145,7 +180,17 @@ public class CTAKESConfig implements Serializable {
     }
 
     /**
+     * Enables the formatted output for serializer.
+     *
+     * @param prettyPrint {@code true} to enable formatted output, {@code false} otherwise.
+     */
+    public void setPrettyPrint(boolean prettyPrint) {
+        this.prettyPrint = prettyPrint;
+    }
+
+    /**
      * Returns the type of cTAKES (UIMA) serializer used to write the CAS.
+     *
      * @return the type of cTAKES serializer.
      */
     public CTAKESSerializer getSerializerType() {
@@ -153,7 +198,17 @@ public class CTAKESConfig implements Serializable {
     }
 
     /**
+     * Sets the type of cTAKES (UIMA) serializer used to write CAS.
+     *
+     * @param serializerType the type of cTAKES serializer.
+     */
+    public void setSerializerType(CTAKESSerializer serializerType) {
+        this.serializerType = serializerType;
+    }
+
+    /**
      * Returns an {@link OutputStream} object used write the CAS.
+     *
      * @return {@link OutputStream} object used write the CAS.
      */
     public OutputStream getOutputStream() {
@@ -161,7 +216,17 @@ public class CTAKESConfig implements Serializable {
     }
 
     /**
+     * Sets the {@link OutputStream} object used to write the CAS.
+     *
+     * @param stream the {@link OutputStream} object used to write the CAS.
+     */
+    public void setOutputStream(OutputStream stream) {
+        this.stream = stream;
+    }
+
+    /**
      * Returns {@code true} if CAS serialization is enabled, {@code false} otherwise.
+     *
      * @return {@code true} if CAS serialization output is enabled, {@code false} otherwise.
      */
     public boolean isSerialize() {
@@ -169,7 +234,17 @@ public class CTAKESConfig implements Serializable {
     }
 
     /**
+     * Enables CAS serialization.
+     *
+     * @param serialize {@code true} to enable CAS serialization, {@code false} otherwise.
+     */
+    public void setSerialize(boolean serialize) {
+        this.serialize = serialize;
+    }
+
+    /**
      * Returns {@code true} if content text analysis is enabled {@code false} otherwise.
+     *
      * @return {@code true} if content text analysis is enabled {@code false} otherwise.
      */
     public boolean isText() {
@@ -177,7 +252,17 @@ public class CTAKESConfig implements Serializable {
     }
 
     /**
+     * Enables content text analysis using cTAKES.
+     *
+     * @param text {@code true} to enable content text analysis, {@code false} otherwise.
+     */
+    public void setText(boolean text) {
+        this.text = text;
+    }
+
+    /**
      * Returns an array of metadata whose values will be analyzed using cTAKES.
+     *
      * @return an array of metadata whose values will be analyzed using cTAKES.
      */
     public String[] getMetadata() {
@@ -185,8 +270,20 @@ public class CTAKESConfig implements Serializable {
     }
 
     /**
-     * Returns a string containing a comma-separated list of metadata whose values will be analyzed using cTAKES.
-     * @return a string containing a comma-separated list of metadata whose values will be analyzed using cTAKES.
+     * Sets the metadata whose values will be analyzed using cTAKES.
+     *
+     * @param metadata the metadata whose values will be analyzed using cTAKES.
+     */
+    public void setMetadata(String[] metadata) {
+        this.metadata = metadata;
+    }
+
+    /**
+     * Returns a string containing a comma-separated list of metadata whose
+     * values will be analyzed using cTAKES.
+     *
+     * @return a string containing a comma-separated list of metadata whose
+     * values will be analyzed using cTAKES.
      */
     public String getMetadataAsString() {
         if (metadata == null) {
@@ -195,7 +292,7 @@ public class CTAKESConfig implements Serializable {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < metadata.length; i++) {
             sb.append(metadata[i]);
-            if (i < metadata.length-1) {
+            if (i < metadata.length - 1) {
                 sb.append(",");
             }
         }
@@ -203,15 +300,45 @@ public class CTAKESConfig implements Serializable {
     }
 
     /**
-     * Returns an array of {@link CTAKESAnnotationProperty}'s that will be included into cTAKES metadata.
-     * @return an array of {@link CTAKESAnnotationProperty}'s that will be included into cTAKES metadata.
+     * Returns an array of {@link CTAKESAnnotationProperty}'s that will be
+     * included into cTAKES metadata.
+     *
+     * @return an array of {@link CTAKESAnnotationProperty}'s that will be
+     * included into cTAKES metadata.
      */
     public CTAKESAnnotationProperty[] getAnnotationProps() {
         return annotationProps;
     }
 
     /**
-     * Returns a string containing a comma-separated list of {@link CTAKESAnnotationProperty} names that will be included into cTAKES metadata.
+     * Sets the {@link CTAKESAnnotationProperty}'s that will be included into cTAKES metadata.
+     *
+     * @param annotationProps the {@link CTAKESAnnotationProperty}'s that will
+     *                        be included into cTAKES metadata.
+     */
+    public void setAnnotationProps(CTAKESAnnotationProperty[] annotationProps) {
+        this.annotationProps = annotationProps;
+    }
+
+    /**
+     * ets the {@link CTAKESAnnotationProperty}'s that will be included into cTAKES metadata.
+     *
+     * @param annotationProps the {@link CTAKESAnnotationProperty}'s that will be
+     *                       included into cTAKES metadata.
+     */
+    public void setAnnotationProps(String[] annotationProps) {
+        CTAKESAnnotationProperty[] properties =
+                new CTAKESAnnotationProperty[annotationProps.length];
+        for (int i = 0; i < annotationProps.length; i++) {
+            properties[i] = CTAKESAnnotationProperty.valueOf(annotationProps[i]);
+        }
+        setAnnotationProps(properties);
+    }
+
+    /**
+     * Returns a string containing a comma-separated list of {@link CTAKESAnnotationProperty}
+     * names that will be included into cTAKES metadata.
+     *
      * @return
      */
     public String getAnnotationPropsAsString() {
@@ -228,6 +355,7 @@ public class CTAKESConfig implements Serializable {
 
     /**
      * Returns the separator character used for annotation properties.
+     *
      * @return the separator character used for annotation properties.
      */
     public char getSeparatorChar() {
@@ -235,99 +363,8 @@ public class CTAKESConfig implements Serializable {
     }
 
     /**
-     * Sets the path to XML descriptor for AnalysisEngine.
-     * @param aeDescriptorPath the path to XML descriptor for AnalysisEngine.
-     */
-    public void setAeDescriptorPath(String aeDescriptorPath) {
-        this.aeDescriptorPath = aeDescriptorPath;
-    }
-
-    /**
-     * Sets the UMLS username.
-     * @param uMLSUser the UMLS username.
-     */
-    public void setUMLSUser(String uMLSUser) {
-        this.UMLSUser = uMLSUser;
-    }
-
-    /**
-     * Sets the UMLS password.
-     * @param uMLSPass the UMLS password.
-     */
-    public void setUMLSPass(String uMLSPass) {
-        this.UMLSPass = uMLSPass;
-    }
-
-    /**
-     * Enables the formatted output for serializer.
-     * @param prettyPrint {@code true} to enable formatted output, {@code false} otherwise.
-     */
-    public void setPrettyPrint(boolean prettyPrint) {
-        this.prettyPrint = prettyPrint;
-    }
-
-    /**
-     * Sets the type of cTAKES (UIMA) serializer used to write CAS. 
-     * @param serializerType the type of cTAKES serializer.
-     */
-    public void setSerializerType(CTAKESSerializer serializerType) {
-        this.serializerType = serializerType;
-    }
-
-    /**
-     * Sets the {@link OutputStream} object used to write the CAS.
-     * @param stream the {@link OutputStream} object used to write the CAS.
-     */
-    public void setOutputStream(OutputStream stream) {
-        this.stream = stream;
-    }
-
-    /**
-     * Enables CAS serialization.
-     * @param serialize {@code true} to enable CAS serialization, {@code false} otherwise.
-     */
-    public void setSerialize(boolean serialize) {
-        this.serialize = serialize;
-    }
-
-    /**
-     * Enables content text analysis using cTAKES.
-     * @param text {@code true} to enable content text analysis, {@code false} otherwise.
-     */
-    public void setText(boolean text) {
-        this.text = text;
-    }
-
-    /**
-     * Sets the metadata whose values will be analyzed using cTAKES.
-     * @param metadata the metadata whose values will be analyzed using cTAKES.
-     */
-    public void setMetadata(String[] metadata) {
-        this.metadata = metadata;
-    }
-
-    /**
-     * Sets the {@link CTAKESAnnotationProperty}'s that will be included into cTAKES metadata.
-     * @param annotationProps the {@link CTAKESAnnotationProperty}'s that will be included into cTAKES metadata.
-     */
-    public void setAnnotationProps(CTAKESAnnotationProperty[] annotationProps) {
-        this.annotationProps = annotationProps;
-    }
-
-    /**
-     * ets the {@link CTAKESAnnotationProperty}'s that will be included into cTAKES metadata.
-     * @param annotationProps the {@link CTAKESAnnotationProperty}'s that will be included into cTAKES metadata.
-     */
-    public void setAnnotationProps(String[] annotationProps) {
-        CTAKESAnnotationProperty[] properties = new CTAKESAnnotationProperty[annotationProps.length];
-        for (int i = 0; i < annotationProps.length; i++) {
-            properties[i] = CTAKESAnnotationProperty.valueOf(annotationProps[i]);
-        }
-        setAnnotationProps(properties);
-    }
-
-    /**
      * Sets the separator character used for annotation properties.
+     *
      * @param separatorChar the separator character used for annotation properties.
      */
     public void setSeparatorChar(char separatorChar) {

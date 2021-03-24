@@ -40,21 +40,25 @@ public class EmitKey {
 
     @Override
     public String toString() {
-        return "EmitterKey{" +
-                "emitterName='" + emitterName + '\'' +
-                ", emitterKey='" + emitKey + '\'' +
-                '}';
+        return "EmitterKey{" + "emitterName='" + emitterName + '\'' + ", emitterKey='" + emitKey +
+                '\'' + '}';
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         EmitKey emitKey1 = (EmitKey) o;
 
-        if (emitterName != null ? !emitterName.equals(emitKey1.emitterName) : emitKey1.emitterName != null)
+        if (emitterName != null ? !emitterName.equals(emitKey1.emitterName) :
+                emitKey1.emitterName != null) {
             return false;
+        }
         return emitKey != null ? emitKey.equals(emitKey1.emitKey) : emitKey1.emitKey == null;
     }
 

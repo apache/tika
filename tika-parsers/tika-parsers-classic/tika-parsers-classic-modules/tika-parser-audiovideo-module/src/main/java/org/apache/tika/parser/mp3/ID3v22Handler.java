@@ -20,10 +20,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.mp3.ID3v2Frame.RawTag;
 import org.apache.tika.parser.mp3.ID3v2Frame.RawTagIterator;
-import org.xml.sax.SAXException;
 
 /**
  * This is used to parse ID3 Version 2.2 Tag information from an MP3 file,
@@ -43,60 +44,60 @@ public class ID3v22Handler implements ID3Tags {
     private String disc;
     private List<ID3Comment> comments = new ArrayList<ID3Comment>();
 
-    public ID3v22Handler(ID3v2Frame frame)
-            throws IOException, SAXException, TikaException {
+    public ID3v22Handler(ID3v2Frame frame) throws IOException, SAXException, TikaException {
         RawTagIterator tags = new RawV22TagIterator(frame);
         while (tags.hasNext()) {
             RawTag tag = tags.next();
             if (tag.name.equals("TT2")) {
-                title = getTagString(tag.data, 0, tag.data.length); 
+                title = getTagString(tag.data, 0, tag.data.length);
             } else if (tag.name.equals("TP1")) {
-                artist = getTagString(tag.data, 0, tag.data.length); 
+                artist = getTagString(tag.data, 0, tag.data.length);
             } else if (tag.name.equals("TP2")) {
-                albumArtist = getTagString(tag.data, 0, tag.data.length); 
+                albumArtist = getTagString(tag.data, 0, tag.data.length);
             } else if (tag.name.equals("TAL")) {
-                album = getTagString(tag.data, 0, tag.data.length); 
+                album = getTagString(tag.data, 0, tag.data.length);
             } else if (tag.name.equals("TYE")) {
-                year = getTagString(tag.data, 0, tag.data.length); 
+                year = getTagString(tag.data, 0, tag.data.length);
             } else if (tag.name.equals("TCM")) {
-                composer = getTagString(tag.data, 0, tag.data.length); 
+                composer = getTagString(tag.data, 0, tag.data.length);
             } else if (tag.name.equals("COM")) {
-                comments.add( getComment(tag.data, 0, tag.data.length) ); 
+                comments.add(getComment(tag.data, 0, tag.data.length));
             } else if (tag.name.equals("TRK")) {
-                trackNumber = getTagString(tag.data, 0, tag.data.length); 
+                trackNumber = getTagString(tag.data, 0, tag.data.length);
             } else if (tag.name.equals("TPA")) {
-                disc = getTagString(tag.data, 0, tag.data.length); 
+                disc = getTagString(tag.data, 0, tag.data.length);
             } else if (tag.name.equals("TCO")) {
-                genre = extractGenre( getTagString(tag.data, 0, tag.data.length) );
+                genre = extractGenre(getTagString(tag.data, 0, tag.data.length));
             }
+        }
+    }
+
+    protected static String extractGenre(String rawGenre) {
+        int open = rawGenre.indexOf("(");
+        int close = rawGenre.indexOf(")");
+        if (open == -1 && close == -1) {
+            return rawGenre;
+        } else if (open < close) {
+            String genreStr = rawGenre.substring(0, open).trim();
+            try {
+                int genreID = Integer.parseInt(rawGenre.substring(open + 1, close));
+                return ID3Tags.GENRES[genreID];
+            } catch (ArrayIndexOutOfBoundsException invalidNum) {
+                return genreStr;
+            } catch (NumberFormatException notANum) {
+                return genreStr;
+            }
+        } else {
+            return null;
         }
     }
 
     private String getTagString(byte[] data, int offset, int length) {
         return ID3v2Frame.getTagString(data, offset, length);
     }
+
     private ID3Comment getComment(byte[] data, int offset, int length) {
         return ID3v2Frame.getComment(data, offset, length);
-    }
-    
-    protected static String extractGenre(String rawGenre) {
-       int open = rawGenre.indexOf("(");
-       int close = rawGenre.indexOf(")");
-       if (open == -1 && close == -1) {
-          return rawGenre;
-       } else if (open < close) {
-           String genreStr = rawGenre.substring(0, open).trim();
-           try {
-               int genreID = Integer.parseInt(rawGenre.substring(open+1, close));
-               return ID3Tags.GENRES[genreID];
-           } catch(ArrayIndexOutOfBoundsException invalidNum) {
-              return genreStr;
-           } catch(NumberFormatException notANum) {
-              return genreStr;
-           }
-       } else {
-          return null;
-       }
     }
 
     public boolean getTagsPresent() {
@@ -118,7 +119,7 @@ public class ID3v22Handler implements ID3Tags {
     public String getYear() {
         return year;
     }
-    
+
     public String getComposer() {
         return composer;
     }
@@ -145,7 +146,7 @@ public class ID3v22Handler implements ID3Tags {
 
     /**
      * ID3v22 doesn't have compilations,
-     *  so returns null;
+     * so returns null;
      */
     public String getCompilation() {
         return null;

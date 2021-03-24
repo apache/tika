@@ -20,11 +20,12 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * Dummy parser that always produces an empty XHTML document without even
@@ -33,23 +34,20 @@ import org.xml.sax.SAXException;
  */
 public class EmptyParser extends AbstractParser {
     /**
-     * Serial version UID.
-     */
-    private static final long serialVersionUID = -4218649699095732123L;
-
-    /**
      * Singleton instance of this class.
      */
     public static final EmptyParser INSTANCE = new EmptyParser();
+    /**
+     * Serial version UID.
+     */
+    private static final long serialVersionUID = -4218649699095732123L;
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return Collections.emptySet();
     }
 
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
-            throws SAXException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws SAXException {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         xhtml.endDocument();

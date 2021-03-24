@@ -16,10 +16,10 @@
  */
 package org.apache.tika.pipes.emitter;
 
-import org.apache.tika.metadata.Metadata;
-
 import java.io.IOException;
 import java.util.List;
+
+import org.apache.tika.metadata.Metadata;
 
 public interface Emitter {
 

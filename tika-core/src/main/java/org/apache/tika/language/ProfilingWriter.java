@@ -30,7 +30,7 @@ public class ProfilingWriter extends Writer {
 
     private final LanguageProfile profile;
 
-    private char[] buffer = new char[] { 0, 0, '_' };
+    private final char[] buffer = new char[]{0, 0, '_'};
 
     private int n = 1;
 

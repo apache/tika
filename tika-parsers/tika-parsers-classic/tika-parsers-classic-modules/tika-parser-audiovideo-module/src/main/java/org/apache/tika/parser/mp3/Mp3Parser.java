@@ -23,6 +23,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TailStream;
@@ -34,8 +37,6 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.mp3.ID3Tags.ID3Comment;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * The <code>Mp3Parser</code> is used to parse ID3 Version 1 Tag information
@@ -47,21 +48,99 @@ import org.xml.sax.SAXException;
  */
 public class Mp3Parser extends AbstractParser {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = 8537074922934844370L;
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-        Collections.singleton(MediaType.audio("mpeg"));
+            Collections.singleton(MediaType.audio("mpeg"));
+
+    /**
+     * Scans the MP3 frames for ID3 tags, and creates ID3Tag Handlers
+     * for each supported set of tags.
+     */
+    protected static ID3TagsAndAudio getAllTagHandlers(InputStream stream, ContentHandler handler)
+            throws IOException, SAXException, TikaException {
+        ID3v24Handler v24 = null;
+        ID3v23Handler v23 = null;
+        ID3v22Handler v22 = null;
+        ID3v1Handler v1 = null;
+        LyricsHandler lyrics = null;
+        AudioFrame firstAudio = null;
+
+        TailStream tailStream = new TailStream(stream, 10240 + 128);
+        MpegStream mpegStream = new MpegStream(tailStream);
+
+        // ID3v2 tags live at the start of the file
+        // You can apparently have several different ID3 tag blocks
+        // So, keep going until we don't find any more
+        MP3Frame f;
+        while ((f = ID3v2Frame.createFrameIfPresent(mpegStream)) != null) {
+            if (f instanceof ID3v2Frame) {
+                ID3v2Frame id3F = (ID3v2Frame) f;
+                if (id3F.getMajorVersion() == 4) {
+                    v24 = new ID3v24Handler(id3F);
+                } else if (id3F.getMajorVersion() == 3) {
+                    v23 = new ID3v23Handler(id3F);
+                } else if (id3F.getMajorVersion() == 2) {
+                    v22 = new ID3v22Handler(id3F);
+                }
+            }
+        }
+
+        // Now iterate over all audio frames in the file
+        AudioFrame frame = mpegStream.nextFrame();
+        float duration = 0;
+        boolean skipped = true;
+        while (frame != null && skipped) {
+            duration += frame.getDuration();
+            if (firstAudio == null) {
+                firstAudio = frame;
+            }
+            skipped = mpegStream.skipFrame();
+            if (skipped) {
+                frame = mpegStream.nextFrame();
+            }
+        }
+
+        // ID3v1 tags live at the end of the file
+        // Lyrics live just before ID3v1, at the end of the file
+        // Search for both (handlers seek to the end for us)
+        lyrics = new LyricsHandler(tailStream.getTail());
+        v1 = lyrics.id3v1;
+
+        // Go in order of preference
+        // Currently, that's newest to oldest
+        List<ID3Tags> tags = new ArrayList<ID3Tags>();
+
+        if (v24 != null && v24.getTagsPresent()) {
+            tags.add(v24);
+        }
+        if (v23 != null && v23.getTagsPresent()) {
+            tags.add(v23);
+        }
+        if (v22 != null && v22.getTagsPresent()) {
+            tags.add(v22);
+        }
+        if (v1 != null && v1.getTagsPresent()) {
+            tags.add(v1);
+        }
+
+        ID3TagsAndAudio ret = new ID3TagsAndAudio();
+        ret.audio = firstAudio;
+        ret.lyrics = lyrics;
+        ret.tags = tags.toArray(new ID3Tags[0]);
+        ret.duration = duration;
+        return ret;
+    }
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
-
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
         metadata.set(Metadata.CONTENT_TYPE, "audio/mpeg");
         metadata.set(XMPDM.AUDIO_COMPRESSOR, "MP3");
 
@@ -70,10 +149,10 @@ public class Mp3Parser extends AbstractParser {
         // Create handlers for the various kinds of ID3 tags
         ID3TagsAndAudio audioAndTags = getAllTagHandlers(stream, handler);
 
-        //process as much metadata as possible before
-        //writing to xhtml
+        // Before we start on the XHTML output, process and store
+        //  as much metadata as possible
         if (audioAndTags.duration > 0) {
-            metadata.set(XMPDM.DURATION, audioAndTags.duration);
+            metadata.set(XMPDM.DURATION, audioAndTags.durationSeconds());
         }
 
         if (audioAndTags.audio != null) {
@@ -81,16 +160,15 @@ public class Mp3Parser extends AbstractParser {
             metadata.set("channels", String.valueOf(audioAndTags.audio.getChannels()));
             metadata.set("version", audioAndTags.audio.getVersion());
 
-            metadata.set(
-                    XMPDM.AUDIO_SAMPLE_RATE,
+            metadata.set(XMPDM.AUDIO_SAMPLE_RATE,
                     Integer.toString(audioAndTags.audio.getSampleRate()));
-            if(audioAndTags.audio.getChannels() == 1) {
+            if (audioAndTags.audio.getChannels() == 1) {
                 metadata.set(XMPDM.AUDIO_CHANNEL_TYPE, "Mono");
-            } else if(audioAndTags.audio.getChannels() == 2) {
+            } else if (audioAndTags.audio.getChannels() == 2) {
                 metadata.set(XMPDM.AUDIO_CHANNEL_TYPE, "Stereo");
-            } else if(audioAndTags.audio.getChannels() == 5) {
+            } else if (audioAndTags.audio.getChannels() == 5) {
                 metadata.set(XMPDM.AUDIO_CHANNEL_TYPE, "5.1");
-            } else if(audioAndTags.audio.getChannels() == 7) {
+            } else if (audioAndTags.audio.getChannels() == 7) {
                 metadata.set(XMPDM.AUDIO_CHANNEL_TYPE, "7.1");
             }
         }
@@ -152,15 +230,15 @@ public class Mp3Parser extends AbstractParser {
             xhtml.element("p", tag.getYear());
             xhtml.element("p", tag.getGenre());
         }
-        xhtml.element("p", String.valueOf(audioAndTags.duration));
+        xhtml.element("p", String.valueOf(audioAndTags.durationSeconds()));
         for (String comment : comments) {
             xhtml.element("p", comment);
         }
 
         if (audioAndTags.lyrics != null && audioAndTags.lyrics.hasLyrics()) {
-           xhtml.startElement("p", "class", "lyrics");
-           xhtml.characters(audioAndTags.lyrics.lyricsText);
-           xhtml.endElement("p");
+            xhtml.startElement("p", "class", "lyrics");
+            xhtml.characters(audioAndTags.lyrics.lyricsText);
+            xhtml.endElement("p");
         }
 
         xhtml.endDocument();
@@ -176,92 +254,14 @@ public class Mp3Parser extends AbstractParser {
         ID3v2Frame.setMaxRecordSize(maxRecordSize);
     }
 
-    /**
-     * Scans the MP3 frames for ID3 tags, and creates ID3Tag Handlers
-     *  for each supported set of tags. 
-     */
-    protected static ID3TagsAndAudio getAllTagHandlers(InputStream stream, ContentHandler handler)
-           throws IOException, SAXException, TikaException {
-       ID3v24Handler v24 = null;
-       ID3v23Handler v23 = null;
-       ID3v22Handler v22 = null;
-       ID3v1Handler v1 = null;
-       LyricsHandler lyrics = null;
-       AudioFrame firstAudio = null;
-
-       TailStream tailStream = new TailStream(stream, 10240+128);
-       MpegStream mpegStream = new MpegStream(tailStream);
-
-       // ID3v2 tags live at the start of the file
-       // You can apparently have several different ID3 tag blocks
-       // So, keep going until we don't find any more
-       MP3Frame f;
-       while ((f = ID3v2Frame.createFrameIfPresent(mpegStream)) != null) {
-           if(f instanceof ID3v2Frame) {
-               ID3v2Frame id3F = (ID3v2Frame)f;
-               if (id3F.getMajorVersion() == 4) {
-                   v24 = new ID3v24Handler(id3F);
-               } else if(id3F.getMajorVersion() == 3) {
-                   v23 = new ID3v23Handler(id3F);
-               } else if(id3F.getMajorVersion() == 2) {
-                   v22 = new ID3v22Handler(id3F);
-               }
-           }
-       }
-
-        // Now iterate over all audio frames in the file
-        AudioFrame frame = mpegStream.nextFrame();
-        float duration = 0;
-        boolean skipped = true;
-        while (frame != null && skipped)
-        {
-            duration += frame.getDuration();
-            if (firstAudio == null)
-            {
-                firstAudio = frame;
-            }
-            skipped = mpegStream.skipFrame();
-            if (skipped) {
-                frame = mpegStream.nextFrame();
-            }
-        }
-
-       // ID3v1 tags live at the end of the file
-       // Lyrics live just before ID3v1, at the end of the file
-       // Search for both (handlers seek to the end for us)
-       lyrics = new LyricsHandler(tailStream.getTail());
-       v1 = lyrics.id3v1;
-
-       // Go in order of preference
-       // Currently, that's newest to oldest
-       List<ID3Tags> tags = new ArrayList<ID3Tags>();
-
-       if(v24 != null && v24.getTagsPresent()) {
-          tags.add(v24);
-       }
-       if(v23 != null && v23.getTagsPresent()) {
-          tags.add(v23);
-       }
-       if(v22 != null && v22.getTagsPresent()) {
-          tags.add(v22);
-       }
-       if(v1 != null && v1.getTagsPresent()) {
-          tags.add(v1);
-       }
-       
-       ID3TagsAndAudio ret = new ID3TagsAndAudio();
-       ret.audio = firstAudio;
-       ret.lyrics = lyrics;
-       ret.tags = tags.toArray(new ID3Tags[0]);
-       ret.duration = duration;
-       return ret;
-    }
-
     protected static class ID3TagsAndAudio {
         private ID3Tags[] tags;
         private AudioFrame audio;
         private LyricsHandler lyrics;
-        private float duration;
-    }
+        private float duration; // Milliseconds
 
+        private float durationSeconds() {
+            return duration / 1000;
+        }
+    }
 }

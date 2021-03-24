@@ -20,22 +20,22 @@ package org.apache.tika.server.classic;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import javax.ws.rs.core.Response;
-
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import javax.ws.rs.core.Response;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.gagravarr.tika.OpusParser;
+import org.junit.Test;
+
 import org.apache.tika.parser.microsoft.ooxml.OOXMLParser;
 import org.apache.tika.parser.pkg.PackageParser;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.resource.TikaParsers;
-import org.gagravarr.tika.OpusParser;
-import org.junit.Test;
 
 public class TikaParsersTest extends CXFTestBase {
 
@@ -45,10 +45,7 @@ public class TikaParsersTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(TikaParsers.class);
-        sf.setResourceProvider(
-                TikaParsers.class,
-                new SingletonResourceProvider(new TikaParsers())
-        );
+        sf.setResourceProvider(TikaParsers.class, new SingletonResourceProvider(new TikaParsers()));
     }
 
     @Override
@@ -67,11 +64,8 @@ public class TikaParsersTest extends CXFTestBase {
     @Test
     public void testGetPlainText() throws Exception {
         for (boolean details : new boolean[]{false, true}) {
-            Response response = WebClient
-                    .create(endPoint + getPath(details))
-                    .type("text/plain")
-                    .accept("text/plain")
-                    .get();
+            Response response = WebClient.create(endPoint + getPath(details)).type("text/plain")
+                    .accept("text/plain").get();
 
             String text = getStringFromInputStream((InputStream) response.getEntity());
             assertContains("org.apache.tika.parser.DefaultParser (Composite Parser)", text);
@@ -96,11 +90,8 @@ public class TikaParsersTest extends CXFTestBase {
     @Test
     public void testGetHTML() throws Exception {
         for (boolean details : new boolean[]{false, true}) {
-            Response response = WebClient
-                    .create(endPoint + getPath(details))
-                    .type("text/html")
-                    .accept("text/html")
-                    .get();
+            Response response = WebClient.create(endPoint + getPath(details)).type("text/html")
+                    .accept("text/html").get();
 
             String text = getStringFromInputStream((InputStream) response.getEntity());
             assertContains("<h3>DefaultParser</h3>", text);
@@ -132,11 +123,9 @@ public class TikaParsersTest extends CXFTestBase {
     @SuppressWarnings("unchecked")
     public void testGetJSON() throws Exception {
         for (boolean details : new boolean[]{false, true}) {
-            Response response = WebClient
-                    .create(endPoint + getPath(details))
+            Response response = WebClient.create(endPoint + getPath(details))
                     .type(javax.ws.rs.core.MediaType.APPLICATION_JSON)
-                    .accept(javax.ws.rs.core.MediaType.APPLICATION_JSON)
-                    .get();
+                    .accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).get();
 
             String jsonStr = getStringFromInputStream((InputStream) response.getEntity());
             Map<String, Map<String, Object>> json =
@@ -150,7 +139,7 @@ public class TikaParsersTest extends CXFTestBase {
             assertEquals(Boolean.TRUE, json.get("composite"));
 
             // At least 20 child parsers which aren't composite, except for CompositeExternalParser
-            List<Object> children = (List)json.get("children");
+            List<Object> children = (List) json.get("children");
             assertTrue(children.size() >= 2);
             boolean hasOpus = false, hasOOXML = false, hasZip = false;
             int nonComposite = 0;
@@ -168,14 +157,16 @@ public class TikaParsersTest extends CXFTestBase {
                 for (Object grandChildO : grandChildrenArr) {
                     Map<String, Object> grandChildren = (Map<String, Object>) grandChildO;
 
-                    if (grandChildren.get("composite") == Boolean.FALSE)
+                    if (grandChildren.get("composite") == Boolean.FALSE) {
                         nonComposite++;
-                    else
+                    } else {
                         composite++;
+                    }
 
                     // Will only have mime types if requested
-                    if (grandChildren.get("composite") == Boolean.FALSE)
+                    if (grandChildren.get("composite") == Boolean.FALSE) {
                         assertEquals(details, grandChildren.containsKey("supportedTypes"));
+                    }
 
                     String name = (String) grandChildren.get("name");
                     if (OpusParser.class.getName().equals(name)) {
@@ -193,7 +184,8 @@ public class TikaParsersTest extends CXFTestBase {
             assertEquals(true, hasOOXML);
             assertEquals(true, hasZip);
             assertTrue(nonComposite > 20);
-            assertTrue(composite == 0 || composite == 1); // if CompositeExternalParser is available it will be 1
+            assertTrue(composite == 0 ||
+                    composite == 1); // if CompositeExternalParser is available it will be 1
         }
     }
 }

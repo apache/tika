@@ -21,10 +21,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import org.apache.tika.exception.TikaException;
-
 import org.junit.Before;
 import org.junit.Test;
+
+import org.apache.tika.exception.TikaException;
 
 public class TestChmLzxState {
     private ChmLzxState chmLzxState;
@@ -38,38 +38,34 @@ public class TestChmLzxState {
         ChmItsfHeader chmItsHeader = new ChmItsfHeader();
         // chmItsHeader.parse(Arrays.copyOfRange(data, 0,
         // ChmConstants.CHM_ITSF_V3_LEN - 1), chmItsHeader);
-        chmItsHeader.parse(ChmCommons.copyOfRange(data, 0,
-                ChmConstants.CHM_ITSF_V3_LEN - 1), chmItsHeader);
+        chmItsHeader.parse(ChmCommons.copyOfRange(data, 0, ChmConstants.CHM_ITSF_V3_LEN - 1),
+                chmItsHeader);
         /* Creates and parses itsp block */
         ChmItspHeader chmItspHeader = new ChmItspHeader();
         // chmItspHeader.parse(Arrays.copyOfRange( data, (int)
         // chmItsHeader.getDirOffset(),
         // (int) chmItsHeader.getDirOffset()
         // + ChmConstants.CHM_ITSP_V1_LEN), chmItspHeader);
-        chmItspHeader.parse(ChmCommons.copyOfRange(data,
-                (int) chmItsHeader.getDirOffset(),
-                (int) chmItsHeader.getDirOffset()
-                + ChmConstants.CHM_ITSP_V1_LEN), chmItspHeader);
+        chmItspHeader.parse(ChmCommons.copyOfRange(data, (int) chmItsHeader.getDirOffset(),
+                (int) chmItsHeader.getDirOffset() + ChmConstants.CHM_ITSP_V1_LEN), chmItspHeader);
 
         /* Creating instance of ChmDirListingContainer */
-        ChmDirectoryListingSet chmDirListCont = new ChmDirectoryListingSet(
-                data, chmItsHeader, chmItspHeader);
-        int indexOfControlData = ChmCommons.indexOf(
-                chmDirListCont.getDirectoryListingEntryList(),
-                ChmConstants.CONTROL_DATA);
+        ChmDirectoryListingSet chmDirListCont =
+                new ChmDirectoryListingSet(data, chmItsHeader, chmItspHeader);
+        int indexOfControlData = ChmCommons
+                .indexOf(chmDirListCont.getDirectoryListingEntryList(), ChmConstants.CONTROL_DATA);
 
-        int indexOfResetTable = ChmCommons.indexOfResetTableBlock(data,
-                ChmConstants.LZXC.getBytes(UTF_8));
+        int indexOfResetTable =
+                ChmCommons.indexOfResetTableBlock(data, ChmConstants.LZXC.getBytes(UTF_8));
         byte[] dir_chunk = null;
         if (indexOfResetTable > 0) {
             // dir_chunk = Arrays.copyOfRange( data, indexOfResetTable,
             // indexOfResetTable
             // +
             // chmDirListCont.getDirectoryListingEntryList().get(indexOfControlData).getLength());
-            dir_chunk = ChmCommons.copyOfRange(data, indexOfResetTable,
-                    indexOfResetTable
-                    + chmDirListCont.getDirectoryListingEntryList()
-                    .get(indexOfControlData).getLength());
+            dir_chunk = ChmCommons.copyOfRange(data, indexOfResetTable, indexOfResetTable +
+                    chmDirListCont.getDirectoryListingEntryList().get(indexOfControlData)
+                            .getLength());
         }
 
         ChmLzxcControlData clcd = new ChmLzxcControlData();
@@ -85,8 +81,9 @@ public class TestChmLzxState {
 
     @Test
     public void testToString() throws TikaException {
-        if (chmLzxState == null)
+        if (chmLzxState == null) {
             testChmLzxStateConstructor();
+        }
         assertTrue(chmLzxState.toString().length() > 20);
     }
 

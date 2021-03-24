@@ -16,19 +16,19 @@
  */
 package org.apache.tika.parser.mp4;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TemporaryResources;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.XMP;
-import org.apache.tika.metadata.XMPDM;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.XHTMLContentHandler;
+import java.io.IOException;
+import java.io.InputStream;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
 import org.mp4parser.Box;
 import org.mp4parser.Container;
 import org.mp4parser.IsoFile;
@@ -60,66 +60,86 @@ import org.mp4parser.boxes.sampleentry.AudioSampleEntry;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import org.apache.tika.config.Field;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.XMP;
+import org.apache.tika.metadata.XMPDM;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Parser for the MP4 media container format, as well as the older
- *  QuickTime format that MP4 is based on.
- * 
+ * QuickTime format that MP4 is based on.
+ * <p>
  * This uses the MP4Parser project from http://code.google.com/p/mp4parser/
- *  to do the underlying parsing
+ * to do the underlying parsing
  */
 public class MP4Parser extends AbstractParser {
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = 84011216792285L;
-    /** TODO Replace this with a 2dp Duration Property Converter */
-    private static final DecimalFormat DURATION_FORMAT = 
-            (DecimalFormat)NumberFormat.getNumberInstance(Locale.ROOT); 
+    /**
+     * TODO Replace this with a 2dp Duration Property Converter
+     */
+    private static final DecimalFormat DURATION_FORMAT =
+            (DecimalFormat) NumberFormat.getNumberInstance(Locale.ROOT);
+    // Ensure this stays in Sync with the entries in tika-mimetypes.xml
+    private static final Map<MediaType, List<String>> typesMap = new HashMap<>();
+    private static final Set<MediaType> SUPPORTED_TYPES =
+            Collections.unmodifiableSet(typesMap.keySet());
+
     static {
         DURATION_FORMAT.applyPattern("0.0#");
     }
-    // Ensure this stays in Sync with the entries in tika-mimetypes.xml
-    private static final Map<MediaType,List<String>> typesMap = new HashMap<MediaType, List<String>>();
-    static {
-       // All types should be 4 bytes long, space padded as needed
-       typesMap.put(MediaType.audio("mp4"), Arrays.asList(
-             "M4A ", "M4B ", "F4A ", "F4B "));
-       typesMap.put(MediaType.video("3gpp"), Arrays.asList(
-             "3ge6", "3ge7", "3gg6", "3gp1", "3gp2", "3gp3", "3gp4", "3gp5", "3gp6", "3gs7"));
-       typesMap.put(MediaType.video("3gpp2"), Arrays.asList(
-             "3g2a", "3g2b", "3g2c"));
-       typesMap.put(MediaType.video("mp4"), Arrays.asList(
-             "mp41", "mp42"));
-       typesMap.put(MediaType.video("x-m4v"), Arrays.asList(
-             "M4V ", "M4VH", "M4VP"));
 
-       typesMap.put(MediaType.video("quicktime"), Collections.<String>emptyList());
-       typesMap.put(MediaType.application("mp4"), Collections.<String>emptyList());
+    static {
+        // All types should be 4 bytes long, space padded as needed
+        typesMap.put(MediaType.audio("mp4"), Arrays.asList("M4A ", "M4B ", "F4A ", "F4B "));
+        typesMap.put(MediaType.video("3gpp"),
+                Arrays.asList("3ge6", "3ge7", "3gg6", "3gp1", "3gp2", "3gp3", "3gp4", "3gp5",
+                        "3gp6", "3gs7"));
+        typesMap.put(MediaType.video("3gpp2"), Arrays.asList("3g2a", "3g2b", "3g2c"));
+        typesMap.put(MediaType.video("mp4"), Arrays.asList("mp41", "mp42"));
+        typesMap.put(MediaType.video("x-m4v"), Arrays.asList("M4V ", "M4VH", "M4VP"));
+
+        typesMap.put(MediaType.video("quicktime"), Collections.emptyList());
+        typesMap.put(MediaType.application("mp4"), Collections.emptyList());
     }
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-       Collections.unmodifiableSet(typesMap.keySet());
-
     private ISO6709Extractor iso6709Extractor = new ISO6709Extractor();
+
+    private static void addMetadata(Property prop, Metadata m, Utf8AppleDataBox metadata) {
+        if (metadata != null) {
+            m.set(prop, metadata.getValue());
+        }
+    }
+
+    private static <T extends Box> T getOrNull(Container box, Class<T> clazz) {
+        if (box == null) {
+            return null;
+        }
+
+        List<T> boxes = box.getBoxes(clazz);
+        if (boxes.size() == 0) {
+            return null;
+        }
+        return boxes.get(0);
+    }
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
 
         // The MP4Parser library accepts either a File, or a byte array
         // As MP4 video files are typically large, always use a file to
@@ -132,14 +152,19 @@ public class MP4Parser extends AbstractParser {
             // Grab the file type box
             FileTypeBox fileType = getOrNull(isoFile, FileTypeBox.class);
             if (fileType != null) {
-                // Identify the type
-                MediaType type = MediaType.application("mp4");
-                for (Map.Entry<MediaType, List<String>> e : typesMap.entrySet()) {
-                    if (e.getValue().contains(fileType.getMajorBrand())) {
-                        type = e.getKey();
-                        break;
-                    }
+                // Identify the type based on the major brand
+                Optional<MediaType> typeHolder = typesMap.entrySet().stream()
+                        .filter(e -> e.getValue().contains(fileType.getMajorBrand())).findFirst()
+                        .map(Map.Entry::getKey);
+
+                if (!typeHolder.isPresent()) {
+                    // If no match for major brand, see if any of the compatible brands match
+                    typeHolder = typesMap.entrySet().stream().filter(e -> e.getValue().stream()
+                            .anyMatch(fileType.getCompatibleBrands()::contains)).findFirst()
+                            .map(Map.Entry::getKey);
                 }
+
+                MediaType type = typeHolder.orElse(MediaType.application("mp4"));
                 metadata.set(Metadata.CONTENT_TYPE, type.toString());
 
                 if (type.getType().equals("audio")) {
@@ -214,8 +239,10 @@ public class MP4Parser extends AbstractParser {
                 // Look for the first Audio Sample, if present
                 AudioSampleEntry sample = getOrNull(sampleDesc, AudioSampleEntry.class);
                 if (sample != null) {
-                    XMPDM.ChannelTypePropertyConverter.convertAndSet(metadata, sample.getChannelCount());
-                    //metadata.set(XMPDM.AUDIO_SAMPLE_TYPE, sample.getSampleSize());    // TODO Num -> Type mapping
+                    XMPDM.ChannelTypePropertyConverter
+                            .convertAndSet(metadata, sample.getChannelCount());
+                    //metadata.set(XMPDM.AUDIO_SAMPLE_TYPE, sample.getSampleSize());
+                    // TODO Num -> Type mapping
                     metadata.set(XMPDM.AUDIO_SAMPLE_RATE, (int) sample.getSampleRate());
                     //metadata.set(XMPDM.AUDIO_, sample.getSamplesPerPacket());
                     //metadata.set(XMPDM.AUDIO_, sample.getBytesPerSample());
@@ -242,7 +269,8 @@ public class MP4Parser extends AbstractParser {
         metadata.set(XMPDM.AUDIO_SAMPLE_RATE, (int) mHeader.getTimescale());
     }
 
-    private void handleApple(MetaBox metaBox, Metadata metadata, XHTMLContentHandler xhtml) throws SAXException {
+    private void handleApple(MetaBox metaBox, Metadata metadata, XHTMLContentHandler xhtml)
+            throws SAXException {
         AppleItemListBox apple = getOrNull(metaBox, AppleItemListBox.class);
         if (apple == null) {
             return;
@@ -336,21 +364,5 @@ public class MP4Parser extends AbstractParser {
         }
         String iso6709 = coordBox.getValue();
         iso6709Extractor.extract(iso6709, metadata);
-    }
-
-    private static void addMetadata(Property prop, Metadata m, Utf8AppleDataBox metadata) {
-       if (metadata != null) {
-          m.set(prop, metadata.getValue());
-       }
-    }
-    
-    private static <T extends Box> T getOrNull(Container box, Class<T> clazz) {
-       if (box == null) return null;
-
-       List<T> boxes = box.getBoxes(clazz);
-       if (boxes.size() == 0) {
-          return null;
-       }
-       return boxes.get(0);
     }
 }

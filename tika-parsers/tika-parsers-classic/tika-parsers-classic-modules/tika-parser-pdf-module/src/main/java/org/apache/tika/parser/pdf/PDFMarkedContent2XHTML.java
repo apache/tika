@@ -16,6 +16,18 @@
  */
 package org.apache.tika.parser.pdf;
 
+import java.io.IOException;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+
 import org.apache.pdfbox.cos.COSArray;
 import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSDictionary;
@@ -29,23 +41,12 @@ import org.apache.pdfbox.pdmodel.documentinterchange.logicalstructure.PDStructur
 import org.apache.pdfbox.pdmodel.documentinterchange.markedcontent.PDMarkedContent;
 import org.apache.pdfbox.text.PDFMarkedContentExtractor;
 import org.apache.pdfbox.text.TextPosition;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import java.io.IOException;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * <p>This was added in Tika 1.24 as an alpha version of a text extractor
@@ -87,8 +88,8 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
     //this stores state as we recurse through the structure tag tree
     private State state = new State();
 
-    private PDFMarkedContent2XHTML(PDDocument document, ContentHandler handler, ParseContext context, Metadata metadata,
-                                   PDFParserConfig config)
+    private PDFMarkedContent2XHTML(PDDocument document, ContentHandler handler,
+                                   ParseContext context, Metadata metadata, PDFParserConfig config)
             throws IOException {
         super(document, handler, context, metadata, config);
     }
@@ -103,14 +104,14 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
      * @throws SAXException  if the content handler fails to process SAX events
      * @throws TikaException if there was an exception outside of per page processing
      */
-    public static void process(
-            PDDocument pdDocument, ContentHandler handler, ParseContext context, Metadata metadata,
-            PDFParserConfig config)
+    public static void process(PDDocument pdDocument, ContentHandler handler, ParseContext context,
+                               Metadata metadata, PDFParserConfig config)
             throws SAXException, TikaException {
 
         PDFMarkedContent2XHTML pdfMarkedContent2XHTML = null;
         try {
-            pdfMarkedContent2XHTML = new PDFMarkedContent2XHTML(pdDocument, handler, context, metadata, config);
+            pdfMarkedContent2XHTML =
+                    new PDFMarkedContent2XHTML(pdDocument, handler, context, metadata, config);
         } catch (IOException e) {
             throw new TikaException("couldn't initialize PDFMarkedContent2XHTML", e);
         }
@@ -137,7 +138,54 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
         }
         if (pdfMarkedContent2XHTML.exceptions.size() > 0) {
             //throw the first
-            throw new TikaException("Unable to extract PDF content", pdfMarkedContent2XHTML.exceptions.get(0));
+            throw new TikaException("Unable to extract PDF content",
+                    pdfMarkedContent2XHTML.exceptions.get(0));
+        }
+    }
+
+    private static Map<String, HtmlTag> loadRoleMap(Map<String, Object> roleMap) {
+        if (roleMap == null) {
+            return Collections.EMPTY_MAP;
+        }
+        Map<String, HtmlTag> tags = new HashMap<>();
+        for (Map.Entry<String, Object> e : roleMap.entrySet()) {
+            String k = e.getKey();
+            Object obj = e.getValue();
+            if (obj instanceof String) {
+                String v = (String) obj;
+                String lc = v.toLowerCase(Locale.US);
+                if (COMMON_TAG_MAP.containsValue(new HtmlTag(lc))) {
+                    tags.put(k, new HtmlTag(lc));
+                } else {
+                    tags.put(k, new HtmlTag(DIV, lc));
+                }
+            }
+        }
+        return tags;
+    }
+
+    private static void findPages(COSBase kidsObj, List<ObjectRef> pageRefs) {
+        if (kidsObj == null) {
+            return;
+        }
+        if (kidsObj instanceof COSArray) {
+            for (COSBase kid : ((COSArray) kidsObj)) {
+                if (kid instanceof COSObject) {
+                    COSBase kidbase = ((COSObject) kid).getObject();
+                    if (kidbase instanceof COSDictionary) {
+                        COSDictionary dict = (COSDictionary) kidbase;
+                        if (dict.containsKey(COSName.TYPE) &&
+                                COSName.PAGE.equals(dict.getCOSName(COSName.TYPE))) {
+                            pageRefs.add(new ObjectRef(((COSObject) kid).getObjectNumber(),
+                                    ((COSObject) kid).getGenerationNumber()));
+                            continue;
+                        }
+                        if (((COSDictionary) kidbase).containsKey(COSName.KIDS)) {
+                            findPages(((COSDictionary) kidbase).getItem(COSName.KIDS), pageRefs);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -153,13 +201,13 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
         findPages(pdDocument.getPages().getCOSObject().getItem(COSName.KIDS), pageRefs);
         //confirm the right number of pages was found
         if (pageRefs.size() != pdDocument.getNumberOfPages()) {
-            throw new IOException(
-                    new TikaException("Couldn't find the right number of page refs ("
-                            + pageRefs.size() + ") for pages (" +
-                            pdDocument.getNumberOfPages() + ")"));
+            throw new IOException(new TikaException(
+                    "Couldn't find the right number of page refs (" + pageRefs.size() +
+                            ") for pages (" + pdDocument.getNumberOfPages() + ")"));
         }
 
-        PDStructureTreeRoot structureTreeRoot = pdDocument.getDocumentCatalog().getStructureTreeRoot();
+        PDStructureTreeRoot structureTreeRoot =
+                pdDocument.getDocumentCatalog().getStructureTreeRoot();
 
         //STEP 2: load the roleMap
         Map<String, HtmlTag> roleMap = loadRoleMap(structureTreeRoot.getRoleMap());
@@ -186,7 +234,8 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
             for (MCID mcid : paragraphs.keySet()) {
                 if (!state.processedMCIDs.contains(mcid)) {
                     if (mcid.mcid > -1) {
-                        //TODO: LOG! piece of text that wasn't referenced  in the marked content tree
+                        //TODO: LOG! piece of text that wasn't referenced  in the marked content
+                        // tree
                         // but should have been.  If mcid == -1, this was a known item not part of
                         // content tree.
                     }
@@ -211,11 +260,12 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
     }
 
     private void recurse(COSBase kids, ObjectRef currentPageRef, int depth,
-                         Map<MCID, String> paragraphs, Map<String, HtmlTag> roleMap) throws IOException, SAXException {
+                         Map<MCID, String> paragraphs, Map<String, HtmlTag> roleMap)
+            throws IOException, SAXException {
 
         if (depth > MAX_RECURSION_DEPTH) {
             throw new IOException(
-                    new TikaException("Exceeded max recursion depth "+MAX_RECURSION_DEPTH));
+                    new TikaException("Exceeded max recursion depth " + MAX_RECURSION_DEPTH));
         }
 
         if (kids instanceof COSArray) {
@@ -223,11 +273,11 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                 recurse(k, currentPageRef, depth, paragraphs, roleMap);
             }
         } else if (kids instanceof COSObject) {
-            COSBase cosType = ((COSObject)kids).getItem(COSName.TYPE);
+            COSBase cosType = ((COSObject) kids).getItem(COSName.TYPE);
             if (cosType != null && cosType instanceof COSName) {
-                if ("OBJR".equals(((COSName)cosType).getName())) {
-                    recurse(((COSObject)kids).getDictionaryObject(COSName.OBJ),currentPageRef,
-                            depth+1, paragraphs, roleMap);
+                if ("OBJR".equals(((COSName) cosType).getName())) {
+                    recurse(((COSObject) kids).getDictionaryObject(COSName.OBJ), currentPageRef,
+                            depth + 1, paragraphs, roleMap);
                 }
             }
 
@@ -306,9 +356,11 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                 state.uri = anchor.getString(COSName.URI);
             } else {
                 if (dict.containsKey(COSName.K)) {
-                    recurse(dict.getDictionaryObject(COSName.K), currentPageRef, depth + 1, paragraphs, roleMap);
+                    recurse(dict.getDictionaryObject(COSName.K), currentPageRef, depth + 1,
+                            paragraphs, roleMap);
                 } else if (dict.containsKey(COSName.OBJ)) {
-                    recurse(dict.getDictionaryObject(COSName.OBJ), currentPageRef, depth + 1, paragraphs, roleMap);
+                    recurse(dict.getDictionaryObject(COSName.OBJ), currentPageRef, depth + 1,
+                            paragraphs, roleMap);
 
                 }
             }
@@ -339,7 +391,6 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
 
     }
 
-
     private HtmlTag getTag(String name, Map<String, HtmlTag> roleMap) {
         if (roleMap.containsKey(name)) {
             return roleMap.get(name);
@@ -350,28 +401,6 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
         }
         roleMap.put(name, new HtmlTag(DIV, name.toLowerCase(Locale.US)));
         return roleMap.get(name);
-    }
-
-
-    private static Map<String, HtmlTag> loadRoleMap(Map<String, Object> roleMap) {
-        if (roleMap == null) {
-            return Collections.EMPTY_MAP;
-        }
-        Map<String, HtmlTag> tags = new HashMap<>();
-        for (Map.Entry<String, Object> e : roleMap.entrySet()) {
-            String k = e.getKey();
-            Object obj = e.getValue();
-            if (obj instanceof String) {
-                String v = (String) obj;
-                String lc = v.toLowerCase(Locale.US);
-                if (COMMON_TAG_MAP.containsValue(new HtmlTag(lc))) {
-                    tags.put(k, new HtmlTag(lc));
-                } else {
-                    tags.put(k, new HtmlTag(DIV, lc));
-                }
-            }
-        }
-        return tags;
     }
 
     private Map<MCID, String> loadTextByMCID(List<ObjectRef> pageRefs) throws IOException {
@@ -402,7 +431,8 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                         if (unicode != null) {
                             sb.append(unicode);
                         }
-                    }/*
+                    }
+                    /*
                     TODO: do we want to do anything with these?
                     TODO: Are there other types of objects we need to handle here?
                     else if (o instanceof PDImageXObject) {
@@ -441,38 +471,13 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
         return paragraphs;
     }
 
-    private static void findPages(COSBase kidsObj, List<ObjectRef> pageRefs) {
-        if (kidsObj == null) {
-            return;
-        }
-        if (kidsObj instanceof COSArray) {
-            for (COSBase kid : ((COSArray) kidsObj)) {
-                if (kid instanceof COSObject) {
-                    COSBase kidbase = ((COSObject) kid).getObject();
-                    if (kidbase instanceof COSDictionary) {
-                        COSDictionary dict = (COSDictionary) kidbase;
-                        if (dict.containsKey(COSName.TYPE) && COSName.PAGE.equals(dict.getCOSName(COSName.TYPE))) {
-                            pageRefs.add(new ObjectRef(((COSObject) kid).getObjectNumber(),
-                                    ((COSObject) kid).getGenerationNumber()));
-                            continue;
-                        }
-                        if (((COSDictionary) kidbase).containsKey(COSName.KIDS)) {
-                            findPages(((COSDictionary) kidbase).getItem(COSName.KIDS), pageRefs);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-
     private static class State {
         Set<MCID> processedMCIDs = new HashSet<>();
         boolean inLink = false;
+        int tableDepth = 0;
         private StringBuilder hrefAnchorBuilder = new StringBuilder();
         private String uri = null;
         private int tdDepth = 0;
-        int tableDepth = 0;
     }
 
     private static class HtmlTag {
@@ -528,11 +533,14 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             ObjectRef objectRef = (ObjectRef) o;
-            return objId == objectRef.objId &&
-                    version == objectRef.version;
+            return objId == objectRef.objId && version == objectRef.version;
         }
 
         @Override
@@ -542,10 +550,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
 
         @Override
         public String toString() {
-            return "ObjectRef{" +
-                    "objId=" + objId +
-                    ", version=" + version +
-                    '}';
+            return "ObjectRef{" + "objId=" + objId + ", version=" + version + '}';
         }
     }
 
@@ -570,11 +575,14 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             MCID mcid1 = (MCID) o;
-            return mcid == mcid1.mcid &&
-                    Objects.equals(objectRef, mcid1.objectRef);
+            return mcid == mcid1.mcid && Objects.equals(objectRef, mcid1.objectRef);
         }
 
         @Override
@@ -584,10 +592,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
 
         @Override
         public String toString() {
-            return "MCID{" +
-                    "objectRef=" + objectRef +
-                    ", mcid=" + mcid +
-                    '}';
+            return "MCID{" + "objectRef=" + objectRef + ", mcid=" + mcid + '}';
         }
     }
 }

@@ -16,18 +16,19 @@
  */
 package org.apache.tika.detect;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
 import org.junit.Test;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 
 /**
  * Test cases for the {@link TextDetector} class.
@@ -38,9 +39,7 @@ public class TextDetectorTest {
 
     @Test
     public void testDetectNull() throws Exception {
-        assertEquals(
-                MediaType.OCTET_STREAM,
-                detector.detect(null, new Metadata()));
+        assertEquals(MediaType.OCTET_STREAM, detector.detect(null, new Metadata()));
     }
 
     /**
@@ -57,9 +56,9 @@ public class TextDetectorTest {
     public void testDetectText() throws Exception {
         assertText("Hello, World!".getBytes(UTF_8));
         assertText(" \t\r\n".getBytes(UTF_8));
-        assertNotText(new byte[] { -1, -2, -3, 0x09, 0x0A, 0x0C, 0x0D, 0x1B });
-        assertNotText(new byte[] { 0 });
-        assertNotText(new byte[] { 'H', 'e', 'l', 'l', 'o', 0 });
+        assertNotText(new byte[]{-1, -2, -3, 0x09, 0x0A, 0x0C, 0x0D, 0x1B});
+        assertNotText(new byte[]{0});
+        assertNotText(new byte[]{'H', 'e', 'l', 'l', 'o', 0});
 
         byte[] data = new byte[512];
         Arrays.fill(data, (byte) '.');
@@ -86,9 +85,7 @@ public class TextDetectorTest {
     private void assertText(byte[] data) {
         try {
             InputStream stream = new ByteArrayInputStream(data);
-            assertEquals(
-                    MediaType.TEXT_PLAIN,
-                    detector.detect(stream, new Metadata()));
+            assertEquals(MediaType.TEXT_PLAIN, detector.detect(stream, new Metadata()));
 
             // Test that the stream has been reset
             for (byte aByte : data) {
@@ -102,10 +99,8 @@ public class TextDetectorTest {
 
     private void assertNotText(byte[] data) {
         try {
-            assertEquals(
-                    MediaType.OCTET_STREAM,
-                    detector.detect(
-                            new ByteArrayInputStream(data), new Metadata()));
+            assertEquals(MediaType.OCTET_STREAM,
+                    detector.detect(new ByteArrayInputStream(data), new Metadata()));
         } catch (IOException e) {
             fail("Unexpected exception from TextDetector");
         }

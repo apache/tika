@@ -23,6 +23,9 @@ import java.text.DateFormatSymbols;
 import java.util.Arrays;
 import java.util.Locale;
 
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Database;
 import org.apache.tika.metadata.HttpHeaders;
@@ -34,13 +37,12 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
 
 public class SAS7BDATParserTest extends TikaTest {
-    private static final String[] SHORT_MONTHS = new DateFormatSymbols(Locale.getDefault()).getShortMonths();
+    private static final String[] SHORT_MONTHS =
+            new DateFormatSymbols(Locale.getDefault()).getShortMonths();
     private Parser parser = new SAS7BDATParser();
-    
+
     @Test
     public void testSimpleFile() throws Exception {
         ContentHandler handler = new BodyContentHandler();
@@ -56,7 +58,7 @@ public class SAS7BDATParserTest extends TikaTest {
         // Mon Jan 30 07:31:47 GMT 2017
         assertEquals("2017-01-30T07:31:47Z", metadata.get(TikaCoreProperties.CREATED));
         assertEquals("2017-01-30T07:31:47Z", metadata.get(TikaCoreProperties.MODIFIED));
-        
+
         assertEquals("1", metadata.get(PagedText.N_PAGES));
         assertEquals("2", metadata.get(Database.COLUMN_COUNT));
         assertEquals("11", metadata.get(Database.ROW_COUNT));
@@ -65,9 +67,9 @@ public class SAS7BDATParserTest extends TikaTest {
         assertEquals("9.0301M2", metadata.get(OfficeOpenXMLExtended.APP_VERSION));
         assertEquals("32", metadata.get(MachineMetadata.ARCHITECTURE_BITS));
         assertEquals("Little", metadata.get(MachineMetadata.ENDIAN));
-        assertEquals(Arrays.asList("recnum","label"),
-                     Arrays.asList(metadata.getValues(Database.COLUMN_NAME)));
-        
+        assertEquals(Arrays.asList("recnum", "label"),
+                Arrays.asList(metadata.getValues(Database.COLUMN_NAME)));
+
         String content = handler.toString();
         assertContains("TESTING", content);
         assertContains("\t3\t", content);
@@ -75,7 +77,7 @@ public class SAS7BDATParserTest extends TikaTest {
         assertContains("\tThis is row", content);
         assertContains(" of ", content);
     }
-    
+
     @Test
     public void testMultiColumns() throws Exception {
         ContentHandler handler = new BodyContentHandler();
@@ -90,7 +92,7 @@ public class SAS7BDATParserTest extends TikaTest {
 
         assertEquals("2018-05-18T11:38:30Z", metadata.get(TikaCoreProperties.CREATED));
         assertEquals("2018-05-18T11:38:30Z", metadata.get(TikaCoreProperties.MODIFIED));
-        
+
         assertEquals("1", metadata.get(PagedText.N_PAGES));
         assertEquals("8", metadata.get(Database.COLUMN_COUNT));
         assertEquals("11", metadata.get(Database.ROW_COUNT));
@@ -99,18 +101,17 @@ public class SAS7BDATParserTest extends TikaTest {
         assertEquals("9.0401M5", metadata.get(OfficeOpenXMLExtended.APP_VERSION));
         assertEquals("32", metadata.get(MachineMetadata.ARCHITECTURE_BITS));
         assertEquals("Little", metadata.get(MachineMetadata.ENDIAN));
-        assertEquals(Arrays.asList("Record Number","Square of the Record Number",
-                                   "Description of the Row","Percent Done",
-                                   "Percent Increment","date","datetime","time"),
-                     Arrays.asList(metadata.getValues(Database.COLUMN_NAME)));
-        
+        assertEquals(Arrays.asList("Record Number", "Square of the Record Number",
+                "Description of the Row", "Percent Done", "Percent Increment", "date", "datetime",
+                "time"), Arrays.asList(metadata.getValues(Database.COLUMN_NAME)));
+
         String content = handler.toString();
         assertContains("TESTING", content);
         assertContains("0\t0\tThis", content);
         assertContains("2\t4\tThis", content);
         assertContains("4\t16\tThis", content);
         assertContains("\t01-01-1960\t", content);
-        assertContains("\t01"+SHORT_MONTHS[0]+"1960:00:00", content);
+        assertContains("\t01" + SHORT_MONTHS[0] + "1960:00:00", content);
     }
 
     @Test
@@ -128,7 +129,7 @@ public class SAS7BDATParserTest extends TikaTest {
         assertContains("<td>This is row", xml);
         assertContains("10</td>", xml);
     }
-    
+
     @Test
     public void testHTML2() throws Exception {
         XMLResult result = getXML("test-columnar.sas7bdat");
@@ -142,6 +143,6 @@ public class SAS7BDATParserTest extends TikaTest {
         assertContains("<th title=\"date\">date</th>", xml);
         // Check formatting of dates
         assertContains("<td>01-01-1960</td>", xml);
-        assertContains("<td>01"+SHORT_MONTHS[0]+"1960:00:00:10.00</td>", xml);
+        assertContains("<td>01" + SHORT_MONTHS[0] + "1960:00:00:10.00</td>", xml);
     }
 }

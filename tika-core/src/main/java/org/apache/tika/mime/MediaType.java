@@ -39,40 +39,34 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
      */
     private static final long serialVersionUID = -3831000556189036392L;
 
-    private static final Pattern SPECIAL =
-        Pattern.compile("[\\(\\)<>@,;:\\\\\"/\\[\\]\\?=]");
+    private static final Pattern SPECIAL = Pattern.compile("[\\(\\)<>@,;:\\\\\"/\\[\\]\\?=]");
 
     private static final Pattern SPECIAL_OR_WHITESPACE =
-        Pattern.compile("[\\(\\)<>@,;:\\\\\"/\\[\\]\\?=\\s]");
+            Pattern.compile("[\\(\\)<>@,;:\\\\\"/\\[\\]\\?=\\s]");
 
     /**
      * See http://www.ietf.org/rfc/rfc2045.txt for valid mime-type characters.
      */
-    private static final String VALID_CHARS =
-            "([^\\c\\(\\)<>@,;:\\\\\"/\\[\\]\\?=\\s]+)";
+    private static final String VALID_CHARS = "([^\\c\\(\\)<>@,;:\\\\\"/\\[\\]\\?=\\s]+)";
 
-    private static final Pattern TYPE_PATTERN = Pattern.compile(
-                    "(?s)\\s*" + VALID_CHARS + "\\s*/\\s*" + VALID_CHARS
-                    + "\\s*($|;.*)");
+    private static final Pattern TYPE_PATTERN =
+            Pattern.compile("(?s)\\s*" + VALID_CHARS + "\\s*/\\s*" + VALID_CHARS + "\\s*($|;.*)");
 
     // TIKA-350: handle charset as first element in content-type
     private static final Pattern CHARSET_FIRST_PATTERN = Pattern.compile(
-            "(?is)\\s*(charset\\s*=\\s*[^\\c;\\s]+)\\s*;\\s*"
-            + VALID_CHARS + "\\s*/\\s*" + VALID_CHARS + "\\s*");
+            "(?is)\\s*(charset\\s*=\\s*[^\\c;\\s]+)\\s*;\\s*" + VALID_CHARS + "\\s*/\\s*" +
+                    VALID_CHARS + "\\s*");
 
     /**
      * Set of basic types with normalized "type/subtype" names.
      * Used to optimize type lookup and to avoid having too many
      * {@link MediaType} instances in memory.
      */
-    private static final Map<String, MediaType> SIMPLE_TYPES =
-            new HashMap<String, MediaType>();
+    private static final Map<String, MediaType> SIMPLE_TYPES = new HashMap<String, MediaType>();
 
-    public static final MediaType OCTET_STREAM =
-            parse("application/octet-stream");
+    public static final MediaType OCTET_STREAM = parse("application/octet-stream");
 
-	public static final MediaType EMPTY =
-            parse("application/x-empty");
+    public static final MediaType EMPTY = parse("application/x-empty");
 
     public static final MediaType TEXT_PLAIN = parse("text/plain");
 
@@ -81,6 +75,107 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
     public static final MediaType APPLICATION_XML = parse("application/xml");
 
     public static final MediaType APPLICATION_ZIP = parse("application/zip");
+    /**
+     * Canonical string representation of this media type.
+     */
+    private final String string;
+    /**
+     * Location of the "/" character separating the type and the subtype
+     * tokens in {@link #string}.
+     */
+    private final int slash;
+    /**
+     * Location of the first ";" character separating the type part of
+     * {@link #string} from possible parameters. Length of {@link #string}
+     * in case there are no parameters.
+     */
+    private final int semicolon;
+    /**
+     * Immutable sorted map of media type parameters.
+     */
+    private final Map<String, String> parameters;
+
+    public MediaType(String type, String subtype, Map<String, String> parameters) {
+        type = type.trim().toLowerCase(Locale.ENGLISH);
+        subtype = subtype.trim().toLowerCase(Locale.ENGLISH);
+
+        this.slash = type.length();
+        this.semicolon = slash + 1 + subtype.length();
+
+        if (parameters.isEmpty()) {
+            this.parameters = Collections.emptyMap();
+            this.string = type + '/' + subtype;
+        } else {
+            StringBuilder builder = new StringBuilder();
+            builder.append(type);
+            builder.append('/');
+            builder.append(subtype);
+
+            SortedMap<String, String> map = new TreeMap<String, String>();
+            for (Map.Entry<String, String> entry : parameters.entrySet()) {
+                String key = entry.getKey().trim().toLowerCase(Locale.ENGLISH);
+                map.put(key, entry.getValue());
+            }
+            for (Map.Entry<String, String> entry : map.entrySet()) {
+                builder.append("; ");
+                builder.append(entry.getKey());
+                builder.append("=");
+                String value = entry.getValue();
+                if (SPECIAL_OR_WHITESPACE.matcher(value).find()) {
+                    builder.append('"');
+                    builder.append(SPECIAL.matcher(value).replaceAll("\\\\$0"));
+                    builder.append('"');
+                } else {
+                    builder.append(value);
+                }
+            }
+
+            this.string = builder.toString();
+            this.parameters = Collections.unmodifiableSortedMap(map);
+        }
+    }
+
+    public MediaType(String type, String subtype) {
+        this(type, subtype, Collections.emptyMap());
+    }
+
+    private MediaType(String string, int slash) {
+        assert slash != -1;
+        assert string.charAt(slash) == '/';
+        assert isSimpleName(string.substring(0, slash));
+        assert isSimpleName(string.substring(slash + 1));
+        this.string = string;
+        this.slash = slash;
+        this.semicolon = string.length();
+        this.parameters = Collections.emptyMap();
+    }
+
+    public MediaType(MediaType type, Map<String, String> parameters) {
+        this(type.getType(), type.getSubtype(), union(type.parameters, parameters));
+    }
+
+    /**
+     * Creates a media type by adding a parameter to a base type.
+     *
+     * @param type  base type
+     * @param name  parameter name
+     * @param value parameter value
+     * @since Apache Tika 1.2
+     */
+    public MediaType(MediaType type, String name, String value) {
+        this(type, Collections.singletonMap(name, value));
+    }
+
+    /**
+     * Creates a media type by adding the "charset" parameter to a base type.
+     *
+     * @param type    base type
+     * @param charset charset value
+     * @since Apache Tika 1.2
+     */
+    public MediaType(MediaType type, Charset charset) {
+        this(type, "charset", charset.name());
+    }
 
     public static MediaType application(String type) {
         return MediaType.parse("application/" + type);
@@ -106,9 +201,9 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
      * Convenience method that returns an unmodifiable set that contains
      * all the given media types.
      *
-     * @since Apache Tika 1.2
      * @param types media types
      * @return unmodifiable set of the given types
+     * @since Apache Tika 1.2
      */
     public static Set<MediaType> set(MediaType... types) {
         Set<MediaType> set = new HashSet<MediaType>();
@@ -124,9 +219,9 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
      * Convenience method that parses the given media type strings and
      * returns an unmodifiable set that contains all the parsed types.
      *
-     * @since Apache Tika 1.2
      * @param types media type strings
      * @return unmodifiable set of the parsed types
+     * @since Apache Tika 1.2
      */
     public static Set<MediaType> set(String... types) {
         Set<MediaType> set = new HashSet<MediaType>();
@@ -160,9 +255,9 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
                 int slash = string.indexOf('/');
                 if (slash == -1) {
                     return null;
-                } else if (SIMPLE_TYPES.size() < 10000
-                        && isSimpleName(string.substring(0, slash))
-                        && isSimpleName(string.substring(slash + 1))) {
+                } else if (SIMPLE_TYPES.size() < 10000 &&
+                        isSimpleName(string.substring(0, slash)) &&
+                        isSimpleName(string.substring(slash + 1))) {
                     type = new MediaType(string, slash);
                     SIMPLE_TYPES.put(string, type);
                 }
@@ -175,14 +270,12 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
         Matcher matcher;
         matcher = TYPE_PATTERN.matcher(string);
         if (matcher.matches()) {
-            return new MediaType(
-                    matcher.group(1), matcher.group(2),
+            return new MediaType(matcher.group(1), matcher.group(2),
                     parseParameters(matcher.group(3)));
         }
         matcher = CHARSET_FIRST_PATTERN.matcher(string);
         if (matcher.matches()) {
-            return new MediaType(
-                    matcher.group(2), matcher.group(3),
+            return new MediaType(matcher.group(2), matcher.group(3),
                     parseParameters(matcher.group(1)));
         }
 
@@ -192,9 +285,8 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
     private static boolean isSimpleName(String name) {
         for (int i = 0; i < name.length(); i++) {
             char c = name.charAt(i);
-            if (c != '-' && c != '+' && c != '.' && c != '_'
-                    && !('0' <= c && c <= '9')
-                    && !('a' <= c && c <= 'z')) {
+            if (c != '-' && c != '+' && c != '.' && c != '_' && !('0' <= c && c <= '9') &&
+                    !('a' <= c && c <= 'z')) {
                 return false;
             }
         }
@@ -203,7 +295,7 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
 
     private static Map<String, String> parseParameters(String string) {
         if (string.length() == 0) {
-            return Collections.<String, String>emptyMap();
+            return Collections.emptyMap();
         }
 
         // Extracts k1=v1, k2=v2 from mime/type; k1=v1; k2=v2
@@ -253,87 +345,7 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
         return s;
     }
 
-    /**
-     * Canonical string representation of this media type.
-     */
-    private final String string;
-
-    /**
-     * Location of the "/" character separating the type and the subtype
-     * tokens in {@link #string}.
-     */
-    private final int slash;
-
-    /**
-     * Location of the first ";" character separating the type part of
-     * {@link #string} from possible parameters. Length of {@link #string}
-     * in case there are no parameters.
-     */
-    private final int semicolon;
-
-    /**
-     * Immutable sorted map of media type parameters.
-     */
-    private final Map<String, String> parameters;
-
-    public MediaType(
-            String type, String subtype, Map<String, String> parameters) {
-        type = type.trim().toLowerCase(Locale.ENGLISH);
-        subtype = subtype.trim().toLowerCase(Locale.ENGLISH);
-
-        this.slash = type.length();
-        this.semicolon = slash + 1 + subtype.length();
-
-        if (parameters.isEmpty()) {
-            this.parameters = Collections.emptyMap();
-            this.string = type + '/' + subtype;
-        } else {
-            StringBuilder builder = new StringBuilder();
-            builder.append(type);
-            builder.append('/');
-            builder.append(subtype);
-
-            SortedMap<String, String> map = new TreeMap<String, String>();
-            for (Map.Entry<String, String> entry : parameters.entrySet()) {
-                String key = entry.getKey().trim().toLowerCase(Locale.ENGLISH);
-                map.put(key, entry.getValue());
-            }
-            for (Map.Entry<String, String> entry : map.entrySet()) {
-                builder.append("; ");
-                builder.append(entry.getKey());
-                builder.append("=");
-                String value = entry.getValue();
-                if (SPECIAL_OR_WHITESPACE.matcher(value).find()) {
-                    builder.append('"');
-                    builder.append(SPECIAL.matcher(value).replaceAll("\\\\$0"));
-                    builder.append('"');
-                } else {
-                    builder.append(value);
-                }
-            }
-
-            this.string = builder.toString();
-            this.parameters = Collections.unmodifiableSortedMap(map);
-        }
-    }
-
-    public MediaType(String type, String subtype) {
-        this(type, subtype, Collections.<String, String>emptyMap());
-    }
-
-    private MediaType(String string, int slash) {
-        assert slash != -1;
-        assert string.charAt(slash) == '/';
-        assert isSimpleName(string.substring(0, slash));
-        assert isSimpleName(string.substring(slash + 1));
-        this.string = string;
-        this.slash = slash;
-        this.semicolon = string.length();
-        this.parameters = Collections.emptyMap();
-    }
-
-    private static Map<String, String> union(
-            Map<String, String> a, Map<String, String> b) {
+    private static Map<String, String> union(Map<String, String> a, Map<String, String> b) {
         if (a.isEmpty()) {
             return b;
         } else if (b.isEmpty()) {
@@ -346,37 +358,10 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
         }
     }
 
-    public MediaType(MediaType type, Map<String, String> parameters) {
-        this(type.getType(), type.getSubtype(),
-                union(type.parameters, parameters));
-    }
-
-    /**
-     * Creates a media type by adding a parameter to a base type.
-     *
-     * @param type base type
-     * @param name parameter name
-     * @param value parameter value
-     * @since Apache Tika 1.2
-     */
-    public MediaType(MediaType type, String name, String value) {
-        this(type, Collections.singletonMap(name, value));
-    }
-
-    /**
-     * Creates a media type by adding the "charset" parameter to a base type.
-     *
-     * @param type base type
-     * @param charset charset value
-     * @since Apache Tika 1.2
-     */
-    public MediaType(MediaType type, Charset charset) {
-        this(type, "charset", charset.name());
-    }
     /**
      * Returns the base form of the MediaType, excluding
-     *  any parameters, such as "text/plain" for
-     *  "text/plain; charset=utf-8"
+     * any parameters, such as "text/plain" for
+     * "text/plain; charset=utf-8"
      */
     public MediaType getBaseType() {
         if (parameters.isEmpty()) {
@@ -388,15 +373,15 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
 
     /**
      * Return the Type of the MediaType, such as
-     *  "text" for "text/plain"
+     * "text" for "text/plain"
      */
     public String getType() {
         return string.substring(0, slash);
     }
 
     /**
-     * Return the Sub-Type of the MediaType, 
-     *  such as "plain" for "text/plain"
+     * Return the Sub-Type of the MediaType,
+     * such as "plain" for "text/plain"
      */
     public String getSubtype() {
         return string.substring(slash + 1, semicolon);
@@ -405,9 +390,9 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
     /**
      * Checks whether this media type contains parameters.
      *
-     * @since Apache Tika 0.8
      * @return <code>true</code> if this type has one or more parameters,
-     *         <code>false</code> otherwise
+     * <code>false</code> otherwise
+     * @since Apache Tika 0.8
      */
     public boolean hasParameters() {
         return !parameters.isEmpty();
