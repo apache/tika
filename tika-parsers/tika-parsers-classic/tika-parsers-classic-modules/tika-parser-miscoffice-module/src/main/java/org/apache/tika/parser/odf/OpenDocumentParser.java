@@ -338,7 +338,8 @@ public class OpenDocumentParser extends AbstractParser {
             throws SAXException, TikaException, IOException {
         try {
             XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream),
-                    new OfflineContentHandler(new EmbeddedContentHandler(new OpenDocumentManifestHandler())), context);
+                    new OfflineContentHandler(new EmbeddedContentHandler(
+                            new OpenDocumentManifestHandler())), context);
         } catch (SAXException e) {
             if (e.getCause() != null
                     && e.getCause() instanceof EncryptedDocumentException) {
