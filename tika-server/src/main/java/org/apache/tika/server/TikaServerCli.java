@@ -21,7 +21,18 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.UUID;
+
+
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -66,7 +77,6 @@ import org.apache.tika.server.writer.ZipWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.management.*;
 
 public class TikaServerCli {
 
