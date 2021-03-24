@@ -25,6 +25,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
@@ -410,5 +415,36 @@ public class ODFParserTest extends TikaTest {
         ParseContext parseContext = new ParseContext();
         parseContext.set(Parser.class, new EmptyParser());
         return parseContext;
+    }
+
+    @Test
+    public void testMultiThreaded() throws Exception {
+        int numThreads = 10;
+        ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
+        ExecutorCompletionService<Integer> executorCompletionService =
+                new ExecutorCompletionService<>(executorService);
+
+        for (int i = 0; i < numThreads; i++) {
+            executorCompletionService.submit(() -> {
+                for (int i1 = 0; i1 < 10; i1++) {
+                    List<Metadata> metadataList = getRecursiveMetadata("testODTEmbedded.odt");
+                    assertEquals(3, metadataList.size());
+                    assertEquals("THUMBNAIL",
+                            metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+                }
+                return 1;
+            });
+        }
+
+        try {
+            int finished = 0;
+            while (finished < numThreads) {
+                Future<Integer> future = executorCompletionService.take();
+                future.get();
+                finished++;
+            }
+        } finally {
+            executorService.shutdownNow();
+        }
     }
 }
