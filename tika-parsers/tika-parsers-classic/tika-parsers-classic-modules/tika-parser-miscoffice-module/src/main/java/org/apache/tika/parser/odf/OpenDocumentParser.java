@@ -336,10 +336,16 @@ public class OpenDocumentParser extends AbstractParser {
 
     private void checkForEncryption(InputStream stream, ParseContext context)
             throws SAXException, TikaException, IOException {
-        XMLReaderUtils.parseSAX(
-                new CloseShieldInputStream(stream),
-                new OfflineContentHandler(new EmbeddedContentHandler(
-                        new OpenDocumentManifestHandler())), context);
+        try {
+            XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream),
+                    new OfflineContentHandler(new EmbeddedContentHandler(new OpenDocumentManifestHandler())), context);
+        } catch (SAXException e) {
+            if (e.getCause() != null
+                    && e.getCause() instanceof EncryptedDocumentException) {
+                throw (EncryptedDocumentException)e.getCause();
+            }
+            //otherwise...swallow
+        }
     }
 
     private boolean ignoreScriptFile(String embeddedName) {
