@@ -64,18 +64,13 @@ public class EmitterResource {
     private static final String FETCH_KEY_ABBREV = "fk";
     private static final String EMIT_KEY_ABBREV = "ek";
 
-    /**
-     * key that is safe to pass through http header.
-     * The user _must_ specify this for the fsemitter if calling 'put'
-     */
-    public static final String EMIT_KEY_FOR_HTTP_HEADER = "emit-key";
     private static final Logger LOG = LoggerFactory.getLogger(EmitterResource.class);
 
     static EmitKey calcEmitKey(FetchEmitTuple t) {
         //use fetch key if emitter key is not specified
         //TODO: clean this up?
         EmitKey emitKey = t.getEmitKey();
-        if (StringUtils.isBlank(emitKey.getKey())) {
+        if (StringUtils.isBlank(emitKey.getEmitKey())) {
             emitKey = new EmitKey(emitKey.getEmitterName(), t.getFetchKey().getKey());
         }
         return emitKey;
@@ -197,21 +192,11 @@ public class EmitterResource {
         return emit(calcEmitKey(t), metadataList);
     }
 
-    static EmitKey calcEmitKey(FetchEmitTuple t) {
-        //use fetch key if emitter key is not specified
-        //TODO: clean this up?
-        EmitKey emitKey = t.getEmitKey();
-        if (StringUtils.isBlank(emitKey.getKey())) {
-            emitKey = new EmitKey(emitKey.getEmitterName(), t.getFetchKey().getKey());
-        }
-        return emitKey;
-    }
-
     private Map<String, String> skip(FetchEmitTuple t, List<Metadata> metadataList) {
         Map<String, String> statusMap = new HashMap<>();
         statusMap.put("status", "ok");
         statusMap.put("emitter", t.getEmitKey().getEmitterName());
-        statusMap.put("emitKey", t.getEmitKey().getKey());
+        statusMap.put("emitKey", t.getEmitKey().getEmitKey());
         String msg = metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION);
         statusMap.put("parse_exception", msg);
         return statusMap;
@@ -269,9 +254,9 @@ public class EmitterResource {
         String status = "ok";
         String exceptionMsg = "";
         try {
-            emitter.emit(emitKey.getKey(), metadataList);
+            emitter.emit(emitKey.getEmitKey(), metadataList);
         } catch (IOException | TikaEmitterException e) {
-            LOG.warn("problem emitting (" + emitKey.getKey() + ")", e);
+            LOG.warn("problem emitting (" + emitKey.getEmitterName() + ")", e);
             status = "emitter_exception";
             exceptionMsg = ExceptionUtils.getStackTrace(e);
         }

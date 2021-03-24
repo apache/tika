@@ -31,7 +31,7 @@ import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
 public class TikaClient {
 
     private final Random random = new Random();
-    private List<TikaHttpClient> clients;
+    private final List<TikaHttpClient> clients;
 
 
     private TikaClient(List<TikaHttpClient> clients) {

@@ -17,18 +17,24 @@
 package org.apache.tika.pipes.fetchiterator;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
-
+import org.apache.tika.exception.TikaTimeoutException;
 /**
  * Abstract class that handles the testing for timeouts/thread safety
  * issues.  Concrete classes implement the blocking {@link #enqueue()}.
@@ -36,14 +42,13 @@ import org.apache.tika.exception.TikaConfigException;
  * a RuntimeException.  It will throw an IllegalStateException if
  * next() is called after hasNext() has returned false.
  */
-public abstract class FetchIterator implements Callable<Integer>,
-        Iterable<FetchEmitTuple>, Initializable {
+public abstract class FetchIterator
+        implements Callable<Integer>, Iterable<FetchEmitTuple>, Initializable {
 
     public static final long DEFAULT_MAX_WAIT_MS = 300_000;
     public static final int DEFAULT_QUEUE_SIZE = 1000;
 
-    public static final FetchEmitTuple COMPLETED_SEMAPHORE =
-            new FetchEmitTuple(null, null, null);
+    public static final FetchEmitTuple COMPLETED_SEMAPHORE = new FetchEmitTuple(null, null, null);
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FetchIterator.class);
 
@@ -53,25 +58,26 @@ public abstract class FetchIterator implements Callable<Integer>,
     private String fetcherName;
     private String emitterName;
     private int added = 0;
-    private FetchEmitTuple.ON_PARSE_EXCEPTION onParseException = FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT;
+    private FetchEmitTuple.ON_PARSE_EXCEPTION onParseException =
+            FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT;
     private FutureTask<Integer> futureTask;
-
-    @Field
-    public void setFetcherName(String fetcherName) {
-        this.fetcherName = fetcherName;
-    }
 
     public String getFetcherName() {
         return fetcherName;
     }
 
     @Field
-    public void setEmitterName(String emitterName) {
-        this.emitterName = emitterName;
+    public void setFetcherName(String fetcherName) {
+        this.fetcherName = fetcherName;
     }
 
     public String getEmitterName() {
         return emitterName;
+    }
+
+    @Field
+    public void setEmitterName(String emitterName) {
+        this.emitterName = emitterName;
     }
 
     @Field
@@ -82,6 +88,10 @@ public abstract class FetchIterator implements Callable<Integer>,
     @Field
     public void setQueueSize(int queueSize) {
         this.queueSize = queueSize;
+    }
+
+    public FetchEmitTuple.ON_PARSE_EXCEPTION getOnParseException() {
+        return onParseException;
     }
 
     @Field
@@ -97,10 +107,6 @@ public abstract class FetchIterator implements Callable<Integer>,
 
     public void setOnParseException(FetchEmitTuple.ON_PARSE_EXCEPTION onParseException) {
         this.onParseException = onParseException;
-    }
-
-    public FetchEmitTuple.ON_PARSE_EXCEPTION getOnParseException() {
-        return onParseException;
     }
 
     public Integer call() throws Exception {
@@ -168,19 +174,19 @@ public abstract class FetchIterator implements Callable<Integer>,
             FetchEmitTuple t = null;
             long start = System.currentTimeMillis();
             try {
-                long elapsed = System.currentTimeMillis()-start;
+                long elapsed = System.currentTimeMillis() - start;
                 while (t == null && elapsed < maxWaitMs) {
                     checkThreadOk();
                     t = queue.poll(100, TimeUnit.MILLISECONDS);
-                    elapsed = System.currentTimeMillis()-start;
+                    elapsed = System.currentTimeMillis() - start;
                 }
             } catch (InterruptedException e) {
                 LOGGER.warn("interrupted");
                 return COMPLETED_SEMAPHORE;
             }
             if (t == null) {
-                throw new TikaTimeoutException("waited longer than "+
-                        maxWaitMs+"ms for the next tuple");
+                throw new TikaTimeoutException(
+                        "waited longer than " + maxWaitMs + "ms for the next tuple");
             }
             return t;
         }

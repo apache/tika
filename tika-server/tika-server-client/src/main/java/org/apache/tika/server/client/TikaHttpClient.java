@@ -48,11 +48,11 @@ class TikaHttpClient {
     private final String emitEndPointUrl;
     private final String asyncEndPointUrl;
     private final String tikaUrl;
-    private int maxRetries = 3;
+    private final int maxRetries = 3;
     //if can't make contact with Tika server, max wait time in ms
-    private long maxWaitForTikaMs = 120000;
+    private final long maxWaitForTikaMs = 120000;
     //how often to ping /tika (in ms) to see if the server is up and running
-    private long pulseWaitForTikaMs = 1000;
+    private final long pulseWaitForTikaMs = 1000;
 
     /**
      * @param baseUrl    url to base endpoint
