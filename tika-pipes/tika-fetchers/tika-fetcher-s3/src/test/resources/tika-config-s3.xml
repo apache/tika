@@ -22,6 +22,7 @@
                 <param name="name" type="string">s3</param>
                 <param name="region" type="string">us-east-1</param>
                 <param name="profile" type="string">my_profile</param>
+                <param name="credentialsProvider" type="string">profile</param>
             </params>
         </fetcher>
     </fetchers>

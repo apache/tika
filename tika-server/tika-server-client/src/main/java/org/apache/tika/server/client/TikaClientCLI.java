@@ -45,8 +45,9 @@ import org.apache.tika.pipes.fetchiterator.FetchIterator;
 public class TikaClientCLI {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TikaClientCLI.class);
+    private static final int QUEUE_SIZE = 10000;
 
-    private long maxWaitMs = 300000;
+    private final long maxWaitMs = 300000;
 
     public static void main(String[] args) throws Exception {
         //TODO -- add an actual commandline,
@@ -65,9 +66,10 @@ public class TikaClientCLI {
         ExecutorCompletionService<Integer> completionService =
                 new ExecutorCompletionService<>(executorService);
         final FetchIterator fetchIterator = config.getFetchIterator();
-        final ArrayBlockingQueue<FetchEmitTuple> queue = fetchIterator.init(numThreads);
+        final ArrayBlockingQueue<FetchEmitTuple> queue =
+                new ArrayBlockingQueue<>(QUEUE_SIZE);
 
-        completionService.submit(fetchIterator);
+        completionService.submit(new FetchIteratorWrapper(fetchIterator, queue, numThreads));
         if (tikaServerUrls.size() == numThreads) {
             logDiffSizes(tikaServerUrls.size(), numThreads);
             for (int i = 0; i < numThreads; i++) {
@@ -177,6 +179,33 @@ public class TikaClientCLI {
                     LOGGER.warn(t.getFetchKey().toString(), e);
                 }
             }
+        }
+    }
+
+    private class FetchIteratorWrapper implements Callable<Integer> {
+        private final FetchIterator fetchIterator;
+        private final ArrayBlockingQueue<FetchEmitTuple> queue;
+        private final int numThreads;
+
+        public FetchIteratorWrapper(FetchIterator fetchIterator,
+                                    ArrayBlockingQueue<FetchEmitTuple> queue,
+                                    int numThreads) {
+            this.fetchIterator = fetchIterator;
+            this.queue = queue;
+            this.numThreads = numThreads;
+
+        }
+
+        @Override
+        public Integer call() throws Exception {
+            for (FetchEmitTuple t : fetchIterator) {
+                //potentially blocks forever
+                queue.put(t);
+            }
+            for (int i = 0; i < numThreads; i ++) {
+                queue.put(FetchIterator.COMPLETED_SEMAPHORE);
+            }
+            return 1;
         }
     }
 }

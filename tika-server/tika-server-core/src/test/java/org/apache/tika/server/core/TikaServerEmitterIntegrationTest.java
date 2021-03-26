@@ -242,7 +242,10 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
                              FetchEmitTuple.ON_PARSE_EXCEPTION onParseException) throws Exception {
 
         awaitServerStartup();
-        Response response = WebClient.create(endPoint + "/emit").accept("application/json")
+        System.out.println(getJsonString(fileName, onParseException));
+        Response response = WebClient
+                .create(endPoint + "/emit")
+                .accept("application/json")
                 .post(getJsonString(fileName, onParseException));
         if (response.getStatus() == 200) {
             Path targFile = TMP_OUTPUT_DIR.resolve(fileName + ".json");

@@ -19,9 +19,10 @@ package org.apache.tika.server.client;
 public class TikaEmitterResult {
 
 
-    private STATUS status;
-    private String msg;//used for exceptions. will be null for status ok
-    private long timeElapsed;
+    private final STATUS status;
+    private final String msg;//used for exceptions. will be null for status ok
+    private final long timeElapsed;
+
     public TikaEmitterResult(STATUS status, long timeElapsed, String msg) {
         this.status = status;
         this.timeElapsed = timeElapsed;

@@ -17,11 +17,19 @@
 package org.apache.tika.pipes.fetcher.http;
 
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
@@ -32,13 +40,6 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
 
 /**
  * Based on Apache httpclient
@@ -52,9 +53,9 @@ public class HttpFetcher extends AbstractFetcher implements Initializable {
     public HttpFetcher() throws TikaConfigException {
         httpClientFactory = new HttpClientFactory();
     }
+
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata)
-            throws IOException, TikaException {
+    public InputStream fetch(String fetchKey, Metadata metadata) throws IOException, TikaException {
         HttpGet get = new HttpGet(fetchKey);
         return get(get);
     }
@@ -62,7 +63,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable {
     public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata)
             throws IOException, TikaException {
         HttpGet get = new HttpGet(fetchKey);
-        get.setHeader("Range", "bytes="+startRange+"-"+endRange);
+        get.setHeader("Range", "bytes=" + startRange + "-" + endRange);
         return get(get);
     }
 
@@ -70,21 +71,18 @@ public class HttpFetcher extends AbstractFetcher implements Initializable {
         HttpResponse response = httpClient.execute(get);
         int code = response.getStatusLine().getStatusCode();
         if (code < 200 || code > 299) {
-            throw new IOException("bad status code: "+
-                    code
-                    + " :: " +
+            throw new IOException("bad status code: " + code + " :: " +
                     responseToString(response.getEntity().getContent()));
         }
 
         //spool to local
         long start = System.currentTimeMillis();
-        TikaInputStream tis = TikaInputStream.get(
-                response.getEntity().getContent());
+        TikaInputStream tis = TikaInputStream.get(response.getEntity().getContent());
         tis.getPath();
         if (response instanceof CloseableHttpResponse) {
             ((CloseableHttpResponse) response).close();
         }
-        long elapsed = System.currentTimeMillis()-start;
+        long elapsed = System.currentTimeMillis() - start;
         LOG.debug("took {} ms to copy to local tmp file", elapsed);
         return tis;
     }
@@ -149,7 +147,8 @@ public class HttpFetcher extends AbstractFetcher implements Initializable {
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler)
+            throws TikaConfigException {
 
     }
 }

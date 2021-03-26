@@ -16,6 +16,27 @@
  */
 package org.apache.tika.client;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.HashSet;
+import java.util.Set;
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
+import javax.net.ssl.SSLContext;
+
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
 import org.apache.http.HeaderElementIterator;
@@ -52,35 +73,15 @@ import org.apache.http.message.BasicHeaderElementIterator;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLContexts;
-import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.spec.SecretKeySpec;
-import javax.net.ssl.SSLContext;
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.HashSet;
-import java.util.Set;
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * This holds quite a bit of state and is not thread safe.  Beware!
- *
+ * <p>
  * Also, we're currently ignoring the SSL checks.  Please open a ticket/PR
  * if you need robust SSL.
  */
@@ -104,7 +105,7 @@ public class HttpClientFactory {
     private String password;
     private String ntDomain;//if using nt credentials
     private String authScheme = "basic"; //ntlm or basic
-    private boolean credentialsAESEncrypted = false;
+    private final boolean credentialsAESEncrypted = false;
 
 
     public HttpClientFactory() throws TikaConfigException {
@@ -116,6 +117,7 @@ public class HttpClientFactory {
             aes = new AES();
         }
     }
+
     public String getProxyHost() {
         return proxyHost;
     }
@@ -218,6 +220,7 @@ public class HttpClientFactory {
 
     /**
      * only basic and ntlm are supported
+     *
      * @param authScheme
      */
     public void setAuthScheme(String authScheme) {
@@ -230,19 +233,18 @@ public class HttpClientFactory {
         TrustStrategy acceptingTrustStrategy = (cert, authType) -> true;
         SSLContext sslContext = null;
         try {
-            sslContext = SSLContexts.custom().loadTrustMaterial(null,
-                    acceptingTrustStrategy).build();
+            sslContext =
+                    SSLContexts.custom().loadTrustMaterial(
+                            null, acceptingTrustStrategy).build();
         } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
             throw new TikaConfigException("", e);
         }
-        SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(sslContext,
-                NoopHostnameVerifier.INSTANCE);
+        SSLConnectionSocketFactory sslsf =
+                new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
 
         Registry<ConnectionSocketFactory> socketFactoryRegistry =
-                RegistryBuilder.<ConnectionSocketFactory>create()
-                        .register("https", sslsf)
-                        .register("http", new PlainConnectionSocketFactory())
-                        .build();
+                RegistryBuilder.<ConnectionSocketFactory>create().register("https", sslsf)
+                        .register("http", new PlainConnectionSocketFactory()).build();
 
         PoolingHttpClientConnectionManager manager =
                 new PoolingHttpClientConnectionManager(socketFactoryRegistry);
@@ -253,19 +255,13 @@ public class HttpClientFactory {
         addCredentialsProvider(builder);
         addProxy(builder);
         return builder.setConnectionManager(manager)
-                .setRedirectStrategy(
-                        new CustomRedirectStrategy(allowedHostsForRedirect))
-                .setDefaultRequestConfig(RequestConfig.custom()
-                        .setTargetPreferredAuthSchemes(Arrays.asList(AuthSchemes.BASIC,
-                                AuthSchemes.NTLM))
-                        .setConnectionRequestTimeout((int) requestTimeout)
-                        .setConnectionRequestTimeout(connectTimeout)
-                        .setSocketTimeout(socketTimeout)
-                        .build()
-                )
-                .setKeepAliveStrategy(getKeepAliveStrategy())
-                .setSSLSocketFactory(sslsf)
-                .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
+                .setRedirectStrategy(new CustomRedirectStrategy(allowedHostsForRedirect))
+                .setDefaultRequestConfig(RequestConfig.custom().setTargetPreferredAuthSchemes(
+                        Arrays.asList(AuthSchemes.BASIC, AuthSchemes.NTLM))
+                        .setConnectionRequestTimeout(requestTimeout)
+                        .setConnectionRequestTimeout(connectTimeout).setSocketTimeout(socketTimeout)
+                        .build()).setKeepAliveStrategy(getKeepAliveStrategy())
+                .setSSLSocketFactory(sslsf).setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
                 .build();
     }
 
@@ -285,33 +281,32 @@ public class HttpClientFactory {
 
         if ((StringUtils.isBlank(userName) && StringUtils.isBlank(password)) ||
                 (StringUtils.isBlank(password) && StringUtils.isBlank(userName))) {
-            throw new IllegalArgumentException("can't have one of 'username', " +
-                    "'password' null and the other not");
+            throw new IllegalArgumentException(
+                    "can't have one of 'username', " + "'password' null and the other not");
         }
 
         String finalUserName = decrypt(userName);
         String finalPassword = decrypt(password);
         String finalDomain = decrypt(ntDomain);
-            CredentialsProvider provider = new BasicCredentialsProvider();
-            Credentials credentials = null;
-            Registry<AuthSchemeProvider> authSchemeRegistry = null;
-            if (authScheme.equals("basic")) {
-                credentials = new UsernamePasswordCredentials(finalUserName, finalPassword);
-                authSchemeRegistry = RegistryBuilder
-                        .<AuthSchemeProvider>create()
-                        .register("basic", new BasicSchemeFactory())
-                        .build();
-            } else if (authScheme.equals("ntlm")) {
-                if (StringUtils.isBlank(ntDomain)) {
-                    throw new IllegalArgumentException("must specify 'ntDomain'");
-                }
-                credentials = new NTCredentials(finalUserName, finalPassword, null, finalDomain);
-                authSchemeRegistry = RegistryBuilder.<AuthSchemeProvider>create()
-                        .register("ntlm", new NTLMSchemeFactory()).build();
+        CredentialsProvider provider = new BasicCredentialsProvider();
+        Credentials credentials = null;
+        Registry<AuthSchemeProvider> authSchemeRegistry = null;
+        if (authScheme.equals("basic")) {
+            credentials = new UsernamePasswordCredentials(finalUserName, finalPassword);
+            authSchemeRegistry = RegistryBuilder.<AuthSchemeProvider>create()
+                    .register("basic", new BasicSchemeFactory()).build();
+        } else if (authScheme.equals("ntlm")) {
+            if (StringUtils.isBlank(ntDomain)) {
+                throw new IllegalArgumentException("must specify 'ntDomain'");
             }
-            provider.setCredentials(AuthScope.ANY, credentials);
-            builder.setDefaultCredentialsProvider(provider);
-            builder.setDefaultAuthSchemeRegistry(authSchemeRegistry);
+            credentials = new NTCredentials(finalUserName, finalPassword,
+                    null, finalDomain);
+            authSchemeRegistry = RegistryBuilder.<AuthSchemeProvider>create()
+                    .register("ntlm", new NTLMSchemeFactory()).build();
+        }
+        provider.setCredentials(AuthScope.ANY, credentials);
+        builder.setDefaultCredentialsProvider(provider);
+        builder.setDefaultAuthSchemeRegistry(authSchemeRegistry);
 
     }
 
@@ -350,7 +345,7 @@ public class HttpClientFactory {
     private static class CustomRedirectStrategy extends LaxRedirectStrategy {
 
         private static final Logger LOG = LoggerFactory.getLogger(CustomRedirectStrategy.class);
-        private Set<String> allowedHosts;
+        private final Set<String> allowedHosts;
 
         public CustomRedirectStrategy(Set<String> allowedHosts) {
             this.allowedHosts = allowedHosts;
@@ -373,7 +368,9 @@ public class HttpClientFactory {
         }
 
         @Override
-        public boolean isRedirected(HttpRequest request, HttpResponse response, HttpContext context) throws ProtocolException {
+        public boolean isRedirected(HttpRequest request, HttpResponse response,
+                                    HttpContext context)
+                throws ProtocolException {
             boolean isRedirectedSuper = super.isRedirected(request, response, context);
             if (isRedirectedSuper) {
                 Header locationHeader = response.getFirstHeader("Location");
@@ -422,9 +419,10 @@ public class HttpClientFactory {
             try {
                 Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
                 cipher.init(Cipher.ENCRYPT_MODE, secretKey);
-                return Base64.getEncoder()
-                        .encodeToString(cipher.doFinal(strToEncrypt.getBytes(StandardCharsets.UTF_8)));
-            } catch (NoSuchAlgorithmException|InvalidKeyException|NoSuchPaddingException|BadPaddingException|IllegalBlockSizeException e) {
+                return Base64.getEncoder().encodeToString(
+                        cipher.doFinal(strToEncrypt.getBytes(StandardCharsets.UTF_8)));
+            } catch (NoSuchAlgorithmException | InvalidKeyException |
+                    NoSuchPaddingException | BadPaddingException | IllegalBlockSizeException e) {
                 throw new TikaConfigException("bad encryption info", e);
             }
         }
@@ -435,11 +433,8 @@ public class HttpClientFactory {
                 cipher.init(Cipher.DECRYPT_MODE, secretKey);
                 return new String(cipher.doFinal(Base64.getDecoder().decode(strToDecrypt)),
                         StandardCharsets.UTF_8);
-            } catch (NoSuchAlgorithmException|
-                    InvalidKeyException|
-                    NoSuchPaddingException|
-                    BadPaddingException|
-                    IllegalBlockSizeException e) {
+            } catch (NoSuchAlgorithmException | InvalidKeyException |
+                    NoSuchPaddingException | BadPaddingException | IllegalBlockSizeException e) {
                 throw new TikaConfigException("bad encryption info", e);
             }
         }

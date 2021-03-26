@@ -138,7 +138,7 @@ public class AsyncResource {
     private Map<String, Object> throttle(List<FetchEmitTuple> notAdded, int added) {
         List<String> fetchKeys = new ArrayList<>();
         for (FetchEmitTuple t : notAdded) {
-            fetchKeys.add(t.getFetchKey().getKey());
+            fetchKeys.add(t.getFetchKey().getFetchKey());
         }
         Map<String, Object> map = new HashMap<>();
         map.put("status", "throttled");
