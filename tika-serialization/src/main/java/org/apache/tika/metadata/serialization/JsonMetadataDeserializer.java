@@ -14,31 +14,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.async;
+package org.apache.tika.metadata.serialization;
 
-import java.io.ByteArrayInputStream;
+import static org.apache.tika.metadata.serialization.JsonMetadata.readMetadataObject;
+
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 
-import org.apache.tika.exception.TikaException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationContext;
+
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.pipes.fetcher.Fetcher;
 
-public class MockFetcher implements Fetcher {
+public class JsonMetadataDeserializer extends StdDeserializer<Metadata> {
 
-    private static final byte[] BYTES = ("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
-            "<metadata action=\"add\" name=\"dc:creator\">Nikolai Lobachevsky</metadata>" +
-            "<write element=\"p\">main_content</write>" + "</mock>")
-            .getBytes(StandardCharsets.UTF_8);
-
-    @Override
-    public String getName() {
-        return "mock";
+    public JsonMetadataDeserializer() {
+        super(Metadata.class);
     }
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata) throws TikaException, IOException {
-        return new ByteArrayInputStream(BYTES);
+    public Metadata deserialize(JsonParser jsonParser,
+                                DeserializationContext deserializationContext)
+            throws IOException, JsonProcessingException {
+        return readMetadataObject(jsonParser);
     }
 }

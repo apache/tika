@@ -16,6 +16,12 @@
  */
 package org.apache.tika.pipes.fetchiterator.s3;
 
+import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.TimeoutException;
+
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
@@ -24,6 +30,9 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.iterable.S3Objects;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -34,14 +43,6 @@ import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
 import org.apache.tika.pipes.fetchiterator.FetchIterator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.TimeoutException;
-
-import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
 
 public class S3FetchIterator extends FetchIterator implements Initializable {
 
@@ -76,8 +77,9 @@ public class S3FetchIterator extends FetchIterator implements Initializable {
 
     @Field
     public void setCredentialsProvider(String credentialsProvider) {
-        if (! credentialsProvider.equals("profile") && ! credentialsProvider.equals("instance")) {
-            throw new IllegalArgumentException("credentialsProvider must be either 'profile' or instance'");
+        if (!credentialsProvider.equals("profile") && !credentialsProvider.equals("instance")) {
+            throw new IllegalArgumentException(
+                    "credentialsProvider must be either 'profile' or instance'");
         }
         this.credentialsProvider = credentialsProvider;
     }
@@ -85,6 +87,7 @@ public class S3FetchIterator extends FetchIterator implements Initializable {
     /**
      * This initializes the s3 client. Note, we wrap S3's RuntimeExceptions,
      * e.g. AmazonClientException in a TikaConfigException.
+     *
      * @param params params to use for initialization
      * @throws TikaConfigException
      */
@@ -94,7 +97,7 @@ public class S3FetchIterator extends FetchIterator implements Initializable {
         AWSCredentialsProvider provider = null;
         if ("instance".equals(credentialsProvider)) {
             provider = InstanceProfileCredentialsProvider.getInstance();
-        } else if ("profile".equals(credentialsProvider)){
+        } else if ("profile".equals(credentialsProvider)) {
             provider = new ProfileCredentialsProvider(profile);
         } else {
             throw new TikaConfigException("credentialsProvider must be set and " +
@@ -102,9 +105,7 @@ public class S3FetchIterator extends FetchIterator implements Initializable {
         }
 
         try {
-            s3Client = AmazonS3ClientBuilder.standard()
-                    .withRegion(region)
-                    .withCredentials(provider)
+            s3Client = AmazonS3ClientBuilder.standard().withRegion(region).withCredentials(provider)
                     .build();
         } catch (AmazonClientException e) {
             throw new TikaConfigException("can't initialize s3 fetchiterator");
@@ -128,12 +129,10 @@ public class S3FetchIterator extends FetchIterator implements Initializable {
         for (S3ObjectSummary summary : S3Objects.withPrefix(s3Client, bucket, prefix)) {
 
             long elapsed = System.currentTimeMillis() - start;
-            LOGGER.debug("adding ({}) {} in {} ms", count, summary.getKey(),
-                    elapsed);
-            tryToAdd(new FetchEmitTuple(
-                    new FetchKey(fetcherName, summary.getKey()),
-                    new EmitKey(emitterName, summary.getKey()),
-                    new Metadata(), getOnParseException()));
+            LOGGER.debug("adding ({}) {} in {} ms", count, summary.getKey(), elapsed);
+            tryToAdd(new FetchEmitTuple(new FetchKey(fetcherName, summary.getKey()),
+                    new EmitKey(emitterName, summary.getKey()), new Metadata(),
+                    getOnParseException()));
             count++;
         }
         long elapsed = System.currentTimeMillis() - start;

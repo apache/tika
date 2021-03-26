@@ -61,7 +61,7 @@ public class FileSystemFetchIteratorTest {
 
         Set<String> iteratorSet = new HashSet<>();
         for (FetchEmitTuple p : it) {
-            iteratorSet.add(p.getFetchKey().getKey());
+            iteratorSet.add(p.getFetchKey().getFetchKey());
         }
 
         assertEquals(truthSet, iteratorSet);

@@ -71,7 +71,7 @@ public class EmitterResource {
         //TODO: clean this up?
         EmitKey emitKey = t.getEmitKey();
         if (StringUtils.isBlank(emitKey.getEmitKey())) {
-            emitKey = new EmitKey(emitKey.getEmitterName(), t.getFetchKey().getKey());
+            emitKey = new EmitKey(emitKey.getEmitterName(), t.getFetchKey().getFetchKey());
         }
         return emitKey;
     }
@@ -171,7 +171,7 @@ public class EmitterResource {
         List<Metadata> metadataList = null;
         try (InputStream stream = TikaResource.getConfig().getFetcherManager()
                 .getFetcher(t.getFetchKey().getFetcherName())
-                .fetch(t.getFetchKey().getKey(), metadata)) {
+                .fetch(t.getFetchKey().getFetchKey(), metadata)) {
 
             metadataList = RecursiveMetadataResource
                     .parseMetadata(stream, metadata, httpHeaders.getRequestHeaders(), info, "text");
@@ -213,7 +213,7 @@ public class EmitterResource {
                 shouldEmit = false;
             }
             LOG.warn("fetchKey ({}) caught container parse exception ({})",
-                    t.getFetchKey().getKey(), stack);
+                    t.getFetchKey().getFetchKey(), stack);
         }
 
         for (int i = 1; i < metadataList.size(); i++) {
@@ -221,7 +221,7 @@ public class EmitterResource {
             String embeddedStack = m.get(TikaCoreProperties.EMBEDDED_EXCEPTION);
             if (embeddedStack != null) {
                 LOG.warn("fetchKey ({}) caught embedded parse exception ({})",
-                        t.getFetchKey().getKey(), embeddedStack);
+                        t.getFetchKey().getFetchKey(), embeddedStack);
             }
         }
 

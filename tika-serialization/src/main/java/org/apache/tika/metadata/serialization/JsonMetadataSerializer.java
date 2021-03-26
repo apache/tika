@@ -14,11 +14,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.async;
+package org.apache.tika.metadata.serialization;
 
-public interface AsyncEmitHook {
+import static org.apache.tika.metadata.serialization.JsonMetadata.writeMetadataObject;
 
-    void onSuccess(AsyncTask task);
+import java.io.IOException;
 
-    void onFail(AsyncTask task);
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+
+import org.apache.tika.metadata.Metadata;
+
+public class JsonMetadataSerializer extends StdSerializer<Metadata> {
+
+    public JsonMetadataSerializer() {
+        super(Metadata.class);
+    }
+
+    @Override
+    public void serialize(Metadata metadata,
+                          JsonGenerator jsonGenerator,
+                          SerializerProvider serializerProvider) throws IOException {
+        writeMetadataObject(metadata, jsonGenerator, false);
+    }
 }

@@ -26,18 +26,12 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 
-public class JsonMetadata extends StdSerializer<Metadata> {
+public class JsonMetadata {
 
     static volatile boolean PRETTY_PRINT = false;
-
-    public JsonMetadata() {
-        super(Metadata.class);
-    }
 
     /**
      * Serializes a Metadata object to Json.  This does not flush or close the writer.
@@ -146,10 +140,4 @@ public class JsonMetadata extends StdSerializer<Metadata> {
         PRETTY_PRINT = prettyPrint;
     }
 
-    @Override
-    public void serialize(Metadata metadata,
-                          JsonGenerator jsonGenerator,
-                          SerializerProvider serializerProvider) throws IOException {
-        writeMetadataObject(metadata, jsonGenerator, false);
-    }
 }

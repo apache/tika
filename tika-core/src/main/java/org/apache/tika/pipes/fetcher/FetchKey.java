@@ -38,7 +38,7 @@ public class FetchKey {
         return fetcherName;
     }
 
-    public String getKey() {
+    public String getFetchKey() {
         return fetchKey;
     }
 

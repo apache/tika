@@ -14,10 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
-import org.apache.tika.pipes.fetchiterator.FetchIterator;
-import org.apache.tika.pipes.fetchiterator.csv.CSVFetchIterator;
-import org.junit.Test;
+
+import static org.apache.tika.pipes.fetchiterator.FetchIterator.COMPLETED_SEMAPHORE;
+import static org.junit.Assert.assertEquals;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -25,15 +24,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static org.apache.tika.pipes.fetchiterator.FetchIterator.COMPLETED_SEMAPHORE;
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+
+import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
+import org.apache.tika.pipes.fetchiterator.csv.CSVFetchIterator;
 
 public class TestCSVFetchIterator {
 
@@ -76,10 +76,8 @@ public class TestCSVFetchIterator {
         for (MockFetcher f : fetchers) {
             for (FetchEmitTuple t : f.pairs) {
                 String id = t.getMetadata().get("id");
-                assertEquals("path/to/my/file"+id,
-                        t.getFetchKey().getKey());
-                assertEquals("project"+
-                                (Integer.parseInt(id) % 2 == 1 ? "a" : "b"),
+                assertEquals("path/to/my/file" + id, t.getFetchKey().getFetchKey());
+                assertEquals("project" + (Integer.parseInt(id) % 2 == 1 ? "a" : "b"),
                         t.getMetadata().get("project"));
             }
         }
@@ -98,12 +96,13 @@ public class TestCSVFetchIterator {
     }
 
     private Path get(String testFileName) throws Exception {
-        return Paths.get(TestCSVFetchIterator.class.getResource("/"+testFileName).toURI());
+        return Paths.get(TestCSVFetchIterator.class.getResource("/" + testFileName).toURI());
     }
 
     private static class MockFetcher implements Callable<Integer> {
         private final ArrayBlockingQueue<FetchEmitTuple> queue;
         private final List<FetchEmitTuple> pairs = new ArrayList<>();
+
         private MockFetcher(ArrayBlockingQueue<FetchEmitTuple> queue) {
             this.queue = queue;
         }

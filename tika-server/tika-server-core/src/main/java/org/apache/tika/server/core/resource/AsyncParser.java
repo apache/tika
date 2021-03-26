@@ -64,7 +64,7 @@ public class AsyncParser implements Callable<Integer> {
                     if (!offered) {
                         //TODO: deal with this
                         LOG.warn("Failed to add ({}) " + "to emit queue after 10 minutes.",
-                                request.getFetchKey().getKey());
+                                request.getFetchKey().getFetchKey());
                     }
                 }
             } else {
@@ -76,14 +76,14 @@ public class AsyncParser implements Callable<Integer> {
     private boolean checkForParseException(FetchEmitTuple request, EmitData emitData) {
         if (emitData == null || emitData.getMetadataList() == null ||
                 emitData.getMetadataList().size() == 0) {
-            LOG.warn("empty or null emit data ({})", request.getFetchKey().getKey());
+            LOG.warn("empty or null emit data ({})", request.getFetchKey().getFetchKey());
             return false;
         }
         boolean shouldEmit = true;
         Metadata container = emitData.getMetadataList().get(0);
         String stack = container.get(TikaCoreProperties.CONTAINER_EXCEPTION);
         if (stack != null) {
-            LOG.warn("fetchKey ({}) container parse exception ({})", request.getFetchKey().getKey(),
+            LOG.warn("fetchKey ({}) container parse exception ({})", request.getFetchKey().getFetchKey(),
                     stack);
             if (request.getOnParseException() == FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP) {
                 shouldEmit = false;
@@ -95,7 +95,7 @@ public class AsyncParser implements Callable<Integer> {
             String embeddedStack = m.get(TikaCoreProperties.EMBEDDED_EXCEPTION);
             if (embeddedStack != null) {
                 LOG.warn("fetchKey ({}) embedded parse exception ({})",
-                        request.getFetchKey().getKey(), embeddedStack);
+                        request.getFetchKey().getFetchKey(), embeddedStack);
             }
         }
         return shouldEmit;
@@ -105,7 +105,7 @@ public class AsyncParser implements Callable<Integer> {
         Metadata userMetadata = t.getMetadata();
         Metadata metadata = new Metadata();
         String fetcherName = t.getFetchKey().getFetcherName();
-        String fetchKey = t.getFetchKey().getKey();
+        String fetchKey = t.getFetchKey().getFetchKey();
         List<Metadata> metadataList = null;
         try (InputStream stream = TikaResource.getConfig().getFetcherManager()
                 .getFetcher(fetcherName).fetch(fetchKey, metadata)) {
