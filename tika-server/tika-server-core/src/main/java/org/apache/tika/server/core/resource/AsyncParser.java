@@ -83,7 +83,8 @@ public class AsyncParser implements Callable<Integer> {
         Metadata container = emitData.getMetadataList().get(0);
         String stack = container.get(TikaCoreProperties.CONTAINER_EXCEPTION);
         if (stack != null) {
-            LOG.warn("fetchKey ({}) container parse exception ({})", request.getFetchKey().getFetchKey(),
+            LOG.warn("fetchKey ({}) container parse exception ({})",
+                    request.getFetchKey().getFetchKey(),
                     stack);
             if (request.getOnParseException() == FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP) {
                 shouldEmit = false;
