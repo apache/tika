@@ -21,8 +21,13 @@ package org.apache.tika.pipes.fetcher;
  * to send to that fetcher to retrieve a specific file.
  */
 public class FetchKey {
-    private final String fetcherName;
-    private final String fetchKey;
+    private String fetcherName;
+    private String fetchKey;
+
+    //this is for serialization...yuck
+    public FetchKey(){
+
+    }
 
     public FetchKey(String fetcherName, String fetchKey) {
         this.fetcherName = fetcherName;
@@ -33,7 +38,7 @@ public class FetchKey {
         return fetcherName;
     }
 
-    public String getKey() {
+    public String getFetchKey() {
         return fetchKey;
     }
 

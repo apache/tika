@@ -169,7 +169,6 @@ public class TesseractOCRParserTest extends TikaTest {
     @Test
     public void testSingleImage() throws Exception {
         Assume.assumeTrue("can run OCR", canRun());
-
         String xml = getXML("testOCR.jpg").xml;
         assertContains("OCR Testing", xml);
         //test metadata extraction
@@ -182,6 +181,8 @@ public class TesseractOCRParserTest extends TikaTest {
         assertContainsCount("<body", xml, 1);
         assertContainsCount("</body", xml, 1);
         assertContainsCount("</html", xml, 1);
+
+        assertNotContained("<meta name=\"Content-Type\" content=\"image/ocr-jpeg\" />", xml);
     }
 
 

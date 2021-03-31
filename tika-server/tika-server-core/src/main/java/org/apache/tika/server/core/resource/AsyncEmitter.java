@@ -46,9 +46,12 @@ public class AsyncEmitter implements Callable<Integer> {
 
     //TODO -- need to configure these
     private final long emitWithinMs = 1000;
-    private final ArrayBlockingQueue<EmitData> emitDataQueue;
-    Instant lastEmitted = Instant.now();
+
     private long maxEstimatedBytes = 10_000_000;
+
+    private final ArrayBlockingQueue<EmitData> emitDataQueue;
+
+    Instant lastEmitted = Instant.now();
 
     public AsyncEmitter(ArrayBlockingQueue<EmitData> emitData) {
         this.emitDataQueue = emitData;
@@ -94,7 +97,7 @@ public class AsyncEmitter implements Callable<Integer> {
         void add(EmitData data) {
             size++;
             long sz = AbstractEmitter
-                    .estimateSizeInBytes(data.getEmitKey().getKey(), data.getMetadataList());
+                    .estimateSizeInBytes(data.getEmitKey().getEmitKey(), data.getMetadataList());
             if (estimatedSize + sz > maxBytes) {
                 LOG.debug("estimated size ({}) > maxBytes({}), going to emitAll",
                         (estimatedSize + sz), maxBytes);
@@ -113,8 +116,8 @@ public class AsyncEmitter implements Callable<Integer> {
             int emitted = 0;
             LOG.debug("about to emit {}", size);
             for (Map.Entry<String, List<EmitData>> e : map.entrySet()) {
-                Emitter emitter =
-                        TikaResource.getConfig().getEmitterManager().getEmitter(e.getKey());
+                Emitter emitter = TikaResource.getConfig()
+                        .getEmitterManager().getEmitter(e.getKey());
                 tryToEmit(emitter, e.getValue());
                 emitted += e.getValue().size();
             }

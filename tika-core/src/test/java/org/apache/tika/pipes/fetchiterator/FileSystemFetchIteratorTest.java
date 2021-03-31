@@ -25,11 +25,6 @@ import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -60,24 +55,13 @@ public class FileSystemFetchIteratorTest {
         }
 
         String fetcherName = "fs";
-        ExecutorService es = Executors.newFixedThreadPool(1);
-        ExecutorCompletionService<Integer> cs = new ExecutorCompletionService<>(es);
-        FetchIterator it = new FileSystemFetchIterator(fetcherName, root);
-        it.setQueueSize(20000);
-        ArrayBlockingQueue<FetchEmitTuple> q = it.init(1);
-
-        cs.submit(it);
-
-
-        Future<Integer> f = cs.take();
-        f.get();
+        FetchIterator it = new FileSystemFetchIterator(root);
+        it.setFetcherName(fetcherName);
+        it.setQueueSize(2);
 
         Set<String> iteratorSet = new HashSet<>();
-        for (FetchEmitTuple p : q) {
-            if (p == FetchIterator.COMPLETED_SEMAPHORE) {
-                break;
-            }
-            iteratorSet.add(p.getFetchKey().getKey());
+        for (FetchEmitTuple p : it) {
+            iteratorSet.add(p.getFetchKey().getFetchKey());
         }
 
         assertEquals(truthSet, iteratorSet);
