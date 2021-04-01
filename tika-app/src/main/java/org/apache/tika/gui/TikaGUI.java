@@ -340,9 +340,6 @@ public class TikaGUI extends JFrame
 
         context.set(DocumentSelector.class, new ImageDocumentSelector());
 
-        input = TikaInputStream.get(new ProgressMonitorInputStream(
-                this, "Parsing stream", input));
-
         if (input.markSupported()) {
             int mark = -1;
             if (input instanceof TikaInputStream) {

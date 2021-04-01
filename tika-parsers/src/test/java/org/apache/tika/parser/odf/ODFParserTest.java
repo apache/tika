@@ -21,10 +21,20 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -39,6 +49,9 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.opendocument.OpenOfficeParser;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BodyContentHandler;
+
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
@@ -618,9 +631,64 @@ public class ODFParserTest extends TikaTest {
 
     }
 
+    @Test(expected = EncryptedDocumentException.class)
+    public void testEncryptedODTFile() throws Exception {
+        Path p =
+                Paths.get(
+                        ODFParserTest.class.getResource(
+                                "/test-documents/testODTEncrypted.odt").toURI());
+        getRecursiveMetadata(p, false);
+    }
+
+    //this, of course, should throw an EncryptedDocumentException
+    //but the file can't be read by Java's ZipInputStream or
+    //by commons compress, unless you enable descriptors.
+    //https://issues.apache.org/jira/browse/ODFTOOLKIT-402
+    @Test(expected = TikaException.class)
+    public void testEncryptedODTStream() throws Exception {
+        try (InputStream is = ODFParserTest.class.getResourceAsStream(
+                                "/test-documents/testODTEncrypted.odt")) {
+            getRecursiveMetadata(is, false);
+        }
+    }
+
     private ParseContext getNonRecursingParseContext() {
         ParseContext parseContext = new ParseContext();
         parseContext.set(Parser.class, new EmptyParser());
         return parseContext;
+    }
+
+    @Test
+    public void testMultiThreaded() throws Exception {
+        int numThreads = 10;
+        ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
+        ExecutorCompletionService<Integer> executorCompletionService =
+                new ExecutorCompletionService<>(executorService);
+
+        for (int i = 0; i < numThreads; i++) {
+            executorCompletionService.submit(new Callable<Integer>() {
+                @Override
+                public Integer call() throws Exception {
+                    for (int i = 0; i < 10; i++) {
+                        List<Metadata> metadataList = getRecursiveMetadata("testODTEmbedded.odt");
+                        assertEquals(3, metadataList.size());
+                        assertEquals("THUMBNAIL",
+                                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+                    }
+                    return 1;
+                }
+            });
+        }
+
+        try {
+            int finished = 0;
+            while (finished < numThreads) {
+                Future<Integer> future = executorCompletionService.take();
+                future.get();
+                finished++;
+            }
+        } finally {
+            executorService.shutdownNow();
+        }
     }
 }
