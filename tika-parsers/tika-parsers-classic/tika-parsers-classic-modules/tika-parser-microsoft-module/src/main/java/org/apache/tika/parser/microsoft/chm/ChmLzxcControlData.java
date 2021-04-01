@@ -16,12 +16,11 @@
  */
 package org.apache.tika.parser.microsoft.chm;
 
-import org.apache.tika.exception.TikaException;
-
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import org.apache.tika.exception.TikaException;
+
 /**
- * 
  * ::DataSpace/Storage/<SectionName>/ControlData This file contains $20 bytes of
  * information on the compression. The information is partially known: 0000:
  * DWORD 6 (unknown) 0004: ASCII 'LZXC' Compression type identifier 0008: DWORD
@@ -47,15 +46,21 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
 
     public ChmLzxcControlData() {
         signature = ChmConstants.LZXC.getBytes(UTF_8); /*
-                                                        * 4
-                                                        * (LZXC
-                                                        * )
-                                                        */
+         * 4
+         * (LZXC
+         * )
+         */
+    }
+
+    /**
+     * @param args
+     */
+    public static void main(String[] args) {
     }
 
     /**
      * Returns a remained data
-     * 
+     *
      * @return dataRemained
      */
     private int getDataRemained() {
@@ -64,7 +69,7 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
 
     /**
      * Sets a remained data
-     * 
+     *
      * @param dataRemained
      */
     private void setDataRemained(int dataRemained) {
@@ -73,7 +78,7 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
 
     /**
      * Returns a place holder
-     * 
+     *
      * @return current_place
      */
     private int getCurrentPlace() {
@@ -82,7 +87,7 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
 
     /**
      * Sets a place holder
-     * 
+     *
      * @param currentPlace
      */
     private void setCurrentPlace(int currentPlace) {
@@ -91,7 +96,7 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
 
     /**
      * Returns a size of control data
-     * 
+     *
      * @return size
      */
     public long getSize() {
@@ -100,7 +105,7 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
 
     /**
      * Sets a size of control data
-     * 
+     *
      * @param size
      */
     protected void setSize(long size) {
@@ -109,7 +114,7 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
 
     /**
      * Returns a signature of control data block
-     * 
+     *
      * @return signature
      */
     public byte[] getSignature() {
@@ -118,7 +123,7 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
 
     /**
      * Sets a signature of control data block
-     * 
+     *
      * @param signature
      */
     protected void setSignature(byte[] signature) {
@@ -127,7 +132,7 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
 
     /**
      * Returns a version of control data block
-     * 
+     *
      * @return version
      */
     public long getVersion() {
@@ -136,7 +141,7 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
 
     /**
      * Sets version of control data block
-     * 
+     *
      * @param version
      */
     protected void setVersion(long version) {
@@ -145,7 +150,7 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
 
     /**
      * Returns reset interval
-     * 
+     *
      * @return reset_interval
      */
     public long getResetInterval() {
@@ -154,7 +159,7 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
 
     /**
      * Sets a reset interval
-     * 
+     *
      * @param resetInterval
      */
     protected void setResetInterval(long resetInterval) {
@@ -163,7 +168,7 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
 
     /**
      * Returns a window size
-     * 
+     *
      * @return window_size
      */
     public long getWindowSize() {
@@ -172,7 +177,7 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
 
     /**
      * Sets a window size
-     * 
+     *
      * @param windowSize
      */
     protected void setWindowSize(long windowSize) {
@@ -181,7 +186,7 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
 
     /**
      * Returns windows per reset
-     * 
+     *
      * @return
      */
     public long getWindowsPerReset() {
@@ -190,7 +195,7 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
 
     /**
      * Sets windows per reset
-     * 
+     *
      * @param windowsPerReset
      */
     protected void setWindowsPerReset(long windowsPerReset) {
@@ -199,7 +204,7 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
 
     /**
      * Returns unknown 18 bytes
-     * 
+     *
      * @return unknown_18
      */
     public long getUnknown_18() {
@@ -208,7 +213,7 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
 
     /**
      * Sets unknown 18 bytes
-     * 
+     *
      * @param unknown_18
      */
     protected void setUnknown_18(long unknown_18) {
@@ -217,20 +222,19 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
 
     private long unmarshalUInt32(byte[] data, long dest) throws ChmParsingException {
         assert (data != null && data.length > 0);
-        if (4 > getDataRemained())
+        if (4 > getDataRemained()) {
             throw new ChmParsingException("4 > dataLenght");
-        dest = data[this.getCurrentPlace()]
-                | data[this.getCurrentPlace() + 1] << 8
-                | data[this.getCurrentPlace() + 2] << 16
-                | data[this.getCurrentPlace() + 3] << 24;
+        }
+        dest = data[this.getCurrentPlace()] | data[this.getCurrentPlace() + 1] << 8 |
+                data[this.getCurrentPlace() + 2] << 16 | data[this.getCurrentPlace() + 3] << 24;
 
         setDataRemained(this.getDataRemained() - 4);
         this.setCurrentPlace(this.getCurrentPlace() + 4);
         return dest;
     }
 
-    private void unmarshalCharArray(byte[] data,
-            ChmLzxcControlData chmLzxcControlData, int count) throws TikaException {
+    private void unmarshalCharArray(byte[] data, ChmLzxcControlData chmLzxcControlData, int count)
+            throws TikaException {
         ChmAssert.assertByteArrayNotNull(data);
         ChmAssert.assertChmAccessorNotNull(chmLzxcControlData);
         ChmAssert.assertPositiveInt(count);
@@ -245,67 +249,56 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("size(unknown):=" + this.getSize() + ", ");
-        sb.append("signature(Compression type identifier):="
-                + new String(this.getSignature(), UTF_8) + ", ");
-        sb.append("version(Possibly numeric code for LZX):="
-                + this.getVersion() + System.getProperty("line.separator"));
-        sb.append("resetInterval(The Huffman reset interval):="
-                + this.getResetInterval() + ", ");
+        sb.append("signature(Compression type identifier):=" +
+                new String(this.getSignature(), UTF_8) + ", ");
+        sb.append("version(Possibly numeric code for LZX):=" + this.getVersion() +
+                System.getProperty("line.separator"));
+        sb.append("resetInterval(The Huffman reset interval):=" + this.getResetInterval() + ", ");
         sb.append("windowSize:=" + this.getWindowSize() + ", ");
-        sb.append("windowsPerReset(unknown (sometimes 2, sometimes 1, sometimes 0):="
-                + this.getWindowsPerReset() + ", ");
-        sb.append("unknown_18:=" + this.getUnknown_18()
-                + System.getProperty("line.separator"));
+        sb.append("windowsPerReset(unknown (sometimes 2, sometimes 1, sometimes 0):=" +
+                this.getWindowsPerReset() + ", ");
+        sb.append("unknown_18:=" + this.getUnknown_18() + System.getProperty("line.separator"));
         return sb.toString();
     }
 
     // @Override
     public void parse(byte[] data, ChmLzxcControlData chmLzxcControlData) throws TikaException {
-        if (data == null || (data.length < ChmConstants.CHM_LZXC_MIN_LEN))
+        if (data == null || (data.length < ChmConstants.CHM_LZXC_MIN_LEN)) {
             throw new ChmParsingException("we want at least 0x18 bytes");
+        }
         chmLzxcControlData.setDataRemained(data.length);
         chmLzxcControlData.setSize(unmarshalUInt32(data, chmLzxcControlData.getSize()));
-        chmLzxcControlData.unmarshalCharArray(data, chmLzxcControlData,
-                ChmConstants.CHM_SIGNATURE_LEN);
-        chmLzxcControlData.setVersion(unmarshalUInt32(data,
-                chmLzxcControlData.getVersion()));
-        chmLzxcControlData.setResetInterval(unmarshalUInt32(data,
-                chmLzxcControlData.getResetInterval()));
-        chmLzxcControlData.setWindowSize(unmarshalUInt32(data,
-                chmLzxcControlData.getWindowSize()));
-        chmLzxcControlData.setWindowsPerReset(unmarshalUInt32(data,
-                chmLzxcControlData.getWindowsPerReset()));
+        chmLzxcControlData
+                .unmarshalCharArray(data, chmLzxcControlData, ChmConstants.CHM_SIGNATURE_LEN);
+        chmLzxcControlData.setVersion(unmarshalUInt32(data, chmLzxcControlData.getVersion()));
+        chmLzxcControlData
+                .setResetInterval(unmarshalUInt32(data, chmLzxcControlData.getResetInterval()));
+        chmLzxcControlData.setWindowSize(unmarshalUInt32(data, chmLzxcControlData.getWindowSize()));
+        chmLzxcControlData
+                .setWindowsPerReset(unmarshalUInt32(data, chmLzxcControlData.getWindowsPerReset()));
 
-        if (data.length >= ChmConstants.CHM_LZXC_V2_LEN)
-            chmLzxcControlData.setUnknown_18(unmarshalUInt32(data,
-                    chmLzxcControlData.getUnknown_18()));
-        else
+        if (data.length >= ChmConstants.CHM_LZXC_V2_LEN) {
+            chmLzxcControlData
+                    .setUnknown_18(unmarshalUInt32(data, chmLzxcControlData.getUnknown_18()));
+        } else {
             chmLzxcControlData.setUnknown_18(0);
-
-        if (chmLzxcControlData.getVersion() == 2) {
-            chmLzxcControlData.setWindowSize(getWindowSize()
-                    * ChmConstants.CHM_WINDOW_SIZE_BLOCK);
         }
 
-        if (chmLzxcControlData.getWindowSize() == 0
-                || chmLzxcControlData.getResetInterval() == 0)
-            throw new ChmParsingException(
-                    "window size / resetInterval should be more than zero");
+        if (chmLzxcControlData.getVersion() == 2) {
+            chmLzxcControlData.setWindowSize(getWindowSize() * ChmConstants.CHM_WINDOW_SIZE_BLOCK);
+        }
 
-        if (chmLzxcControlData.getWindowSize() == 1)
-            throw new ChmParsingException(
-                    "window size / resetInterval should be more than 1");
+        if (chmLzxcControlData.getWindowSize() == 0 || chmLzxcControlData.getResetInterval() == 0) {
+            throw new ChmParsingException("window size / resetInterval should be more than zero");
+        }
+
+        if (chmLzxcControlData.getWindowSize() == 1) {
+            throw new ChmParsingException("window size / resetInterval should be more than 1");
+        }
 
         /* checks a signature */
-        if (!new String(chmLzxcControlData.getSignature(), UTF_8)
-                .equals(ChmConstants.LZXC))
-            throw new ChmParsingException(
-                    "the signature does not seem to be correct");
-    }
-
-    /**
-     * @param args
-     */
-    public static void main(String[] args) {
+        if (!new String(chmLzxcControlData.getSignature(), UTF_8).equals(ChmConstants.LZXC)) {
+            throw new ChmParsingException("the signature does not seem to be correct");
+        }
     }
 }

@@ -16,15 +16,16 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+import java.util.List;
+
+import org.junit.Ignore;
+import org.junit.Test;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
-import org.junit.Ignore;
-import org.junit.Test;
-
-import java.util.List;
 
 public class OOXMLParserTest extends TikaTest {
 
@@ -51,7 +52,8 @@ public class OOXMLParserTest extends TikaTest {
         officeParserConfig.setUseSAXPptxExtractor(true);
         parseContext.set(OfficeParserConfig.class, officeParserConfig);
 
-        List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.pptx", parseContext);
+        List<Metadata> metadataList =
+                getRecursiveMetadata("testPPT_EmbeddedPDF.pptx", parseContext);
         Metadata pdfMetadata1 = metadataList.get(4);
         assertContains("Apache Tika", pdfMetadata1.get(TikaCoreProperties.TIKA_CONTENT));
         Metadata pdfMetadata2 = metadataList.get(5);

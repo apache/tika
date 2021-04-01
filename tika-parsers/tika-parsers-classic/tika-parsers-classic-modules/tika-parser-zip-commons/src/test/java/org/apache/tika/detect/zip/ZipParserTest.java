@@ -16,14 +16,15 @@
  */
 package org.apache.tika.detect.zip;
 
-import org.apache.tika.TikaTest;
-import org.apache.tika.metadata.HttpHeaders;
-import org.apache.tika.metadata.Metadata;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+
+import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.HttpHeaders;
+import org.apache.tika.metadata.Metadata;
 
 /**
  * Test case for parsing zip files.
@@ -34,7 +35,8 @@ public class ZipParserTest extends TikaTest {
     @Test
     public void testKMZDetection() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testKMZ.kmz");
-        assertEquals("application/vnd.google-earth.kmz", metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("application/vnd.google-earth.kmz",
+                metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
     }
 
     @Test

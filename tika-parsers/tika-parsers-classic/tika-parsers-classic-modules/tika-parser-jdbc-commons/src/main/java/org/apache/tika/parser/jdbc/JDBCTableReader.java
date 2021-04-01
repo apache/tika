@@ -1,4 +1,3 @@
-package org.apache.tika.parser.jdbc;
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -15,7 +14,7 @@ package org.apache.tika.parser.jdbc;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+package org.apache.tika.parser.jdbc;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -34,6 +33,11 @@ import java.util.List;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -44,10 +48,6 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
 
 /**
  * General base class to iterate through rows of a JDBC table
@@ -57,17 +57,20 @@ public class JDBCTableReader {
     private final static Attributes EMPTY_ATTRIBUTES = new AttributesImpl();
     private final Connection connection;
     private final String tableName;
+    private final EmbeddedDocumentUtil embeddedDocumentUtil;
     int maxClobLength = 1000000;
     ResultSet results = null;
     int rows = 0;
-    private final EmbeddedDocumentUtil embeddedDocumentUtil;
-    public JDBCTableReader(Connection connection, String tableName, EmbeddedDocumentUtil embeddedDocumentUtil) {
+
+    public JDBCTableReader(Connection connection, String tableName,
+                           EmbeddedDocumentUtil embeddedDocumentUtil) {
         this.connection = connection;
         this.tableName = tableName;
         this.embeddedDocumentUtil = embeddedDocumentUtil;
     }
 
-    public boolean nextRow(ContentHandler handler, ParseContext context) throws IOException, SAXException {
+    public boolean nextRow(ContentHandler handler, ParseContext context)
+            throws IOException, SAXException {
         //lazy initialization
         if (results == null) {
             reset();
@@ -95,7 +98,8 @@ public class JDBCTableReader {
         return true;
     }
 
-    private void handleCell(ResultSetMetaData rsmd, int i, ContentHandler handler, ParseContext context) throws SQLException, IOException, SAXException {
+    private void handleCell(ResultSetMetaData rsmd, int i, ContentHandler handler,
+                            ParseContext context) throws SQLException, IOException, SAXException {
         switch (rsmd.getColumnType(i)) {
             case Types.BLOB:
                 handleBlob(tableName, rsmd.getColumnName(i), rows, results, i, handler, context);
@@ -119,13 +123,13 @@ public class JDBCTableReader {
                 //this is necessary to handle rounding issues in presentation
                 //Should we just use getString(i)?
                 float f = results.getFloat(i);
-                if (! results.wasNull()) {
+                if (!results.wasNull()) {
                     addAllCharacters(Float.toString(f), handler);
                 }
                 break;
             case Types.DOUBLE:
                 double d = results.getDouble(i);
-                if (! results.wasNull()) {
+                if (!results.wasNull()) {
                     addAllCharacters(Double.toString(d), handler);
                 }
                 break;
@@ -155,24 +159,26 @@ public class JDBCTableReader {
         return headers;
     }
 
-    protected void handleInteger(ResultSet rs, int columnIndex, ContentHandler handler) throws SQLException, SAXException {
+    protected void handleInteger(ResultSet rs, int columnIndex, ContentHandler handler)
+            throws SQLException, SAXException {
         int i = rs.getInt(columnIndex);
-        if (! rs.wasNull()) {
+        if (!rs.wasNull()) {
             addAllCharacters(Integer.toString(i), handler);
         }
     }
 
-    private void handleBoolean(ResultSet rs, int columnIndex, ContentHandler handler) throws SAXException, SQLException {
+    private void handleBoolean(ResultSet rs, int columnIndex, ContentHandler handler)
+            throws SAXException, SQLException {
         boolean b = rs.getBoolean(columnIndex);
-        if (! rs.wasNull()) {
+        if (!rs.wasNull()) {
             addAllCharacters(Boolean.toString(b), handler);
         }
     }
 
 
-    protected void handleClob(String tableName, String columnName, int rowNum,
-                              ResultSet resultSet, int columnIndex,
-                              ContentHandler handler, ParseContext context) throws SQLException, IOException, SAXException {
+    protected void handleClob(String tableName, String columnName, int rowNum, ResultSet resultSet,
+                              int columnIndex, ContentHandler handler, ParseContext context)
+            throws SQLException, IOException, SAXException {
         Clob clob = resultSet.getClob(columnIndex);
         if (resultSet.wasNull()) {
             return;
@@ -197,12 +203,14 @@ public class JDBCTableReader {
         //is there a more efficient way to go from a Reader to an InputStream?
         String s = clob.getSubString(0, readSize);
         if (embeddedDocumentUtil.shouldParseEmbedded(m)) {
-            embeddedDocumentUtil.parseEmbedded(new ByteArrayInputStream(s.getBytes(UTF_8)), handler, m, true);
+            embeddedDocumentUtil
+                    .parseEmbedded(new ByteArrayInputStream(s.getBytes(UTF_8)), handler, m, true);
         }
     }
 
-    protected void handleBlob(String tableName, String columnName, int rowNum, ResultSet resultSet, int columnIndex,
-                              ContentHandler handler, ParseContext context) throws SQLException, IOException, SAXException {
+    protected void handleBlob(String tableName, String columnName, int rowNum, ResultSet resultSet,
+                              int columnIndex, ContentHandler handler, ParseContext context)
+            throws SQLException, IOException, SAXException {
         Metadata m = new Metadata();
         m.set(Database.TABLE_NAME, tableName);
         m.set(Database.COLUMN_NAME, columnName);
@@ -218,14 +226,17 @@ public class JDBCTableReader {
             is = TikaInputStream.get(blob, m);
             Attributes attrs = new AttributesImpl();
             ((AttributesImpl) attrs).addAttribute("", "type", "type", "CDATA", "blob");
-            ((AttributesImpl) attrs).addAttribute("", "column_name", "column_name", "CDATA", columnName);
-            ((AttributesImpl) attrs).addAttribute("", "row_number", "row_number", "CDATA", Integer.toString(rowNum));
+            ((AttributesImpl) attrs)
+                    .addAttribute("", "column_name", "column_name", "CDATA", columnName);
+            ((AttributesImpl) attrs).addAttribute("", "row_number", "row_number", "CDATA",
+                    Integer.toString(rowNum));
             handler.startElement("", "span", "span", attrs);
             String extension = embeddedDocumentUtil.getExtension(is, m);
 
             m.set(TikaCoreProperties.RESOURCE_NAME_KEY,
                     //just in case something screwy is going on with the column name
-                    FilenameUtils.normalize(FilenameUtils.getName(columnName + "_" + rowNum + extension)));
+                    FilenameUtils.normalize(
+                            FilenameUtils.getName(columnName + "_" + rowNum + extension)));
             if (embeddedDocumentUtil.shouldParseEmbedded(m)) {
                 embeddedDocumentUtil.parseEmbedded(is, handler, m, true);
             }
@@ -234,7 +245,7 @@ public class JDBCTableReader {
             if (blob != null) {
                 try {
                     blob.free();
-                } catch (SQLException|UnsupportedOperationException e) {
+                } catch (SQLException | UnsupportedOperationException e) {
                     //swallow
                 }
             }
@@ -244,26 +255,28 @@ public class JDBCTableReader {
     }
 
     /**
-     *
-     * @param resultSet result set to grab value from
+     * @param resultSet   result set to grab value from
      * @param columnIndex index in result set
-     * @param metadata metadata to populate or use for each implementation
+     * @param metadata    metadata to populate or use for each implementation
      * @return the blob or <code>null</code> if the value was null
      * @throws SQLException
      */
-    protected Blob getBlob(ResultSet resultSet, int columnIndex, Metadata metadata) throws SQLException {
+    protected Blob getBlob(ResultSet resultSet, int columnIndex, Metadata metadata)
+            throws SQLException {
         Blob blob = resultSet.getBlob(columnIndex);
-        if (! resultSet.wasNull()) {
+        if (!resultSet.wasNull()) {
             return blob;
         }
         return null;
     }
 
-    protected void handleDate(ResultSet resultSet, int columnIndex, ContentHandler handler) throws SAXException, SQLException {
+    protected void handleDate(ResultSet resultSet, int columnIndex, ContentHandler handler)
+            throws SAXException, SQLException {
         addAllCharacters(resultSet.getString(columnIndex), handler);
     }
 
-    protected void handleTimeStamp(ResultSet resultSet, int columnIndex, ContentHandler handler) throws SAXException, SQLException {
+    protected void handleTimeStamp(ResultSet resultSet, int columnIndex, ContentHandler handler)
+            throws SAXException, SQLException {
         addAllCharacters(resultSet.getString(columnIndex), handler);
     }
 

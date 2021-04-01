@@ -19,24 +19,21 @@ package org.apache.tika.parser.microsoft.chm;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-
 import org.junit.Before;
 import org.junit.Test;
 
 /**
  * Tests public methods of the DirectoryListingEntry class
- * 
+ *
  * @author olegt
- * 
  */
 public class TestDirectoryListingEntry {
     private DirectoryListingEntry dle = null;
 
     @Before
     public void setUp() throws Exception {
-        dle = new DirectoryListingEntry(TestParameters.nameLength,
-                TestParameters.entryName, TestParameters.entryType,
-                TestParameters.offset, TestParameters.length);
+        dle = new DirectoryListingEntry(TestParameters.nameLength, TestParameters.entryName,
+                TestParameters.entryType, TestParameters.offset, TestParameters.length);
     }
 
     @Test

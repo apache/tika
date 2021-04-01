@@ -18,17 +18,20 @@ package org.apache.tika.parser.wordperfect;
 
 import java.io.IOException;
 
-import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
+
+import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Extracts WordPerfect Document Area text from a WordPerfect document.
+ *
  * @author Pascal Essiembre
  */
 abstract class WPDocumentAreaExtractor {
 
     boolean startedP = false;
-    public void extract(WPInputStream in, XHTMLContentHandler xhtml) 
+
+    public void extract(WPInputStream in, XHTMLContentHandler xhtml)
             throws IOException, SAXException {
         int chunk = 4096;
         StringBuilder out = new StringBuilder(chunk);
@@ -42,13 +45,13 @@ abstract class WPDocumentAreaExtractor {
         }
         endParagraph(out, xhtml);
     }
- 
-    protected abstract void extract(
-            int c, WPInputStream in, StringBuilder out, XHTMLContentHandler xhtml) throws IOException, SAXException;
+
+    protected abstract void extract(int c, WPInputStream in, StringBuilder out,
+                                    XHTMLContentHandler xhtml) throws IOException, SAXException;
 
 
     protected void lazilyStartParagraph(XHTMLContentHandler xhtml) throws SAXException {
-        if (! startedP) {
+        if (!startedP) {
             xhtml.startElement("p");
         }
         startedP = true;
@@ -57,13 +60,14 @@ abstract class WPDocumentAreaExtractor {
     /**
      * This assumes that the &lt;p&gt; was started before you get here.
      * And the user is required to close the &lt;p&gt; at the end of the document.
-     *
+     * <p>
      * These are currently handled by {@link #extract(WPInputStream, XHTMLContentHandler)}.
      *
      * @param xhtml
      * @throws SAXException
      */
-    protected void endParagraph(StringBuilder buffer, XHTMLContentHandler xhtml) throws SAXException {
+    protected void endParagraph(StringBuilder buffer, XHTMLContentHandler xhtml)
+            throws SAXException {
         lazilyStartParagraph(xhtml);
 
         xhtml.characters(buffer.toString());
@@ -73,8 +77,7 @@ abstract class WPDocumentAreaExtractor {
     }
 
     // Skips until the given character is encountered.
-    protected int skipUntilChar(WPInputStream in, int targetChar)
-            throws IOException {
+    protected int skipUntilChar(WPInputStream in, int targetChar) throws IOException {
         int count = 0;
         int c;
         while ((c = in.read()) != -1) {

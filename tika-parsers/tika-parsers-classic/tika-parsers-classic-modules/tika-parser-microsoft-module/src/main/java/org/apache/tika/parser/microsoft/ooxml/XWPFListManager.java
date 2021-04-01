@@ -22,12 +22,13 @@ import org.apache.poi.xwpf.usermodel.XWPFAbstractNum;
 import org.apache.poi.xwpf.usermodel.XWPFNum;
 import org.apache.poi.xwpf.usermodel.XWPFNumbering;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
-import org.apache.tika.parser.microsoft.AbstractListManager;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTAbstractNum;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTDecimalNumber;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTLvl;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTNum;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTNumLvl;
+
+import org.apache.tika.parser.microsoft.AbstractListManager;
 
 
 public class XWPFListManager extends AbstractListManager {
@@ -38,7 +39,8 @@ public class XWPFListManager extends AbstractListManager {
      */
     public final static XWPFListManager EMPTY_LIST = new EmptyListManager();
     private final static boolean OVERRIDE_AVAILABLE;
-    private final static String SKIP_FORMAT = Character.toString((char) 61623);//if this shows up as the lvlText, don't show a number
+    private final static String SKIP_FORMAT = Character.toString((char) 61623);
+//if this shows up as the lvlText, don't show a number
 
     static {
         boolean b = false;
@@ -46,6 +48,7 @@ public class XWPFListManager extends AbstractListManager {
             Class.forName("org.openxmlformats.schemas.wordprocessingml.x2006.main.CTNumLvl");
             b = true;
         } catch (ClassNotFoundException e) {
+            //swallow
         }
         b = OVERRIDE_AVAILABLE = false;
 
@@ -59,7 +62,6 @@ public class XWPFListManager extends AbstractListManager {
     }
 
     /**
-     *
      * @param paragraph paragraph
      * @return the formatted number or an empty string if something went wrong
      */
@@ -111,13 +113,13 @@ public class XWPFListManager extends AbstractListManager {
         for (int i = 0; i < length; i++) {
             LevelTuple tuple;
             if (i >= overrideLength) {
-                tuple = new LevelTuple("%"+i+".");
+                tuple = new LevelTuple("%" + i + ".");
             } else {
                 CTNumLvl ctNumLvl = ctNum.getLvlOverrideArray(i);
                 if (ctNumLvl != null) {
                     tuple = buildTuple(i, ctNumLvl.getLvl());
                 } else {
-                    tuple = new LevelTuple("%"+i+".");
+                    tuple = new LevelTuple("%" + i + ".");
                 }
             }
             levelTuples[i] = tuple;
@@ -152,16 +154,14 @@ public class XWPFListManager extends AbstractListManager {
             isLegal = true;
         }
 
-        if (ctLvl != null && ctLvl.getNumFmt() != null &&
-                ctLvl.getNumFmt().getVal() != null) {
+        if (ctLvl != null && ctLvl.getNumFmt() != null && ctLvl.getNumFmt().getVal() != null) {
             numFmt = ctLvl.getNumFmt().getVal().toString();
         }
         if (ctLvl != null && ctLvl.getLvlRestart() != null &&
                 ctLvl.getLvlRestart().getVal() != null) {
             restart = ctLvl.getLvlRestart().getVal().intValue();
         }
-        if (ctLvl != null && ctLvl.getStart() != null &&
-                ctLvl.getStart().getVal() != null) {
+        if (ctLvl != null && ctLvl.getStart() != null && ctLvl.getStart().getVal() != null) {
             start = ctLvl.getStart().getVal().intValue();
         } else {
 
@@ -169,7 +169,8 @@ public class XWPFListManager extends AbstractListManager {
             //start for a given numFmt.  We should probably try to grab the
             //restartNumberingAfterBreak value in
             //e.g. <w:abstractNum w:abstractNumId="12" w15:restartNumberingAfterBreak="0">???
-            if ("decimal".equals(numFmt) || "ordinal".equals(numFmt) || "decimalZero".equals(numFmt)) {
+            if ("decimal".equals(numFmt) || "ordinal".equals(numFmt) ||
+                    "decimalZero".equals(numFmt)) {
                 start = 0;
             } else {
                 start = 1;

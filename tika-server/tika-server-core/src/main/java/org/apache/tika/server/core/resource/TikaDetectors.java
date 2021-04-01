@@ -16,16 +16,17 @@
  */
 package org.apache.tika.server.core.resource;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.server.core.HTMLHelper;
@@ -75,7 +76,7 @@ public class TikaDetectors {
 
     @GET
     @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
-    public String getDetectorsJSON() throws IOException  {
+    public String getDetectorsJSON() throws IOException {
         Map<String, Object> details = new HashMap<String, Object>();
         detectorAsMap(TikaResource.getConfig().getDetector(), details);
         return new ObjectMapper().writeValueAsString(details);
@@ -104,6 +105,7 @@ public class TikaDetectors {
         renderDetector(TikaResource.getConfig().getDetector(), text, 0);
         return text.toString();
     }
+
     private void renderDetector(Detector d, StringBuffer text, int indent) {
         boolean isComposite = (d instanceof CompositeDetector);
         String name = d.getClass().getName();
@@ -120,6 +122,7 @@ public class TikaDetectors {
                 renderDetector(sd, text, indent + 1);
             }
         } else {
-            text.append("\n");        }
+            text.append("\n");
+        }
     }
 }

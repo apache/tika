@@ -1,4 +1,3 @@
-package org.apache.tika.parser.jdbc;
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -15,6 +14,7 @@ package org.apache.tika.parser.jdbc;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.parser.jdbc;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,6 +23,9 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
+
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.TikaException;
@@ -33,8 +36,6 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * Abstract class that handles iterating through tables within a database.
@@ -51,7 +52,8 @@ public abstract class AbstractDBParser extends AbstractParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
         connection = getConnection(stream, metadata, context);
         XHTMLContentHandler xHandler = null;
         List<String> tableNames = null;
@@ -64,8 +66,9 @@ public abstract class AbstractDBParser extends AbstractParser {
             } catch (SQLException sqlE) {
                 //swallow
             }
-            if (e.getClass().toString().contains("SQLiteException") && e.getMessage() != null
-                && (e.getMessage().contains("[SQLITE_ERROR]") || e.getMessage().contains("[SQLITE_CORRUPT]"))) {
+            if (e.getClass().toString().contains("SQLiteException") && e.getMessage() != null &&
+                    (e.getMessage().contains("[SQLITE_ERROR]") ||
+                            e.getMessage().contains("[SQLITE_CORRUPT]"))) {
                 throw new CorruptedFileException("Corrupt SQLITE", e);
             }
 
@@ -80,7 +83,8 @@ public abstract class AbstractDBParser extends AbstractParser {
 
         try {
             for (String tableName : tableNames) {
-                JDBCTableReader tableReader = getTableReader(connection, tableName, embeddedDocumentUtil);
+                JDBCTableReader tableReader =
+                        getTableReader(connection, tableName, embeddedDocumentUtil);
                 xHandler.startElement("table", "name", tableReader.getTableName());
                 xHandler.startElement("thead");
                 xHandler.startElement("tr");
@@ -101,7 +105,7 @@ public abstract class AbstractDBParser extends AbstractParser {
         } finally {
             try {
                 close();
-            } catch (IOException|SQLException e) {
+            } catch (IOException | SQLException e) {
                 //swallow
             }
             if (xHandler != null) {
@@ -131,7 +135,8 @@ public abstract class AbstractDBParser extends AbstractParser {
      * @throws java.io.IOException
      * @throws org.apache.tika.exception.TikaException
      */
-    protected Connection getConnection(InputStream stream, Metadata metadata, ParseContext context) throws IOException, TikaException {
+    protected Connection getConnection(InputStream stream, Metadata metadata, ParseContext context)
+            throws IOException, TikaException {
         String connectionString = getConnectionString(stream, metadata, context);
 
         Connection connection = null;
@@ -160,8 +165,8 @@ public abstract class AbstractDBParser extends AbstractParser {
      * @return connection string to be used by {@link #getConnection}.
      * @throws java.io.IOException
      */
-    abstract protected String getConnectionString(InputStream stream,
-                                                  Metadata metadata, ParseContext parseContext) throws IOException;
+    abstract protected String getConnectionString(InputStream stream, Metadata metadata,
+                                                  ParseContext parseContext) throws IOException;
 
     /**
      * JDBC class name, e.g. org.sqlite.JDBC
@@ -191,7 +196,8 @@ public abstract class AbstractDBParser extends AbstractParser {
      * @deprecated use {@link #getTableReader(Connection, String, EmbeddedDocumentUtil)}
      */
     @Deprecated
-    abstract protected JDBCTableReader getTableReader(Connection connection, String tableName, ParseContext parseContext);
+    abstract protected JDBCTableReader getTableReader(Connection connection, String tableName,
+                                                      ParseContext parseContext);
 
     /**
      * Given a connection and a table name, return the JDBCTableReader for this db.
@@ -201,8 +207,7 @@ public abstract class AbstractDBParser extends AbstractParser {
      * @param embeddedDocumentUtil embedded doc util
      * @return
      */
-    abstract protected JDBCTableReader getTableReader(Connection connection,
-                                                      String tableName,
+    abstract protected JDBCTableReader getTableReader(Connection connection, String tableName,
                                                       EmbeddedDocumentUtil embeddedDocumentUtil);
 
 }

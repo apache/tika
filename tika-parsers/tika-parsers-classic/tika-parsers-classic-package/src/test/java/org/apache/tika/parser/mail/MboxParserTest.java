@@ -16,6 +16,14 @@
  */
 package org.apache.tika.parser.mail;
 
+import static org.junit.Assert.assertEquals;
+
+import java.io.InputStream;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.detect.TypeDetector;
 import org.apache.tika.metadata.Metadata;
@@ -24,13 +32,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.mbox.MboxParser;
 import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Before;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
-
-import java.io.InputStream;
-
-import static org.junit.Assert.assertEquals;
 
 public class MboxParserTest extends TikaTest {
 
@@ -49,6 +50,7 @@ public class MboxParserTest extends TikaTest {
         mboxParser = new MboxParser();
         mboxParser.setTracking(true);
     }
+
     @Test
     public void testOverrideDetector() throws Exception {
         ContentHandler handler = new BodyContentHandler();

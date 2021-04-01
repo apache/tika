@@ -16,33 +16,35 @@
  */
 package org.apache.tika.server.core;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import javax.ws.rs.core.Response;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.apache.tika.server.core.resource.TikaServerStatus;
-import org.apache.tika.server.core.writer.JSONObjWriter;
 import org.junit.Test;
 
-import javax.ws.rs.core.Response;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.apache.tika.server.core.resource.TikaServerStatus;
+import org.apache.tika.server.core.writer.JSONObjWriter;
 
 public class TikaServerStatusTest extends CXFTestBase {
 
     private final static String STATUS_PATH = "/status";
     private final static String SERVER_ID = UUID.randomUUID().toString();
+
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(TikaServerStatus.class);
-        sf.setResourceProvider(TikaServerStatus.class,
-                new SingletonResourceProvider(new TikaServerStatus(new ServerStatus(SERVER_ID, 0))));
+        sf.setResourceProvider(TikaServerStatus.class, new SingletonResourceProvider(
+                new TikaServerStatus(new ServerStatus(SERVER_ID, 0))));
     }
 
     @Override
@@ -55,8 +57,7 @@ public class TikaServerStatusTest extends CXFTestBase {
     @Test
     public void testBasic() throws Exception {
         Response response = WebClient.create(endPoint + STATUS_PATH).get();
-        String jsonString =
-                getStringFromInputStream((InputStream) response.getEntity());
+        String jsonString = getStringFromInputStream((InputStream) response.getEntity());
         JsonNode root = new ObjectMapper().readTree(jsonString);
         assertTrue(root.has("server_id"));
         assertTrue(root.has("status"));

@@ -39,11 +39,9 @@ public class FileSystemFetchIterator extends FetchIterator implements Initializa
     private Path basePath;
 
     public FileSystemFetchIterator() {
-
     }
 
-    public FileSystemFetchIterator(String fetcherName, Path basePath) {
-        super(fetcherName);
+    public FileSystemFetchIterator(Path basePath) {
         this.basePath = basePath;
     }
 

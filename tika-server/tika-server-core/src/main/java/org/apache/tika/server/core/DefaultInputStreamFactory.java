@@ -17,11 +17,11 @@
 
 package org.apache.tika.server.core;
 
-import org.apache.tika.metadata.Metadata;
-
-import javax.ws.rs.core.HttpHeaders;
 import java.io.IOException;
 import java.io.InputStream;
+import javax.ws.rs.core.HttpHeaders;
+
+import org.apache.tika.metadata.Metadata;
 
 /**
  * Passthrough -- returns InputStream as is
@@ -29,7 +29,8 @@ import java.io.InputStream;
 public class DefaultInputStreamFactory implements InputStreamFactory {
 
     @Override
-    public InputStream getInputSteam(InputStream is, Metadata metadata, HttpHeaders httpHeaders) throws IOException {
+    public InputStream getInputSteam(InputStream is, Metadata metadata, HttpHeaders httpHeaders)
+            throws IOException {
         return is;
     }
 }

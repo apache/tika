@@ -20,11 +20,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
@@ -40,10 +44,6 @@ import org.apache.tika.parser.captioning.CaptionObject;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.AnnotationUtils;
 import org.apache.tika.utils.ServiceLoaderUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 
 /**
@@ -56,8 +56,10 @@ import org.xml.sax.SAXException;
  *  &lt;parsers&gt;
  *   &lt;parser class=&quot;org.apache.tika.parser.recognition.ObjectRecognitionParser&quot;&gt;
  *    &lt;params&gt;
- *      &lt;param name=&quot;class&quot; type=&quot;string&quot;&gt;org.apache.tika.parser.recognition.tf.TensorflowRESTRecogniser&lt;/param&gt;
- *      &lt;param name=&quot;class&quot; type=&quot;string&quot;&gt;org.apache.tika.parser.captioning.tf.TensorflowRESTCaptioner&lt;/param&gt;
+ *      &lt;param name=&quot;class&quot; type=&quot;string&quot;&gt;
+ *      org.apache.tika.parser.recognition.tf.TensorflowRESTRecogniser&lt;/param&gt;
+ *      &lt;param name=&quot;class&quot; type=&quot;string&quot;&gt;
+ *      org.apache.tika.parser.captioning.tf.TensorflowRESTCaptioner&lt;/param&gt;
  *    &lt;/params&gt;
  *   &lt;/parser&gt;
  *  &lt;/parsers&gt;
@@ -67,13 +69,11 @@ import org.xml.sax.SAXException;
  * @since Apache Tika 1.14
  */
 public class ObjectRecognitionParser extends AbstractParser implements Initializable {
-    private static final Logger LOG = LoggerFactory.getLogger(ObjectRecognitionParser.class);
-
     public static final String MD_KEY_OBJ_REC = "OBJECT";
     public static final String MD_KEY_IMG_CAP = "CAPTION";
     public static final String MD_REC_IMPL_KEY =
             ObjectRecognitionParser.class.getPackage().getName() + ".object.rec.impl";
-
+    private static final Logger LOG = LoggerFactory.getLogger(ObjectRecognitionParser.class);
     private ObjectRecogniser recogniser;
 
     @Field(name = "class")
@@ -90,17 +90,20 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler handler) throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler handler)
+            throws TikaConfigException {
         //TODO -- what do we want to check?
     }
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
-        return recogniser.isAvailable() ? recogniser.getSupportedMimes() : Collections.<MediaType>emptySet();
+        return recogniser.isAvailable() ? recogniser.getSupportedMimes() :
+                Collections.<MediaType>emptySet();
     }
 
     @Override
-    public synchronized void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+    public synchronized void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                                   ParseContext context)
             throws IOException, SAXException, TikaException {
         if (!recogniser.isAvailable()) {
             LOG.warn("{} is not available for service", recogniser.getClass());
@@ -108,7 +111,8 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
         }
         metadata.set(MD_REC_IMPL_KEY, recogniser.getClass().getName());
         long start = System.currentTimeMillis();
-        List<? extends RecognisedObject> objects = recogniser.recognise(stream, handler, metadata, context);
+        List<? extends RecognisedObject> objects =
+                recogniser.recognise(stream, handler, metadata, context);
 
         LOG.debug("Found {} objects", objects != null ? objects.size() : 0);
         LOG.info("Time taken {}ms", System.currentTimeMillis() - start);
@@ -123,13 +127,21 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
             // first process all the MD objects
             for (RecognisedObject object : objects) {
                 if (object instanceof CaptionObject) {
-                    if (xhtmlStartVal == null) xhtmlStartVal = "captions";
-                    String labelAndConfidence = String.format(Locale.ENGLISH, "%s (%.5f)", object.getLabel(), object.getConfidence());
+                    if (xhtmlStartVal == null) {
+                        xhtmlStartVal = "captions";
+                    }
+                    String labelAndConfidence =
+                            String.format(Locale.ENGLISH, "%s (%.5f)", object.getLabel(),
+                                    object.getConfidence());
                     metadata.add(MD_KEY_IMG_CAP, labelAndConfidence);
                     xhtmlIds.add(String.valueOf(count++));
                 } else {
-                    if (xhtmlStartVal == null) xhtmlStartVal = "objects";
-                    String labelAndConfidence = String.format(Locale.ENGLISH, "%s (%.5f)", object.getLabel(), object.getConfidence());
+                    if (xhtmlStartVal == null) {
+                        xhtmlStartVal = "objects";
+                    }
+                    String labelAndConfidence =
+                            String.format(Locale.ENGLISH, "%s (%.5f)", object.getLabel(),
+                                    object.getConfidence());
                     metadata.add(MD_KEY_OBJ_REC, labelAndConfidence);
                     xhtmlIds.add(object.getId());
                 }

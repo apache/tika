@@ -16,8 +16,14 @@
  */
 package org.apache.tika.detect.apple;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
+
 import org.apache.tika.detect.zip.StreamingDetectContext;
 import org.apache.tika.detect.zip.ZipContainerDetector;
 import org.apache.tika.io.TikaInputStream;
@@ -25,11 +31,6 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.iwork.IWorkPackageParser;
 import org.apache.tika.parser.iwork.iwana.IWork13PackageParser;
 import org.apache.tika.parser.iwork.iwana.IWork18PackageParser;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashSet;
-import java.util.Set;
 
 public class IWorkDetector implements ZipContainerDetector {
 
@@ -51,8 +52,8 @@ public class IWorkDetector implements ZipContainerDetector {
             // the root element of the document. That is used to the identify
             // the correct type of the keynote container.
             for (String entryName : IWorkPackageParser.IWORK_CONTENT_ENTRIES) {
-                IWorkPackageParser.IWORKDocumentType type =
-                        IWorkPackageParser.IWORKDocumentType.detectType(zip.getEntry(entryName), zip);
+                IWorkPackageParser.IWORKDocumentType type = IWorkPackageParser.IWORKDocumentType
+                        .detectType(zip.getEntry(entryName), zip);
                 if (type != null) {
                     return type.getType();
                 }
@@ -79,7 +80,8 @@ public class IWorkDetector implements ZipContainerDetector {
     }
 
     @Override
-    public MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis, StreamingDetectContext detectContext) {
+    public MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis,
+                                           StreamingDetectContext detectContext) {
         String name = zae.getName();
         EntryNames entryNames = detectContext.get(EntryNames.class);
         if (entryNames == null) {

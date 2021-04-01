@@ -179,4 +179,7 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory {
         TEXT, HTML, XML
     }
 
+    public int getWriteLimit() {
+        return writeLimit;
+    }
 }

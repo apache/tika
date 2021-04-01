@@ -16,17 +16,16 @@
  */
 package org.apache.tika.parser.pkg;
 
-import org.apache.tika.exception.TikaMemoryLimitException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
+import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
 
-import static java.nio.charset.StandardCharsets.US_ASCII;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+
+import org.apache.tika.exception.TikaMemoryLimitException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.sax.BodyContentHandler;
 
 /**
  * Test case for parsing compress (.Z) files.
@@ -64,13 +63,9 @@ public class CompressParserTest extends AbstractPkgTest {
     }
 
 
-    @Test
+    @Test(expected = TikaMemoryLimitException.class)
     public void testLZMAOOM() throws Exception {
-        try {
-            XMLResult r = getXML("testLZMA_oom");
-            fail("should have thrown TikaMemoryLimitException");
-        } catch (TikaMemoryLimitException e) {
-        }
+        getXML("testLZMA_oom");
     }
 
 }

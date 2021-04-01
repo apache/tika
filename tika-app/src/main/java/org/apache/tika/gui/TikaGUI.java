@@ -72,6 +72,7 @@ import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.DelegatingParser;
 import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -99,7 +100,7 @@ public class TikaGUI extends JFrame
         implements ActionListener, HyperlinkListener {
 
     //maximum length to allow for mark for reparse to get JSON
-    private static final int MAX_MARK = 20*1024*1024;//20MB
+    private static final int MAX_MARK = 20 * 1024 * 1024;//20MB
 
     /**
      * Serial version UID.
@@ -129,7 +130,7 @@ public class TikaGUI extends JFrame
                         new CommonsDigester(MAX_MARK,
                                 CommonsDigester.DigestAlgorithm.MD5,
                                 CommonsDigester.DigestAlgorithm.SHA256)
-                        )).setVisible(true);
+                )).setVisible(true);
             }
         });
     }
@@ -143,7 +144,7 @@ public class TikaGUI extends JFrame
      * Configured parser instance.
      */
     private final Parser parser;
-    
+
     /**
      * Captures requested embedded images
      */
@@ -173,7 +174,7 @@ public class TikaGUI extends JFrame
      * Main content output.
      */
     private final JEditorPane textMain;
-    
+
     /**
      * Raw XHTML source.
      */
@@ -341,14 +342,13 @@ public class TikaGUI extends JFrame
 
         context.set(DocumentSelector.class, new ImageDocumentSelector());
 
-        input = TikaInputStream.get(new ProgressMonitorInputStream(
-                this, "Parsing stream", input));
+        input = TikaInputStream.get(input);
 
         if (input.markSupported()) {
             int mark = -1;
             if (input instanceof TikaInputStream) {
-                if (((TikaInputStream)input).hasFile()) {
-                    mark = (int)((TikaInputStream)input).getLength();
+                if (((TikaInputStream) input).hasFile()) {
+                    mark = (int) ((TikaInputStream) input).getLength();
                 }
             }
             if (mark == -1) {
@@ -391,8 +391,8 @@ public class TikaGUI extends JFrame
             input.reset();
             isReset = true;
         } catch (IOException e) {
-            setText(json, "Error during stream reset.\n"+
-                    "There's a limit of "+MAX_MARK + " bytes for this type of processing in the GUI.\n"+
+            setText(json, "Error during stream reset.\n" +
+                    "There's a limit of " + MAX_MARK + " bytes for this type of processing in the GUI.\n" +
                     "Try the app with command line argument of -J."
             );
         }
@@ -420,7 +420,7 @@ public class TikaGUI extends JFrame
         t.printStackTrace(new PrintWriter(writer));
 
         JEditorPane editor =
-            new JEditorPane("text/plain", writer.toString());
+                new JEditorPane("text/plain", writer.toString());
         editor.setEditable(false);
         editor.setBackground(Color.WHITE);
         editor.setCaretPosition(0);
@@ -435,7 +435,7 @@ public class TikaGUI extends JFrame
     private void addWelcomeCard(JPanel panel, String name) {
         try {
             JEditorPane editor =
-                new JEditorPane(TikaGUI.class.getResource("welcome.html"));
+                    new JEditorPane(TikaGUI.class.getResource("welcome.html"));
             editor.setContentType("text/html");
             editor.setEditable(false);
             editor.setBackground(Color.WHITE);
@@ -480,7 +480,7 @@ public class TikaGUI extends JFrame
                 URL url = e.getURL();
                 try (InputStream stream = url.openStream()) {
                     JEditorPane editor =
-                        new JEditorPane("text/plain", IOUtils.toString(stream, UTF_8));
+                            new JEditorPane("text/plain", IOUtils.toString(stream, UTF_8));
                     editor.setEditable(false);
                     editor.setBackground(Color.WHITE);
                     editor.setCaretPosition(0);
@@ -519,7 +519,7 @@ public class TikaGUI extends JFrame
      * {@link JEditorPane} fail thinking that the document character set
      * is inconsistent.
      * <p>
-     * Additionally, it will use ImageSavingParser to re-write embedded:(image) 
+     * Additionally, it will use ImageSavingParser to re-write embedded:(image)
      * image links to be file:///(temporary file) so that they can be loaded.
      *
      * @param writer output writer
@@ -529,7 +529,7 @@ public class TikaGUI extends JFrame
     private ContentHandler getHtmlHandler(Writer writer)
             throws TransformerConfigurationException {
         SAXTransformerFactory factory = (SAXTransformerFactory)
-            SAXTransformerFactory.newInstance();
+                SAXTransformerFactory.newInstance();
         TransformerHandler handler = factory.newTransformerHandler();
         handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "html");
         handler.setResult(new StreamResult(writer));
@@ -542,36 +542,37 @@ public class TikaGUI extends JFrame
                     uri = null;
                 }
                 if (!"head".equals(localName)) {
-                    if("img".equals(localName)) {
-                       AttributesImpl newAttrs;
-                       if(atts instanceof AttributesImpl) {
-                          newAttrs = (AttributesImpl)atts;
-                       } else {
-                          newAttrs = new AttributesImpl(atts);
-                       }
-                       
-                       for(int i=0; i<newAttrs.getLength(); i++) {
-                          if("src".equals(newAttrs.getLocalName(i))) {
-                             String src = newAttrs.getValue(i);
-                             if(src.startsWith("embedded:")) {
-                                String filename = src.substring(src.indexOf(':')+1);
-                                try {
-                                   File img = imageParser.requestSave(filename);
-                                   String newSrc = img.toURI().toString();
-                                   newAttrs.setValue(i, newSrc);
-                                } catch(IOException e) {
-                                   System.err.println("Error creating temp image file " + filename);
-                                   // The html viewer will show a broken image too to alert them
+                    if ("img".equals(localName)) {
+                        AttributesImpl newAttrs;
+                        if (atts instanceof AttributesImpl) {
+                            newAttrs = (AttributesImpl) atts;
+                        } else {
+                            newAttrs = new AttributesImpl(atts);
+                        }
+
+                        for (int i = 0; i < newAttrs.getLength(); i++) {
+                            if ("src".equals(newAttrs.getLocalName(i))) {
+                                String src = newAttrs.getValue(i);
+                                if (src.startsWith("embedded:")) {
+                                    String filename = src.substring(src.indexOf(':') + 1);
+                                    try {
+                                        File img = imageParser.requestSave(filename);
+                                        String newSrc = img.toURI().toString();
+                                        newAttrs.setValue(i, newSrc);
+                                    } catch (IOException e) {
+                                        System.err.println("Error creating temp image file " + filename);
+                                        // The html viewer will show a broken image too to alert them
+                                    }
                                 }
-                             }
-                          }
-                       }
-                       super.startElement(uri, localName, name, newAttrs);
+                            }
+                        }
+                        super.startElement(uri, localName, name, newAttrs);
                     } else {
-                       super.startElement(uri, localName, name, atts);
+                        super.startElement(uri, localName, name, atts);
                     }
                 }
             }
+
             @Override
             public void endElement(String uri, String localName, String name)
                     throws SAXException {
@@ -582,9 +583,11 @@ public class TikaGUI extends JFrame
                     super.endElement(uri, localName, name);
                 }
             }
+
             @Override
             public void startPrefixMapping(String prefix, String uri) {
             }
+
             @Override
             public void endPrefixMapping(String prefix) {
             }
@@ -594,6 +597,7 @@ public class TikaGUI extends JFrame
     private ContentHandler getTextContentHandler(Writer writer) {
         return new BodyContentHandler(writer);
     }
+
     private ContentHandler getTextMainContentHandler(Writer writer) {
         return new BoilerpipeContentHandler(writer);
     }
@@ -601,7 +605,7 @@ public class TikaGUI extends JFrame
     private ContentHandler getXmlContentHandler(Writer writer)
             throws TransformerConfigurationException {
         SAXTransformerFactory factory = (SAXTransformerFactory)
-            SAXTransformerFactory.newInstance();
+                SAXTransformerFactory.newInstance();
         TransformerHandler handler = factory.newTransformerHandler();
         handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "xml");
         handler.setResult(new StreamResult(writer));
@@ -612,63 +616,63 @@ public class TikaGUI extends JFrame
      * A {@link DocumentSelector} that accepts only images.
      */
     private static class ImageDocumentSelector implements DocumentSelector {
-      public boolean select(Metadata metadata) {
-         String type = metadata.get(Metadata.CONTENT_TYPE);
-         return type != null && type.startsWith("image/");
-      }
+        public boolean select(Metadata metadata) {
+            String type = metadata.get(Metadata.CONTENT_TYPE);
+            return type != null && type.startsWith("image/");
+        }
     }
-    
+
     /**
      * A recursive parser that saves certain images into the temporary
-     *  directory, and delegates everything else to another downstream
-     *  parser.
+     * directory, and delegates everything else to another downstream
+     * parser.
      */
     private static class ImageSavingParser extends AbstractParser {
-      private Map<String,File> wanted = new HashMap<String,File>();
-      private Parser downstreamParser;
-      private File tmpDir;
-      
-      private ImageSavingParser(Parser downstreamParser) {
-         this.downstreamParser = downstreamParser;
-         
-         try {
-            File t = File.createTempFile("tika", ".test");
-            tmpDir = t.getParentFile();
-         } catch(IOException e) {}
-      }
-      
-      public File requestSave(String embeddedName) throws IOException {
-         String suffix = ".tika";
-         
-         int splitAt = embeddedName.lastIndexOf('.');
-         if (splitAt > 0) {
-            embeddedName.substring(splitAt);
-         }
-         
-         File tmp = File.createTempFile("tika-embedded-", suffix);
-         wanted.put(embeddedName, tmp);
-         return tmp;
-      }
-      
-      public Set<MediaType> getSupportedTypes(ParseContext context) {
-         // Never used in an auto setup
-         return null;
-      }
+        private Map<String, File> wanted = new HashMap<String, File>();
+        private Parser downstreamParser;
+        private File tmpDir;
 
-      public void parse(InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context) throws IOException,
-            SAXException, TikaException {
-         String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
-         if(name != null && wanted.containsKey(name)) {
-            FileOutputStream out = new FileOutputStream(wanted.get(name));
-            IOUtils.copy(stream, out);
-            out.close();
-         } else {
-            if(downstreamParser != null) {
-               downstreamParser.parse(stream, handler, metadata, context);
+        private ImageSavingParser(Parser downstreamParser) {
+            this.downstreamParser = downstreamParser;
+
+            try {
+                File t = File.createTempFile("tika", ".test");
+                tmpDir = t.getParentFile();
+            } catch (IOException e) {
             }
-         }
-      }
+        }
+
+        public File requestSave(String embeddedName) throws IOException {
+            String suffix = ".tika";
+
+            int splitAt = embeddedName.lastIndexOf('.');
+            if (splitAt > 0) {
+                embeddedName.substring(splitAt);
+            }
+
+            File tmp = File.createTempFile("tika-embedded-", suffix);
+            wanted.put(embeddedName, tmp);
+            return tmp;
+        }
+
+        public Set<MediaType> getSupportedTypes(ParseContext context) {
+            return downstreamParser.getSupportedTypes(context);
+        }
+
+        public void parse(InputStream stream, ContentHandler handler,
+                          Metadata metadata, ParseContext context) throws IOException,
+                SAXException, TikaException {
+            String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+            if (name != null && wanted.containsKey(name)) {
+                FileOutputStream out = new FileOutputStream(wanted.get(name));
+                IOUtils.copy(stream, out);
+                out.close();
+            } else {
+                if (downstreamParser != null) {
+                    downstreamParser.parse(stream, handler, metadata, context);
+                }
+            }
+        }
 
     }
 

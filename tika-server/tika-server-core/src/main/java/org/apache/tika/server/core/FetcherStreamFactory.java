@@ -16,13 +16,13 @@
  */
 package org.apache.tika.server.core;
 
-import javax.ws.rs.core.HttpHeaders;
 import java.io.IOException;
 import java.io.InputStream;
+import javax.ws.rs.core.HttpHeaders;
 
 import org.apache.commons.lang3.StringUtils;
+
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.fetcher.FetcherManager;
 
@@ -40,7 +40,6 @@ import org.apache.tika.pipes.fetcher.FetcherManager;
  * to your intranet, and you let the public hit this service, they will now
  * have access to your intranet.
  * See <a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2015-3271">CVE-2015-3271</a>
- *
  */
 public class FetcherStreamFactory implements InputStreamFactory {
 
@@ -51,16 +50,16 @@ public class FetcherStreamFactory implements InputStreamFactory {
     }
 
     @Override
-    public InputStream getInputSteam(InputStream is, Metadata metadata,
-                                     HttpHeaders httpHeaders) throws IOException {
-        String fetcherName= httpHeaders.getHeaderString("fetcherName");
+    public InputStream getInputSteam(InputStream is, Metadata metadata, HttpHeaders httpHeaders)
+            throws IOException {
+        String fetcherName = httpHeaders.getHeaderString("fetcherName");
         String fetchKey = httpHeaders.getHeaderString("fetchKey");
         if (StringUtils.isBlank(fetcherName) != StringUtils.isBlank(fetchKey)) {
-            throw new IOException("Must specify both a 'fetcherName' and a 'fetchKey'. I see: "+
-                    " fetcherName:"+fetcherName+" and fetchKey:"+fetchKey);
+            throw new IOException("Must specify both a 'fetcherName' and a 'fetchKey'. I see: " +
+                    " fetcherName:" + fetcherName + " and fetchKey:" + fetchKey);
         }
 
-        if (!StringUtils.isBlank(fetcherName)){
+        if (!StringUtils.isBlank(fetcherName)) {
             try {
                 return fetcherManager.getFetcher(fetcherName).fetch(fetchKey, metadata);
             } catch (TikaException e) {

@@ -16,15 +16,16 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import org.apache.poi.wp.usermodel.CharacterRun;
-import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
-import org.apache.poi.xwpf.usermodel.XWPFRun;
-import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.SAXException;
-
 import java.util.Deque;
 import java.util.EnumSet;
 import java.util.Locale;
+
+import org.apache.poi.wp.usermodel.CharacterRun;
+import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
+import org.apache.poi.xwpf.usermodel.XWPFRun;
+import org.xml.sax.SAXException;
+
+import org.apache.tika.sax.XHTMLContentHandler;
 
 public class FormattingUtils {
     private FormattingUtils() {
@@ -39,8 +40,7 @@ public class FormattingUtils {
      * @param currentState current formatting state (stack of open formatting tags)
      * @throws SAXException pass underlying handler exception
      */
-    public static void ensureFormattingState(XHTMLContentHandler xhtml,
-                                             EnumSet<Tag> desired,
+    public static void ensureFormattingState(XHTMLContentHandler xhtml, EnumSet<Tag> desired,
                                              Deque<Tag> currentState) throws SAXException {
         EnumSet<FormattingUtils.Tag> undesired = EnumSet.complementOf(desired);
 
@@ -62,8 +62,8 @@ public class FormattingUtils {
      * @param formattingState current formatting state (stack of open formatting tags)
      * @throws SAXException pass underlying handler exception
      */
-    public static void closeStyleTags(XHTMLContentHandler xhtml,
-                                      Deque<Tag> formattingState) throws SAXException {
+    public static void closeStyleTags(XHTMLContentHandler xhtml, Deque<Tag> formattingState)
+            throws SAXException {
         ensureFormattingState(xhtml, EnumSet.noneOf(Tag.class), formattingState);
     }
 
@@ -78,13 +78,14 @@ public class FormattingUtils {
         if (run.isStrikeThrough()) {
             tags.add(Tag.S);
         }
-        if(run instanceof XWPFRun) {
+        if (run instanceof XWPFRun) {
             XWPFRun xwpfRun = (XWPFRun) run;
             if (xwpfRun.getUnderline() != UnderlinePatterns.NONE) {
                 tags.add(Tag.U);
             }
-        } else if(run instanceof org.apache.poi.hwpf.usermodel.CharacterRun) {
-            org.apache.poi.hwpf.usermodel.CharacterRun hwpfRun = (org.apache.poi.hwpf.usermodel.CharacterRun) run;
+        } else if (run instanceof org.apache.poi.hwpf.usermodel.CharacterRun) {
+            org.apache.poi.hwpf.usermodel.CharacterRun hwpfRun =
+                    (org.apache.poi.hwpf.usermodel.CharacterRun) run;
             if (hwpfRun.getUnderlineCode() != 0) {
                 tags.add(Tag.U);
             }

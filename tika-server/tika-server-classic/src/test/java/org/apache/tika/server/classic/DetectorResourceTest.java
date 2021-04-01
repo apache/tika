@@ -17,24 +17,25 @@
 
 package org.apache.tika.server.classic;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import javax.ws.rs.core.Response;
+
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.junit.Test;
+
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.ServerStatus;
 import org.apache.tika.server.core.TikaServerParseExceptionMapper;
 import org.apache.tika.server.core.resource.DetectorResource;
 import org.apache.tika.server.core.writer.TarWriter;
 import org.apache.tika.server.core.writer.ZipWriter;
-import org.junit.Test;
-
-import javax.ws.rs.core.Response;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 public class DetectorResourceTest extends CXFTestBase {
 
@@ -64,16 +65,12 @@ public class DetectorResourceTest extends CXFTestBase {
     @Test
     public void testDetectCsvWithExt() throws Exception {
         String url = endPoint + DETECT_STREAM_PATH;
-        Response response = WebClient
-                .create(endPoint + DETECT_STREAM_PATH)
-                .type("text/csv")
-                .accept("*/*")
-                .header("Content-Disposition",
-                        "attachment; filename=" + FOO_CSV)
-                .put(ClassLoader.getSystemResourceAsStream(FOO_CSV));
+        Response response =
+                WebClient.create(endPoint + DETECT_STREAM_PATH).type("text/csv").accept("*/*")
+                        .header("Content-Disposition", "attachment; filename=" + FOO_CSV)
+                        .put(ClassLoader.getSystemResourceAsStream(FOO_CSV));
         assertNotNull(response);
-        String readMime = getStringFromInputStream((InputStream) response
-                .getEntity());
+        String readMime = getStringFromInputStream((InputStream) response.getEntity());
         assertEquals("text/csv", readMime);
 
     }
@@ -81,25 +78,17 @@ public class DetectorResourceTest extends CXFTestBase {
     @Test
     public void testDetectCsvNoExt() throws Exception {
 
-        Response response = WebClient
-                .create(endPoint + DETECT_STREAM_PATH)
-                .type("text/csv")
-                .accept("*/*")
-                .header("Content-Disposition",
-                        "attachment; filename=" + CDEC_CSV_NO_EXT)
-                .put(ClassLoader.getSystemResourceAsStream(CDEC_CSV_NO_EXT));
+        Response response =
+                WebClient.create(endPoint + DETECT_STREAM_PATH).type("text/csv").accept("*/*")
+                        .header("Content-Disposition", "attachment; filename=" + CDEC_CSV_NO_EXT)
+                        .put(ClassLoader.getSystemResourceAsStream(CDEC_CSV_NO_EXT));
         assertNotNull(response);
-        String readMime = getStringFromInputStream((InputStream) response
-                .getEntity());
+        String readMime = getStringFromInputStream((InputStream) response.getEntity());
         assertEquals("text/plain", readMime);
 
         // now trick it by adding .csv to the end
-        response = WebClient
-                .create(endPoint + DETECT_STREAM_PATH)
-                .type("text/csv")
-                .accept("*/*")
-                .header("Content-Disposition",
-                        "attachment; filename=" + CDEC_CSV_NO_EXT + ".csv")
+        response = WebClient.create(endPoint + DETECT_STREAM_PATH).type("text/csv").accept("*/*")
+                .header("Content-Disposition", "attachment; filename=" + CDEC_CSV_NO_EXT + ".csv")
                 .put(ClassLoader.getSystemResourceAsStream(CDEC_CSV_NO_EXT));
         assertNotNull(response);
         readMime = getStringFromInputStream((InputStream) response.getEntity());

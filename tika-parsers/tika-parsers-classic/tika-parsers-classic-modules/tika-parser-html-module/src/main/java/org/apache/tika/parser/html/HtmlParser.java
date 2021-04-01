@@ -25,6 +25,13 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.ccil.cowan.tagsoup.HTMLSchema;
+import org.ccil.cowan.tagsoup.Schema;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.config.Field;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
@@ -35,14 +42,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.ParseContext;
-import org.ccil.cowan.tagsoup.HTMLSchema;
-import org.ccil.cowan.tagsoup.Schema;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
-import javax.swing.text.AbstractDocument;
 
 /**
  * HTML parser. Uses TagSoup to turn the input document to HTML SAX events,
@@ -62,12 +61,8 @@ public class HtmlParser extends AbstractEncodingDetectorParser {
     private static final MediaType WAP_XHTML = MediaType.application("vnd.wap.xhtml+xml");
     private static final MediaType X_ASP = MediaType.application("x-asp");
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-                    MediaType.text("html"),
-                    XHTML,
-                    WAP_XHTML,
-                    X_ASP)));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
+            new HashSet<>(Arrays.asList(MediaType.text("html"), XHTML, WAP_XHTML, X_ASP)));
 
     /**
      * HTML schema singleton used to amortise the heavy instantiation time.
@@ -77,10 +72,6 @@ public class HtmlParser extends AbstractEncodingDetectorParser {
     @Field
     private boolean extractScripts = false;
 
-    public Set<MediaType> getSupportedTypes(ParseContext context) {
-        return SUPPORTED_TYPES;
-    }
-
     public HtmlParser() {
         super();
     }
@@ -89,10 +80,12 @@ public class HtmlParser extends AbstractEncodingDetectorParser {
         super(encodingDetector);
     }
 
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return SUPPORTED_TYPES;
+    }
+
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
 
         TemporaryResources tmp = null;
         try {
@@ -113,8 +106,8 @@ public class HtmlParser extends AbstractEncodingDetectorParser {
     }
 
 
-    private void parseImpl(InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+    private void parseImpl(InputStream stream, ContentHandler handler, Metadata metadata,
+                           ParseContext context) throws IOException, SAXException, TikaException {
         // Automatically detect the character encoding
         try (AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(stream),
                 metadata, getEncodingDetector(context))) {
@@ -137,22 +130,18 @@ public class HtmlParser extends AbstractEncodingDetectorParser {
             metadata.set(Metadata.CONTENT_ENCODING, charset.name());
 
             // Get the HTML mapper from the parse context
-            HtmlMapper mapper =
-                    context.get(HtmlMapper.class, new HtmlParserMapper());
+            HtmlMapper mapper = context.get(HtmlMapper.class, new HtmlParserMapper());
 
             // Parse the HTML document
-            org.ccil.cowan.tagsoup.Parser parser =
-                    new org.ccil.cowan.tagsoup.Parser();
+            org.ccil.cowan.tagsoup.Parser parser = new org.ccil.cowan.tagsoup.Parser();
 
             // Use schema from context or default
             Schema schema = context.get(Schema.class, HTML_SCHEMA);
 
             // TIKA-528: Reuse share schema to avoid heavy instantiation
-            parser.setProperty(
-                    org.ccil.cowan.tagsoup.Parser.schemaProperty, schema);
+            parser.setProperty(org.ccil.cowan.tagsoup.Parser.schemaProperty, schema);
             // TIKA-599: Shared schema is thread-safe only if bogons are ignored
-            parser.setFeature(
-                    org.ccil.cowan.tagsoup.Parser.ignoreBogonsFeature, true);
+            parser.setFeature(org.ccil.cowan.tagsoup.Parser.ignoreBogonsFeature, true);
 
             parser.setContentHandler(new XHTMLDowngradeHandler(
                     new HtmlHandler(mapper, handler, metadata, context, extractScripts)));
@@ -206,6 +195,21 @@ public class HtmlParser extends AbstractEncodingDetectorParser {
         return DefaultHtmlMapper.INSTANCE.mapSafeAttribute(elementName, attributeName);
     }
 
+    public boolean isExtractScripts() {
+        return extractScripts;
+    }
+
+    /**
+     * Whether or not to extract contents in script entities.
+     * Default is <code>false</code>
+     *
+     * @param extractScripts
+     */
+    @Field
+    public void setExtractScripts(boolean extractScripts) {
+        this.extractScripts = extractScripts;
+    }
+
     /**
      * Adapter class that maintains backwards compatibility with the
      * protected HtmlParser methods. Making HtmlParser implement HtmlMapper
@@ -227,21 +231,6 @@ public class HtmlParser extends AbstractEncodingDetectorParser {
         public String mapSafeAttribute(String elementName, String attributeName) {
             return HtmlParser.this.mapSafeAttribute(elementName, attributeName);
         }
-    }
-
-    /**
-     * Whether or not to extract contents in script entities.
-     * Default is <code>false</code>
-     *
-     * @param extractScripts
-     */
-    @Field
-    public void setExtractScripts(boolean extractScripts) {
-        this.extractScripts = extractScripts;
-    }
-
-    public boolean isExtractScripts() {
-        return extractScripts;
     }
 
 }

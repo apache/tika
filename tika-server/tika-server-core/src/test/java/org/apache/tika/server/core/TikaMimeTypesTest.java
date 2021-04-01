@@ -17,21 +17,15 @@
 
 package org.apache.tika.server.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import javax.ws.rs.core.Response;
-
 import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
+import javax.ws.rs.core.Response;
 
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.apache.tika.server.core.CXFTestBase;
-import org.apache.tika.server.core.resource.TikaMimeTypes;
 import org.junit.Test;
+
+import org.apache.tika.server.core.resource.TikaMimeTypes;
 
 public class TikaMimeTypesTest extends CXFTestBase {
 
@@ -41,10 +35,8 @@ public class TikaMimeTypesTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(TikaMimeTypes.class);
-        sf.setResourceProvider(
-                TikaMimeTypes.class,
-                new SingletonResourceProvider(new TikaMimeTypes())
-        );
+        sf.setResourceProvider(TikaMimeTypes.class,
+                new SingletonResourceProvider(new TikaMimeTypes()));
     }
 
     @Override
@@ -53,11 +45,9 @@ public class TikaMimeTypesTest extends CXFTestBase {
 
     @Test
     public void testGetPlainText() throws Exception {
-        Response response = WebClient
-                .create(endPoint + MIMETYPES_PATH)
-                .type("text/plain")
-                .accept("text/plain")
-                .get();
+        Response response =
+                WebClient.create(endPoint + MIMETYPES_PATH).type("text/plain").accept("text/plain")
+                        .get();
 
         String text = getStringFromInputStream((InputStream) response.getEntity());
         assertContains("text/plain", text);
@@ -71,11 +61,9 @@ public class TikaMimeTypesTest extends CXFTestBase {
 
     @Test
     public void testGetHTML() throws Exception {
-        Response response = WebClient
-                .create(endPoint + MIMETYPES_PATH)
-                .type("text/html")
-                .accept("text/html")
-                .get();
+        Response response =
+                WebClient.create(endPoint + MIMETYPES_PATH).type("text/html").accept("text/html")
+                        .get();
 
         String text = getStringFromInputStream((InputStream) response.getEntity());
         assertContains("text/plain", text);

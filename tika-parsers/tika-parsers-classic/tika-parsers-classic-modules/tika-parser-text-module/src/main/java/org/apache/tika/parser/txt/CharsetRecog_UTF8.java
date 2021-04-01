@@ -24,13 +24,13 @@ class CharsetRecog_UTF8 extends CharsetRecognizer {
         boolean hasBOM = false;
         int numValid = 0;
         int numInvalid = 0;
-        byte input[] = det.fRawInput;
+        byte[] input = det.fRawInput;
         int i;
         int trailBytes = 0;
         int confidence;
 
-        if (det.fRawLength >= 3 &&
-                (input[0] & 0xFF) == 0xef && (input[1] & 0xFF) == 0xbb && (input[2] & 0xFF) == 0xbf) {
+        if (det.fRawLength >= 3 && (input[0] & 0xFF) == 0xef && (input[1] & 0xFF) == 0xbb &&
+                (input[2] & 0xFF) == 0xbf) {
             hasBOM = true;
         }
 

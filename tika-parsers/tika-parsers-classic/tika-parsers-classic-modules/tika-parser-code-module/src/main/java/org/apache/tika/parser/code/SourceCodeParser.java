@@ -33,6 +33,12 @@ import java.util.regex.Pattern;
 import com.uwyn.jhighlight.renderer.Renderer;
 import com.uwyn.jhighlight.renderer.XhtmlRendererFactory;
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.ccil.cowan.tagsoup.HTMLSchema;
+import org.ccil.cowan.tagsoup.Schema;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
@@ -41,11 +47,6 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.ParseContext;
-import org.ccil.cowan.tagsoup.HTMLSchema;
-import org.ccil.cowan.tagsoup.Schema;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 /**
  * Generic Source code parser for Java, Groovy, C++.
@@ -60,15 +61,16 @@ public class SourceCodeParser extends AbstractEncodingDetectorParser {
 
     private static final Pattern authorPattern = Pattern.compile("(?im)@author (.*) *$");
 
-    private static final Map<MediaType, String> TYPES_TO_RENDERER = new HashMap<MediaType, String>() {
-        private static final long serialVersionUID = -741976157563751152L;
+    private static final Map<MediaType, String> TYPES_TO_RENDERER =
+            new HashMap<MediaType, String>() {
+                private static final long serialVersionUID = -741976157563751152L;
 
-        {
-            put(MediaType.text("x-c++src"), CPP);
-            put(MediaType.text("x-java-source"), JAVA);
-            put(MediaType.text("x-groovy"), GROOVY);
-        }
-    };
+                {
+                    put(MediaType.text("x-c++src"), CPP);
+                    put(MediaType.text("x-java-source"), JAVA);
+                    put(MediaType.text("x-groovy"), GROOVY);
+                }
+            };
 
     //Parse the HTML document
     private static final Schema HTML_SCHEMA = new HTMLSchema();
@@ -87,10 +89,10 @@ public class SourceCodeParser extends AbstractEncodingDetectorParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
-        try (AutoDetectReader reader = new AutoDetectReader(
-                new CloseShieldInputStream(stream), metadata, getEncodingDetector(context))) {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
+        try (AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(stream),
+                metadata, getEncodingDetector(context))) {
             Charset charset = reader.getCharset();
             String mediaType = metadata.get(Metadata.CONTENT_TYPE);
             String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);

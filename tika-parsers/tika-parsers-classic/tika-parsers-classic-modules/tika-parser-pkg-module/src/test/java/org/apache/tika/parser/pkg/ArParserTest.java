@@ -23,10 +23,11 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
+
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.sax.BodyContentHandler;
 
 public class ArParserTest extends AbstractPkgTest {
 
@@ -56,7 +57,7 @@ public class ArParserTest extends AbstractPkgTest {
         for (String type : tracker.mediatypes) {
             assertNull(type);
         }
-        for(String crt : tracker.createdAts) {
+        for (String crt : tracker.createdAts) {
             assertNull(crt);
         }
 
@@ -72,11 +73,11 @@ public class ArParserTest extends AbstractPkgTest {
 
         modifiedAt = tracker.modifiedAts.get(0);
         assertTrue("Modified at " + modifiedAt, modifiedAt.startsWith("201"));
-        
+
         for (String type : tracker.mediatypes) {
             assertNull(type);
         }
-        for(String crt : tracker.createdAts) {
+        for (String crt : tracker.createdAts) {
             assertNull(crt);
         }
     }

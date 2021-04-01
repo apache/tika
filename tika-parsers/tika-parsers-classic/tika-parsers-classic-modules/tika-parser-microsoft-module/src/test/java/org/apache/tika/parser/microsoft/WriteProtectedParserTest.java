@@ -20,18 +20,19 @@ import static org.apache.tika.TikaTest.assertContains;
 
 import java.io.InputStream;
 
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
 
 public class WriteProtectedParserTest {
 
     @Test
     public void testWriteProtected() throws Exception {
-        InputStream input = ExcelParserTest.class.getResourceAsStream(
-                "/test-documents/protect.xlsx");
+        InputStream input =
+                ExcelParserTest.class.getResourceAsStream("/test-documents/protect.xlsx");
 
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();

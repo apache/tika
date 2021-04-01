@@ -28,6 +28,10 @@ class ExtendedGUID implements Comparable<ExtendedGUID> {
         this.n = n;
     }
 
+    public static ExtendedGUID nil() {
+        return new ExtendedGUID(GUID.nil(), 0);
+    }
+
     @Override
     public int compareTo(ExtendedGUID other) {
         if (other.guid.equals(guid)) {
@@ -45,17 +49,12 @@ class ExtendedGUID implements Comparable<ExtendedGUID> {
             return false;
         }
         ExtendedGUID that = (ExtendedGUID) o;
-        return n == that.n &&
-          Objects.equals(guid, that.guid);
+        return n == that.n && Objects.equals(guid, that.guid);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(guid, n);
-    }
-
-    public static ExtendedGUID nil() {
-        return new ExtendedGUID(GUID.nil(), 0);
     }
 
     @Override

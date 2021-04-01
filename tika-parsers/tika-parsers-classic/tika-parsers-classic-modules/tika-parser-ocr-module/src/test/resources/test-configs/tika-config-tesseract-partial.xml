@@ -16,23 +16,23 @@
   limitations under the License.
 -->
 <properties>
-  <parsers>
-    <parser class="org.apache.tika.parser.ocr.TesseractOCRParser">
-      <params>
-        <param name="timeout" type="int">240</param>
-        <param name="density" type="int">200</param>
-        <param name="depth" type="int">8</param>
-        <param name="resize" type="int">300</param>
+    <parsers>
+        <parser class="org.apache.tika.parser.ocr.TesseractOCRParser">
+            <params>
+                <param name="timeout" type="int">240</param>
+                <param name="density" type="int">200</param>
+                <param name="depth" type="int">8</param>
+                <param name="resize" type="int">300</param>
 
-        <param name="minFileSizeToOcr" type="long">1</param>
-        <param name="outputType" type="string">hocr</param>
-        <param name="filter" type="string">box</param>
-        <param name="applyRotation" type="bool">false</param>
-        <param name="enableImagePreprocessing" type="bool">false</param>
+                <param name="minFileSizeToOcr" type="long">1</param>
+                <param name="outputType" type="string">hocr</param>
+                <param name="filter" type="string">box</param>
+                <param name="applyRotation" type="bool">false</param>
+                <param name="enableImagePreprocessing" type="bool">false</param>
 
-        <param name="language" type="string">fra+deu</param>
+                <param name="language" type="string">fra+deu</param>
 
-      </params>
-    </parser>
-  </parsers>
+            </params>
+        </parser>
+    </parsers>
 </properties>

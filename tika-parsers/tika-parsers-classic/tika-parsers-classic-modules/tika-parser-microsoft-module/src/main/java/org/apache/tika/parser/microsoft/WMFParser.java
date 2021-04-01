@@ -19,7 +19,6 @@ package org.apache.tika.parser.microsoft;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Array;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Set;
@@ -31,14 +30,15 @@ import org.apache.poi.hwmf.record.HwmfText;
 import org.apache.poi.hwmf.usermodel.HwmfPicture;
 import org.apache.poi.util.LocaleUtil;
 import org.apache.poi.util.RecordFormatException;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * This parser offers a very rough capability to extract text if there
@@ -48,8 +48,7 @@ public class WMFParser extends AbstractParser {
 
     private static final MediaType MEDIA_TYPE = MediaType.image("wmf");
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MEDIA_TYPE);
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MEDIA_TYPE);
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -57,8 +56,8 @@ public class WMFParser extends AbstractParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         try {
@@ -67,7 +66,7 @@ public class WMFParser extends AbstractParser {
                 picture = new HwmfPicture(stream);
             } catch (ArrayIndexOutOfBoundsException e) {
                 //POI can throw this on corrupt files
-                throw new TikaException(e.getClass().getSimpleName()+": " + e.getMessage(), e);
+                throw new TikaException(e.getClass().getSimpleName() + ": " + e.getMessage(), e);
             }
             Charset charset = LocaleUtil.CHARSET_1252;
             //TODO: make x/y info public in POI so that we can use it here
@@ -78,9 +77,9 @@ public class WMFParser extends AbstractParser {
                 //This fix should be done within POI
                 if (record.getWmfRecordType().equals(HwmfRecordType.createFontIndirect)) {
                     HwmfFont font = ((HwmfText.WmfCreateFontIndirect) record).getFont();
-                    charset = (font.getCharset() == null || font.getCharset().getCharset() == null)
-                            ? LocaleUtil.CHARSET_1252 :
-                            font.getCharset().getCharset();
+                    charset =
+                            (font.getCharset() == null || font.getCharset().getCharset() == null) ?
+                                    LocaleUtil.CHARSET_1252 : font.getCharset().getCharset();
                 }
                 if (record.getWmfRecordType().equals(HwmfRecordType.extTextOut)) {
                     HwmfText.WmfExtTextOut textOut = (HwmfText.WmfExtTextOut) record;
@@ -94,7 +93,8 @@ public class WMFParser extends AbstractParser {
                     xhtml.endElement("p");
                 }
             }
-        } catch (RecordFormatException e) { //POI's hwmfparser can throw these for "parse exceptions"
+        } catch (RecordFormatException e) { //POI's hwmfparser can \ throw these for "parse
+            // exceptions"
             throw new TikaException(e.getMessage(), e);
         } catch (RuntimeException e) { //convert Runtime to RecordFormatExceptions
             throw new TikaException(e.getMessage(), e);

@@ -16,17 +16,17 @@
  */
 package org.apache.tika.detect.zip;
 
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
-import org.apache.commons.compress.archivers.zip.ZipFile;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.mime.MediaType;
+import static org.apache.tika.detect.zip.PackageConstants.KMZ;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Enumeration;
 
-import static org.apache.tika.detect.zip.PackageConstants.KMZ;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipFile;
+
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.mime.MediaType;
 
 public class KMZDetector implements ZipContainerDetector {
     @Override
@@ -37,8 +37,7 @@ public class KMZDetector implements ZipContainerDetector {
         while (entries.hasMoreElements()) {
             ZipArchiveEntry entry = entries.nextElement();
             String name = entry.getName();
-            if (!entry.isDirectory()
-                    && name.indexOf('/') == -1 && name.indexOf('\\') == -1) {
+            if (!entry.isDirectory() && name.indexOf('/') == -1 && name.indexOf('\\') == -1) {
                 if (name.endsWith(".kml") && !kmlFound) {
                     kmlFound = true;
                 } else {
@@ -55,12 +54,11 @@ public class KMZDetector implements ZipContainerDetector {
     }
 
     @Override
-    public MediaType streamingDetectUpdate(ZipArchiveEntry zae,
-                                           InputStream zis, StreamingDetectContext detectContext) {
+    public MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis,
+                                           StreamingDetectContext detectContext) {
         String name = zae.getName();
 
-        if (name.indexOf('/') != -1
-                || name.indexOf('\\') != -1) {
+        if (name.indexOf('/') != -1 || name.indexOf('\\') != -1) {
             return null;
         }
         if (name.endsWith(".kml")) {

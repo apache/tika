@@ -16,11 +16,19 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+import java.math.BigDecimal;
+import java.util.Date;
+import java.util.Optional;
+
 import org.apache.poi.ooxml.POIXMLProperties;
 import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.opc.internal.PackagePropertiesPart;
 import org.apache.poi.openxml4j.util.Nullable;
 import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
+import org.apache.xmlbeans.impl.values.XmlValueOutOfRangeException;
+import org.openxmlformats.schemas.officeDocument.x2006.customProperties.CTProperty;
+import org.openxmlformats.schemas.officeDocument.x2006.extendedProperties.CTProperties;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -33,13 +41,6 @@ import org.apache.tika.parser.microsoft.SummaryExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xps.XPSTextExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xslf.XSLFEventBasedPowerPointExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
-import org.apache.xmlbeans.impl.values.XmlValueOutOfRangeException;
-import org.openxmlformats.schemas.officeDocument.x2006.customProperties.CTProperty;
-import org.openxmlformats.schemas.officeDocument.x2006.extendedProperties.CTProperties;
-
-import java.math.BigDecimal;
-import java.util.Date;
-import java.util.Optional;
 
 /**
  * OOXML metadata extractor.
@@ -61,8 +62,7 @@ public class MetadataExtractor {
                 ((extractor instanceof XSSFEventBasedExcelExtractor ||
                         extractor instanceof XWPFEventBasedWordExtractor ||
                         extractor instanceof XSLFEventBasedPowerPointExtractor ||
-                        extractor instanceof XPSTextExtractor) &&
-                        extractor.getPackage() != null)) {
+                        extractor instanceof XPSTextExtractor) && extractor.getPackage() != null)) {
             extractMetadata(extractor.getCoreProperties(), metadata);
             extractMetadata(extractor.getExtendedProperties(), metadata);
             extractMetadata(extractor.getCustomProperties(), metadata);
@@ -70,34 +70,22 @@ public class MetadataExtractor {
     }
 
     private void extractMetadata(POIXMLProperties.CoreProperties properties, Metadata metadata) {
-        PackagePropertiesPart propsHolder = properties
-                .getUnderlyingProperties();
+        PackagePropertiesPart propsHolder = properties.getUnderlyingProperties();
 
         setProperty(metadata, OfficeOpenXMLCore.CATEGORY, propsHolder.getCategoryProperty());
-        setProperty(metadata, OfficeOpenXMLCore.CONTENT_STATUS, propsHolder
-                .getContentStatusProperty());
-        setProperty(metadata, TikaCoreProperties.CREATED, propsHolder
-                .getCreatedProperty());
-        addMultiProperty(metadata, TikaCoreProperties.CREATOR, propsHolder
-                .getCreatorProperty());
-        setProperty(metadata, TikaCoreProperties.DESCRIPTION, propsHolder
-                .getDescriptionProperty());
-        setProperty(metadata, TikaCoreProperties.IDENTIFIER, propsHolder
-                .getIdentifierProperty());
-        addProperty(metadata, OfficeOpenXMLCore.SUBJECT,
-                propsHolder.getSubjectProperty());
-        addProperty(metadata, Office.KEYWORDS, propsHolder
-                .getKeywordsProperty());
-        setProperty(metadata, TikaCoreProperties.LANGUAGE, propsHolder
-                .getLanguageProperty());
-        setProperty(metadata, TikaCoreProperties.MODIFIER, propsHolder
-                .getLastModifiedByProperty());
-        setProperty(metadata, TikaCoreProperties.PRINT_DATE, propsHolder
-                .getLastPrintedProperty());
-        setProperty(metadata, TikaCoreProperties.MODIFIED, propsHolder
-                .getModifiedProperty());
-        setProperty(metadata, OfficeOpenXMLCore.REVISION, propsHolder
-                .getRevisionProperty());
+        setProperty(metadata, OfficeOpenXMLCore.CONTENT_STATUS,
+                propsHolder.getContentStatusProperty());
+        setProperty(metadata, TikaCoreProperties.CREATED, propsHolder.getCreatedProperty());
+        addMultiProperty(metadata, TikaCoreProperties.CREATOR, propsHolder.getCreatorProperty());
+        setProperty(metadata, TikaCoreProperties.DESCRIPTION, propsHolder.getDescriptionProperty());
+        setProperty(metadata, TikaCoreProperties.IDENTIFIER, propsHolder.getIdentifierProperty());
+        addProperty(metadata, OfficeOpenXMLCore.SUBJECT, propsHolder.getSubjectProperty());
+        addProperty(metadata, Office.KEYWORDS, propsHolder.getKeywordsProperty());
+        setProperty(metadata, TikaCoreProperties.LANGUAGE, propsHolder.getLanguageProperty());
+        setProperty(metadata, TikaCoreProperties.MODIFIER, propsHolder.getLastModifiedByProperty());
+        setProperty(metadata, TikaCoreProperties.PRINT_DATE, propsHolder.getLastPrintedProperty());
+        setProperty(metadata, TikaCoreProperties.MODIFIED, propsHolder.getModifiedProperty());
+        setProperty(metadata, OfficeOpenXMLCore.REVISION, propsHolder.getRevisionProperty());
 
         setProperty(metadata, TikaCoreProperties.TITLE, propsHolder.getTitleProperty());
         setProperty(metadata, OfficeOpenXMLCore.VERSION, propsHolder.getVersionProperty());
@@ -122,9 +110,11 @@ public class MetadataExtractor {
         setProperty(metadata, OfficeOpenXMLExtended.APP_VERSION, propsHolder.getAppVersion());
         setProperty(metadata, TikaCoreProperties.PUBLISHER, propsHolder.getCompany());
         setProperty(metadata, OfficeOpenXMLExtended.COMPANY, propsHolder.getCompany());
-        SummaryExtractor.addMulti(metadata, OfficeOpenXMLExtended.MANAGER, propsHolder.getManager());
+        SummaryExtractor
+                .addMulti(metadata, OfficeOpenXMLExtended.MANAGER, propsHolder.getManager());
         setProperty(metadata, OfficeOpenXMLExtended.NOTES, propsHolder.getNotes());
-        setProperty(metadata, OfficeOpenXMLExtended.PRESENTATION_FORMAT, propsHolder.getPresentationFormat());
+        setProperty(metadata, OfficeOpenXMLExtended.PRESENTATION_FORMAT,
+                propsHolder.getPresentationFormat());
         setProperty(metadata, OfficeOpenXMLExtended.TEMPLATE, propsHolder.getTemplate());
         setProperty(metadata, OfficeOpenXMLExtended.TOTAL_TIME, totalTime);
         int docSecurityFlag = propsHolder.getDocSecurity();
@@ -144,13 +134,14 @@ public class MetadataExtractor {
         setProperty(metadata, Office.LINE_COUNT, propsHolder.getLines());
         setProperty(metadata, Office.WORD_COUNT, propsHolder.getWords());
         setProperty(metadata, Office.CHARACTER_COUNT, propsHolder.getCharacters());
-        setProperty(metadata, Office.CHARACTER_COUNT_WITH_SPACES, propsHolder.getCharactersWithSpaces());
+        setProperty(metadata, Office.CHARACTER_COUNT_WITH_SPACES,
+                propsHolder.getCharactersWithSpaces());
     }
 
     private String getDocSecurityString(int docSecurityFlag) {
         //mappings from: https://exiftool.org/TagNames/OOXML.html and
         //https://docs.microsoft.com/en-us/dotnet/api/documentformat.openxml.extendedproperties.documentsecurity?view=openxml-2.8.1
-        switch(docSecurityFlag) {
+        switch (docSecurityFlag) {
             case 0:
                 return OfficeOpenXMLExtended.SECURITY_NONE;
             case 1:
@@ -166,10 +157,9 @@ public class MetadataExtractor {
         }
     }
 
-    private void extractMetadata(POIXMLProperties.CustomProperties properties,
-                                 Metadata metadata) {
-        org.openxmlformats.schemas.officeDocument.x2006.customProperties.CTProperties
-                props = properties.getUnderlyingProperties();
+    private void extractMetadata(POIXMLProperties.CustomProperties properties, Metadata metadata) {
+        org.openxmlformats.schemas.officeDocument.x2006.customProperties.CTProperties props =
+                properties.getUnderlyingProperties();
         for (int i = 0; i < props.sizeOfPropertyArray(); i++) {
             CTProperty property = props.getPropertyArray(i);
             String val = null;
@@ -274,7 +264,8 @@ public class MetadataExtractor {
         if (value instanceof String) {
             metadata.add(property, (String) value);
         } else {
-            throw new IllegalArgumentException("Can't add property of class: " + optionalValue.getClass());
+            throw new IllegalArgumentException(
+                    "Can't add property of class: " + optionalValue.getClass());
         }
     }
 

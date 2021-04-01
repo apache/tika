@@ -1,4 +1,3 @@
-package org.apache.tika.parser.sqlite3;
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -15,6 +14,7 @@ package org.apache.tika.parser.sqlite3;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.parser.sqlite3;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,6 +29,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import org.sqlite.SQLiteConfig;
+
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -36,7 +38,6 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.jdbc.AbstractDBParser;
 import org.apache.tika.parser.jdbc.JDBCTableReader;
-import org.sqlite.SQLiteConfig;
 
 /**
  * This is the implementation of the db parser for SQLite.
@@ -60,7 +61,8 @@ class SQLite3DBParser extends AbstractDBParser {
     }
 
     @Override
-    protected Connection getConnection(InputStream stream, Metadata metadata, ParseContext context) throws IOException {
+    protected Connection getConnection(InputStream stream, Metadata metadata, ParseContext context)
+            throws IOException {
         String connectionString = getConnectionString(stream, metadata, context);
 
         Connection connection = null;
@@ -83,7 +85,8 @@ class SQLite3DBParser extends AbstractDBParser {
     }
 
     @Override
-    protected String getConnectionString(InputStream is, Metadata metadata, ParseContext context) throws IOException {
+    protected String getConnectionString(InputStream is, Metadata metadata, ParseContext context)
+            throws IOException {
         TikaInputStream tis = TikaInputStream.cast(is);
         //if this is a TikaInputStream, use that to spool is to disk or
         //use original underlying file.
@@ -94,7 +97,7 @@ class SQLite3DBParser extends AbstractDBParser {
             //if not TikaInputStream, create own tmpResources.
             tmpFile = Files.createTempFile("tika-sqlite-tmp", "");
             Files.copy(is, tmpFile, StandardCopyOption.REPLACE_EXISTING);
-            return "jdbc:sqlite:"+ tmpFile.toAbsolutePath().toString();
+            return "jdbc:sqlite:" + tmpFile.toAbsolutePath().toString();
         }
     }
 
@@ -131,12 +134,14 @@ class SQLite3DBParser extends AbstractDBParser {
     }
 
     @Override
-    public JDBCTableReader getTableReader(Connection connection, String tableName, ParseContext context) {
+    public JDBCTableReader getTableReader(Connection connection, String tableName,
+                                          ParseContext context) {
         return new SQLite3TableReader(connection, tableName, new EmbeddedDocumentUtil(context));
     }
 
     @Override
-    protected JDBCTableReader getTableReader(Connection connection, String tableName, EmbeddedDocumentUtil embeddedDocumentUtil) {
+    protected JDBCTableReader getTableReader(Connection connection, String tableName,
+                                             EmbeddedDocumentUtil embeddedDocumentUtil) {
         return new SQLite3TableReader(connection, tableName, embeddedDocumentUtil);
     }
 }
