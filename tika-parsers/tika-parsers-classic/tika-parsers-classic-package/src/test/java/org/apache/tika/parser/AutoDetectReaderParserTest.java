@@ -26,15 +26,16 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 public class AutoDetectReaderParserTest extends MultiThreadedTikaTest {
 
@@ -51,8 +52,7 @@ public class AutoDetectReaderParserTest extends MultiThreadedTikaTest {
         FileFilter fileFilter = new FileFilter() {
             @Override
             public boolean accept(File pathname) {
-                if (pathname.getName().endsWith(".txt") ||
-                pathname.getName().endsWith(".html")) {
+                if (pathname.getName().endsWith(".txt") || pathname.getName().endsWith(".html")) {
                     return true;
                 }
                 return false;
@@ -67,20 +67,18 @@ public class AutoDetectReaderParserTest extends MultiThreadedTikaTest {
 
         @Override
         public Set<MediaType> getSupportedTypes(ParseContext context) {
-            return Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-                            MediaType.text("html"),
-                            MediaType.text("plain"))));
+            return Collections.unmodifiableSet(
+                    new HashSet<>(Arrays.asList(MediaType.text("html"), MediaType.text("plain"))));
         }
 
         @Override
-        public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+        public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                          ParseContext context) throws IOException, SAXException, TikaException {
             try (AutoDetectReader reader = new AutoDetectReader(stream)) {
                 Charset charset = reader.getCharset();
-                MediaType type = new MediaType(
-                        MediaType.parse("text/plhtml"), charset);
+                MediaType type = new MediaType(MediaType.parse("text/plhtml"), charset);
                 metadata.set(Metadata.CONTENT_TYPE, type.toString());
-                XHTMLContentHandler xhtml =
-                        new XHTMLContentHandler(handler, metadata);
+                XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
                 xhtml.startDocument();
 
                 xhtml.startElement("p");

@@ -19,13 +19,14 @@ package org.apache.tika.parser;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
 import org.apache.tika.utils.RegexUtils;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * Parser decorator that post-processes the results from a decorated parser.
@@ -48,10 +49,8 @@ public class ParserPostProcessor extends ParserDecorator {
      * Forwards the call to the delegated parser and post-processes the
      * results as described above.
      */
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
         ContentHandler body = new BodyContentHandler();
         ContentHandler tee = new TeeContentHandler(handler, body);
         super.parse(stream, tee, metadata, context);

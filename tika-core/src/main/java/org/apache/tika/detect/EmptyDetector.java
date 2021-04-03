@@ -32,8 +32,7 @@ public class EmptyDetector implements Detector {
      */
     public static final EmptyDetector INSTANCE = new EmptyDetector();
 
-    public MediaType detect(InputStream input, Metadata metadata)
-            throws IOException {
+    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
         return MediaType.OCTET_STREAM;
     }
 

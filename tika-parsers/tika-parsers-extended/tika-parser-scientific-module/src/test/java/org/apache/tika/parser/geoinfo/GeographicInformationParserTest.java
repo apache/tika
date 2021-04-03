@@ -19,15 +19,16 @@ package org.apache.tika.parser.geoinfo;
 
 import static org.junit.Assert.assertEquals;
 
+import org.junit.Test;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
-import org.junit.Test;
 
 
 public class GeographicInformationParserTest extends TikaTest {
 
     @Test
-    public void testISO19139() throws Exception{
+    public void testISO19139() throws Exception {
         XMLResult r = getXML("sampleFile.iso19139", new GeographicInformationParser());
         assertEquals("text/iso19139+xml", r.metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("UTF-8", r.metadata.get("CharacterSet"));

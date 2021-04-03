@@ -16,13 +16,14 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
+import org.junit.Test;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTest {
 

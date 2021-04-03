@@ -21,9 +21,9 @@ import org.xml.sax.SAXException;
 
 /**
  * A wrapper around a {@link ContentHandler} which will ignore normal
- *  SAX calls to {@link #endDocument()}, and only fire them later.
+ * SAX calls to {@link #endDocument()}, and only fire them later.
  * This is typically used to ensure that we can output the metadata
- *  before ending the document
+ * before ending the document
  */
 public class EndDocumentShieldingContentHandler extends ContentHandlerDecorator {
     private boolean endDocumentCalled;
@@ -34,20 +34,20 @@ public class EndDocumentShieldingContentHandler extends ContentHandlerDecorator 
      * @param handler SAX event handler to be decorated
      */
     public EndDocumentShieldingContentHandler(ContentHandler handler) {
-       super(handler);
-       endDocumentCalled = false;
+        super(handler);
+        endDocumentCalled = false;
     }
 
     @Override
     public void endDocument() throws SAXException {
         endDocumentCalled = true;
     }
-    
+
     public void reallyEndDocument() throws SAXException {
-       super.endDocument();
+        super.endDocument();
     }
-    
+
     public boolean isEndDocumentWasCalled() {
-       return endDocumentCalled;
+        return endDocumentCalled;
     }
 }

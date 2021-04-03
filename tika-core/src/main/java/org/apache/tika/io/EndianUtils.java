@@ -5,9 +5,9 @@
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,6 +30,8 @@ import org.apache.tika.exception.TikaException;
  * Origin of code: Based on the version in POI
  */
 public class EndianUtils {
+    private static final int LONG_SIZE = 8;
+
     /**
      * Get a LE short value from an InputStream
      *
@@ -38,7 +40,8 @@ public class EndianUtils {
      * @throws IOException             will be propagated back to the caller
      * @throws BufferUnderrunException if the stream cannot provide enough bytes
      */
-    public static short readShortLE(InputStream stream) throws IOException, BufferUnderrunException {
+    public static short readShortLE(InputStream stream)
+            throws IOException, BufferUnderrunException {
         return (short) readUShortLE(stream);
     }
 
@@ -50,7 +53,8 @@ public class EndianUtils {
      * @throws IOException             will be propagated back to the caller
      * @throws BufferUnderrunException if the stream cannot provide enough bytes
      */
-    public static short readShortBE(InputStream stream) throws IOException, BufferUnderrunException {
+    public static short readShortBE(InputStream stream)
+            throws IOException, BufferUnderrunException {
         return (short) readUShortBE(stream);
     }
 
@@ -71,7 +75,6 @@ public class EndianUtils {
         }
         return (ch1 << 8) + (ch2 << 0);
     }
-
 
     /**
      * Get a LE unsigned int value from an InputStream
@@ -110,6 +113,7 @@ public class EndianUtils {
         }
         return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0)) & 0x00FFFFFFFFl;
     }
+
     /**
      * Get a LE int value from an InputStream
      *
@@ -169,15 +173,9 @@ public class EndianUtils {
             throw new BufferUnderrunException();
         }
 
-        return
-                ((long) ch8 << 56) +
-                        ((long) ch7 << 48) +
-                        ((long) ch6 << 40) +
-                        ((long) ch5 << 32) +
-                        ((long) ch4 << 24) + // cast to long to preserve bit 31 (sign bit for ints)
-                        (ch3 << 16) +
-                        (ch2 << 8) +
-                        (ch1 << 0);
+        return ((long) ch8 << 56) + ((long) ch7 << 48) + ((long) ch6 << 40) + ((long) ch5 << 32) +
+                ((long) ch4 << 24) + // cast to long to preserve bit 31 (sign bit for ints)
+                (ch3 << 16) + (ch2 << 8) + (ch1 << 0);
     }
 
     /**
@@ -201,15 +199,9 @@ public class EndianUtils {
             throw new BufferUnderrunException();
         }
 
-        return
-                ((long) ch1 << 56) +
-                        ((long) ch2 << 48) +
-                        ((long) ch3 << 40) +
-                        ((long) ch4 << 32) +
-                        ((long) ch5 << 24) + // cast to long to preserve bit 31 (sign bit for ints)
-                        (ch6 << 16) +
-                        (ch7 << 8) +
-                        (ch8 << 0);
+        return ((long) ch1 << 56) + ((long) ch2 << 48) + ((long) ch3 << 40) + ((long) ch4 << 32) +
+                ((long) ch5 << 24) + // cast to long to preserve bit 31 (sign bit for ints)
+                (ch6 << 16) + (ch7 << 8) + (ch8 << 0);
     }
 
     /**
@@ -235,7 +227,6 @@ public class EndianUtils {
         }
         return v;
     }
-
 
     /**
      * Get a LE short value from the beginning of a byte array
@@ -437,9 +428,6 @@ public class EndianUtils {
         }
         return result;
     }
-
-    private static final int LONG_SIZE = 8;
-
 
     /**
      * Convert an 'unsigned' byte to an integer. ie, don't carry across the

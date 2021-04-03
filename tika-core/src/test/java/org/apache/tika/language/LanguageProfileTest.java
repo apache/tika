@@ -50,7 +50,7 @@ public class LanguageProfileTest {
         assertTrue(foo.distance(foobar) == bar.distance(foobar));
 
         foobar.add("foo");
-        assertTrue( foo.distance(foobar) < bar.distance(foobar));
+        assertTrue(foo.distance(foobar) < bar.distance(foobar));
 
         foobar.add("bar");
         assertTrue(foo.distance(foobar) == bar.distance(foobar));

@@ -18,11 +18,12 @@
 package org.apache.tika.parser;
 
 
-import org.apache.tika.exception.TikaException;
-import org.xml.sax.SAXException;
-
 import java.io.IOException;
 import java.util.Map;
+
+import org.xml.sax.SAXException;
+
+import org.apache.tika.exception.TikaException;
 
 public abstract class ParserFactory {
 

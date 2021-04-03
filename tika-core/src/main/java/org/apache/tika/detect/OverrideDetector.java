@@ -16,26 +16,33 @@
  */
 package org.apache.tika.detect;
 
+import java.io.IOException;
+import java.io.InputStream;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 
-import java.io.IOException;
-import java.io.InputStream;
-
 /**
  * Use this to force a content type detection via the
- * {@link TikaCoreProperties#CONTENT_TYPE_OVERRIDE} key in the metadata object.
+ * {@link TikaCoreProperties#CONTENT_TYPE_USER_OVERRIDE} key in the metadata object.
+ * <p>
+ * This is also required to override detection by some parsers
+ * via {@link TikaCoreProperties#CONTENT_TYPE_PARSER_OVERRIDE}.
  */
 public class OverrideDetector implements Detector {
 
     @Override
     public MediaType detect(InputStream input, Metadata metadata) throws IOException {
-        String type = metadata.get(TikaCoreProperties.CONTENT_TYPE_OVERRIDE);
-        if (type == null) {
-            return MediaType.OCTET_STREAM;
-        } else {
+        String type = metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE);
+        if (type != null) {
             return MediaType.parse(type);
+        }
+        type = metadata.get(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE);
+        if (type != null) {
+            return MediaType.parse(type);
+        } else {
+            return MediaType.OCTET_STREAM;
         }
     }
 }

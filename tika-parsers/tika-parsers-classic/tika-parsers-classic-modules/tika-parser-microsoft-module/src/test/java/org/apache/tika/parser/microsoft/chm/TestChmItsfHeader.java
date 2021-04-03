@@ -26,7 +26,6 @@ import org.junit.Test;
 
 /**
  * Tests all public functions of ChmItsfHeader
- * 
  */
 public class TestChmItsfHeader {
     private ChmItsfHeader chmItsfHeader = null;
@@ -37,14 +36,13 @@ public class TestChmItsfHeader {
         byte[] data = TestParameters.chmData;
         // chmItsfHeader.parse(Arrays.copyOfRange(data, 0,
         // ChmConstants.CHM_ITSF_V3_LEN - 1), chmItsfHeader);
-        chmItsfHeader.parse(ChmCommons.copyOfRange(data, 0,
-                ChmConstants.CHM_ITSF_V3_LEN - 1), chmItsfHeader);
+        chmItsfHeader.parse(ChmCommons.copyOfRange(data, 0, ChmConstants.CHM_ITSF_V3_LEN - 1),
+                chmItsfHeader);
     }
 
     @Test
     public void getDataOffset() {
-        assertEquals(TestParameters.VP_DATA_OFFSET_LENGTH,
-                chmItsfHeader.getDataOffset());
+        assertEquals(TestParameters.VP_DATA_OFFSET_LENGTH, chmItsfHeader.getDataOffset());
     }
 
     @Test
@@ -54,62 +52,52 @@ public class TestChmItsfHeader {
 
     @Test
     public void getDirLen() {
-        assertEquals(TestParameters.VP_DIRECTORY_LENGTH,
-                chmItsfHeader.getDirLen());
+        assertEquals(TestParameters.VP_DIRECTORY_LENGTH, chmItsfHeader.getDirLen());
     }
 
     @Test
     public void getDirOffset() {
-        assertEquals(TestParameters.VP_DIRECTORY_OFFSET,
-                chmItsfHeader.getDirOffset());
+        assertEquals(TestParameters.VP_DIRECTORY_OFFSET, chmItsfHeader.getDirOffset());
     }
 
     @Test
     public void getHeaderLen() {
-        assertEquals(TestParameters.VP_ITSF_HEADER_LENGTH,
-                chmItsfHeader.getHeaderLen());
+        assertEquals(TestParameters.VP_ITSF_HEADER_LENGTH, chmItsfHeader.getHeaderLen());
     }
 
     @Test
     public void getLangId() {
-        assertEquals(TestParameters.VP_LANGUAGE_ID,
-                chmItsfHeader.getLangId());
+        assertEquals(TestParameters.VP_LANGUAGE_ID, chmItsfHeader.getLangId());
     }
 
     @Test
     public void getLastModified() {
-        assertEquals(TestParameters.VP_LAST_MODIFIED,
-                chmItsfHeader.getLastModified());
+        assertEquals(TestParameters.VP_LAST_MODIFIED, chmItsfHeader.getLastModified());
     }
 
     @Test
     public void getUnknown_000c() {
-        assertEquals(TestParameters.VP_UNKNOWN_000C,
-                chmItsfHeader.getUnknown_000c());
+        assertEquals(TestParameters.VP_UNKNOWN_000C, chmItsfHeader.getUnknown_000c());
     }
 
     @Test
     public void getUnknownLen() {
-        assertEquals(TestParameters.VP_UNKNOWN_LEN,
-                chmItsfHeader.getUnknownLen());
+        assertEquals(TestParameters.VP_UNKNOWN_LEN, chmItsfHeader.getUnknownLen());
     }
-    
+
     @Test
     public void getUnknownOffset() {
-        assertEquals(TestParameters.VP_UNKNOWN_OFFSET,
-                chmItsfHeader.getUnknownOffset());
+        assertEquals(TestParameters.VP_UNKNOWN_OFFSET, chmItsfHeader.getUnknownOffset());
     }
 
     @Test
     public void getVersion() {
-        assertEquals(TestParameters.VP_VERSION,
-                chmItsfHeader.getVersion());
+        assertEquals(TestParameters.VP_VERSION, chmItsfHeader.getVersion());
     }
 
     @Test
     public void testToString() {
-        assertTrue(chmItsfHeader.toString().contains(
-                TestParameters.VP_ISTF_SIGNATURE));
+        assertTrue(chmItsfHeader.toString().contains(TestParameters.VP_ISTF_SIGNATURE));
     }
 
     @After

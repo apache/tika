@@ -16,7 +16,22 @@
  */
 package org.apache.tika.parser.odf;
 
+import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Stack;
+import javax.xml.namespace.QName;
+
 import org.apache.commons.codec.binary.Base64;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
@@ -25,85 +40,27 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.ElementMappingContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
 
-import javax.xml.namespace.QName;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.BitSet;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Stack;
-
-import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
 /*
     Handler for the body element or odt flat files and content.xml of
     traditional compressed odt files
  */
 class OpenDocumentBodyHandler extends ElementMappingContentHandler {
 
-    private interface Style {
-    }
-
-    private static class TextStyle implements Style {
-        public boolean italic;
-        public boolean bold;
-        public boolean underlined;
-
-        @Override
-        public String toString() {
-            return "TextStyle{" +
-                    "italic=" + italic +
-                    ", bold=" + bold +
-                    ", underlined=" + underlined +
-                    '}';
-        }
-    }
-
-    private static class ListStyle implements Style {
-        public boolean ordered;
-
-        public String getTag() {
-            return ordered ? "ol" : "ul";
-        }
-    }
-
-
-    public static final String TEXT_NS =
-            "urn:oasis:names:tc:opendocument:xmlns:text:1.0";
-
-    public static final String TABLE_NS =
-            "urn:oasis:names:tc:opendocument:xmlns:table:1.0";
-
-    public static final String STYLE_NS =
-            "urn:oasis:names:tc:opendocument:xmlns:style:1.0";
-
+    public static final String TEXT_NS = "urn:oasis:names:tc:opendocument:xmlns:text:1.0";
+    public static final String TABLE_NS = "urn:oasis:names:tc:opendocument:xmlns:table:1.0";
+    public static final String STYLE_NS = "urn:oasis:names:tc:opendocument:xmlns:style:1.0";
     public static final String FORMATTING_OBJECTS_NS =
             "urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0";
-
-    public static final String OFFICE_NS =
-            "urn:oasis:names:tc:opendocument:xmlns:office:1.0";
-
-    public static final String SVG_NS =
-            "urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0";
-
+    public static final String OFFICE_NS = "urn:oasis:names:tc:opendocument:xmlns:office:1.0";
+    public static final String SVG_NS = "urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0";
     public static final String PRESENTATION_NS =
             "urn:oasis:names:tc:opendocument:xmlns:presentation:1.0";
-
-    public static final String DRAW_NS =
-            "urn:oasis:names:tc:opendocument:xmlns:drawing:1.0";
-
+    public static final String DRAW_NS = "urn:oasis:names:tc:opendocument:xmlns:drawing:1.0";
     public static final String XLINK_NS = "http://www.w3.org/1999/xlink";
-
-    private static final String BINARY_DATA = "binary-data";
-
     protected static final char[] TAB = new char[]{'\t'};
-
+    private static final String BINARY_DATA = "binary-data";
     private static final Attributes EMPTY_ATTRIBUTES = new AttributesImpl();
-
     /**
      * Mappings between ODF tag names and XHTML tag names
      * (including attributes). All other tag names/attributes are ignored
@@ -111,108 +68,70 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
      */
     private static final HashMap<QName, TargetElement> MAPPINGS =
             new HashMap<QName, TargetElement>();
-
-    static {
-        // general mappings of text:-tags
-        MAPPINGS.put(
-                new QName(TEXT_NS, "p"),
-                new TargetElement(XHTML, "p"));
-        // text:h-tags are mapped specifically in startElement/endElement
-        MAPPINGS.put(
-                new QName(TEXT_NS, "line-break"),
-                new TargetElement(XHTML, "br"));
-        MAPPINGS.put(
-                new QName(TEXT_NS, "list-item"),
-                new TargetElement(XHTML, "li"));
-        MAPPINGS.put(
-                new QName(TEXT_NS, "note"),
-                new TargetElement(XHTML, "span"));
-        MAPPINGS.put(
-                new QName(OFFICE_NS, "annotation"),
-                new TargetElement(XHTML, "span"));
-        MAPPINGS.put(
-                new QName(PRESENTATION_NS, "notes"),
-                new TargetElement(XHTML, "span"));
-        MAPPINGS.put(
-                new QName(DRAW_NS, "object"),
-                new TargetElement(XHTML, "object"));
-        MAPPINGS.put(
-                new QName(DRAW_NS, "text-box"),
-                new TargetElement(XHTML, "div"));
-        MAPPINGS.put(
-                new QName(SVG_NS, "title"),
-                new TargetElement(XHTML, "span"));
-        MAPPINGS.put(
-                new QName(SVG_NS, "desc"),
-                new TargetElement(XHTML, "span"));
-        MAPPINGS.put(
-                new QName(TEXT_NS, "span"),
-                new TargetElement(XHTML, "span"));
-
-        final HashMap<QName, QName> aAttsMapping =
-                new HashMap<QName, QName>();
-        aAttsMapping.put(
-                new QName(XLINK_NS, "href"),
-                new QName("href"));
-        aAttsMapping.put(
-                new QName(XLINK_NS, "title"),
-                new QName("title"));
-        MAPPINGS.put(
-                new QName(TEXT_NS, "a"),
-                new TargetElement(XHTML, "a", aAttsMapping));
-        MAPPINGS.put(
-                new QName(DRAW_NS, "a"),
-                new TargetElement(XHTML, "a", aAttsMapping));
-
-        // create HTML tables from table:-tags
-        MAPPINGS.put(
-                new QName(TABLE_NS, "table"),
-                new TargetElement(XHTML, "table"));
-        // repeating of rows is ignored; for columns, see below!
-        MAPPINGS.put(
-                new QName(TABLE_NS, "table-row"),
-                new TargetElement(XHTML, "tr"));
-        // special mapping for rowspan/colspan attributes
-        final HashMap<QName, QName> tableCellAttsMapping =
-                new HashMap<QName, QName>();
-        tableCellAttsMapping.put(
-                new QName(TABLE_NS, "number-columns-spanned"),
-                new QName("colspan"));
-        tableCellAttsMapping.put(
-                new QName(TABLE_NS, "number-rows-spanned"),
-                new QName("rowspan"));
-        /* TODO: The following is not correct, the cell should be repeated not spanned!
-         * Code generates a HTML cell, spanning all repeated columns, to make the cell look correct.
-         * Problems may occur when both spanning and repeating is given, which is not allowed by spec.
-         * Cell spanning instead of repeating  is not a problem, because OpenOffice uses it
-         * only for empty cells.
-         */
-        tableCellAttsMapping.put(
-                new QName(TABLE_NS, "number-columns-repeated"),
-                new QName("colspan"));
-        MAPPINGS.put(
-                new QName(TABLE_NS, "table-cell"),
-                new TargetElement(XHTML, "td", tableCellAttsMapping));
-    }
-
     private static final char[] SPACE = new char[]{' '};
     private static final String CLASS = "class";
     private static final Attributes ANNOTATION_ATTRIBUTES = buildAttributes(CLASS, "annotation");
     private static final Attributes NOTE_ATTRIBUTES = buildAttributes(CLASS, "note");
     private static final Attributes NOTES_ATTRIBUTES = buildAttributes(CLASS, "notes");
 
-    private static Attributes buildAttributes(String key, String value) {
-        AttributesImpl attrs = new AttributesImpl();
-        attrs.addAttribute("", key, key, "CDATA", value);
-        return attrs;
+    static {
+        // general mappings of text:-tags
+        MAPPINGS.put(new QName(TEXT_NS, "p"), new TargetElement(XHTML, "p"));
+        // text:h-tags are mapped specifically in startElement/endElement
+        MAPPINGS.put(new QName(TEXT_NS, "line-break"), new TargetElement(XHTML, "br"));
+        MAPPINGS.put(new QName(TEXT_NS, "list-item"), new TargetElement(XHTML, "li"));
+        MAPPINGS.put(new QName(TEXT_NS, "note"), new TargetElement(XHTML, "span"));
+        MAPPINGS.put(new QName(OFFICE_NS, "annotation"), new TargetElement(XHTML,
+                "span"));
+        MAPPINGS.put(new QName(PRESENTATION_NS, "notes"), new TargetElement(XHTML,
+                "span"));
+        MAPPINGS.put(new QName(DRAW_NS, "object"), new TargetElement(XHTML,
+                "object"));
+        MAPPINGS.put(new QName(DRAW_NS, "text-box"), new TargetElement(XHTML, "div"));
+        MAPPINGS.put(new QName(SVG_NS, "title"), new TargetElement(XHTML, "span"));
+        MAPPINGS.put(new QName(SVG_NS, "desc"), new TargetElement(XHTML, "span"));
+        MAPPINGS.put(new QName(TEXT_NS, "span"), new TargetElement(XHTML, "span"));
+
+        final HashMap<QName, QName> aAttsMapping = new HashMap<QName, QName>();
+        aAttsMapping.put(new QName(XLINK_NS, "href"), new QName("href"));
+        aAttsMapping.put(new QName(XLINK_NS, "title"), new QName("title"));
+        MAPPINGS.put(new QName(TEXT_NS, "a"), new TargetElement(XHTML, "a",
+                aAttsMapping));
+        MAPPINGS.put(new QName(DRAW_NS, "a"), new TargetElement(XHTML, "a",
+                aAttsMapping));
+
+        // create HTML tables from table:-tags
+        MAPPINGS.put(new QName(TABLE_NS, "table"), new TargetElement(XHTML, "table"));
+        // repeating of rows is ignored; for columns, see below!
+        MAPPINGS.put(new QName(TABLE_NS, "table-row"), new TargetElement(XHTML, "tr"));
+        // special mapping for rowspan/colspan attributes
+        final HashMap<QName, QName> tableCellAttsMapping = new HashMap<QName, QName>();
+        tableCellAttsMapping
+                .put(new QName(TABLE_NS, "number-columns-spanned"), new QName("colspan"));
+        tableCellAttsMapping.put(new QName(TABLE_NS, "number-rows-spanned"), new QName("rowspan"));
+        /* TODO: The following is not correct, the cell should be repeated not spanned!
+         * Code generates a HTML cell, spanning all repeated columns, to make the cell look correct.
+         * Problems may occur when both spanning and repeating is given, which is not allowed by
+         *  spec.
+         * Cell spanning instead of repeating  is not a problem, because OpenOffice uses it
+         * only for empty cells.
+         */
+        tableCellAttsMapping
+                .put(new QName(TABLE_NS, "number-columns-repeated"), new QName("colspan"));
+        MAPPINGS.put(new QName(TABLE_NS, "table-cell"),
+                new TargetElement(XHTML, "td", tableCellAttsMapping));
     }
 
     private final ContentHandler handler;
     private final ParseContext parseContext;
-    private EmbeddedDocumentExtractor embeddedDocumentExtractor;
-
-    private StringBuilder base64BinaryDataBuffer = new StringBuilder();
     private final BitSet textNodeStack = new BitSet();
+    //have we written the start style tags
+    //yet for the current text style
+    boolean hasWrittenStartStyleTags = false;
+    //if we're in a binary-data tag
+    boolean inBinaryData = false;
+    private EmbeddedDocumentExtractor embeddedDocumentExtractor;
+    private StringBuilder base64BinaryDataBuffer = new StringBuilder();
     private int nodeDepth = 0;
     private int completelyFiltered = 0;
     private Stack<String> headingStack = new Stack<String>();
@@ -222,43 +141,33 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
     private String currParagraphStyleName; //paragraph style name
     private TextStyle currTextStyle; //this is the text style for particular spans/paragraphs
     private String currTextStyleName;
-
     private Stack<ListStyle> listStyleStack = new Stack<ListStyle>();
     private ListStyle listStyle;
-
     // True if we are currently in the named style:
     private boolean curUnderlined;
     private boolean curBold;
     private boolean curItalic;
-
-    //have we written the start style tags
-    //yet for the current text style
-    boolean hasWrittenStartStyleTags = false;
-
-    //if we're in a binary-data tag
-    boolean inBinaryData = false;
-
-    private int pDepth = 0;  //<p> can appear inside comments and other things that are already inside <p>
-    //we need to track our pDepth and only output <p> if we're at the main level
-
-
-
+    private int pDepth = 0;
     OpenDocumentBodyHandler(ContentHandler handler, ParseContext parseContext) {
         super(handler, MAPPINGS);
         this.handler = handler;
         this.parseContext = parseContext;
     }
 
+    private static Attributes buildAttributes(String key, String value) {
+        AttributesImpl attrs = new AttributesImpl();
+        attrs.addAttribute("", key, key, "CDATA", value);
+        return attrs;
+    }
+
     @Override
-    public void characters(char[] ch, int start, int length)
-            throws SAXException {
+    public void characters(char[] ch, int start, int length) throws SAXException {
         if (inBinaryData) {
             base64BinaryDataBuffer.append(ch, start, length);
             return;
         }
         // only forward content of tags from text:-namespace
-        if (completelyFiltered == 0 && nodeDepth > 0
-                && textNodeStack.get(nodeDepth - 1)) {
+        if (completelyFiltered == 0 && nodeDepth > 0 && textNodeStack.get(nodeDepth - 1)) {
             if (!hasWrittenStartStyleTags) {
                 updateStyleTags();
                 hasWrittenStartStyleTags = true;
@@ -269,14 +178,14 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
 
     // helper for checking tags which need complete filtering
     // (with sub-tags)
-    private boolean needsCompleteFiltering(
-            String namespaceURI, String localName) {
+    private boolean needsCompleteFiltering(String namespaceURI, String localName) {
         if (TEXT_NS.equals(namespaceURI)) {
-            return localName.endsWith("-template")
-                    || localName.endsWith("-style");
+            return localName.endsWith("-template") || localName.endsWith("-style");
         }
         return TABLE_NS.equals(namespaceURI) && "covered-table-cell".equals(localName);
     }
+            //<p> can appear inside comments and other things that are already inside <p>
+    //we need to track our pDepth and only output <p> if we're at the main level
 
     // map the heading level to <hX> HTML tags
     private String getXHTMLHeaderTagName(Attributes atts) {
@@ -299,12 +208,12 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
      * Check if a node is a text node
      */
     private boolean isTextNode(String namespaceURI, String localName) {
-        if (TEXT_NS.equals(namespaceURI) && !localName.equals("page-number") && !localName.equals("page-count")) {
+        if (TEXT_NS.equals(namespaceURI) && !localName.equals("page-number") &&
+                !localName.equals("page-count")) {
             return true;
         }
         if (SVG_NS.equals(namespaceURI)) {
-            return "title".equals(localName) ||
-                    "desc".equals(localName);
+            return "title".equals(localName) || "desc".equals(localName);
         }
         return false;
     }
@@ -431,9 +340,8 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
     }
 
     @Override
-    public void startElement(
-            String namespaceURI, String localName, String qName,
-            Attributes attrs) throws SAXException {
+    public void startElement(String namespaceURI, String localName, String qName, Attributes attrs)
+            throws SAXException {
 
         if (DRAW_NS.equals(namespaceURI) && "image".equals(localName)) {
             String link = attrs.getValue(XLINK_NS, "href");
@@ -470,16 +378,16 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
             listStyle = new ListStyle();
             String name = attrs.getValue(STYLE_NS, "name");
             listStyleMap.put(name, listStyle);
-        } else if (currTextStyle != null && STYLE_NS.equals(namespaceURI)
-                && "text-properties".equals(localName)) {
+        } else if (currTextStyle != null && STYLE_NS.equals(namespaceURI) &&
+                "text-properties".equals(localName)) {
             String fontStyle = attrs.getValue(FORMATTING_OBJECTS_NS, "font-style");
             if ("italic".equals(fontStyle) || "oblique".equals(fontStyle)) {
                 currTextStyle.italic = true;
             }
             String fontWeight = attrs.getValue(FORMATTING_OBJECTS_NS, "font-weight");
-            if ("bold".equals(fontWeight) || "bolder".equals(fontWeight)
-                    || (fontWeight != null && Character.isDigit(fontWeight.charAt(0))
-                    && Integer.valueOf(fontWeight) > 500)) {
+            if ("bold".equals(fontWeight) || "bolder".equals(fontWeight) ||
+                    (fontWeight != null && Character.isDigit(fontWeight.charAt(0)) &&
+                            Integer.valueOf(fontWeight) > 500)) {
                 currTextStyle.bold = true;
             }
             String underlineStyle = attrs.getValue(STYLE_NS, "text-underline-style");
@@ -494,8 +402,7 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
             }
         }
 
-        textNodeStack.set(nodeDepth++,
-                isTextNode(namespaceURI, localName));
+        textNodeStack.set(nodeDepth++, isTextNode(namespaceURI, localName));
         // filter *all* content of some tags
         assert completelyFiltered >= 0;
 
@@ -533,8 +440,7 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
     }
 
     @Override
-    public void endElement(
-            String namespaceURI, String localName, String qName)
+    public void endElement(String namespaceURI, String localName, String qName)
             throws SAXException {
         if (BINARY_DATA.equals(localName)) {
             inBinaryData = false;
@@ -582,9 +488,8 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
             }
 
             // special handling of tabulators
-            if (TEXT_NS.equals(namespaceURI)
-                    && ("tab-stop".equals(localName)
-                    || "tab".equals(localName))) {
+            if (TEXT_NS.equals(namespaceURI) &&
+                    ("tab-stop".equals(localName) || "tab".equals(localName))) {
                 this.characters(TAB, 0, TAB.length);
             }
         }
@@ -611,14 +516,13 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
         inBinaryData = false;
 
         if (embeddedDocumentExtractor == null) {
-            embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
+            embeddedDocumentExtractor =
+                    EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
         }
         Metadata embeddedMetadata = new Metadata();
         if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
             try (InputStream is = TikaInputStream.get(bytes)) {
-                embeddedDocumentExtractor.parseEmbedded(
-                        is, handler, embeddedMetadata, false
-                );
+                embeddedDocumentExtractor.parseEmbedded(is, handler, embeddedMetadata, false);
             }
         }
     }
@@ -631,6 +535,29 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
     @Override
     public void endPrefixMapping(String prefix) {
         // remove prefix mappings as they should not occur in XHTML
+    }
+
+    private interface Style {
+    }
+
+    private static class TextStyle implements Style {
+        public boolean italic;
+        public boolean bold;
+        public boolean underlined;
+
+        @Override
+        public String toString() {
+            return "TextStyle{" + "italic=" + italic + ", bold=" + bold + ", underlined=" +
+                    underlined + '}';
+        }
+    }
+
+    private static class ListStyle implements Style {
+        public boolean ordered;
+
+        public String getTag() {
+            return ordered ? "ol" : "ul";
+        }
     }
 
 

@@ -147,16 +147,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- for java 10
-           See TIKA-2778 for why we need to do this now.
-            May the gods of API design fix this in the future.
-            only required for jackcess-encrypt
-           -->
-        <dependency>
-            <groupId>org.glassfish.jaxb</groupId>
-            <artifactId>jaxb-runtime</artifactId>
-            <version>${jaxb.version}</version>
-        </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcmail-jdk15on</artifactId>

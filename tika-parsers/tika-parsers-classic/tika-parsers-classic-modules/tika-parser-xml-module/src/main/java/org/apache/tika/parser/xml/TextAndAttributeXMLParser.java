@@ -16,17 +16,19 @@
  */
 package org.apache.tika.parser.xml;
 
+import org.xml.sax.ContentHandler;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.TextAndAttributeContentHandler;
-import org.xml.sax.ContentHandler;
 
 public class TextAndAttributeXMLParser extends XMLParser {
 
     private static final long serialVersionUID = 7796914007312429473L;
 
     @Override
-    protected ContentHandler getContentHandler(ContentHandler handler, Metadata metadata, ParseContext context) {
+    protected ContentHandler getContentHandler(ContentHandler handler, Metadata metadata,
+                                               ParseContext context) {
         return new TextAndAttributeContentHandler(handler, true);
     }
 }

@@ -26,7 +26,7 @@ import org.apache.tika.config.ServiceLoader;
 public class ServiceLoaderUtils {
     /**
      * Sorts a list of loaded classes, so that non-Tika ones come
-     *  before Tika ones, and otherwise in reverse alphabetical order
+     * before Tika ones, and otherwise in reverse alphabetical order
      */
     public static <T> void sortLoadedClasses(List<T> loaded) {
         loaded.sort(CompareUtils::compareClassName);
@@ -34,8 +34,9 @@ public class ServiceLoaderUtils {
 
     /**
      * Loads a class and instantiates it
+     *
      * @param className service class name
-     * @param <T> service type
+     * @param <T>       service type
      * @return instance of service
      */
     public static <T> T newInstance(String className) {
@@ -44,12 +45,13 @@ public class ServiceLoaderUtils {
 
     /**
      * Loads a class and instantiates it
+     *
      * @param className service class name
-     * @param loader class loader
-     * @param <T> service type
+     * @param loader    class loader
+     * @param <T>       service type
      * @return instance of service
      */
-    public static <T> T newInstance(String className, ClassLoader loader){
+    public static <T> T newInstance(String className, ClassLoader loader) {
         try {
             Class loadedClass = Class.forName(className, true, loader);
             Class<T> castedClass = loadedClass;

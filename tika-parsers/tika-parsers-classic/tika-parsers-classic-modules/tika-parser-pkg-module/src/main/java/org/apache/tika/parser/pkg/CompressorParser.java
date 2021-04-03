@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.pkg;
 
+import static org.apache.tika.detect.zip.CompressorConstants.BROTLI;
 import static org.apache.tika.detect.zip.CompressorConstants.BZIP;
 import static org.apache.tika.detect.zip.CompressorConstants.BZIP2;
 import static org.apache.tika.detect.zip.CompressorConstants.COMPRESS;
@@ -31,7 +32,7 @@ import static org.apache.tika.detect.zip.CompressorConstants.XZ;
 import static org.apache.tika.detect.zip.CompressorConstants.ZLIB;
 import static org.apache.tika.detect.zip.CompressorConstants.ZSTD;
 import static org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE;
-import static org.apache.tika.detect.zip.CompressorConstants.BROTLI;
+
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,6 +57,9 @@ import org.apache.commons.compress.compressors.snappy.SnappyCompressorInputStrea
 import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
 import org.apache.commons.compress.compressors.z.ZCompressorInputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
@@ -67,15 +71,15 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * Parser for various compression formats.
  */
 public class CompressorParser extends AbstractParser {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = 2793565792967222459L;
 
 
@@ -83,18 +87,19 @@ public class CompressorParser extends AbstractParser {
     private static Map<String, String> MIMES_TO_NAME;
 
     static {
-        Set<MediaType> TMP_SET = new HashSet<>(MediaType.set(
-                BZIP, BZIP2, DEFLATE64, GZIP, GZIP_ALT, LZ4_FRAMED, COMPRESS, XZ, PACK, SNAPPY_FRAMED, ZLIB, LZMA));
+        Set<MediaType> TMP_SET = new HashSet<>(MediaType
+                .set(BZIP, BZIP2, DEFLATE64, GZIP, GZIP_ALT, LZ4_FRAMED, COMPRESS, XZ, PACK,
+                        SNAPPY_FRAMED, ZLIB, LZMA));
         try {
             Class.forName("org.brotli.dec.BrotliInputStream");
             TMP_SET.add(BROTLI);
-        } catch (NoClassDefFoundError|ClassNotFoundException e) {
+        } catch (NoClassDefFoundError | ClassNotFoundException e) {
             //swallow
         }
         try {
             Class.forName("com.github.luben.zstd.ZstdInputStream");
             TMP_SET.add(ZSTD);
-        } catch (NoClassDefFoundError|ClassNotFoundException e) {
+        } catch (NoClassDefFoundError | ClassNotFoundException e) {
             //swallow
         }
         SUPPORTED_TYPES = Collections.unmodifiableSet(TMP_SET);
@@ -122,7 +127,6 @@ public class CompressorParser extends AbstractParser {
     private int memoryLimitInKb = 100000;//100MB
 
     /**
-     *
      * @param stream stream
      * @return MediaType
      */
@@ -143,7 +147,7 @@ public class CompressorParser extends AbstractParser {
         } else if (stream instanceof Pack200CompressorInputStream) {
             return PACK;
         } else if (stream instanceof FramedSnappyCompressorInputStream ||
-                   stream instanceof SnappyCompressorInputStream) {
+                stream instanceof SnappyCompressorInputStream) {
             // TODO Add unit tests for this format
             return SNAPPY_FRAMED;
         } else if (stream instanceof LZMACompressorInputStream) {
@@ -154,15 +158,12 @@ public class CompressorParser extends AbstractParser {
     }
 
 
-
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
         // At the end we want to close the compression stream to release
         // any associated resources, but the underlying document stream
         // should not be closed
@@ -176,13 +177,14 @@ public class CompressorParser extends AbstractParser {
         CompressorInputStream cis;
         try {
             CompressorParserOptions options =
-                 context.get(CompressorParserOptions.class, new CompressorParserOptions() {
-                     public boolean decompressConcatenated(Metadata metadata) {
-                         return false;
-                     }
-                 });
+                    context.get(CompressorParserOptions.class, new CompressorParserOptions() {
+                        public boolean decompressConcatenated(Metadata metadata) {
+                            return false;
+                        }
+                    });
             CompressorStreamFactory factory =
-                    new CompressorStreamFactory(options.decompressConcatenated(metadata), memoryLimitInKb);
+                    new CompressorStreamFactory(options.decompressConcatenated(metadata),
+                            memoryLimitInKb);
             //if we've already identified it via autodetect
             //trust that and go with the appropriate name
             //to avoid calling CompressorStreamFactory.detect() twice
@@ -213,12 +215,8 @@ public class CompressorParser extends AbstractParser {
             if (name != null) {
                 if (name.endsWith(".tbz") || name.endsWith(".tbz2")) {
                     name = name.substring(0, name.lastIndexOf(".")) + ".tar";
-                } else if (name.endsWith(".bz")   ||
-                           name.endsWith(".bz2")  ||
-                           name.endsWith(".xz")   ||
-                           name.endsWith(".zlib") ||
-                           name.endsWith(".pack") ||
-                           name.endsWith(".br")) {
+                } else if (name.endsWith(".bz") || name.endsWith(".bz2") || name.endsWith(".xz") ||
+                        name.endsWith(".zlib") || name.endsWith(".pack") || name.endsWith(".br")) {
                     name = name.substring(0, name.lastIndexOf("."));
                 } else if (name.length() > 0) {
                     name = GzipUtils.getUncompressedFilename(name);
@@ -243,7 +241,7 @@ public class CompressorParser extends AbstractParser {
      * @param metadata
      * @return CompressorStream name based on the content-type value
      * in metadata or <code>null</code> if not found
-     *  ind
+     * ind
      */
     private String getStreamName(Metadata metadata) {
         String mimeString = metadata.get(Metadata.CONTENT_TYPE);

@@ -22,7 +22,6 @@ package org.apache.tika.parser.microsoft.chm;
  * iii. end block is using for knowing where to stop iv. start offset is using
  * for knowing where to start reading v. end offset is using for knowing where
  * to stop reading
- * 
  */
 public class ChmBlockInfo {
     /* class members */
@@ -37,36 +36,56 @@ public class ChmBlockInfo {
     }
 
     @Deprecated
-    public static ChmBlockInfo getChmBlockInfoInstance(
-            DirectoryListingEntry dle, int bytesPerBlock,
-            ChmLzxcControlData clcd) throws ChmParsingException {
+    public static ChmBlockInfo getChmBlockInfoInstance(DirectoryListingEntry dle, int bytesPerBlock,
+                                                       ChmLzxcControlData clcd)
+            throws ChmParsingException {
         return getChmBlockInfoInstance(dle, bytesPerBlock, clcd, new ChmBlockInfo());
     }
 
 
-    public static ChmBlockInfo getChmBlockInfoInstance(
-                DirectoryListingEntry dle, int bytesPerBlock,
-        ChmLzxcControlData clcd, ChmBlockInfo chmBlockInfo) throws ChmParsingException{
+    public static ChmBlockInfo getChmBlockInfoInstance(DirectoryListingEntry dle, int bytesPerBlock,
+                                                       ChmLzxcControlData clcd,
+                                                       ChmBlockInfo chmBlockInfo)
+            throws ChmParsingException {
         if (chmBlockInfo == null) {
             chmBlockInfo = new ChmBlockInfo();
         }
-        if (!validateParameters(dle, bytesPerBlock, clcd, chmBlockInfo))
+        if (!validateParameters(dle, bytesPerBlock, clcd, chmBlockInfo)) {
             throw new ChmParsingException("Please check you parameters");
+        }
 
 
         chmBlockInfo.setStartBlock(dle.getOffset() / bytesPerBlock);
-        chmBlockInfo.setEndBlock(
-                (dle.getOffset() + dle.getLength()) / bytesPerBlock);
+        chmBlockInfo.setEndBlock((dle.getOffset() + dle.getLength()) / bytesPerBlock);
         chmBlockInfo.setStartOffset(dle.getOffset() % bytesPerBlock);
-        chmBlockInfo.setEndOffset(
-                (dle.getOffset() + dle.getLength()) % bytesPerBlock);
+        chmBlockInfo.setEndOffset((dle.getOffset() + dle.getLength()) % bytesPerBlock);
         // potential problem with casting long to int
         chmBlockInfo.setIniBlock(
-                chmBlockInfo.startBlock - chmBlockInfo.startBlock
-                        % (int) clcd.getResetInterval());
+                chmBlockInfo.startBlock - chmBlockInfo.startBlock % (int) clcd.getResetInterval());
 //                (getChmBlockInfo().startBlock - getChmBlockInfo().startBlock)
 //                        % (int) clcd.getResetInterval());
         return chmBlockInfo;
+    }
+
+    private static boolean validateParameters(DirectoryListingEntry dle, int bytesPerBlock,
+                                              ChmLzxcControlData clcd, ChmBlockInfo chmBlockInfo) {
+        int goodParameter = 0;
+        if (dle != null) {
+            ++goodParameter;
+        }
+        if (bytesPerBlock > 0) {
+            ++goodParameter;
+        }
+        if (clcd != null) {
+            ++goodParameter;
+        }
+        if (chmBlockInfo != null) {
+            ++goodParameter;
+        }
+        return (goodParameter == 4);
+    }
+
+    public static void main(String[] args) {
     }
 
     /**
@@ -78,32 +97,13 @@ public class ChmBlockInfo {
         sb.append("startBlock:=" + getStartBlock() + ", ");
         sb.append("endBlock:=" + getEndBlock() + ", ");
         sb.append("startOffset:=" + getStartOffset() + ", ");
-        sb.append("endOffset:=" + getEndOffset()
-                + System.getProperty("line.separator"));
+        sb.append("endOffset:=" + getEndOffset() + System.getProperty("line.separator"));
         return sb.toString();
-    }
-
-    private static boolean validateParameters(DirectoryListingEntry dle,
-            int bytesPerBlock, ChmLzxcControlData clcd,
-            ChmBlockInfo chmBlockInfo) {
-        int goodParameter = 0;
-        if (dle != null)
-            ++goodParameter;
-        if (bytesPerBlock > 0)
-            ++goodParameter;
-        if (clcd != null)
-            ++goodParameter;
-        if (chmBlockInfo != null)
-            ++goodParameter;
-        return (goodParameter == 4);
-    }
-
-    public static void main(String[] args) {
     }
 
     /**
      * Returns an initial block index
-     * 
+     *
      * @return int
      */
     public int getIniBlock() {
@@ -112,9 +112,8 @@ public class ChmBlockInfo {
 
     /**
      * Sets the initial block index
-     * 
-     * @param iniBlock
-     *            - int
+     *
+     * @param iniBlock - int
      */
     private void setIniBlock(int iniBlock) {
         this.iniBlock = iniBlock;
@@ -122,7 +121,7 @@ public class ChmBlockInfo {
 
     /**
      * Returns the start block index
-     * 
+     *
      * @return int
      */
     public int getStartBlock() {
@@ -131,9 +130,8 @@ public class ChmBlockInfo {
 
     /**
      * Sets the start block index
-     * 
-     * @param startBlock
-     *            - int
+     *
+     * @param startBlock - int
      */
     private void setStartBlock(int startBlock) {
         this.startBlock = startBlock;
@@ -141,7 +139,7 @@ public class ChmBlockInfo {
 
     /**
      * Returns the end block index
-     * 
+     *
      * @return - int
      */
     public int getEndBlock() {
@@ -150,9 +148,8 @@ public class ChmBlockInfo {
 
     /**
      * Sets the end block index
-     * 
-     * @param endBlock
-     *            - int
+     *
+     * @param endBlock - int
      */
     private void setEndBlock(int endBlock) {
         this.endBlock = endBlock;
@@ -160,7 +157,7 @@ public class ChmBlockInfo {
 
     /**
      * Returns the start offset index
-     * 
+     *
      * @return - int
      */
     public int getStartOffset() {
@@ -169,9 +166,8 @@ public class ChmBlockInfo {
 
     /**
      * Sets the start offset index
-     * 
-     * @param startOffset
-     *            - int
+     *
+     * @param startOffset - int
      */
     private void setStartOffset(int startOffset) {
         this.startOffset = startOffset;
@@ -179,7 +175,7 @@ public class ChmBlockInfo {
 
     /**
      * Returns the end offset index
-     * 
+     *
      * @return - int
      */
     public int getEndOffset() {
@@ -188,9 +184,8 @@ public class ChmBlockInfo {
 
     /**
      * Sets the end offset index
-     * 
-     * @param endOffset
-     *            - int
+     *
+     * @param endOffset - int
      */
     private void setEndOffset(int endOffset) {
         this.endOffset = endOffset;

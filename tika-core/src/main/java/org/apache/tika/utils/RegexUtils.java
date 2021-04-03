@@ -25,24 +25,22 @@ import java.util.regex.Pattern;
 /**
  * Inspired from Nutch code class OutlinkExtractor. Apply regex to extract
  * content
- * 
- * 
  */
 public class RegexUtils {
 
     /**
      * Regex pattern to get URLs within a plain text.
-     * 
+     *
      * @see <a
-     *      href="http://www.truerwords.net/articles/ut/urlactivation.html">http://www.truerwords.net/articles/ut/urlactivation.html
-     *      </a>
+     * href="http://www.truerwords.net/articles/ut/urlactivation.html">http://www.truerwords.net/articles/ut/urlactivation.html
+     * </a>
      */
-    private static final String LINKS_REGEX =
-        "([A-Za-z][A-Za-z0-9+.-]{1,120}:"
-        + "[A-Za-z0-9/](([A-Za-z0-9$_.+!*,;/?:@&~=-])|%[A-Fa-f0-9]{2}){1,333}"
-        + "(#([a-zA-Z0-9][a-zA-Z0-9$_.+!*,;/?:@&~=%-]{0,1000}))?)";
-    
-    private static final Pattern LINKS_PATTERN = Pattern.compile(LINKS_REGEX, Pattern.CASE_INSENSITIVE + Pattern.MULTILINE);
+    private static final String LINKS_REGEX = "([A-Za-z][A-Za-z0-9+.-]{1,120}:" +
+            "[A-Za-z0-9/](([A-Za-z0-9$_.+!*,;/?:@&~=-])|%[A-Fa-f0-9]{2}){1,333}" +
+            "(#([a-zA-Z0-9][a-zA-Z0-9$_.+!*,;/?:@&~=%-]{0,1000}))?)";
+
+    private static final Pattern LINKS_PATTERN =
+            Pattern.compile(LINKS_REGEX, Pattern.CASE_INSENSITIVE + Pattern.MULTILINE);
 
     /**
      * Extract urls from plain text.

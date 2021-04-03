@@ -31,34 +31,29 @@ import java.util.Set;
  * Identifier of the language that best matches a given content profile.
  * The content profile is compared to generic language profiles based on
  * material from various sources.
- * @since Apache Tika 0.5
+ *
  * @see <a href="http://www.iccs.inf.ed.ac.uk/~pkoehn/publications/europarl/">
- *      Europarl: A Parallel Corpus for Statistical Machine Translation</a>
+ * Europarl: A Parallel Corpus for Statistical Machine Translation</a>
  * @see <a href="http://www.loc.gov/standards/iso639-2/php/code_list.php">
- *      ISO 639 Language Codes</a>
- * @deprecated  use a concrete class of {@link org.apache.tika.language.detect.LanguageDetector}
+ * ISO 639 Language Codes</a>
+ * @since Apache Tika 0.5
+ * @deprecated use a concrete class of {@link org.apache.tika.language.detect.LanguageDetector}
  */
 @Deprecated
 public class LanguageIdentifier {
-    
+
     /**
      * The available language profiles.
      */
     private static final Map<String, LanguageProfile> PROFILES =
-        new HashMap<String, LanguageProfile>();
+            new HashMap<String, LanguageProfile>();
     private static final String PROFILE_SUFFIX = ".ngp";
-
-    private static Properties props = new Properties();
-    private static String errors = "";
-    
     private static final String PROPERTIES_OVERRIDE_FILE = "tika.language.override.properties";
     private static final String PROPERTIES_FILE = "tika.language.properties";
     private static final String LANGUAGES_KEY = "languages";
     private static final double CERTAINTY_LIMIT = 0.022;
-
-    private final String language;
-
-    private final double distance;
+    private static Properties props = new Properties();
+    private static String errors = "";
 
     /*
      * Always attempt initializing language profiles when class is loaded first time
@@ -66,48 +61,13 @@ public class LanguageIdentifier {
     static {
         initProfiles();
     }
-    
-    /*
-     * Add one language profile based on config in property file
-     */
-    private static void addProfile(String language) throws Exception {
-        try {
-            LanguageProfile profile = new LanguageProfile();
 
-            try (InputStream stream =
-                    LanguageIdentifier.class.getResourceAsStream(
-                            language + PROFILE_SUFFIX)) {
-                BufferedReader reader =
-                    new BufferedReader(new InputStreamReader(stream, UTF_8));
-                String line = reader.readLine();
-                while (line != null) {
-                    if (line.length() > 0 && !line.startsWith("#")) {
-                        int space = line.indexOf(' ');
-                        profile.add(
-                                line.substring(0, space),
-                                Long.parseLong(line.substring(space + 1)));
-                    }
-                    line = reader.readLine();
-                }
-            }
+    private final String language;
+    private final double distance;
 
-            addProfile(language, profile);
-        } catch (Throwable t) {
-            throw new Exception("Failed trying to load language profile for language \""+language+"\". Error: "+t.getMessage());
-        }
-    }
-    
-    /**
-     * Adds a single language profile
-     * @param language an ISO 639 code representing language
-     * @param profile the language profile
-     */
-    public static void addProfile(String language, LanguageProfile profile) {
-        PROFILES.put(language, profile);
-    }
-    
     /**
      * Constructs a language identifier based on a LanguageProfile
+     *
      * @param profile the language profile
      */
     public LanguageIdentifier(LanguageProfile profile) {
@@ -127,63 +87,88 @@ public class LanguageIdentifier {
 
     /**
      * Constructs a language identifier based on a String of text content
+     *
      * @param content the text
      */
     public LanguageIdentifier(String content) {
         this(new LanguageProfile(content));
     }
 
-    /**
-     * Gets the identified language
-     * @return an ISO 639 code representing the detected language
+    /*
+     * Add one language profile based on config in property file
      */
-    public String getLanguage() {
-        return language;
+    private static void addProfile(String language) throws Exception {
+        try {
+            LanguageProfile profile = new LanguageProfile();
+
+            try (InputStream stream = LanguageIdentifier.class
+                    .getResourceAsStream(language + PROFILE_SUFFIX)) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(stream, UTF_8));
+                String line = reader.readLine();
+                while (line != null) {
+                    if (line.length() > 0 && !line.startsWith("#")) {
+                        int space = line.indexOf(' ');
+                        profile.add(line.substring(0, space),
+                                Long.parseLong(line.substring(space + 1)));
+                    }
+                    line = reader.readLine();
+                }
+            }
+
+            addProfile(language, profile);
+        } catch (Throwable t) {
+            throw new Exception(
+                    "Failed trying to load language profile for language \"" + language +
+                            "\". Error: " + t.getMessage());
+        }
     }
 
     /**
-     * Tries to judge whether the identification is certain enough
-     * to be trusted.
-     * WARNING: Will never return true for small amount of input texts. 
-     * @return <code>true</code> if the distance is smaller then {@value LanguageIdentifier#CERTAINTY_LIMIT}, <code>false</code> otherwise
+     * Adds a single language profile
+     *
+     * @param language an ISO 639 code representing language
+     * @param profile  the language profile
      */
-    public boolean isReasonablyCertain() {
-        return distance < CERTAINTY_LIMIT;
+    public static void addProfile(String language, LanguageProfile profile) {
+        PROFILES.put(language, profile);
     }
 
     /**
      * Builds the language profiles.
      * The list of languages are fetched from a property file named "tika.language.properties"
-     * If a file called "tika.language.override.properties" is found on classpath, this is used instead
-     * The property file contains a key "languages" with values being comma-separated language codes
+     * If a file called "tika.language.override.properties" is found on classpath, this is
+     * used instead The property file contains a key "languages" with values being
+     * comma-separated language codes
      */
     public static void initProfiles() {
         clearProfiles();
-        
+
         errors = "";
         InputStream stream;
         stream = LanguageIdentifier.class.getResourceAsStream(PROPERTIES_OVERRIDE_FILE);
-        if(stream == null) {
+        if (stream == null) {
             stream = LanguageIdentifier.class.getResourceAsStream(PROPERTIES_FILE);
         }
 
-        if(stream != null){
+        if (stream != null) {
             try {
                 props = new Properties();
                 props.load(stream);
             } catch (IOException e) {
-                errors += "IOException while trying to load property file. Message: " + e.getMessage() + "\n";
+                errors += "IOException while trying to load property file. Message: " +
+                        e.getMessage() + "\n";
             }
         }
-        
+
         String[] languages = props.getProperty(LANGUAGES_KEY).split(",");
-        for(String language : languages) {
+        for (String language : languages) {
             language = language.trim();
-            String name = props.getProperty("name."+language, "Unknown");
+            String name = props.getProperty("name." + language, "Unknown");
             try {
                 addProfile(language);
             } catch (Exception e) {
-                errors += "Language " + language + " (" + name + ") not initialized. Message: " + e.getMessage() + "\n";
+                errors += "Language " + language + " (" + name + ") not initialized. Message: " +
+                        e.getMessage() + "\n";
             }
         }
     }
@@ -197,40 +182,64 @@ public class LanguageIdentifier {
      */
     public static void initProfiles(Map<String, LanguageProfile> profilesMap) {
         clearProfiles();
-        for(Map.Entry<String, LanguageProfile> entry : profilesMap.entrySet()) {
+        for (Map.Entry<String, LanguageProfile> entry : profilesMap.entrySet()) {
             addProfile(entry.getKey(), entry.getValue());
         }
     }
-    
+
     /**
      * Clears the current map of language profiles
      */
     public static void clearProfiles() {
         PROFILES.clear();
     }
-    
+
     /**
      * Tests whether there were errors initializing language config
+     *
      * @return true if there are errors. Use getErrors() to retrieve.
      */
     public static boolean hasErrors() {
         return errors != "";
     }
-    
+
     /**
      * Returns a string of error messages related to initializing language profiles
+     *
      * @return the String containing the error messages
      */
     public static String getErrors() {
         return errors;
     }
-    
+
     /**
      * Returns what languages are supported for language identification
+     *
      * @return A set of Strings being the ISO 639 language codes
      */
     public static Set<String> getSupportedLanguages() {
         return PROFILES.keySet();
+    }
+
+    /**
+     * Gets the identified language
+     *
+     * @return an ISO 639 code representing the detected language
+     */
+    public String getLanguage() {
+        return language;
+    }
+
+    /**
+     * Tries to judge whether the identification is certain enough
+     * to be trusted.
+     * WARNING: Will never return true for small amount of input texts.
+     *
+     * @return <code>true</code> if the distance is smaller then
+     * {@value LanguageIdentifier#CERTAINTY_LIMIT}, <code>false</code> otherwise
+     */
+    public boolean isReasonablyCertain() {
+        return distance < CERTAINTY_LIMIT;
     }
 
     @Override

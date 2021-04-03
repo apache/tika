@@ -17,12 +17,13 @@
 
 package org.apache.tika.extractor;
 
-import org.apache.tika.metadata.Metadata;
+import java.io.IOException;
+import java.io.InputStream;
+
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import java.io.IOException;
-import java.io.InputStream;
+import org.apache.tika.metadata.Metadata;
 
 public interface EmbeddedDocumentExtractor {
     boolean shouldParseEmbedded(Metadata metadata);

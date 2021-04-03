@@ -24,6 +24,9 @@ import java.util.Set;
 import com.github.junrar.Archive;
 import com.github.junrar.exception.RarException;
 import com.github.junrar.rarfile.FileHeader;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.UnsupportedFormatException;
@@ -36,17 +39,15 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * Parser for Rar files.
  */
 public class RarParser extends AbstractParser {
     private static final long serialVersionUID = 6157727985054451501L;
-    
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections
-            .singleton(MediaType.application("x-rar-compressed"));
+
+    private static final Set<MediaType> SUPPORTED_TYPES =
+            Collections.singleton(MediaType.application("x-rar-compressed"));
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext arg0) {
@@ -54,14 +55,14 @@ public class RarParser extends AbstractParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context) throws IOException,
-            SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
-        EmbeddedDocumentExtractor extractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        EmbeddedDocumentExtractor extractor =
+                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         String mediaType = metadata.get(Metadata.CONTENT_TYPE);
 
         if (mediaType != null && mediaType.contains("version=5")) {
@@ -84,11 +85,9 @@ public class RarParser extends AbstractParser {
                 if (!header.isDirectory()) {
                     try (InputStream subFile = rar.getInputStream(header)) {
                         Metadata entrydata = PackageParser.handleEntryMetadata(
-                                "".equals(header.getFileNameW()) ? header.getFileNameString() : header.getFileNameW(),
-                                header.getCTime(), header.getMTime(),
-                                header.getFullUnpackSize(),
-                                xhtml
-                        );
+                                "".equals(header.getFileNameW()) ? header.getFileNameString() :
+                                        header.getFileNameW(), header.getCTime(), header.getMTime(),
+                                header.getFullUnpackSize(), xhtml);
 
                         if (extractor.shouldParseEmbedded(entrydata)) {
                             extractor.parseEmbedded(subFile, handler, entrydata, true);
@@ -102,8 +101,9 @@ public class RarParser extends AbstractParser {
         } catch (RarException e) {
             throw new TikaException("RarParser Exception", e);
         } finally {
-            if (rar != null)
+            if (rar != null) {
                 rar.close();
+            }
 
         }
 

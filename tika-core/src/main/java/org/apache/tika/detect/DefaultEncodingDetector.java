@@ -17,8 +17,8 @@
 
 package org.apache.tika.detect;
 
-import javax.imageio.spi.ServiceRegistry;
 import java.util.Collection;
+import javax.imageio.spi.ServiceRegistry;
 
 import org.apache.tika.config.ServiceLoader;
 
@@ -27,11 +27,11 @@ import org.apache.tika.config.ServiceLoader;
  * available through the {@link ServiceRegistry service provider mechanism}.  Those
  * loaded via the service provider mechanism are ordered by how they appear in the
  * file, if there is a single service file.  If multiple, there is no guarantee of order.
- *
- *
+ * <p>
+ * <p>
  * If you need to control the order of the Detectors, you should instead
- *  construct your own {@link CompositeDetector} and pass in the list
- *  of Detectors in the required order.
+ * construct your own {@link CompositeDetector} and pass in the list
+ * of Detectors in the required order.
  *
  * @since Apache Tika 1.15
  */
@@ -46,7 +46,8 @@ public class DefaultEncodingDetector extends CompositeEncodingDetector {
     }
 
     public DefaultEncodingDetector(ServiceLoader loader,
-                                   Collection<Class<? extends EncodingDetector>> excludeEncodingDetectors) {
+                                   Collection<Class<? extends EncodingDetector>>
+                                           excludeEncodingDetectors) {
         super(loader.loadServiceProviders(EncodingDetector.class), excludeEncodingDetectors);
     }
 

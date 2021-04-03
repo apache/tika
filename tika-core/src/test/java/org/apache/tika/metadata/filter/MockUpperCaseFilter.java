@@ -16,10 +16,10 @@
  */
 package org.apache.tika.metadata.filter;
 
+import java.util.Locale;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-
-import java.util.Locale;
 
 /**
  * Mock Filter for testing uppercasing of all values

@@ -17,14 +17,6 @@
 
 package org.apache.tika.parser.ner.opennlp;
 
-import opennlp.tools.namefind.NameFinderME;
-import opennlp.tools.namefind.TokenNameFinderModel;
-import opennlp.tools.util.Span;
-import org.apache.commons.io.IOUtils;
-import org.apache.tika.parser.ner.NERecogniser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -33,6 +25,15 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import opennlp.tools.namefind.NameFinderME;
+import opennlp.tools.namefind.TokenNameFinderModel;
+import opennlp.tools.util.Span;
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.tika.parser.ner.NERecogniser;
 
 /**
  * An implementation of {@link NERecogniser} that finds names in text using Open NLP Model.
@@ -49,15 +50,16 @@ public class OpenNLPNameFinder implements NERecogniser {
 
     /**
      * Creates OpenNLP name finder
-     * @param nameType the entity type recognised by the given NER model
+     *
+     * @param nameType     the entity type recognised by the given NER model
      * @param nerModelPath path to ner model
      */
     public OpenNLPNameFinder(String nameType, String nerModelPath) {
         this.nameTypes = Collections.singleton(nameType);
         this.nameType = nameType;
-        InputStream nerModelStream  = getClass().getClassLoader().getResourceAsStream(nerModelPath);
+        InputStream nerModelStream = getClass().getClassLoader().getResourceAsStream(nerModelPath);
         try {
-            if (nerModelStream != null){
+            if (nerModelStream != null) {
                 TokenNameFinderModel model = new TokenNameFinderModel(nerModelStream);
                 this.nameFinder = new NameFinderME(model);
                 this.available = true;
@@ -72,6 +74,12 @@ public class OpenNLPNameFinder implements NERecogniser {
         LOG.info("{} NER : Available for service ? {}", nameType, available);
     }
 
+    public static String[] tokenize(String text) {
+        //NOTE: replace this with a NLP tokenizer tool
+        //clean + split
+        return text.trim().replaceAll("(\\s\\s+)", " ").split("\\s");
+    }
+
     @Override
     public boolean isAvailable() {
         return available;
@@ -82,12 +90,6 @@ public class OpenNLPNameFinder implements NERecogniser {
         return nameTypes;
     }
 
-    public static String[] tokenize(String text){
-        //NOTE: replace this with a NLP tokenizer tool
-        //clean + split
-        return text.trim().replaceAll("(\\s\\s+)", " ").split("\\s");
-    }
-
     @Override
     public synchronized Map<String, Set<String>> recognise(String text) {
         String[] tokens = tokenize(text);
@@ -96,6 +98,7 @@ public class OpenNLPNameFinder implements NERecogniser {
 
     /**
      * finds names from given array of tokens
+     *
      * @param tokens the tokens array
      * @return map of EntityType -&gt; set of entity names
      */

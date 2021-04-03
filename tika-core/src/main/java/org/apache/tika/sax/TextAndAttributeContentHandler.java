@@ -21,20 +21,22 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /*
-* extends TextContentHandler, will also handle element attributes
-*/
+ * extends TextContentHandler, will also handle element attributes
+ */
 public class TextAndAttributeContentHandler extends TextContentHandler {
 
     public TextAndAttributeContentHandler(ContentHandler delegate) {
         this(delegate, false);
     }
 
-    public TextAndAttributeContentHandler(ContentHandler delegate, boolean addSpaceBetweenElements) {
+    public TextAndAttributeContentHandler(ContentHandler delegate,
+                                          boolean addSpaceBetweenElements) {
         super(delegate, addSpaceBetweenElements);
     }
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes attributes)
+            throws SAXException {
         super.startElement(uri, localName, qName, attributes);
 
         // output element name and attributes if attributes length larger than 0.
@@ -45,7 +47,7 @@ public class TextAndAttributeContentHandler extends TextContentHandler {
             characters(elementName, 0, elementName.length);
 
             // output attributes
-            for (int i=0; i<attributeLength; i++) {
+            for (int i = 0; i < attributeLength; i++) {
                 char[] attributeName = (attributes.getLocalName(i).trim() + " ").toCharArray();
                 char[] attributeValue = (attributes.getValue(i).trim() + " ").toCharArray();
                 characters(attributeName, 0, attributeName.length);

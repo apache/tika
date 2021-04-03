@@ -17,9 +17,6 @@
 
 package org.apache.tika.parser.geo;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,20 +25,23 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Properties;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class GeoParserConfig implements Serializable {
     private static final long serialVersionUID = -3167692634278575818L;
+    private static final Logger LOG = LoggerFactory.getLogger(GeoParserConfig.class);
     private URL nerModelUrl = null;
     private String gazetteerRestEndpoint = null;
-
-    private static final Logger LOG = LoggerFactory.getLogger(GeoParserConfig.class);
 
     public GeoParserConfig() {
         this.nerModelUrl = GeoParserConfig.class.getResource("en-ner-location.bin");
         init(this.getClass().getResourceAsStream("GeoTopicConfig.properties"));
     }
-    
+
     /**
      * Initialize configurations from property files
+     *
      * @param stream InputStream for GeoTopicConfig.properties
      */
     private void init(InputStream stream) {
@@ -67,8 +67,9 @@ public class GeoParserConfig implements Serializable {
     }
 
     public void setNERModelPath(String path) {
-        if (path == null)
+        if (path == null) {
             return;
+        }
         File file = new File(path);
         if (file.isDirectory() || !file.exists()) {
             return;
@@ -80,24 +81,28 @@ public class GeoParserConfig implements Serializable {
         }
     }
 
-    public void setNerModelUrl(URL url) {
-        this.nerModelUrl = url;
-    }
     public URL getNerModelUrl() {
         return nerModelUrl;
     }
+
+    public void setNerModelUrl(URL url) {
+        this.nerModelUrl = url;
+    }
+
     /**
      * @return REST endpoint for lucene-geo-gazetteer
      */
     public String getGazetteerRestEndpoint() {
-		return gazetteerRestEndpoint;
-	}
+        return gazetteerRestEndpoint;
+    }
+
     /**
      * Configure REST endpoint for lucene-geo-gazetteer
+     *
      * @param gazetteerRestEndpoint
      */
     public void setGazetteerRestEndpoint(String gazetteerRestEndpoint) {
-		this.gazetteerRestEndpoint = gazetteerRestEndpoint;
-	}
+        this.gazetteerRestEndpoint = gazetteerRestEndpoint;
+    }
 
 }

@@ -16,13 +16,6 @@
  */
 package org.apache.tika.fork;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.sax.ContentHandlerFactory;
-import org.apache.tika.sax.RecursiveParserWrapperHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -30,6 +23,14 @@ import java.io.IOException;
 import java.io.NotSerializableException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.sax.ContentHandlerFactory;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
 
 /**
  * <p>This class calls #toString() on the ContentHandler, inserts it into the Metadata object
@@ -39,22 +40,26 @@ import java.io.Serializable;
  * but we can't guarantee that the ContentHandler is Serializable (e.g. the StringWriter in
  * the WriteOutContentHandler).
  */
-class RecursiveMetadataContentHandlerProxy extends RecursiveParserWrapperHandler implements ForkProxy {
+class RecursiveMetadataContentHandlerProxy extends RecursiveParserWrapperHandler
+        implements ForkProxy {
 
-    public static final byte EMBEDDED_DOCUMENT         =  1;
-    public static final byte MAIN_DOCUMENT           =  2;
+    public static final byte EMBEDDED_DOCUMENT = 1;
+    public static final byte MAIN_DOCUMENT = 2;
     public static final byte HANDLER_AND_METADATA = 3;
     public static final byte METADATA_ONLY = 4;
-    public static final byte COMPLETE   =  5;
+    public static final byte COMPLETE = 5;
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = 737511106054617524L;
 
     private final int resource;
 
     private transient DataOutputStream output;
 
-    public RecursiveMetadataContentHandlerProxy(int resource, ContentHandlerFactory contentHandlerFactory) {
+    public RecursiveMetadataContentHandlerProxy(int resource,
+                                                ContentHandlerFactory contentHandlerFactory) {
         super(contentHandlerFactory);
         this.resource = resource;
     }
@@ -64,9 +69,11 @@ class RecursiveMetadataContentHandlerProxy extends RecursiveParserWrapperHandler
     }
 
     @Override
-    public void endEmbeddedDocument(ContentHandler contentHandler, Metadata metadata) throws SAXException {
+    public void endEmbeddedDocument(ContentHandler contentHandler, Metadata metadata)
+            throws SAXException {
         proxyBackToClient(EMBEDDED_DOCUMENT, contentHandler, metadata);
     }
+
     @Override
     public void endDocument(ContentHandler contentHandler, Metadata metadata) throws SAXException {
         if (hasHitMaximumEmbeddedResources()) {
@@ -75,8 +82,8 @@ class RecursiveMetadataContentHandlerProxy extends RecursiveParserWrapperHandler
         proxyBackToClient(MAIN_DOCUMENT, contentHandler, metadata);
     }
 
-    private void proxyBackToClient(int embeddedOrMainDocument,
-                                   ContentHandler contentHandler, Metadata metadata) throws SAXException {
+    private void proxyBackToClient(int embeddedOrMainDocument, ContentHandler contentHandler,
+                                   Metadata metadata) throws SAXException {
         try {
             output.write(ForkServer.RESOURCE);
             output.writeByte(resource);

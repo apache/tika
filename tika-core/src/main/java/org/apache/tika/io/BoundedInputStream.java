@@ -22,7 +22,7 @@ import java.io.InputStream;
 /**
  * Very slight modification of Commons' BoundedInputStream
  * so that we can figure out if this hit the bound or not.
- *
+ * <p>
  * This relies on IOUtils' skip and read to try to fully
  * read/skip inputstream.
  */
@@ -64,7 +64,7 @@ public class BoundedInputStream extends InputStream {
 
     /**
      * Invokes the delegate's <code>read(byte[], int, int)</code> method.
-     *
+     * <p>
      * This does not have the same guarantees as IOUtil's readFully()...be careful.
      *
      * @param b   the buffer to read the bytes into

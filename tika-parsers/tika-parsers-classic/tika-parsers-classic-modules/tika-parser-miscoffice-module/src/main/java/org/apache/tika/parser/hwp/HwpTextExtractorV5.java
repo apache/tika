@@ -16,11 +16,6 @@
  */
 package org.apache.tika.parser.hwp;
 
-import javax.crypto.Cipher;
-import javax.crypto.CipherInputStream;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.spec.SecretKeySpec;
-
 import java.io.EOFException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -36,6 +31,10 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
+import javax.crypto.Cipher;
+import javax.crypto.CipherInputStream;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.poi.hpsf.NoPropertySetStreamException;
@@ -49,6 +48,10 @@ import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.util.IOUtils;
 import org.apache.poi.util.LittleEndian;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.UnsupportedFormatException;
@@ -57,30 +60,20 @@ import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.SAXException;
 
 public class HwpTextExtractorV5 implements Serializable {
     private static final long serialVersionUID = 1L;
-    protected static Logger LOG = LoggerFactory
-            .getLogger(HwpTextExtractorV5.class);
-
-    private static final byte[] HWP_V5_SIGNATURE = "HWP Document File"
-            .getBytes(StandardCharsets.US_ASCII);
-
+    private static final byte[] HWP_V5_SIGNATURE =
+            "HWP Document File".getBytes(StandardCharsets.US_ASCII);
     private static final int HWPTAG_BEGIN = 0x010;
-
     private static final int I = 1; // INLINE
     private static final int C = 2; // CONTROL
     private static final int X = 3; // EXTENDED
-
-    private static final int[] HWP_CHAR_TYPE = new int[]{
-            C, X, X, X, I, I, I, I, I, I, // 0-9
+    private static final int[] HWP_CHAR_TYPE = new int[]{C, X, X, X, I, I, I, I, I, I, // 0-9
             C, X, X, C, X, X, X, X, X, I, // 10-19
             I, X, X, X, C, C, C, C, C, C, // 20-29
             C, C}; // 30-31
-
+    protected static Logger LOG = LoggerFactory.getLogger(HwpTextExtractorV5.class);
 
     /**
      * extract Text from HWP Stream.
@@ -94,10 +87,10 @@ public class HwpTextExtractorV5 implements Serializable {
      * @throws SAXException
      */
     public void extract(InputStream source, Metadata metadata, XHTMLContentHandler xhtml)
-            throws FileNotFoundException, IOException,
-            TikaException, SAXException {
-        if (source == null || xhtml == null)
+            throws FileNotFoundException, IOException, TikaException, SAXException {
+        if (source == null || xhtml == null) {
             throw new IllegalArgumentException();
+        }
 
         POIFSFileSystem fs = null;
         try {
@@ -142,7 +135,8 @@ public class HwpTextExtractorV5 implements Serializable {
 
     }
 
-    private void parseSummaryInformation(DirectoryNode root, Metadata metadata) throws TikaException {
+    private void parseSummaryInformation(DirectoryNode root, Metadata metadata)
+            throws TikaException {
 
         try {
             Entry summaryEntry = root.getEntry("\u0005HwpSummaryInformation");
@@ -150,16 +144,15 @@ public class HwpTextExtractorV5 implements Serializable {
             populateMatadata(summaryEntry, metadata);
 
         } catch (NoPropertySetStreamException | IOException e) {
-            throw new UnsupportedFormatException(
-                    "cannot parse the Summary Information");
+            throw new UnsupportedFormatException("cannot parse the Summary Information");
         }
 
     }
 
-    private void populateMatadata(Entry summaryEntry, Metadata metadata) throws IOException, NoPropertySetStreamException {
+    private void populateMatadata(Entry summaryEntry, Metadata metadata)
+            throws IOException, NoPropertySetStreamException {
 
-        DocumentInputStream summaryStream = new DocumentInputStream(
-                (DocumentEntry) summaryEntry);
+        DocumentInputStream summaryStream = new DocumentInputStream((DocumentEntry) summaryEntry);
 
         PropertySet ps = new PropertySet(summaryStream);
 
@@ -216,17 +209,16 @@ public class HwpTextExtractorV5 implements Serializable {
         try (DocumentInputStream headerStream = new DocumentInputStream(
                 (DocumentEntry) headerEntry)) {
             int read = headerStream.read(header);
-            if (read != 256
-                    || !Arrays.equals(HWP_V5_SIGNATURE, Arrays.copyOfRange(
-                    header, 0, HWP_V5_SIGNATURE.length)))
+            if (read != 256 || !Arrays.equals(HWP_V5_SIGNATURE,
+                    Arrays.copyOfRange(header, 0, HWP_V5_SIGNATURE.length))) {
                 return null;
+            }
         }
 
         FileHeader fileHeader = new FileHeader();
 
         // version. debug
-        fileHeader.version = HwpVersion.parseVersion(LittleEndian.getUInt(
-                header, 32));
+        fileHeader.version = HwpVersion.parseVersion(LittleEndian.getUInt(header, 32));
         long flags = LittleEndian.getUInt(header, 36);
         LOG.debug("Flags={}", Long.toBinaryString(flags).replace(' ', '0'));
 
@@ -247,8 +239,8 @@ public class HwpTextExtractorV5 implements Serializable {
      * @throws IOException
      * @throws SAXException
      */
-    private void parseBodyText(FileHeader header, DirectoryNode root,
-                               XHTMLContentHandler xhtml) throws IOException, SAXException {
+    private void parseBodyText(FileHeader header, DirectoryNode root, XHTMLContentHandler xhtml)
+            throws IOException, SAXException {
         // read BodyText
         Entry bodyText = root.getEntry("BodyText");
         if (bodyText == null || !bodyText.isDirectoryEntry()) {
@@ -258,11 +250,9 @@ public class HwpTextExtractorV5 implements Serializable {
         Iterator<Entry> iterator = ((DirectoryEntry) bodyText).getEntries();
         while (iterator.hasNext()) {
             Entry entry = iterator.next();
-            if (entry.getName().startsWith("Section")
-                    && entry instanceof DocumentEntry) {
+            if (entry.getName().startsWith("Section") && entry instanceof DocumentEntry) {
                 LOG.debug("extract {}", entry.getName());
-                InputStream input = new DocumentInputStream(
-                        (DocumentEntry) entry);
+                InputStream input = new DocumentInputStream((DocumentEntry) entry);
 
                 if (header.compressed) {
                     input = new InflaterInputStream(input, new Inflater(true));
@@ -287,8 +277,8 @@ public class HwpTextExtractorV5 implements Serializable {
      * @return
      * @throws IOException
      */
-    private void parseViewText(FileHeader header, DirectoryNode root,
-                               XHTMLContentHandler xhtml) throws IOException {
+    private void parseViewText(FileHeader header, DirectoryNode root, XHTMLContentHandler xhtml)
+            throws IOException {
         // read BodyText
         Entry bodyText = root.getEntry("ViewText");
         if (bodyText == null || !bodyText.isDirectoryEntry()) {
@@ -298,19 +288,16 @@ public class HwpTextExtractorV5 implements Serializable {
         Iterator<Entry> iterator = ((DirectoryEntry) bodyText).getEntries();
         while (iterator.hasNext()) {
             Entry entry = iterator.next();
-            if (entry.getName().startsWith("Section")
-                    && entry instanceof DocumentEntry) {
+            if (entry.getName().startsWith("Section") && entry instanceof DocumentEntry) {
                 LOG.debug("extract {}", entry.getName());
 
-                InputStream input = new DocumentInputStream(
-                        (DocumentEntry) entry);
+                InputStream input = new DocumentInputStream((DocumentEntry) entry);
 
                 try {
                     Key key = readKey(input);
                     input = createDecryptStream(input, key);
                     if (header.compressed) {
-                        input = new InflaterInputStream(input, new Inflater(
-                                true));
+                        input = new InflaterInputStream(input, new Inflater(true));
                     }
 
                     HwpStreamReader sectionStream = new HwpStreamReader(input);
@@ -335,7 +322,7 @@ public class HwpTextExtractorV5 implements Serializable {
     private Key readKey(InputStream input) throws IOException {
         byte[] data = new byte[260];
 
-        if (IOUtils.readFully(input, data, 0, 4) != 4) {// TAG,
+        if (IOUtils.readFully(input, data, 0, 4) != 4) { // TAG,
             throw new EOFException();
         }
 
@@ -363,8 +350,7 @@ public class HwpTextExtractorV5 implements Serializable {
     }
 
     public InputStream createDecryptStream(InputStream input, Key key)
-            throws NoSuchAlgorithmException,
-            NoSuchPaddingException, InvalidKeyException {
+            throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
         Cipher cipher = null;
 
         cipher = Cipher.getInstance("AES/ECB/NoPadding");
@@ -387,8 +373,9 @@ public class HwpTextExtractorV5 implements Serializable {
         TagInfo tag = new TagInfo();
 
         while (true) {
-            if (!readTag(reader, tag))
+            if (!readTag(reader, tag)) {
                 break;
+            }
 
             if (HWPTAG_BEGIN + 51 == tag.id) {
                 if (tag.length % 2 != 0) {
@@ -419,8 +406,8 @@ public class HwpTextExtractorV5 implements Serializable {
      * @param buf
      * @throws IOException
      */
-    private void writeParaText(HwpStreamReader reader, long datasize,
-                               StringBuilder buf) throws IOException {
+    private void writeParaText(HwpStreamReader reader, long datasize, StringBuilder buf)
+            throws IOException {
         int[] chars = reader.uint16((int) (datasize / 2));
 
         for (int index = 0; index < chars.length; index++) {
@@ -445,21 +432,22 @@ public class HwpTextExtractorV5 implements Serializable {
         }
     }
 
-    private boolean readTag(HwpStreamReader reader, TagInfo tag)
-            throws IOException {
+    private boolean readTag(HwpStreamReader reader, TagInfo tag) throws IOException {
         // see p.24 of hwp 5.0 format guide
 
         long recordHeader = reader.uint32();
-        if (recordHeader == -1)
+        if (recordHeader == -1) {
             return false;
+        }
 
         tag.id = recordHeader & 0x3FF;
         tag.level = (recordHeader >> 10) & 0x3FF;
         tag.length = (recordHeader >> 20) & 0xFFF;
 
         // see p.24 of hwp 5.0 format guide
-        if (tag.length == 0xFFF)
+        if (tag.length == 0xFFF) {
             tag.length = reader.uint32();
+        }
 
         return true;
     }
@@ -496,11 +484,6 @@ public class HwpTextExtractorV5 implements Serializable {
         int p;
         int r;
 
-        public String toString() {
-            return String.format(
-                    Locale.US, "%d.%d.%d.%d", m, n, p, r);
-        }
-
         public static HwpVersion parseVersion(long longVersion) {
             HwpVersion version = new HwpVersion();
             version.m = (int) ((longVersion & 0xFF000000L) >> 24);
@@ -508,6 +491,10 @@ public class HwpTextExtractorV5 implements Serializable {
             version.p = (int) ((longVersion & 0x0000FF00L) >> 8);
             version.r = (int) ((longVersion & 0x000000FFL));
             return version;
+        }
+
+        public String toString() {
+            return String.format(Locale.US, "%d.%d.%d.%d", m, n, p, r);
         }
     }
 

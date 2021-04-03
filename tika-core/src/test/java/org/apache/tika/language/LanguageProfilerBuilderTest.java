@@ -30,21 +30,23 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 
-import org.apache.tika.exception.TikaException;
 import org.junit.After;
 import org.junit.Test;
 
+import org.apache.tika.exception.TikaException;
+
 @Deprecated
 public class LanguageProfilerBuilderTest {
-    /* Test members */
-    private LanguageProfilerBuilder ngramProfile = null;
-    private LanguageProfile langProfile = null;
-    private final String profileName = "../tika-core/src/test/resources/org/apache/tika/language/langbuilder/"
-            + LanguageProfilerBuilderTest.class.getName();
+    private final String profileName =
+            "../tika-core/src/test/resources/org/apache/tika/language/langbuilder/" +
+                    LanguageProfilerBuilderTest.class.getName();
     private final String corpusName = "langbuilder/welsh_corpus.txt";
     private final String FILE_EXTENSION = "ngp";
     private final String LANGUAGE = "welsh";
     private final int maxlen = 1000;
+    /* Test members */
+    private LanguageProfilerBuilder ngramProfile = null;
+    private LanguageProfile langProfile = null;
 
     @Test
     public void testCreateProfile() throws TikaException, IOException, URISyntaxException {
@@ -70,19 +72,20 @@ public class LanguageProfilerBuilderTest {
 
     private void createLanguageProfile() throws IOException, TikaException, URISyntaxException {
         // Sort of dependency injection
-        if (ngramProfile == null)
+        if (ngramProfile == null) {
             testCreateProfile();
+        }
 
         langProfile = new LanguageProfile();
 
-        try (InputStream stream = new FileInputStream(new File(profileName + "." + FILE_EXTENSION))) {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(
-                    stream, UTF_8));
+        try (InputStream stream = new FileInputStream(
+                new File(profileName + "." + FILE_EXTENSION))) {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(stream, UTF_8));
             String line = reader.readLine();
             while (line != null) {
-                if (line.length() > 0 && !line.startsWith("#")) {// skips the
-                                                                 // ngp
-                                                                 // header/comment
+                if (line.length() > 0 && !line.startsWith("#")) { // skips the
+                    // ngp
+                    // header/comment
                     int space = line.indexOf(' ');
                     langProfile.add(line.substring(0, space),
                             Long.parseLong(line.substring(space + 1)));
@@ -95,7 +98,8 @@ public class LanguageProfilerBuilderTest {
     @After
     public void tearDown() throws Exception {
         File profile = new File(profileName + "." + FILE_EXTENSION);
-        if (profile.exists())
+        if (profile.exists()) {
             profile.delete();
+        }
     }
 }

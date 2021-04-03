@@ -16,17 +16,8 @@
  */
 package org.apache.tika.detect;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.tika.config.Field;
-import org.apache.tika.io.BoundedInputStream;
-import org.apache.tika.io.TemporaryResources;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.external.ExternalParser;
-import org.apache.tika.utils.ProcessUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -38,17 +29,27 @@ import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.tika.config.Field;
+import org.apache.tika.io.BoundedInputStream;
+import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.external.ExternalParser;
+import org.apache.tika.utils.ProcessUtils;
 
 /**
  * This runs the linux 'file' command against a file.  If
  * this is called on a TikaInputStream, it will use the underlying Path
  * or spool the full file to disk and then run file against that.
- *
+ * <p>
  * If this is run against any other type of InputStream, it will spool
  * up to {@link #maxBytes} to disk and then run the detector.
- *
+ * <p>
  * As with all detectors, mark must be supported.
  */
 public class FileCommandDetector implements Detector {
@@ -57,9 +58,9 @@ public class FileCommandDetector implements Detector {
     //should we map file mimes to Tika mimes, e.g. text/xml -> application/xml??
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileCommandDetector.class);
-    private static boolean HAS_WARNED = false;
     private static final long DEFAULT_TIMEOUT_MS = 6000;
-    private static String DEFAULT_FILE_COMMAND_PATH = "file";
+    private static final String DEFAULT_FILE_COMMAND_PATH = "file";
+    private static boolean HAS_WARNED = false;
     private Boolean hasFileCommand = null;
     private String fileCommandPath = DEFAULT_FILE_COMMAND_PATH;
     private int maxBytes = 1_000_000;
@@ -71,15 +72,12 @@ public class FileCommandDetector implements Detector {
 
 
     public static boolean checkHasFile(String fileCommandPath) {
-        String[] commandline = new String[]{
-            fileCommandPath, "-v"
-        };
+        String[] commandline = new String[]{fileCommandPath, "-v"};
         return ExternalParser.check(commandline);
     }
 
     /**
-     *
-     * @param input document input stream, or <code>null</code>
+     * @param input    document input stream, or <code>null</code>
      * @param metadata input metadata for the document
      * @return mime as identified by the file command or application/octet-stream otherwise
      * @throws IOException
@@ -90,8 +88,8 @@ public class FileCommandDetector implements Detector {
             hasFileCommand = checkHasFile(this.fileCommandPath);
         }
         if (!hasFileCommand) {
-            if (! HAS_WARNED) {
-                LOGGER.warn("'file' command isn't working: '"+fileCommandPath+"'");
+            if (!HAS_WARNED) {
+                LOGGER.warn("'file' command isn't working: '" + fileCommandPath + "'");
                 HAS_WARNED = true;
             }
             return MediaType.OCTET_STREAM;
@@ -117,11 +115,9 @@ public class FileCommandDetector implements Detector {
 
     private MediaType detectOnPath(Path path) throws IOException {
 
-        String[] args = new String[]{
-                ProcessUtils.escapeCommandLine(fileCommandPath),
-                "-b", "--mime-type",
-                ProcessUtils.escapeCommandLine(path.toAbsolutePath().toString())
-        };
+        String[] args =
+                new String[]{ProcessUtils.escapeCommandLine(fileCommandPath), "-b", "--mime-type",
+                        ProcessUtils.escapeCommandLine(path.toAbsolutePath().toString())};
         ProcessBuilder builder = new ProcessBuilder(args);
         Process process = builder.start();
         StringStreamGobbler errorGobbler = new StringStreamGobbler(process.getErrorStream());
@@ -148,6 +144,7 @@ public class FileCommandDetector implements Detector {
             errorThread.join();
             outThread.join();
         } catch (InterruptedException e) {
+            //swallow
         }
         MediaType mt = MediaType.parse(outGobbler.toString().trim());
         if (mt == null) {
@@ -189,7 +186,8 @@ public class FileCommandDetector implements Detector {
         private final StringBuilder sb = new StringBuilder();
 
         public StringStreamGobbler(InputStream is) {
-            this.reader = new BufferedReader(new InputStreamReader(new BufferedInputStream(is), UTF_8));
+            this.reader =
+                    new BufferedReader(new InputStreamReader(new BufferedInputStream(is), UTF_8));
         }
 
         @Override

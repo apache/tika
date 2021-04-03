@@ -32,10 +32,8 @@ public class CaptionObject extends RecognisedObject {
 
     @Override
     public String toString() {
-        return "Caption{" +
-                "sentence='" + label + "\' (" + labelLang + ')' +
-                ", confidence=" + confidence +
-                '}';
+        return "Caption{" + "sentence='" + label + "\' (" + labelLang + ')' + ", confidence=" +
+                confidence + '}';
     }
 
 }

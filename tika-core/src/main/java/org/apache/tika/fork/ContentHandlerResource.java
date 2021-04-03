@@ -32,8 +32,7 @@ class ContentHandlerResource implements ForkResource {
         this.handler = handler;
     }
 
-    public Throwable process(DataInputStream input, DataOutputStream output)
-            throws IOException {
+    public Throwable process(DataInputStream input, DataOutputStream output) throws IOException {
         try {
             internalProcess(input);
             return null;
@@ -42,8 +41,7 @@ class ContentHandlerResource implements ForkResource {
         }
     }
 
-    private void internalProcess(DataInputStream input)
-            throws IOException, SAXException {
+    private void internalProcess(DataInputStream input) throws IOException, SAXException {
         int type = input.readUnsignedByte();
         if (type == ContentHandlerProxy.START_DOCUMENT) {
             handler.startDocument();
@@ -62,10 +60,8 @@ class ContentHandlerResource implements ForkResource {
             if (n >= 0) {
                 atts = new AttributesImpl();
                 for (int i = 0; i < n; i++) {
-                    atts.addAttribute(
-                            readString(input), readString(input),
-                            readString(input), readString(input),
-                            readString(input));
+                    atts.addAttribute(readString(input), readString(input), readString(input),
+                            readString(input), readString(input));
                 }
             }
             handler.startElement(uri, localName, qName, atts);
@@ -98,7 +94,7 @@ class ContentHandlerResource implements ForkResource {
     private char[] readCharacters(DataInputStream input) throws IOException {
         return readStringUTF(input).toCharArray();
     }
-    
+
     private String readStringUTF(DataInputStream input) throws IOException {
         int frags = input.readInt();
         StringBuilder sb = new StringBuilder();

@@ -16,16 +16,16 @@
  */
 package org.apache.tika.pipes.emitter;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-
 import java.io.IOException;
 import java.util.List;
+
+import org.apache.tika.metadata.Metadata;
 
 public class MockEmitter extends AbstractEmitter {
 
     @Override
-    public void emit(String emitKey, List<Metadata> metadataList) throws IOException, TikaEmitterException {
+    public void emit(String emitKey, List<Metadata> metadataList)
+            throws IOException, TikaEmitterException {
 
     }
 }

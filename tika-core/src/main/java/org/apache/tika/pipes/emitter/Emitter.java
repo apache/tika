@@ -16,10 +16,10 @@
  */
 package org.apache.tika.pipes.emitter;
 
-import org.apache.tika.metadata.Metadata;
-
 import java.io.IOException;
 import java.util.List;
+
+import org.apache.tika.metadata.Metadata;
 
 public interface Emitter {
 
@@ -27,7 +27,7 @@ public interface Emitter {
 
     void emit(String emitKey, List<Metadata> metadataList) throws IOException, TikaEmitterException;
 
-    void emit(List<EmitData> emitData) throws IOException, TikaEmitterException;
+    void emit(List<? extends EmitData> emitData) throws IOException, TikaEmitterException;
     //TODO -- add this later for xhtml?
     //void emit(String txt, Metadata metadata) throws IOException, TikaException;
 

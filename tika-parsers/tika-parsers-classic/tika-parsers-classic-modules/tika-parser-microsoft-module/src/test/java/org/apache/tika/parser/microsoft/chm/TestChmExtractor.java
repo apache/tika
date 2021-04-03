@@ -24,26 +24,24 @@ import static org.junit.Assert.fail;
 import java.io.ByteArrayInputStream;
 import java.util.List;
 
-import org.apache.tika.TikaTest;
-import org.apache.tika.exception.TikaException;
-
 import org.junit.Before;
 import org.junit.Test;
+
+import org.apache.tika.TikaTest;
+import org.apache.tika.exception.TikaException;
 
 public class TestChmExtractor extends TikaTest {
     private ChmExtractor chmExtractor = null;
 
     @Before
     public void setUp() throws Exception {
-        chmExtractor = new ChmExtractor(
-                new ByteArrayInputStream(TestParameters.chmData));
+        chmExtractor = new ChmExtractor(new ByteArrayInputStream(TestParameters.chmData));
     }
 
     @Test
     public void testEnumerateChm() {
         List<String> chmEntries = chmExtractor.enumerateChm();
-        assertEquals(TestParameters.VP_CHM_ENTITIES_NUMBER,
-                chmEntries.size());
+        assertEquals(TestParameters.VP_CHM_ENTITIES_NUMBER, chmEntries.size());
     }
 
     @Test
@@ -52,9 +50,9 @@ public class TestChmExtractor extends TikaTest {
     }
 
     @Test
-    public void testExtractChmEntry() throws TikaException{
+    public void testExtractChmEntry() throws TikaException {
         ChmDirectoryListingSet entries = chmExtractor.getChmDirList();
-        
+
         int count = 0;
         for (DirectoryListingEntry directoryListingEntry : entries.getDirectoryListingEntryList()) {
             chmExtractor.extractChmEntry(directoryListingEntry);

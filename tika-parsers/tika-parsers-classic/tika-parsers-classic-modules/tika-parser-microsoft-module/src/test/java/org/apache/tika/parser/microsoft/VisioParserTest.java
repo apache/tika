@@ -21,26 +21,25 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
 
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
 
 public class VisioParserTest {
 
     @Test
     public void testVisioParser() throws Exception {
-        try (InputStream input = VisioParserTest.class.getResourceAsStream(
-                "/test-documents/testVISIO.vsd")) {
+        try (InputStream input = VisioParserTest.class
+                .getResourceAsStream("/test-documents/testVISIO.vsd")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             new OfficeParser().parse(input, handler, metadata, new ParseContext());
 
-            assertEquals(
-                    "application/vnd.visio",
-                    metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("application/vnd.visio", metadata.get(Metadata.CONTENT_TYPE));
             assertEquals("", metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Hogwarts", metadata.get(TikaCoreProperties.CREATOR));
             String content = handler.toString();

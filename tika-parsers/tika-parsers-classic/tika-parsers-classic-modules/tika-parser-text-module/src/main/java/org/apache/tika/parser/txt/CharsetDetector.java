@@ -8,8 +8,6 @@
  */
 package org.apache.tika.parser.txt;
 
-import org.apache.commons.io.IOUtils;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -18,6 +16,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import org.apache.commons.io.IOUtils;
 
 
 /**
@@ -53,10 +53,8 @@ public class CharsetDetector {
 //   actually choose the "real" charset.  All assuming that the application just
 //   wants the data, and doesn't care about a char set name.
 
-    private static final int MAX_CONFIDENCE = 100;
-
     static final int DEFAULT_MARK_LIMIT = 12000; //This is a Tika modification; ICU's is 8000
-
+    private static final int MAX_CONFIDENCE = 100;
     /*
      * List of recognizers for all charsets known to the implementation.
      */
@@ -75,9 +73,13 @@ public class CharsetDetector {
         list.add(new CSRecognizerInfo(new CharsetRecog_2022.CharsetRecog_2022JP(), true));
         list.add(new CSRecognizerInfo(new CharsetRecog_2022.CharsetRecog_2022CN(), true));
         list.add(new CSRecognizerInfo(new CharsetRecog_2022.CharsetRecog_2022KR(), true));
-        list.add(new CSRecognizerInfo(new CharsetRecog_mbcs.CharsetRecog_euc.CharsetRecog_gb_18030(), true));
-        list.add(new CSRecognizerInfo(new CharsetRecog_mbcs.CharsetRecog_euc.CharsetRecog_euc_jp(), true));
-        list.add(new CSRecognizerInfo(new CharsetRecog_mbcs.CharsetRecog_euc.CharsetRecog_euc_kr(), true));
+        list.add(
+                new CSRecognizerInfo(new CharsetRecog_mbcs.CharsetRecog_euc.CharsetRecog_gb_18030(),
+                        true));
+        list.add(new CSRecognizerInfo(new CharsetRecog_mbcs.CharsetRecog_euc.CharsetRecog_euc_jp(),
+                true));
+        list.add(new CSRecognizerInfo(new CharsetRecog_mbcs.CharsetRecog_euc.CharsetRecog_euc_kr(),
+                true));
         list.add(new CSRecognizerInfo(new CharsetRecog_mbcs.CharsetRecog_big5(), true));
 
         list.add(new CSRecognizerInfo(new CharsetRecog_sbcs.CharsetRecog_8859_1(), true));
@@ -115,10 +117,10 @@ public class CharsetDetector {
      *
      */
     final byte[] fInputBytes;  // The text to be checked.  Markup will have been
-                               // removed if appropriate.
-
+    // removed if appropriate.
+    private final int kBufSize;
     int fInputLen;          // Length of the byte data in fInputBytes.
-    short fByteStats[] =      // byte frequency statistics for the input text.
+    short[] fByteStats =      // byte frequency statistics for the input text.
             new short[256];  //   Value is percent, not absolute.
     boolean fC1Bytes =          // True if any bytes in the range 0x80 - 0x9F are in the input;
             false;
@@ -135,8 +137,6 @@ public class CharsetDetector {
     private boolean fStripTags =   // If true, setText() will strip tags from input text.
             false;
     private boolean[] fEnabledRecognizers;   // If not null, active set of charset recognizers had
-
-    private final int kBufSize;
 
     /**
      * Constructor
@@ -246,8 +246,8 @@ public class CharsetDetector {
 
         if (bytesRead < 1) {
             return setText(new byte[0]);
-        } else if ( kBufSize > bytesRead) {
-            return setText(inputBytes, (int)bytesRead);
+        } else if (kBufSize > bytesRead) {
+            return setText(inputBytes, (int) bytesRead);
         } else {
             return setText(inputBytes);
         }
@@ -276,7 +276,7 @@ public class CharsetDetector {
 //          detectAll(), and cut it short as soon as a match with a high confidence
 //          is found.  This is something to be done later, after things are otherwise
 //          working.
-        CharsetMatch matches[] = detectAll();
+        CharsetMatch[] matches = detectAll();
 
         if (matches == null || matches.length == 0) {
             return null;
@@ -317,11 +317,13 @@ public class CharsetDetector {
                     confidence = Math.min(confidence, MAX_CONFIDENCE);
 
                     // Apply charset hint.
-                    if ((fDeclaredEncoding != null) && (fDeclaredEncoding.equalsIgnoreCase(csr.getName()))) {
+                    if ((fDeclaredEncoding != null) &&
+                            (fDeclaredEncoding.equalsIgnoreCase(csr.getName()))) {
                         // Reduce lack of confidence (delta between "sure" and current) by 50%.
                         confidence += (MAX_CONFIDENCE - confidence) / 2;
                     }
-                    CharsetMatch m = new CharsetMatch(this, csr, confidence, charsetMatch.getName(), charsetMatch.getLanguage());
+                    CharsetMatch m = new CharsetMatch(this, csr, confidence, charsetMatch.getName(),
+                            charsetMatch.getLanguage());
                     matches.add(m);
                 }
             }
@@ -494,8 +496,7 @@ public class CharsetDetector {
         //    essentially nothing but markup abandon the markup stripping.
         //    Detection will have to work on the unstripped input.
         //
-        if (openTags < 5 || openTags / 5 < badTags ||
-                (fInputLen < 100 && fRawLength > 600)) {
+        if (openTags < 5 || openTags / 5 < badTags || (fInputLen < 100 && fRawLength > 600)) {
             int limit = fRawLength;
 
             if (limit > kBufSize) {
@@ -540,7 +541,8 @@ public class CharsetDetector {
         List<String> csnames = new ArrayList<>(ALL_CS_RECOGNIZERS.size());
         for (int i = 0; i < ALL_CS_RECOGNIZERS.size(); i++) {
             CSRecognizerInfo rcinfo = ALL_CS_RECOGNIZERS.get(i);
-            boolean active = (fEnabledRecognizers == null) ? rcinfo.isDefaultEnabled : fEnabledRecognizers[i];
+            boolean active = (fEnabledRecognizers == null) ? rcinfo.isDefaultEnabled :
+                    fEnabledRecognizers[i];
             if (active) {
                 csnames.add(rcinfo.recognizer.getName());
             }

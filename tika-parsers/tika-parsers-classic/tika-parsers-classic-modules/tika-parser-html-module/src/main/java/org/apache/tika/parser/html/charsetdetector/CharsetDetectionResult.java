@@ -16,11 +16,11 @@
  */
 package org.apache.tika.parser.html.charsetdetector;
 
-import java.nio.charset.Charset;
-
 import static java.nio.charset.StandardCharsets.UTF_16BE;
 import static java.nio.charset.StandardCharsets.UTF_16LE;
 import static java.nio.charset.StandardCharsets.UTF_8;
+
+import java.nio.charset.Charset;
 
 
 /**
@@ -43,10 +43,14 @@ class CharsetDetectionResult {
     public void find(String charsetName) {
         this.found = true;
         charsetName = charsetName.trim();
-        if ("x-user-defined".equals(charsetName)) charsetName = "windows-1252";
+        if ("x-user-defined".equals(charsetName)) {
+            charsetName = "windows-1252";
+        }
         this.charset = CharsetAliases.getCharsetByLabel(charsetName);
         // The specification states: If charset is a UTF-16 encoding, then set charset to UTF-8.
-        if (UTF_16LE.equals(charset) || UTF_16BE.equals(charset)) charset = UTF_8;
+        if (UTF_16LE.equals(charset) || UTF_16BE.equals(charset)) {
+            charset = UTF_8;
+        }
     }
 
     public Charset getCharset() {

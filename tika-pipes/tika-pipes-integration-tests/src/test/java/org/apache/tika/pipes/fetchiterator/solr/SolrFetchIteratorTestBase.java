@@ -13,6 +13,7 @@ import org.testcontainers.containers.GenericContainer;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 
 public abstract class SolrFetchIteratorTestBase {
 
@@ -51,7 +52,7 @@ public abstract class SolrFetchIteratorTestBase {
             xmlContents = xmlContents.replace("{SOLR_URL}", "http://" + solrHost + ":" + solrPort + "/solr");
             TikaConfig tikaConfig = new TikaConfig(new ByteArrayInputStream(xmlContents.getBytes(StandardCharsets.UTF_8)));
             FetchIterator it = tikaConfig.getFetchIterator();
-            it.init(1);
+            it.initialize(Collections.emptyMap());
             int numProcessed = it.call();
             Assert.assertEquals(numDocs, numProcessed);
         }
@@ -66,7 +67,7 @@ public abstract class SolrFetchIteratorTestBase {
             xmlContents = xmlContents.replace("{ZK_HOST}", solrHost + ":" + zkPort);
             TikaConfig tikaConfig = new TikaConfig(new ByteArrayInputStream(xmlContents.getBytes(StandardCharsets.UTF_8)));
             FetchIterator it = tikaConfig.getFetchIterator();
-            it.init(1);
+            it.initialize(Collections.emptyMap());
             int numProcessed = it.call();
             Assert.assertEquals(numDocs, numProcessed);
         }

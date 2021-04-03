@@ -21,23 +21,25 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 
 import org.apache.commons.codec.binary.Base32;
-import org.apache.tika.parser.DigestingParser;
-import org.apache.tika.parser.digest.CompositeDigester;
-import org.apache.tika.parser.digest.InputStreamDigester;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
 
+import org.apache.tika.parser.DigestingParser;
+import org.apache.tika.parser.digest.CompositeDigester;
+import org.apache.tika.parser.digest.InputStreamDigester;
+
 /**
  * Digester that relies on BouncyCastle for MessageDigest implementations.
- *
  */
 public class BouncyCastleDigester extends CompositeDigester {
 
     /**
      * Include a string representing the comma-separated algorithms to run: e.g. "md5,sha1".
-     * If you want base 32 encoding instead of hexadecimal, add ":32" to the algorithm, e.g. "md5,sha1:32"
+     * If you want base 32 encoding instead of hexadecimal, add ":32" to the algorithm,  e.g.
+     * "md5,sha1:32"
      * <p/>
      * Will throw an IllegalArgumentException if an algorithm isn't supported
+     *
      * @param markLimit
      * @param algorithmString
      */
@@ -84,7 +86,8 @@ public class BouncyCastleDigester extends CompositeDigester {
 
     private static class BCInputStreamDigester extends InputStreamDigester {
 
-        public BCInputStreamDigester(int markLimit, String algorithm, DigestingParser.Encoder encoder) {
+        public BCInputStreamDigester(int markLimit, String algorithm,
+                                     DigestingParser.Encoder encoder) {
             super(markLimit, algorithm, encoder);
             try {
                 MessageDigest.getInstance(algorithm, getProvider());

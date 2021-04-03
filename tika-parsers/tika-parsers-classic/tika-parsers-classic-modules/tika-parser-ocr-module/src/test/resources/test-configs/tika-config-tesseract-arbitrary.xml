@@ -16,15 +16,15 @@
   limitations under the License.
 -->
 <properties>
-  <parsers>
-    <parser class="org.apache.tika.parser.ocr.TesseractOCRParser">
-      <params>
-        <!-- space delimited key-value pairs -->
-        <param name="otherTesseractSettings" type="list">
-          <string>textord_initialx_ile 0.75</string>
-          <string>textord_noise_hfract 0.15625</string>
-        </param>
-      </params>
-    </parser>
-  </parsers>
+    <parsers>
+        <parser class="org.apache.tika.parser.ocr.TesseractOCRParser">
+            <params>
+                <!-- space delimited key-value pairs -->
+                <param name="otherTesseractSettings" type="list">
+                    <string>textord_initialx_ile 0.75</string>
+                    <string>textord_noise_hfract 0.15625</string>
+                </param>
+            </params>
+        </parser>
+    </parsers>
 </properties>

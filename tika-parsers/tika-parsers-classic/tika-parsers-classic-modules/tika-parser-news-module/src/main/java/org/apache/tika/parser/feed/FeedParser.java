@@ -23,7 +23,16 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.rometools.rome.feed.synd.SyndContent;
+import com.rometools.rome.feed.synd.SyndEntry;
+import com.rometools.rome.feed.synd.SyndFeed;
+import com.rometools.rome.io.FeedException;
+import com.rometools.rome.io.SyndFeedInput;
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -31,15 +40,6 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-
-import com.rometools.rome.feed.synd.SyndContent;
-import com.rometools.rome.feed.synd.SyndEntry;
-import com.rometools.rome.feed.synd.SyndFeed;
-import com.rometools.rome.io.FeedException;
-import com.rometools.rome.io.SyndFeedInput;
 
 /**
  * Feed parser.
@@ -49,26 +49,44 @@ import com.rometools.rome.io.SyndFeedInput;
  */
 public class FeedParser extends AbstractParser {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = -3785361933034525186L;
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
-                    MediaType.application("rss+xml"),
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
+            new HashSet<MediaType>(Arrays.asList(MediaType.application("rss+xml"),
                     MediaType.application("atom+xml"))));
+
+    private static String stripTags(SyndContent c) {
+        if (c == null) {
+            return "";
+        }
+
+        String value = c.getValue();
+        if (value == null) {
+            return "";
+        }
+
+        String[] parts = value.split("<[^>]*>");
+        StringBuilder buf = new StringBuilder();
+
+        for (String part : parts)
+            buf.append(part);
+
+        return buf.toString().trim();
+    }
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
         // set the encoding?
         try {
-            SyndFeed feed = new SyndFeedInput().build(
-                    new InputSource(new CloseShieldInputStream(stream)));
+            SyndFeed feed =
+                    new SyndFeedInput().build(new InputSource(new CloseShieldInputStream(stream)));
 
             String title = stripTags(feed.getTitleEx());
             String description = stripTags(feed.getDescriptionEx());
@@ -77,8 +95,7 @@ public class FeedParser extends AbstractParser {
             metadata.set(TikaCoreProperties.DESCRIPTION, description);
             // store the other fields in the metadata
 
-            XHTMLContentHandler xhtml =
-                new XHTMLContentHandler(handler, metadata);
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             xhtml.startDocument();
 
             xhtml.element("h1", title);
@@ -108,22 +125,5 @@ public class FeedParser extends AbstractParser {
             throw new TikaException("RSS parse error", e);
         }
 
-    }
-
-    private static String stripTags(SyndContent c) {
-        if (c == null)
-            return "";
-
-        String value = c.getValue();
-        if (value == null)
-            return "";
-
-        String[] parts = value.split("<[^>]*>");
-        StringBuilder buf = new StringBuilder();
-
-        for (String part : parts)
-            buf.append(part);
-
-        return buf.toString().trim();
     }
 }

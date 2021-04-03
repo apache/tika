@@ -16,13 +16,13 @@
  */
 package org.apache.tika.extractor;
 
-import org.apache.tika.config.ServiceLoader;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.utils.ServiceLoaderUtils;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+
+import org.apache.tika.config.ServiceLoader;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.utils.ServiceLoaderUtils;
 
 /**
  * Loads EmbeddedStreamTranslators via service loading.  Tries to run each

@@ -16,14 +16,15 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import org.apache.tika.TikaTest;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+
+import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 public class EMFParserTest extends TikaTest {
 
@@ -37,7 +38,8 @@ public class EMFParserTest extends TikaTest {
         //this is just the usual embedded pdf
         Metadata pdfMetadata = metadataList.get(2);
         assertEquals("application/pdf", pdfMetadata.get(Metadata.CONTENT_TYPE));
-        assertContains("is a toolkit for detecting", pdfMetadata.get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("is a toolkit for detecting",
+                pdfMetadata.get(TikaCoreProperties.TIKA_CONTENT));
     }
 
     @Test
@@ -47,6 +49,7 @@ public class EMFParserTest extends TikaTest {
         //it does not exist as a standalone pdf file inside the _mac.xls file.
         Metadata pdfMetadata = metadataList.get(1);
         assertEquals("application/pdf", pdfMetadata.get(Metadata.CONTENT_TYPE));
-        assertContains("is a toolkit for detecting", pdfMetadata.get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("is a toolkit for detecting",
+                pdfMetadata.get(TikaCoreProperties.TIKA_CONTENT));
     }
 }

@@ -27,20 +27,20 @@ class DBFRow {
         cells = new DBFCell[header.getCols().length];
         for (int i = 0; i < cells.length; i++) {
             DBFColumnHeader columnHeader = header.getCols()[i];
-            cells[i] = new DBFCell(columnHeader.getColType(),
-                    columnHeader.fieldLength,
+            cells[i] = new DBFCell(columnHeader.getColType(), columnHeader.fieldLength,
                     columnHeader.decimalCount);
         }
     }
 
-    private DBFRow() {}
-
-    void setDeleted(boolean deleted) {
-        isDeleted = deleted;
+    private DBFRow() {
     }
 
     boolean isDeleted() {
         return isDeleted;
+    }
+
+    void setDeleted(boolean deleted) {
+        isDeleted = deleted;
     }
 
     DBFRow deepCopy() {
@@ -55,8 +55,6 @@ class DBFRow {
 
     @Override
     public String toString() {
-        return "DBFRow{" +
-                "cells=" + Arrays.toString(cells) +
-                '}';
+        return "DBFRow{" + "cells=" + Arrays.toString(cells) + '}';
     }
 }

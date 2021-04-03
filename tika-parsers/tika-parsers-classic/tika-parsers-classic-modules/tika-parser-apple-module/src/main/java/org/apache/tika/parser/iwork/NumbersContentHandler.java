@@ -16,17 +16,18 @@
  */
 package org.apache.tika.parser.iwork;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
-import java.util.HashMap;
-import java.util.Map;
 
 class NumbersContentHandler extends DefaultHandler {
 
@@ -61,7 +62,8 @@ class NumbersContentHandler extends DefaultHandler {
     }
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes attributes)
+            throws SAXException {
         if ("ls:workspace".equals(qName)) {
             inSheet = true;
             numberOfSheets++;

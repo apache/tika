@@ -28,45 +28,49 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.tika.parser.ner.NERecogniser;
 import com.github.openjson.JSONException;
 import com.github.openjson.JSONObject;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.parser.ner.NERecogniser;
+
 /**
- *  This class offers an implementation of {@link NERecogniser} based on
- *  CRF classifiers from Stanford CoreNLP. This NER requires additional setup,
- *  due to runtime binding to Stanford CoreNLP.
- *  See <a href="http://wiki.apache.org/tika/TikaAndNER#CoreNLP">
- *      Tika NER Wiki</a> for configuring this recogniser.
- *  @see NERecogniser
+ * This class offers an implementation of {@link NERecogniser} based on
+ * CRF classifiers from Stanford CoreNLP. This NER requires additional setup,
+ * due to runtime binding to Stanford CoreNLP.
+ * See <a href="http://wiki.apache.org/tika/TikaAndNER#CoreNLP">
+ * Tika NER Wiki</a> for configuring this recogniser.
  *
+ * @see NERecogniser
  */
 public class CoreNLPNERecogniser implements NERecogniser {
 
-    private static final Logger LOG = LoggerFactory.getLogger(CoreNLPNERecogniser.class);
-
     //default model paths
-    public static final String NER_3CLASS_MODEL = "edu/stanford/nlp/models/ner/english.all.3class.distsim.crf.ser.gz";
-    public static final String NER_4CLASS_MODEL = "edu/stanford/nlp/models/ner/english.conll.4class.distsim.crf.ser.gz";
-    public static final String NER_7CLASS_MODEL = "edu/stanford/nlp/models/ner/english.muc.7class.distsim.crf.ser.gz";
+    public static final String NER_3CLASS_MODEL =
+            "edu/stanford/nlp/models/ner/english.all.3class.distsim.crf.ser.gz";
+    public static final String NER_4CLASS_MODEL =
+            "edu/stanford/nlp/models/ner/english.conll.4class.distsim.crf.ser.gz";
+    public static final String NER_7CLASS_MODEL =
+            "edu/stanford/nlp/models/ner/english.muc.7class.distsim.crf.ser.gz";
     /**
      * default Model path
      */
     public static final String DEFAULT_MODEL_PATH = NER_7CLASS_MODEL;
     public static final String MODEL_PROP_NAME = "ner.corenlp.model";
-
-    public static final Set<String> ENTITY_TYPES = new HashSet<String>(){{
-        add(PERSON);
-        add(TIME);
-        add(LOCATION);
-        add(ORGANIZATION);
-        add(MONEY);
-        add(PERCENT);
-        add(DATE);
-    }};
+    public static final Set<String> ENTITY_TYPES = new HashSet<String>() {
+        {
+            add(PERSON);
+            add(TIME);
+            add(LOCATION);
+            add(ORGANIZATION);
+            add(MONEY);
+            add(PERCENT);
+            add(DATE);
+        }
+    };
+    private static final Logger LOG = LoggerFactory.getLogger(CoreNLPNERecogniser.class);
     private static final String CLASSIFIER_CLASS_NAME = "edu.stanford.nlp.ie.crf.CRFClassifier";
 
     private boolean available = false;
@@ -76,19 +80,21 @@ public class CoreNLPNERecogniser implements NERecogniser {
     private Object classifierInstance;
     private Method classifyMethod;
 
-    public CoreNLPNERecogniser(){
+    public CoreNLPNERecogniser() {
         this(System.getProperty(MODEL_PROP_NAME, DEFAULT_MODEL_PATH));
     }
 
     /**
      * Creates a NERecogniser by loading model from given path
+     *
      * @param modelPath path to NER model file
      */
     public CoreNLPNERecogniser(String modelPath) {
         try {
             Properties props = new Properties();
             Class<?> classifierClass = Class.forName(CLASSIFIER_CLASS_NAME);
-            Method loadMethod = classifierClass.getMethod("getClassifier", String.class, Properties.class);
+            Method loadMethod =
+                    classifierClass.getMethod("getClassifier", String.class, Properties.class);
             classifierInstance = loadMethod.invoke(classifierClass, modelPath, props);
             classifyMethod = classifierClass.getMethod("classifyToCharacterOffsets", String.class);
 
@@ -104,8 +110,24 @@ public class CoreNLPNERecogniser implements NERecogniser {
         LOG.info("Available for service ? {}", available);
     }
 
+    public static void main(String[] args) throws IOException, JSONException {
+        if (args.length != 1) {
+            System.err.println("Error: Invalid Args");
+            System.err.println("This tool finds names inside text");
+            System.err.println("Usage: <path/to/text/file>");
+            return;
+        }
+
+        try (FileInputStream stream = new FileInputStream(args[0])) {
+            String text = IOUtils.toString(stream, StandardCharsets.UTF_8);
+            CoreNLPNERecogniser ner = new CoreNLPNERecogniser();
+            Map<String, Set<String>> names = ner.recognise(text);
+            JSONObject jNames = new JSONObject(names);
+            System.out.println(jNames.toString(2));
+        }
+    }
+
     /**
-     *
      * @return {@code true} if model was available, valid and was able to initialise the classifier.
      * returns {@code false} when this recogniser is not available for service.
      */
@@ -115,6 +137,7 @@ public class CoreNLPNERecogniser implements NERecogniser {
 
     /**
      * Gets set of entity types recognised by this recogniser
+     *
      * @return set of entity classes/types
      */
     public Set<String> getEntityTypes() {
@@ -123,6 +146,7 @@ public class CoreNLPNERecogniser implements NERecogniser {
 
     /**
      * recognises names of entities in the text
+     *
      * @param text text which possibly contains names
      * @return map of entity type -&gt; set of names
      */
@@ -150,22 +174,5 @@ public class CoreNLPNERecogniser implements NERecogniser {
             LOG.warn(e.getMessage(), e);
         }
         return names;
-    }
-
-    public static void main(String[] args) throws IOException, JSONException {
-        if (args.length != 1) {
-            System.err.println("Error: Invalid Args");
-            System.err.println("This tool finds names inside text");
-            System.err.println("Usage: <path/to/text/file>");
-            return;
-        }
-
-        try (FileInputStream stream = new FileInputStream(args[0])) {
-            String text = IOUtils.toString(stream, StandardCharsets.UTF_8);
-            CoreNLPNERecogniser ner = new CoreNLPNERecogniser();
-            Map<String, Set<String>> names = ner.recognise(text);
-            JSONObject jNames = new JSONObject(names);
-            System.out.println(jNames.toString(2));
-        }
     }
 }
