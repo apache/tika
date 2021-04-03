@@ -81,7 +81,7 @@ public class RTGTranslator extends AbstractTranslator {
     public RTGTranslator() {
         String rtgBaseUrl = RTG_TRANSLATE_URL_BASE;
         Properties config = new Properties();
-        try (InputStream stream = getClass().getResourceAsStream(RTG_PROPS)){
+        try (InputStream stream = getClass().getClassLoader().getResourceAsStream(RTG_PROPS)){
             if (stream != null){
                 config.load(stream);
             }
@@ -92,8 +92,13 @@ public class RTGTranslator extends AbstractTranslator {
         LOG.info("RTG base URL: " + rtgBaseUrl);
         List<Object> providers = new ArrayList<>();
         providers.add(new JacksonJsonProvider());
-        this.client = WebClient.create(rtgBaseUrl, providers);
-        this.isAvailable = client.head().getStatus() == 200;
+        try {
+            this.client = WebClient.create(rtgBaseUrl, providers);
+            this.isAvailable = client.head().getStatus() == 200;
+        } catch (Exception e){
+            LOG.warn(e.getMessage(), e);
+            isAvailable = false;
+        }
 
     }
     @Override
