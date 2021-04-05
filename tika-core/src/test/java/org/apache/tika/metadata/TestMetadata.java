@@ -38,8 +38,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.apache.tika.utils.DateUtils;
 import org.junit.Test;
+
+import org.apache.tika.utils.DateUtils;
 
 //Junit imports
 
@@ -50,7 +51,9 @@ public class TestMetadata {
 
     private static final String CONTENTTYPE = "contenttype";
 
-    /** Test for the <code>add(String, String)</code> method. */
+    /**
+     * Test for the <code>add(String, String)</code> method.
+     */
     @Test
     public void testAdd() {
         String[] values = null;
@@ -78,17 +81,20 @@ public class TestMetadata {
         assertEquals("value1", values[0]);
         assertEquals("value2", values[1]);
         assertEquals("value1", values[2]);
-        
+
         Property nonMultiValued = Property.internalText("nonMultiValued");
         meta.add(nonMultiValued, "value1");
         try {
             meta.add(nonMultiValued, "value2");
             fail("add should fail on the second call of a non-multi valued item");
         } catch (PropertyTypeException e) {
+            //swallow
         }
     }
 
-    /** Test for the <code>set(String, String)</code> method. */
+    /**
+     * Test for the <code>set(String, String)</code> method.
+     */
     @Test
     public void testSet() {
         String[] values = null;
@@ -115,7 +121,9 @@ public class TestMetadata {
         assertEquals("new value 2", values[1]);
     }
 
-    /** Test for <code>setAll(Properties)</code> method. */
+    /**
+     * Test for <code>setAll(Properties)</code> method.
+     */
     @Test
     public void testSetProperties() {
         String[] values = null;
@@ -143,7 +151,9 @@ public class TestMetadata {
         assertEquals("value2.1", values[0]);
     }
 
-    /** Test for <code>get(String)</code> method. */
+    /**
+     * Test for <code>get(String)</code> method.
+     */
     @Test
     public void testGet() {
         Metadata meta = new Metadata();
@@ -154,7 +164,9 @@ public class TestMetadata {
         assertEquals("value-1", meta.get("a-name"));
     }
 
-    /** Test for <code>isMultiValued()</code> method. */
+    /**
+     * Test for <code>isMultiValued()</code> method.
+     */
     @Test
     public void testIsMultiValued() {
         Metadata meta = new Metadata();
@@ -165,7 +177,9 @@ public class TestMetadata {
         assertTrue(meta.isMultiValued("key"));
     }
 
-    /** Test for <code>names</code> method. */
+    /**
+     * Test for <code>names</code> method.
+     */
     @Test
     public void testNames() {
         String[] names = null;
@@ -182,7 +196,9 @@ public class TestMetadata {
         assertEquals(2, names.length);
     }
 
-    /** Test for <code>remove(String)</code> method. */
+    /**
+     * Test for <code>remove(String)</code> method.
+     */
     @Test
     public void testRemove() {
         Metadata meta = new Metadata();
@@ -204,7 +220,9 @@ public class TestMetadata {
         assertNull(meta.get("name-two"));
     }
 
-    /** Test for <code>equals(Object)</code> method. */
+    /**
+     * Test for <code>equals(Object)</code> method.
+     */
     @Test
     public void testObject() {
         Metadata meta1 = new Metadata();
@@ -232,163 +250,170 @@ public class TestMetadata {
 
     /**
      * Tests for getting and setting integer
-     *  based properties
+     * based properties
      */
     @Test
     public void testGetSetInt() {
         Metadata meta = new Metadata();
-        
+
         // Isn't initially set, will get null back
         assertEquals(null, meta.get(Metadata.IMAGE_WIDTH));
         assertEquals(null, meta.getInt(Metadata.IMAGE_WIDTH));
-        
+
         // Can only set as a single valued int
         try {
             meta.set(Metadata.BITS_PER_SAMPLE, 1);
             fail("Shouldn't be able to set a multi valued property as an int");
-        } catch(PropertyTypeException e) {}
+        } catch (PropertyTypeException e) {
+            //swallow
+        }
         try {
             meta.set(TikaCoreProperties.CREATED, 1);
             fail("Shouldn't be able to set a date property as an int");
-        } catch(PropertyTypeException e) {}
-        
+        } catch (PropertyTypeException e) {
+            //swallow
+        }
+
         // Can set it and retrieve it
         meta.set(Metadata.IMAGE_WIDTH, 22);
         assertEquals("22", meta.get(Metadata.IMAGE_WIDTH));
         assertEquals(22, meta.getInt(Metadata.IMAGE_WIDTH).intValue());
-        
+
         // If you save a non int value, you get null
         meta.set(Metadata.IMAGE_WIDTH, "INVALID");
         assertEquals("INVALID", meta.get(Metadata.IMAGE_WIDTH));
         assertEquals(null, meta.getInt(Metadata.IMAGE_WIDTH));
-        
+
         // If you try to retrieve a non simple int value, you get null
         meta.set(Metadata.IMAGE_WIDTH, 22);
         assertEquals(22, meta.getInt(Metadata.IMAGE_WIDTH).intValue());
         assertEquals(null, meta.getInt(Metadata.BITS_PER_SAMPLE));
         assertEquals(null, meta.getInt(TikaCoreProperties.CREATED));
     }
-    
+
     /**
      * Tests for getting and setting date
-     *  based properties
+     * based properties
      */
     @Test
     public void testGetSetDate() {
         Metadata meta = new Metadata();
-        long hour = 60 * 60 * 1000; 
-        
+        long hour = 60 * 60 * 1000;
+
         // Isn't initially set, will get null back
         assertEquals(null, meta.get(TikaCoreProperties.CREATED));
         assertEquals(null, meta.getInt(TikaCoreProperties.CREATED));
-        
+
         // Can only set as a single valued date
         try {
             meta.set(Metadata.BITS_PER_SAMPLE, new Date(1000));
             fail("Shouldn't be able to set a multi valued property as a date");
-        } catch(PropertyTypeException e) {}
+        } catch (PropertyTypeException e) {
+            //swallow
+        }
         try {
             meta.set(Metadata.IMAGE_WIDTH, new Date(1000));
             fail("Shouldn't be able to set an int property as an date");
-        } catch(PropertyTypeException e) {}
-        
+        } catch (PropertyTypeException e) {
+            //swallow
+        }
+
         // Can set it and retrieve it
         meta.set(TikaCoreProperties.CREATED, new Date(1000));
         assertEquals("1970-01-01T00:00:01Z", meta.get(TikaCoreProperties.CREATED));
         assertEquals(1000, meta.getDate(TikaCoreProperties.CREATED).getTime());
-        
+
         // If you save a non date value, you get null
         meta.set(TikaCoreProperties.CREATED, "INVALID");
         assertEquals("INVALID", meta.get(TikaCoreProperties.CREATED));
         assertEquals(null, meta.getDate(TikaCoreProperties.CREATED));
-        
+
         // If you try to retrieve a non simple date value, you get null
         meta.set(TikaCoreProperties.CREATED, new Date(1000));
         assertEquals(1000, meta.getDate(TikaCoreProperties.CREATED).getTime());
         assertEquals(null, meta.getInt(Metadata.BITS_PER_SAMPLE));
         assertEquals(null, meta.getInt(TikaCoreProperties.CREATED));
-        
+
         // Our format doesn't include milliseconds
         // This means things get rounded 
         meta.set(TikaCoreProperties.CREATED, new Date(1050));
         assertEquals("1970-01-01T00:00:01Z", meta.get(TikaCoreProperties.CREATED));
         assertEquals(1000, meta.getDate(TikaCoreProperties.CREATED).getTime());
-        
+
         // We can accept a number of different ISO-8601 variants
         meta.set(TikaCoreProperties.CREATED, "1970-01-01T00:00:01Z");
         assertEquals(1000, meta.getDate(TikaCoreProperties.CREATED).getTime());
-        
+
         meta.set(TikaCoreProperties.CREATED, "1970-01-01 00:00:01Z");
         assertEquals(1000, meta.getDate(TikaCoreProperties.CREATED).getTime());
-        
+
         meta.set(TikaCoreProperties.CREATED, "1970-01-01T01:00:01+01:00");
         assertEquals(1000, meta.getDate(TikaCoreProperties.CREATED).getTime());
-        
+
         meta.set(TikaCoreProperties.CREATED, "1970-01-01 01:00:01+01:00");
         assertEquals(1000, meta.getDate(TikaCoreProperties.CREATED).getTime());
-        
+
         meta.set(TikaCoreProperties.CREATED, "1970-01-01T12:00:01+12:00");
         assertEquals(1000, meta.getDate(TikaCoreProperties.CREATED).getTime());
-        
+
         meta.set(TikaCoreProperties.CREATED, "1969-12-31T12:00:01-12:00");
         assertEquals(1000, meta.getDate(TikaCoreProperties.CREATED).getTime());
-        
+
         // Dates without times, come in at midday UTC
         meta.set(TikaCoreProperties.CREATED, "1970-01-01");
-        assertEquals(12*hour, meta.getDate(TikaCoreProperties.CREATED).getTime());
-        
+        assertEquals(12 * hour, meta.getDate(TikaCoreProperties.CREATED).getTime());
+
         meta.set(TikaCoreProperties.CREATED, "1970:01:01");
-        assertEquals(12*hour, meta.getDate(TikaCoreProperties.CREATED).getTime());
+        assertEquals(12 * hour, meta.getDate(TikaCoreProperties.CREATED).getTime());
     }
-    
+
     /**
      * Some documents, like jpegs, might have date in unspecified time zone
      * which should be handled like strings but verified to have parseable ISO 8601 format
      */
     @Test
     public void testGetSetDateUnspecifiedTimezone() {
-        Metadata meta = new Metadata();    
-        
+        Metadata meta = new Metadata();
+
         // Set explictly without a timezone
         meta.set(TikaCoreProperties.CREATED, "1970-01-01T00:00:01");
         assertEquals("should return string without time zone specifier because zone is not known",
-        		"1970-01-01T00:00:01", meta.get(TikaCoreProperties.CREATED));
-        
+                "1970-01-01T00:00:01", meta.get(TikaCoreProperties.CREATED));
+
         // Now ask DateUtils to format for us without one
         meta.set(TikaCoreProperties.CREATED, DateUtils.formatDateUnknownTimezone(new Date(1000)));
         assertEquals("should return string without time zone specifier because zone is not known",
-                         "1970-01-01T00:00:01", meta.get(TikaCoreProperties.CREATED));
+                "1970-01-01T00:00:01", meta.get(TikaCoreProperties.CREATED));
     }
-    
+
     /**
      * Defines a composite property, then checks that when set as the
-     *  composite the value can be retrieved with the property or the aliases
+     * composite the value can be retrieved with the property or the aliases
      */
     @SuppressWarnings("deprecation")
     @Test
     public void testCompositeProperty() {
-       Metadata meta = new Metadata();
-       Property compositeProperty = Property.composite(
-             DublinCore.DESCRIPTION, new Property[] { 
-                   TikaCoreProperties.DESCRIPTION,
-                   Property.internalText("testDescriptionAlt")
-             });
-       String message = "composite description";
-       meta.set(compositeProperty, message);
+        Metadata meta = new Metadata();
+        Property compositeProperty = Property.composite(DublinCore.DESCRIPTION,
+                new Property[]{TikaCoreProperties.DESCRIPTION,
+                        Property.internalText("testDescriptionAlt")});
+        String message = "composite description";
+        meta.set(compositeProperty, message);
 
-       // Fetch as the composite
-       assertEquals(message, meta.get(compositeProperty));
-       // Fetch as the primary property on the composite
-       assertEquals(message, meta.get(DublinCore.DESCRIPTION));
-       // Fetch as the aliases
-       assertEquals(message, meta.get("testDescriptionAlt"));
+        // Fetch as the composite
+        assertEquals(message, meta.get(compositeProperty));
+        // Fetch as the primary property on the composite
+        assertEquals(message, meta.get(DublinCore.DESCRIPTION));
+        // Fetch as the aliases
+        assertEquals(message, meta.get("testDescriptionAlt"));
     }
 
     @Test
     public void testMultithreadedDates() throws Exception {
         int numThreads = 10;
         ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
-        ExecutorCompletionService<Integer> executorCompletionService = new ExecutorCompletionService<Integer>(executorService);
+        ExecutorCompletionService<Integer> executorCompletionService =
+                new ExecutorCompletionService<Integer>(executorService);
         for (int i = 0; i < numThreads; i++) {
             executorCompletionService.submit(new MetadataDateAdder());
         }
@@ -403,8 +428,71 @@ public class TestMetadata {
 
     }
 
+    @Test
+    public void testEquals() {
+        Metadata meta1 = new Metadata();
+        meta1.add("key", "value1");
+        meta1.add("key", "value2");
+        meta1.add("key2", "value12");
+
+        Metadata meta2 = new Metadata();
+        meta2.add("key", "value1");
+        meta2.add("key", "value2");
+        meta2.add("key2", "value12");
+
+        assertEquals(meta1, meta2);
+    }
+
+    @Test
+    public void testNotEquals() {
+        Metadata meta1 = new Metadata();
+        meta1.add("key", "value1");
+        meta1.add("key", "value2");
+        meta1.add("key2", "value12");
+
+        Metadata meta2 = new Metadata();
+        meta2.add("key", "value1");
+        meta2.add("key", "value2");
+        meta2.add("key2", "value22");
+
+        assertFalse(meta1.equals(meta2));
+    }
+
+    @Test
+    public void testEqualAndHashCode() {
+        Metadata meta1 = new Metadata();
+        meta1.add("key", "value1");
+        meta1.add("key", "value2");
+        meta1.add("key2", "value12");
+
+        Metadata meta2 = new Metadata();
+        meta2.add("key", "value1");
+        meta2.add("key", "value2");
+        meta2.add("key2", "value12");
+
+        assertEquals(meta1, meta2);
+        assertEquals(meta1.hashCode(), meta2.hashCode());
+    }
+
+    @Test
+    public void testToStringWithManyEntries() {
+        Metadata m = new Metadata();
+        m.add("key", "value1");
+        m.add("key", "value2");
+        m.add("key2", "value12");
+        assertEquals("key2=value12 key=value1 key=value2", m.toString());
+    }
+
+    @Test
+    public void testToStringWithSingleEntry() {
+        Metadata m = new Metadata();
+        m.add("key", "value1");
+        assertEquals("key=value1", m.toString());
+    }
+
     private class MetadataDateAdder implements Callable<Integer> {
         private final Random random = new Random();
+
         @Override
         public Integer call() throws Exception {
             for (int i = 0; i < 1000; i++) {
@@ -415,72 +503,12 @@ public class TestMetadata {
                 DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
                 m.set(TikaCoreProperties.CREATED, df.format(now));
                 df.setTimeZone(TimeZone.getTimeZone("UTC"));
-                assertTrue(Math.abs(now.getTime() - m.getDate(TikaCoreProperties.CREATED).getTime()) < 2000);
+                assertTrue(
+                        Math.abs(now.getTime() - m.getDate(TikaCoreProperties.CREATED).getTime()) <
+                                2000);
 
             }
             return 1;
         }
-    }
-    
-    @Test
-    public void testEquals() {
-        Metadata meta1 = new Metadata();
-        meta1.add("key", "value1");
-        meta1.add("key", "value2");
-        meta1.add("key2", "value12");
-        
-        Metadata meta2 = new Metadata();
-        meta2.add("key", "value1");
-        meta2.add("key", "value2");
-        meta2.add("key2", "value12");
-        
-        assertEquals(meta1, meta2);
-    }
-    
-    @Test
-    public void testNotEquals() {
-        Metadata meta1 = new Metadata();
-        meta1.add("key", "value1");
-        meta1.add("key", "value2");
-        meta1.add("key2", "value12");
-        
-        Metadata meta2 = new Metadata();
-        meta2.add("key", "value1");
-        meta2.add("key", "value2");
-        meta2.add("key2", "value22");
-        
-        assertFalse(meta1.equals(meta2));
-    }
-    
-    @Test
-    public void testEqualAndHashCode() {
-        Metadata meta1 = new Metadata();
-        meta1.add("key", "value1");
-        meta1.add("key", "value2");
-        meta1.add("key2", "value12");
-        
-        Metadata meta2 = new Metadata();
-        meta2.add("key", "value1");
-        meta2.add("key", "value2");
-        meta2.add("key2", "value12");
-        
-        assertEquals(meta1, meta2);
-        assertEquals(meta1.hashCode(), meta2.hashCode());
-    }
-    
-    @Test
-    public void testToStringWithManyEntries() {
-        Metadata m = new Metadata();
-        m.add("key", "value1");
-        m.add("key", "value2");
-        m.add("key2", "value12");
-        assertEquals("key2=value12 key=value1 key=value2", m.toString());
-    }
-    
-    @Test
-    public void testToStringWithSingleEntry() {
-        Metadata m = new Metadata();
-        m.add("key", "value1");
-        assertEquals("key=value1", m.toString());
     }
 }

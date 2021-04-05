@@ -27,6 +27,7 @@ public class TikaConfigException extends TikaException {
 
     /**
      * Creates an instance of exception
+     *
      * @param msg message
      */
     public TikaConfigException(String msg) {

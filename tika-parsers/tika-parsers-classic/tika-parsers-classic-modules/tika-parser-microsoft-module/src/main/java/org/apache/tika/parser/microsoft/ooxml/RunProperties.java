@@ -18,7 +18,6 @@
 package org.apache.tika.parser.microsoft.ooxml;
 
 import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTUnderline;
 
 /**
  * WARNING: This class is mutable.  Make a copy of it
@@ -36,12 +35,12 @@ public class RunProperties {
         return italics;
     }
 
-    public boolean isBold() {
-        return bold;
-    }
-
     public void setItalics(boolean italics) {
         this.italics = italics;
+    }
+
+    public boolean isBold() {
+        return bold;
     }
 
     public void setBold(boolean bold) {

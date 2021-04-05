@@ -50,7 +50,8 @@ public class AccessChecker implements Serializable {
      * This constructs an {@link AccessChecker} that will check
      * for whether or not content should be extracted from a document.
      *
-     * @param allowExtractionForAccessibility if general extraction is not allowed, is extraction for accessibility allowed
+     * @param allowExtractionForAccessibility if general extraction is
+     *                                        not allowed, is extraction for accessibility allowed
      */
     public AccessChecker(boolean allowExtractionForAccessibility) {
         needToCheck = true;
@@ -73,7 +74,8 @@ public class AccessChecker implements Serializable {
                 if ("true".equals(metadata.get(AccessPermissions.EXTRACT_FOR_ACCESSIBILITY))) {
                     return;
                 }
-                throw new AccessPermissionException("Content extraction for accessibility is not allowed.");
+                throw new AccessPermissionException(
+                        "Content extraction for accessibility is not allowed.");
             }
             throw new AccessPermissionException("Content extraction is not allowed.");
         }
@@ -81,12 +83,18 @@ public class AccessChecker implements Serializable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         AccessChecker checker = (AccessChecker) o;
 
-        if (needToCheck != checker.needToCheck) return false;
+        if (needToCheck != checker.needToCheck) {
+            return false;
+        }
         return allowAccessibility == checker.allowAccessibility;
 
     }

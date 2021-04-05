@@ -18,14 +18,14 @@
 package org.apache.tika.parser.microsoft.ooxml.xps;
 
 
+import java.io.IOException;
+
 import org.apache.poi.ooxml.POIXMLDocument;
 import org.apache.poi.ooxml.POIXMLProperties;
 import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.xmlbeans.XmlException;
-
-import java.io.IOException;
 
 /**
  * Currently, mostly a pass-through class to hold pkg and properties
@@ -38,7 +38,7 @@ public class XPSTextExtractor extends POIXMLTextExtractor {
     private final POIXMLProperties properties;
 
     public XPSTextExtractor(OPCPackage pkg) throws OpenXML4JException, XmlException, IOException {
-        super((POIXMLDocument)null);
+        super((POIXMLDocument) null);
         this.pkg = pkg;
         this.properties = new POIXMLProperties(pkg);
 
@@ -53,6 +53,7 @@ public class XPSTextExtractor extends POIXMLTextExtractor {
     public String getText() {
         return null;
     }
+
     public POIXMLProperties.CoreProperties getCoreProperties() {
         return this.properties.getCoreProperties();
     }

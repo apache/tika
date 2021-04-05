@@ -16,14 +16,14 @@
   limitations under the License.
 -->
 <properties>
-  <parsers>
-    <parser class="org.apache.tika.parser.DefaultParser">
-      <parser-exclude class="org.apache.tika.parser.ocr.TesseractOCRParser"/>
-    </parser>
-    <parser class="org.apache.tika.parser.ocr.TesseractOCRParser">
-      <params>
-        <param name="preloadLangs" type="bool">true</param>
-      </params>
-    </parser>
-  </parsers>
+    <parsers>
+        <parser class="org.apache.tika.parser.DefaultParser">
+            <parser-exclude class="org.apache.tika.parser.ocr.TesseractOCRParser"/>
+        </parser>
+        <parser class="org.apache.tika.parser.ocr.TesseractOCRParser">
+            <params>
+                <param name="preloadLangs" type="bool">true</param>
+            </params>
+        </parser>
+    </parsers>
 </properties>

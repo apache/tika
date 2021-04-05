@@ -1,4 +1,3 @@
-package org.apache.tika.parser.sqlite3;
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -15,12 +14,17 @@ package org.apache.tika.parser.sqlite3;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.parser.sqlite3;
+
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -31,8 +35,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * This is the main class for parsing SQLite3 files.  When {@link #parse} is called,
@@ -60,9 +62,11 @@ public class SQLite3Parser extends AbstractParser implements Initializable {
     private static final MediaType MEDIA_TYPE = MediaType.application("x-sqlite3");
 
     private static final Set<MediaType> SUPPORTED_TYPES;
+
     static {
         SUPPORTED_TYPES = Collections.singleton(MEDIA_TYPE);
     }
+
     /**
      * Checks to see if class is available for org.sqlite.JDBC.
      * <p/>
@@ -78,13 +82,15 @@ public class SQLite3Parser extends AbstractParser implements Initializable {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
         SQLite3DBParser p = new SQLite3DBParser();
         p.parse(stream, handler, metadata, context);
     }
 
     /**
      * No-op
+     *
      * @param params params to use for initialization
      * @throws TikaConfigException
      */
@@ -94,6 +100,7 @@ public class SQLite3Parser extends AbstractParser implements Initializable {
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler)
+            throws TikaConfigException {
     }
 }

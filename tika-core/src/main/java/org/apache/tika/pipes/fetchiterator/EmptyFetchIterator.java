@@ -16,13 +16,7 @@
  */
 package org.apache.tika.pipes.fetchiterator;
 
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
-import org.apache.tika.exception.TikaConfigException;
-
 import java.io.IOException;
-
-import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 public class EmptyFetchIterator extends FetchIterator {

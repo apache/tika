@@ -34,9 +34,12 @@ public abstract class AbstractPOIContainerExtractionTest extends TikaTest {
     public static final MediaType TYPE_DOC = MediaType.application("msword");
     public static final MediaType TYPE_PPT = MediaType.application("vnd.ms-powerpoint");
     public static final MediaType TYPE_XLS = MediaType.application("vnd.ms-excel");
-    public static final MediaType TYPE_DOCX = MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.document");
-    public static final MediaType TYPE_PPTX = MediaType.application("vnd.openxmlformats-officedocument.presentationml.presentation");
-    public static final MediaType TYPE_XLSX = MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    public static final MediaType TYPE_DOCX =
+            MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.document");
+    public static final MediaType TYPE_PPTX =
+            MediaType.application("vnd.openxmlformats-officedocument.presentationml.presentation");
+    public static final MediaType TYPE_XLSX =
+            MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     public static final MediaType TYPE_MSG = MediaType.application("vnd.ms-outlook");
 
     public static final MediaType TYPE_TXT = MediaType.text("plain");
@@ -49,14 +52,15 @@ public abstract class AbstractPOIContainerExtractionTest extends TikaTest {
     public static final MediaType TYPE_WMF = MediaType.image("wmf");
 
     protected static TikaInputStream getTestFile(String filename) throws Exception {
-        URL input = AbstractPOIContainerExtractionTest.class.getResource(
-                "/test-documents/" + filename);
+        URL input =
+                AbstractPOIContainerExtractionTest.class.getResource("/test-documents/" + filename);
         assertNotNull(filename + " not found", input);
 
         return TikaInputStream.get(input);
     }
 
-    protected TrackingHandler process(String filename, ContainerExtractor extractor, boolean recurse) throws Exception {
+    protected TrackingHandler process(String filename, ContainerExtractor extractor,
+                                      boolean recurse) throws Exception {
         try (TikaInputStream stream = getTestFile(filename)) {
             assertEquals(true, extractor.isSupported(stream));
 

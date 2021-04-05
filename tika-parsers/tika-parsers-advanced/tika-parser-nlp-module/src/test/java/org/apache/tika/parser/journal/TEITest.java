@@ -25,10 +25,11 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.io.IOUtils;
+import org.junit.Test;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.junit.Test;
 
 public class TEITest extends TikaTest {
 
@@ -40,29 +41,34 @@ public class TEITest extends TikaTest {
         try (InputStream is = getResourceAsStream("/test-documents/testTEI.xml")) {
             IOUtils.copy(is, bos);
         }
-        String xml = new String (bos.toByteArray(), StandardCharsets.UTF_8);
+        String xml = new String(bos.toByteArray(), StandardCharsets.UTF_8);
         Metadata metadata = teiParser.parse(xml, new ParseContext());
-        assertEquals("Montbonnot Saint-Martin, Montbonnot Saint-Martin, Montbonnot Saint-Martin, " +
+        assertEquals("Montbonnot Saint-Martin, Montbonnot Saint-Martin, " +
+                "Montbonnot Saint-Martin, " +
                 "Montbonnot Saint-Martin, null 38330, 38330, 38330, 38330 " +
-                "France, France, France, France ", metadata.get("Address"));
+                "France, France, France, France ", metadata.get("Address").replaceAll("\\s+", " "));
         String[] keywords = new String[]{
-                "F22 [Analysis of Algorithms and Problem Complexity]: Nonnumerical Algorithms and Problems\u2014Sequencing",
-                "and scheduling; D41 [Operating Systems]: Process management\u2014Scheduling, Concurrency",
-                "Keywords",
-                "Parallel Computing, Algorithms, Scheduling, Parallel Tasks,",
-                "Moldable Tasks, Bi-criteria"
-        };
+                "F22 [Analysis of Algorithms and Problem Complexity]: Nonnumerical Algorithms " +
+                        "and Problems\u2014Sequencing",
+                "and scheduling; D41 [Operating Systems]: Process management\u2014Scheduling, " +
+                        "Concurrency",
+                "Keywords", "Parallel Computing, Algorithms, Scheduling, Parallel Tasks,",
+                "Moldable Tasks, Bi-criteria"};
         assertArrayEquals(keywords, metadata.getValues("Keyword"));
-        assertEquals("Pierre-François  Dutot 1 Lionel  Eyraud 1 Grégory  Gr´ 1 Grégory  Mouní 1 Denis  Trystram 1 ",
+        assertEquals(
+                "Pierre-François  Dutot 1 Lionel  Eyraud 1 Grégory  Gr´ 1 Grégory  " +
+                        "Mouní 1 Denis  Trystram 1 ",
                 metadata.get("Authors"));
         assertEquals("Bi-criteria Algorithm for Scheduling Jobs on Cluster Platforms *",
                 metadata.get("Title"));
         assertEquals("1 ID-IMAG ID-IMAG ID-IMAG ID-IMAG", metadata.get("Affiliation"));
         assertEquals("[Affiliation {orgName=ID-IMAG ID-IMAG ID-IMAG ID-IMAG , " +
-                        "address=Montbonnot Saint-Martin, Montbonnot Saint-Martin, Montbonnot Saint-Martin, Montbonnot Saint-Martin, " +
+                        "address=Montbonnot Saint-Martin, Montbonnot Saint-Martin, " +
+                        "Montbonnot Saint-Martin, Montbonnot Saint-Martin, " +
                         "null 38330, 38330, 38330, 38330 France, France, France, France}" +
                         "[Affiliation {orgName=ID-IMAG ID-IMAG ID-IMAG ID-IMAG , " +
-                        "address=Montbonnot Saint-Martin, Montbonnot Saint-Martin, Montbonnot Saint-Martin, Montbonnot Saint-Martin, " +
+                        "address=Montbonnot Saint-Martin, Montbonnot Saint-Martin, " +
+                        "Montbonnot Saint-Martin, Montbonnot Saint-Martin, " +
                         "null 38330, 38330, 38330, 38330 France, France, France, France}]",
                 metadata.get("FullAffiliations"));
     }

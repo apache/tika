@@ -16,14 +16,8 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
-import org.apache.commons.io.IOUtils;
-import org.apache.tika.TikaTest;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.junit.Ignore;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
@@ -34,17 +28,23 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Random;
 
-import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
+import org.apache.commons.io.IOUtils;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 public class TruncatedOOXMLTest extends TikaTest {
 
     @Test
     public void testWordTrunc14435() throws Exception {
         //this is only very slightly truncated
-        List<Metadata> metadataList = getRecursiveMetadata(truncate(
-                "testWORD_various.docx", 14435), true);
+        List<Metadata> metadataList =
+                getRecursiveMetadata(truncate("testWORD_various.docx", 14435), true);
         assertEquals(1, metadataList.size());
         Metadata metadata = metadataList.get(0);
         String content = metadata.get(TikaCoreProperties.TIKA_CONTENT);
@@ -56,11 +56,10 @@ public class TruncatedOOXMLTest extends TikaTest {
     }
 
 
-
     @Test
     public void testTruncation() throws Exception {
 
-        int length = (int)getResourceAsFile("/test-documents/testWORD_various.docx").length();
+        int length = (int) getResourceAsFile("/test-documents/testWORD_various.docx").length();
         Random r = new Random();
         for (int i = 0; i < 50; i++) {
             int targetLength = r.nextInt(length);
@@ -70,10 +69,10 @@ public class TruncatedOOXMLTest extends TikaTest {
             assertEquals(targetLength, bos.toByteArray().length);
         }
         try {
-            InputStream is = truncate("testWORD_various.docx", length+1);
+            InputStream is = truncate("testWORD_various.docx", length + 1);
             fail("should have thrown EOF");
         } catch (EOFException e) {
-
+            //swallow
         }
     }
 
@@ -85,7 +84,9 @@ public class TruncatedOOXMLTest extends TikaTest {
             if (f.isDirectory()) {
                 continue;
             }
-            if (f.getName().endsWith(".xlsx")) {// || f.getName().endsWith(".pptx") || f.getName().endsWith(".docx")) {
+            if (f.getName().endsWith(
+                    ".xlsx")) { // || f.getName().endsWith(".pptx") || f.getName().endsWith("
+                // .docx")) {
 
             } else {
                 continue;
@@ -94,7 +95,7 @@ public class TruncatedOOXMLTest extends TikaTest {
                 ZipArchiveInputStream zipArchiveInputStream = new ZipArchiveInputStream(is);
                 ZipArchiveEntry zae = zipArchiveInputStream.getNextZipEntry();
                 int cnt = 0;
-                while (zae != null && ! zae.isDirectory() && ++cnt <= 10) {
+                while (zae != null && !zae.isDirectory() && ++cnt <= 10) {
                     System.out.println(f.getName() + " : " + zae.getName());
                     if (zae.getName().equals("_rels/.rels")) {
                         ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -104,7 +105,7 @@ public class TruncatedOOXMLTest extends TikaTest {
                     zae = zipArchiveInputStream.getNextZipEntry();
                 }
             } catch (Exception e) {
-                System.out.println(f.getName() + " : "+e.getMessage());
+                System.out.println(f.getName() + " : " + e.getMessage());
             }
         }
     }

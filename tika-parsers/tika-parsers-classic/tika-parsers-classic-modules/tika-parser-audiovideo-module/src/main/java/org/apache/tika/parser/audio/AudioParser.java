@@ -25,7 +25,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
 import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioFileFormat.Type;
 import javax.sound.sampled.AudioFormat;
@@ -34,6 +33,9 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.ProxyInputStream;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.XMPDM;
@@ -41,29 +43,27 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 public class AudioParser extends AbstractParser {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = -6015684081240882695L;
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-        Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
-                MediaType.audio("basic"),
-                MediaType.audio("vnd.wave"), // Official, fixed in Tika 1.16
-                MediaType.audio("x-wav"),    // Older, used until Tika 1.16
-                MediaType.audio("x-aiff"))));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
+            new HashSet<MediaType>(
+                    Arrays.asList(MediaType.audio("basic"), MediaType.audio("vnd.wave"),
+                            // Official, fixed in Tika 1.16
+                            MediaType.audio("x-wav"),    // Older, used until Tika 1.16
+                            MediaType.audio("x-aiff"))));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
         // AudioSystem expects the stream to support the mark feature
         if (!stream.markSupported()) {
             stream = new BufferedInputStream(stream);
@@ -89,9 +89,7 @@ public class AudioParser extends AbstractParser {
             float rate = audioFormat.getSampleRate();
             if (rate != AudioSystem.NOT_SPECIFIED) {
                 metadata.set("samplerate", String.valueOf(rate));
-                metadata.set(
-                        XMPDM.AUDIO_SAMPLE_RATE,
-                        Integer.toString((int) rate));
+                metadata.set(XMPDM.AUDIO_SAMPLE_RATE, Integer.toString((int) rate));
             }
             int bits = audioFormat.getSampleSizeInBits();
             if (bits != AudioSystem.NOT_SPECIFIED) {

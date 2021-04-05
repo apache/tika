@@ -18,13 +18,14 @@ package org.apache.tika.parser.txt;
 
 import java.nio.charset.Charset;
 
+import org.mozilla.universalchardet.CharsetListener;
+import org.mozilla.universalchardet.Constants;
+import org.mozilla.universalchardet.UniversalDetector;
+
 import org.apache.tika.detect.TextStatistics;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.utils.CharsetUtils;
-import org.mozilla.universalchardet.CharsetListener;
-import org.mozilla.universalchardet.Constants;
-import org.mozilla.universalchardet.UniversalDetector;
 
 /**
  * Helper class used by {@link UniversalEncodingDetector} to access the
@@ -99,14 +100,12 @@ class UniversalEncodingListener implements CharsetListener {
     }
 
     /*
-    * hex value 0x81, 0x8d, 0x8f, 0x90, 0x9d don't exist in charset windows-1252.
-    * If these value's count > 0, return true
-    * */
+     * hex value 0x81, 0x8d, 0x8f, 0x90, 0x9d don't exist in charset windows-1252.
+     * If these value's count > 0, return true
+     * */
     private Boolean hasNonexistentHexInCharsetWindows1252() {
-        return (statistics.count(0x81) > 0 ||
-                statistics.count(0x8d) > 0 ||
-                statistics.count(0x8f) > 0 ||
-                statistics.count(0x90) > 0 ||
+        return (statistics.count(0x81) > 0 || statistics.count(0x8d) > 0 ||
+                statistics.count(0x8f) > 0 || statistics.count(0x90) > 0 ||
                 statistics.count(0x9d) > 0);
     }
 

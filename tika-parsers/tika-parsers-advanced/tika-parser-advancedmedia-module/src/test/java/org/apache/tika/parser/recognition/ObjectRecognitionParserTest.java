@@ -16,14 +16,14 @@
  */
 package org.apache.tika.parser.recognition;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.util.List;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.cxf.jaxrs.client.WebClient;
-import org.apache.tika.Tika;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.recognition.tf.TensorflowImageRecParser;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
@@ -31,10 +31,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.util.List;
+import org.apache.tika.Tika;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.recognition.tf.TensorflowImageRecParser;
 
 /**
  * Testcases for Object Recognition Parser
@@ -42,9 +43,12 @@ import java.util.List;
 public class ObjectRecognitionParserTest {
 
     // Config files
-    private static final String CONFIG_FILE_OBJ_REC = "org/apache/tika/parser/recognition/tika-config-tflow.xml";
-    private static final String CONFIG_REST_FILE_OBJ_REC = "org/apache/tika/parser/recognition/tika-config-tflow-rest.xml";
-    private static final String CONFIG_REST_FILE_IM2TXT = "org/apache/tika/parser/recognition/tika-config-tflow-im2txt-rest.xml";
+    private static final String CONFIG_FILE_OBJ_REC =
+            "org/apache/tika/parser/recognition/tika-config-tflow.xml";
+    private static final String CONFIG_REST_FILE_OBJ_REC =
+            "org/apache/tika/parser/recognition/tika-config-tflow-rest.xml";
+    private static final String CONFIG_REST_FILE_IM2TXT =
+            "org/apache/tika/parser/recognition/tika-config-tflow-im2txt-rest.xml";
 
     // Test images
     private static final String CAT_IMAGE_JPEG = "test-documents/testJPEG.jpg";
@@ -58,11 +62,11 @@ public class ObjectRecognitionParserTest {
     private static final ClassLoader loader = ObjectRecognitionParserTest.class.getClassLoader();
 
     private static final Logger LOG = LoggerFactory.getLogger(ObjectRecognitionParserTest.class);
-    
+
     @Test
     public void jpegTFObjRecTest() throws IOException, TikaException, SAXException {
-      TensorflowImageRecParser p = new TensorflowImageRecParser();
-      Assume.assumeTrue(p.isAvailable());      
+        TensorflowImageRecParser p = new TensorflowImageRecParser();
+        Assume.assumeTrue(p.isAvailable());
         try (InputStream stream = loader.getResourceAsStream(CONFIG_FILE_OBJ_REC)) {
             assert stream != null;
             Tika tika = new Tika(new TikaConfig(stream));
@@ -72,7 +76,8 @@ public class ObjectRecognitionParserTest {
                 List<String> lines = IOUtils.readLines(reader);
                 String text = StringUtils.join(lines, " ");
                 String[] expectedObjects = {"Egyptian cat", "tabby, tabby cat"};
-                String metaValues = StringUtils.join(metadata.getValues(ObjectRecognitionParser.MD_KEY_OBJ_REC), " ");
+                String metaValues = StringUtils
+                        .join(metadata.getValues(ObjectRecognitionParser.MD_KEY_OBJ_REC), " ");
                 for (String expectedObject : expectedObjects) {
                     String message = "'" + expectedObject + "' must have been detected";
                     Assert.assertTrue(message, text.contains(expectedObject));
@@ -87,11 +92,11 @@ public class ObjectRecognitionParserTest {
         String apiUrl = "http://localhost:8764/inception/v4/ping";
         boolean available = false;
         int status = 500;
-        try{
-          status = WebClient.create(apiUrl).get().getStatus();
-          available = status == 200;
+        try {
+            status = WebClient.create(apiUrl).get().getStatus();
+            available = status == 200;
+        } catch (Exception ignore) {
         }
-        catch(Exception ignore){}
         Assume.assumeTrue(available);
         String[] expectedObjects = {"Egyptian cat", "tabby, tabby cat"};
         doRecognize(CONFIG_REST_FILE_OBJ_REC, CAT_IMAGE_JPEG,
@@ -103,15 +108,15 @@ public class ObjectRecognitionParserTest {
         String apiUrl = "http://localhost:8764/inception/v4/ping";
         boolean available = false;
         int status = 500;
-        try{
+        try {
             status = WebClient.create(apiUrl).get().getStatus();
             available = status == 200;
+        } catch (Exception ignore) {
         }
-        catch(Exception ignore){}
         Assume.assumeTrue(available);
         String[] expectedObjects = {"Egyptian cat", "tabby, tabby cat"};
-        doRecognize(CONFIG_REST_FILE_OBJ_REC, CAT_IMAGE_PNG,
-                ObjectRecognitionParser.MD_KEY_OBJ_REC, expectedObjects);
+        doRecognize(CONFIG_REST_FILE_OBJ_REC, CAT_IMAGE_PNG, ObjectRecognitionParser.MD_KEY_OBJ_REC,
+                expectedObjects);
     }
 
     @Test
@@ -119,15 +124,15 @@ public class ObjectRecognitionParserTest {
         String apiUrl = "http://localhost:8764/inception/v4/ping";
         boolean available = false;
         int status = 500;
-        try{
+        try {
             status = WebClient.create(apiUrl).get().getStatus();
             available = status == 200;
+        } catch (Exception ignore) {
         }
-        catch(Exception ignore){}
         Assume.assumeTrue(available);
         String[] expectedObjects = {"Egyptian cat"};
-        doRecognize(CONFIG_REST_FILE_OBJ_REC, CAT_IMAGE_GIF,
-                ObjectRecognitionParser.MD_KEY_OBJ_REC, expectedObjects);
+        doRecognize(CONFIG_REST_FILE_OBJ_REC, CAT_IMAGE_GIF, ObjectRecognitionParser.MD_KEY_OBJ_REC,
+                expectedObjects);
     }
 
     @Test
@@ -135,12 +140,12 @@ public class ObjectRecognitionParserTest {
         String apiUrl = "http://localhost:8764/inception/v3/ping";
         boolean available = false;
         int status = 500;
-        try{
-          status = WebClient.create(apiUrl).get().getStatus();
-          available = status == 200;
+        try {
+            status = WebClient.create(apiUrl).get().getStatus();
+            available = status == 200;
+        } catch (Exception ignore) {
         }
-        catch(Exception ignore){}
-        Assume.assumeTrue(available);   
+        Assume.assumeTrue(available);
         String[] expectedCaption = {"a baseball player holding a bat on a field"};
         doRecognize(CONFIG_REST_FILE_IM2TXT, BASEBALL_IMAGE_JPEG,
                 ObjectRecognitionParser.MD_KEY_IMG_CAP, expectedCaption);
@@ -151,12 +156,12 @@ public class ObjectRecognitionParserTest {
         String apiUrl = "http://localhost:8764/inception/v3/ping";
         boolean available = false;
         int status = 500;
-        try{
-          status = WebClient.create(apiUrl).get().getStatus();
-          available = status == 200;
+        try {
+            status = WebClient.create(apiUrl).get().getStatus();
+            available = status == 200;
+        } catch (Exception ignore) {
         }
-        catch(Exception ignore){}
-        Assume.assumeTrue(available);  
+        Assume.assumeTrue(available);
         String[] expectedCaption = {"a baseball player holding a bat on a field"};
         doRecognize(CONFIG_REST_FILE_IM2TXT, BASEBALL_IMAGE_PNG,
                 ObjectRecognitionParser.MD_KEY_IMG_CAP, expectedCaption);
@@ -167,18 +172,19 @@ public class ObjectRecognitionParserTest {
         String apiUrl = "http://localhost:8764/inception/v3/ping";
         boolean available = false;
         int status = 500;
-        try{
-          status = WebClient.create(apiUrl).get().getStatus();
-          available = status == 200;
+        try {
+            status = WebClient.create(apiUrl).get().getStatus();
+            available = status == 200;
+        } catch (Exception ignore) {
         }
-        catch(Exception ignore){}
-        Assume.assumeTrue(available);  
+        Assume.assumeTrue(available);
         String[] expectedCaption = {"a baseball player pitching a ball on top of a field"};
         doRecognize(CONFIG_REST_FILE_IM2TXT, BASEBALL_IMAGE_GIF,
                 ObjectRecognitionParser.MD_KEY_IMG_CAP, expectedCaption);
     }
 
-    private void doRecognize(String configFile, String testImg, String mdKey, String[] expectedObjects) throws Exception {
+    private void doRecognize(String configFile, String testImg, String mdKey,
+                             String[] expectedObjects) throws Exception {
         try (InputStream stream = loader.getResourceAsStream(configFile)) {
             assert stream != null;
             Tika tika = new Tika(new TikaConfig(stream));

@@ -17,13 +17,12 @@
 
 package org.apache.tika.parser.ner;
 
-import java.lang.String;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * Defines a contract for named entity recogniser. The NER contract includes {@link #isAvailable()},
- * {@link #getEntityTypes()} and {@link #recognise( String )}
+ * {@link #getEntityTypes()} and {@link #recognise(String)}
  */
 public interface NERecogniser {
 
@@ -39,18 +38,21 @@ public interface NERecogniser {
 
     /**
      * checks if this Named Entity recogniser is available for service
+     *
      * @return true if this recogniser is ready to recognise, false otherwise
      */
     boolean isAvailable();
 
     /**
-     *  gets a set of entity types whose names are recognisable by this
+     * gets a set of entity types whose names are recognisable by this
+     *
      * @return set of entity types/classes
      */
     Set<String> getEntityTypes();
 
     /**
      * call for name recognition action from text
+     *
      * @param text text with possibly contains names
      * @return map of entityType -&gt; set of names
      */

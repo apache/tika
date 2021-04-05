@@ -17,23 +17,6 @@
 
 package org.apache.tika.pipes;
 
-import com.amazonaws.auth.profile.ProfileCredentialsProvider;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.iterable.S3Objects;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.pipes.emitter.Emitter;
-import org.apache.tika.pipes.emitter.s3.S3Emitter;
-import org.apache.tika.pipes.fetcher.Fetcher;
-import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
-import org.apache.tika.pipes.fetchiterator.FetchIterator;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -49,6 +32,24 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.amazonaws.auth.profile.ProfileCredentialsProvider;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.iterable.S3Objects;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.pipes.emitter.Emitter;
+import org.apache.tika.pipes.emitter.s3.S3Emitter;
+import org.apache.tika.pipes.fetcher.Fetcher;
+import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
+import org.apache.tika.pipes.fetchiterator.FetchIterator;
+
 @Ignore("turn these into actual tests")
 public class PipeIntegrationTests {
 
@@ -59,10 +60,8 @@ public class PipeIntegrationTests {
         String region = "";
         String profile = "";
         String bucket = "";
-        AmazonS3 s3Client = AmazonS3ClientBuilder.standard()
-                .withRegion(region)
-                .withCredentials(new ProfileCredentialsProvider(profile))
-                .build();
+        AmazonS3 s3Client = AmazonS3ClientBuilder.standard().withRegion(region)
+                .withCredentials(new ProfileCredentialsProvider(profile)).build();
         s3Client.listObjects(bucket);
         int cnt = 0;
         long sz = 0;
@@ -72,17 +71,18 @@ public class PipeIntegrationTests {
             if (Files.isRegularFile(targ)) {
                 continue;
             }
-            if (! Files.isDirectory(targ.getParent())) {
+            if (!Files.isDirectory(targ.getParent())) {
                 Files.createDirectories(targ.getParent());
             }
-            System.out.println("id: " + cnt + " :: " + summary.getKey() + " : " + summary.getSize());
+            System.out
+                    .println("id: " + cnt + " :: " + summary.getKey() + " : " + summary.getSize());
             S3Object s3Object = s3Client.getObject(bucket, summary.getKey());
             Files.copy(s3Object.getObjectContent(), targ);
             summary.getSize();
             cnt++;
             sz += summary.getSize();
         }
-        System.out.println("iterated: "+cnt + " sz: "+sz);
+        System.out.println("iterated: " + cnt + " sz: " + sz);
     }
 
     @Test
@@ -92,15 +92,20 @@ public class PipeIntegrationTests {
         int numConsumers = 1;
         ExecutorService es = Executors.newFixedThreadPool(numConsumers + 1);
         ExecutorCompletionService<Integer> completionService = new ExecutorCompletionService<>(es);
-        ArrayBlockingQueue<FetchEmitTuple> queue = it.init(numConsumers);
-        completionService.submit(it);
+        ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(1000);
         for (int i = 0; i < numConsumers; i++) {
-            completionService.submit(new FSFetcherEmitter(
-                    queue, tikaConfig.getFetcherManager().getFetcher("s3"), null));
+            completionService.submit(new FSFetcherEmitter(queue,
+                    tikaConfig.getFetcherManager().getFetcher("s3"), null));
+        }
+        for (FetchEmitTuple t : it) {
+            queue.offer(t);
+        }
+        for (int i = 0; i < numConsumers; i++) {
+            queue.offer(FetchIterator.COMPLETED_SEMAPHORE);
         }
         int finished = 0;
         try {
-            while (finished++ < numConsumers+1) {
+            while (finished++ < numConsumers + 1) {
                 Future<Integer> future = completionService.take();
                 future.get();
             }
@@ -112,20 +117,25 @@ public class PipeIntegrationTests {
     @Test
     public void testS3ToS3() throws Exception {
         TikaConfig tikaConfig = getConfig("tika-config-s3Tos3.xml");
-        FetchIterator it = tikaConfig.getFetchIterator();
         int numConsumers = 20;
         ExecutorService es = Executors.newFixedThreadPool(numConsumers + 1);
         ExecutorCompletionService<Integer> completionService = new ExecutorCompletionService<>(es);
-        ArrayBlockingQueue<FetchEmitTuple> queue = it.init(numConsumers);
-        completionService.submit(it);
+        ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(1000);
         for (int i = 0; i < numConsumers; i++) {
-            completionService.submit(new S3FetcherEmitter(
-                    queue, tikaConfig.getFetcherManager().getFetcher("s3f"),
-                    (S3Emitter)tikaConfig.getEmitterManager().getEmitter("s3e")));
+            completionService.submit(new S3FetcherEmitter(queue,
+                    tikaConfig.getFetcherManager().getFetcher("s3f"),
+                    (S3Emitter) tikaConfig.getEmitterManager().getEmitter("s3e")));
+        }
+        FetchIterator it = tikaConfig.getFetchIterator();
+        for (FetchEmitTuple t : it) {
+            queue.offer(t);
+        }
+        for (int i = 0; i < numConsumers; i++) {
+            queue.offer(FetchIterator.COMPLETED_SEMAPHORE);
         }
         int finished = 0;
         try {
-            while (finished++ < numConsumers+1) {
+            while (finished++ < numConsumers + 1) {
                 Future<Integer> future = completionService.take();
                 future.get();
             }
@@ -135,8 +145,7 @@ public class PipeIntegrationTests {
     }
 
     private TikaConfig getConfig(String fileName) throws Exception {
-        try (InputStream is =
-                     PipeIntegrationTests.class.getResourceAsStream("/"+fileName)) {
+        try (InputStream is = PipeIntegrationTests.class.getResourceAsStream("/" + fileName)) {
             return new TikaConfig(is);
         }
     }
@@ -149,8 +158,8 @@ public class PipeIntegrationTests {
         private final Emitter emitter;
         private final ArrayBlockingQueue<FetchEmitTuple> queue;
 
-        FSFetcherEmitter(ArrayBlockingQueue<FetchEmitTuple> queue, Fetcher
-                fetcher, Emitter emitter) {
+        FSFetcherEmitter(ArrayBlockingQueue<FetchEmitTuple> queue, Fetcher fetcher,
+                         Emitter emitter) {
             this.queue = queue;
             this.fetcher = fetcher;
             this.emitter = emitter;
@@ -172,12 +181,12 @@ public class PipeIntegrationTests {
         }
 
         private void process(FetchEmitTuple t) throws IOException, TikaException {
-            Path targ = OUTDIR.resolve(t.getFetchKey().getKey());
+            Path targ = OUTDIR.resolve(t.getFetchKey().getFetchKey());
             if (Files.isRegularFile(targ)) {
                 return;
             }
-            try (InputStream is = fetcher.fetch(t.getFetchKey().getKey(), t.getMetadata())) {
-                System.out.println(counter.getAndIncrement() + " : "+t );
+            try (InputStream is = fetcher.fetch(t.getFetchKey().getFetchKey(), t.getMetadata())) {
+                System.out.println(counter.getAndIncrement() + " : " + t);
                 Files.createDirectories(targ.getParent());
                 Files.copy(is, targ);
             }
@@ -191,8 +200,8 @@ public class PipeIntegrationTests {
         private final S3Emitter emitter;
         private final ArrayBlockingQueue<FetchEmitTuple> queue;
 
-        S3FetcherEmitter(ArrayBlockingQueue<FetchEmitTuple> queue, Fetcher
-                fetcher, S3Emitter emitter) {
+        S3FetcherEmitter(ArrayBlockingQueue<FetchEmitTuple> queue, Fetcher fetcher,
+                         S3Emitter emitter) {
             this.queue = queue;
             this.fetcher = fetcher;
             this.emitter = emitter;
@@ -217,8 +226,8 @@ public class PipeIntegrationTests {
             Metadata userMetadata = new Metadata();
             userMetadata.set("project", "my-project");
 
-            try (InputStream is = fetcher.fetch(t.getFetchKey().getKey(), t.getMetadata())) {
-                emitter.emit(t.getEmitKey().getKey(), is, userMetadata);
+            try (InputStream is = fetcher.fetch(t.getFetchKey().getFetchKey(), t.getMetadata())) {
+                emitter.emit(t.getEmitKey().getEmitKey(), is, userMetadata);
             }
         }
     }

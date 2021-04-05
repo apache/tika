@@ -21,13 +21,6 @@ import java.io.InputStream;
 import java.util.Set;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
-import org.apache.tika.parser.EmptyParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSSignedDataParser;
 import org.bouncycastle.cms.CMSTypedStream;
@@ -37,19 +30,27 @@ import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractParser;
+import org.apache.tika.parser.EmptyParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+
 /**
  * Basic parser for PKCS7 data.
  */
 public class Pkcs7Parser extends AbstractParser {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = -7310531559075115044L;
 
-    private static final MediaType PKCS7_MIME =
-            MediaType.application("pkcs7-mime");
+    private static final MediaType PKCS7_MIME = MediaType.application("pkcs7-mime");
 
-    private static final MediaType PKCS7_SIGNATURE =
-            MediaType.application("pkcs7-signature");
+    private static final MediaType PKCS7_SIGNATURE = MediaType.application("pkcs7-signature");
 
     private static final Set<MediaType> SUPPORTED_TYPES =
             MediaType.set(PKCS7_MIME, PKCS7_SIGNATURE);
@@ -58,23 +59,21 @@ public class Pkcs7Parser extends AbstractParser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
         try {
             DigestCalculatorProvider digestCalculatorProvider =
                     new JcaDigestCalculatorProviderBuilder().setProvider("BC").build();
-            CMSSignedDataParser parser =
-                    new CMSSignedDataParser(digestCalculatorProvider, new CloseShieldInputStream(stream));
+            CMSSignedDataParser parser = new CMSSignedDataParser(digestCalculatorProvider,
+                    new CloseShieldInputStream(stream));
             try {
                 CMSTypedStream content = parser.getSignedContent();
                 if (content == null) {
-                    throw new TikaException("cannot parse detached pkcs7 signature (no signed data to parse)");
+                    throw new TikaException(
+                            "cannot parse detached pkcs7 signature (no signed data to parse)");
                 }
                 try (InputStream input = content.getContentStream()) {
-                    Parser delegate =
-                            context.get(Parser.class, EmptyParser.INSTANCE);
+                    Parser delegate = context.get(Parser.class, EmptyParser.INSTANCE);
                     delegate.parse(input, handler, metadata, context);
                 }
             } finally {

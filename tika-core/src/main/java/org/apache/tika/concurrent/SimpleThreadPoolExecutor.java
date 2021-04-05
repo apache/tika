@@ -26,15 +26,17 @@ import java.util.concurrent.TimeUnit;
  *
  * @since Apache Tika 1.11
  */
-public class SimpleThreadPoolExecutor extends ThreadPoolExecutor implements ConfigurableThreadPoolExecutor {
+public class SimpleThreadPoolExecutor extends ThreadPoolExecutor implements
+        ConfigurableThreadPoolExecutor {
 
     public SimpleThreadPoolExecutor() {
-        super(1, 2, 0L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new ThreadFactory() {
-            
-            @Override
-            public Thread newThread(Runnable r) {
-                return new Thread(r, "Tika Executor Thread");
-            }
-        });
+        super(1, 2, 0L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(),
+                new ThreadFactory() {
+
+                    @Override
+                    public Thread newThread(Runnable r) {
+                        return new Thread(r, "Tika Executor Thread");
+                    }
+                });
     }
 }

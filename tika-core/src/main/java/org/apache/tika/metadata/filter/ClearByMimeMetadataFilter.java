@@ -16,16 +16,14 @@
  */
 package org.apache.tika.metadata.filter;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.mime.MediaType;
-
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.apache.tika.config.Field;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 
 /**
  * This class clears the entire metadata object if the
@@ -62,11 +60,10 @@ public class ClearByMimeMetadataFilter implements MetadataFilter {
     }
 
     /**
-     *
      * @param mimes list of mimes that will trigger complete removal of metadata
      */
     @Field
     public void setMimes(List<String> mimes) {
-            this.mimes.addAll(mimes);
+        this.mimes.addAll(mimes);
     }
 }

@@ -17,6 +17,7 @@
 package org.apache.tika.mime;
 
 // JDK imports
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -30,8 +31,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import javax.xml.namespace.QName;
 
 import org.apache.tika.Tika;
@@ -58,61 +57,60 @@ import org.apache.tika.metadata.TikaCoreProperties;
 public final class MimeTypes implements Detector, Serializable {
 
     /**
-     * Serial version UID.
-     */
-    private static final long serialVersionUID = -1350863170146349036L;
-
-    /**
      * Name of the {@link #rootMimeType root} type, application/octet-stream.
      */
     public static final String OCTET_STREAM = "application/octet-stream";
-
     /**
      * Name of the {@link #textMimeType text} type, text/plain.
      */
     public static final String PLAIN_TEXT = "text/plain";
-    
     /**
      * Name of the {@link #xmlMimeType xml} type, application/xml.
      */
     public static final String XML = "application/xml";
-
+    /**
+     * Serial version UID.
+     */
+    private static final long serialVersionUID = -1350863170146349036L;
+    private static final Map<ClassLoader, MimeTypes> CLASSLOADER_SPECIFIC_DEFAULT_TYPES =
+            new HashMap<ClassLoader, MimeTypes>();
+    private static MimeTypes DEFAULT_TYPES = null;
     /**
      * Root type, application/octet-stream.
      */
     private final MimeType rootMimeType;
     private final List<MimeType> rootMimeTypeL;
-
     /**
      * Text type, text/plain.
      */
     private final MimeType textMimeType;
-
     /**
      * html type, text/html
      */
     private final MimeType htmlMimeType;
-
     /**
      * xml type, application/xml
      */
     private final MimeType xmlMimeType;
-
     /**
      * Registered media types and their aliases.
      */
     private final MediaTypeRegistry registry = new MediaTypeRegistry();
-
-    /** All the registered MimeTypes indexed on their canonical names */
+    /**
+     * All the registered MimeTypes indexed on their canonical names
+     */
     private final Map<MediaType, MimeType> types = new HashMap<>();
-
-    /** The patterns matcher */
-    private Patterns patterns = new Patterns(registry);
-
-    /** Sorted list of all registered magics */
+    /**
+     * The patterns matcher
+     */
+    private final Patterns patterns = new Patterns(registry);
+    /**
+     * Sorted list of all registered magics
+     */
     private final List<Magic> magics = new ArrayList<Magic>();
-
-    /** Sorted list of all registered rootXML */
+    /**
+     * Sorted list of all registered rootXML
+     */
     private final List<MimeType> xmls = new ArrayList<MimeType>();
 
     public MimeTypes() {
@@ -120,7 +118,7 @@ public final class MimeTypes implements Detector, Serializable {
         textMimeType = new MimeType(MediaType.TEXT_PLAIN);
         htmlMimeType = new MimeType(MediaType.TEXT_HTML);
         xmlMimeType = new MimeType(MediaType.APPLICATION_XML);
-        
+
         rootMimeTypeL = Collections.singletonList(rootMimeType);
 
         add(rootMimeType);
@@ -129,12 +127,54 @@ public final class MimeTypes implements Detector, Serializable {
     }
 
     /**
+     * Get the default MimeTypes. This includes all the build in
+     * media types, and any custom override ones present.
+     *
+     * @return MimeTypes default type registry
+     */
+    public static synchronized MimeTypes getDefaultMimeTypes() {
+        return getDefaultMimeTypes(null);
+    }
+
+    /**
+     * Get the default MimeTypes. This includes all the built-in
+     * media types, and any custom override ones present.
+     *
+     * @param classLoader to use, if not the default
+     * @return MimeTypes default type registry
+     */
+    public static synchronized MimeTypes getDefaultMimeTypes(ClassLoader classLoader) {
+        MimeTypes types = DEFAULT_TYPES;
+        if (classLoader != null) {
+            types = CLASSLOADER_SPECIFIC_DEFAULT_TYPES.get(classLoader);
+        }
+
+        if (types == null) {
+            try {
+                types = MimeTypesFactory
+                        .create("tika-mimetypes.xml", "custom-mimetypes.xml", classLoader);
+            } catch (MimeTypeException e) {
+                throw new RuntimeException("Unable to parse the default media type registry", e);
+            } catch (IOException e) {
+                throw new RuntimeException("Unable to read the default media type registry", e);
+            }
+
+            if (classLoader == null) {
+                DEFAULT_TYPES = types;
+            } else {
+                CLASSLOADER_SPECIFIC_DEFAULT_TYPES.put(classLoader, types);
+            }
+        }
+        return types;
+    }
+
+    /**
      * Find the Mime Content Type of a document from its name.
      * Returns application/octet-stream if no better match is found.
      *
-     * @deprecated Use {@link Tika#detect(String)} instead
      * @param name of the document to analyze.
      * @return the Mime Content Type of the specified document name
+     * @deprecated Use {@link Tika#detect(String)} instead
      */
     public MimeType getMimeType(String name) {
         MimeType type = patterns.matches(name);
@@ -153,21 +193,20 @@ public final class MimeTypes implements Detector, Serializable {
      * Find the Mime Content Type of a document stored in the given file.
      * Returns application/octet-stream if no better match is found.
      *
-     * @deprecated Use {@link Tika#detect(File)} instead
      * @param file file to analyze
      * @return the Mime Content Type of the specified document
      * @throws MimeTypeException if the type can't be detected
-     * @throws IOException if the file can't be read
+     * @throws IOException       if the file can't be read
+     * @deprecated Use {@link Tika#detect(File)} instead
      */
-    public MimeType getMimeType(File file)
-            throws MimeTypeException, IOException {
+    public MimeType getMimeType(File file) throws MimeTypeException, IOException {
         return forName(new Tika(this).detect(file));
     }
 
     /**
      * Returns the MIME type that best matches the given first few bytes
      * of a document stream. Returns application/octet-stream if no better
-     * match is found. 
+     * match is found.
      * <p>
      * If multiple matches are found, the best (highest priority) matching
      * type is returned. If multiple matches are found with the same priority,
@@ -199,22 +238,21 @@ public final class MimeTypes implements Detector, Serializable {
                 currentPriority = magic.getPriority();
             }
         }
- 
+
         if (!result.isEmpty()) {
-            for (int i=0; i<result.size(); i++) {
+            for (int i = 0; i < result.size(); i++) {
                 final MimeType matched = result.get(i);
-                
+
                 // When detecting generic XML (or possibly XHTML),
                 // extract the root element and match it against known types
-                if ("application/xml".equals(matched.getName())
-                        || "text/html".equals(matched.getName())) {
+                if ("application/xml".equals(matched.getName()) ||
+                        "text/html".equals(matched.getName())) {
                     XmlRootExtractor extractor = new XmlRootExtractor();
 
                     QName rootElement = extractor.extractRootElement(data);
                     if (rootElement != null) {
                         for (MimeType type : xmls) {
-                            if (type.matchesXML(
-                                    rootElement.getNamespaceURI(),
+                            if (type.matchesXML(rootElement.getNamespaceURI(),
                                     rootElement.getLocalPart())) {
                                 result.set(i, type);
                                 break;
@@ -226,13 +264,15 @@ public final class MimeTypes implements Detector, Serializable {
                         //  invalid XML. So, try our HTML magics explicitly (TIKA-2419)
                         boolean isHTML = false;
                         for (Magic magic : magics) {
-                            if (! magic.getType().equals(htmlMimeType)) continue;
+                            if (!magic.getType().equals(htmlMimeType)) {
+                                continue;
+                            }
                             if (magic.eval(data)) {
                                 isHTML = true;
                                 break;
                             }
                         }
-                        
+
                         // Otherwise, downgrade from application/xml to text/plain
                         //  since the document seems not to be well-formed.
                         if (isHTML) {
@@ -306,17 +346,17 @@ public final class MimeTypes implements Detector, Serializable {
         if (type != null) {
             MediaType normalisedType = registry.normalize(type);
             MimeType mime = types.get(normalisedType);
-            
+
             if (mime == null) {
                 synchronized (this) {
-                   // Double check it didn't already get added while 
-                   //  we were waiting for the lock
-                   mime = types.get(normalisedType);
-                   if (mime == null) {
-                      mime = new MimeType(type);
-                      add(mime);
-                      types.put(type, mime);
-                   }
+                    // Double check it didn't already get added while
+                    //  we were waiting for the lock
+                    mime = types.get(normalisedType);
+                    if (mime == null) {
+                        mime = new MimeType(type);
+                        add(mime);
+                        types.put(type, mime);
+                    }
                 }
             }
             return mime;
@@ -327,18 +367,18 @@ public final class MimeTypes implements Detector, Serializable {
 
     /**
      * Returns the registered, normalised media type with the given name (or alias).
-     * 
-     * <p>Unlike {@link #forName(String)}, this function will <em>not<em> create a 
-     * new MimeType and register it. Instead, <code>null</code> will be returned if 
+     *
+     * <p>Unlike {@link #forName(String)}, this function will <em>not<em> create a
+     * new MimeType and register it. Instead, <code>null</code> will be returned if
      * there is no definition available for the given name.
      *
      * <p>Also, unlike {@link #forName(String)}, this function may return a
      * mime type that has fewer parameters than were included in the supplied name.
-     * If the registered mime type has parameters (e.g. 
-     * <code>application/dita+xml;format=map</code>), then those will be maintained.  
+     * If the registered mime type has parameters (e.g.
+     * <code>application/dita+xml;format=map</code>), then those will be maintained.
      * However, if the supplied name has paramenters that the <em>registered</em> mime
-     * type does not (e.g. <code>application/xml; charset=UTF-8</code> as a name, 
-     * compared to just <code>application/xml</code> for the type in the registry), 
+     * type does not (e.g. <code>application/xml; charset=UTF-8</code> as a name,
+     * compared to just <code>application/xml</code> for the type in the registry),
      * then those parameters will not be included in the returned type.
      *
      * @param name media type name (case-insensitive)
@@ -361,7 +401,7 @@ public final class MimeTypes implements Detector, Serializable {
             throw new MimeTypeException("Invalid media type name: " + name);
         }
     }
-    
+
     public synchronized void setSuperType(MimeType type, MediaType parent) {
         registry.addSuperType(type.getType(), parent);
     }
@@ -370,7 +410,7 @@ public final class MimeTypes implements Detector, Serializable {
      * Adds an alias for the given media type. This method should only
      * be called from {@link MimeType#addAlias(String)}.
      *
-     * @param type media type
+     * @param type  media type
      * @param alias media type alias (normalized to lower case)
      */
     synchronized void addAlias(MimeType type, MediaType alias) {
@@ -381,15 +421,11 @@ public final class MimeTypes implements Detector, Serializable {
      * Adds a file name pattern for the given media type. Assumes that the
      * pattern being added is <b>not</b> a JDK standard regular expression.
      *
-     * @param type
-     *            media type
-     * @param pattern
-     *            file name pattern
-     * @throws MimeTypeException
-     *             if the pattern conflicts with existing ones
+     * @param type    media type
+     * @param pattern file name pattern
+     * @throws MimeTypeException if the pattern conflicts with existing ones
      */
-    public void addPattern(MimeType type, String pattern)
-            throws MimeTypeException {
+    public void addPattern(MimeType type, String pattern) throws MimeTypeException {
         this.addPattern(type, pattern, false);
     }
 
@@ -400,16 +436,11 @@ public final class MimeTypes implements Detector, Serializable {
      * is set to true, then a JDK standard regex is assumed, otherwise the
      * freedesktop glob type is assumed.
      *
-     * @param type
-     *            media type
-     * @param pattern
-     *            file name pattern
-     * @param isRegex
-     *            set to true if JDK std regexs are desired, otherwise set to
-     *            false.
-     * @throws MimeTypeException
-     *             if the pattern conflicts with existing ones.
-     *
+     * @param type    media type
+     * @param pattern file name pattern
+     * @param isRegex set to true if JDK std regexs are desired, otherwise set to
+     *                false.
+     * @throws MimeTypeException if the pattern conflicts with existing ones.
      */
     public void addPattern(MimeType type, String pattern, boolean isRegex)
             throws MimeTypeException {
@@ -436,8 +467,7 @@ public final class MimeTypes implements Detector, Serializable {
     /**
      * Add the specified mime-type in the repository.
      *
-     * @param type
-     *            is the mime-type to add.
+     * @param type is the mime-type to add.
      */
     void add(MimeType type) {
         registry.addType(type.getType());
@@ -477,13 +507,12 @@ public final class MimeTypes implements Detector, Serializable {
      * can reset the stream to the position it was in before this method
      * was called.
      *
-     * @param input document stream, or <code>null</code>
+     * @param input    document stream, or <code>null</code>
      * @param metadata metadata hints
      * @return MIME type of the document
      * @throws IOException if the document stream could not be read
      */
-    public MediaType detect(InputStream input, Metadata metadata)
-            throws IOException {
+    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
         List<MimeType> possibleTypes = null;
 
         // Get type based on magic prefix
@@ -522,7 +551,8 @@ public final class MimeTypes implements Detector, Serializable {
             if (name != null) {
                 MimeType hint = getMimeType(name);
 
-                // For server-side scripting languages, we cannot rely on the filename to detect the mime type
+                // For server-side scripting languages, we cannot rely on the filename to detect
+                // the mime type
                 if (!(isHttp && hint.isInterpreted())) {
                     // If we have some types based on mime magic, try to specialise
                     //  and/or select the type based on that
@@ -550,9 +580,10 @@ public final class MimeTypes implements Detector, Serializable {
             return possibleTypes.get(0).getType();
         }
     }
+
     /**
      * Use the MimeType hint to try to clarify or specialise the current
-     *  possible types list.
+     * possible types list.
      * If the hint is a specialised form, use that instead
      * If there are multiple possible types, use the hint to select one
      */
@@ -561,61 +592,15 @@ public final class MimeTypes implements Detector, Serializable {
             return Collections.singletonList(hint);
         } else {
             for (final MimeType type : possibleTypes) {
-                if (hint.equals(type) || registry.isSpecializationOf(hint.getType(), type.getType())) {
+                if (hint.equals(type) ||
+                        registry.isSpecializationOf(hint.getType(), type.getType())) {
                     // Use just this type
                     return Collections.singletonList(hint);
                 }
             }
         }
-        
+
         // Hint didn't help, sorry
         return possibleTypes;
-    }
-
-    private static MimeTypes DEFAULT_TYPES = null;
-    private static Map<ClassLoader,MimeTypes> CLASSLOADER_SPECIFIC_DEFAULT_TYPES =
-            new HashMap<ClassLoader, MimeTypes>();
-
-    /**
-     * Get the default MimeTypes. This includes all the build in
-     * media types, and any custom override ones present.
-     * 
-     * @return MimeTypes default type registry
-     */
-    public static synchronized MimeTypes getDefaultMimeTypes() {
-        return getDefaultMimeTypes(null);
-    }
-    /**
-     * Get the default MimeTypes. This includes all the built-in
-     * media types, and any custom override ones present.
-     * 
-     * @param classLoader to use, if not the default
-     * @return MimeTypes default type registry
-     */
-    public static synchronized MimeTypes getDefaultMimeTypes(ClassLoader classLoader) {
-        MimeTypes types = DEFAULT_TYPES;
-        if (classLoader != null) {
-            types = CLASSLOADER_SPECIFIC_DEFAULT_TYPES.get(classLoader);
-        }
-            
-        if (types == null) {
-            try {
-                types = MimeTypesFactory.create(
-                      "tika-mimetypes.xml", "custom-mimetypes.xml", classLoader);
-            } catch (MimeTypeException e) {
-                throw new RuntimeException(
-                        "Unable to parse the default media type registry", e);
-            } catch (IOException e) {
-                throw new RuntimeException(
-                        "Unable to read the default media type registry", e);
-            }
-            
-            if (classLoader == null) {
-                DEFAULT_TYPES = types;
-            } else {
-                CLASSLOADER_SPECIFIC_DEFAULT_TYPES.put(classLoader, types);
-            }
-        }
-        return types;
     }
 }

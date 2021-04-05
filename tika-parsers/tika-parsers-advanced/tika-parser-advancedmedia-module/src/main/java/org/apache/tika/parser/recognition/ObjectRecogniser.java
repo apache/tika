@@ -16,6 +16,15 @@
  */
 package org.apache.tika.parser.recognition;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
@@ -24,35 +33,31 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.recognition.tf.TensorflowImageRecParser;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * This is a contract for object recognisers used by {@link ObjectRecognitionParser}
+ *
  * @see TensorflowImageRecParser
  */
-public interface ObjectRecogniser  extends Initializable {
+public interface ObjectRecogniser extends Initializable {
 
     /**
      * The mimes supported by this recogniser
+     *
      * @return set of mediatypes
      */
     Set<MediaType> getSupportedMimes();
 
     /**
      * Is this service available
+     *
      * @return {@code true} when the service is available, {@code false} otherwise
      */
     boolean isAvailable();
 
     /**
      * This is the hook for configuring the recogniser
+     *
      * @param params configuration instance in the form of context
      * @throws TikaConfigException when there is an issue with configuration
      */
@@ -60,16 +65,17 @@ public interface ObjectRecogniser  extends Initializable {
 
     /**
      * Recognise the objects in the stream
-     * @param stream content stream
-     * @param handler tika's content handler
+     *
+     * @param stream   content stream
+     * @param handler  tika's content handler
      * @param metadata metadata instance
-     * @param context parser context
+     * @param context  parser context
      * @return List of {@link RecognisedObject}s
-     * @throws IOException when an I/O error occurs
-     * @throws SAXException when an issue with XML occurs
+     * @throws IOException   when an I/O error occurs
+     * @throws SAXException  when an issue with XML occurs
      * @throws TikaException any generic error
      */
     List<? extends RecognisedObject> recognise(InputStream stream, ContentHandler handler,
-                                     Metadata metadata, ParseContext context)
+                                               Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException;
 }

@@ -20,16 +20,18 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.List;
 
+import org.junit.Test;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.junit.Test;
 
 public class WMFParserTest extends TikaTest {
 
     @Test
     public void testTextExtractionWindows() throws Exception {
-        testTextExtraction("testXLSX_Thumbnail.xlsx", 1, "This file contains an embedded thumbnail");
+        testTextExtraction("testXLSX_Thumbnail.xlsx", 1,
+                "This file contains an embedded thumbnail");
     }
 
     @Test
@@ -37,7 +39,8 @@ public class WMFParserTest extends TikaTest {
         testTextExtraction("testWMF_charset.wmf", 0, "普林斯");
     }
 
-    private void testTextExtraction(String fileName, int metaDataItemIndex, String expectedText) throws Exception {
+    private void testTextExtraction(String fileName, int metaDataItemIndex, String expectedText)
+            throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata(fileName);
         Metadata wmfMetadata = metadataList.get(metaDataItemIndex);
 

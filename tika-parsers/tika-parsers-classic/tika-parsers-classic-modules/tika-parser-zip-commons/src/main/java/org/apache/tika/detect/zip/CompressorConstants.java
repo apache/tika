@@ -17,6 +17,7 @@
 package org.apache.tika.detect.zip;
 
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
+
 import org.apache.tika.mime.MediaType;
 
 public class CompressorConstants {
@@ -38,7 +39,7 @@ public class CompressorConstants {
     public static final MediaType LZMA = MediaType.application("x-lzma");
     public static final MediaType LZ4_FRAMED = MediaType.application("x-lz4");
     public static final MediaType ZSTD = MediaType.application("zstd");
-    public static final MediaType DEFLATE64= MediaType.application("deflate64");
+    public static final MediaType DEFLATE64 = MediaType.application("deflate64");
 
     public static MediaType getMediaType(String name) {
         if (CompressorStreamFactory.BROTLI.equals(name)) {

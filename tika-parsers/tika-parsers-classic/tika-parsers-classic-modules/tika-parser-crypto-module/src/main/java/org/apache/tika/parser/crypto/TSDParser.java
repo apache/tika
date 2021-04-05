@@ -33,16 +33,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.EmbeddedDocumentUtil;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.utils.RereadableInputStream;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
@@ -60,14 +50,24 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.RereadableInputStream;
+
 /**
  * Tika parser for Time Stamped Data Envelope (application/timestamped-data)
  */
 public class TSDParser extends AbstractParser {
+    public static final String TSD_MIME_TYPE = "application/timestamped-data";
     private static final long serialVersionUID = 3268158344501763323L;
-
     private static final Logger LOG = LoggerFactory.getLogger(TSDParser.class);
-
     private static final String TSD_LOOP_LABEL = "Time-Stamp-n.";
     private static final String TSD_DESCRIPTION_LABEL = "Description";
     private static final String TSD_DESCRIPTION_VALUE = "Time Stamped Data Envelope";
@@ -79,9 +79,8 @@ public class TSDParser extends AbstractParser {
     private static final String TSD_SERIAL_NUMBER = "Serial-Number";
     private static final String TSD_TSA = "TSA";
     private static final String TSD_ALGORITHM = "Algorithm";
-
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.application("timestamped-data"));
-    public static final String TSD_MIME_TYPE = "application/timestamped-data";
+    private static final Set<MediaType> SUPPORTED_TYPES =
+            Collections.singleton(MediaType.application("timestamped-data"));
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -89,15 +88,16 @@ public class TSDParser extends AbstractParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler,
-                      Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
 
         //Try to parse TSD file
-        try (RereadableInputStream ris = new RereadableInputStream(stream, 2048, true, true)) {
+        try (RereadableInputStream ris = new RereadableInputStream(stream, 2048, true)) {
             Metadata TSDAndEmbeddedMetadata = new Metadata();
 
             List<TSDMetas> tsdMetasList = this.extractMetas(ris);
-            this.buildMetas(tsdMetasList, metadata != null && metadata.size() > 0 ? TSDAndEmbeddedMetadata : metadata);
+            this.buildMetas(tsdMetasList,
+                    metadata != null && metadata.size() > 0 ? TSDAndEmbeddedMetadata : metadata);
 
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             xhtml.startDocument();
@@ -118,8 +118,7 @@ public class TSDParser extends AbstractParser {
             TimeStampToken[] tokens = cmsTimeStampedData.getTimeStampTokens();
 
             for (TimeStampToken token : tokens) {
-                TSDMetas tsdMetas = new TSDMetas(true,
-                        token.getTimeStampInfo().getGenTime(),
+                TSDMetas tsdMetas = new TSDMetas(true, token.getTimeStampInfo().getGenTime(),
                         token.getTimeStampInfo().getPolicy().getId(),
                         token.getTimeStampInfo().getSerialNumber(),
                         token.getTimeStampInfo().getTsa(),
@@ -143,20 +142,25 @@ public class TSDParser extends AbstractParser {
 
         for (TSDMetas tsdm : tsdMetasList) {
             metadata.set(TSD_LOOP_LABEL + count + " - " + Metadata.CONTENT_TYPE, TSD_MIME_TYPE);
-            metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_DESCRIPTION_LABEL, TSD_DESCRIPTION_VALUE);
-            metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_PARSED_LABEL, tsdm.getParseBuiltStr());
-            metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_PARSED_DATE, tsdm.getParsedDateStr() + " " + TSD_DATE_FORMAT);
-            metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_DATE, tsdm.getEmitDateStr() + " " + TSD_DATE_FORMAT);
+            metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_DESCRIPTION_LABEL,
+                    TSD_DESCRIPTION_VALUE);
+            metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_PARSED_LABEL,
+                    tsdm.getParseBuiltStr());
+            metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_PARSED_DATE,
+                    tsdm.getParsedDateStr() + " " + TSD_DATE_FORMAT);
+            metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_DATE,
+                    tsdm.getEmitDateStr() + " " + TSD_DATE_FORMAT);
             metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_POLICY_ID, tsdm.getPolicyId());
-            metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_SERIAL_NUMBER, tsdm.getSerialNumberFormatted());
+            metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_SERIAL_NUMBER,
+                    tsdm.getSerialNumberFormatted());
             metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_TSA, tsdm.getTsaStr());
             metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_ALGORITHM, tsdm.getAlgorithmName());
             count++;
         }
     }
 
-    private void parseTSDContent(InputStream stream, ContentHandler handler,
-                                 Metadata metadata, ParseContext context) {
+    private void parseTSDContent(InputStream stream, ContentHandler handler, Metadata metadata,
+                                 ParseContext context) {
 
         CMSTimeStampedDataParser cmsTimeStampedDataParser = null;
         EmbeddedDocumentExtractor edx = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
@@ -189,129 +193,6 @@ public class TSDParser extends AbstractParser {
         }
     }
 
-    private class TSDMetas {
-        private final String DATE_FORMAT = "dd/MM/yyyy HH:mm:ss";
-
-        private Boolean parseBuilt = false;
-        private Date emitDate = new Date();
-        private String policyId = "";
-        private BigInteger serialNumber = null;
-        private GeneralName tsa = null;
-        private String algorithm = "";
-        private Date parsedDate = new Date();
-
-        public TSDMetas() {
-            super();
-        }
-
-        public TSDMetas(Boolean parseBuilt, Date emitDate, String policyId,
-                        BigInteger serialNumber, GeneralName tsa, String algorithm) {
-            super();
-            this.parseBuilt = parseBuilt;
-            this.emitDate = emitDate;
-            this.policyId = policyId;
-            this.serialNumber = serialNumber;
-            this.tsa = tsa;
-            this.algorithm = algorithm;
-        }
-
-        public Boolean isParseBuilt() {
-            return parseBuilt;
-        }
-
-        public String getParseBuiltStr() {
-            return String.valueOf(this.isParseBuilt() != null ?
-                    this.isParseBuilt() : false);
-        }
-
-        public void setParseBuilt(Boolean parseBuilt) {
-            this.parseBuilt = parseBuilt;
-        }
-
-        public Date getEmitDate() {
-            return emitDate;
-        }
-
-        public void setEmitDate(Date emitDate) {
-            this.emitDate = emitDate;
-        }
-
-        public String getEmitDateStr() {
-            SimpleDateFormat sdf = new SimpleDateFormat(this.DATE_FORMAT, Locale.ROOT);
-            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-            return sdf.format(this.getEmitDate() != null ?
-                    this.getEmitDate() : new Date());
-        }
-
-        public String getPolicyId() {
-            return policyId;
-        }
-
-        public void setPolicyId(String policyId) {
-            this.policyId = policyId;
-        }
-
-        public BigInteger getSerialNumber() {
-            return serialNumber;
-        }
-
-        public String getSerialNumberFormatted() {
-            String outsn = String.format(Locale.ROOT, "%12x", getSerialNumber());
-            return outsn != null ? outsn.trim() : "" + getSerialNumber();
-        }
-
-        public void setSerialNumber(BigInteger serialNumber) {
-            this.serialNumber = serialNumber;
-        }
-
-        public GeneralName getTsa() {
-            return tsa;
-        }
-
-        public String getTsaStr() {
-            return tsa + "";
-        }
-
-        public void setTSA(GeneralName tsa) {
-            this.tsa = tsa;
-        }
-
-        public String getAlgorithm() {
-            return algorithm;
-        }
-
-        public String getAlgorithmName() {
-            return OIDNameMapper.getDigestAlgName(getAlgorithm());
-        }
-
-        public void setAlgorithm(String algorithm) {
-            this.algorithm = algorithm;
-        }
-
-        public Date getParsedDate() {
-            return parsedDate;
-        }
-
-        public String getParsedDateStr() {
-            SimpleDateFormat sdf = new SimpleDateFormat(this.DATE_FORMAT, Locale.ROOT);
-            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-            return sdf.format(this.getParsedDate() != null ?
-                    this.getParsedDate() : new Date());
-        }
-
-        public void setParsedDate(Date parsedDate) {
-            this.parsedDate = parsedDate;
-        }
-
-        @Override
-        public String toString() {
-            return "TSDMetas [parseBuilt=" + parseBuilt + ", emitDate="
-                    + emitDate + ", policyId=" + policyId + ", serialNumber="
-                    + serialNumber + ", tsa=" + tsa + ", algorithm="
-                    + algorithm + ", parsedDate=" + parsedDate + "]";
-        }
-    }
-
     private static class OIDNameMapper {
         private static final Map<String, String> encryptionAlgs = new HashMap<>();
         private static final Map<String, String> digestAlgs = new HashMap<>();
@@ -322,7 +203,8 @@ public class TSDParser extends AbstractParser {
             encryptionAlgs.put(OIWObjectIdentifiers.dsaWithSHA1.getId(), "DSA");
             encryptionAlgs.put(PKCSObjectIdentifiers.rsaEncryption.getId(), "RSA");
             encryptionAlgs.put(PKCSObjectIdentifiers.sha1WithRSAEncryption.getId(), "RSA");
-            encryptionAlgs.put(TeleTrusTObjectIdentifiers.teleTrusTRSAsignatureAlgorithm.getId(), "RSA");
+            encryptionAlgs
+                    .put(TeleTrusTObjectIdentifiers.teleTrusTRSAsignatureAlgorithm.getId(), "RSA");
             encryptionAlgs.put(X509ObjectIdentifiers.id_ea_rsa.getId(), "RSA");
             encryptionAlgs.put(CMSSignedDataGenerator.ENCRYPTION_ECDSA, "ECDSA");
             encryptionAlgs.put(X9ObjectIdentifiers.ecdsa_with_SHA2.getId(), "ECDSA");
@@ -385,6 +267,125 @@ public class TSDParser extends AbstractParser {
             } else {
                 return MessageDigest.getInstance(algorithm);
             }
+        }
+    }
+
+    private class TSDMetas {
+        private final String DATE_FORMAT = "dd/MM/yyyy HH:mm:ss";
+
+        private Boolean parseBuilt = false;
+        private Date emitDate = new Date();
+        private String policyId = "";
+        private BigInteger serialNumber = null;
+        private GeneralName tsa = null;
+        private String algorithm = "";
+        private Date parsedDate = new Date();
+
+        public TSDMetas() {
+            super();
+        }
+
+        public TSDMetas(Boolean parseBuilt, Date emitDate, String policyId, BigInteger serialNumber,
+                        GeneralName tsa, String algorithm) {
+            super();
+            this.parseBuilt = parseBuilt;
+            this.emitDate = emitDate;
+            this.policyId = policyId;
+            this.serialNumber = serialNumber;
+            this.tsa = tsa;
+            this.algorithm = algorithm;
+        }
+
+        public Boolean isParseBuilt() {
+            return parseBuilt;
+        }
+
+        public String getParseBuiltStr() {
+            return String.valueOf(this.isParseBuilt() != null ? this.isParseBuilt() : false);
+        }
+
+        public void setParseBuilt(Boolean parseBuilt) {
+            this.parseBuilt = parseBuilt;
+        }
+
+        public Date getEmitDate() {
+            return emitDate;
+        }
+
+        public void setEmitDate(Date emitDate) {
+            this.emitDate = emitDate;
+        }
+
+        public String getEmitDateStr() {
+            SimpleDateFormat sdf = new SimpleDateFormat(this.DATE_FORMAT, Locale.ROOT);
+            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+            return sdf.format(this.getEmitDate() != null ? this.getEmitDate() : new Date());
+        }
+
+        public String getPolicyId() {
+            return policyId;
+        }
+
+        public void setPolicyId(String policyId) {
+            this.policyId = policyId;
+        }
+
+        public BigInteger getSerialNumber() {
+            return serialNumber;
+        }
+
+        public void setSerialNumber(BigInteger serialNumber) {
+            this.serialNumber = serialNumber;
+        }
+
+        public String getSerialNumberFormatted() {
+            String outsn = String.format(Locale.ROOT, "%12x", getSerialNumber());
+            return outsn != null ? outsn.trim() : "" + getSerialNumber();
+        }
+
+        public GeneralName getTsa() {
+            return tsa;
+        }
+
+        public String getTsaStr() {
+            return tsa + "";
+        }
+
+        public void setTSA(GeneralName tsa) {
+            this.tsa = tsa;
+        }
+
+        public String getAlgorithm() {
+            return algorithm;
+        }
+
+        public void setAlgorithm(String algorithm) {
+            this.algorithm = algorithm;
+        }
+
+        public String getAlgorithmName() {
+            return OIDNameMapper.getDigestAlgName(getAlgorithm());
+        }
+
+        public Date getParsedDate() {
+            return parsedDate;
+        }
+
+        public void setParsedDate(Date parsedDate) {
+            this.parsedDate = parsedDate;
+        }
+
+        public String getParsedDateStr() {
+            SimpleDateFormat sdf = new SimpleDateFormat(this.DATE_FORMAT, Locale.ROOT);
+            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+            return sdf.format(this.getParsedDate() != null ? this.getParsedDate() : new Date());
+        }
+
+        @Override
+        public String toString() {
+            return "TSDMetas [parseBuilt=" + parseBuilt + ", emitDate=" + emitDate + ", policyId=" +
+                    policyId + ", serialNumber=" + serialNumber + ", tsa=" + tsa + ", algorithm=" +
+                    algorithm + ", parsedDate=" + parsedDate + "]";
         }
     }
 }

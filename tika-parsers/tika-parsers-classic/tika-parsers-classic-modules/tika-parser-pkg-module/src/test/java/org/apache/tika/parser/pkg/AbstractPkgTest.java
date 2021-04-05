@@ -22,6 +22,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import org.junit.Before;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -30,61 +34,57 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.junit.Before;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * Parent class for all Package based Test cases
  */
 public abstract class AbstractPkgTest extends TikaTest {
-   protected ParseContext trackingContext;
-   protected ParseContext recursingContext;
-   
-   protected EmbeddedTrackingParser tracker;
+    protected ParseContext trackingContext;
+    protected ParseContext recursingContext;
 
-   @Before
-   public void setUp() throws Exception {
-      tracker = new EmbeddedTrackingParser();
-      trackingContext = new ParseContext();
-      trackingContext.set(Parser.class, tracker);
-      
-      recursingContext = new ParseContext();
-      recursingContext.set(Parser.class, AUTO_DETECT_PARSER);
-   }
+    protected EmbeddedTrackingParser tracker;
+
+    @Before
+    public void setUp() throws Exception {
+        tracker = new EmbeddedTrackingParser();
+        trackingContext = new ParseContext();
+        trackingContext.set(Parser.class, tracker);
+
+        recursingContext = new ParseContext();
+        recursingContext.set(Parser.class, AUTO_DETECT_PARSER);
+    }
 
 
-   @SuppressWarnings("serial")
-   protected static class EmbeddedTrackingParser extends AbstractParser {
-      protected List<String> filenames = new ArrayList<String>();
-      protected List<String> mediatypes = new ArrayList<String>();
-      protected List<String> createdAts = new ArrayList<String>();
-      protected List<String> modifiedAts = new ArrayList<String>();
-      protected byte[] lastSeenStart;
-      
-      public void reset() {
-         filenames.clear();
-         mediatypes.clear();
-         createdAts.clear();
-         modifiedAts.clear();
-      }
-      
-      public Set<MediaType> getSupportedTypes(ParseContext context) {
-         // Cheat!
-         return AUTO_DETECT_PARSER.getSupportedTypes(context);
-      }
+    @SuppressWarnings("serial")
+    protected static class EmbeddedTrackingParser extends AbstractParser {
+        protected List<String> filenames = new ArrayList<String>();
+        protected List<String> mediatypes = new ArrayList<String>();
+        protected List<String> createdAts = new ArrayList<String>();
+        protected List<String> modifiedAts = new ArrayList<String>();
+        protected byte[] lastSeenStart;
 
-      public void parse(InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context) throws IOException,
-            SAXException, TikaException {
-         filenames.add(metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
-         mediatypes.add(metadata.get(Metadata.CONTENT_TYPE));
-         createdAts.add(metadata.get(TikaCoreProperties.CREATED));
-         modifiedAts.add(metadata.get(TikaCoreProperties.MODIFIED));
-         
-         lastSeenStart = new byte[32];
-         stream.read(lastSeenStart);
-      }
+        public void reset() {
+            filenames.clear();
+            mediatypes.clear();
+            createdAts.clear();
+            modifiedAts.clear();
+        }
 
-   }
+        public Set<MediaType> getSupportedTypes(ParseContext context) {
+            // Cheat!
+            return AUTO_DETECT_PARSER.getSupportedTypes(context);
+        }
+
+        public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                          ParseContext context) throws IOException, SAXException, TikaException {
+            filenames.add(metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+            mediatypes.add(metadata.get(Metadata.CONTENT_TYPE));
+            createdAts.add(metadata.get(TikaCoreProperties.CREATED));
+            modifiedAts.add(metadata.get(TikaCoreProperties.MODIFIED));
+
+            lastSeenStart = new byte[32];
+            stream.read(lastSeenStart);
+        }
+
+    }
 }

@@ -24,12 +24,13 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collection;
 
+import org.junit.Test;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPMM;
-import org.junit.Test;
 
 public class JempboxExtractorTest extends TikaTest {
 
@@ -49,9 +50,11 @@ public class JempboxExtractorTest extends TikaTest {
 
             // DublinCore fields
             assertEquals("Tosteberga \u00C4ngar", metadata.get(TikaCoreProperties.TITLE));
-            assertEquals("Bird site in north eastern Sk\u00E5ne, Sweden.\n(new line)", metadata.get(TikaCoreProperties.DESCRIPTION));
+            assertEquals("Bird site in north eastern Sk\u00E5ne, Sweden.\n(new line)",
+                    metadata.get(TikaCoreProperties.DESCRIPTION));
             assertEquals("Some Tourist", metadata.get(TikaCoreProperties.CREATOR));
-            Collection<String> keywords = Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT));
+            Collection<String> keywords =
+                    Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT));
             assertTrue(keywords.contains("oldkeyword"));
             assertTrue(keywords.contains("grazelands"));
             assertTrue(keywords.contains("nature reserve"));
@@ -63,15 +66,18 @@ public class JempboxExtractorTest extends TikaTest {
     @Test
     public void testParseJpegPhotoshop() throws IOException, TikaException {
         Metadata metadata = new Metadata();
-        try (InputStream stream = getResourceAsStream("/test-documents/testJPEG_commented_pspcs2mac.jpg")) {
+        try (InputStream stream = getResourceAsStream(
+                "/test-documents/testJPEG_commented_pspcs2mac.jpg")) {
             JempboxExtractor extractor = new JempboxExtractor(metadata);
             extractor.parse(stream);
 
             // DublinCore fields
             assertEquals("Tosteberga \u00C4ngar", metadata.get(TikaCoreProperties.TITLE));
-            assertEquals("Bird site in north eastern Sk\u00E5ne, Sweden.\n(new line)", metadata.get(TikaCoreProperties.DESCRIPTION));
+            assertEquals("Bird site in north eastern Sk\u00E5ne, Sweden.\n(new line)",
+                    metadata.get(TikaCoreProperties.DESCRIPTION));
             assertEquals("Some Tourist", metadata.get(TikaCoreProperties.CREATOR));
-            Collection<String> keywords = Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT));
+            Collection<String> keywords =
+                    Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT));
             assertTrue(keywords.contains("bird watching"));
             assertTrue(keywords.contains("coast"));
         }
@@ -80,14 +86,16 @@ public class JempboxExtractorTest extends TikaTest {
     @Test
     public void testParseJpegXnviewmp() throws IOException, TikaException {
         Metadata metadata = new Metadata();
-        try (InputStream stream = getResourceAsStream("/test-documents/testJPEG_commented_xnviewmp026.jpg")) {
+        try (InputStream stream = getResourceAsStream(
+                "/test-documents/testJPEG_commented_xnviewmp026.jpg")) {
             JempboxExtractor extractor = new JempboxExtractor(metadata);
             extractor.parse(stream);
 
             // XnViewMp fields not understood by Jempbox
             assertEquals("Bird site in north eastern Sk\u00E5ne, Sweden.\n(new line)",
                     metadata.get(TikaCoreProperties.DESCRIPTION));
-            Collection<String> keywords = Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT));
+            Collection<String> keywords =
+                    Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT));
             assertTrue(keywords.contains("coast"));
             assertTrue(keywords.contains("nature reserve"));
         }
@@ -95,11 +103,10 @@ public class JempboxExtractorTest extends TikaTest {
 
     @Test
     public void testJoinCreators() {
-        assertEquals("Mr B", new JempboxExtractor(null).joinCreators(
-                Arrays.asList("Mr B")));
+        assertEquals("Mr B", new JempboxExtractor(null).joinCreators(Arrays.asList("Mr B")));
         // TODO use multi-value property instead?
-        assertEquals("Mr B, Mr A", new JempboxExtractor(null).joinCreators(
-                Arrays.asList("Mr B", "Mr A")));
+        assertEquals("Mr B, Mr A",
+                new JempboxExtractor(null).joinCreators(Arrays.asList("Mr B", "Mr A")));
     }
 
     @Test

@@ -18,18 +18,16 @@ package org.apache.tika.detect;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-
 import javax.xml.namespace.QName;
-import javax.xml.parsers.SAXParser;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.OfflineContentHandler;
-import org.apache.tika.utils.XMLReaderUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.OfflineContentHandler;
+import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * Utility class that uses a {@link javax.xml.parsers.SAXParser} to determine
@@ -50,8 +48,7 @@ public class XmlRootExtractor {
     public QName extractRootElement(InputStream stream) {
         ExtractorHandler handler = new ExtractorHandler();
         try {
-            XMLReaderUtils.parseSAX(
-                    new CloseShieldInputStream(stream),
+            XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream),
                     new OfflineContentHandler(handler), EMPTY_CONTEXT);
         } catch (SecurityException e) {
             throw e;
@@ -65,8 +62,7 @@ public class XmlRootExtractor {
         private QName rootElement = null;
 
         @Override
-        public void startElement(
-                String uri, String local, String name, Attributes attributes)
+        public void startElement(String uri, String local, String name, Attributes attributes)
                 throws SAXException {
             this.rootElement = new QName(uri, local);
             throw new SAXException("Aborting: root element received");

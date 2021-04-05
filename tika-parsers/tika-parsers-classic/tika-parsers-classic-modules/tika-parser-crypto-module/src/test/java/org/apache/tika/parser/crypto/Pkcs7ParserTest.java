@@ -22,12 +22,13 @@ import static org.junit.Assert.fail;
 
 import java.io.InputStream;
 
+import org.xml.sax.ContentHandler;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
-import org.xml.sax.ContentHandler;
 
 public class Pkcs7ParserTest extends TikaTest {
     public void testDetachedSignature() throws Exception {

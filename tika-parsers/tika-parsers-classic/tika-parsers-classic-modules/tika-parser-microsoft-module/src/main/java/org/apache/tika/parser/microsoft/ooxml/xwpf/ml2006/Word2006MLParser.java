@@ -23,6 +23,9 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -32,16 +35,12 @@ import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
-import javax.xml.parsers.SAXParser;
 
 
 public class Word2006MLParser extends AbstractOfficeParser {
 
-    protected static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(
-                    MediaType.application("vnd.ms-word2006ml"));
+    protected static final Set<MediaType> SUPPORTED_TYPES =
+            Collections.singleton(MediaType.application("vnd.ms-word2006ml"));
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -49,21 +48,19 @@ public class Word2006MLParser extends AbstractOfficeParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler,
-                      Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
         //set OfficeParserConfig if the user hasn't specified one
         configure(context);
 
-        final XHTMLContentHandler xhtml =
-                new XHTMLContentHandler(handler, metadata);
+        final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
 
         xhtml.startDocument();
         try {
             //need to get new SAXParser because
             //an attachment might require another SAXParser
             //mid-parse
-            XMLReaderUtils.getSAXParser().parse(
-                    new CloseShieldInputStream(stream),
+            XMLReaderUtils.getSAXParser().parse(new CloseShieldInputStream(stream),
                     new OfflineContentHandler(new EmbeddedContentHandler(
                             new Word2006MLDocHandler(xhtml, metadata, context))));
         } catch (SAXException e) {

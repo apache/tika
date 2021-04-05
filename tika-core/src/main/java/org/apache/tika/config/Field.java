@@ -26,14 +26,14 @@ import java.lang.annotation.Target;
  * Field annotation is a contract for binding {@link Param} value from
  * Tika Configuration to an object.
  * services
+ *
  * @since Apache Tika 1.14
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD, ElementType.METHOD})
 @Documented
-public @interface Field{
+public @interface Field {
     /**
-     *
      * @return name of the Field
      */
     String name() default ParamField.DEFAULT;

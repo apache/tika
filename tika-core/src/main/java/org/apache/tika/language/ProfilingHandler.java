@@ -21,8 +21,9 @@ import org.apache.tika.sax.WriteOutContentHandler;
 /**
  * SAX content handler that builds a language profile based on all the
  * received character content.
- * @deprecated use {@link org.apache.tika.language.detect.LanguageHandler}
+ *
  * @since Apache Tika 0.5
+ * @deprecated use {@link org.apache.tika.language.detect.LanguageHandler}
  */
 @Deprecated
 public class ProfilingHandler extends WriteOutContentHandler {

@@ -20,6 +20,7 @@ public class StringUtils {
 
     /**
      * The empty String {@code ""}.
+     *
      * @since 2.0
      */
     public static final String EMPTY = "";
@@ -58,11 +59,11 @@ public class StringUtils {
      * StringUtils.leftPad("bat", 5, "")    = "  bat"
      * </pre>
      *
-     * @param str  the String to pad out, may be null
-     * @param size  the size to pad to
-     * @param padStr  the String to pad with, null or empty treated as single space
+     * @param str    the String to pad out, may be null
+     * @param size   the size to pad to
+     * @param padStr the String to pad with, null or empty treated as single space
      * @return left padded String or original String if no padding is necessary,
-     *  {@code null} if null String input
+     * {@code null} if null String input
      */
     public static String leftPad(final String str, final int size, String padStr) {
         if (str == null) {
@@ -127,8 +128,8 @@ public class StringUtils {
      * consider using {@link #repeat(String, int)} instead.
      * </p>
      *
-     * @param ch  character to repeat
-     * @param repeat  number of times to repeat char, negative treated as zero
+     * @param ch     character to repeat
+     * @param repeat number of times to repeat char, negative treated as zero
      * @return String with repeated character
      * @see #repeat(String, int)
      */
@@ -145,6 +146,7 @@ public class StringUtils {
 
     // Padding
     //-----------------------------------------------------------------------
+
     /**
      * <p>Repeat a String {@code repeat} times to form a
      * new String.</p>
@@ -158,10 +160,10 @@ public class StringUtils {
      * StringUtils.repeat("a", -2) = ""
      * </pre>
      *
-     * @param str  the String to repeat, may be null
-     * @param repeat  number of times to repeat str, negative treated as zero
+     * @param str    the String to repeat, may be null
+     * @param repeat number of times to repeat str, negative treated as zero
      * @return a new String consisting of the original String repeated,
-     *  {@code null} if null String input
+     * {@code null} if null String input
      */
     public static String repeat(final String str, final int repeat) {
         // Performance tuned for 2.0 (JDK1.4)
@@ -182,9 +184,9 @@ public class StringUtils {
 
         final int outputLength = inputLength * repeat;
         switch (inputLength) {
-            case 1 :
+            case 1:
                 return repeat(str.charAt(0), repeat);
-            case 2 :
+            case 2:
                 final char ch0 = str.charAt(0);
                 final char ch1 = str.charAt(1);
                 final char[] output2 = new char[outputLength];
@@ -193,7 +195,7 @@ public class StringUtils {
                     output2[i + 1] = ch1;
                 }
                 return new String(output2);
-            default :
+            default:
                 final StringBuilder buf = new StringBuilder(outputLength);
                 for (int i = 0; i < repeat; i++) {
                     buf.append(str);

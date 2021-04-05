@@ -16,8 +16,9 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
+
+import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Linked cell. This class decorates another content cell with a hyperlink.

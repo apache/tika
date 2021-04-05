@@ -17,14 +17,15 @@
 
 package org.apache.tika.parser.pkg;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
+import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.sax.BodyContentHandler;
 
 
 public class ArParserTest extends AbstractPkgTest {
@@ -39,8 +40,7 @@ public class ArParserTest extends AbstractPkgTest {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
         }
 
-        assertEquals("application/x-archive",
-                metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-archive", metadata.get(Metadata.CONTENT_TYPE));
         String content = handler.toString();
         assertContains("testTXT.txt", content);
         assertContains("Test d'indexation de Txt", content);
@@ -50,8 +50,7 @@ public class ArParserTest extends AbstractPkgTest {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
         }
 
-        assertEquals("application/x-archive",
-                metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-archive", metadata.get(Metadata.CONTENT_TYPE));
         content = handler.toString();
         assertContains("testAU.au", content);
     }

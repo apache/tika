@@ -17,10 +17,10 @@
 
 package org.apache.tika.server.core;
 
+import static org.apache.tika.server.core.TikaServerConfig.DEFAULT_HOST;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -34,12 +34,8 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
-import org.apache.tika.Tika;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.tika.server.core.TikaServerConfig.DEFAULT_HOST;
-import static org.apache.tika.server.core.TikaServerConfig.DEFAULT_PORT;
 
 public class TikaServerCli {
 
@@ -48,19 +44,19 @@ public class TikaServerCli {
      * This value is set to the server's id in the forked process.
      */
     public static String TIKA_SERVER_ID_ENV = "tika.server.id";
+
     private static Options getOptions() {
         Options options = new Options();
-        options.addOption("h", "host", true, "host name (default = "
-                + DEFAULT_HOST + ", use * for all)");
-        options.addOption("p", "port", true,
-                "listen port(s) (default = 9998)\n" +
-                        "Can specify multiple ports with inclusive ranges (e.g. 9990-9999)\n" +
-                        "or with comma delimited list (e.g. 9996,9998,9995)");
+        options.addOption("h", "host", true,
+                "host name (default = " + DEFAULT_HOST + ", use * for all)");
+        options.addOption("p", "port", true, "listen port(s) (default = 9998)\n" +
+                "Can specify multiple ports with inclusive ranges (e.g. 9990-9999)\n" +
+                "or with comma delimited list (e.g. 9996,9998,9995)");
         options.addOption("?", "help", false, "this help message");
         options.addOption("c", "config", true, "tika-config file");
 
-        options.addOption("i", "id", true, "id to use for server in" +
-                " the server status endpoint and logging");
+        options.addOption("i", "id", true,
+                "id to use for server in" + " the server status endpoint and logging");
         options.addOption("noFork", false, "runs in legacy 1.x mode -- " +
                 "server runs in process and is not safely isolated in a forked process");
 
@@ -121,7 +117,7 @@ public class TikaServerCli {
                     LOG.debug("main loop future is available");
                     WatchDogResult result = future.get();
                     LOG.debug("main loop future: ({}); finished", result);
-                        finished++;
+                    finished++;
                 }
             }
         } catch (InterruptedException e) {
@@ -146,8 +142,8 @@ public class TikaServerCli {
     }
 
     public static void noFork(TikaServerConfig tikaServerConfig) {
-        List<String> args = tikaServerConfig.getForkedProcessArgs(
-                tikaServerConfig.getPort(), tikaServerConfig.getIdBase());
+        List<String> args = tikaServerConfig
+                .getForkedProcessArgs(tikaServerConfig.getPort(), tikaServerConfig.getIdBase());
         TikaServerProcess.main(args.toArray(new String[0]));
     }
 
@@ -165,8 +161,10 @@ public class TikaServerCli {
         for (String val : commaDelimited) {
             rangeMatcher.reset(val);
             if (rangeMatcher.find()) {
-                int min = Math.min(Integer.parseInt(rangeMatcher.group(1)), Integer.parseInt(rangeMatcher.group(2)));
-                int max = Math.max(Integer.parseInt(rangeMatcher.group(1)), Integer.parseInt(rangeMatcher.group(2)));
+                int min = Math.min(Integer.parseInt(rangeMatcher.group(1)),
+                        Integer.parseInt(rangeMatcher.group(2)));
+                int max = Math.max(Integer.parseInt(rangeMatcher.group(1)),
+                        Integer.parseInt(rangeMatcher.group(2)));
                 for (int i = min; i <= max; i++) {
                     indivPorts.add(i);
                 }
@@ -176,7 +174,8 @@ public class TikaServerCli {
         }
         //if there's only one port, use only the idbase, otherwise append -$port
         if (indivPorts.size() == 0) {
-            throw new IllegalArgumentException("Couldn't find any ports in: "+tikaServerConfig.getPortString());
+            throw new IllegalArgumentException(
+                    "Couldn't find any ports in: " + tikaServerConfig.getPortString());
         } else if (indivPorts.size() == 1) {
             pairs.add(new PortIdPair(indivPorts.get(0), tikaServerConfig.getIdBase()));
         } else {

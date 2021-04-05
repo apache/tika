@@ -16,37 +16,21 @@
  */
 package org.apache.tika.detect.zip;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.tika.detect.Detector;
-import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.OfflineContentHandler;
-import org.apache.tika.utils.XMLReaderUtils;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
 
-public class DeprecatedStreamingZipContainerDetector extends ZipContainerDetectorBase implements Detector {
+public class DeprecatedStreamingZipContainerDetector extends ZipContainerDetectorBase
+        implements Detector {
 
     private static final int MAX_MIME_TYPE = 1024;
     private static final int MAX_MANIFEST = 20 * 1024 * 1024;
-/*
-*/
+    /*
+     */
+
     /**
-     *
      * @param is inputstream to read from. Callers must mark/reset the stream
      *           before/after this call to detect.  This call does not close the stream!
      *           Depending on the file type, this call to detect may read the entire stream.
@@ -81,7 +65,8 @@ public class DeprecatedStreamingZipContainerDetector extends ZipContainerDetecto
                     }
                     return TIKA_OOXML;
                 } else if (IWorkPackageParser.IWORK_CONTENT_ENTRIES.contains(name)) {
-                    IWorkPackageParser.IWORKDocumentType type = IWorkPackageParser.IWORKDocumentType.detectType(zipArchiveInputStream);
+                    IWorkPackageParser.IWORKDocumentType type = IWorkPackageParser.
+                    IWORKDocumentType.detectType(zipArchiveInputStream);
                     if (type != null) {
                         return type.getType();
                     }
@@ -89,7 +74,8 @@ public class DeprecatedStreamingZipContainerDetector extends ZipContainerDetecto
                     //can't rely on zae.getSize to determine if there is any
                     //content here. :(
                     ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                    BoundedInputStream bis = new BoundedInputStream(MAX_MIME_TYPE, zipArchiveInputStream);
+                    BoundedInputStream bis = new BoundedInputStream(MAX_MIME_TYPE,
+                    zipArchiveInputStream);
                     IOUtils.copy(bis, bos);
                     //do anything with an inputstream > MAX_MIME_TYPE?
                     if (bos.toByteArray().length > 0)  {
@@ -102,7 +88,8 @@ public class DeprecatedStreamingZipContainerDetector extends ZipContainerDetecto
                     //without exception or warning.  So, copy the full stream, then
                     //process.  TIKA-3061
                     ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                    BoundedInputStream bis = new BoundedInputStream(MAX_MANIFEST, zipArchiveInputStream);
+                    BoundedInputStream bis = new BoundedInputStream(MAX_MANIFEST,
+                     zipArchiveInputStream);
                     IOUtils.copy(bis, bos);
                     //TODO: do something if the full stream hasn't been read?
                     MediaType mt = detectStarOfficeX(new ByteArrayInputStream(bos.toByteArray()));
@@ -151,7 +138,7 @@ public class DeprecatedStreamingZipContainerDetector extends ZipContainerDetecto
                     return TIKA_OOXML;
                 }
             }
-        }*/
+        } */
         return MediaType.APPLICATION_ZIP;
     }
 /*

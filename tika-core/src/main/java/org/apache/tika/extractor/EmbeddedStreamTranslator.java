@@ -16,10 +16,10 @@
  */
 package org.apache.tika.extractor;
 
-import org.apache.tika.metadata.Metadata;
-
 import java.io.IOException;
 import java.io.InputStream;
+
+import org.apache.tika.metadata.Metadata;
 
 /**
  * Interface for different filtering of embedded streams.

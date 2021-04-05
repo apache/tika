@@ -28,44 +28,44 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.commons.io.ByteOrderMark;
-import org.apache.tika.TikaTest;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.Parser;
 import org.junit.Test;
+
+import org.apache.tika.TikaTest;
+import org.apache.tika.mime.MediaType;
 
 public class CSVSnifferTest extends TikaTest {
 
-    private static char[] DELIMITERS = new char[]{ ',', '\t'};
+    private static char[] DELIMITERS = new char[]{',', '\t'};
 
     private static byte[] CSV_BASIC =
-            ("the,quick,brown\tfox\n" +
-              "jumped \tover,the\tlazy,\tdog\n"+
-              "and then,ran,down\tthe\tstreet").getBytes(StandardCharsets.UTF_8);
+            ("the,quick,brown\tfox\n" + "jumped \tover,the\tlazy,\tdog\n" +
+                    "and then,ran,down\tthe\tstreet").getBytes(StandardCharsets.UTF_8);
 
     private static byte[] TSV_BASIC =
-            ("the\tquick\tbrown,fox\n" +
-                    "jumped ,over\tthe,lazy\t,dog\n"+
+            ("the\tquick\tbrown,fox\n" + "jumped ,over\tthe,lazy\t,dog\n" +
                     "and then\tran\tdown,the,street").getBytes(StandardCharsets.UTF_8);
 
     private static byte[] CSV_MID_CELL_QUOTE_EXCEPTION =
-            ("the,quick,brown\"fox\n" +
-                    "jumped over,the lazy,dog\n"+
+            ("the,quick,brown\"fox\n" + "jumped over,the lazy,dog\n" +
                     "and then,ran,down the street").getBytes(StandardCharsets.UTF_8);
 
 
     private static byte[] ALLOW_SPACES_BEFORE_QUOTE =
-            ("the,quick,         \"brown\"\"fox\"\n" +
-                    "jumped over,the lazy,dog\n"+
+            ("the,quick,         \"brown\"\"fox\"\n" + "jumped over,the lazy,dog\n" +
                     "and then,ran,down the street").getBytes(StandardCharsets.UTF_8);
 
     private static byte[] ALLOW_SPACES_AFTER_QUOTE =
-            ("the,\"quick\"     ,brown  fox\n" +
-                    "jumped over,the lazy,dog\n"+
+            ("the,\"quick\"     ,brown  fox\n" + "jumped over,the lazy,dog\n" +
                     "and then,ran,down the street").getBytes(StandardCharsets.UTF_8);
+
+    private static List<CSVResult> sniff(char[] delimiters, byte[] bytes, Charset charset)
+            throws IOException {
+        CSVSniffer sniffer = new CSVSniffer(delimiters);
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(new ByteArrayInputStream(bytes), charset))) {
+            return sniffer.sniff(reader);
+        }
+    }
 
     @Test
     public void testCSVBasic() throws Exception {
@@ -78,25 +78,18 @@ public class CSVSnifferTest extends TikaTest {
         assertEquals(new Character('\t'), results.get(0).getDelimiter());
     }
 
-    private static List<CSVResult> sniff(char[] delimiters, byte[] bytes, Charset charset) throws IOException {
-        CSVSniffer sniffer = new CSVSniffer(delimiters);
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(new ByteArrayInputStream(bytes), charset))) {
-            return sniffer.sniff(reader);
-        }
-    }
-
     @Test
     public void testCSVMidCellQuoteException() throws Exception {
-        List<CSVResult> results = sniff(DELIMITERS, CSV_MID_CELL_QUOTE_EXCEPTION, StandardCharsets.UTF_8);
+        List<CSVResult> results =
+                sniff(DELIMITERS, CSV_MID_CELL_QUOTE_EXCEPTION, StandardCharsets.UTF_8);
 
         assertEquals(2, results.size());
     }
 
     @Test
     public void testAllowWhiteSpacesAroundAQuote() throws Exception {
-        List<CSVResult> results = sniff(DELIMITERS,
-                ALLOW_SPACES_BEFORE_QUOTE, StandardCharsets.UTF_8);
+        List<CSVResult> results =
+                sniff(DELIMITERS, ALLOW_SPACES_BEFORE_QUOTE, StandardCharsets.UTF_8);
         assertEquals(2, results.size());
         assertEquals(new Character(','), results.get(0).getDelimiter());
 

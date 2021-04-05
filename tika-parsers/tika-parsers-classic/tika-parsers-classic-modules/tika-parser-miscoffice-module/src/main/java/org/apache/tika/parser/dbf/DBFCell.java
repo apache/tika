@@ -16,9 +16,6 @@
  */
 package org.apache.tika.parser.dbf;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.tika.io.EndianUtils;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,6 +28,10 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.TimeZone;
+
+import org.apache.commons.io.IOUtils;
+
+import org.apache.tika.io.EndianUtils;
 
 class DBFCell {
 
@@ -67,14 +68,13 @@ class DBFCell {
     boolean read(InputStream is) throws IOException {
         bytesReadLast = IOUtils.read(is, bytes);
         if (DBFReader.STRICT && bytesReadLast != bytes.length) {
-            throw new IOException("Truncated record, only read "+bytesReadLast+
-                    " bytes, but should have read: "+bytes.length);
+            throw new IOException("Truncated record, only read " + bytesReadLast +
+                    " bytes, but should have read: " + bytes.length);
         }
         return bytesReadLast > 0;
     }
 
     /**
-     *
      * @return copy of bytes that were read on the last read
      */
     byte[] getBytes() {
@@ -89,11 +89,8 @@ class DBFCell {
 
     @Override
     public String toString() {
-        return "DBFCell{" +
-                "colType=" + colType +
-                ", bytes=" + Arrays.toString(bytes) +
-                ", decimalCount=" + decimalCount +
-                '}';
+        return "DBFCell{" + "colType=" + colType + ", bytes=" + Arrays.toString(bytes) +
+                ", decimalCount=" + decimalCount + '}';
     }
 
     DBFCell deepCopy() {
@@ -119,8 +116,7 @@ class DBFCell {
                 return "";
             }
         }
-        return String.format(Locale.ROOT,
-                "%s/%s/%s", month, day, year);
+        return String.format(Locale.ROOT, "%s/%s/%s", month, day, year);
     }
 
     public String getFormattedDateTime() {
@@ -128,10 +124,10 @@ class DBFCell {
         //http://stackoverflow.com/questions/20026154/convert-dbase-timestamp
         //TODO: add heuristic for deciding;
         //TODO: find example of file with time != 0
-        Calendar baseCalendar = GregorianCalendar.getInstance(TimeZone.getTimeZone("UTC"), Locale.ROOT);
+        Calendar baseCalendar =
+                GregorianCalendar.getInstance(TimeZone.getTimeZone("UTC"), Locale.ROOT);
 //        baseCalendar.set(1899, 11, 31, 0, 0, 0);
         baseCalendar.set(-4712, 0, 1, 0, 0, 0);
-        byte[] bytes = getBytes();
         try (InputStream is = new ByteArrayInputStream(getBytes())) {
 
             int date = EndianUtils.readIntLE(is);
@@ -139,8 +135,8 @@ class DBFCell {
             baseCalendar.add(Calendar.DATE, date);
             DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ROOT);
             return df.format(baseCalendar.getTime());
-        } catch (IOException|EndianUtils.BufferUnderrunException e) {
-
+        } catch (IOException | EndianUtils.BufferUnderrunException e) {
+            //swallow
         }
         return "";
     }

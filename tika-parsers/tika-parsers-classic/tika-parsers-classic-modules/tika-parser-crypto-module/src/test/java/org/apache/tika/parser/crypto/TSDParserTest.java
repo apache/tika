@@ -23,25 +23,25 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.utils.ParserUtils;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
 
 public class TSDParserTest extends TikaTest {
 
     @Test
     public void testTSDFileData() throws Exception {
         try (InputStream inputXml = getResourceAsStream("/test-documents/MANIFEST.XML.TSD");
-             InputStream inputTxt1 = getResourceAsStream("/test-documents/Test1.txt.tsd");
-             InputStream inputTxt2 = getResourceAsStream("/test-documents/Test2.txt.tsd");
-             InputStream inputDocx = getResourceAsStream("/test-documents/Test3.docx.tsd");
-             InputStream inputPdf = getResourceAsStream("/test-documents/Test4.pdf.tsd");
-             InputStream inputPng = getResourceAsStream("/test-documents/Test5.PNG.tsd")) {
+                InputStream inputTxt1 = getResourceAsStream("/test-documents/Test1.txt.tsd");
+                InputStream inputTxt2 = getResourceAsStream("/test-documents/Test2.txt.tsd");
+                InputStream inputDocx = getResourceAsStream("/test-documents/Test3.docx.tsd");
+                InputStream inputPdf = getResourceAsStream("/test-documents/Test4.pdf.tsd");
+                InputStream inputPng = getResourceAsStream("/test-documents/Test5.PNG.tsd")) {
 
             TSDParser tsdParser = new TSDParser();
 

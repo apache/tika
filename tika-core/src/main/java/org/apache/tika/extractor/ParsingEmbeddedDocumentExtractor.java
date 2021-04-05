@@ -16,14 +16,20 @@
  */
 package org.apache.tika.extractor;
 
+import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
+
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.apache.tika.exception.EncryptedDocumentException;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+
 import org.apache.tika.exception.CorruptedFileException;
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -34,11 +40,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-
-import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
 
 /**
  * Helper class for parsers of package archives or other compound document
@@ -78,10 +79,10 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
     public void parseEmbedded(
             InputStream stream, ContentHandler handler, Metadata metadata, boolean outputHtml)
             throws SAXException, IOException {
-        if(outputHtml) {
-           AttributesImpl attributes = new AttributesImpl();
-           attributes.addAttribute("", "class", "class", "CDATA", "package-entry");
-           handler.startElement(XHTML, "div", "div", attributes);
+        if (outputHtml) {
+            AttributesImpl attributes = new AttributesImpl();
+            attributes.addAttribute("", "class", "class", "CDATA", "package-entry");
+            handler.startElement(XHTML, "div", "div", attributes);
         }
 
         String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
@@ -94,7 +95,8 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
 
         // Use the delegate parser to parse this entry
         try (TemporaryResources tmp = new TemporaryResources()) {
-            final TikaInputStream newStream = TikaInputStream.get(new CloseShieldInputStream(stream), tmp);
+            final TikaInputStream newStream = TikaInputStream.get(
+                    new CloseShieldInputStream(stream), tmp);
             if (stream instanceof TikaInputStream) {
                 final Object container = ((TikaInputStream) stream).getOpenContainer();
                 if (container != null) {
@@ -115,8 +117,8 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
             // Could not parse the entry, just skip the content
         }
 
-        if(outputHtml) {
-           handler.endElement(XHTML, "div", "div");
+        if (outputHtml) {
+            handler.endElement(XHTML, "div", "div");
         }
     }
 

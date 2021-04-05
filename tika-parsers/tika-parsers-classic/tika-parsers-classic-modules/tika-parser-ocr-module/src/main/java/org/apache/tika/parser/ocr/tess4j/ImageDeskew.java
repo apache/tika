@@ -20,10 +20,10 @@
  */
 package org.apache.tika.parser.ocr.tess4j;
 
+import java.awt.image.BufferedImage;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.awt.image.BufferedImage;
 
 public class ImageDeskew {
     private static final Logger LOG = LoggerFactory.getLogger(ImageDeskew.class);
@@ -95,7 +95,8 @@ public class ImageDeskew {
 
         for (int var3 = var1; var3 < var2; ++var3) {
             for (int var4 = 1; var4 < this.cImage.getWidth() - 2; ++var4) {
-                if (ImageUtil.isBlack(this.cImage, var4, var3) && !ImageUtil.isBlack(this.cImage, var4, var3 + 1)) {
+                if (ImageUtil.isBlack(this.cImage, var4, var3) &&
+                        !ImageUtil.isBlack(this.cImage, var4, var3 + 1)) {
                     this.calc(var4, var3);
                 }
             }
@@ -131,7 +132,8 @@ public class ImageDeskew {
 
         this.cDMin = -this.cImage.getWidth();
         final double cDStep = 1.0D;
-        final int cDCount = (int) (2.0D * (double) (this.cImage.getWidth() + this.cImage.getHeight()) / cDStep);
+        final int cDCount =
+                (int) (2.0D * (double) (this.cImage.getWidth() + this.cImage.getHeight()) / cDStep);
         this.cHMatrix = new int[cDCount * this.cSteps];
     }
 

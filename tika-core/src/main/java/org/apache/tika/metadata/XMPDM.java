@@ -23,9 +23,9 @@ import java.util.Date;
  * {@link Property property definition} constants for the dynamic media
  * properties defined in the XMP standard.
  *
- * @since Apache Tika 0.7
  * @see <a href="http://wwwimages.adobe.com/content/dam/Adobe/en/devnet/xmp/pdfs/cc-201306/XMPSpecificationPart2.pdf"
- *        >XMP Specification, Part 2: Standard Schemas</a>
+ * >XMP Specification, Part 2: Standard Schemas</a>
+ * @since Apache Tika 0.7
  */
 public interface XMPDM {
 
@@ -33,8 +33,7 @@ public interface XMPDM {
      * "The absolute path to the file's peak audio file. If empty, no peak
      * file exists."
      */
-    Property ABS_PEAK_AUDIO_FILE_PATH =
-        Property.internalURI("xmpDM:absPeakAudioFilePath");
+    Property ABS_PEAK_AUDIO_FILE_PATH = Property.internalURI("xmpDM:absPeakAudioFilePath");
 
     /**
      * "The name of the album."
@@ -73,166 +72,110 @@ public interface XMPDM {
      * "The audio sample rate. Can be any value, but commonly 32000, 41100,
      * or 48000."
      */
-    Property AUDIO_SAMPLE_RATE =
-        Property.internalInteger("xmpDM:audioSampleRate");
+    Property AUDIO_SAMPLE_RATE = Property.internalInteger("xmpDM:audioSampleRate");
 
     /**
      * "The audio sample type."
      */
-    Property AUDIO_SAMPLE_TYPE = Property.internalClosedChoise(
-            "xmpDM:audioSampleType", "8Int", "16Int", "32Int", "32Float");
+    Property AUDIO_SAMPLE_TYPE =
+            Property.internalClosedChoise("xmpDM:audioSampleType", "8Int", "16Int", "32Int",
+                    "32Float");
 
     /**
      * "The audio channel type."
      */
-    Property AUDIO_CHANNEL_TYPE = Property.internalClosedChoise(
-            "xmpDM:audioChannelType", "Mono", "Stereo", "5.1", "7.1");
-    /**
-     * Converter for {@link XMPDM#AUDIO_CHANNEL_TYPE}
-     * @deprecated Experimental method, will change shortly
-     */
-    @Deprecated
-    static class ChannelTypePropertyConverter {
-       private static Property property = AUDIO_CHANNEL_TYPE;
-
-       /**
-        * How a standalone converter might work
-        */
-       public static String convert(Object value) {
-          if (value instanceof String) {
-             // Assume already done
-             return (String)value;
-          }
-          if (value instanceof Integer) {
-             int channelCount = (Integer)value;
-             if(channelCount == 1) {
-                return "Mono";
-             } else if(channelCount == 2) {
-                return "Stereo";
-             } else if(channelCount == 5) {
-                return "5.1";
-             } else if(channelCount == 7) {
-                return "7.1";
-             }
-          }
-          return null;
-       }
-       /**
-        * How convert+set might work
-        */
-       public static void convertAndSet(Metadata metadata, Object value) {
-          if (value instanceof Integer || value instanceof Long) {
-             metadata.set(property, convert(value));
-          }
-          if (value instanceof Date) {
-             // Won't happen in this case, just an example of already
-             //  converted to a type metadata.set(property) handles
-             metadata.set(property, (Date)value);
-          }
-          if (value instanceof String) {
-             // Already converted, or so we hope!
-             metadata.set(property, (String)value);
-          }
-       }
-    }
-
+    Property AUDIO_CHANNEL_TYPE =
+            Property.internalClosedChoise("xmpDM:audioChannelType", "Mono", "Stereo", "5.1", "7.1");
     /**
      * "The audio compression used. For example, MP3."
      */
     Property AUDIO_COMPRESSOR = Property.internalText("xmpDM:audioCompressor");
-
-//    /**
-//     * "Additional parameters for Beat Splice stretch mode."
-//     */
-//    Property BEAT_SPLICE_PARAMS = "xmpDM:beatSpliceParams";
-
     /**
      * "An album created by various artists."
      */
     Property COMPILATION = Property.externalInteger("xmpDM:compilation");
 
+//    /**
+//     * "Additional parameters for Beat Splice stretch mode."
+//     */
+//    Property BEAT_SPLICE_PARAMS = "xmpDM:beatSpliceParams";
     /**
      * "The composer's name."
      */
     Property COMPOSER = Property.externalText("xmpDM:composer");
-
-//    /**
-//     * "An unordered list of all media used to create this media."
-//     */
-//    Property CONTRIBUTED_MEDIA = "xmpDM:contributedMedia";
-
     /**
      * "The copyright information."
      */
     Property COPYRIGHT = Property.externalText("xmpDM:copyright");
 
+//    /**
+//     * "An unordered list of all media used to create this media."
+//     */
+//    Property CONTRIBUTED_MEDIA = "xmpDM:contributedMedia";
     /**
      * "The disc number for part of an album set."
      */
     Property DISC_NUMBER = Property.externalInteger("xmpDM:discNumber");
-
     /**
      * "The duration of the media file."
+     * Value is in Seconds, unless xmpDM:scale is also set.
      */
     Property DURATION = Property.externalReal("xmpDM:duration");
-
     /**
      * "The engineer's name."
      */
     Property ENGINEER = Property.externalText("xmpDM:engineer");
-
     /**
      * "The file data rate in megabytes per second. For example:
      * '36/10' = 3.6 MB/sec"
      */
     Property FILE_DATA_RATE = Property.internalRational("xmpDM:fileDataRate");
-
     /**
      * "The name of the genre."
      */
     Property GENRE = Property.externalText("xmpDM:genre");
-
     /**
      * "The musical instrument."
      */
     Property INSTRUMENT = Property.externalText("xmpDM:instrument");
+    /**
+     * "The audio's musical key."
+     */
+    Property KEY =
+            Property.internalClosedChoise("xmpDM:key", "C", "C#", "D", "D#", "E", "F", "F#", "G",
+                    "G#", "A", "A#", "B");
 
 //    /**
 //     * "The duration of lead time for queuing music."
 //     */
 //    Property INTRO_TIME = "xmpDM:introTime";
-
-    /**
-     * "The audio's musical key."
-     */
-    Property KEY = Property.internalClosedChoise(
-            "xmpDM:key", "C", "C#", "D", "D#", "E", "F", "F#",
-            "G", "G#", "A", "A#", "B");
-
     /**
      * "User's log comments."
      */
     Property LOG_COMMENT = Property.externalText("xmpDM:logComment");
-
     /**
      * "When true, the clip can be looped seamlessly."
      */
     Property LOOP = Property.internalBoolean("xmpDM:loop");
-
     /**
      * "The number of beats."
      */
     Property NUMBER_OF_BEATS = Property.internalReal("xmpDM:numberOfBeats");
+    /**
+     * "The date and time when the metadata was last modified."
+     */
+    Property METADATA_MOD_DATE = Property.internalDate("xmpDM:metadataModDate");
 
 //    /**
 //     * An ordered list of markers. See also {@link #TRACKS xmpDM:Tracks}.
 //     */
 //    Property MARKERS = "xmpDM:markers";
-
     /**
-     * "The date and time when the metadata was last modified."
+     * "The sampling phase of film to be converted to video (pull-down)."
      */
-    Property METADATA_MOD_DATE = Property.internalDate("xmpDM:metadataModDate");
+    Property PULL_DOWN =
+            Property.internalClosedChoise("xmpDM:pullDown", "WSSWW", "SSWWW", "SWWWS", "WWWSS",
+                    "WWSSW", "WSSWW_24p", "SSWWW_24p", "SWWWS_24p", "WWWSS_24p", "WWSSW_24p");
 
 //    /**
 //     * "The time at which to fade out."
@@ -243,114 +186,98 @@ public interface XMPDM {
 //     * "A reference to the project that created this file."
 //     */
 //    Property PROJECT_REF = "xmpDM:projectRef";
-
-    /**
-     * "The sampling phase of film to be converted to video (pull-down)."
-     */
-    Property PULL_DOWN = Property.internalClosedChoise(
-            "xmpDM:pullDown", "WSSWW", "SSWWW", "SWWWS", "WWWSS", "WWSSW",
-            "WSSWW_24p", "SSWWW_24p", "SWWWS_24p", "WWWSS_24p", "WWSSW_24p");
-
     /**
      * "The relative path to the file's peak audio file. If empty, no peak
      * file exists."
      */
     Property RELATIVE_PEAK_AUDIO_FILE_PATH =
-        Property.internalURI("xmpDM:relativePeakAudioFilePath");
-
-//    /**
-//     * "The start time of the media inside the audio project."
-//     */
-//    Property RELATIVE_TIMESTAMP = "xmpDM:relativeTimestamp";
-
+            Property.internalURI("xmpDM:relativePeakAudioFilePath");
     /**
      * "The date the title was released."
      */
     Property RELEASE_DATE = Property.externalDate("xmpDM:releaseDate");
 
 //    /**
-//     * "Additional parameters for Resample stretch mode."
+//     * "The start time of the media inside the audio project."
 //     */
-//    Property RESAMPLE_PARAMS = "xmpDM:resampleParams";
-
+//    Property RELATIVE_TIMESTAMP = "xmpDM:relativeTimestamp";
     /**
      * "The musical scale used in the music. 'Neither' is most often used
      * for instruments with no associated scale, such as drums."
      */
-    Property SCALE_TYPE = Property.internalClosedChoise(
-            "xmpDM:scaleType", "Major", "Minor", "Both", "Neither");
+    Property SCALE_TYPE =
+            Property.internalClosedChoise("xmpDM:scaleType", "Major", "Minor", "Both", "Neither");
 
+//    /**
+//     * "Additional parameters for Resample stretch mode."
+//     */
+//    Property RESAMPLE_PARAMS = "xmpDM:resampleParams";
     /**
      * "The name of the scene."
      */
     Property SCENE = Property.externalText("xmpDM:scene");
-
     /**
      * "The date and time when the video was shot."
      */
     Property SHOT_DATE = Property.externalDate("xmpDM:shotDate");
-
     /**
      * "The name of the location where the video was shot. For example:
      * 'Oktoberfest, Munich, Germany'. For more accurate  positioning,
      * use the EXIF GPS values."
      */
     Property SHOT_LOCATION = Property.externalText("xmpDM:shotLocation");
-
     /**
      * "The name of the shot or take."
      */
     Property SHOT_NAME = Property.externalText("xmpDM:shotName");
-
     /**
      * "A description of the speaker angles from center front in degrees.
      * For example: 'Left = -30, Right = 30, Center = 0, LFE = 45,
      * Left Surround = -110, Right Surround = 110'"
      */
-    Property SPEAKER_PLACEMENT =
-        Property.externalText("xmpDM:speakerPlacement");
+    Property SPEAKER_PLACEMENT = Property.externalText("xmpDM:speakerPlacement");
+    /**
+     * "The audio stretch mode."
+     */
+    Property STRETCH_MODE =
+            Property.internalClosedChoise("xmpDM:stretchMode", "Fixed length", "Time-Scale",
+                    "Resample", "Beat Splice", "Hybrid");
 
 //    /**
 //     * "The timecode of the first frame of video in the file, as obtained
 //     * from the device control."
 //     */
 //    Property START_TIMECODE = "xmpDM:startTimecode";
-
-    /**
-     * "The audio stretch mode."
-     */
-    Property STRETCH_MODE = Property.internalClosedChoise(
-            "xmpDM:stretchMode", "Fixed length", "Time-Scale", "Resample",
-            "Beat Splice", "Hybrid");
-
     /**
      * "The name of the tape from which the clip was captured, as set during
      * the capture process."
      */
     Property TAPE_NAME = Property.externalText("xmpDM:tapeName");
-
     /**
      * "The audio's tempo."
      */
     Property TEMPO = Property.internalReal("xmpDM:tempo");
+    /**
+     * "The time signature of the music."
+     */
+    Property TIME_SIGNATURE =
+            Property.internalClosedChoise("xmpDM:timeSignature", "2/4", "3/4", "4/4", "5/4", "7/4",
+                    "6/8", "9/8", "12/8", "other");
 
 //    /**
 //     * "Additional parameters for Time-Scale stretch mode."
 //     */
 //    Property TIME_SCALE_PARAMS = "xmpDM:timeScaleParams";
-
-    /**
-     * "The time signature of the music."
-     */
-    Property TIME_SIGNATURE = Property.internalClosedChoise(
-            "xmpDM:timeSignature", "2/4", "3/4", "4/4", "5/4", "7/4",
-            "6/8", "9/8", "12/8", "other");
-
     /**
      * "A numeric value indicating the order of the audio file within its
      * original recording."
      */
     Property TRACK_NUMBER = Property.externalInteger("xmpDM:trackNumber");
+    /**
+     * "The alpha mode."
+     */
+    Property VIDEO_ALPHA_MODE =
+            Property.externalClosedChoise("xmpDM:videoAlphaMode", "straight", "pre-multiplied");
 
 //    /**
 //     * "An unordered list of tracks. A track is a named set of markers,
@@ -358,69 +285,106 @@ public interface XMPDM {
 //     * See also {@link #MARKERS xmpDM:markers}."
 //     */
 //    Property TRACKS = "xmpDM:Tracks";
-
     /**
-     * "The alpha mode."
+     * "When true, unity is clear, when false, it is opaque."
      */
-    Property VIDEO_ALPHA_MODE = Property.externalClosedChoise(
-            "xmpDM:videoAlphaMode", "straight", "pre-multiplied");
+    Property VIDEO_ALPHA_UNITY_IS_TRANSPARENT =
+            Property.internalBoolean("xmpDM:videoAlphaUnityIsTransparent");
 
 //    /**
 //     * "A color in CMYK or RGB to be used as the pre-multiple color when
 //     * alpha mode is pre-multiplied."
 //     */
 //    Property VIDEO_ALPHA_PREMULTIPLE_COLOR = "xmpDM:videoAlphaPremultipleColor";
-
-    /**
-     * "When true, unity is clear, when false, it is opaque."
-     */
-    Property VIDEO_ALPHA_UNITY_IS_TRANSPARENT =
-        Property.internalBoolean("xmpDM:videoAlphaUnityIsTransparent");
-
     /**
      * "The color space."
      */
-    Property VIDEO_COLOR_SPACE = Property.internalClosedChoise(
-            "xmpDM:videoColorSpace", "sRGB", "CCIR-601", "CCIR-709");
-
+    Property VIDEO_COLOR_SPACE =
+            Property.internalClosedChoise("xmpDM:videoColorSpace", "sRGB", "CCIR-601", "CCIR-709");
     /**
      * "Video compression used. For example, jpeg."
      */
     Property VIDEO_COMPRESSOR = Property.internalText("xmpDM:videoCompressor");
-
     /**
      * "The field order for video."
      */
-    Property VIDEO_FIELD_ORDER = Property.internalClosedChoise(
-            "xmpDM:videoFieldOrder", "Upper", "Lower", "Progressive");
-
+    Property VIDEO_FIELD_ORDER =
+            Property.internalClosedChoise("xmpDM:videoFieldOrder", "Upper", "Lower", "Progressive");
     /**
      * "The video frame rate."
      */
-    Property VIDEO_FRAME_RATE = Property.internalOpenChoise(
-            "xmpDM:videoFrameRate", "24", "NTSC", "PAL");
-
-//    /**
-//     * "The frame size. For example: w:720, h: 480, unit:pixels"
-//     */
-//    Property VIDEO_FRAME_SIZE = "xmpDM:videoFrameSize";
-
+    Property VIDEO_FRAME_RATE =
+            Property.internalOpenChoise("xmpDM:videoFrameRate", "24", "NTSC", "PAL");
     /**
      * "The date and time when the video was last modified."
      */
     Property VIDEO_MOD_DATE = Property.internalDate("xmpDM:videoModDate");
 
+//    /**
+//     * "The frame size. For example: w:720, h: 480, unit:pixels"
+//     */
+//    Property VIDEO_FRAME_SIZE = "xmpDM:videoFrameSize";
     /**
      * "The size in bits of each color component of a pixel. Standard
-     *  Windows 32-bit pixels have 8 bits per component."
+     * Windows 32-bit pixels have 8 bits per component."
      */
-    Property VIDEO_PIXEL_DEPTH = Property.internalClosedChoise(
-            "xmpDM:videoPixelDepth", "8Int", "16Int", "32Int", "32Float");
-
+    Property VIDEO_PIXEL_DEPTH =
+            Property.internalClosedChoise("xmpDM:videoPixelDepth", "8Int", "16Int", "32Int",
+                    "32Float");
     /**
      * "The aspect ratio, expressed as wd/ht. For example: '648/720' = 0.9"
      */
-    Property VIDEO_PIXEL_ASPECT_RATIO =
-        Property.internalRational("xmpDM:videoPixelAspectRatio");
+    Property VIDEO_PIXEL_ASPECT_RATIO = Property.internalRational("xmpDM:videoPixelAspectRatio");
+
+    /**
+     * Converter for {@link XMPDM#AUDIO_CHANNEL_TYPE}
+     *
+     * @deprecated Experimental method, will change shortly
+     */
+    @Deprecated
+    class ChannelTypePropertyConverter {
+        private static final Property property = AUDIO_CHANNEL_TYPE;
+
+        /**
+         * How a standalone converter might work
+         */
+        public static String convert(Object value) {
+            if (value instanceof String) {
+                // Assume already done
+                return (String) value;
+            }
+            if (value instanceof Integer) {
+                int channelCount = (Integer) value;
+                if (channelCount == 1) {
+                    return "Mono";
+                } else if (channelCount == 2) {
+                    return "Stereo";
+                } else if (channelCount == 5) {
+                    return "5.1";
+                } else if (channelCount == 7) {
+                    return "7.1";
+                }
+            }
+            return null;
+        }
+
+        /**
+         * How convert+set might work
+         */
+        public static void convertAndSet(Metadata metadata, Object value) {
+            if (value instanceof Integer || value instanceof Long) {
+                metadata.set(property, convert(value));
+            }
+            if (value instanceof Date) {
+                // Won't happen in this case, just an example of already
+                //  converted to a type metadata.set(property) handles
+                metadata.set(property, (Date) value);
+            }
+            if (value instanceof String) {
+                // Already converted, or so we hope!
+                metadata.set(property, (String) value);
+            }
+        }
+    }
 
 }

@@ -17,6 +17,8 @@
 
 package org.apache.tika.detect;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,12 +37,9 @@ import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 public abstract class TrainedModelDetector implements Detector {
-    private final Map<MediaType, TrainedModel> MODEL_MAP = new HashMap<>();
-
     private static final long serialVersionUID = 1L;
+    private final Map<MediaType, TrainedModel> MODEL_MAP = new HashMap<>();
 
     public TrainedModelDetector() {
         loadDefaultModels(getClass().getClassLoader());
@@ -50,8 +49,7 @@ public abstract class TrainedModelDetector implements Detector {
         return Integer.MAX_VALUE;
     }
 
-    public MediaType detect(InputStream input, Metadata metadata)
-            throws IOException {
+    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
         // convert to byte-histogram
         if (input != null) {
             input.mark(getMinLength());
@@ -89,14 +87,13 @@ public abstract class TrainedModelDetector implements Detector {
      * @return byte frequencies array
      * @throws IOException
      */
-    protected float[] readByteFrequencies(final InputStream input)
-            throws IOException {
+    protected float[] readByteFrequencies(final InputStream input) throws IOException {
         ReadableByteChannel inputChannel;
         // TODO: any reason to avoid closing of input & inputChannel?
         try {
             inputChannel = Channels.newChannel(input);
             // long inSize = inputChannel.size();
-            float histogram[] = new float[257];
+            float[] histogram = new float[257];
             histogram[0] = 1;
 
             // create buffer with capacity of maxBufSize bytes
@@ -106,7 +103,7 @@ public abstract class TrainedModelDetector implements Detector {
             float max = -1;
             while (bytesRead != -1) {
 
-                ((Buffer)buf).flip(); // make buffer ready for read
+                ((Buffer) buf).flip(); // make buffer ready for read
 
                 while (buf.hasRemaining()) {
                     byte byt = buf.get();
@@ -143,12 +140,11 @@ public abstract class TrainedModelDetector implements Detector {
      * @param histogram
      * @throws IOException
      */
-    private void writeHisto(final float[] histogram)
-            throws IOException {
+    private void writeHisto(final float[] histogram) throws IOException {
         Path histPath = new TemporaryResources().createTempFile();
         try (Writer writer = Files.newBufferedWriter(histPath, UTF_8)) {
             for (float bin : histogram) {
-                writer.write(String.valueOf(bin) + "\t");
+                writer.write(bin + "\t");
                 // writer.write(i + "\t");
             }
             writer.write("\r\n");

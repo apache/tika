@@ -24,10 +24,11 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
 import org.junit.Before;
 import org.junit.Test;
+
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 
 public class ZeroSizeFileDetectorTest {
 

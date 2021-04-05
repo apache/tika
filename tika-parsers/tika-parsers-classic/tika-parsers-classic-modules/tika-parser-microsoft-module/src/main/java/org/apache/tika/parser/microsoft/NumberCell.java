@@ -18,8 +18,9 @@ package org.apache.tika.parser.microsoft;
 
 import java.text.NumberFormat;
 
-import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
+
+import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Number cell.

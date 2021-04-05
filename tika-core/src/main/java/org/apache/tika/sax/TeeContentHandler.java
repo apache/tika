@@ -35,8 +35,7 @@ public class TeeContentHandler extends DefaultHandler {
     }
 
     @Override
-    public void startPrefixMapping(String prefix, String uri)
-            throws SAXException {
+    public void startPrefixMapping(String prefix, String uri) throws SAXException {
         for (ContentHandler handler : handlers) {
             handler.startPrefixMapping(prefix, uri);
         }
@@ -50,8 +49,7 @@ public class TeeContentHandler extends DefaultHandler {
     }
 
     @Override
-    public void processingInstruction(String target, String data)
-            throws SAXException {
+    public void processingInstruction(String target, String data) throws SAXException {
         for (ContentHandler handler : handlers) {
             handler.processingInstruction(target, data);
         }
@@ -79,8 +77,7 @@ public class TeeContentHandler extends DefaultHandler {
     }
 
     @Override
-    public void startElement(
-            String uri, String localName, String name, Attributes atts)
+    public void startElement(String uri, String localName, String name, Attributes atts)
             throws SAXException {
         for (ContentHandler handler : handlers) {
             handler.startElement(uri, localName, name, atts);
@@ -88,24 +85,21 @@ public class TeeContentHandler extends DefaultHandler {
     }
 
     @Override
-    public void endElement(String uri, String localName, String name)
-            throws SAXException {
+    public void endElement(String uri, String localName, String name) throws SAXException {
         for (ContentHandler handler : handlers) {
             handler.endElement(uri, localName, name);
         }
     }
 
     @Override
-    public void characters(char[] ch, int start, int length)
-            throws SAXException {
+    public void characters(char[] ch, int start, int length) throws SAXException {
         for (ContentHandler handler : handlers) {
             handler.characters(ch, start, length);
         }
     }
 
     @Override
-    public void ignorableWhitespace(char[] ch, int start, int length)
-            throws SAXException {
+    public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
         for (ContentHandler handler : handlers) {
             handler.ignorableWhitespace(ch, start, length);
         }

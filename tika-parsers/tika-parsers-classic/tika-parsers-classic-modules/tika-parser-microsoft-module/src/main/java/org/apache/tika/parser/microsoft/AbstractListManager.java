@@ -28,7 +28,8 @@ import org.apache.poi.hwpf.converter.NumberFormatter;
 public abstract class AbstractListManager {
     private final static String BULLET = "\u00b7";
 
-    protected Map<Integer, ParagraphLevelCounter> listLevelMap = new HashMap<Integer, ParagraphLevelCounter>();
+    protected Map<Integer, ParagraphLevelCounter> listLevelMap =
+            new HashMap<Integer, ParagraphLevelCounter>();
     protected Map<Integer, LevelTuple[]> overrideTupleMap = new HashMap<Integer, LevelTuple[]>();
 
     //helper class that is docx/doc format agnostic
@@ -99,15 +100,17 @@ public abstract class AbstractListManager {
                 //log?
                 return "";
             }
-            boolean isLegal = (overrideLevelTuples != null) ? overrideLevelTuples[level].isLegal : levelTuples[level].isLegal;
+            boolean isLegal = (overrideLevelTuples != null) ? overrideLevelTuples[level].isLegal :
+                    levelTuples[level].isLegal;
             //short circuit bullet
             String numFmt = getNumFormat(level, isLegal, overrideLevelTuples);
             if ("bullet".equals(numFmt)) {
                 return BULLET + " ";
             }
 
-            String lvlText = (overrideLevelTuples == null || overrideLevelTuples[level].lvlText == null) ?
-                    levelTuples[level].lvlText : overrideLevelTuples[level].lvlText;
+            String lvlText =
+                    (overrideLevelTuples == null || overrideLevelTuples[level].lvlText == null) ?
+                            levelTuples[level].lvlText : overrideLevelTuples[level].lvlText;
             StringBuilder sb = new StringBuilder();
             Matcher m = LEVEL_INTERPOLATOR.matcher(lvlText);
             int last = 0;
@@ -208,7 +211,8 @@ public abstract class AbstractListManager {
         }
 
         private void resetAfter(int startlevelNumber, LevelTuple[] overrideLevelTuples) {
-            for (int levelNumber = startlevelNumber + 1; levelNumber < counts.size(); levelNumber++) {
+            for (int levelNumber = startlevelNumber + 1; levelNumber < counts.size();
+                    levelNumber++) {
                 int cnt = counts.get(levelNumber);
                 if (cnt == NOT_SEEN_YET) {
                     //do nothing
@@ -216,12 +220,13 @@ public abstract class AbstractListManager {
                     //do nothing
                 } else if (levelTuples.length > levelNumber) {
                     //never reset if restarts == 0
-                    int restart = (overrideLevelTuples == null || overrideLevelTuples[levelNumber].restart < 0) ?
-                            levelTuples[levelNumber].restart : overrideLevelTuples[levelNumber].restart;
+                    int restart = (overrideLevelTuples == null ||
+                            overrideLevelTuples[levelNumber].restart < 0) ?
+                            levelTuples[levelNumber].restart :
+                            overrideLevelTuples[levelNumber].restart;
                     if (restart == 0) {
                         return;
-                    } else if (restart == -1 ||
-                            startlevelNumber <= restart - 1) {
+                    } else if (restart == -1 || startlevelNumber <= restart - 1) {
                         counts.set(levelNumber, NOT_SEEN_YET);
                     } else {
                         //do nothing/don't reset

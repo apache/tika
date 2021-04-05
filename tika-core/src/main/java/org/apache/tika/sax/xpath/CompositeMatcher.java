@@ -50,8 +50,7 @@ public class CompositeMatcher extends Matcher {
     }
 
     public boolean matchesAttribute(String namespace, String name) {
-        return a.matchesAttribute(namespace, name)
-            || b.matchesAttribute(namespace, name);
+        return a.matchesAttribute(namespace, name) || b.matchesAttribute(namespace, name);
     }
 
     public boolean matchesText() {

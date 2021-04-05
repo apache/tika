@@ -16,11 +16,11 @@
  */
 package org.apache.tika.parser.microsoft.chm;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.math.BigInteger;
 
 import org.apache.tika.exception.TikaException;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * The Header 0000: char[4] 'ITSF' 0004: DWORD 3 (Version number) 0008: DWORD
@@ -58,6 +58,9 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
         signature = ChmConstants.ITSF.getBytes(UTF_8); /* 0 (ITSF) */
     }
 
+    public static void main(String[] args) {
+    }
+
     /**
      * Prints the values of ChmfHeader
      */
@@ -81,7 +84,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     /**
      * Returns a signature of itsf header
-     * 
+     *
      * @return itsf header
      */
     public byte[] getSignature() {
@@ -90,7 +93,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     /**
      * Sets itsf header signature
-     * 
+     *
      * @param signature
      */
     protected void setSignature(byte[] signature) {
@@ -99,7 +102,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     /**
      * Returns itsf header version
-     * 
+     *
      * @return itsf version
      */
     public int getVersion() {
@@ -108,7 +111,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     /**
      * Sets itsf version
-     * 
+     *
      * @param version
      */
     protected void setVersion(int version) {
@@ -117,7 +120,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     /**
      * Returns itsf header length
-     * 
+     *
      * @return length
      */
     public int getHeaderLen() {
@@ -126,7 +129,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     /**
      * Sets itsf header length
-     * 
+     *
      * @param header_len
      */
     protected void setHeaderLen(int header_len) {
@@ -135,7 +138,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     /**
      * Returns unknown_00c value
-     * 
+     *
      * @return unknown_00c
      */
     public int getUnknown_000c() {
@@ -144,7 +147,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     /**
      * Sets unknown_00c
-     * 
+     *
      * @param unknown_000c
      */
     protected void setUnknown_000c(int unknown_000c) {
@@ -153,7 +156,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     /**
      * Returns last modified date of the chm file
-     * 
+     *
      * @return last modified date as long
      */
     public long getLastModified() {
@@ -162,7 +165,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     /**
      * Sets last modified date of the chm file
-     * 
+     *
      * @param last_modified
      */
     protected void setLastModified(long last_modified) {
@@ -171,7 +174,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     /**
      * Returns language ID
-     * 
+     *
      * @return language_id
      */
     public long getLangId() {
@@ -180,7 +183,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     /**
      * Sets language_id
-     * 
+     *
      * @param lang_id
      */
     protected void setLangId(long lang_id) {
@@ -189,7 +192,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     /**
      * Returns directory uuid
-     * 
+     *
      * @return dir_uuid
      */
     public byte[] getDir_uuid() {
@@ -198,7 +201,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     /**
      * Sets directory uuid
-     * 
+     *
      * @param dir_uuid
      */
     protected void setDir_uuid(byte[] dir_uuid) {
@@ -207,7 +210,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     /**
      * Returns stream uuid
-     * 
+     *
      * @return stream_uuid
      */
     public byte[] getStream_uuid() {
@@ -216,7 +219,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     /**
      * Sets stream uuid
-     * 
+     *
      * @param stream_uuid
      */
     protected void setStream_uuid(byte[] stream_uuid) {
@@ -225,7 +228,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     /**
      * Returns unknown offset
-     * 
+     *
      * @return unknown_offset
      */
     public long getUnknownOffset() {
@@ -234,7 +237,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     /**
      * Sets unknown offset
-     * 
+     *
      * @param unknown_offset
      */
     protected void setUnknownOffset(long unknown_offset) {
@@ -243,7 +246,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     /**
      * Returns unknown length
-     * 
+     *
      * @return unknown_length
      */
     public long getUnknownLen() {
@@ -252,7 +255,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     /**
      * Sets unknown length
-     * 
+     *
      * @param unknown_len
      */
     protected void setUnknownLen(long unknown_len) {
@@ -261,7 +264,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     /**
      * Returns directory offset
-     * 
+     *
      * @return directory_offset
      */
     public long getDirOffset() {
@@ -270,7 +273,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     /**
      * Sets directory offset
-     * 
+     *
      * @param dir_offset
      */
     protected void setDirOffset(long dir_offset) {
@@ -279,7 +282,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     /**
      * Returns directory length
-     * 
+     *
      * @return directory_offset
      */
     public long getDirLen() {
@@ -288,7 +291,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     /**
      * Sets directory length
-     * 
+     *
      * @param dir_len
      */
     protected void setDirLen(long dir_len) {
@@ -297,7 +300,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     /**
      * Returns data offset
-     * 
+     *
      * @return data_offset
      */
     public long getDataOffset() {
@@ -306,7 +309,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     /**
      * Sets data offset
-     * 
+     *
      * @param data_offset
      */
     protected void setDataOffset(long data_offset) {
@@ -315,14 +318,14 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     /**
      * Copies 4 first bytes of the byte[]
-     * 
+     *
      * @param data
      * @param chmItsfHeader
      * @param count
-     * @throws TikaException 
+     * @throws TikaException
      */
-    private void unmarshalCharArray(byte[] data, ChmItsfHeader chmItsfHeader,
-            int count) throws TikaException {
+    private void unmarshalCharArray(byte[] data, ChmItsfHeader chmItsfHeader, int count)
+            throws TikaException {
         ChmAssert.assertChmAccessorParameters(data, chmItsfHeader, count);
         System.arraycopy(data, 0, chmItsfHeader.signature, 0, count);
         this.setCurrentPlace(this.getCurrentPlace() + count);
@@ -331,7 +334,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     /**
      * Copies X bytes of source byte[] to the dest byte[]
-     * 
+     *
      * @param data
      * @param dest
      * @param count
@@ -346,18 +349,19 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
     /**
      * Takes 8 bytes and reverses them
-     * 
+     *
      * @param data
      * @param dest
      * @return
-     * @throws TikaException 
+     * @throws TikaException
      */
-    private long unmarshalUint64(byte[] data, long dest) throws TikaException{
+    private long unmarshalUint64(byte[] data, long dest) throws TikaException {
         byte[] temp = new byte[8];
         int i, j;
 
-        if (8 > this.getDataRemained())
+        if (8 > this.getDataRemained()) {
             throw new TikaException("8 > this.getDataRemained()");
+        }
 
         for (i = 8, j = 7; i > 0; i--) {
             temp[j--] = data[this.getCurrentPlace()];
@@ -369,50 +373,38 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
         return dest;
     }
 
-    private int unmarshalInt32(byte[] data, int dest) throws TikaException{
+    private int unmarshalInt32(byte[] data, int dest) throws TikaException {
         ChmAssert.assertByteArrayNotNull(data);
 
-        if (4 > this.getDataRemained())
+        if (4 > this.getDataRemained()) {
             throw new TikaException("4 > dataLenght");
-        dest = (data[this.getCurrentPlace()] & 0xff)
-                | (data[this.getCurrentPlace() + 1] & 0xff) << 8
-                | (data[this.getCurrentPlace() + 2] & 0xff) << 16
-                | (data[this.getCurrentPlace() + 3] & 0xff) << 24;
+        }
+        dest = (data[this.getCurrentPlace()] & 0xff) |
+                (data[this.getCurrentPlace() + 1] & 0xff) << 8 |
+                (data[this.getCurrentPlace() + 2] & 0xff) << 16 |
+                (data[this.getCurrentPlace() + 3] & 0xff) << 24;
 
         this.setCurrentPlace(this.getCurrentPlace() + 4);
         this.setDataRemained(this.getDataRemained() - 4);
         return dest;
     }
 
-    private long unmarshalUInt32(byte[] data, long dest) throws TikaException{
+    private long unmarshalUInt32(byte[] data, long dest) throws TikaException {
         ChmAssert.assertByteArrayNotNull(data);
-        if (4 > getDataRemained())
+        if (4 > getDataRemained()) {
             throw new TikaException("4 > dataLenght");
-        dest = data[this.getCurrentPlace()]
-                | data[this.getCurrentPlace() + 1] << 8
-                | data[this.getCurrentPlace() + 2] << 16
-                | data[this.getCurrentPlace() + 3] << 24;
+        }
+        dest = data[this.getCurrentPlace()] | data[this.getCurrentPlace() + 1] << 8 |
+                data[this.getCurrentPlace() + 2] << 16 | data[this.getCurrentPlace() + 3] << 24;
 
         setDataRemained(this.getDataRemained() - 4);
         this.setCurrentPlace(this.getCurrentPlace() + 4);
         return dest;
     }
 
-    public static void main(String[] args) {
-    }
-
-    /**
-     * Sets data remained to be processed
-     * 
-     * @param dataRemained
-     */
-    private void setDataRemained(int dataRemained) {
-        this.dataRemained = dataRemained;
-    }
-
     /**
      * Returns data remained
-     * 
+     *
      * @return data_remainned
      */
     private int getDataRemained() {
@@ -420,65 +412,89 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
     }
 
     /**
-     * Sets current place in the byte[]
-     * 
-     * @param currentPlace
+     * Sets data remained to be processed
+     *
+     * @param dataRemained
      */
-    private void setCurrentPlace(int currentPlace) {
-        this.currentPlace = currentPlace;
+    private void setDataRemained(int dataRemained) {
+        this.dataRemained = dataRemained;
     }
 
     /**
      * Returns current place in the byte[]
-     * 
+     *
      * @return current place
      */
     private int getCurrentPlace() {
         return currentPlace;
     }
 
+    /**
+     * Sets current place in the byte[]
+     *
+     * @param currentPlace
+     */
+    private void setCurrentPlace(int currentPlace) {
+        this.currentPlace = currentPlace;
+    }
+
     // @Override
     public void parse(byte[] data, ChmItsfHeader chmItsfHeader) throws TikaException {
-        if (data.length < ChmConstants.CHM_ITSF_V2_LEN
-                || data.length > ChmConstants.CHM_ITSF_V3_LEN)
-            throw new TikaException("we only know how to deal with the 0x58 and 0x60 byte structures");
+        if (data.length < ChmConstants.CHM_ITSF_V2_LEN ||
+                data.length > ChmConstants.CHM_ITSF_V3_LEN) {
+            throw new TikaException(
+                    "we only know how to deal with the 0x58 and 0x60 byte structures");
+        }
 
         chmItsfHeader.setDataRemained(data.length);
         chmItsfHeader.unmarshalCharArray(data, chmItsfHeader, ChmConstants.CHM_SIGNATURE_LEN);
         chmItsfHeader.setVersion(chmItsfHeader.unmarshalInt32(data, chmItsfHeader.getVersion()));
-        chmItsfHeader.setHeaderLen(chmItsfHeader.unmarshalInt32(data, chmItsfHeader.getHeaderLen()));
-        chmItsfHeader.setUnknown_000c(chmItsfHeader.unmarshalInt32(data, chmItsfHeader.getUnknown_000c()));
-        chmItsfHeader.setLastModified(chmItsfHeader.unmarshalUInt32(data, chmItsfHeader.getLastModified()));
+        chmItsfHeader
+                .setHeaderLen(chmItsfHeader.unmarshalInt32(data, chmItsfHeader.getHeaderLen()));
+        chmItsfHeader.setUnknown_000c(
+                chmItsfHeader.unmarshalInt32(data, chmItsfHeader.getUnknown_000c()));
+        chmItsfHeader.setLastModified(
+                chmItsfHeader.unmarshalUInt32(data, chmItsfHeader.getLastModified()));
         chmItsfHeader.setLangId(chmItsfHeader.unmarshalUInt32(data, chmItsfHeader.getLangId()));
-        chmItsfHeader.setDir_uuid(chmItsfHeader.unmarshalUuid(data, chmItsfHeader.getDir_uuid(), 16));
-        chmItsfHeader.setStream_uuid(chmItsfHeader.unmarshalUuid(data, chmItsfHeader.getStream_uuid(), 16));
-        chmItsfHeader.setUnknownOffset(chmItsfHeader.unmarshalUint64(data, chmItsfHeader.getUnknownOffset()));
-        chmItsfHeader.setUnknownLen(chmItsfHeader.unmarshalUint64(data, chmItsfHeader.getUnknownLen()));
-        chmItsfHeader.setDirOffset(chmItsfHeader.unmarshalUint64(data, chmItsfHeader.getDirOffset()));
+        chmItsfHeader
+                .setDir_uuid(chmItsfHeader.unmarshalUuid(data, chmItsfHeader.getDir_uuid(), 16));
+        chmItsfHeader.setStream_uuid(
+                chmItsfHeader.unmarshalUuid(data, chmItsfHeader.getStream_uuid(), 16));
+        chmItsfHeader.setUnknownOffset(
+                chmItsfHeader.unmarshalUint64(data, chmItsfHeader.getUnknownOffset()));
+        chmItsfHeader
+                .setUnknownLen(chmItsfHeader.unmarshalUint64(data, chmItsfHeader.getUnknownLen()));
+        chmItsfHeader
+                .setDirOffset(chmItsfHeader.unmarshalUint64(data, chmItsfHeader.getDirOffset()));
         chmItsfHeader.setDirLen(chmItsfHeader.unmarshalUint64(data, chmItsfHeader.getDirLen()));
-        if (!new String(chmItsfHeader.getSignature(), UTF_8).equals(ChmConstants.ITSF))
+        if (!new String(chmItsfHeader.getSignature(), UTF_8).equals(ChmConstants.ITSF)) {
             throw new TikaException("seems not valid file");
+        }
         if (chmItsfHeader.getVersion() == ChmConstants.CHM_VER_2) {
-            if (chmItsfHeader.getHeaderLen() < ChmConstants.CHM_ITSF_V2_LEN)
+            if (chmItsfHeader.getHeaderLen() < ChmConstants.CHM_ITSF_V2_LEN) {
                 throw new TikaException("something wrong with header");
+            }
         } else if (chmItsfHeader.getVersion() == ChmConstants.CHM_VER_3) {
-            if (chmItsfHeader.getHeaderLen() < ChmConstants.CHM_ITSF_V3_LEN)
+            if (chmItsfHeader.getHeaderLen() < ChmConstants.CHM_ITSF_V3_LEN) {
                 throw new TikaException("unknown v3 header lenght");
-        } else
+            }
+        } else {
             throw new ChmParsingException("unsupported chm format");
+        }
 
         /*
          * now, if we have a V3 structure, unmarshal the rest, otherwise,
          * compute it
          */
         if (chmItsfHeader.getVersion() == ChmConstants.CHM_VER_3) {
-            if (chmItsfHeader.getDataRemained() >= 0)
-                chmItsfHeader.setDataOffset(chmItsfHeader.getDirOffset()
-                        + chmItsfHeader.getDirLen());
-            else
+            if (chmItsfHeader.getDataRemained() >= 0) {
+                chmItsfHeader
+                        .setDataOffset(chmItsfHeader.getDirOffset() + chmItsfHeader.getDirLen());
+            } else {
                 throw new TikaException("cannot set data offset, no data remained");
-        } else
-            chmItsfHeader.setDataOffset(chmItsfHeader.getDirOffset()
-                    + chmItsfHeader.getDirLen());
+            }
+        } else {
+            chmItsfHeader.setDataOffset(chmItsfHeader.getDirOffset() + chmItsfHeader.getDirLen());
+        }
     }
 }

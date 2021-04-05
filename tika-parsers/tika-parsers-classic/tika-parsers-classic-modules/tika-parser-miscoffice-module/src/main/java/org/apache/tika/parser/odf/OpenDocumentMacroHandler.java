@@ -16,13 +16,14 @@
  */
 package org.apache.tika.parser.odf;
 
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.utils.XMLReaderUtils;
+import java.io.IOException;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import java.io.IOException;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.utils.XMLReaderUtils;
 
 
 class OpenDocumentMacroHandler extends FlatOpenDocumentMacroHandler {
@@ -32,9 +33,8 @@ class OpenDocumentMacroHandler extends FlatOpenDocumentMacroHandler {
     }
 
     @Override
-    public void startElement(
-            String namespaceURI, String localName, String qName,
-            Attributes attrs) throws SAXException {
+    public void startElement(String namespaceURI, String localName, String qName, Attributes attrs)
+            throws SAXException {
         //in the compressed odf, there should only be one element in this file.
         if (MODULE.equalsIgnoreCase(localName)) {
             inMacro = true;
@@ -44,8 +44,8 @@ class OpenDocumentMacroHandler extends FlatOpenDocumentMacroHandler {
 
 
     @Override
-    public void endElement(
-            String namespaceURI, String localName, String qName) throws SAXException {
+    public void endElement(String namespaceURI, String localName, String qName)
+            throws SAXException {
         if (MODULE.equals(localName)) {
             try {
                 handleMacro();

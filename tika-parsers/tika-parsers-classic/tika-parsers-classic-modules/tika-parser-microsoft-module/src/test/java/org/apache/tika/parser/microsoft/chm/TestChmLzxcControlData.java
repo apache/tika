@@ -21,7 +21,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-
 import org.junit.Before;
 import org.junit.Test;
 
@@ -38,35 +37,32 @@ public class TestChmLzxcControlData {
         ChmItsfHeader chmItsHeader = new ChmItsfHeader();
         // chmItsHeader.parse(Arrays.copyOfRange(data, 0,
         // ChmConstants.CHM_ITSF_V3_LEN - 1), chmItsHeader);
-        chmItsHeader.parse(ChmCommons.copyOfRange(data, 0,
-                ChmConstants.CHM_ITSF_V3_LEN - 1), chmItsHeader);
+        chmItsHeader.parse(ChmCommons.copyOfRange(data, 0, ChmConstants.CHM_ITSF_V3_LEN - 1),
+                chmItsHeader);
         /* Creates and parses itsp block */
         ChmItspHeader chmItspHeader = new ChmItspHeader();
         // chmItspHeader.parse(Arrays.copyOfRange( data, (int)
         // chmItsHeader.getDirOffset(),
         // (int) chmItsHeader.getDirOffset()
         // + ChmConstants.CHM_ITSP_V1_LEN), chmItspHeader);
-        chmItspHeader.parse(ChmCommons.copyOfRange(data,
-                (int) chmItsHeader.getDirOffset(),
-                (int) chmItsHeader.getDirOffset()
-                        + ChmConstants.CHM_ITSP_V1_LEN), chmItspHeader);
+        chmItspHeader.parse(ChmCommons.copyOfRange(data, (int) chmItsHeader.getDirOffset(),
+                (int) chmItsHeader.getDirOffset() + ChmConstants.CHM_ITSP_V1_LEN), chmItspHeader);
         /* Creating instance of ChmDirListingContainer */
-        ChmDirectoryListingSet chmDirListCont = new ChmDirectoryListingSet(
-                data, chmItsHeader, chmItspHeader);
+        ChmDirectoryListingSet chmDirListCont =
+                new ChmDirectoryListingSet(data, chmItsHeader, chmItspHeader);
         int indexOfControlData = chmDirListCont.getControlDataIndex();
 
-        int indexOfResetTable = ChmCommons.indexOfResetTableBlock(data,
-                ChmConstants.LZXC.getBytes(UTF_8));
+        int indexOfResetTable =
+                ChmCommons.indexOfResetTableBlock(data, ChmConstants.LZXC.getBytes(UTF_8));
         byte[] dir_chunk = null;
         if (indexOfResetTable > 0) {
             // dir_chunk = Arrays.copyOfRange( data, indexOfResetTable,
             // indexOfResetTable
             // +
             // chmDirListCont.getDirectoryListingEntryList().get(indexOfControlData).getLength());
-            dir_chunk = ChmCommons.copyOfRange(data, indexOfResetTable,
-                    indexOfResetTable
-                            + chmDirListCont.getDirectoryListingEntryList()
-                                    .get(indexOfControlData).getLength());
+            dir_chunk = ChmCommons.copyOfRange(data, indexOfResetTable, indexOfResetTable +
+                    chmDirListCont.getDirectoryListingEntryList().get(indexOfControlData)
+                            .getLength());
         }
 
         /* Creates and parses control block */
@@ -82,57 +78,49 @@ public class TestChmLzxcControlData {
 
     @Test
     public void testGetResetInterval() {
-        assertEquals(TestParameters.VP_RESET_INTERVAL,
-                chmLzxcControlData.getResetInterval());
+        assertEquals(TestParameters.VP_RESET_INTERVAL, chmLzxcControlData.getResetInterval());
     }
 
     @Test
     public void testGetSize() {
-        assertEquals(TestParameters.VP_CONTROL_DATA_SIZE,
-                chmLzxcControlData.getSize());
+        assertEquals(TestParameters.VP_CONTROL_DATA_SIZE, chmLzxcControlData.getSize());
     }
 
     @Test
     public void testGetUnknown_18() {
-        assertEquals(TestParameters.VP_UNKNOWN_18,
-                chmLzxcControlData.getUnknown_18());
+        assertEquals(TestParameters.VP_UNKNOWN_18, chmLzxcControlData.getUnknown_18());
     }
 
     @Test
     public void testGetVersion() {
-        assertEquals(TestParameters.VP_CONTROL_DATA_VERSION,
-                chmLzxcControlData.getVersion());
+        assertEquals(TestParameters.VP_CONTROL_DATA_VERSION, chmLzxcControlData.getVersion());
     }
 
     @Test
     public void testGetWindowSize() {
-        assertEquals(TestParameters.VP_WINDOW_SIZE,
-                chmLzxcControlData.getWindowSize());
+        assertEquals(TestParameters.VP_WINDOW_SIZE, chmLzxcControlData.getWindowSize());
     }
 
     @Test
     public void testGetWindowsPerReset() {
-        assertEquals(TestParameters.VP_WINDOWS_PER_RESET,
-                chmLzxcControlData.getWindowsPerReset());
+        assertEquals(TestParameters.VP_WINDOWS_PER_RESET, chmLzxcControlData.getWindowsPerReset());
     }
 
     @Test
     public void testGetToString() {
-        assertTrue(chmLzxcControlData.toString().contains(
-                TestParameters.VP_CONTROL_DATA_SIGNATURE));
+        assertTrue(
+                chmLzxcControlData.toString().contains(TestParameters.VP_CONTROL_DATA_SIGNATURE));
     }
 
     @Test
     public void testGetSignature() {
-        assertEquals(
-                TestParameters.VP_CONTROL_DATA_SIGNATURE.getBytes(UTF_8).length,
+        assertEquals(TestParameters.VP_CONTROL_DATA_SIGNATURE.getBytes(UTF_8).length,
                 chmLzxcControlData.getSignature().length);
     }
 
     @Test
     public void testGetSignaure() {
-        assertEquals(
-                TestParameters.VP_CONTROL_DATA_SIGNATURE.getBytes(UTF_8).length,
+        assertEquals(TestParameters.VP_CONTROL_DATA_SIGNATURE.getBytes(UTF_8).length,
                 chmLzxcControlData.getSignature().length);
     }
 

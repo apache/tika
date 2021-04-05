@@ -1,4 +1,3 @@
-package org.apache.tika.parser.sqlite3;
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -15,20 +14,23 @@ package org.apache.tika.parser.sqlite3;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.parser.sqlite3;
 
-import javax.sql.rowset.serial.SerialBlob;
+
 import java.io.IOException;
 import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import javax.sql.rowset.serial.SerialBlob;
+
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.jdbc.JDBCTableReader;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 
 /**
@@ -41,7 +43,8 @@ import org.xml.sax.SAXException;
 class SQLite3TableReader extends JDBCTableReader {
 
 
-    public SQLite3TableReader(Connection connection, String tableName, EmbeddedDocumentUtil embeddedDocumentUtil) {
+    public SQLite3TableReader(Connection connection, String tableName,
+                              EmbeddedDocumentUtil embeddedDocumentUtil) {
         super(connection, tableName, embeddedDocumentUtil);
     }
 
@@ -61,9 +64,9 @@ class SQLite3TableReader extends JDBCTableReader {
      * @throws org.xml.sax.SAXException
      */
     @Override
-    protected void handleClob(String tableName, String fieldName, int rowNum,
-                              ResultSet resultSet, int columnIndex,
-                              ContentHandler handler, ParseContext context) throws SQLException, IOException, SAXException {
+    protected void handleClob(String tableName, String fieldName, int rowNum, ResultSet resultSet,
+                              int columnIndex, ContentHandler handler, ParseContext context)
+            throws SQLException, IOException, SAXException {
         //no-op for now.
     }
 

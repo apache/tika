@@ -23,20 +23,19 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.poi.openxml4j.opc.PackagePart;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLWordAndPowerPointTextHandler;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
-import javax.xml.parsers.SAXParser;
 
 /**
  * For Tika, all we need (so far) is a mapping between styleId and a style's name.
- *
+ * <p>
  * This class uses SAX to scrape that info out of the styles.xml file.  If
  * either the styleId or the style's name is null, no information is recorded.
  */
@@ -53,20 +52,21 @@ public class XWPFStylesShim {
 
     }
 
-    public XWPFStylesShim(PackagePart part, ParseContext parseContext) throws IOException, TikaException, SAXException {
+    public XWPFStylesShim(PackagePart part, ParseContext parseContext)
+            throws IOException, TikaException, SAXException {
 
         try (InputStream is = part.getInputStream()) {
             onDocumentLoad(parseContext, is);
         }
     }
 
-    private void onDocumentLoad(ParseContext parseContext, InputStream stream) throws TikaException, IOException, SAXException {
-            XMLReaderUtils.parseSAX(stream,
-                    new OfflineContentHandler(new StylesStripper()), parseContext);
+    private void onDocumentLoad(ParseContext parseContext, InputStream stream)
+            throws TikaException, IOException, SAXException {
+        XMLReaderUtils
+                .parseSAX(stream, new OfflineContentHandler(new StylesStripper()), parseContext);
     }
 
     /**
-     *
      * @param styleId
      * @return style's name or null if styleId is null or can't be found
      */
@@ -90,10 +90,12 @@ public class XWPFStylesShim {
         String currentStyleId = null;
 
         @Override
-        public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
+        public void startElement(String uri, String localName, String qName, Attributes atts)
+                throws SAXException {
             if (uri == null || OOXMLWordAndPowerPointTextHandler.W_NS.equals(uri)) {
                 if ("style".equals(localName)) {
-                    currentStyleId = atts.getValue(OOXMLWordAndPowerPointTextHandler.W_NS, "styleId");
+                    currentStyleId =
+                            atts.getValue(OOXMLWordAndPowerPointTextHandler.W_NS, "styleId");
                 } else if ("name".equals(localName)) {
                     String name = atts.getValue(OOXMLWordAndPowerPointTextHandler.W_NS, "val");
                     if (currentStyleId != null && name != null) {

@@ -17,10 +17,10 @@
 
 package org.apache.tika.metadata.filter;
 
+import java.io.Serializable;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-
-import java.io.Serializable;
 
 /**
  * Filters the metadata in place

@@ -34,7 +34,7 @@ public class Matcher {
      * to a child element with the given name.
      *
      * @param namespace element namespace or <code>null</code>
-     * @param name element name
+     * @param name      element name
      * @return next XPath evaluation state
      */
     public Matcher descend(String namespace, String name) {
@@ -56,7 +56,7 @@ public class Matcher {
      * attribute of the element associated with this evaluation state.
      *
      * @param namespace attribute namespace or <code>null</code>
-     * @param name attribute name
+     * @param name      attribute name
      * @return XPath evaluation state for named attribute of this element
      */
     public boolean matchesAttribute(String namespace, String name) {
