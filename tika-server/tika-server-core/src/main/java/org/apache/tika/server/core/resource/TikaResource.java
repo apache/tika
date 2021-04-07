@@ -381,7 +381,8 @@ public class TikaResource {
     public StreamingOutput getTextFromMultipart(Attachment att,
                                                 @Context HttpHeaders httpHeaders,
                                                 @Context final UriInfo info) {
-        return produceText(att.getObject(InputStream.class), new Metadata(), preparePostHeaderMap(att, httpHeaders), info);
+        return produceText(att.getObject(InputStream.class), new Metadata(),
+                preparePostHeaderMap(att, httpHeaders), info);
     }
 
     //this is equivalent to text-main in tika-app
@@ -402,7 +403,8 @@ public class TikaResource {
     public StreamingOutput getTextMainFromMultipart(final Attachment att,
                                                     @Context HttpHeaders httpHeaders,
                                                     @Context final UriInfo info) {
-        return produceTextMain(att.getObject(InputStream.class), preparePostHeaderMap(att, httpHeaders), info);
+        return produceTextMain(att.getObject(InputStream.class),
+                preparePostHeaderMap(att, httpHeaders), info);
     }
 
     public StreamingOutput produceTextMain(final InputStream is,
