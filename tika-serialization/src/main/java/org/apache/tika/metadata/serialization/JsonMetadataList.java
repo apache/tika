@@ -28,6 +28,8 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import org.apache.commons.io.input.CloseShieldReader;
+import org.apache.commons.io.output.CloseShieldWriter;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -48,7 +50,8 @@ public class JsonMetadataList {
             writer.write("null");
             return;
         }
-        try (JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
+        try (JsonGenerator jsonGenerator = new JsonFactory().createGenerator(
+                new CloseShieldWriter(writer))) {
             if (PRETTY_PRINT) {
                 jsonGenerator.useDefaultPrettyPrinter();
             }
@@ -61,7 +64,7 @@ public class JsonMetadataList {
     }
         
     /**
-     * Read metadata from reader.
+     * Read metadata from reader. This does not close the reader
      *
      * @param reader
      * @return Metadata or null if nothing could be read from the reader
@@ -73,12 +76,13 @@ public class JsonMetadataList {
             return ms;
         }
         ms = new ArrayList<>();
-        try (JsonParser jParser = new JsonFactory().createParser(reader)) {
+        try (JsonParser jParser = new JsonFactory().createParser(
+                new CloseShieldReader(reader))) {
 
             JsonToken token = jParser.nextToken();
             if (token != JsonToken.START_ARRAY) {
                 throw new IOException(
-                        "metadata list must start with an array, but I see: "+token.name());
+                        "metadata list must start with an array, but I see: " + token.name());
             }
             token = jParser.nextToken();
             while (token != JsonToken.END_ARRAY) {
