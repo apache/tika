@@ -233,12 +233,9 @@ public class TikaResource {
 
         } catch (Throwable ex) {
             // TIKA-3345
-            String error = (!(ex.getCause() instanceof IllegalArgumentException)) ? String.format(Locale.ROOT,
-                    "%s is an invalid %s header",
-                    key, prefix) :
-                    String.format(Locale.ROOT,
-                            "%s is an invalid %s header value",
-                            val, key);
+            String error = (!(ex.getCause() instanceof IllegalArgumentException)) ?
+                    String.format(Locale.ROOT, "%s is an invalid %s header", key, prefix) :
+                    String.format(Locale.ROOT, "%s is an invalid %s header value", val, key);
             throw new WebApplicationException(error, Response.Status.BAD_REQUEST);
         }
     }
@@ -381,7 +378,9 @@ public class TikaResource {
     @Consumes("multipart/form-data")
     @Produces("text/plain")
     @Path("form")
-    public StreamingOutput getTextFromMultipart(Attachment att, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
+    public StreamingOutput getTextFromMultipart(Attachment att,
+                                                @Context HttpHeaders httpHeaders,
+                                                @Context final UriInfo info) {
         return produceText(att.getObject(InputStream.class), new Metadata(), preparePostHeaderMap(att, httpHeaders), info);
     }
 
@@ -400,7 +399,9 @@ public class TikaResource {
     @Consumes("multipart/form-data")
     @Produces("text/plain")
     @Path("form/main")
-    public StreamingOutput getTextMainFromMultipart(final Attachment att, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
+    public StreamingOutput getTextMainFromMultipart(final Attachment att,
+                                                    @Context HttpHeaders httpHeaders,
+                                                    @Context final UriInfo info) {
         return produceTextMain(att.getObject(InputStream.class), preparePostHeaderMap(att, httpHeaders), info);
     }
 
@@ -467,7 +468,9 @@ public class TikaResource {
     @Consumes("multipart/form-data")
     @Produces("text/html")
     @Path("form")
-    public StreamingOutput getHTMLFromMultipart(Attachment att, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
+    public StreamingOutput getHTMLFromMultipart(Attachment att,
+                                                @Context HttpHeaders httpHeaders,
+                                                @Context final UriInfo info) {
         return produceOutput(att.getObject(InputStream.class), new Metadata(),
                 preparePostHeaderMap(att, httpHeaders), info, "html");
     }
@@ -486,7 +489,9 @@ public class TikaResource {
     @Consumes("multipart/form-data")
     @Produces("text/xml")
     @Path("form")
-    public StreamingOutput getXMLFromMultipart(Attachment att, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
+    public StreamingOutput getXMLFromMultipart(Attachment att,
+                                               @Context HttpHeaders httpHeaders,
+                                               @Context final UriInfo info) {
         return produceOutput(att.getObject(InputStream.class),
                 new Metadata(), preparePostHeaderMap(att, httpHeaders), info, "xml");
     }
@@ -544,13 +549,15 @@ public class TikaResource {
      * @param httpHeaders the http headers, fetched from context.
      * @return the case insensitive MetadataMap containing combined headers.
      */
-    private MetadataMap<String, String> preparePostHeaderMap(Attachment att, HttpHeaders httpHeaders) {
-        if(att == null && httpHeaders == null) return null;
-        MetadataMap<String, String> finalHeaders = new MetadataMap<>(false, true);
-        if(httpHeaders != null && httpHeaders.getRequestHeaders() != null) {
+    private MetadataMap<String, String> preparePostHeaderMap(Attachment att,
+                                                             HttpHeaders httpHeaders) {
+        if (att == null && httpHeaders == null) return null;
+        MetadataMap<String, String> finalHeaders = new MetadataMap<>(false,
+                true);
+        if (httpHeaders != null && httpHeaders.getRequestHeaders() != null) {
             finalHeaders.putAll(httpHeaders.getRequestHeaders());
         }
-        if(att != null && att.getHeaders() != null) {
+        if (att != null && att.getHeaders() != null) {
             finalHeaders.putAll(att.getHeaders());
         }
         return finalHeaders;
