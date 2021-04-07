@@ -526,7 +526,8 @@ public class TikaResourceTest extends CXFTestBase {
         Response response = WebClient.create(endPoint + TIKA_POST_PATH)
                 .type("application/pdf")
                 .accept(MediaType.TEXT_PLAIN).type(MediaType.MULTIPART_FORM_DATA)
-                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX.toLowerCase(Locale.ROOT)+"ocrstrategy", "no_ocr")
+                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX.toLowerCase(Locale.ROOT)
+                        + "ocrstrategy", "no_ocr")
                 .post(testPDFLowerCaseOCRConfigPOSTBody());
         String responseMsg = getStringFromInputStream((InputStream) response
                 .getEntity());
@@ -536,7 +537,8 @@ public class TikaResourceTest extends CXFTestBase {
         response = WebClient.create(endPoint + TIKA_POST_PATH)
                 .type("application/pdf")
                 .accept(MediaType.TEXT_PLAIN).type(MediaType.MULTIPART_FORM_DATA)
-                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX.toLowerCase(Locale.ROOT)+"ocrstrategy", "ocr_only")
+                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX.toLowerCase(Locale.ROOT)
+                        + "ocrstrategy", "ocr_only")
                 .post(testPDFLowerCaseOCRConfigPOSTBody());
         responseMsg = getStringFromInputStream((InputStream) response
                 .getEntity());
@@ -546,7 +548,8 @@ public class TikaResourceTest extends CXFTestBase {
         response = WebClient.create(endPoint + TIKA_POST_PATH)
                 .type("application/pdf")
                 .accept(MediaType.TEXT_PLAIN).type(MediaType.MULTIPART_FORM_DATA)
-                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX.toLowerCase(Locale.ROOT)+"ocrstrategy", "non-sense-value")
+                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX.toLowerCase(Locale.ROOT)
+                        + "ocrstrategy", "non-sense-value")
                 .post(testPDFLowerCaseOCRConfigPOSTBody());
         assertEquals(400, response.getStatus());
     }
@@ -554,7 +557,8 @@ public class TikaResourceTest extends CXFTestBase {
     private MultipartBody testPDFLowerCaseOCRConfigPOSTBody() {
         ContentDisposition cd = new ContentDisposition(
                 "form-data; name=\"input\"; filename=\"testOCR.pdf\"");
-        Attachment att = new Attachment("upload", ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"), cd);
+        Attachment att = new Attachment("upload", ClassLoader
+                .getSystemResourceAsStream("test-documents/testOCR.pdf"), cd);
         return new MultipartBody(att);
     }
 
