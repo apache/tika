@@ -20,6 +20,7 @@ package org.apache.tika.server.core.resource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.cxf.attachment.ContentDisposition;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
+import org.apache.cxf.jaxrs.impl.MetadataMap;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -232,10 +233,14 @@ public class TikaResource {
             }
 
         } catch (Throwable ex) {
-            throw new WebApplicationException(
+            // TIKA-3345
+            String error = (!(ex.getCause() instanceof IllegalArgumentException)) ? String.format(Locale.ROOT,
+                    "%s is an invalid %s header",
+                    key, prefix) :
                     String.format(Locale.ROOT,
-                    "%s is an invalid %s header or has an invalid value: %s",
-                            key, prefix, val), Response.Status.BAD_REQUEST);
+                            "%s is an invalid %s header value",
+                            val, key);
+            throw new WebApplicationException(error, Response.Status.BAD_REQUEST);
         }
     }
 
@@ -373,8 +378,8 @@ public class TikaResource {
     @Consumes("multipart/form-data")
     @Produces("text/plain")
     @Path("form")
-    public StreamingOutput getTextFromMultipart(Attachment att, @Context final UriInfo info) {
-        return produceText(att.getObject(InputStream.class), new Metadata(), att.getHeaders(), info);
+    public StreamingOutput getTextFromMultipart(Attachment att, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
+        return produceText(att.getObject(InputStream.class), new Metadata(), preparePostHeaderMap(att, httpHeaders), info);
     }
 
     //this is equivalent to text-main in tika-app
@@ -391,8 +396,8 @@ public class TikaResource {
     @Consumes("multipart/form-data")
     @Produces("text/plain")
     @Path("form/main")
-    public StreamingOutput getTextMainFromMultipart(final Attachment att, @Context final UriInfo info) {
-        return produceTextMain(att.getObject(InputStream.class), att.getHeaders(), info);
+    public StreamingOutput getTextMainFromMultipart(final Attachment att, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
+        return produceTextMain(att.getObject(InputStream.class), preparePostHeaderMap(att, httpHeaders), info);
     }
 
     public StreamingOutput produceTextMain(final InputStream is, MultivaluedMap<String, String> httpHeaders, final UriInfo info) {
@@ -449,9 +454,9 @@ public class TikaResource {
     @Consumes("multipart/form-data")
     @Produces("text/html")
     @Path("form")
-    public StreamingOutput getHTMLFromMultipart(Attachment att, @Context final UriInfo info) {
+    public StreamingOutput getHTMLFromMultipart(Attachment att, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
         return produceOutput(att.getObject(InputStream.class), new Metadata(),
-                att.getHeaders(), info, "html");
+                preparePostHeaderMap(att, httpHeaders), info, "html");
     }
 
     @PUT
@@ -466,9 +471,9 @@ public class TikaResource {
     @Consumes("multipart/form-data")
     @Produces("text/xml")
     @Path("form")
-    public StreamingOutput getXMLFromMultipart(Attachment att, @Context final UriInfo info) {
+    public StreamingOutput getXMLFromMultipart(Attachment att, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
         return produceOutput(att.getObject(InputStream.class),
-                new Metadata(), att.getHeaders(), info, "xml");
+                new Metadata(), preparePostHeaderMap(att, httpHeaders), info, "xml");
     }
 
     @PUT
@@ -512,5 +517,24 @@ public class TikaResource {
                 parse(parser, LOG, info.getPath(), is, content, metadata, context);
             }
         };
+    }
+
+    /**
+     * Prepares a multivalued map, combining attachment headers and request headers.
+     * Gives priority to attachment headers.
+     * @param att the attachment.
+     * @param httpHeaders the http headers, fetched from context.
+     * @return the case insensitive MetadataMap containing combined headers.
+     */
+    private MetadataMap<String, String> preparePostHeaderMap(Attachment att, HttpHeaders httpHeaders) {
+        if(att == null && httpHeaders == null) return null;
+        MetadataMap<String, String> finalHeaders = new MetadataMap<>(false, true);
+        if(httpHeaders != null && httpHeaders.getRequestHeaders() != null) {
+            finalHeaders.putAll(httpHeaders.getRequestHeaders());
+        }
+        if(att != null && att.getHeaders() != null) {
+            finalHeaders.putAll(att.getHeaders());
+        }
+        return finalHeaders;
     }
 }

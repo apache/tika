@@ -23,6 +23,8 @@ import org.apache.cxf.attachment.AttachmentUtil;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
+import org.apache.cxf.jaxrs.ext.multipart.ContentDisposition;
+import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
@@ -37,8 +39,11 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.ws.rs.ProcessingException;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,6 +64,7 @@ public class TikaResourceTest extends CXFTestBase {
     private static final String STREAM_CLOSED_FAULT = "java.io.IOException: Stream Closed";
 
     private static final String TIKA_PATH = "/tika";
+    private static final String TIKA_POST_PATH = "/tika/form";
     private static final int UNPROCESSEABLE = 422;
 
     @Override
@@ -70,7 +76,7 @@ public class TikaResourceTest extends CXFTestBase {
 
     @Override
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
-        List<Object> providers = new ArrayList<Object>();
+        List<Object> providers = new ArrayList<>();
         providers.add(new TikaServerParseExceptionMapper(false));
         sf.setProviders(providers);
     }
@@ -175,7 +181,7 @@ public class TikaResourceTest extends CXFTestBase {
 
 
     @Test
-    public void testPasswordXLS() throws Exception {
+    public void testPasswordXLS() {
         Response response = WebClient.create(endPoint + TIKA_PATH)
                 .type("application/vnd.ms-excel")
                 .accept("text/plain")
@@ -200,7 +206,7 @@ public class TikaResourceTest extends CXFTestBase {
     }
 
     @Test
-    public void testPasswordXLSHTML() throws Exception {
+    public void testPasswordXLSHTML() {
         Response response = WebClient.create(endPoint + TIKA_PATH)
                 .type("application/vnd.ms-excel")
                 .accept("text/html")
@@ -221,7 +227,7 @@ public class TikaResourceTest extends CXFTestBase {
     }
 
     @Test
-    public void testPasswordXLSXML() throws Exception {
+    public void testPasswordXLSXML() {
         Response response = WebClient.create(endPoint + TIKA_PATH)
                 .type("application/vnd.ms-excel")
                 .accept("text/xml")
@@ -321,7 +327,7 @@ public class TikaResourceTest extends CXFTestBase {
         String responseMsg = getStringFromInputStream((InputStream) response
                 .getEntity());
 
-        assertTrue(responseMsg.trim().equals(""));
+        assertEquals("", responseMsg.trim());
 
         response = WebClient.create(endPoint + TIKA_PATH)
                 .type("application/pdf")
@@ -331,7 +337,7 @@ public class TikaResourceTest extends CXFTestBase {
         responseMsg = getStringFromInputStream((InputStream) response
                 .getEntity());
 
-        assertTrue(responseMsg.trim().equals(""));
+        assertEquals("", responseMsg.trim());
 
 
         response = WebClient.create(endPoint + TIKA_PATH)
@@ -367,7 +373,7 @@ public class TikaResourceTest extends CXFTestBase {
         String responseMsg = getStringFromInputStream((InputStream) response
                 .getEntity());
 
-        assertTrue(responseMsg.trim().equals(""));
+        assertEquals("", responseMsg.trim());
 
         response = WebClient.create(endPoint + TIKA_PATH)
                 .type("application/pdf")
@@ -377,7 +383,7 @@ public class TikaResourceTest extends CXFTestBase {
         responseMsg = getStringFromInputStream((InputStream) response
                 .getEntity());
 
-        assertTrue(responseMsg.trim().equals(""));
+        assertEquals("", responseMsg.trim());
 
 
         response = WebClient.create(endPoint + TIKA_PATH)
@@ -459,8 +465,8 @@ public class TikaResourceTest extends CXFTestBase {
     }
 
     @Test
-    public void testDataIntegrityCheck() throws Exception {
-        Response response = null;
+    public void testDataIntegrityCheck() {
+        Response response;
         try {
             response = WebClient.create(endPoint + TIKA_PATH)
                     .type("application/pdf")
@@ -485,7 +491,7 @@ public class TikaResourceTest extends CXFTestBase {
                     .put(ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"));
             assertEquals(400, response.getStatus());
         } catch (ProcessingException e) {
-
+            // suppressing e
         }
     }
 
@@ -514,8 +520,6 @@ public class TikaResourceTest extends CXFTestBase {
         assertEquals(200, response.getStatus());
 
     }
-
-
 
     @Test
     public void testUnicodePasswordProtectedSpaces() throws Exception {
@@ -561,6 +565,48 @@ public class TikaResourceTest extends CXFTestBase {
                 .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
         responseMsg = getStringFromInputStream((InputStream) response.getEntity());
         assertNotFound("embed4.txt", responseMsg);
+    }
+
+    // TIKA-3344
+    @Test
+    public void testPDFLowerCaseOCRConfigPOST() throws Exception {
+        if (! new TesseractOCRParser().hasTesseract()) {
+            return;
+        }
+
+        Response response = WebClient.create(endPoint + TIKA_POST_PATH)
+                .type("application/pdf")
+                .accept(MediaType.TEXT_PLAIN).type(MediaType.MULTIPART_FORM_DATA)
+                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX.toLowerCase(Locale.ROOT)+"ocrstrategy", "no_ocr")
+                .post(testPDFLowerCaseOCRConfigPOSTBody());
+        String responseMsg = getStringFromInputStream((InputStream) response
+                .getEntity());
+
+        assertEquals("", responseMsg.trim());
+
+        response = WebClient.create(endPoint + TIKA_POST_PATH)
+                .type("application/pdf")
+                .accept(MediaType.TEXT_PLAIN).type(MediaType.MULTIPART_FORM_DATA)
+                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX.toLowerCase(Locale.ROOT)+"ocrstrategy", "ocr_only")
+                .post(testPDFLowerCaseOCRConfigPOSTBody());
+        responseMsg = getStringFromInputStream((InputStream) response
+                .getEntity());
+        assertContains("Happy New Year 2003!", responseMsg);
+
+        //now try a bad value
+        response = WebClient.create(endPoint + TIKA_POST_PATH)
+                .type("application/pdf")
+                .accept(MediaType.TEXT_PLAIN).type(MediaType.MULTIPART_FORM_DATA)
+                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX.toLowerCase(Locale.ROOT)+"ocrstrategy", "non-sense-value")
+                .post(testPDFLowerCaseOCRConfigPOSTBody());
+        assertEquals(400, response.getStatus());
+    }
+
+    private MultipartBody testPDFLowerCaseOCRConfigPOSTBody() {
+        ContentDisposition cd = new ContentDisposition(
+                "form-data; name=\"input\"; filename=\"testOCR.pdf\"");
+        Attachment att = new Attachment("upload", ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"), cd);
+        return new MultipartBody(att);
     }
 
 }
