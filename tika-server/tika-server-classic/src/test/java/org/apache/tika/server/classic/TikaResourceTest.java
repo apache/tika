@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import javax.ws.rs.ProcessingException;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.apache.commons.codec.binary.Base64;
@@ -49,25 +50,6 @@ import org.apache.tika.server.core.TikaServerParseExceptionMapper;
 import org.apache.tika.server.core.config.DocumentSelectorConfig;
 import org.apache.tika.server.core.config.PasswordProviderConfig;
 import org.apache.tika.server.core.resource.TikaResource;
-import org.junit.Ignore;
-import org.junit.Test;
-
-import javax.ws.rs.ProcessingException;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-
-import static org.apache.cxf.helpers.HttpHeaderHelper.CONTENT_ENCODING;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class TikaResourceTest extends CXFTestBase {
     public static final String TEST_DOC = "test-documents/test.doc";
