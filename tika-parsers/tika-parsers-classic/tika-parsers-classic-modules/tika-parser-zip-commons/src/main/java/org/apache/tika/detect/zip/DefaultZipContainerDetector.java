@@ -16,6 +16,12 @@
  */
 package org.apache.tika.detect.zip;
 
+import java.io.ByteArrayInputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException;
@@ -26,20 +32,14 @@ import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
+
 import org.apache.tika.config.Field;
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.BoundedInputStream;
-import org.apache.tika.io.LookaheadInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-
-import java.io.ByteArrayInputStream;
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
 
 public class DefaultZipContainerDetector implements Detector {
 
@@ -49,14 +49,16 @@ public class DefaultZipContainerDetector implements Detector {
     //we can remove all of this. See TIKA-2591.
     final static MediaType TIFF = MediaType.image("tiff");
     final static byte[][] TIFF_SIGNATURES = new byte[3][];
-    static {
-        TIFF_SIGNATURES[0] = new byte[]{'M','M',0x00,0x2a};
-        TIFF_SIGNATURES[1] = new byte[]{'I','I',0x2a, 0x00};
-        TIFF_SIGNATURES[2] = new byte[]{'M','M', 0x00, 0x2b};
-    }
-
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = 2891763938430295453L;
+
+    static {
+        TIFF_SIGNATURES[0] = new byte[]{'M', 'M', 0x00, 0x2a};
+        TIFF_SIGNATURES[1] = new byte[]{'I', 'I', 0x2a, 0x00};
+        TIFF_SIGNATURES[2] = new byte[]{'M', 'M', 0x00, 0x2b};
+    }
 
     //this has to be > 100,000 to handle some of the iworks files
     //in our unit tests
@@ -76,6 +78,53 @@ public class DefaultZipContainerDetector implements Detector {
     public DefaultZipContainerDetector(List<ZipContainerDetector> zipDetectors) {
         //TODO: OPCBased needs to be last!!!
         this.zipDetectors = zipDetectors;
+    }
+
+    static boolean isZipArchive(MediaType type) {
+        return type.equals(PackageConstants.ZIP) || type.equals(PackageConstants.JAR);
+    }
+
+    private static boolean isTiff(byte[] prefix) {
+        for (byte[] sig : TIFF_SIGNATURES) {
+            if (arrayStartWith(sig, prefix)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean arrayStartWith(byte[] needle, byte[] haystack) {
+        if (haystack.length < needle.length) {
+            return false;
+        }
+        for (int i = 0; i < needle.length; i++) {
+            if (haystack[i] != needle[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static MediaType detectArchiveFormat(byte[] prefix, int length) {
+        if (isTiff(prefix)) {
+            return TIFF;
+        }
+        try {
+            String name = ArchiveStreamFactory.detect(new ByteArrayInputStream(prefix, 0, length));
+            return PackageConstants.getMediaType(name);
+        } catch (ArchiveException e) {
+            return MediaType.OCTET_STREAM;
+        }
+    }
+
+    static MediaType detectCompressorFormat(byte[] prefix, int length) {
+        try {
+            String type =
+                    CompressorStreamFactory.detect(new ByteArrayInputStream(prefix, 0, length));
+            return CompressorConstants.getMediaType(type);
+        } catch (CompressorException e) {
+            return MediaType.OCTET_STREAM;
+        }
     }
 
     /**
@@ -134,6 +183,7 @@ public class DefaultZipContainerDetector implements Detector {
      * This will call TikaInputStream's getFile(). If there are no exceptions,
      * it will place the ZipFile in TikaInputStream's openContainer and leave it
      * open.
+     *
      * @param tis
      * @return
      */
@@ -141,13 +191,13 @@ public class DefaultZipContainerDetector implements Detector {
         try {
             ZipFile zip = new ZipFile(tis.getFile()); // TODO: hasFile()?
 
-            try{
-            for (ZipContainerDetector zipDetector : zipDetectors) {
-                MediaType type = zipDetector.detect(zip, tis);
-                if (type != null) {
-                    return type;
+            try {
+                for (ZipContainerDetector zipDetector : zipDetectors) {
+                    MediaType type = zipDetector.detect(zip, tis);
+                    if (type != null) {
+                        return type;
+                    }
                 }
-            }
             } finally {
                 tis.setOpenContainer(zip);
             }
@@ -157,54 +207,6 @@ public class DefaultZipContainerDetector implements Detector {
         }
         // Fallback: it's still a zip file, we just don't know what kind of one
         return MediaType.APPLICATION_ZIP;
-    }
-
-
-    static boolean isZipArchive(MediaType type) {
-        return type.equals(PackageConstants.ZIP)
-                || type.equals(PackageConstants.JAR);
-    }
-
-    private static boolean isTiff(byte[] prefix) {
-        for (byte[] sig : TIFF_SIGNATURES) {
-            if(arrayStartWith(sig, prefix)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static boolean arrayStartWith(byte[] needle, byte[] haystack) {
-        if (haystack.length < needle.length) {
-            return false;
-        }
-        for (int i = 0; i < needle.length; i++) {
-            if (haystack[i] != needle[i]) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    static MediaType detectArchiveFormat(byte[] prefix, int length) {
-        if (isTiff(prefix)) {
-            return TIFF;
-        }
-        try {
-            String name = ArchiveStreamFactory.detect(new ByteArrayInputStream(prefix, 0, length));
-            return PackageConstants.getMediaType(name);
-        } catch (ArchiveException e) {
-            return MediaType.OCTET_STREAM;
-        }
-    }
-
-    static MediaType detectCompressorFormat(byte[] prefix, int length) {
-        try {
-            String type = CompressorStreamFactory.detect(new ByteArrayInputStream(prefix, 0, length));
-            return CompressorConstants.getMediaType(type);
-        } catch (CompressorException e) {
-            return MediaType.OCTET_STREAM;
-        }
     }
 
     MediaType detectStreaming(InputStream input, Metadata metadata) throws IOException {
@@ -217,12 +219,11 @@ public class DefaultZipContainerDetector implements Detector {
         }
     }
 
-    MediaType detectStreaming (InputStream input,
-                               Metadata metadata, boolean allowStoredEntries) throws IOException {
+    MediaType detectStreaming(InputStream input, Metadata metadata, boolean allowStoredEntries)
+            throws IOException {
         StreamingDetectContext detectContext = new StreamingDetectContext();
-        try (ZipArchiveInputStream zis =
-                     new ZipArchiveInputStream(new CloseShieldInputStream(input),
-                             "UTF8", false, allowStoredEntries)) {
+        try (ZipArchiveInputStream zis = new ZipArchiveInputStream(
+                new CloseShieldInputStream(input), "UTF8", false, allowStoredEntries)) {
             ZipArchiveEntry zae = zis.getNextZipEntry();
             while (zae != null) {
                 MediaType mt = detect(zae, zis, detectContext);

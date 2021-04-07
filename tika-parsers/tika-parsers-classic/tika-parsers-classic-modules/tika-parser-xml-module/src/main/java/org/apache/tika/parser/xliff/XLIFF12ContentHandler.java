@@ -16,23 +16,24 @@
  */
 package org.apache.tika.parser.xliff;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
+
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Content Handler for XLIFF 1.2 documents.
  */
 public class XLIFF12ContentHandler extends DefaultHandler {
 
+    private final XHTMLContentHandler xhtml;
+    private final Metadata metadata;
     private int numberOfFiles = 0;
     private int numberOfTUs = 0;
     private boolean inTransUnit = false;
-    private final XHTMLContentHandler xhtml;
-    private final Metadata metadata;
 
     XLIFF12ContentHandler(XHTMLContentHandler xhtml, Metadata metadata) {
         this.xhtml = xhtml;
@@ -45,8 +46,7 @@ public class XLIFF12ContentHandler extends DefaultHandler {
     }
 
     @Override
-    public void startElement(
-            String uri, String localName, String qName, Attributes attributes)
+    public void startElement(String uri, String localName, String qName, Attributes attributes)
             throws SAXException {
 
         final AttributesImpl attributeVals = new AttributesImpl();
@@ -117,8 +117,7 @@ public class XLIFF12ContentHandler extends DefaultHandler {
     }
 
     @Override
-    public void characters(char[] ch, int start, int length)
-            throws SAXException {
+    public void characters(char[] ch, int start, int length) throws SAXException {
         if (inTransUnit && length != 0) {
             xhtml.characters(ch, start, length);
         }

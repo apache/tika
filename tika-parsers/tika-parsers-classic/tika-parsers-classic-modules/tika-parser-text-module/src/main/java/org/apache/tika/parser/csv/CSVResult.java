@@ -39,7 +39,6 @@ public class CSVResult implements Comparable<CSVResult> {
     }
 
     /**
-     *
      * @return returns the delimiter or <code>null</code> if the mediatype=text/plain
      */
     public Character getDelimiter() {
@@ -48,6 +47,7 @@ public class CSVResult implements Comparable<CSVResult> {
 
     /**
      * Sorts in descending order of confidence
+     *
      * @param o
      * @return
      */
@@ -58,8 +58,12 @@ public class CSVResult implements Comparable<CSVResult> {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         CSVResult csvResult = (CSVResult) o;
         return Double.compare(csvResult.confidence, confidence) == 0 &&
                 mediaType.equals(csvResult.mediaType) &&
@@ -73,11 +77,8 @@ public class CSVResult implements Comparable<CSVResult> {
 
     @Override
     public String toString() {
-        return "CSVResult{" +
-                "confidence=" + confidence +
-                ", mediaType=" + mediaType +
-                ", delimiter=" + delimiter +
-                '}';
+        return "CSVResult{" + "confidence=" + confidence + ", mediaType=" + mediaType +
+                ", delimiter=" + delimiter + '}';
     }
 
     public double getConfidence() {

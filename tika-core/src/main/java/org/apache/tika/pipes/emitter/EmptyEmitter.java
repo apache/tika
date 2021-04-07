@@ -35,7 +35,7 @@ public class EmptyEmitter implements Emitter {
     }
 
     @Override
-    public void emit(List<EmitData> emitData) throws IOException, TikaEmitterException {
+    public void emit(List<? extends EmitData> emitData) throws IOException, TikaEmitterException {
 
     }
 }

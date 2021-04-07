@@ -16,14 +16,21 @@
  */
 package org.apache.tika.parser.dbf;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.EndianUtils;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
+
+import org.apache.commons.io.IOUtils;
+
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.EndianUtils;
 
 class DBFFileHeader {
 
@@ -45,8 +52,7 @@ class DBFFileHeader {
         int lastModYear = is.read();
         int lastModMonth = is.read();
         int lastModDay = is.read();
-        Calendar now = GregorianCalendar.getInstance(
-                TimeZone.getTimeZone("UTC"), Locale.ROOT);
+        Calendar now = GregorianCalendar.getInstance(TimeZone.getTimeZone("UTC"), Locale.ROOT);
 
         //if this was last modified after the current year, assume
         //the file was created in 1900
@@ -55,9 +61,8 @@ class DBFFileHeader {
         } else {
             lastModYear += 2000;
         }
-        Calendar lastModified = new GregorianCalendar(
-                TimeZone.getTimeZone("UTC"), Locale.ROOT);
-        lastModified.set(lastModYear, lastModMonth - 1, lastModDay,0,0,0);
+        Calendar lastModified = new GregorianCalendar(TimeZone.getTimeZone("UTC"), Locale.ROOT);
+        lastModified.set(lastModYear, lastModMonth - 1, lastModDay, 0, 0, 0);
         header.lastModified = lastModified;
 
         header.numRecords = EndianUtils.readIntLE(is);
@@ -73,7 +78,7 @@ class DBFFileHeader {
             bytesAccountedFor += colHeader.fieldLength;
             numCols++;
             headers.add(colHeader);
-            if (bytesAccountedFor >= header.numBytesInRecord-1) {
+            if (bytesAccountedFor >= header.numBytesInRecord - 1) {
                 break;
             }
         }
@@ -106,10 +111,13 @@ class DBFFileHeader {
         col.setType(colType);
         col.fieldLength = fieldRecord[16] & 0xFF;
         if (col.fieldLength < 0) {
-            throw new TikaException("Field length for column "+col.getName(StandardCharsets.US_ASCII)+" is < 0");
+            throw new TikaException(
+                    "Field length for column " + col.getName(StandardCharsets.US_ASCII) +
+                            " is < 0");
         } else if (col.fieldLength > DBFReader.MAX_FIELD_LENGTH) {
-            throw new TikaException("Field length ("+col.fieldLength+") is greater than DBReader.MAX_FIELD_LENGTH ("+
-                    DBFReader.MAX_FIELD_LENGTH+")");
+            throw new TikaException("Field length (" + col.fieldLength +
+                    ") is greater than DBReader.MAX_FIELD_LENGTH (" + DBFReader.MAX_FIELD_LENGTH +
+                    ")");
         }
         col.decimalCount = fieldRecord[17] & 0xFF;
         return col;
@@ -133,12 +141,8 @@ class DBFFileHeader {
 
     @Override
     public String toString() {
-        return "DBFFileHeader{" +
-                "lastModified=" + lastModified +
-                ", numRecords=" + numRecords +
-                ", numBytesInHeader=" + numBytesInHeader +
-                ", numBytesInRecord=" + numBytesInRecord +
-                ", cols=" + Arrays.toString(cols) +
-                '}';
+        return "DBFFileHeader{" + "lastModified=" + lastModified + ", numRecords=" + numRecords +
+                ", numBytesInHeader=" + numBytesInHeader + ", numBytesInRecord=" +
+                numBytesInRecord + ", cols=" + Arrays.toString(cols) + '}';
     }
 }

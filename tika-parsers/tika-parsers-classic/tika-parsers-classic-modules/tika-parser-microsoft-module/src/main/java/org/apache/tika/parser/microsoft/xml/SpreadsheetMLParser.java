@@ -17,27 +17,26 @@
 package org.apache.tika.parser.microsoft.xml;
 
 
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.TeeContentHandler;
-import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.TeeContentHandler;
+import org.apache.tika.sax.XHTMLContentHandler;
+
 /**
  * Parses wordml 2003 format Excel files.  These are single xml files
  * that predate ooxml.
- *
+ * <p>
  * See <a href="https://en.wikipedia.org/wiki/Microsoft_Office_XML_formats">https://en.wikipedia.org/wiki/Microsoft_Office_XML_formats</a>
  */
 public class SpreadsheetMLParser extends AbstractXML2003Parser {
@@ -56,11 +55,10 @@ public class SpreadsheetMLParser extends AbstractXML2003Parser {
     }
 
     @Override
-    protected ContentHandler getContentHandler(ContentHandler ch,
-                                               Metadata metadata, ParseContext context) {
+    protected ContentHandler getContentHandler(ContentHandler ch, Metadata metadata,
+                                               ParseContext context) {
 
-        return new TeeContentHandler(
-                super.getContentHandler(ch, metadata, context),
+        return new TeeContentHandler(super.getContentHandler(ch, metadata, context),
                 new ExcelMLHandler(ch));
     }
 
@@ -95,9 +93,7 @@ public class SpreadsheetMLParser extends AbstractXML2003Parser {
                     String worksheetName = attrs.getValue(MS_SPREADSHEET_URN, "Name");
                     AttributesImpl xhtmlAttrs = new AttributesImpl();
                     if (worksheetName != null) {
-                        xhtmlAttrs.addAttribute(XHTMLContentHandler.XHTML,
-                                NAME_ATTR,
-                                NAME_ATTR,
+                        xhtmlAttrs.addAttribute(XHTMLContentHandler.XHTML, NAME_ATTR, NAME_ATTR,
                                 CDATA, worksheetName);
                     }
                     handler.startElement(XHTMLContentHandler.XHTML, DIV, DIV, xhtmlAttrs);
@@ -130,27 +126,16 @@ public class SpreadsheetMLParser extends AbstractXML2003Parser {
                     handler.endElement(XHTMLContentHandler.XHTML, TABLE, TABLE);
 
                 } else if (WORKSHEET.equals(localName)) {
-                    handler.endElement(
-                            XHTMLContentHandler.XHTML,
-                            DIV, DIV
-                    );
+                    handler.endElement(XHTMLContentHandler.XHTML, DIV, DIV);
                 } else if (ROW.equals(localName)) {
-                    handler.endElement(
-                            XHTMLContentHandler.XHTML,
-                            TR, TR
-                    );
+                    handler.endElement(XHTMLContentHandler.XHTML, TR, TR);
                 } else if (CELL.equals(localName)) {
-                    handler.endElement(
-                            XHTMLContentHandler.XHTML,
-                            TD, TD
-                    );
+                    handler.endElement(XHTMLContentHandler.XHTML, TD, TD);
                 } else if (DATA.equals(localName)) {
                     if (href != null) {
                         AttributesImpl attrs = new AttributesImpl();
-                        attrs.addAttribute(XHTMLContentHandler.XHTML,
-                                HREF, HREF, CDATA, href);
-                        handler.startElement(XHTMLContentHandler.XHTML,
-                                A, A, attrs);
+                        attrs.addAttribute(XHTMLContentHandler.XHTML, HREF, HREF, CDATA, href);
+                        handler.startElement(XHTMLContentHandler.XHTML, A, A, attrs);
                     }
                     String b = buffer.toString();
                     if (b == null) {
@@ -159,8 +144,7 @@ public class SpreadsheetMLParser extends AbstractXML2003Parser {
                     char[] chars = b.trim().toCharArray();
                     handler.characters(chars, 0, chars.length);
                     if (href != null) {
-                        handler.endElement(XHTMLContentHandler.XHTML,
-                                A, A);
+                        handler.endElement(XHTMLContentHandler.XHTML, A, A);
                     }
                     buffer.setLength(0);
                     inData = false;

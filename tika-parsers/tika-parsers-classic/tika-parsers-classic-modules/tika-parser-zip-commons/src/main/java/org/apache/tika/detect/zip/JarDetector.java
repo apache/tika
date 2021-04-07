@@ -16,14 +16,14 @@
  */
 package org.apache.tika.detect.zip;
 
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
-import org.apache.commons.compress.archivers.zip.ZipFile;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.mime.MediaType;
-
 import java.io.IOException;
 import java.io.InputStream;
+
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipFile;
+
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.mime.MediaType;
 
 public class JarDetector implements ZipContainerDetector {
 
@@ -60,8 +60,7 @@ public class JarDetector implements ZipContainerDetector {
     }
 
     @Override
-    public MediaType streamingDetectUpdate(ZipArchiveEntry zae,
-                                           InputStream zis,
+    public MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis,
                                            StreamingDetectContext detectContext) {
 
         String name = zae.getName();
@@ -99,5 +98,6 @@ public class JarDetector implements ZipContainerDetector {
         return null;
     }
 
-    private static class SeenManifest { }
+    private static class SeenManifest {
+    }
 }

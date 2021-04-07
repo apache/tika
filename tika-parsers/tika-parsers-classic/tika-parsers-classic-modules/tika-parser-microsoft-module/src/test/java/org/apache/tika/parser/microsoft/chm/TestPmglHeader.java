@@ -30,44 +30,38 @@ public class TestPmglHeader {
     public void setUp() throws Exception {
         byte[] data = TestParameters.chmData;
         chmPmglHeader = new ChmPmglHeader();
-        chmPmglHeader.parse(ChmCommons.copyOfRange(data,
-                ChmConstants.START_PMGL, ChmConstants.START_PMGL
-                        + ChmConstants.CHM_PMGL_LEN + 10), chmPmglHeader);
+        chmPmglHeader.parse(ChmCommons.copyOfRange(data, ChmConstants.START_PMGL,
+                ChmConstants.START_PMGL + ChmConstants.CHM_PMGL_LEN + 10), chmPmglHeader);
     }
 
     @Test
     public void testToString() {
-        assertTrue((chmPmglHeader != null)
-                && chmPmglHeader.toString().length() > 0);
+        assertTrue((chmPmglHeader != null) && chmPmglHeader.toString().length() > 0);
     }
 
     @Test
     public void testChmPmglHeaderGet() {
-        assertEquals(TestParameters.VP_PMGL_SIGNATURE, new String(
-                chmPmglHeader.getSignature(), UTF_8));
+        assertEquals(TestParameters.VP_PMGL_SIGNATURE,
+                new String(chmPmglHeader.getSignature(), UTF_8));
     }
 
     @Test
     public void testGetBlockNext() {
-        assertEquals(TestParameters.VP_PMGL_BLOCK_NEXT,
-                chmPmglHeader.getBlockNext());
+        assertEquals(TestParameters.VP_PMGL_BLOCK_NEXT, chmPmglHeader.getBlockNext());
     }
 
     @Test
     public void testGetBlockPrev() {
-        assertEquals(TestParameters.VP_PMGL_BLOCK_PREV,
-                chmPmglHeader.getBlockPrev());
+        assertEquals(TestParameters.VP_PMGL_BLOCK_PREV, chmPmglHeader.getBlockPrev());
     }
 
     @Test
     public void testGetFreeSpace() {
-        assertEquals(TestParameters.VP_PMGL_FREE_SPACE,
-                chmPmglHeader.getFreeSpace());
+        assertEquals(TestParameters.VP_PMGL_FREE_SPACE, chmPmglHeader.getFreeSpace());
     }
 
     @Test
     public void testGetUnknown0008() {
-        assertEquals(TestParameters.VP_PMGL_UNKNOWN_008,
-                chmPmglHeader.getUnknown0008());
+        assertEquals(TestParameters.VP_PMGL_UNKNOWN_008, chmPmglHeader.getUnknown0008());
     }
 }

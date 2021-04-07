@@ -16,51 +16,52 @@
  */
 package org.apache.tika.parser.ner.nltk;
 
-import org.apache.tika.parser.ner.NERecogniser;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import org.apache.cxf.jaxrs.client.WebClient;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Collection;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Properties;
-import java.util.Iterator;
-import java.util.Locale;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
-import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.tika.parser.ner.NERecogniser;
 
 /**
- *  This class offers an implementation of {@link NERecogniser} based on
- *  ne_chunk() module of NLTK. This NER requires additional setup,
- *  due to Http requests to an endpoint server that runs NLTK.
- *  See <a href="http://wiki.apache.org/tika/TikaAndNLTK">
- *
+ * This class offers an implementation of {@link NERecogniser} based on
+ * ne_chunk() module of NLTK. This NER requires additional setup,
+ * due to Http requests to an endpoint server that runs NLTK.
+ * See <a href="http://wiki.apache.org/tika/TikaAndNLTK">
  */
 public class NLTKNERecogniser implements NERecogniser {
 
-    private static final Logger LOG = LoggerFactory.getLogger(NLTKNERecogniser.class);
-    private static boolean available = false;
-    private static final String NLTK_REST_HOST = "http://localhost:8881";
-    private String restHostUrlStr;
-     /**
+    /**
      * some common entities identified by NLTK
      */
-    public static final Set<String> ENTITY_TYPES = new HashSet<String>(){{
-        add("NAMES");
-    }};
+    public static final Set<String> ENTITY_TYPES = new HashSet<String>() {
+        {
+            add("NAMES");
+        }
+    };
+
+    private static final Logger LOG = LoggerFactory.getLogger(NLTKNERecogniser.class);
+    private static final String NLTK_REST_HOST = "http://localhost:8881";
+    private static boolean available = false;
+    private String restHostUrlStr;
 
 
-    public NLTKNERecogniser(){
+    public NLTKNERecogniser() {
         try {
 
-            String restHostUrlStr="";
+            String restHostUrlStr = "";
             try {
                 restHostUrlStr = readRestUrl();
             } catch (IOException e) {
@@ -75,10 +76,9 @@ public class NLTKNERecogniser implements NERecogniser {
 
             Response response = WebClient.create(restHostUrlStr).accept(MediaType.TEXT_HTML).get();
             int responseCode = response.getStatus();
-            if(responseCode == 200){
+            if (responseCode == 200) {
                 available = true;
-            }
-            else{
+            } else {
                 LOG.info("NLTKRest Server is not running");
             }
 
@@ -89,8 +89,7 @@ public class NLTKNERecogniser implements NERecogniser {
 
     private static String readRestUrl() throws IOException {
         Properties nltkProperties = new Properties();
-        nltkProperties.load(NLTKNERecogniser.class
-                .getResourceAsStream("NLTKServer.properties"));
+        nltkProperties.load(NLTKNERecogniser.class.getResourceAsStream("NLTKServer.properties"));
 
         return nltkProperties.getProperty("nltk.server.url");
     }
@@ -105,6 +104,7 @@ public class NLTKNERecogniser implements NERecogniser {
 
     /**
      * Gets set of entity types recognised by this recogniser
+     *
      * @return set of entity classes/types
      */
     public Set<String> getEntityTypes() {
@@ -113,6 +113,7 @@ public class NLTKNERecogniser implements NERecogniser {
 
     /**
      * recognises names of entities in the text
+     *
      * @param text text which possibly contains names
      * @return map of entity type -&gt; set of names
      */
@@ -128,14 +129,14 @@ public class NLTKNERecogniser implements NERecogniser {
                 JSONObject j = (JSONObject) parser.parse(result);
                 for (Object o : j.keySet()) {
                     String key = (String) o;
-                    if ( !key.equals("result") ) {
+                    if (!key.equals("result")) {
                         ENTITY_TYPES.add(key);
-                        entities.put(key.toUpperCase(Locale.ENGLISH), new HashSet((Collection) j.get(key)));
+                        entities.put(key.toUpperCase(Locale.ENGLISH),
+                                new HashSet((Collection) j.get(key)));
                     }
                 }
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             LOG.debug(e.getMessage(), e);
         }
 

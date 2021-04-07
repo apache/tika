@@ -16,27 +16,24 @@
  */
 package org.apache.tika.server.client;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import static org.junit.Assert.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static org.junit.Assert.assertTrue;
+import org.junit.Ignore;
+import org.junit.Test;
 
 @Ignore("turn into actual unit test")
 public class TestBasic {
 
     @Test
     public void testBasic() throws Exception {
-        Path p = Paths.get(TestBasic.class.getResource("/tika-config-simple-fs-emitter.xml").toURI());
+        Path p = Paths.get(
+                TestBasic.class.getResource("/tika-config-simple-fs-emitter.xml").toURI());
         assertTrue(Files.isRegularFile(p));
-        String[] args = new String[]{
-                p.toAbsolutePath().toString(),
-                "http://localhost:9998/",
-                "fs"
-        };
+        String[] args = new String[]{p.toAbsolutePath().toString(), "http://localhost:9998/", "fs"};
         TikaClientCLI.main(args);
     }
 }

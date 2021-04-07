@@ -467,7 +467,7 @@ public class TikaConfig {
 
         if (serviceLoaderElement != null) {
             boolean dynamic = Boolean.parseBoolean(serviceLoaderElement.getAttribute("dynamic"));
-            LoadErrorHandler loadErrorHandler = LoadErrorHandler.IGNORE;
+            LoadErrorHandler loadErrorHandler = LoadErrorHandler.THROW;
             String loadErrorHandleConfig = serviceLoaderElement.getAttribute("loadErrorHandler");
             if (LoadErrorHandler.WARN.toString().equalsIgnoreCase(loadErrorHandleConfig)) {
                 loadErrorHandler = LoadErrorHandler.WARN;

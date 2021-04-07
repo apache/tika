@@ -16,23 +16,22 @@
  */
 package org.apache.tika.parser.ocr;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.utils.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * Configuration for TesseractOCRParser.
@@ -59,66 +58,76 @@ public class TesseractOCRConfig implements Serializable {
 
     private static Pattern ALLOWABLE_OTHER_PARAMS_PATTERN =
             Pattern.compile("(?i)^[-_/\\.A-Z0-9]+$");
-
-    public enum OUTPUT_TYPE {
-        TXT,
-        HOCR
-    }
-
     // Language dictionary to be used.
     private String language = "eng";
-
     // Tesseract page segmentation mode.
     private String pageSegMode = "1";
-
     // Minimum file size to submit file to ocr.
     private long minFileSizeToOcr = 0;
-
     // Maximum file size to submit file to ocr.
     private long maxFileSizeToOcr = Integer.MAX_VALUE;
-
     // Maximum time (seconds) to wait for the ocring process termination
     private int timeoutSeconds = 120;
-
     // The format of the ocr'ed output to be returned, txt or hocr.
     private OUTPUT_TYPE outputType = OUTPUT_TYPE.TXT;
-
     // enable image preprocessing with ImageMagick (optional)
     private boolean enableImagePreprocessing = false;
-
     // resolution of processed image (in dpi).
     private int density = 300;
-
     // number of bits in a color sample within a pixel.
     private int depth = 4;
-
     // colorspace of processed image.
     private String colorspace = "gray";
-
     // filter to be applied to the processed image.
     private String filter = "triangle";
-
     // factor by which image is to be scaled.
     // TODO: we should make this dynamic depending on the size of the image
     // The current testRotation.png takes minutes to expand 900%
     private int resize = 200;
-
     // See setPageSeparator.
     private String pageSeparator = "";
-
     // whether or not to preserve interword spacing
     private boolean preserveInterwordSpacing = false;
-
     // whether or not to apply rotation calculated by the rotation.py script
     private boolean applyRotation = false;
-
     // runtime switch to turn off OCR
     private boolean skipOcr = false;
-
     // See addOtherTesseractConfig.
     private Map<String, String> otherTesseractConfig = new HashMap<>();
-
     private Set<String> userConfigured = new HashSet<>();
+
+    /**
+     * This takes a language string, parses it and then bins individual langs into
+     * valid or invalid based on regexes against the language codes
+     *
+     * @param language
+     * @param validLangs
+     * @param invalidLangs
+     */
+    public static void getLangs(String language, Set<String> validLangs, Set<String> invalidLangs) {
+        if (StringUtils.isBlank(language)) {
+            return;
+        }
+        // Get rid of embedded spaces
+        language = language.replaceAll("\\s", "");
+        // Test for leading or trailing +
+        if (language.matches("\\+.*|.*\\+")) {
+            throw new IllegalArgumentException(
+                    "Invalid syntax - Can't start or end with +" + language);
+        }
+        // Split on the + sign
+        final String[] langs = language.split("\\+");
+        for (String lang : langs) {
+            // First, make sure it conforms to the correct syntax
+            if (!lang.matches(
+                    "([a-zA-Z]{3}(_[a-zA-Z]{3,4}){0,2})|script(/|\\\\)[A-Z][a-zA-Z_]+")) {
+                invalidLangs.add(lang + " (invalid syntax)");
+            } else {
+                validLangs.add(lang);
+            }
+        }
+    }
+
     /**
      * @see #setLanguage(String language)
      */
@@ -130,9 +139,11 @@ public class TesseractOCRConfig implements Serializable {
      * Set tesseract language dictionary to be used. Default is "eng".
      * languages are either:
      * <ol>
-     *   <li>Nominally an ISO-639-2 code but compound codes are allowed separated by underscore: e.g., chi_tra_vert, aze_cyrl</li>
+     *   <li>Nominally an ISO-639-2 code but compound codes are allowed separated by underscore:
+     *   e.g., chi_tra_vert, aze_cyrl</li>
      *   <li>A file path in the script directory.  The name starts with upper-case letter.
-     *       Some of them have underscores and other upper-case letters: e.g., script/Arabic, script/HanS_vert, script/Japanese_vert, script/Canadian_Aboriginal</li>
+     *       Some of them have underscores and other upper-case letters: e.g., script/Arabic,
+     *       script/HanS_vert, script/Japanese_vert, script/Canadian_Aboriginal</li>
      * </ol>
      * Multiple languages may be specified, separated by plus characters.
      * e.g. "chi_tra+chi_sim+script/Arabic"
@@ -142,8 +153,7 @@ public class TesseractOCRConfig implements Serializable {
         Set<String> validCodes = new HashSet<>();
         getLangs(languageString, validCodes, invalidCodes);
         if (!invalidCodes.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Invalid language code(s): " + invalidCodes);
+            throw new IllegalArgumentException("Invalid language code(s): " + invalidCodes);
         }
         this.language = languageString;
         userConfigured.add("language");
@@ -176,9 +186,12 @@ public class TesseractOCRConfig implements Serializable {
     }
 
     /**
-     * The page separator to use in plain text output.  This corresponds to Tesseract's page_separator config option.
-     * The default here is the empty string (i.e. no page separators).  Note that this is also the default in
-     * Tesseract 3.x, but in Tesseract 4.0 the default is to use the form feed control character.  We are overriding
+     * The page separator to use in plain text output.  This corresponds to Tesseract's
+     * page_separator config option.
+     * The default here is the empty string (i.e. no page separators).  Note that this is also
+     * the default in
+     * Tesseract 3.x, but in Tesseract 4.0 the default is to use the form feed control character.
+     * We are overriding
      * Tesseract 4.0's default here.
      *
      * @param pageSeparator
@@ -204,6 +217,13 @@ public class TesseractOCRConfig implements Serializable {
     }
 
     /**
+     * @return whether or not to maintain interword spacing.
+     */
+    public boolean isPreserveInterwordSpacing() {
+        return preserveInterwordSpacing;
+    }
+
+    /**
      * Whether or not to maintain interword spacing.  Default is <code>false</code>.
      *
      * @param preserveInterwordSpacing
@@ -211,13 +231,6 @@ public class TesseractOCRConfig implements Serializable {
     public void setPreserveInterwordSpacing(boolean preserveInterwordSpacing) {
         this.preserveInterwordSpacing = preserveInterwordSpacing;
         userConfigured.add("preserveInterwordSpacing");
-    }
-
-    /**
-     * @return whether or not to maintain interword spacing.
-     */
-    public boolean isPreserveInterwordSpacing() {
-        return preserveInterwordSpacing;
     }
 
     /**
@@ -253,6 +266,14 @@ public class TesseractOCRConfig implements Serializable {
     }
 
     /**
+     * @return timeout value for Tesseract
+     * @see #setTimeoutSeconds(int timeout)
+     */
+    public int getTimeoutSeconds() {
+        return timeoutSeconds;
+    }
+
+    /**
      * Set maximum time (seconds) to wait for the ocring process to terminate.
      * Default value is 120s.
      */
@@ -262,11 +283,10 @@ public class TesseractOCRConfig implements Serializable {
     }
 
     /**
-     * @return timeout value for Tesseract
-     * @see #setTimeoutSeconds(int timeout)
+     * @see #setOutputType(OUTPUT_TYPE outputType)
      */
-    public int getTimeoutSeconds() {
-        return timeoutSeconds;
+    public OUTPUT_TYPE getOutputType() {
+        return outputType;
     }
 
     /**
@@ -290,13 +310,6 @@ public class TesseractOCRConfig implements Serializable {
         } else {
             throw new IllegalArgumentException("outputType must be either 'txt' or 'hocr'");
         }
-    }
-
-    /**
-     * @see #setOutputType(OUTPUT_TYPE outputType)
-     */
-    public OUTPUT_TYPE getOutputType() {
-        return outputType;
     }
 
     /**
@@ -329,7 +342,8 @@ public class TesseractOCRConfig implements Serializable {
      */
     public void setDensity(int density) {
         if (density < 150 || density > 1200) {
-            throw new IllegalArgumentException("Invalid density value. Valid range of values is 150-1200.");
+            throw new IllegalArgumentException(
+                    "Invalid density value. Valid range of values is 150-1200.");
         }
         this.density = density;
         userConfigured.add("density");
@@ -355,7 +369,8 @@ public class TesseractOCRConfig implements Serializable {
                 return;
             }
         }
-        throw new IllegalArgumentException("Invalid depth value. Valid values are 2, 4, 8, 16, 32, 64, 256, 4096.");
+        throw new IllegalArgumentException(
+                "Invalid depth value. Valid values are 2, 4, 8, 16, 32, 64, 256, 4096.");
     }
 
     /**
@@ -374,7 +389,8 @@ public class TesseractOCRConfig implements Serializable {
             throw new IllegalArgumentException("Colorspace value cannot be null.");
         }
         if (!colorspace.matches("(?i)^[-_A-Z0-9]+$")) {
-            throw new IllegalArgumentException("colorspace must match this pattern: (?i)^[-_A-Z0-9]+$");
+            throw new IllegalArgumentException(
+                    "colorspace must match this pattern: (?i)^[-_A-Z0-9]+$");
         }
         this.colorspace = colorspace;
         userConfigured.add("colorspace");
@@ -388,16 +404,20 @@ public class TesseractOCRConfig implements Serializable {
     }
 
     /**
-     * @param filter the filter to set. Valid values are point, hermite, cubic, box, gaussian, catrom, triangle, quadratic and mitchell.
+     * @param filter the filter to set. Valid values are point, hermite, cubic, box, gaussian,
+     *               catrom, triangle, quadratic and mitchell.
      *               Default value is triangle.
      */
     public void setFilter(String filter) {
         if (filter.equals(null)) {
-            throw new IllegalArgumentException("Filter value cannot be null. Valid values are point, hermite, "
-                    + "cubic, box, gaussian, catrom, triangle, quadratic and mitchell.");
+            throw new IllegalArgumentException(
+                    "Filter value cannot be null. Valid values are point, hermite, " +
+                            "cubic, box, gaussian, catrom, triangle, quadratic and mitchell.");
         }
 
-        String[] allowedFilters = {"Point", "Hermite", "Cubic", "Box", "Gaussian", "Catrom", "Triangle", "Quadratic", "Mitchell"};
+        String[] allowedFilters =
+                {"Point", "Hermite", "Cubic", "Box", "Gaussian", "Catrom", "Triangle", "Quadratic",
+                        "Mitchell"};
         for (String allowedFilter : allowedFilters) {
             if (filter.equalsIgnoreCase(allowedFilter)) {
                 this.filter = filter;
@@ -405,22 +425,24 @@ public class TesseractOCRConfig implements Serializable {
                 return;
             }
         }
-        throw new IllegalArgumentException("Invalid filter value. Valid values are point, hermite, "
-                + "cubic, box, gaussian, catrom, triangle, quadratic and mitchell.");
+        throw new IllegalArgumentException(
+                "Invalid filter value. Valid values are point, hermite, " +
+                        "cubic, box, gaussian, catrom, triangle, quadratic and mitchell.");
+    }
+
+    public boolean isSkipOcr() {
+        return skipOcr;
     }
 
     /**
      * If you want to turn off OCR at run time for a specific file,
      * set this to <code>true</code>
+     *
      * @param skipOcr
      */
     public void setSkipOcr(boolean skipOcr) {
         this.skipOcr = skipOcr;
         userConfigured.add("skipOcr");
-    }
-
-    public boolean isSkipOcr() {
-        return skipOcr;
     }
 
     /**
@@ -442,11 +464,13 @@ public class TesseractOCRConfig implements Serializable {
                 return;
             }
         }
-        throw new IllegalArgumentException("Invalid resize value. Valid range of values is 100-900.");
+        throw new IllegalArgumentException(
+                "Invalid resize value. Valid range of values is 100-900.");
     }
 
     /**
-     * @return Whether or not a rotation value should be calculated and passed to ImageMagick before performing OCR.
+     * @return Whether or not a rotation value should be calculated and passed to ImageMagick
+     * before performing OCR.
      */
     public boolean isApplyRotation() {
         return this.applyRotation;
@@ -511,8 +535,8 @@ public class TesseractOCRConfig implements Serializable {
             if ("userConfigured".equals(field.getName())) {
                 continue;
             }
-            if ("otherTesseractConfig".equals(field.getName())
-                    && updates.userConfigured.contains(field.getName())) {
+            if ("otherTesseractConfig".equals(field.getName()) &&
+                    updates.userConfigured.contains(field.getName())) {
                 //deep copy
                 for (Map.Entry<String, String> e : updates.getOtherTesseractConfig().entrySet()) {
                     updated.addOtherTesseractConfig(e.getKey(), e.getValue());
@@ -536,32 +560,7 @@ public class TesseractOCRConfig implements Serializable {
         return updated;
     }
 
-    /**
-     * This takes a language string, parses it and then bins individual langs into
-     * valid or invalid based on regexes against the language codes
-     * @param language
-     * @param validLangs
-     * @param invalidLangs
-     */
-    public static void getLangs(String language, Set<String> validLangs, Set<String> invalidLangs) {
-        if (StringUtils.isBlank(language)) {
-            return;
-        }
-        // Get rid of embedded spaces
-        language = language.replaceAll("\\s", "");
-        // Test for leading or trailing +
-        if (language.matches("\\+.*|.*\\+")) {
-            throw new IllegalArgumentException("Invalid syntax - Can't start or end with +" + language);
-        }
-        // Split on the + sign
-        final String[] langs = language.split("\\+");
-        for (String lang : langs) {
-            // First, make sure it conforms to the correct syntax
-            if (!lang.matches("([a-zA-Z]{3}(_[a-zA-Z]{3,4}){0,2})|script(/|\\\\)[A-Z][a-zA-Z_]+")) {
-                invalidLangs.add(lang + " (invalid syntax)");
-            } else {
-                validLangs.add(lang);
-            }
-        }
+    public enum OUTPUT_TYPE {
+        TXT, HOCR
     }
 }

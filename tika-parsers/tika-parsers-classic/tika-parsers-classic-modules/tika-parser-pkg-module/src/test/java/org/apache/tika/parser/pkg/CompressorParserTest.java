@@ -24,14 +24,15 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
+import org.junit.Assume;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.detect.zip.CompressorConstants;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 public class CompressorParserTest extends TikaTest {
     //These compressed stream types can't currently
@@ -61,11 +62,11 @@ public class CompressorParserTest extends TikaTest {
             //use this instead of assertNotEquals so that we report the
             //name of the missing stream
             if (mt.equals(MediaType.OCTET_STREAM)) {
-                fail("getting octet-stream for: "+name);
+                fail("getting octet-stream for: " + name);
             }
 
-            if (! compressorParser.getSupportedTypes(parseContext).contains(mt)) {
-                fail("CompressorParser should support: "+mt.toString());
+            if (!compressorParser.getSupportedTypes(parseContext).contains(mt)) {
+                fail("CompressorParser should support: " + mt.toString());
             }
         }
     }
@@ -73,8 +74,8 @@ public class CompressorParserTest extends TikaTest {
     @Test(expected = TikaException.class)
     public void testQuineXHTML() throws Exception {
         //Anti-virus can surreptitiously remove this file
-        Assume.assumeTrue(CompressorParserTest.class
-                .getResourceAsStream("/test-documents/quine.gz") != null);
+        Assume.assumeTrue(
+                CompressorParserTest.class.getResourceAsStream("/test-documents/quine.gz") != null);
 
         //https://blog.matthewbarber.io/2019/07/22/how-to-make-compressed-file-quines
         getXML("quine.gz");
@@ -83,8 +84,8 @@ public class CompressorParserTest extends TikaTest {
     @Test
     public void testQuineRecursive() throws Exception {
         //Anti-virus can surreptitiously remove this file
-        Assume.assumeTrue(CompressorParserTest.class
-                .getResourceAsStream("/test-documents/quine.gz") != null);
+        Assume.assumeTrue(
+                CompressorParserTest.class.getResourceAsStream("/test-documents/quine.gz") != null);
         //https://blog.matthewbarber.io/2019/07/22/how-to-make-compressed-file-quines
         getRecursiveMetadata("quine.gz");
     }

@@ -159,7 +159,8 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
              * be used to open a charset (e.g. IBM424_rtl). The ending '_rtl' or 'ltr'
              * should be stripped off before creating the string.
              */
-            int startSuffix = name.indexOf("_rtl") < 0 ? name.indexOf("_ltr") : name.indexOf("_rtl");
+            int startSuffix =
+                    name.indexOf("_rtl") < 0 ? name.indexOf("_ltr") : name.indexOf("_rtl");
             if (startSuffix > 0) {
                 name = name.substring(0, startSuffix);
             }
@@ -203,7 +204,8 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
     /**
      * Get the ISO code for the language of the detected charset.
      *
-     * @return The ISO code for the language or <code>null</code> if the language cannot be determined.
+     * @return The ISO code for the language or <code>null</code> if the
+     * language cannot be determined.
      * @stable ICU 3.4
      */
     public String getLanguage() {
@@ -235,6 +237,7 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
 
     /**
      * compare this CharsetMatch to another based on confidence value
+     *
      * @param o the CharsetMatch object to compare against
      * @return true if equal
      */
@@ -249,6 +252,7 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
 
     /**
      * generates a hashCode based on the confidence value
+     *
      * @return the hashCode
      */
     public int hashCode() {

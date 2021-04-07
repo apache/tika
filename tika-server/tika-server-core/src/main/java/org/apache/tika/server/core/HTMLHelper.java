@@ -17,12 +17,12 @@
 
 package org.apache.tika.server.core;
 
-import org.apache.commons.io.IOUtils;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
 import java.io.InputStream;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import org.apache.commons.io.IOUtils;
 
 /**
  * Helps produce user facing HTML output.
@@ -62,4 +62,5 @@ public class HTMLHelper {
 
     public void generateFooter(StringBuffer html) {
         html.append(POST_BODY);
-    }}
+    }
+}

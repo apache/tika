@@ -25,6 +25,9 @@ import org.apache.fontbox.ttf.NameRecord;
 import org.apache.fontbox.ttf.NamingTable;
 import org.apache.fontbox.ttf.TTFParser;
 import org.apache.fontbox.ttf.TrueTypeFont;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -33,31 +36,27 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * Parser for TrueType font files (TTF).
  */
 public class TrueTypeParser extends AbstractParser {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = 44788554612243032L;
 
-    private static final MediaType TYPE =
-        MediaType.application("x-font-ttf");
+    private static final MediaType TYPE = MediaType.application("x-font-ttf");
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-        Collections.singleton(TYPE);
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(TYPE);
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
         TikaInputStream tis = TikaInputStream.cast(stream);
 
         // Ask FontBox to parse the file for us
@@ -72,10 +71,8 @@ public class TrueTypeParser extends AbstractParser {
 
             // Report the details of the font
             metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
-            metadata.set(TikaCoreProperties.CREATED,
-                    font.getHeader().getCreated());
-            metadata.set(TikaCoreProperties.MODIFIED,
-                    font.getHeader().getModified());
+            metadata.set(TikaCoreProperties.CREATED, font.getHeader().getCreated());
+            metadata.set(TikaCoreProperties.MODIFIED, font.getHeader().getModified());
             metadata.set(AdobeFontMetricParser.MET_DOC_VERSION,
                     Float.toString(font.getHeader().getVersion()));
 

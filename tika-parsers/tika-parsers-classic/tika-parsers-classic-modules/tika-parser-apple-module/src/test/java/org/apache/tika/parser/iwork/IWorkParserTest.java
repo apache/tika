@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.iwork;
 
-import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -24,14 +23,15 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 
+import org.junit.Before;
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Before;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
 
 /**
  * Tests if the IWork parser parses the content and metadata properly of the supported formats.
@@ -68,12 +68,17 @@ public class IWorkParserTest extends TikaTest {
         // (Exact numbers will vary based on composites)
         assertTrue("Insufficient metadata found " + metadata.size(), metadata.size() >= 6);
         List<String> metadataKeys = Arrays.asList(metadata.names());
-        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(Metadata.CONTENT_TYPE));
-        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(Office.SLIDE_COUNT.getName()));
-//        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(Office.SLIDE_COUNT.getName()));
-        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(TikaCoreProperties.CREATOR.getName()));
-        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(TikaCoreProperties.TITLE.getName()));
-        
+        assertTrue("Metadata not found in " + metadataKeys,
+                metadataKeys.contains(Metadata.CONTENT_TYPE));
+        assertTrue("Metadata not found in " + metadataKeys,
+                metadataKeys.contains(Office.SLIDE_COUNT.getName()));
+//        assertTrue("Metadata not found in " + metadataKeys,
+//        metadataKeys.contains(Office.SLIDE_COUNT.getName()));
+        assertTrue("Metadata not found in " + metadataKeys,
+                metadataKeys.contains(TikaCoreProperties.CREATOR.getName()));
+        assertTrue("Metadata not found in " + metadataKeys,
+                metadataKeys.contains(TikaCoreProperties.TITLE.getName()));
+
         // Check the metadata values
         assertEquals("application/vnd.apple.keynote", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("3", metadata.get(Office.SLIDE_COUNT));
@@ -112,7 +117,8 @@ public class IWorkParserTest extends TikaTest {
     @Test
     public void testKeynoteBulletPoints() throws Exception {
         String content = getText("testBulletPoints.key", iWorkParser);
-        assertTrue(content.replaceAll("\\s+", " ").contains("bullet point 1 bullet point 2 bullet point 3"));
+        assertTrue(content.replaceAll("\\s+", " ")
+                .contains("bullet point 1 bullet point 2 bullet point 3"));
     }
 
     // TIKA-923
@@ -141,13 +147,19 @@ public class IWorkParserTest extends TikaTest {
         // (Exact numbers will vary based on composites)
         assertTrue("Insufficient metadata found " + metadata.size(), metadata.size() >= 50);
         List<String> metadataKeys = Arrays.asList(metadata.names());
-        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(Metadata.CONTENT_TYPE));
-        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(Office.PAGE_COUNT.getName()));
-        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(TikaCoreProperties.CREATOR.getName()));
-        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(TikaCoreProperties.TITLE.getName()));
-        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(TikaCoreProperties.MODIFIED.getName()));
-        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(TikaCoreProperties.LANGUAGE.getName()));
-        
+        assertTrue("Metadata not found in " + metadataKeys,
+                metadataKeys.contains(Metadata.CONTENT_TYPE));
+        assertTrue("Metadata not found in " + metadataKeys,
+                metadataKeys.contains(Office.PAGE_COUNT.getName()));
+        assertTrue("Metadata not found in " + metadataKeys,
+                metadataKeys.contains(TikaCoreProperties.CREATOR.getName()));
+        assertTrue("Metadata not found in " + metadataKeys,
+                metadataKeys.contains(TikaCoreProperties.TITLE.getName()));
+        assertTrue("Metadata not found in " + metadataKeys,
+                metadataKeys.contains(TikaCoreProperties.MODIFIED.getName()));
+        assertTrue("Metadata not found in " + metadataKeys,
+                metadataKeys.contains(TikaCoreProperties.LANGUAGE.getName()));
+
         // Check the metadata values
         assertEquals("application/vnd.apple.pages", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Tika user", metadata.get(TikaCoreProperties.CREATOR));
@@ -196,13 +208,19 @@ public class IWorkParserTest extends TikaTest {
         // (Exact numbers will vary based on composites)
         assertTrue("Insufficient metadata found " + metadata.size(), metadata.size() >= 8);
         List<String> metadataKeys = Arrays.asList(metadata.names());
-        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(Metadata.CONTENT_TYPE));
-        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(Office.PAGE_COUNT.getName()));
-        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(TikaCoreProperties.CREATOR.getName()));
-        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(TikaCoreProperties.COMMENTS.getName()));
-        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(TikaCoreProperties.TITLE.getName()));
-        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(TikaCoreProperties.TITLE.getName()));
-        
+        assertTrue("Metadata not found in " + metadataKeys,
+                metadataKeys.contains(Metadata.CONTENT_TYPE));
+        assertTrue("Metadata not found in " + metadataKeys,
+                metadataKeys.contains(Office.PAGE_COUNT.getName()));
+        assertTrue("Metadata not found in " + metadataKeys,
+                metadataKeys.contains(TikaCoreProperties.CREATOR.getName()));
+        assertTrue("Metadata not found in " + metadataKeys,
+                metadataKeys.contains(TikaCoreProperties.COMMENTS.getName()));
+        assertTrue("Metadata not found in " + metadataKeys,
+                metadataKeys.contains(TikaCoreProperties.TITLE.getName()));
+        assertTrue("Metadata not found in " + metadataKeys,
+                metadataKeys.contains(TikaCoreProperties.TITLE.getName()));
+
         // Check the metadata values
         assertEquals("2", metadata.get(Office.PAGE_COUNT));
         assertEquals("Tika User", metadata.get(TikaCoreProperties.CREATOR));
@@ -228,22 +246,22 @@ public class IWorkParserTest extends TikaTest {
         String content = getText("tableNames.numbers", iWorkParser);
         assertContains("This is the main table", content);
     }
-        
+
     @Test
     public void testParseNumbersTableHeaders() throws Exception {
         String content = getText("tableHeaders.numbers");
-        for(int header = 1;header <= 5;header++) {
-          assertContains("header" + header, content);
+        for (int header = 1; header <= 5; header++) {
+            assertContains("header" + header, content);
         }
-        for(int row = 1;row <= 3;row++) {
-          assertContains("row" + row, content);
+        for (int row = 1; row <= 3; row++) {
+            assertContains("row" + row, content);
         }
     }
 
     /**
      * We don't currently support password protected Pages files, as
-     *  we don't know how the encryption works (it's not regular Zip
-     *  Encryption). See TIKA-903 for details
+     * we don't know how the encryption works (it's not regular Zip
+     * Encryption). See TIKA-903 for details
      */
     @Test
     public void testParsePagesPasswordProtected() throws Exception {
@@ -251,11 +269,11 @@ public class IWorkParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         String content = getText("testPagesPwdProtected.pages", iWorkParser, metadata);
         assertEquals("", content);
-       
+
         // Will have been identified as encrypted
         assertEquals("application/x-tika-iworks-protected", metadata.get(Metadata.CONTENT_TYPE));
     }
-    
+
     /**
      * Check we get headers, footers and footnotes from Pages
      */
@@ -272,46 +290,46 @@ public class IWorkParserTest extends TikaTest {
         assertContains("Both Pages 1.x", content); // P1
         assertContains("understanding the Pages document", content); // P1
         assertContains("should be page 2", content); // P2
-       
+
         // Check for headers, footers and footnotes
         assertContains(header, content);
         assertContains(footer, content);
         assertContains(footer2, content);
         assertContains(footnote, content);
     }
-    
+
     /**
      * Check we get upper-case Roman numerals within the footer for AutoPageNumber.
      */
     @Test
     public void testParsePagesHeadersFootersRomanUpper() throws Exception {
-       String header = "THIS IS SOME HEADER TEXT";
-       String footer = "THIS IS SOME FOOTER TEXT\tI";
-       String footer2 = "THIS IS SOME FOOTER TEXT\tII";
+        String header = "THIS IS SOME HEADER TEXT";
+        String footer = "THIS IS SOME FOOTER TEXT\tI";
+        String footer2 = "THIS IS SOME FOOTER TEXT\tII";
 
-       String content = getText("testPagesHeadersFootersRomanUpper.pages", iWorkParser);
+        String content = getText("testPagesHeadersFootersRomanUpper.pages", iWorkParser);
 
-       // Check for headers, footers and footnotes
-       assertContains(header, content);
-       assertContains(footer, content);
-       assertContains(footer2, content);
+        // Check for headers, footers and footnotes
+        assertContains(header, content);
+        assertContains(footer, content);
+        assertContains(footer2, content);
     }
-    
+
     /**
      * Check we get lower-case Roman numerals within the footer for AutoPageNumber.
      */
     @Test
     public void testParsePagesHeadersFootersRomanLower() throws Exception {
-       String header = "THIS IS SOME HEADER TEXT";
-       String footer = "THIS IS SOME FOOTER TEXT\ti";
-       String footer2 = "THIS IS SOME FOOTER TEXT\tii";
+        String header = "THIS IS SOME HEADER TEXT";
+        String footer = "THIS IS SOME FOOTER TEXT\ti";
+        String footer2 = "THIS IS SOME FOOTER TEXT\tii";
 
-       String content = getText("testPagesHeadersFootersRomanLower.pages", iWorkParser);
+        String content = getText("testPagesHeadersFootersRomanLower.pages", iWorkParser);
 
-       // Check for headers, footers and footnotes
-       assertContains(header, content);
-       assertContains(footer, content);
-       assertContains(footer2, content);
+        // Check for headers, footers and footnotes
+        assertContains(header, content);
+        assertContains(footer, content);
+        assertContains(footer2, content);
     }
 
     /**
@@ -330,7 +348,7 @@ public class IWorkParserTest extends TikaTest {
         assertContains(footer, content);
         assertContains(footer2, content);
     }
- 
+
     /**
      * Check we get lower-case alpha-numeric letters within the footer for AutoPageNumber.
      */
@@ -347,7 +365,7 @@ public class IWorkParserTest extends TikaTest {
         assertContains(footer, content);
         assertContains(footer2, content);
     }
-    
+
     /**
      * Check we get annotations (eg comments) from Pages
      */
@@ -362,12 +380,12 @@ public class IWorkParserTest extends TikaTest {
         assertContains("Both Pages 1.x", content); // P1
         assertContains("understanding the Pages document", content); // P1
         assertContains("should be page 2", content); // P2
-       
+
         // Check for comments
         assertContains(commentA, content);
         assertContains(commentB, content);
     }
-    
+
     // TIKA-918
     @Test
     public void testNumbersExtractChartNames() throws Exception {
@@ -380,10 +398,11 @@ public class IWorkParserTest extends TikaTest {
     //TIKA-3020
     @Test
     public void testKeyNoteTableMarkup() throws Exception {
-        String expected = "<table><tr>\t<td>Cell one</td>\t<td>Cell two</td>\t<td>Cell three</td></tr>" +
-                "<tr>\t<td>Cell four</td>\t<td>Cell 5</td>\t<td>Cell six</td></tr>" +
-                "<tr>\t<td>7</td>\t<td>Cell eight</td>\t<td>5/5/1985</td></tr>" +
-                "</table>";
+        String expected =
+                "<table><tr>\t<td>Cell one</td>\t<td>Cell two</td>\t<td>Cell three</td></tr>" +
+                        "<tr>\t<td>Cell four</td>\t<td>Cell 5</td>\t<td>Cell six</td></tr>" +
+                        "<tr>\t<td>7</td>\t<td>Cell eight</td>\t<td>5/5/1985</td></tr>" +
+                        "</table>";
         String xml = getXML("testKeynote.key", iWorkParser).xml;
         xml = xml.replaceAll("[\r\n]", "");
         assertContains(expected, xml);

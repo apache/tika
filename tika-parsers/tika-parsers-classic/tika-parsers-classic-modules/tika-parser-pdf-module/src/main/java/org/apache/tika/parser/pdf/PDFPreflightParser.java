@@ -17,6 +17,11 @@
 
 package org.apache.tika.parser.pdf;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Path;
+import java.util.List;
+
 import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSDictionary;
 import org.apache.pdfbox.cos.COSDocument;
@@ -33,36 +38,55 @@ import org.apache.pdfbox.preflight.PreflightDocument;
 import org.apache.pdfbox.preflight.ValidationResult;
 import org.apache.pdfbox.preflight.exception.SyntaxValidationException;
 import org.apache.pdfbox.preflight.parser.PreflightParser;
+
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.ExceptionUtils;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Path;
-import java.util.List;
-
-import static org.apache.pdfbox.preflight.PreflightConstants.DICTIONARY_KEY_LINEARIZED;
-
 public class PDFPreflightParser extends PDFParser {
 
     private static final PDFPreflightParserConfig DEFAULT = new PDFPreflightParserConfig();
 
+    /**
+     * Copied verbatim from PDFBox
+     * <p>
+     * According to the PDF Reference, A linearized PDF contain a dictionary as first object
+     * (linearized dictionary) and
+     * only this one in the first section.
+     *
+     * @param document the document to validate.
+     * @return the linearization dictionary or null.
+     */
+    protected static COSDictionary getLinearizedDictionary(PDDocument document) {
+        // ---- Get Ref to obj
+        COSDocument cDoc = document.getDocument();
+        List<?> lObj = cDoc.getObjects();
+        for (Object object : lObj) {
+            COSBase curObj = ((COSObject) object).getObject();
+            if (curObj instanceof COSDictionary && ((COSDictionary) curObj).keySet()
+                    .contains(COSName.getPDFName(PreflightConstants.DICTIONARY_KEY_LINEARIZED))) {
+                return (COSDictionary) curObj;
+            }
+        }
+        return null;
+    }
+
     @Override
     protected PDDocument getPDDocument(InputStream inputStream, String password,
-                                       MemoryUsageSetting memoryUsageSetting,
-                                       Metadata metadata, ParseContext parseContext) throws IOException {
+                                       MemoryUsageSetting memoryUsageSetting, Metadata metadata,
+                                       ParseContext parseContext) throws IOException {
         try (TikaInputStream tis = TikaInputStream.get(inputStream)) {
-            return getPDDocument(tis.getPath(), password, memoryUsageSetting, metadata, parseContext);
+            return getPDDocument(tis.getPath(), password, memoryUsageSetting, metadata,
+                    parseContext);
         }
     }
 
     @Override
     protected PDDocument getPDDocument(Path path, String password,
-                                       MemoryUsageSetting memoryUsageSetting,
-                                       Metadata metadata, ParseContext context) throws IOException {
+                                       MemoryUsageSetting memoryUsageSetting, Metadata metadata,
+                                       ParseContext context) throws IOException {
         PDFPreflightParserConfig pppConfig = context.get(PDFPreflightParserConfig.class, DEFAULT);
 
         PreflightConfiguration configuration = new PreflightConfiguration();
@@ -107,8 +131,7 @@ public class PDFPreflightParser extends PDFParser {
         metadata.set(PDF.PREFLIGHT_XREF_TYPE, resolver.getXrefType().toString());
         if (preflightContext.getIccProfileWrapper() != null &&
                 preflightContext.getIccProfileWrapper().getProfile() != null) {
-            metadata.set(
-                    PDF.PREFLIGHT_ICC_PROFILE,
+            metadata.set(PDF.PREFLIGHT_ICC_PROFILE,
                     preflightContext.getIccProfileWrapper().getProfile().toString());
         }
         COSDictionary linearized = getLinearizedDictionary(preflightDocument);
@@ -129,34 +152,9 @@ public class PDFPreflightParser extends PDFParser {
         }
     }
 
-    /**
-     * Copied verbatim from PDFBox
-     *
-     * According to the PDF Reference, A linearized PDF contain a dictionary as first object (linearized dictionary) and
-     * only this one in the first section.
-     *
-     * @param document the document to validate.
-     * @return the linearization dictionary or null.
-     */
-    protected static COSDictionary getLinearizedDictionary(PDDocument document) {
-        // ---- Get Ref to obj
-        COSDocument cDoc = document.getDocument();
-        List<?> lObj = cDoc.getObjects();
-        for (Object object : lObj) {
-            COSBase curObj = ((COSObject) object).getObject();
-            if (curObj instanceof COSDictionary
-                    && ((COSDictionary) curObj).keySet().contains(COSName.getPDFName(
-                            PreflightConstants.DICTIONARY_KEY_LINEARIZED))) {
-                return (COSDictionary) curObj;
-            }
-        }
-        return null;
-    }
-
-    private PDDocument handleSyntaxException(Path path,
-                                             String password,
-                                             MemoryUsageSetting memoryUsageSetting, Metadata metadata,
-                                             SyntaxValidationException e)
+    private PDDocument handleSyntaxException(Path path, String password,
+                                             MemoryUsageSetting memoryUsageSetting,
+                                             Metadata metadata, SyntaxValidationException e)
             throws IOException {
         metadata.add(PDF.PREFLIGHT_PARSE_EXCEPTION, ExceptionUtils.getStackTrace(e));
         return PDDocument.load(path.toFile(), password, memoryUsageSetting);

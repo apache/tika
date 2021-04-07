@@ -23,6 +23,13 @@
 -->
 
 <module name = "Checker">
+
+  <!-- TODO: move this into tika-parsers-class-module/tika-parsers-text-module -->
+  <module name="SuppressionSingleFilter">
+    <property name="checks" value="RegexpHeader"/>
+    <property name="files" value="(CharsetMatch.java)|(CharsetDetector.java)|(CharsetRecog.*.java)"/>
+  </module>
+
   <property name="charset" value="UTF-8"/>
 
   <property name="severity" value="error"/>

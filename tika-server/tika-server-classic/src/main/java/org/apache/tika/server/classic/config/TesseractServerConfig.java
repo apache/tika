@@ -16,20 +16,18 @@
  */
 package org.apache.tika.server.classic.config;
 
+import static org.apache.tika.server.core.resource.TikaResource.processHeaderConfig;
+
+import java.util.List;
+import java.util.Map;
+import javax.ws.rs.core.MultivaluedMap;
+
 import org.apache.commons.lang3.StringUtils;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.DocumentSelector;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.server.core.ParseContextConfig;
-
-import javax.ws.rs.core.MultivaluedMap;
-
-import java.util.List;
-import java.util.Map;
-
-import static org.apache.tika.server.core.resource.TikaResource.processHeaderConfig;
 
 /**
  * Tesseract configuration, for the request
@@ -45,13 +43,13 @@ public class TesseractServerConfig implements ParseContextConfig {
      * Configures the parseContext with present headers.
      * Note: only first value of header is considered.
      *
-     * @param httpHeaders the headers.
-     * @param metadata  the metadata.
-     * @param parseContext  the parse context to configure.
+     * @param httpHeaders  the headers.
+     * @param metadata     the metadata.
+     * @param parseContext the parse context to configure.
      */
     @Override
-    public void configure(MultivaluedMap<String, String> httpHeaders,
-                          Metadata metadata, ParseContext parseContext) {
+    public void configure(MultivaluedMap<String, String> httpHeaders, Metadata metadata,
+                          ParseContext parseContext) {
         //lazily initialize configs
         //if a header is submitted, any params set in --tika-config tika-config.xml
         //upon server startup will be ignored.
@@ -59,7 +57,8 @@ public class TesseractServerConfig implements ParseContextConfig {
         for (Map.Entry<String, List<String>> kvp : httpHeaders.entrySet()) {
             if (StringUtils.startsWithIgnoreCase(kvp.getKey(), X_TIKA_OCR_HEADER_PREFIX)) {
                 ocrConfig = (ocrConfig == null) ? new TesseractOCRConfig() : ocrConfig;
-                processHeaderConfig(ocrConfig, kvp.getKey(), kvp.getValue().get(0).trim(), X_TIKA_OCR_HEADER_PREFIX);
+                processHeaderConfig(ocrConfig, kvp.getKey(), kvp.getValue().get(0).trim(),
+                        X_TIKA_OCR_HEADER_PREFIX);
             }
         }
         if (ocrConfig != null) {

@@ -32,7 +32,7 @@ public class JsonEmitData {
             jsonGenerator.writeStartObject();
             EmitKey key = emitData.getEmitKey();
             jsonGenerator.writeStringField(JsonFetchEmitTuple.EMITTER, key.getEmitterName());
-            jsonGenerator.writeStringField(JsonFetchEmitTuple.EMITKEY, key.getKey());
+            jsonGenerator.writeStringField(JsonFetchEmitTuple.EMITKEY, key.getEmitKey());
             jsonGenerator.writeFieldName("data");
             jsonGenerator.writeStartArray();
             for (Metadata m : emitData.getMetadataList()) {

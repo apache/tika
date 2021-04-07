@@ -16,37 +16,42 @@
  */
 package org.apache.tika.parser.pkg;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.io.InputStream;
+import java.security.NoSuchAlgorithmException;
+import javax.crypto.Cipher;
+
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
-
-import javax.crypto.Cipher;
-import java.io.InputStream;
-import java.security.NoSuchAlgorithmException;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Test case for parsing 7z files.
  */
 public class Seven7ParserTest extends AbstractPkgTest {
     private static final MediaType TYPE_7ZIP = MediaType.application("x-7z-compressed");
-    
+
+    private static boolean isStrongCryptoAvailable() throws NoSuchAlgorithmException {
+        return Cipher.getMaxAllowedKeyLength("AES/ECB/PKCS5Padding") >= 256;
+    }
+
     @Test
     public void test7ZParsing() throws Exception {
         Metadata metadata = new Metadata();
-        
+
         // Ensure 7zip is a parsable format
-        assertTrue("No 7zip parser found", 
+        assertTrue("No 7zip parser found",
                 AUTO_DETECT_PARSER.getSupportedTypes(recursingContext).contains(TYPE_7ZIP));
-        
+
         // Parse
         String content = getText("test-documents.7z", metadata);
 
@@ -75,19 +80,20 @@ public class Seven7ParserTest extends AbstractPkgTest {
     public void testPasswordProtected() throws Exception {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
-        
+
         // No password, will fail with EncryptedDocumentException
         boolean ex = false;
-        try (InputStream stream = getResourceAsStream("/test-documents/test7Z_protected_passTika.7z")) {
+        try (InputStream stream = getResourceAsStream(
+                "/test-documents/test7Z_protected_passTika.7z")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
             fail("Shouldn't be able to read a password protected 7z without the password");
         } catch (EncryptedDocumentException e) {
             // Good
             ex = true;
         }
-        
+
         assertTrue("test no password", ex);
-        
+
         // No password, will fail with EncryptedDocumentException
         ex = false;
         try (InputStream stream = getResourceAsStream("/test-documents/full_encrypted.7z")) {
@@ -96,14 +102,14 @@ public class Seven7ParserTest extends AbstractPkgTest {
         } catch (EncryptedDocumentException e) {
             // Good
             ex = true;
-        } catch (Exception e){
+        } catch (Exception e) {
             ex = false;
         }
-        
+
         assertTrue("test no password for full encrypted 7z", ex);
 
         ex = false;
-        
+
         // Wrong password currently silently gives no content
         // Ideally we'd like Commons Compress to give an error, but it doesn't...
         recursingContext.set(PasswordProvider.class, new PasswordProvider() {
@@ -113,11 +119,13 @@ public class Seven7ParserTest extends AbstractPkgTest {
             }
         });
         handler = new BodyContentHandler();
-        try (InputStream stream = getResourceAsStream("/test-documents/test7Z_protected_passTika.7z")) {
+        try (InputStream stream = getResourceAsStream(
+                "/test-documents/test7Z_protected_passTika.7z")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
             fail("Shouldn't be able to read a password protected 7z with wrong password");
         } catch (TikaException e) {
-            //if JCE is installed, the cause will be: Caused by: org.tukaani.xz.CorruptedInputException: Compressed data is corrupt
+            //if JCE is installed, the cause will be:
+            // Caused by: org.tukaani.xz.CorruptedInputException: Compressed data is corrupt
             //if JCE is not installed, the message will include
             // "(do you have the JCE  Unlimited Strength Jurisdiction Policy Files installed?")
             ex = true;
@@ -136,7 +144,8 @@ public class Seven7ParserTest extends AbstractPkgTest {
                 }
             });
             handler = new BodyContentHandler();
-            try (InputStream stream = getResourceAsStream("/test-documents/test7Z_protected_passTika.7z")) {
+            try (InputStream stream = getResourceAsStream(
+                    "/test-documents/test7Z_protected_passTika.7z")) {
                 AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
             }
 
@@ -161,16 +170,13 @@ public class Seven7ParserTest extends AbstractPkgTest {
                 }
             });
             handler = new BodyContentHandler();
-            try (InputStream stream = getResourceAsStream("/test-documents/test7Z_protected_passTika.7z")) {
+            try (InputStream stream = getResourceAsStream(
+                    "/test-documents/test7Z_protected_passTika.7z")) {
                 AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
             } catch (TikaException e) {
                 ioe = true;
             }
             assertTrue("IOException because JCE was not installed", ioe);
         }
-    }
-
-    private static boolean isStrongCryptoAvailable() throws NoSuchAlgorithmException {
-        return Cipher.getMaxAllowedKeyLength("AES/ECB/PKCS5Padding") >= 256;
     }
 }

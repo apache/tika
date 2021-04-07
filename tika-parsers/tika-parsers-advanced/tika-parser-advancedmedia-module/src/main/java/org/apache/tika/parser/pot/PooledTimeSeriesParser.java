@@ -37,6 +37,12 @@ import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteWatchdog;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.exec.environment.EnvironmentUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -50,11 +56,6 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.parser.mp4.MP4Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
 
 /**
  * Uses the Pooled Time Series algorithm + command line tool, to
@@ -65,20 +66,19 @@ import org.xml.sax.helpers.AttributesImpl;
  */
 public class PooledTimeSeriesParser extends AbstractParser {
 
+    static final boolean isAvailable =
+            ExternalParser.check(new String[]{"pooled-time-series", "--help"}, -1);
     private static final long serialVersionUID = -2855917932512164988L;
-
-    static final boolean isAvailable = ExternalParser.check(
-            new String[]{"pooled-time-series", "--help"}, -1);
-
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            isAvailable ? Collections.unmodifiableSet(
-                    new HashSet<>(Arrays.asList(new MediaType[]{
-                            MediaType.video("avi"), MediaType.video("mp4")
-                    }))) : Collections.<MediaType>emptySet();
+    private static final Set<MediaType> SUPPORTED_TYPES = isAvailable ? Collections.unmodifiableSet(
+            new HashSet<>(Arrays.asList(
+                    new MediaType[]{MediaType.video("avi"), MediaType.video("mp4")}))) :
+            Collections.<MediaType>emptySet();
     ;
     // TODO: Add all supported video types
 
     private static final Logger LOG = LoggerFactory.getLogger(PooledTimeSeriesParser.class);
+    // TIKA-1445 workaround parser
+    private static Parser _TMP_VIDEO_METADATA_PARSER = new CompositeVideoParser();
 
     /**
      * Returns the set of media types supported by this parser when used with the
@@ -114,9 +114,8 @@ public class PooledTimeSeriesParser extends AbstractParser {
      * @since Apache Tika 0.5
      */
     @Override
-    public void parse(InputStream stream, ContentHandler handler,
-                      Metadata metadata, ParseContext context) throws IOException,
-            SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
 
         if (!isAvailable) {
             LOG.warn("PooledTimeSeries not installed!");
@@ -130,10 +129,10 @@ public class PooledTimeSeriesParser extends AbstractParser {
             TikaInputStream tikaStream = TikaInputStream.get(stream, tmp);
             File input = tikaStream.getFile();
             String cmdOutput = computePoT(input);
-            try(InputStream ofStream = new FileInputStream(new File(
-                    input.getAbsoluteFile() + ".of.txt"))) {
-                try(InputStream ogStream = new FileInputStream(new File(
-                        input.getAbsoluteFile() + ".hog.txt"))) {
+            try (InputStream ofStream = new FileInputStream(
+                    new File(input.getAbsoluteFile() + ".of.txt"))) {
+                try (InputStream ogStream = new FileInputStream(
+                        new File(input.getAbsoluteFile() + ".hog.txt"))) {
 
                     extractHeaderOutput(ofStream, metadata, "of");
                     extractHeaderOutput(ogStream, metadata, "og");
@@ -156,22 +155,7 @@ public class PooledTimeSeriesParser extends AbstractParser {
         }
     }
 
-    // TIKA-1445 workaround parser
-    private static Parser _TMP_VIDEO_METADATA_PARSER = new CompositeVideoParser();
-
-    private static class CompositeVideoParser extends CompositeParser {
-        private static final long serialVersionUID = -2398203965206381382L;
-        private static List<Parser> videoParsers = Arrays.asList(new Parser[]{
-                new MP4Parser()
-        });
-
-        CompositeVideoParser() {
-            super(new MediaTypeRegistry(), videoParsers);
-        }
-    }
-
-    private String computePoT(File input)
-            throws IOException, TikaException {
+    private String computePoT(File input) throws IOException, TikaException {
 
         CommandLine cmdLine = new CommandLine("pooled-time-series");
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -184,8 +168,7 @@ public class PooledTimeSeriesParser extends AbstractParser {
         exec.setWatchdog(watchdog);
         PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
         exec.setStreamHandler(streamHandler);
-        int exitValue = exec
-                .execute(cmdLine, EnvironmentUtils.getProcEnvironment());
+        int exitValue = exec.execute(cmdLine, EnvironmentUtils.getProcEnvironment());
         return outputStream.toString("UTF-8");
 
     }
@@ -202,11 +185,9 @@ public class PooledTimeSeriesParser extends AbstractParser {
      * @throws SAXException if the XHTML SAX events could not be handled
      * @throws IOException  if an input error occurred
      */
-    private void doExtract(InputStream stream, XHTMLContentHandler xhtml,
-                           String tableTitle, String frames, String vecSize) throws SAXException,
-            IOException {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream,
-                UTF_8))) {
+    private void doExtract(InputStream stream, XHTMLContentHandler xhtml, String tableTitle,
+                           String frames, String vecSize) throws SAXException, IOException {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, UTF_8))) {
             String line = null;
             AttributesImpl attributes = new AttributesImpl();
             attributes.addAttribute("", "", "rows", "CDATA", frames);
@@ -229,10 +210,9 @@ public class PooledTimeSeriesParser extends AbstractParser {
         }
     }
 
-    private void extractHeaderOutput(InputStream stream, Metadata metadata,
-                                     String prefix) throws IOException {
-        try(BufferedReader reader = new BufferedReader(new InputStreamReader(stream,
-                UTF_8))) {
+    private void extractHeaderOutput(InputStream stream, Metadata metadata, String prefix)
+            throws IOException {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, UTF_8))) {
             String line = reader.readLine();
             String[] firstLine = line.split(" ");
             String frames = firstLine[0];
@@ -243,6 +223,15 @@ public class PooledTimeSeriesParser extends AbstractParser {
             }
             metadata.add(prefix + "_frames", frames);
             metadata.add(prefix + "_vecSize", vecSize);
+        }
+    }
+
+    private static class CompositeVideoParser extends CompositeParser {
+        private static final long serialVersionUID = -2398203965206381382L;
+        private static List<Parser> videoParsers = Arrays.asList(new Parser[]{new MP4Parser()});
+
+        CompositeVideoParser() {
+            super(new MediaTypeRegistry(), videoParsers);
         }
     }
 

@@ -18,6 +18,7 @@
 package org.apache.tika.parser.hdf;
 
 //JDK imports
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,6 +26,12 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import ucar.nc2.Attribute;
+import ucar.nc2.Group;
+import ucar.nc2.NetcdfFile;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -33,15 +40,8 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.netcdf.NetCDFParser;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
-import ucar.nc2.Attribute;
-import ucar.nc2.Group;
-import ucar.nc2.NetcdfFile;
 
 /**
- * 
  * Since the {@link NetCDFParser} depends on the <a
  * href="http://www.unidata.ucar.edu/software/netcdf-java" >NetCDF-Java</a> API,
  * we are able to use it to parse HDF files as well. See <a href=
@@ -50,15 +50,17 @@ import ucar.nc2.NetcdfFile;
  */
 public class HDFParser extends AbstractParser {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = 1091208208003437549L;
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-        Collections.singleton(MediaType.application("x-hdf"));
+            Collections.singleton(MediaType.application("x-hdf"));
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * org.apache.tika.parser.netcdf.NetCDFParser#getSupportedTypes(org.apache
      * .tika.parser.ParseContext)
@@ -69,15 +71,14 @@ public class HDFParser extends AbstractParser {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * org.apache.tika.parser.netcdf.NetCDFParser#parse(java.io.InputStream,
      * org.xml.sax.ContentHandler, org.apache.tika.metadata.Metadata,
      * org.apache.tika.parser.ParseContext)
      */
-    public void parse(InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context) throws IOException,
-            SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         IOUtils.copy(stream, os);
 
@@ -110,8 +111,7 @@ public class HDFParser extends AbstractParser {
                 met.add(attribute.getFullName(), attribute.getStringValue());
             } else {
                 // try and cast its value to a string
-                met.add(attribute.getFullName(), String.valueOf(attribute
-                        .getNumericValue()));
+                met.add(attribute.getFullName(), String.valueOf(attribute.getNumericValue()));
             }
         }
 

@@ -20,19 +20,11 @@ import org.apache.ctakes.typesystem.type.textsem.IdentifiedAnnotation;
 
 /**
  * This enumeration includes the properties that an {@link IdentifiedAnnotation} object can provide.
- *
  */
 public enum CTAKESAnnotationProperty {
-    BEGIN("start"),
-    END("end"),
-    CONDITIONAL("conditional"),
-    CONFIDENCE("confidence"),
-    DISCOVERY_TECNIQUE("discoveryTechnique"),
-    GENERIC("generic"),
-    HISTORY_OF("historyOf"),
-    ID("id"),
-    ONTOLOGY_CONCEPT_ARR("ontologyConceptArr"),
-    POLARITY("polarity");
+    BEGIN("start"), END("end"), CONDITIONAL("conditional"), CONFIDENCE("confidence"),
+    DISCOVERY_TECNIQUE("discoveryTechnique"), GENERIC("generic"), HISTORY_OF("historyOf"), ID("id"),
+    ONTOLOGY_CONCEPT_ARR("ontologyConceptArr"), POLARITY("polarity");
 
     private String name;
 

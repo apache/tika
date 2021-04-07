@@ -1,4 +1,3 @@
-package org.apache.tika.parser.microsoft.rtf;
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -15,9 +14,18 @@ package org.apache.tika.parser.microsoft.rtf;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.parser.microsoft.rtf;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -27,13 +35,6 @@ import org.apache.tika.metadata.RTFMetadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.EmbeddedContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * This class buffers data from embedded objects and pictures.
@@ -61,6 +62,7 @@ class RTFEmbObjHandler {
     private final ContentHandler handler;
     private final EmbeddedDocumentUtil embeddedDocumentUtil;
     private final ByteArrayOutputStream os;
+    private final int memoryLimitInKb;
     //high hex cached for writing hexpair chars (data)
     private int hi = -1;
     private int thumbCount = 0;
@@ -72,9 +74,9 @@ class RTFEmbObjHandler {
     private StringBuilder sb = new StringBuilder();
     private Metadata metadata;
     private EMB_STATE state = EMB_STATE.NADA;
-    private final int memoryLimitInKb;
 
-    protected RTFEmbObjHandler(ContentHandler handler, Metadata metadata, ParseContext context, int memoryLimitInKb) {
+    protected RTFEmbObjHandler(ContentHandler handler, Metadata metadata, ParseContext context,
+                               int memoryLimitInKb) {
         this.handler = handler;
         this.embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
         os = new ByteArrayOutputStream();
@@ -152,8 +154,8 @@ class RTFEmbObjHandler {
         if (len < 0) {
             throw new TikaException("Requesting I read < 0 bytes ?!");
         }
-        if (len > memoryLimitInKb*1024) {
-            throw new TikaMemoryLimitException(len, (memoryLimitInKb*1024));
+        if (len > memoryLimitInKb * 1024) {
+            throw new TikaMemoryLimitException(len, (memoryLimitInKb * 1024));
         }
 
         byte[] bytes = new byte[len];
@@ -209,18 +211,18 @@ class RTFEmbObjHandler {
             if (metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY) == null) {
                 String extension = embeddedDocumentUtil.getExtension(stream, metadata);
                 if (inObject && state == EMB_STATE.PICT) {
-                    metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "thumbnail_" + thumbCount++ + extension);
+                    metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
+                            "thumbnail_" + thumbCount++ + extension);
                     metadata.set(RTFMetadata.THUMBNAIL, "true");
                 } else {
-                    metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "file_" + unknownFilenameCount.getAndIncrement() +
-                            extension);
+                    metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
+                            "file_" + unknownFilenameCount.getAndIncrement() + extension);
                 }
             }
             try {
-                embeddedDocumentUtil.parseEmbedded(
-                        stream,
-                        new EmbeddedContentHandler(handler),
-                        metadata, false);
+                embeddedDocumentUtil
+                        .parseEmbedded(stream, new EmbeddedContentHandler(handler), metadata,
+                                false);
             } catch (IOException e) {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
             } finally {

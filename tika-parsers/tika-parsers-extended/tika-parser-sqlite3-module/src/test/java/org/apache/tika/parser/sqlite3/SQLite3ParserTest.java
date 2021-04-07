@@ -1,5 +1,3 @@
-package org.apache.tika.parser.sqlite3;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,37 +14,19 @@ package org.apache.tika.parser.sqlite3;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.parser.sqlite3;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.tika.TikaTest;
-import org.apache.tika.extractor.EmbeddedResourceHandler;
-import org.apache.tika.extractor.ParserContainerExtractor;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Database;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.EmptyParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.RecursiveParserWrapper;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
-import org.apache.tika.sax.BasicContentHandlerFactory;
-import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.sax.RecursiveParserWrapperHandler;
-import org.apache.tika.sax.ToXMLContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
+
+import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.BodyContentHandler;
 
 public class SQLite3ParserTest extends TikaTest {
     private final static String TEST_FILE_NAME = "testSqlite3b.db";
@@ -72,7 +52,8 @@ public class SQLite3ParserTest extends TikaTest {
     public void testNulls() throws Exception {
         String xml = getXML(TEST_FILE_NAME).xml.replaceAll("\\s+", "");
         //everything except for the first key column should be empty
-        TikaTest.assertContains("<tr><td>2</td><td/><td/><td/><td/><td/><td/><td/><td/><td/></tr>", xml);
+        TikaTest.assertContains("<tr><td>2</td><td/><td/><td/><td/><td/><td/><td/><td/><td/></tr>",
+                xml);
     }
 
     //code used for creating the test file
@@ -131,7 +112,8 @@ public class SQLite3ParserTest extends TikaTest {
         ps.setString(8, "2015-01-02");
         ps.setString(9, "2015-01-03 15:17:03");
 //        ps.setClob(10, new StringReader(sql));
-        ps.setBytes(10, getByteArray(this.getClass().getResourceAsStream("/test-documents/testWORD_1img.doc")));//contains "quick brown fox"
+        ps.setBytes(10, getByteArray(this.getClass()
+        .getResourceAsStream("/test-documents/testWORD_1img.doc")));//contains "quick brown fox"
         ps.executeUpdate();
         ps.clearParameters();
 
@@ -145,7 +127,8 @@ public class SQLite3ParserTest extends TikaTest {
         ps.setString(8, "2015-01-04");
         ps.setString(9, "2015-01-03 15:17:03");
         //ps.setClob(9, new StringReader("consectetur adipiscing elit"));
-        ps.setBytes(10, getByteArray(this.getClass().getResourceAsStream("/test-documents/testWORD_1img.docx")));//contains "The end!"
+        ps.setBytes(10, getByteArray(this.getClass()
+        .getResourceAsStream("/test-documents/testWORD_1img.docx")));//contains "The end!"
 
         ps.executeUpdate();
         //now add a fully null row

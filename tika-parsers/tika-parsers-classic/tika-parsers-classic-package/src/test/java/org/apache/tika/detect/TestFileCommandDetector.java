@@ -16,15 +16,16 @@
  */
 package org.apache.tika.detect;
 
-import org.apache.tika.MultiThreadedTikaTest;
-import org.apache.tika.utils.XMLReaderUtils;
-import org.junit.Test;
+import static org.junit.Assume.assumeTrue;
 
 import java.io.File;
 import java.io.FileFilter;
 import java.util.Random;
 
-import static org.junit.Assume.assumeTrue;
+import org.junit.Test;
+
+import org.apache.tika.MultiThreadedTikaTest;
+import org.apache.tika.utils.XMLReaderUtils;
 
 public class TestFileCommandDetector extends MultiThreadedTikaTest {
 
@@ -39,6 +40,7 @@ public class TestFileCommandDetector extends MultiThreadedTikaTest {
             //for now, randomly pick 20 files.
             int toProcess = 20;
             int processed = 0;
+
             @Override
             public boolean accept(File pathname) {
                 if (processed >= toProcess) {
@@ -53,7 +55,7 @@ public class TestFileCommandDetector extends MultiThreadedTikaTest {
         int numThreads = 5;
         XMLReaderUtils.setPoolSize(numThreads);
 
-        testDetector(detector, numThreads, 20, filter, numThreads*3);
+        testDetector(detector, numThreads, 20, filter, numThreads * 3);
 
     }
 }

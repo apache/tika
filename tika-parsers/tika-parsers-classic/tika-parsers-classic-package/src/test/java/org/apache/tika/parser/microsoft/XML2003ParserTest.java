@@ -17,21 +17,22 @@
 
 package org.apache.tika.parser.microsoft;
 
-import org.apache.tika.TikaTest;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Office;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+
+import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 public class XML2003ParserTest extends TikaTest {
     @Test
     public void testBasicWord() throws Exception {
-        List<Metadata> list =  getRecursiveMetadata("testWORD2003.xml");
+        List<Metadata> list = getRecursiveMetadata("testWORD2003.xml");
         assertEquals(8, list.size());
         Metadata m = list.get(0);//container doc
         String xml = m.get(TikaCoreProperties.TIKA_CONTENT);
@@ -39,7 +40,9 @@ public class XML2003ParserTest extends TikaTest {
         //make sure that metadata gets dumped to xml
         assertContains("<meta name=\"meta:character-count-with-spaces\" content=\"256\"", xml);
         //do not allow nested <p> elements
-        assertContains("<p /> <img href=\"02000003.jpg\" /><p /> <p><img href=\"02000004.jpg\" /></p>", xml);
+        assertContains(
+                "<p /> <img href=\"02000003.jpg\" /><p /> <p><img href=\"02000004.jpg\" /></p>",
+                xml);
         assertContains("<table><tbody>", xml);
         assertContains("</tbody></table>", xml);
         assertContains("<td><p>R1 c1</p> </td>", xml);
@@ -67,10 +70,12 @@ public class XML2003ParserTest extends TikaTest {
         assertContains("moscow-birds",
                 Arrays.asList(list.get(7).getValues(TikaCoreProperties.SUBJECT)));
 
-        assertEquals("testJPEG_EXIF.jpg", list.get(7).get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
+        assertEquals("testJPEG_EXIF.jpg",
+                list.get(7).get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
 
         //check that text is extracted with breaks between elements
-        String txt = getText(getResourceAsStream("/test-documents/testWORD2003.xml"),AUTO_DETECT_PARSER);
+        String txt = getText(getResourceAsStream("/test-documents/testWORD2003.xml"),
+                AUTO_DETECT_PARSER);
         txt = txt.replaceAll("\\s+", " ");
         assertNotContained("beforeR1", txt);
         assertContains("R1 c1 R1 c2", txt);

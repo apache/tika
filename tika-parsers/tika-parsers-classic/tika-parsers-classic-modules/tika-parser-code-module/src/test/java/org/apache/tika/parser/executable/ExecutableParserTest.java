@@ -18,12 +18,11 @@ package org.apache.tika.parser.executable;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.Arrays;
+import org.junit.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.junit.Test;
 
 public class ExecutableParserTest extends TikaTest {
 
@@ -33,34 +32,25 @@ public class ExecutableParserTest extends TikaTest {
         Metadata metadata = r.metadata;
 
         assertEquals("application/x-msdownload", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("2012-05-13T13:40:11Z",
-                metadata.get(TikaCoreProperties.CREATED));
+        assertEquals("2012-05-13T13:40:11Z", metadata.get(TikaCoreProperties.CREATED));
 
-        assertEquals(ExecutableParser.MACHINE_x86_32,
-                metadata.get(ExecutableParser.MACHINE_TYPE));
-        assertEquals("Little",
-                metadata.get(ExecutableParser.ENDIAN));
-        assertEquals("32",
-                metadata.get(ExecutableParser.ARCHITECTURE_BITS));
-        assertEquals("Windows",
-                metadata.get(ExecutableParser.PLATFORM));
+        assertEquals(ExecutableParser.MACHINE_x86_32, metadata.get(ExecutableParser.MACHINE_TYPE));
+        assertEquals("Little", metadata.get(ExecutableParser.ENDIAN));
+        assertEquals("32", metadata.get(ExecutableParser.ARCHITECTURE_BITS));
+        assertEquals("Windows", metadata.get(ExecutableParser.PLATFORM));
         assertContains("<body />", r.xml); //no text yet
 
     }
-    
+
     @Test
     public void testElfParser_x86_32() throws Exception {
         XMLResult r = getXML("testLinux-x86-32");
         Metadata metadata = r.metadata;
-        assertEquals("application/x-executable",
-                metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-executable", metadata.get(Metadata.CONTENT_TYPE));
 
-        assertEquals(ExecutableParser.MACHINE_x86_32,
-                metadata.get(ExecutableParser.MACHINE_TYPE));
-        assertEquals("Little",
-                metadata.get(ExecutableParser.ENDIAN));
-        assertEquals("32",
-                metadata.get(ExecutableParser.ARCHITECTURE_BITS));
+        assertEquals(ExecutableParser.MACHINE_x86_32, metadata.get(ExecutableParser.MACHINE_TYPE));
+        assertEquals("Little", metadata.get(ExecutableParser.ENDIAN));
+        assertEquals("32", metadata.get(ExecutableParser.ARCHITECTURE_BITS));
 
 //         assertEquals("Linux",
 //               metadata.get(ExecutableParser.PLATFORM));
