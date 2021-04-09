@@ -530,8 +530,9 @@ public class TikaCLI {
             wrapper.parse(input, handler, metadata, context);
         }
         JsonMetadataList.setPrettyPrinting(prettyPrint);
-        Writer writer = getOutputWriter(output, encoding);
-        JsonMetadataList.toJson(handler.getMetadataList(), writer);
+        try(Writer writer = getOutputWriter(output, encoding)) {
+            JsonMetadataList.toJson(handler.getMetadataList(), writer);
+        }
     }
 
     private ContentHandlerFactory getContentHandlerFactory(OutputType type) {
