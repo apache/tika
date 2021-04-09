@@ -57,8 +57,8 @@ public class MetadataListMessageBodyWriter implements MessageBodyWriter<Metadata
                         Annotation[] annotations, MediaType mediaType,
                         MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream)
             throws IOException, WebApplicationException {
-        Writer writer = new OutputStreamWriter(entityStream, UTF_8);
-        JsonMetadataList.toJson(list.getMetadata(), writer);
-        entityStream.flush();
+        try (Writer writer = new OutputStreamWriter(entityStream, UTF_8)) {
+            JsonMetadataList.toJson(list.getMetadata(), writer);
+        }
     }
 }
