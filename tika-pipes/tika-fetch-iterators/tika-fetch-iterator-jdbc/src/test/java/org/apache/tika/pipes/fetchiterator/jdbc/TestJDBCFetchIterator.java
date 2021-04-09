@@ -91,8 +91,9 @@ public class TestJDBCFetchIterator {
     public void testSimple() throws Exception {
         TikaConfig tk = getConfig();
         int numConsumers = 5;
+
         FetchIterator fetchIterator = tk.getFetchIterator();
-        ExecutorService es = Executors.newFixedThreadPool(numConsumers + 1);
+        ExecutorService es = Executors.newFixedThreadPool(numConsumers);
         ExecutorCompletionService<Integer> completionService =
                 new ExecutorCompletionService<>(es);
         ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(100);
@@ -102,9 +103,12 @@ public class TestJDBCFetchIterator {
             fetchers.add(mockFetcher);
             completionService.submit(mockFetcher);
         }
+        int offered = 0;
         for (FetchEmitTuple t : fetchIterator) {
-            queue.offer(t);
+            queue.put(t);
+            offered++;
         }
+        assertEquals(NUM_ROWS, offered);
         for (int i = 0; i < numConsumers; i++) {
             queue.offer(FetchIterator.COMPLETED_SEMAPHORE);
         }
@@ -112,7 +116,8 @@ public class TestJDBCFetchIterator {
         int completed = 0;
         while (completed < numConsumers) {
             Future<Integer> f = completionService.take();
-            processed += f.get();
+            int fetched = f.get();
+            processed += fetched;
             completed++;
         }
         assertEquals(NUM_ROWS, processed);

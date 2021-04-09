@@ -52,11 +52,11 @@ public class JSONMessageBodyWriter implements MessageBodyWriter<Metadata> {
     @Override
     public void writeTo(Metadata metadata, Class<?> type, Type genericType,
                         Annotation[] annotations, MediaType mediaType,
-                        MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream)
+                        MultivaluedMap<String, Object> httpHeaders,
+                        OutputStream entityStream)
             throws IOException, WebApplicationException {
-        Writer writer = new OutputStreamWriter(entityStream, UTF_8);
-        JsonMetadata.toJson(metadata, writer);
-        writer.flush();
-        entityStream.flush();
+        try (Writer writer = new OutputStreamWriter(entityStream, UTF_8)) {
+            JsonMetadata.toJson(metadata, writer);
+        }
     }
 }
