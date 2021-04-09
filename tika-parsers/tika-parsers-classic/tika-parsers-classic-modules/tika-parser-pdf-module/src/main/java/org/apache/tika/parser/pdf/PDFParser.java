@@ -144,7 +144,8 @@ public class PDFParser extends AbstractParser implements Initializable {
             if (tstream != null && tstream.hasFile()) {
                 // File based -- send file directly to PDFBox
                 pdfDocument =
-                        getPDDocument(tstream, password, memoryUsageSetting, metadata, context);
+                        getPDDocument(tstream.getPath(), password,
+                                memoryUsageSetting, metadata, context);
             } else {
                 pdfDocument = getPDDocument(new CloseShieldInputStream(stream), password,
                         memoryUsageSetting, metadata, context);
