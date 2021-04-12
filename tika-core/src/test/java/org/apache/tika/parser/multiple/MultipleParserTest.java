@@ -196,11 +196,10 @@ public class MultipleParserTest {
         assertEquals("Test1", metadata.get("TBoth"));
 
         usedParsers = metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY);
-        assertEquals(4, usedParsers.length);
+        assertEquals(3, usedParsers.length);   // DummyParser is only added once
         assertEquals(ErrorParser.class.getName(), usedParsers[0]);
         assertEquals(DummyParser.class.getName(), usedParsers[1]);
-        assertEquals(DummyParser.class.getName(), usedParsers[2]);
-        assertEquals(EmptyParser.class.getName(), usedParsers[3]);
+        assertEquals(EmptyParser.class.getName(), usedParsers[2]);
 
 
         // Last Wins
@@ -217,11 +216,10 @@ public class MultipleParserTest {
         assertEquals("Test2", metadata.get("TBoth"));
 
         usedParsers = metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY);
-        assertEquals(4, usedParsers.length);
+        assertEquals(3, usedParsers.length);    // DummyParser is only added once
         assertEquals(ErrorParser.class.getName(), usedParsers[0]);
         assertEquals(DummyParser.class.getName(), usedParsers[1]);
-        assertEquals(DummyParser.class.getName(), usedParsers[2]);
-        assertEquals(EmptyParser.class.getName(), usedParsers[3]);
+        assertEquals(EmptyParser.class.getName(), usedParsers[2]);
 
 
         // Merge
@@ -240,11 +238,10 @@ public class MultipleParserTest {
         assertEquals("Test2", metadata.getValues("TBoth")[1]);
 
         usedParsers = metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY);
-        assertEquals(4, usedParsers.length);
+        assertEquals(3, usedParsers.length);    // DummyParser is only added once
         assertEquals(ErrorParser.class.getName(), usedParsers[0]);
         assertEquals(DummyParser.class.getName(), usedParsers[1]);
-        assertEquals(DummyParser.class.getName(), usedParsers[2]);
-        assertEquals(EmptyParser.class.getName(), usedParsers[3]);
+        assertEquals(EmptyParser.class.getName(), usedParsers[2]);
 
 
         // Check the error details always come through, no matter the policy
