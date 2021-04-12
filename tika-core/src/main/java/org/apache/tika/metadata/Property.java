@@ -36,7 +36,7 @@ import java.util.TreeSet;
  */
 public final class Property implements Comparable<Property> {
 
-    private static final Map<String, Property> properties = new HashMap<String, Property>();
+    private static final Map<String, Property> properties = new HashMap<>();
     private final String name;
     private final boolean internal;
     private final PropertyType propertyType;
@@ -57,7 +57,7 @@ public final class Property implements Comparable<Property> {
         this.valueType = valueType;
         if (choices != null) {
             this.choices = Collections
-                    .unmodifiableSet(new HashSet<String>(Arrays.asList(choices.clone())));
+                    .unmodifiableSet(new HashSet<>(Arrays.asList(choices.clone())));
         } else {
             this.choices = null;
         }
@@ -120,7 +120,7 @@ public final class Property implements Comparable<Property> {
     }
 
     public static SortedSet<Property> getProperties(String prefix) {
-        SortedSet<Property> set = new TreeSet<Property>();
+        SortedSet<Property> set = new TreeSet<>();
         String p = prefix + ":";
         synchronized (properties) {
             for (String name : properties.keySet()) {
@@ -172,6 +172,10 @@ public final class Property implements Comparable<Property> {
         return new Property(name, true, PropertyType.BAG, ValueType.TEXT);
     }
 
+    public static Property internalTextSet(String name) {
+        return new Property(name, true, PropertyType.SET, ValueType.TEXT);
+    }
+
     public static Property internalURI(String name) {
         return new Property(name, true, ValueType.URI);
     }
@@ -214,6 +218,10 @@ public final class Property implements Comparable<Property> {
 
     public static Property externalTextBag(String name) {
         return new Property(name, false, PropertyType.BAG, ValueType.TEXT);
+    }
+
+    public static Property externalTextSet(String name) {
+        return new Property(name, false, PropertyType.SET, ValueType.TEXT);
     }
 
     /**
@@ -266,14 +274,18 @@ public final class Property implements Comparable<Property> {
      * Is the PropertyType one which accepts multiple values?
      */
     public boolean isMultiValuePermitted() {
-        if (propertyType == PropertyType.BAG || propertyType == PropertyType.SEQ ||
-                propertyType == PropertyType.ALT) {
+        if (propertyType == PropertyType.BAG || propertyType == PropertyType.SET
+                || propertyType == PropertyType.SEQ || propertyType == PropertyType.ALT) {
             return true;
         } else if (propertyType == PropertyType.COMPOSITE) {
             // Base it on the primary property's behaviour
             return primaryProperty.isMultiValuePermitted();
         }
         return false;
+    }
+
+    public boolean isDupsPermitted() {
+        return propertyType != PropertyType.SET;
     }
 
     public PropertyType getPropertyType() {
@@ -338,6 +350,10 @@ public final class Property implements Comparable<Property> {
          * An un-ordered array
          */
         BAG,
+        /**
+         * An un-ordered array with unique values
+         */
+        SET,
         /**
          * An ordered array
          */

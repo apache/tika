@@ -62,7 +62,7 @@ public class Metadata
      * Constructs a new, empty metadata.
      */
     public Metadata() {
-        metadata = new HashMap<String, String[]>();
+        metadata = new HashMap<>();
     }
 
     private static DateFormat createDateFormat(String format, TimeZone timezone) {
@@ -116,7 +116,7 @@ public class Metadata
     }
 
     /**
-     * Get the value associated to a metadata name. If many values are assiociated
+     * Get the value associated to a metadata name. If many values are associated
      * to the specified name, then the first one is returned.
      *
      * @param name of the metadata.
@@ -221,11 +221,17 @@ public class Metadata
         return values;
     }
 
-    private String[] appendedValues(String[] values, final String value) {
+//    private String[] appendedValues(String[] values, final String value) {
+//        return appendedValues(values, value, true);
+//    }
+
+    private String[] appendedValues(String[] values, final String value, boolean allowDups) {
         String[] newValues = new String[values.length + 1];
         System.arraycopy(values, 0, newValues, 0, values.length);
         newValues[newValues.length - 1] = value;
-        return newValues;
+        return allowDups
+             ? newValues
+             : Arrays.stream(newValues).distinct().toArray(String[]::new);
     }
 
     /**
@@ -240,7 +246,7 @@ public class Metadata
         if (values == null) {
             set(name, value);
         } else {
-            metadata.put(name, appendedValues(values, value));
+            metadata.put(name, appendedValues(values, value, true));
         }
     }
 
@@ -270,7 +276,7 @@ public class Metadata
                 set(property, value);
             } else {
                 if (property.isMultiValuePermitted()) {
-                    set(property, appendedValues(values, value));
+                    set(property, appendedValues(values, value, property.isDupsPermitted()));
                 } else {
                     throw new PropertyTypeException(
                             property.getName() + " : " + property.getPropertyType());
@@ -548,7 +554,7 @@ public class Metadata
     }
 
     public String toString() {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         String[] names = names();
         for (String name : names) {
             String[] values = _getValues(name);
