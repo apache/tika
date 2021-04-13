@@ -19,30 +19,28 @@ package org.apache.tika.server;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-import org.apache.commons.io.IOUtils;
 import org.apache.cxf.attachment.AttachmentUtil;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
+import org.apache.cxf.jaxrs.ext.multipart.ContentDisposition;
+import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.server.resource.TikaResource;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.ws.rs.ProcessingException;
-import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 
 import static org.apache.cxf.helpers.HttpHeaderHelper.CONTENT_ENCODING;
 import static org.junit.Assert.assertEquals;
@@ -58,6 +56,7 @@ public class TikaResourceTest extends CXFTestBase {
     private static final String STREAM_CLOSED_FAULT = "java.io.IOException: Stream Closed";
 
     private static final String TIKA_PATH = "/tika";
+    private static final String TIKA_POST_PATH = "/tika/form";
     private static final int UNPROCESSEABLE = 422;
 
     @Override
@@ -561,6 +560,48 @@ public class TikaResourceTest extends CXFTestBase {
                 .header(TikaResource.X_TIKA_PDF_HEADER_PREFIX.toLowerCase(Locale.ROOT) + "ocrstrategy", "non-sense-value")
                 .put(ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"));
         assertEquals(400, response.getStatus());
+    }
+
+    // TIKA-3344
+    @Test
+    public void testPDFLowerCaseOCRConfigPOST() throws Exception {
+        if (! new TesseractOCRParser().hasTesseract(new TesseractOCRConfig())) {
+            return;
+        }
+
+        Response response = WebClient.create(endPoint + TIKA_POST_PATH)
+                .type("application/pdf")
+                .accept(MediaType.TEXT_PLAIN).type(MediaType.MULTIPART_FORM_DATA)
+                .header(TikaResource.X_TIKA_PDF_HEADER_PREFIX.toLowerCase(Locale.ROOT)+"ocrstrategy", "no_ocr")
+                .post(testPDFLowerCaseOCRConfigPOSTBody());
+        String responseMsg = getStringFromInputStream((InputStream) response
+                .getEntity());
+
+        assertTrue(responseMsg.trim().equals(""));
+
+        response = WebClient.create(endPoint + TIKA_POST_PATH)
+                .type("application/pdf")
+                .accept(MediaType.TEXT_PLAIN).type(MediaType.MULTIPART_FORM_DATA)
+                .header(TikaResource.X_TIKA_PDF_HEADER_PREFIX.toLowerCase(Locale.ROOT)+"ocrstrategy", "ocr_only")
+                .post(testPDFLowerCaseOCRConfigPOSTBody());
+        responseMsg = getStringFromInputStream((InputStream) response
+                .getEntity());
+        assertContains("Happy New Year 2003!", responseMsg);
+
+        //now try a bad value
+        response = WebClient.create(endPoint + TIKA_POST_PATH)
+                .type("application/pdf")
+                .accept(MediaType.TEXT_PLAIN).type(MediaType.MULTIPART_FORM_DATA)
+                .header(TikaResource.X_TIKA_PDF_HEADER_PREFIX.toLowerCase(Locale.ROOT)+"ocrstrategy", "non-sense-value")
+                .post(testPDFLowerCaseOCRConfigPOSTBody());
+        assertEquals(400, response.getStatus());
+    }
+
+    private MultipartBody testPDFLowerCaseOCRConfigPOSTBody() throws FileNotFoundException, URISyntaxException {
+        ContentDisposition cd = new ContentDisposition(
+                "form-data; name=\"input\"; filename=\"testOCR.pdf\"");
+        Attachment att = new Attachment("upload", ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"), cd);
+        return new MultipartBody(att);
     }
 
 }

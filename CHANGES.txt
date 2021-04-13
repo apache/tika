@@ -1,5 +1,7 @@
 Release 1.27 - ???
 
+   * Tika's PDFParser should use the underlying file if one is passed in
+     via a TikaInputStream (TIKA-3350)
 
 Release 1.26 - 03/24/2021
 
