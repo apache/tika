@@ -20,6 +20,7 @@ import static org.apache.tika.metadata.TikaCoreProperties.EMBEDDED_EXCEPTION;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -75,7 +76,14 @@ public class ParserUtils {
      * or used.
      */
     public static void recordParserDetails(Parser parser, Metadata metadata) {
-        metadata.add(TikaCoreProperties.TIKA_PARSED_BY, getParserClassname(parser));
+        String className = getParserClassname(parser);
+        String[] parsedBys = metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY);
+        if (parsedBys == null || parsedBys.length == 0) {
+            metadata.add(TikaCoreProperties.TIKA_PARSED_BY, className);
+        } else if (! Arrays.stream(parsedBys).anyMatch(className::equals)) {
+            //only add parser once
+            metadata.add(TikaCoreProperties.TIKA_PARSED_BY, className);
+        }
     }
 
     /**
