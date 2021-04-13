@@ -43,6 +43,10 @@ Release 2.0.0-ALPHA - 01/13/2021
      * tika-server's /metadata endpoint requires tika-server-classic to write XMP/rdf output.
        This output is not available in tika-server-core.
 
+
+
+   * Tika's OpenNLPDetector now covers 148 languages and language-script pairs (TIKA-3340).
+
 Release 1.26 - ??/??/????
 
    * The "writeLimit" header now pertains to the combined characters

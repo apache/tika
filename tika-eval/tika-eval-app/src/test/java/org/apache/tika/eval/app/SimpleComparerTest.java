@@ -160,8 +160,8 @@ public class SimpleComparerTest extends TikaTest {
 
         Map<Cols, String> row = tableInfos.get(0);
         assertEquals("122", row.get(Cols.TOKEN_LENGTH_SUM));
-        assertEquals("20", row.get(Cols.NUM_COMMON_TOKENS));
-        assertEquals("cmn", row.get(Cols.COMMON_TOKENS_LANG));
+        assertEquals("37", row.get(Cols.NUM_COMMON_TOKENS));
+        assertEquals("zho-simp", row.get(Cols.COMMON_TOKENS_LANG));
 
     }
 
