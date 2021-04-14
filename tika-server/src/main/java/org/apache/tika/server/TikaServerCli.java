@@ -307,7 +307,7 @@ public class TikaServerCli {
             } else {
                 serverStatus = new ServerStatus(serverId, 0, true);
             }
-            TikaResource.init(tika, digester, inputStreamFactory, serverStatus);
+            TikaResource.init(tika, returnStackTrace, digester, inputStreamFactory, serverStatus);
             JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
 
             List<ResourceProvider> rCoreProviders = new ArrayList<>();

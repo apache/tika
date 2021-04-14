@@ -92,7 +92,7 @@ public abstract class CXFTestBase {
     public void setUp() throws Exception {
 
         this.tika = new TikaConfig(getTikaConfigInputStream());
-        TikaResource.init(tika,
+        TikaResource.init(tika, isIncludeStackTrace(),
                 new CommonsDigester(DIGESTER_READ_LIMIT, "md5,sha1:32"),
                 new DefaultInputStreamFactory(), new ServerStatus("", 0,true));
         JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
@@ -119,6 +119,10 @@ public abstract class CXFTestBase {
                 factory
         );
         server = sf.create();
+    }
+
+    protected boolean isIncludeStackTrace() {
+        return false;
     }
 
     protected InputStream getTikaConfigInputStream() {

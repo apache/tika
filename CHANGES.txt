@@ -1,5 +1,7 @@
 Release 1.27 - ???
 
+   * Add json output for /tika endpoint in tika-server (TIKA-3352).
+
    * Tika's PDFParser should use the underlying file if one is passed in
      via a TikaInputStream (TIKA-3350)
 

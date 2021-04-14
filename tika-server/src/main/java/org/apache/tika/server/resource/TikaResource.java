@@ -27,6 +27,7 @@ import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaMetadataKeys;
@@ -40,12 +41,16 @@ import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.html.BoilerpipeContentHandler;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.pdf.PDFParserConfig;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
+import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ExpandedTitleContentHandler;
 import org.apache.tika.sax.RichTextContentHandler;
 import org.apache.tika.server.InputStreamFactory;
 import org.apache.tika.server.ServerStatus;
 import org.apache.tika.server.TikaServerParseException;
+import org.apache.tika.utils.ExceptionUtils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
@@ -56,6 +61,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
@@ -83,6 +89,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.tika.server.resource.RecursiveMetadataResource.DEFAULT_HANDLER_TYPE;
+import static org.apache.tika.server.resource.RecursiveMetadataResource.HANDLER_TYPE_PARAM;
 
 @Path("/tika")
 public class TikaResource {
@@ -103,9 +111,12 @@ public class TikaResource {
     private static DigestingParser.Digester digester = null;
     private static InputStreamFactory inputStreamFactory = null;
     private static ServerStatus SERVER_STATUS = null;
-    public static void init(TikaConfig config, DigestingParser.Digester digestr,
+    private static boolean INCLUDE_STACK_TRACE = false;
+    public static void init(TikaConfig config,
+                            boolean includeStackTrace, DigestingParser.Digester digestr,
                             InputStreamFactory iSF, ServerStatus serverStatus) {
         tikaConfig = config;
+        INCLUDE_STACK_TRACE = includeStackTrace;
         digester = digestr;
         inputStreamFactory = iSF;
         SERVER_STATUS = serverStatus;
@@ -584,6 +595,88 @@ public class TikaResource {
         Metadata metadata = new Metadata();
         return produceOutput(getInputStream(is, metadata, httpHeaders),
                 metadata, httpHeaders.getRequestHeaders(), info, "xml");
+    }
+
+
+    @POST
+    @Consumes("multipart/form-data")
+    @Produces("application/json")
+    @Path("form{" + HANDLER_TYPE_PARAM + " : (\\w+)?}")
+    public Metadata getJsonFromMultipart(Attachment att,
+                                         @Context HttpHeaders httpHeaders,
+                                         @Context final UriInfo info,
+                                         @PathParam(HANDLER_TYPE_PARAM)
+                                                 String handlerTypeName)
+            throws IOException, TikaException {
+        Metadata metadata = new Metadata();
+        parseToMetadata(getInputStream(att.getObject(InputStream.class), metadata, httpHeaders),
+                metadata, preparePostHeaderMap(att, httpHeaders), info, handlerTypeName);
+        TikaResource.getConfig().getMetadataFilter().filter(metadata);
+        return metadata;
+    }
+
+    @PUT
+    @Consumes("*/*")
+    @Produces("application/json")
+    @Path("{" + HANDLER_TYPE_PARAM + " : (\\w+)?}")
+    public Metadata getJson(final InputStream is, @Context
+            HttpHeaders httpHeaders,
+                            @Context final UriInfo info, @PathParam(HANDLER_TYPE_PARAM)
+                                    String handlerTypeName)
+            throws IOException, TikaException {
+        Metadata metadata = new Metadata();
+        parseToMetadata(getInputStream(is, metadata, httpHeaders), metadata,
+                httpHeaders.getRequestHeaders(), info, handlerTypeName);
+        TikaResource.getConfig().getMetadataFilter().filter(metadata);
+        return metadata;
+    }
+
+    private void parseToMetadata(InputStream inputStream,
+                                 Metadata metadata,
+                                 MultivaluedMap<String, String> httpHeaders,
+                                 UriInfo info, String handlerTypeName) throws IOException {
+        final Parser parser = createParser();
+        final ParseContext context = new ParseContext();
+
+        fillMetadata(parser, metadata, context, httpHeaders);
+        fillParseContext(context, httpHeaders, parser);
+
+
+        logRequest(LOG, info, metadata);
+        int writeLimit = -1;
+        if (httpHeaders.containsKey("writeLimit")) {
+            writeLimit = Integer.parseInt(httpHeaders.getFirst("writeLimit"));
+        }
+        BasicContentHandlerFactory.HANDLER_TYPE type =
+                BasicContentHandlerFactory.parseHandlerType(handlerTypeName, DEFAULT_HANDLER_TYPE);
+        BasicContentHandlerFactory fact = new BasicContentHandlerFactory(type, writeLimit);
+        ContentHandler contentHandler = fact.getNewContentHandler();
+
+        try {
+            parse(parser, LOG, info.getPath(), inputStream, contentHandler, metadata, context);
+        } catch (TikaServerParseException e) {
+            if (INCLUDE_STACK_TRACE) {
+                Throwable cause = e.getCause();
+                if (cause != null) {
+                    metadata.add(AbstractRecursiveParserWrapperHandler.CONTAINER_EXCEPTION,
+                            ExceptionUtils.getStackTrace(cause));
+                } else {
+                    metadata.add(AbstractRecursiveParserWrapperHandler.CONTAINER_EXCEPTION,
+                            ExceptionUtils.getStackTrace(e));
+                }
+            } else {
+                throw e;
+            }
+        } catch (OutOfMemoryError e) {
+            if (INCLUDE_STACK_TRACE) {
+                metadata.add(AbstractRecursiveParserWrapperHandler.CONTAINER_EXCEPTION,
+                        ExceptionUtils.getStackTrace(e));
+            } else {
+                throw e;
+            }
+        } finally {
+            metadata.add(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT, contentHandler.toString());
+        }
     }
 
     private StreamingOutput produceOutput(final InputStream is, Metadata metadata, final MultivaluedMap<String, String> httpHeaders,
