@@ -44,7 +44,9 @@ Release 2.0.0-ALPHA - 01/13/2021
        This output is not available in tika-server-core.
 
 
+Release 1.27 - ??
 
+   * Add json output for /tika endpoint in tika-server (TIKA-3352).
    * Tika's OpenNLPDetector now covers 148 languages and language-script pairs (TIKA-3340).
 
 Release 1.26 - 03/24/2021
