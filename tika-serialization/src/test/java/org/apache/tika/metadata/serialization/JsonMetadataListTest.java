@@ -118,7 +118,8 @@ public class JsonMetadataListTest {
         writer = new StringWriter();
         JsonMetadataList.setPrettyPrinting(true);
         JsonMetadataList.toJson(metadataList, writer);
-        assertTrue(writer.toString().startsWith("[ {\n" +
+        assertTrue(writer.toString().replaceAll("\r\n", "\n")
+                .startsWith("[ {\n" +
                 "  \"zk1\" : [ \"v1\", \"v2\", \"v3\", \"v4\", \"v4\" ],\n" +
                 "  \"zk2\" : \"v1\",\n" +
                 "  \"X-TIKA:content\" : \"this is the content\"\n" +
