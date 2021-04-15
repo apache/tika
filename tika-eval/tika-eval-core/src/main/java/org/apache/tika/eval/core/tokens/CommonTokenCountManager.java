@@ -115,6 +115,9 @@ public class CommonTokenCountManager {
                 new HashSet(commonTokenMap.get(getActualLangCode(lang)).getTokens()));
     }
 
+    public Set<String> getLangs() {
+        return commonTokenMap.keySet();
+    }
     /**
      * @param lang
      * @return pair of actual language code used and a set of common

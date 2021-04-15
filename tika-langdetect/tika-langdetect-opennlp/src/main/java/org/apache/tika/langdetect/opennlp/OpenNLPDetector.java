@@ -42,12 +42,43 @@ import java.util.regex.Pattern;
  * <p>
  * This is based on OpenNLP's language detector.  However,
  * we've built our own ProbingLanguageDetector and our own language
- * models from an extended Leipzig corpus.
+ * models.
  * </p>
- * <p>
- * Going forward, we plan to fold these improvements into OpenNLP
- * and remove our own custom code.
- * </p>
+ * To build our model, we followed OpenNLP's lead by using the
+ * (<a href="https://wortschatz.uni-leipzig.de/en/download">Leipzig corpus</a>)
+ * as gathered and preprocessed
+ * (
+ * <a href="https://svn.apache.org/repos/bigdata/opennlp/trunk/leipzig/">big-data corpus</a>
+ * ). We removed azj, plt, sun
+ * and zsm because our models couldn't sufficiently well distinguish
+ * them from related languages. We removed cmn in favor of the
+ * finer-grained zho-trad and zho-simp.
+ *
+ * We then added the following languages from <a href="http://data.statmt.org/cc-100/">cc-100</a>:
+ * ben-rom (Bengali Romanized), ful, gla, gug, hau, hin-rom, ibo, ful, linm
+ * mya-zaw, nso, orm, quz, roh, srd, ssw, tam-rom, tel-rom, tsn, urd-rom,
+ * wol, yor.
+ *
+ * We ran our own train/devtest/test code because OpenNLPs required
+ * more sentences/data than were available for some languages.
+ *
+ * Please open an issue on our JIRA if we made mistakes and/or had
+ * misunderstandings in our design choices or if you need to have other
+ * languages added.
+ *
+ * Citations for the cc-100 corpus:
+ *
+ * Unsupervised Cross-lingual Representation Learning at Scale, Alexis Conneau,
+ * Kartikay Khandelwal, Naman Goyal, Vishrav Chaudhary, Guillaume Wenzek,
+ * Francisco Guzmán, Edouard Grave, Myle Ott, Luke Zettlemoyer, Veselin Stoyanov,
+ * Proceedings of the 58th Annual Meeting of the Association for Computational
+ * Linguistics (ACL), p. 8440-8451, July 2020, pdf, bib.
+ *
+ * CCNet: Extracting High Quality Monolingual Datasets from Web Crawl Data,
+ * Guillaume Wenzek, Marie-Anne Lachaux, Alexis Conneau, Vishrav Chaudhary,
+ * Francisco Guzmán, Armand Joulin, Edouard Grave, Proceedings of the 12th
+ * Language Resources and Evaluation Conference (LREC), p. 4003-4012,
+ * May 2020, pdf, bib.
  */
 public class OpenNLPDetector extends LanguageDetector {
 
@@ -55,7 +86,7 @@ public class OpenNLPDetector extends LanguageDetector {
 
     static void loadBuiltInModels() throws IOException {
         try (InputStream is = OpenNLPDetector.class.getResourceAsStream(
-                "/opennlp_langdetect_model_20190626.bin"
+                "/opennlp-langdetect-20210413.bin"
         )) {
             LANG_MODEL = new LanguageDetectorModel(is);
         }

@@ -232,7 +232,7 @@ public class TikaServerProcess {
 
             serverThread.start();
         }
-        TikaResource.init(tika, digester, inputStreamFactory, serverStatus);
+        TikaResource.init(tika, tikaServerConfig, digester, inputStreamFactory, serverStatus);
         JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
 
         List<ResourceProvider> resourceProviders = new ArrayList<>();

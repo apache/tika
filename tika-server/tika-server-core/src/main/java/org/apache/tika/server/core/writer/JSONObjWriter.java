@@ -57,9 +57,9 @@ public class JSONObjWriter implements MessageBodyWriter<Map<String, Object>> {
                         Annotation[] annotations, MediaType mediaType,
                         MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream)
             throws IOException, WebApplicationException {
-        Writer writer = new OutputStreamWriter(entityStream, UTF_8);
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.writerWithDefaultPrettyPrinter().writeValue(writer, map);
-        entityStream.flush();
+        try (Writer writer = new OutputStreamWriter(entityStream, UTF_8)) {
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(writer, map);
+        }
     }
 }

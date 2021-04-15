@@ -107,6 +107,7 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
                 <version>${maven.shade.version}</version>
                 <executions>
@@ -158,10 +159,11 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
+                <version>${maven.jar.version}</version>
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Automatic-Module-Name>eval-core</Automatic-Module-Name>
+                            <Automatic-Module-Name>org.apache.tika.eval.core</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
                 </configuration>
@@ -174,6 +176,7 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>${maven.failsafe.version}</version>
                 <configuration>

@@ -95,11 +95,7 @@
                             <createDependencyReducedPom>
                                 false
                             </createDependencyReducedPom>
-                            <artifactSet>
-                                <excludes>
-                                    <exclude>org.apache.tika:tika-eval-core:jar:</exclude>
-                                </excludes>
-                            </artifactSet>
+                            <!-- figure out why/fix shade including eval-core's uber jar _and_ the dependency jars -->
                             <!-- <filters> -->
                             <filters>
                                 <filter>
@@ -165,10 +161,11 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
+                <version>${maven.jar.version}</version>
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Automatic-Module-Name>eval-app</Automatic-Module-Name>
+                            <Automatic-Module-Name>org.apache.tika.eval.app</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
                 </configuration>

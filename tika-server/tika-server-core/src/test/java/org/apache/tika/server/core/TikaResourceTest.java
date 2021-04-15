@@ -21,6 +21,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import javax.ws.rs.core.MultivaluedHashMap;
@@ -33,10 +35,17 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.Test;
 
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.serialization.JsonMetadata;
 import org.apache.tika.server.core.resource.TikaResource;
+import org.apache.tika.server.core.writer.JSONMessageBodyWriter;
 
 public class TikaResourceTest extends CXFTestBase {
+
     public static final String TEST_HELLO_WORLD = "test-documents/mock/hello_world.xml";
+    public static final String TEST_HELLO_WORLD_LONG = "test-documents/mock/hello_world_long.xml";
+    public static final String TEST_NULL_POINTER = "test-documents/mock/null_pointer.xml";
     public static final String TEST_OOM = "test-documents/mock/fake_oom.xml";
 
     private static final String STREAM_CLOSED_FAULT = "java.io.IOException: Stream Closed";
@@ -55,6 +64,7 @@ public class TikaResourceTest extends CXFTestBase {
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
         List<Object> providers = new ArrayList<Object>();
         providers.add(new TikaServerParseExceptionMapper(false));
+        providers.add(new JSONMessageBodyWriter());
         sf.setProviders(providers);
     }
 
@@ -112,5 +122,82 @@ public class TikaResourceTest extends CXFTestBase {
                 WebClient.create(endPoint + TIKA_PATH + "?_wadl").accept("text/plain").get();
         String resp = getStringFromInputStream((InputStream) response.getEntity());
         assertTrue(resp.startsWith("<application"));
+    }
+
+    @Test
+    public void testJson() throws Exception {
+        Response response = WebClient.create(endPoint + TIKA_PATH).accept(
+                "application/json")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
+        Metadata metadata =
+                JsonMetadata.fromJson(new InputStreamReader(
+                        ((InputStream)response.getEntity()), StandardCharsets.UTF_8));
+
+        assertEquals("Nikolai Lobachevsky", metadata.get("author"));
+        assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
+        assertContains("hello world", metadata.get(TikaCoreProperties.TIKA_CONTENT));
+    }
+
+    @Test
+    public void testJsonNPE() throws Exception {
+        Response response = WebClient.create(endPoint + TIKA_PATH).accept(
+                "application/json")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_NULL_POINTER));
+        Metadata metadata =
+                JsonMetadata.fromJson(new InputStreamReader(
+                        ((InputStream)response.getEntity()), StandardCharsets.UTF_8));
+
+        assertEquals("Nikolai Lobachevsky", metadata.get("author"));
+        assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
+        assertContains("some content", metadata.get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("null pointer message",
+                metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION));
+    }
+
+    @Test
+    public void testJsonWriteLimit() throws Exception {
+        Response response = WebClient.create(endPoint + TIKA_PATH)
+                .header("writeLimit", "100")
+                .accept("application/json")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD_LONG));
+        Metadata metadata =
+                JsonMetadata.fromJson(new InputStreamReader(
+                        ((InputStream)response.getEntity()), StandardCharsets.UTF_8));
+
+        assertEquals("Nikolai Lobachevsky", metadata.get("author"));
+        assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
+        assertContains("Hello world", metadata.get(TikaCoreProperties.TIKA_CONTENT));
+        assertNotFound("dissolve", metadata.get(TikaCoreProperties.TIKA_CONTENT));
+        assertTrue(metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION).startsWith(
+                "org.apache.tika.sax.WriteOutContentHandler$WriteLimitReachedException"
+        ));
+    }
+
+    @Test
+    public void testJsonHandlerType() throws Exception {
+        Response response = WebClient.create(endPoint + TIKA_PATH)
+                .accept("application/json")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD_LONG));
+        Metadata metadata =
+                JsonMetadata.fromJson(new InputStreamReader(
+                        ((InputStream)response.getEntity()), StandardCharsets.UTF_8));
+
+        assertEquals("Nikolai Lobachevsky", metadata.get("author"));
+        assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
+        assertContains("Hello world", metadata.get(TikaCoreProperties.TIKA_CONTENT));
+        //default is xhtml
+        assertContains("<p>", metadata.get(TikaCoreProperties.TIKA_CONTENT));
+
+        response = WebClient.create(endPoint + TIKA_PATH + "/text")
+                .accept("application/json")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD_LONG));
+        metadata =
+                JsonMetadata.fromJson(new InputStreamReader(
+                        ((InputStream)response.getEntity()), StandardCharsets.UTF_8));
+
+        assertEquals("Nikolai Lobachevsky", metadata.get("author"));
+        assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
+        assertContains("Hello world", metadata.get(TikaCoreProperties.TIKA_CONTENT));
+        assertNotFound("<p>", metadata.get(TikaCoreProperties.TIKA_CONTENT));
     }
 }
