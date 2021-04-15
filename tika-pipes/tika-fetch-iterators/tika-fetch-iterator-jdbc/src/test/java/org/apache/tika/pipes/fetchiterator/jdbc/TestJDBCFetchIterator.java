@@ -21,7 +21,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -83,7 +82,8 @@ public class TestJDBCFetchIterator {
     }
 
     @AfterClass
-    public static void tearDown() throws IOException {
+    public static void tearDown() throws Exception {
+        CONNECTION.close();
         FileUtils.deleteDirectory(DB_DIR.toFile());
     }
 
@@ -110,7 +110,7 @@ public class TestJDBCFetchIterator {
         }
         assertEquals(NUM_ROWS, offered);
         for (int i = 0; i < numConsumers; i++) {
-            queue.offer(FetchIterator.COMPLETED_SEMAPHORE);
+            queue.put(FetchIterator.COMPLETED_SEMAPHORE);
         }
         int processed = 0;
         int completed = 0;

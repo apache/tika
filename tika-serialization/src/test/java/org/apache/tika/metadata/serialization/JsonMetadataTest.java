@@ -63,7 +63,7 @@ public class JsonMetadataTest {
         writer = new StringWriter();
         JsonMetadata.setPrettyPrinting(true);
         JsonMetadata.toJson(metadata, writer);
-        assertTrue(writer.toString().contains(
+        assertTrue(writer.toString().replaceAll("\r\n", "\n").contains(
                 "\"json_escapes\" : \"the: \\\"quick\\\" brown, fox\",\n" +
                         "  \"k1\" : [ \"v1\", \"v2\" ],\n" +
                         "  \"k3\" : [ \"v3\", \"v3\" ],\n" +
