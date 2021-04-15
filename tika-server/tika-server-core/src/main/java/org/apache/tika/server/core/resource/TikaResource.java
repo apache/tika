@@ -18,6 +18,8 @@
 package org.apache.tika.server.core.resource;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.tika.server.core.resource.RecursiveMetadataResource.DEFAULT_HANDLER_TYPE;
+import static org.apache.tika.server.core.resource.RecursiveMetadataResource.HANDLER_TYPE_PARAM;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,6 +38,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
@@ -62,12 +65,14 @@ import org.xml.sax.SAXException;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.EncryptedDocumentException;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ExpandedTitleContentHandler;
 import org.apache.tika.sax.RichTextContentHandler;
@@ -76,7 +81,9 @@ import org.apache.tika.server.core.CompositeParseContextConfig;
 import org.apache.tika.server.core.InputStreamFactory;
 import org.apache.tika.server.core.ParseContextConfig;
 import org.apache.tika.server.core.ServerStatus;
+import org.apache.tika.server.core.TikaServerConfig;
 import org.apache.tika.server.core.TikaServerParseException;
+import org.apache.tika.utils.ExceptionUtils;
 
 @Path("/tika")
 public class TikaResource {
@@ -87,6 +94,7 @@ public class TikaResource {
     private static final Logger LOG = LoggerFactory.getLogger(TikaResource.class);
     private static Pattern ALLOWABLE_HEADER_CHARS = Pattern.compile("(?i)^[-/_+\\.A-Z0-9 ]+$");
     private static TikaConfig tikaConfig;
+    private static TikaServerConfig tikaServerConfig;
     private static DigestingParser.Digester digester = null;
     private static InputStreamFactory inputStreamFactory = null;
     private static ServerStatus SERVER_STATUS = null;
@@ -94,9 +102,11 @@ public class TikaResource {
     private static ParseContextConfig PARSE_CONTEXT_CONFIG = new CompositeParseContextConfig();
 
 
-    public static void init(TikaConfig config, DigestingParser.Digester digestr,
+    public static void init(TikaConfig config, TikaServerConfig tikaServerConfg,
+                            DigestingParser.Digester digestr,
                             InputStreamFactory iSF, ServerStatus serverStatus) {
         tikaConfig = config;
+        tikaServerConfig = tikaServerConfg;
         digester = digestr;
         inputStreamFactory = iSF;
         SERVER_STATUS = serverStatus;
@@ -506,6 +516,86 @@ public class TikaResource {
         Metadata metadata = new Metadata();
         return produceOutput(getInputStream(is, metadata, httpHeaders), metadata,
                 httpHeaders.getRequestHeaders(), info, "xml");
+    }
+
+    @POST
+    @Consumes("multipart/form-data")
+    @Produces("application/json")
+    @Path("form{" + HANDLER_TYPE_PARAM + " : (\\w+)?}")
+    public Metadata getJsonFromMultipart(Attachment att,
+                                                @Context HttpHeaders httpHeaders,
+                                                @Context final UriInfo info,
+                                                @PathParam(HANDLER_TYPE_PARAM)
+                                                     String handlerTypeName)
+            throws IOException, TikaException {
+        Metadata metadata = new Metadata();
+        parseToMetadata(getInputStream(att.getObject(InputStream.class), metadata, httpHeaders),
+                metadata, preparePostHeaderMap(att, httpHeaders), info, handlerTypeName);
+        TikaResource.getConfig().getMetadataFilter().filter(metadata);
+        return metadata;
+    }
+
+    @PUT
+    @Consumes("*/*")
+    @Produces("application/json")
+    @Path("{" + HANDLER_TYPE_PARAM + " : (\\w+)?}")
+    public Metadata getJson(final InputStream is, @Context
+            HttpHeaders httpHeaders,
+                                   @Context final UriInfo info, @PathParam(HANDLER_TYPE_PARAM)
+                                               String handlerTypeName)
+            throws IOException, TikaException {
+        Metadata metadata = new Metadata();
+        parseToMetadata(getInputStream(is, metadata, httpHeaders), metadata,
+                httpHeaders.getRequestHeaders(), info, handlerTypeName);
+        TikaResource.getConfig().getMetadataFilter().filter(metadata);
+        return metadata;
+    }
+
+    private void parseToMetadata(InputStream inputStream,
+                                 Metadata metadata,
+                                 MultivaluedMap<String, String> httpHeaders,
+                                 UriInfo info, String handlerTypeName) throws IOException {
+        final Parser parser = createParser();
+        final ParseContext context = new ParseContext();
+
+        fillMetadata(parser, metadata, httpHeaders);
+        fillParseContext(httpHeaders, metadata, context);
+
+        logRequest(LOG, "/tika", metadata);
+        int writeLimit = -1;
+        if (httpHeaders.containsKey("writeLimit")) {
+            writeLimit = Integer.parseInt(httpHeaders.getFirst("writeLimit"));
+        }
+        BasicContentHandlerFactory.HANDLER_TYPE type =
+                BasicContentHandlerFactory.parseHandlerType(handlerTypeName, DEFAULT_HANDLER_TYPE);
+        BasicContentHandlerFactory fact = new BasicContentHandlerFactory(type, writeLimit);
+        ContentHandler contentHandler = fact.getNewContentHandler();
+
+        try {
+            parse(parser, LOG, info.getPath(), inputStream, contentHandler, metadata, context);
+        } catch (TikaServerParseException e) {
+            if (tikaServerConfig.isReturnStackTrace()) {
+                Throwable cause = e.getCause();
+                if (cause != null) {
+                    metadata.add(TikaCoreProperties.CONTAINER_EXCEPTION,
+                            ExceptionUtils.getStackTrace(cause));
+                } else {
+                    metadata.add(TikaCoreProperties.CONTAINER_EXCEPTION,
+                            ExceptionUtils.getStackTrace(e));
+                }
+            } else {
+                throw e;
+            }
+        } catch (OutOfMemoryError e) {
+            if (tikaServerConfig.isReturnStackTrace()) {
+                metadata.add(TikaCoreProperties.CONTAINER_EXCEPTION,
+                        ExceptionUtils.getStackTrace(e));
+            } else {
+                throw e;
+            }
+        } finally {
+            metadata.add(TikaCoreProperties.TIKA_CONTENT, contentHandler.toString());
+        }
     }
 
     private StreamingOutput produceOutput(final InputStream is, Metadata metadata,

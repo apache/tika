@@ -23,6 +23,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,6 +43,10 @@ import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.Test;
 
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.OfficeOpenXMLExtended;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.serialization.JsonMetadata;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.server.classic.config.PDFServerConfig;
 import org.apache.tika.server.classic.config.TesseractServerConfig;
@@ -50,6 +55,7 @@ import org.apache.tika.server.core.TikaServerParseExceptionMapper;
 import org.apache.tika.server.core.config.DocumentSelectorConfig;
 import org.apache.tika.server.core.config.PasswordProviderConfig;
 import org.apache.tika.server.core.resource.TikaResource;
+import org.apache.tika.server.core.writer.JSONMessageBodyWriter;
 
 public class TikaResourceTest extends CXFTestBase {
     public static final String TEST_DOC = "test-documents/test.doc";
@@ -74,6 +80,7 @@ public class TikaResourceTest extends CXFTestBase {
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
         List<Object> providers = new ArrayList<>();
         providers.add(new TikaServerParseExceptionMapper(false));
+        providers.add(new JSONMessageBodyWriter());
         sf.setProviders(providers);
     }
 
@@ -562,4 +569,36 @@ public class TikaResourceTest extends CXFTestBase {
         return new MultipartBody(att);
     }
 
+    @Test
+    public void testJson() throws Exception {
+        Response response = WebClient.create(endPoint + TIKA_PATH + "/text")
+                .accept("application/json")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+        Metadata metadata =
+                JsonMetadata.fromJson(new InputStreamReader(
+                        ((InputStream)response.getEntity()), StandardCharsets.UTF_8));
+        assertContains("embed4.txt", metadata.get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("General Congress", metadata.get(TikaCoreProperties.TIKA_CONTENT));
+        assertNotFound("<p", metadata.get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals("Microsoft Office Word", metadata.get(OfficeOpenXMLExtended.APPLICATION));
+    }
+
+    @Test
+    public void testJsonWriteLimitEmbedded() throws Exception {
+        Response response = WebClient.create(endPoint + TIKA_PATH + "/text")
+                .accept("application/json")
+                .header("writeLimit", "500")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+        Metadata metadata =
+                JsonMetadata.fromJson(new InputStreamReader(
+                        ((InputStream)response.getEntity()), StandardCharsets.UTF_8));
+        assertContains("embed2a.txt", metadata.get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("When in the Course", metadata.get(TikaCoreProperties.TIKA_CONTENT));
+        assertNotFound("declare the causes", metadata.get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals("Microsoft Office Word", metadata.get(OfficeOpenXMLExtended.APPLICATION));
+        assertTrue(metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION).startsWith(
+                "org.apache.tika.sax.WriteOutContentHandler$WriteLimitReachedException"));
+        assertNotFound("embed4.txt", metadata.get(TikaCoreProperties.TIKA_CONTENT));
+
+    }
 }

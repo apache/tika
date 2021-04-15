@@ -57,9 +57,9 @@ import org.apache.tika.server.core.resource.UnpackerResource;
 
 public abstract class CXFTestBase {
     protected static final String endPoint = "http://localhost:" + TikaServerConfig.DEFAULT_PORT;
-    private final static int DIGESTER_READ_LIMIT = 20 * 1024 * 1024;
+    protected final static int DIGESTER_READ_LIMIT = 20 * 1024 * 1024;
     protected Server server;
-    private TikaConfig tika;
+    protected TikaConfig tika;
 
     public static void assertContains(String needle, String haystack) {
         assertTrue(needle + " not found in:\n" + haystack, haystack.contains(needle));
@@ -101,7 +101,10 @@ public abstract class CXFTestBase {
     public void setUp() throws Exception {
 
         this.tika = new TikaConfig(getTikaConfigInputStream());
-        TikaResource.init(tika, new CommonsDigester(DIGESTER_READ_LIMIT, "md5,sha1:32"),
+        TikaServerConfig tikaServerConfig = getTikaServerConfig();
+        TikaResource.init(tika, tikaServerConfig,
+                new CommonsDigester(DIGESTER_READ_LIMIT, "md5," +
+                        "sha1:32"),
                 getInputStreamFactory(tika), new ServerStatus("", 0, true));
         JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
         //set compression interceptors
@@ -119,6 +122,12 @@ public abstract class CXFTestBase {
 
         manager.registerBindingFactory(JAXRSBindingFactory.JAXRS_BINDING_ID, factory);
         server = sf.create();
+    }
+
+    protected TikaServerConfig getTikaServerConfig() {
+        TikaServerConfig tikaServerConfig = new TikaServerConfig();
+        tikaServerConfig.setReturnStackTrace(true);
+        return tikaServerConfig;
     }
 
     protected InputStreamFactory getInputStreamFactory(TikaConfig tikaConfig) {

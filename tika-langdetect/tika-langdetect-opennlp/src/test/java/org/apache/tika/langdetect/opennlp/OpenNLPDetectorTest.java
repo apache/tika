@@ -22,15 +22,14 @@ import org.apache.tika.language.detect.LanguageResult;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
+
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +57,7 @@ public class OpenNLPDetectorTest {
         OPTIMAIZE_TO_OPENNLP.put("pt", "por");
         OPTIMAIZE_TO_OPENNLP.put("sv", "swe");
         OPTIMAIZE_TO_OPENNLP.put("th", "tha");
-        OPTIMAIZE_TO_OPENNLP.put("zh", "cmn");
+        OPTIMAIZE_TO_OPENNLP.put("zh", "zho-simp");
     }
 
     @Test

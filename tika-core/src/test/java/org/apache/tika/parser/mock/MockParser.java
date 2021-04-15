@@ -31,9 +31,20 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.xml.parsers.DocumentBuilder;
 
+import com.martensigwart.fakeload.FakeLoad;
+import com.martensigwart.fakeload.FakeLoadBuilder;
+import com.martensigwart.fakeload.FakeLoadExecutor;
+import com.martensigwart.fakeload.FakeLoadExecutors;
+import com.martensigwart.fakeload.MemoryUnit;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -141,6 +152,8 @@ public class MockParser extends AbstractParser {
             throwIt(action);
         } else if ("hang".equals(name)) {
             hang(action);
+        } else if ("fakeload".equals(name)) {
+            fakeload(action);
         } else if ("oom".equals(name)) {
             kabOOM();
         } else if ("print_out".equals(name) || "print_err".equals(name)) {
@@ -156,6 +169,68 @@ public class MockParser extends AbstractParser {
         } else {
             throw new IllegalArgumentException("Didn't recognize mock action: " + name);
         }
+    }
+
+    private void fakeload(Node action) {
+        //https://github.com/msigwart/fakeload
+        //with this version of fakeload, you should only need one thread to hit
+        //the cpu targets; on Linux with Java 8 at least, two or more threads did
+        //not increase the overall CPU over a single thread
+        int numThreads = 1;
+        NamedNodeMap attrs = action.getAttributes();
+        if (attrs == null) {
+            throw new IllegalArgumentException("Must specify details...no attributes for " +
+                    "fakeload?!");
+        }
+        if (attrs.getNamedItem("millis") == null || attrs.getNamedItem("cpu") == null ||
+                attrs.getNamedItem("mb") == null) {
+            throw new IllegalArgumentException("must specify 'millis' (time to process), " +
+                    "'cpu' (% cpu as an integer, e.g. 50% would be '50'), " +
+                    "and 'mb' (megabytes as an integer)");
+        }
+        Node n = attrs.getNamedItem("numThreads");
+        if (n != null) {
+            numThreads = Integer.parseInt(n.getNodeValue());
+        }
+        final long millis = Long.parseLong(attrs.getNamedItem("millis").getNodeValue());
+        final int cpu = Integer.parseInt(attrs.getNamedItem("cpu").getNodeValue());
+        final int mb = Integer.parseInt(attrs.getNamedItem("mb").getNodeValue());
+
+        ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
+        ExecutorCompletionService<Integer> executorCompletionService =
+                new ExecutorCompletionService<>(executorService);
+
+        for (int i = 0; i < numThreads; i++) {
+            executorCompletionService.submit(new Runnable() {
+                @Override
+                public void run() {
+                    FakeLoad fakeload =
+                            new FakeLoadBuilder().lasting(millis, TimeUnit.MILLISECONDS)
+                                    .withCpu(cpu).withMemory(mb, MemoryUnit.MB).build();
+                    FakeLoadExecutor executor = FakeLoadExecutors.newDefaultExecutor();
+                    executor.execute(fakeload);
+                }
+            }, 1);
+
+            int finished = 0;
+            try {
+                while (finished < numThreads) {
+                    Future<Integer> future = executorCompletionService.take();
+                    if (future != null) {
+                        future.get();
+                        finished++;
+                    }
+                }
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                executorService.shutdownNow();
+            }
+
+        }
+
     }
 
     private void throwIllegalChars() throws IOException {

@@ -1202,6 +1202,35 @@
             on e.extract_exception_id=t.extract_exception_id
         </sql>
     </report>
+    <report reportName="fixedCatastrophicExtractExceptions"
+            reportFilename="exceptions/fixed_catastrophic_exceptions_in_b.xlsx"
+            format="xlsx"
+            includeSql="true">
+        <sql>
+            select exa.file_path, ra.extract_exception_description, rb.extract_exception_description
+            from extract_exceptions_a exa
+            left join extract_exceptions_b exb on exa.container_id=exb.container_id
+            join ref_extract_exception_types ra on exa.extract_exception_id = ra.extract_exception_id
+            left join ref_extract_exception_types rb on exb.extract_exception_id = rb.extract_exception_id
+            where exa.extract_exception_id &lt; 4
+            and (exb.extract_exception_id is null or exb.extract_exception_id &gt; 3)
+        </sql>
+    </report>
+    <report reportName="newCatastrophicExtractExceptions"
+            reportFilename="exceptions/new_catastrophic_exceptions_in_b.xlsx"
+            format="xlsx"
+            includeSql="true">
+        <sql>
+            select exb.file_path, rb.extract_exception_description, ra.extract_exception_description
+            from extract_exceptions_b exb
+            left join extract_exceptions_a exa on exb.container_id=exa.container_id
+            join ref_extract_exception_types rb on exb.extract_exception_id = rb.extract_exception_id
+            left join ref_extract_exception_types ra on exa.extract_exception_id = ra.extract_exception_id
+            where exb.extract_exception_id &lt; 4
+            and (exa.extract_exception_id is null or exa.extract_exception_id &gt; 3)
+        </sql>
+    </report>
+
     <report reportName="parseExceptionTypesA"
             reportFilename="exceptions/overall_exception_types_a.xlsx"
             format="xlsx"

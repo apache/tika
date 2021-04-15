@@ -33,6 +33,7 @@
 
     <modules>
         <module>tika-langdetect-commons</module>
+        <module>tika-langdetect-tika</module>
         <module>tika-langdetect-lingo24</module>
         <module>tika-langdetect-optimaize</module>
         <module>tika-langdetect-mitll-text</module>
