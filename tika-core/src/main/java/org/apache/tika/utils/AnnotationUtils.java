@@ -18,6 +18,7 @@ package org.apache.tika.utils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.InvocationTargetException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -120,12 +121,17 @@ public class AnnotationUtils {
                 if (field.getType().isAssignableFrom(param.getType())) {
                     try {
                         field.assignValue(bean, param.getValue());
-                    } catch (Exception e) {
+                    } catch (InvocationTargetException e) {
+                        LOG.error("Error assigning value '{}' to '{}'", param.getValue(), param.getName());
+                        final Throwable cause = e.getCause() == null ? e : e.getCause();
+                        throw new TikaConfigException(cause.getMessage(), cause);
+                    } catch (IllegalAccessException e) {
+                        LOG.error("Error assigning value '{}' to '{}'", param.getValue(), param.getName());
                         throw new TikaConfigException(e.getMessage(), e);
                     }
                 } else {
                     String msg = String.format(Locale.ROOT,
-                            "Value '%s' of type '%s' cant be" +
+                            "Value '%s' of type '%s' can't be" +
                                     " assigned to field '%s' of defined type '%s'",
                             param.getValue(),
                             param.getValue().getClass(), field.getName(), field.getType());
