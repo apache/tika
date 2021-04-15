@@ -49,8 +49,8 @@ public class ProduceTypeResourceComparator implements ResourceComparator {
             Arrays.asList(
                     MediaType.TEXT_PLAIN_TYPE,
                     MediaType.APPLICATION_JSON_TYPE,
-                    MediaType.TEXT_XML_TYPE,
-                    MediaType.TEXT_HTML_TYPE
+                    MediaType.TEXT_HTML_TYPE,
+                    MediaType.TEXT_XML_TYPE
             );
 
     /**
