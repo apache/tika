@@ -109,8 +109,7 @@ public class MetricsHelper {
         REGISTRY.add(jmxMeterRegistry);
     }
 
-    public static void registerPreStart(JAXRSServerFactoryBean sf,
-                                        ServerStatus serverStatus,
+    public static void registerPreStart(ServerStatus serverStatus,
                                         boolean enableStatus) {
 
         if (enableStatus) {

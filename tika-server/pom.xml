@@ -202,6 +202,12 @@
       <groupId>io.github.mweirauch</groupId>
       <artifactId>micrometer-jvm-extras</artifactId>
       <version>${micrometer-extras.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>io.micrometer</groupId>
+          <artifactId>micrometer-core</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>io.micrometer</groupId>

@@ -56,6 +56,7 @@ import org.apache.tika.parser.utils.CommonsDigester;
 import org.apache.tika.server.mbean.MBeanHelper;
 import org.apache.tika.server.mbean.ServerStatusExporter;
 import org.apache.tika.server.metrics.MetricsHelper;
+import org.apache.tika.server.metrics.MetricsResource;
 import org.apache.tika.server.resource.DetectorResource;
 import org.apache.tika.server.resource.LanguageResource;
 import org.apache.tika.server.resource.MetadataResource;
@@ -330,6 +331,9 @@ public class TikaServerCli {
                 rCoreProviders.add(new SingletonResourceProvider(new TikaServerStatus(serverStatus)));
                 MBeanHelper.registerServerStatusMBean(serverStatus);
             }
+            if (line.hasOption("metrics")) {
+                rCoreProviders.add(new SingletonResourceProvider(new MetricsResource()));
+            }
             List<ResourceProvider> rAllProviders = new ArrayList<>(rCoreProviders);
             rAllProviders.add(new SingletonResourceProvider(new TikaWelcome(rCoreProviders)));
             sf.setResourceProviders(rAllProviders);
@@ -366,7 +370,7 @@ public class TikaServerCli {
             sf.setResourceComparator(new ProduceTypeResourceComparator());
             if (line.hasOption("metrics")) {
                 MetricsHelper.initMetrics(sf);
-                MetricsHelper.registerPreStart(sf, serverStatus, line.hasOption("status"));
+                MetricsHelper.registerPreStart(serverStatus, line.hasOption("status"));
             }
             BindingFactoryManager manager = sf.getBus().getExtension(BindingFactoryManager.class);
             JAXRSBindingFactory factory = new JAXRSBindingFactory();
