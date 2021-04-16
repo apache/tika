@@ -119,6 +119,7 @@ public class TikaServerCli {
         options.addOption("s", "includeStack", false, "whether or not to return a stack trace\nif there is an exception during 'parse'");
         options.addOption("i", "id", true, "id to use for server in server status endpoint");
         options.addOption("status", false, "enable the status endpoint");
+        options.addOption("metrics", false, "enable metrics collection and expose them");
         options.addOption("?", "help", false, "this help message");
         options.addOption("enableUnsecureFeatures", false, "this is required to enable fileUrl.");
         options.addOption("enableFileUrl", false, "allows user to pass in fileUrl instead of InputStream.");
