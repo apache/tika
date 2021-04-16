@@ -29,6 +29,8 @@
   <url>http://tika.apache.org/</url>
 
   <properties>
+    <cxf.micrometer.version>1.5.12</cxf.micrometer.version>
+    <micrometer-extras.version>0.2.2</micrometer-extras.version>
   </properties>
 
   <pluginRepositories>
@@ -170,6 +172,46 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>jul-to-slf4j</artifactId>
+    </dependency>
+
+    <!-- metrics -->
+    <dependency>
+      <groupId>org.apache.cxf</groupId>
+      <artifactId>cxf-rt-features-metrics</artifactId>
+      <version>${cxf.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>io.dropwizard.metrics</groupId>
+          <artifactId>metrics-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.dropwizard.metrics</groupId>
+          <artifactId>metrics-jmx</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.micrometer</groupId>
+          <artifactId>micrometer-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.sun.activation</groupId>
+          <artifactId>jakarta.activation</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>io.github.mweirauch</groupId>
+      <artifactId>micrometer-jvm-extras</artifactId>
+      <version>${micrometer-extras.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-registry-prometheus</artifactId>
+      <version>${cxf.micrometer.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-registry-jmx</artifactId>
+      <version>${cxf.micrometer.version}</version>
     </dependency>
 
     <dependency>
