@@ -22,6 +22,8 @@ import java.lang.reflect.Modifier;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.text.PDFTextStripper;
@@ -95,6 +97,13 @@ public class PDFParserConfig implements Serializable {
     private boolean ifXFAExtractOnlyXFA = false;
 
     private OCR_STRATEGY ocrStrategy = OCR_STRATEGY.AUTO;
+
+    // If OCR_Strategy=AUTO, then this controls the algorithm used
+    private static final OCRStrategyAuto OCR_STRATEGY_AUTO_BEST = new OCRStrategyAuto(10, 10);
+    private static final OCRStrategyAuto OCR_STRATEGY_AUTO_FAST = new OCRStrategyAuto(.1f, 10);
+    private static final int OCR_STRATEGY_AUTO_DEFAULT_CHARS_PER_PAGE = 10;
+
+    private OCRStrategyAuto ocrStrategyAuto = OCR_STRATEGY_AUTO_BEST;
 
     private int ocrDPI = 300;
     private ImageType ocrImageType = ImageType.GRAY;
@@ -473,6 +482,13 @@ public class PDFParserConfig implements Serializable {
     }
 
     /**
+     * @return ocr auto strategy to use when ocr_strategy = Auto
+     */
+    public OCRStrategyAuto getOcrStrategyAuto() {
+        return ocrStrategyAuto;
+    }
+
+    /**
      * Which strategy to use for OCR
      *
      * @param ocrStrategy
@@ -480,6 +496,37 @@ public class PDFParserConfig implements Serializable {
     public void setOcrStrategy(OCR_STRATEGY ocrStrategy) {
         this.ocrStrategy = ocrStrategy;
         userConfigured.add("ocrStrategy");
+    }
+
+
+    public void setOcrStrategyAuto(String ocrStrategyAuto) {
+        final String regex = "^\\s*(fast|best)|(\\d{1,3})(%)?(?:,\\s*(\\d{1,3}))?\\s*$";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(ocrStrategyAuto);
+        if (matcher.matches()) {
+            final String group1 = matcher.group(1);
+
+            if ("best".equals(group1)) {
+                this.ocrStrategyAuto = OCR_STRATEGY_AUTO_BEST;
+            } else if ("fast".equals(group1)) {
+                this.ocrStrategyAuto = OCR_STRATEGY_AUTO_FAST;
+            } else {
+                float unmappedUnicodeCharsPerPage = Integer.parseInt(matcher.group(2));
+                if (matcher.group(3) != null) {
+                    // IF we have the percent sign, then convert
+                    unmappedUnicodeCharsPerPage = unmappedUnicodeCharsPerPage / 100f;
+                }
+                // The 2nd number is optional.  Default to 10 chars per page
+                int totalCharsPerPage = matcher.group(4) == null
+                        ? OCR_STRATEGY_AUTO_DEFAULT_CHARS_PER_PAGE
+                        : Integer.parseInt(matcher.group(4));
+                this.ocrStrategyAuto = new OCRStrategyAuto(unmappedUnicodeCharsPerPage, totalCharsPerPage);
+            }
+            userConfigured.add("ocrStrategyAuto");
+
+        } else {
+            throw new IllegalArgumentException("Error parsing OCRStrategyAuto - Must be in the form 'num[%], num'");
+        }
     }
 
     /**
@@ -846,4 +893,34 @@ public class PDFParserConfig implements Serializable {
             throw new IllegalArgumentException(sb.toString());
         }
     }
+
+    /**
+     * Encapsulate the numbers used to control OCR Strategy when set to auto
+     *
+     * If the total characters on the page < this.totalCharsPerPage
+     * or
+     * total unmapped unicode characters on the page > this.unmappedUnicodeCharsPerPage
+     * then we will perform OCR on the page
+     *
+     * If unamppedUnicodeCharsPerPage is an integer > 0, then we compare absolute number of characters.
+     * If it is a float < 1, then we assume it is a percentage and we compare it to the
+     *   percentage of unmappedCharactersPerPage/totalCharsPerPage
+     */
+    public static class OCRStrategyAuto {
+        private final float unmappedUnicodeCharsPerPage;
+        private final int totalCharsPerPage;
+        public OCRStrategyAuto(float unmappedUnicodeCharsPerPage, int totalCharsPerPage) {
+            this.totalCharsPerPage = totalCharsPerPage;
+            this.unmappedUnicodeCharsPerPage = unmappedUnicodeCharsPerPage;
+        }
+
+        public float getUnmappedUnicodeCharsPerPage() {
+            return unmappedUnicodeCharsPerPage;
+        }
+
+        public int getTotalCharsPerPage() {
+            return totalCharsPerPage;
+        }
+    }
+
 }
