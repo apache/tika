@@ -23,14 +23,28 @@ import io.micrometer.core.instrument.binder.MeterBinder;
 import org.apache.tika.server.ServerStatus;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Server status metrics meter binder.
+ */
 public class ServerStatusMetrics implements MeterBinder {
 
+    /**
+     * The server status currently in use.
+     */
     private ServerStatus serverStatus;
 
+    /**
+     * Initializes server status metrics with the server status object.
+     * @param serverStatus the server status.
+     */
     public ServerStatusMetrics(ServerStatus serverStatus) {
         this.serverStatus = serverStatus;
     }
 
+    /**
+     * Binds server status metrics to meter registry.
+     * @param meterRegistry the meter registry to bind to.
+     */
     @Override
     public void bindTo(@NotNull MeterRegistry meterRegistry) {
         Gauge.builder("server.status.lastparsed", serverStatus, ServerStatus::getMillisSinceLastParseStarted)

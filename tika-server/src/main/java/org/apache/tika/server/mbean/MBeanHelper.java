@@ -18,7 +18,6 @@
 package org.apache.tika.server.mbean;
 
 import org.apache.tika.server.ServerStatus;
-import org.apache.tika.server.TikaServerCli;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +26,9 @@ import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 import java.util.Locale;
 
+/**
+ * Heps setup custom mBeans.
+ */
 public class MBeanHelper {
 
     /**

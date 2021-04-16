@@ -60,6 +60,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Helps setup and configure metrics.
+ */
 public class MetricsHelper {
 
     /**
@@ -67,15 +70,31 @@ public class MetricsHelper {
      */
     private static final Logger LOG = LoggerFactory.getLogger(MetricsHelper.class);
 
+    /**
+     * Map of Meter registry class to object/instance in use.
+     */
     private static final Map<Class<? extends MeterRegistry>, MeterRegistry> REGISTRY_MAP
             = Collections.synchronizedMap(new HashMap<>());
 
+    /**
+     * The composite registry in use.
+     */
     private static final CompositeMeterRegistry REGISTRY = Metrics.globalRegistry;
 
+    /**
+     * Gets the sub registry from root registry.
+     * @param tClass the class to get registry of.
+     * @param <T> the registry type.
+     * @return the registry instance.
+     */
     public static <T extends MeterRegistry> T getRegistry(Class<T> tClass) {
         return tClass.cast(REGISTRY_MAP.get(tClass));
     }
 
+    /**
+     * Initialized metrics.
+     * @param sf the server factory bean.
+     */
     public static void initMetrics(JAXRSServerFactoryBean sf) {
         final JaxrsTags jaxrsTags = new JaxrsTags();
         final TagsCustomizer operationsCustomizer = new JaxrsOperationTagsCustomizer(jaxrsTags);
@@ -97,6 +116,9 @@ public class MetricsHelper {
         sf.setFeatures(Collections.singletonList(new MetricsFeature(metricsProvider)));
     }
 
+    /**
+     * Sets up registries.
+     */
     private static void setUpRegistries() {
         REGISTRY.config().commonTags("application", "tika-server");
 
@@ -109,6 +131,11 @@ public class MetricsHelper {
         REGISTRY.add(jmxMeterRegistry);
     }
 
+    /**
+     * Register meters before start.
+     * @param serverStatus the server status object.
+     * @param enableStatus whether to enable server status metrics.
+     */
     public static void registerPreStart(ServerStatus serverStatus,
                                         boolean enableStatus) {
 
@@ -117,13 +144,21 @@ public class MetricsHelper {
         }
         setUpJvmMetrics();
         setUpSystemMetrics();
+        setUpLoggingMetrics();
         setUpExtraMetrics();
     }
 
+    /**
+     * Sets up server status metrics.
+     * @param serverStatus the server status.
+     */
     private static void setUpServerStatusMetrics(ServerStatus serverStatus) {
         new ServerStatusMetrics(serverStatus).bindTo(REGISTRY);
     }
 
+    /**
+     * Sets up jvm metrics.
+     */
     private static void setUpJvmMetrics() {
         new ClassLoaderMetrics().bindTo(REGISTRY);
         new JvmMemoryMetrics().bindTo(REGISTRY);
@@ -131,21 +166,44 @@ public class MetricsHelper {
         new JvmThreadMetrics().bindTo(REGISTRY);
     }
 
+    /**
+     * Sets up system level metrics.
+     */
     private static void setUpSystemMetrics() {
         new ProcessorMetrics().bindTo(REGISTRY);
         new FileDescriptorMetrics().bindTo(REGISTRY);
         new UptimeMetrics().bindTo(REGISTRY);
     }
 
+    /**
+     * Sets up logging metrics.
+     */
+    private static void setUpLoggingMetrics() {
+        new Log4JMetrics().bindTo(REGISTRY);
+    }
+
+    /**
+     * Sets up jvm extras metrics.
+     */
     private static void setUpExtraMetrics() {
         new ProcessThreadMetrics().bindTo(REGISTRY);
         new ProcessMemoryMetrics().bindTo(REGISTRY);
     }
 
+    /**
+     * Registers meters post start.
+     * @param sf the server factory bean.
+     * @param server the cxf server.
+     */
     public static void registerPostStart(JAXRSServerFactoryBean sf, Server server) {
         setUpJettyThreadPoolMetrics(sf, server);
     }
 
+    /**
+     * Sets up jetty thread pool metrics.
+     * @param sf the server factory bean.
+     * @param server the cxf server.
+     */
     private static void setUpJettyThreadPoolMetrics(JAXRSServerFactoryBean sf, Server server) {
         JettyHTTPServerEngineFactory engineFactory = sf.getBus()
                 .getExtension(JettyHTTPServerEngineFactory.class);

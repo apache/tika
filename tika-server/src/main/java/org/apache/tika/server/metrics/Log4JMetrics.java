@@ -46,22 +46,45 @@ import static org.apache.log4j.Level.INFO_INT;
 import static org.apache.log4j.Level.TRACE_INT;
 import static org.apache.log4j.Level.WARN_INT;
 
+/**
+ * Log4J metrics meter binder.
+ */
 public class Log4JMetrics implements MeterBinder, AutoCloseable {
 
+    /**
+     * Te meter name.
+     */
     private static final String METER_NAME = "log4j.events";
 
+    /**
+     * Additional tags.
+     */
     private final Iterable<Tag> tags;
 
+    /**
+     * List of appenders that has the metrics filter attached.
+     */
     private List<Appender> attachedAppenders = new ArrayList<>();
 
+    /**
+     * Initializes metrics with no additional tags.
+     */
     public Log4JMetrics() {
-        this.tags = Collections.emptyList();
+        this(Collections.emptyList());
     }
 
+    /**
+     * Initializes metrics with additional tags.
+     * @param tags the additional tags.
+     */
     public Log4JMetrics(Iterable<Tag> tags) {
         this.tags = tags;
     }
 
+    /**
+     * Binds the metrics to registry.
+     * @param meterRegistry the meter registry to bind to.
+     */
     @Override
     public void bindTo(@NotNull MeterRegistry meterRegistry) {
         Logger rootLogger = LogManager.getRootLogger();
@@ -78,6 +101,11 @@ public class Log4JMetrics implements MeterBinder, AutoCloseable {
                 });
     }
 
+    /**
+     * Attaches metrics filter to enumeration of appender.
+     * @param appenderEnumeration the appender enumeration.
+     * @param meterRegistry the meter registry to attach to.
+     */
     private void attachToAppenders(Enumeration<Appender> appenderEnumeration, MeterRegistry meterRegistry) {
         while (appenderEnumeration.hasMoreElements()) {
             Appender appender = appenderEnumeration.nextElement();
@@ -93,6 +121,10 @@ public class Log4JMetrics implements MeterBinder, AutoCloseable {
         }
     }
 
+    /**
+     * Clears all metrics filters.
+     * @throws Exception if an issue.
+     */
     @Override
     public void close() throws Exception {
         for (Appender appender : attachedAppenders) {
@@ -103,6 +135,11 @@ public class Log4JMetrics implements MeterBinder, AutoCloseable {
         attachedAppenders.clear();
     }
 
+    /**
+     * Attaches metrics filter to appender.
+     * @param appender the appender to attach to.
+     * @param meterRegistry the meter registry to bind to.
+     */
     private void attachMetricsFilter(Appender appender, MeterRegistry meterRegistry) {
         MetricsFilter metricsFilter = new MetricsFilter(meterRegistry, tags);
         attachedAppenders.add(appender);
@@ -112,17 +149,49 @@ public class Log4JMetrics implements MeterBinder, AutoCloseable {
         appender.addFilter(metricsFilter);
     }
 
+    /**
+     * Monitors all logging through log4j and keeps count of
+     * all logs for all levels.
+     */
     @NonNullApi
     @NonNullFields
-    class MetricsFilter extends Filter {
+    private class MetricsFilter extends Filter {
 
+        /**
+         * Fatal log counter
+         */
         private final Counter fatalCounter;
+
+        /**
+         * Error log counter.
+         */
         private final Counter errorCounter;
+
+        /**
+         * Warn log counter.
+         */
         private final Counter warnCounter;
+
+        /**
+         * Info log counter.
+         */
         private final Counter infoCounter;
+
+        /**
+         * Debug log counter.
+         */
         private final Counter debugCounter;
+
+        /**
+         * Trace log counter.
+         */
         private final Counter traceCounter;
 
+        /**
+         * Initializes metrics filter with registry and tags.
+         * @param registry the meter registry to bind to.
+         * @param tags the additional tags.
+         */
         MetricsFilter(MeterRegistry registry, Iterable<Tag> tags) {
             fatalCounter = Counter.builder(METER_NAME)
                     .tags(tags)
@@ -190,6 +259,10 @@ public class Log4JMetrics implements MeterBinder, AutoCloseable {
             return decision;
         }
 
+        /**
+         * Increments the appropriate counter.
+         * @param event the logging event.
+         */
         private void incrementCounter(LoggingEvent event) {
             switch (event.getLevel().toInt()) {
                 case FATAL_INT:
