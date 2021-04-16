@@ -24,7 +24,6 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.tika.server.metrics.MetricsHelper;
 import org.apache.tika.server.metrics.MetricsResource;
-import org.apache.tika.server.writer.JSONMessageBodyWriter;
 import org.apache.tika.server.writer.TextMessageBodyWriter;
 import org.junit.Test;
 
