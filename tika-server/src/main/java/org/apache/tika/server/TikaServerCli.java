@@ -52,6 +52,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.utils.BouncyCastleDigester;
 import org.apache.tika.parser.utils.CommonsDigester;
+import org.apache.tika.server.mbean.MBeanHelper;
 import org.apache.tika.server.mbean.ServerStatusExporter;
 import org.apache.tika.server.resource.DetectorResource;
 import org.apache.tika.server.resource.LanguageResource;
@@ -99,10 +100,10 @@ public class TikaServerCli {
             "Please make sure you know what you are doing.";
 
     private static final List<String> ONLY_IN_SPAWN_CHILD_MODE =
-            Arrays.asList(new String[] { "taskTimeoutMillis", "taskPulseMillis",
-            "pingTimeoutMillis", "pingPulseMillis", "maxFiles", "javaHome", "maxRestarts",
+            Arrays.asList("taskTimeoutMillis", "taskPulseMillis",
+                    "pingTimeoutMillis", "pingPulseMillis", "maxFiles", "javaHome", "maxRestarts",
                     "numRestarts",
-            "childStatusFile", "maxChildStartupMillis", "tmpFilePrefix"});
+                    "childStatusFile", "maxChildStartupMillis", "tmpFilePrefix");
 
     private static Options getOptions() {
         Options options = new Options();
@@ -324,7 +325,7 @@ public class TikaServerCli {
             rCoreProviders.add(new SingletonResourceProvider(new TikaVersion()));
             if (line.hasOption("status")) {
                 rCoreProviders.add(new SingletonResourceProvider(new TikaServerStatus(serverStatus)));
-                registerServerStatusMBean(serverStatus);
+                MBeanHelper.registerServerStatusMBean(serverStatus);
             }
             List<ResourceProvider> rAllProviders = new ArrayList<>(rCoreProviders);
             rAllProviders.add(new SingletonResourceProvider(new TikaWelcome(rCoreProviders)));
@@ -408,27 +409,6 @@ public class TikaServerCli {
         }
 
         return serverTimeouts;
-    }
-
-    /**
-     * Registers MBean server bean for server status (via exporter).
-     *
-     * @param serverStatus the server status to expose.
-     */
-    private static void registerServerStatusMBean(ServerStatus serverStatus) {
-        try {
-            MBeanServer server = ManagementFactory.getPlatformMBeanServer();
-            ServerStatusExporter mbean = new ServerStatusExporter(serverStatus);
-            final Class<? extends ServerStatusExporter> objectClass = mbean.getClass();
-            // Construct the ObjectName for the MBean we will register
-            ObjectName mbeanName = new ObjectName(
-                    String.format(Locale.ROOT, "%s:type=basic,name=%s", objectClass.getPackage().getName(), objectClass.getSimpleName())
-            );
-            server.registerMBean(mbean, mbeanName);
-            LOG.info("Registered Server Status MBean with objectname : {}", mbeanName);
-        } catch (Exception e) {
-            LOG.warn("Error registering MBean for status", e);
-        }
     }
 
 }
