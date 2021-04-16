@@ -40,6 +40,7 @@ import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.cxf.binding.BindingFactoryManager;
+import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
@@ -54,6 +55,7 @@ import org.apache.tika.parser.utils.BouncyCastleDigester;
 import org.apache.tika.parser.utils.CommonsDigester;
 import org.apache.tika.server.mbean.MBeanHelper;
 import org.apache.tika.server.mbean.ServerStatusExporter;
+import org.apache.tika.server.metrics.MetricsHelper;
 import org.apache.tika.server.resource.DetectorResource;
 import org.apache.tika.server.resource.LanguageResource;
 import org.apache.tika.server.resource.MetadataResource;
@@ -361,11 +363,18 @@ public class TikaServerCli {
             String url = "http://" + host + ":" + port + "/";
             sf.setAddress(url);
             sf.setResourceComparator(new ProduceTypeResourceComparator());
+            if (line.hasOption("metrics")) {
+                MetricsHelper.initMetrics(sf);
+                MetricsHelper.registerPreStart(sf, serverStatus, line.hasOption("status"));
+            }
             BindingFactoryManager manager = sf.getBus().getExtension(BindingFactoryManager.class);
             JAXRSBindingFactory factory = new JAXRSBindingFactory();
             factory.setBus(sf.getBus());
             manager.registerBindingFactory(JAXRSBindingFactory.JAXRS_BINDING_ID, factory);
-            sf.create();
+            Server server = sf.create();
+            if (line.hasOption("metrics")) {
+                MetricsHelper.registerPostStart(sf, server);
+            }
             LOG.info("Started Apache Tika server at {}", url);
     }
 

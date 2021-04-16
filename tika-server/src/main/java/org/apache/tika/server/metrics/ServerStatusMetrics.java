@@ -20,7 +20,6 @@ package org.apache.tika.server.metrics;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
-import io.micrometer.core.instrument.binder.logging.Log4j2Metrics;
 import org.apache.tika.server.ServerStatus;
 import org.jetbrains.annotations.NotNull;
 
