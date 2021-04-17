@@ -906,7 +906,7 @@ public class PDFParserConfig implements Serializable {
      * If it is a float < 1, then we assume it is a percentage and we compare it to the
      *   percentage of unmappedCharactersPerPage/totalCharsPerPage
      */
-    public static class OCRStrategyAuto {
+    public static class OCRStrategyAuto implements Serializable {
         private final float unmappedUnicodeCharsPerPage;
         private final int totalCharsPerPage;
         public OCRStrategyAuto(float unmappedUnicodeCharsPerPage, int totalCharsPerPage) {
