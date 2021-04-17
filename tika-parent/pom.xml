@@ -344,6 +344,7 @@
 
     <cxf.version>3.4.3</cxf.version>
     <slf4j.version>1.7.30</slf4j.version>
+        <log4j.version>1.2.17</log4j.version>
     <jackson.version>2.12.2</jackson.version>
     <!-- when this is next upgraded, see if we can get rid of
          javax.activation dependency in tika-server -->

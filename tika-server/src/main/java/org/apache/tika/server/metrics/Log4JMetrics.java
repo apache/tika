@@ -37,14 +37,11 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
-
-import static org.apache.log4j.Level.DEBUG_INT;
-import static org.apache.log4j.Level.ERROR_INT;
-import static org.apache.log4j.Level.FATAL_INT;
-import static org.apache.log4j.Level.INFO_INT;
-import static org.apache.log4j.Level.TRACE_INT;
-import static org.apache.log4j.Level.WARN_INT;
+import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * Log4J metrics meter binder.
@@ -158,34 +155,10 @@ public class Log4JMetrics implements MeterBinder, AutoCloseable {
     private class MetricsFilter extends Filter {
 
         /**
-         * Fatal log counter
+         * Map of log level string to counter.
          */
-        private final Counter fatalCounter;
-
-        /**
-         * Error log counter.
-         */
-        private final Counter errorCounter;
-
-        /**
-         * Warn log counter.
-         */
-        private final Counter warnCounter;
-
-        /**
-         * Info log counter.
-         */
-        private final Counter infoCounter;
-
-        /**
-         * Debug log counter.
-         */
-        private final Counter debugCounter;
-
-        /**
-         * Trace log counter.
-         */
-        private final Counter traceCounter;
+        private final Map<String, Counter> LEVEL_COUNTER_MAP =
+                new HashMap<>();
 
         /**
          * Initializes metrics filter with registry and tags.
@@ -193,47 +166,14 @@ public class Log4JMetrics implements MeterBinder, AutoCloseable {
          * @param tags the additional tags.
          */
         MetricsFilter(MeterRegistry registry, Iterable<Tag> tags) {
-            fatalCounter = Counter.builder(METER_NAME)
-                    .tags(tags)
-                    .tags("level", "fatal")
-                    .description("Number of fatal level log events")
-                    .baseUnit(BaseUnits.EVENTS)
-                    .register(registry);
-
-            errorCounter = Counter.builder(METER_NAME)
-                    .tags(tags)
-                    .tags("level", "error")
-                    .description("Number of error level log events")
-                    .baseUnit(BaseUnits.EVENTS)
-                    .register(registry);
-
-            warnCounter = Counter.builder(METER_NAME)
-                    .tags(tags)
-                    .tags("level", "warn")
-                    .description("Number of warn level log events")
-                    .baseUnit(BaseUnits.EVENTS)
-                    .register(registry);
-
-            infoCounter = Counter.builder(METER_NAME)
-                    .tags(tags)
-                    .tags("level", "info")
-                    .description("Number of info level log events")
-                    .baseUnit(BaseUnits.EVENTS)
-                    .register(registry);
-
-            debugCounter = Counter.builder(METER_NAME)
-                    .tags(tags)
-                    .tags("level", "debug")
-                    .description("Number of debug level log events")
-                    .baseUnit(BaseUnits.EVENTS)
-                    .register(registry);
-
-            traceCounter = Counter.builder(METER_NAME)
-                    .tags(tags)
-                    .tags("level", "trace")
-                    .description("Number of trace level log events")
-                    .baseUnit(BaseUnits.EVENTS)
-                    .register(registry);
+            Stream.of("fatal", "error", "warn", "info", "debug", "trace")
+                    .forEach(levelStr -> LEVEL_COUNTER_MAP.put(levelStr,
+                            Counter.builder(METER_NAME)
+                            .tags(tags)
+                            .tags("level", levelStr)
+                            .description("Number of " + levelStr + " level log events")
+                            .baseUnit(BaseUnits.EVENTS)
+                            .register(registry)));
         }
 
         /**
@@ -264,28 +204,8 @@ public class Log4JMetrics implements MeterBinder, AutoCloseable {
          * @param event the logging event.
          */
         private void incrementCounter(LoggingEvent event) {
-            switch (event.getLevel().toInt()) {
-                case FATAL_INT:
-                    fatalCounter.increment();
-                    break;
-                case ERROR_INT:
-                    errorCounter.increment();
-                    break;
-                case WARN_INT:
-                    warnCounter.increment();
-                    break;
-                case INFO_INT:
-                    infoCounter.increment();
-                    break;
-                case DEBUG_INT:
-                    debugCounter.increment();
-                    break;
-                case TRACE_INT:
-                    traceCounter.increment();
-                    break;
-                default:
-                    break;
-            }
+            LEVEL_COUNTER_MAP.get(event.getLevel().toString().toLowerCase(Locale.ROOT))
+                    .increment();
         }
     }
 

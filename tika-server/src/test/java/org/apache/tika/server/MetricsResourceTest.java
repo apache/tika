@@ -88,6 +88,13 @@ public class MetricsResourceTest extends CXFTestBase {
         assertTrue(getMetricValue(response, "jetty_threads_current") > 1.0);
     }
 
+    @Test
+    public void testPrometheusContainsLog4j() throws IOException {
+        String response = getPrometheusResponse();
+        assertContains("log4j_events_total", response);
+        assertTrue(getMetricValue(response, "log4j_events_total{application=\"tika-server\",level=\"info\",}") > 1.0);
+    }
+
     private String getPrometheusResponse() throws IOException {
         Response response = WebClient.create(endPoint + METRICS_PROMETHEUS_PATH)
                 .type(MediaType.TEXT_PLAIN).accept(MediaType.TEXT_PLAIN).get();
