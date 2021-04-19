@@ -17,6 +17,23 @@
 
 package org.apache.tika.server;
 
+import static org.apache.cxf.helpers.HttpHeaderHelper.CONTENT_ENCODING;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import javax.ws.rs.ProcessingException;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.cxf.attachment.AttachmentUtil;
@@ -26,34 +43,15 @@ import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.cxf.jaxrs.ext.multipart.ContentDisposition;
 import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.junit.Test;
 
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadata;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.server.resource.TikaResource;
 import org.apache.tika.server.writer.JSONMessageBodyWriter;
-
-import org.junit.Test;
-
-import javax.ws.rs.ProcessingException;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-
-import static org.apache.cxf.helpers.HttpHeaderHelper.CONTENT_ENCODING;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 public class TikaResourceTest extends CXFTestBase {
     public static final String TEST_DOC = "test.doc";
@@ -83,6 +81,7 @@ public class TikaResourceTest extends CXFTestBase {
         sf.setResourceClasses(TikaResource.class);
         sf.setResourceProvider(TikaResource.class,
                 new SingletonResourceProvider(new TikaResource()));
+        sf.setResourceComparator(new ProduceTypeResourceComparator());
     }
 
     @Override
@@ -110,6 +109,16 @@ public class TikaResourceTest extends CXFTestBase {
         String responseMsg = getStringFromInputStream((InputStream) response
                 .getEntity());
         assertTrue(responseMsg.contains("test"));
+    }
+
+    @Test
+    public void testResourceComparator() throws Exception {
+        Response response = WebClient.create(endPoint + TIKA_PATH)
+                .put(ClassLoader.getSystemResourceAsStream(TEST_DOC));
+        String responseMsg = getStringFromInputStream((InputStream) response.getEntity());
+        //test that xml markup is the default
+        assertTrue(
+                responseMsg.contains("<meta name=\"meta:author\" content=\"Maxim Valyanskiy\"/>"));
     }
 
     @Test
