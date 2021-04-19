@@ -107,6 +107,7 @@ public abstract class CXFTestBase {
         setUpProviders(sf);
         sf.setAddress(endPoint + "/");
         sf.setResourceComparator(new ProduceTypeResourceComparator());
+        setUpFeatures(sf);
         BindingFactoryManager manager = sf.getBus().getExtension(
                 BindingFactoryManager.class
         );
@@ -119,6 +120,7 @@ public abstract class CXFTestBase {
                 factory
         );
         server = sf.create();
+        setUpPostProcess(sf, server);
     }
 
     protected boolean isIncludeStackTrace() {
@@ -139,6 +141,16 @@ public abstract class CXFTestBase {
      * Have the test do {@link JAXRSServerFactoryBean#setProviders(java.util.List)}, if needed
      */
     protected abstract void setUpProviders(JAXRSServerFactoryBean sf);
+
+    /**
+     * Have the test do {@link JAXRSServerFactoryBean#setFeatures(java.util.List)}, if needed
+     */
+    protected void setUpFeatures(JAXRSServerFactoryBean sf) {}
+
+    /**
+     * Have the test do additional steps after it is started, if needed
+     */
+    protected void setUpPostProcess(JAXRSServerFactoryBean sf, Server server) {}
 
     @After
     public void tearDown() throws Exception {
