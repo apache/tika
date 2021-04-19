@@ -359,6 +359,7 @@ public class TikaServerCli {
 
             String url = "http://" + host + ":" + port + "/";
             sf.setAddress(url);
+            sf.setResourceComparator(new ProduceTypeResourceComparator());
             BindingFactoryManager manager = sf.getBus().getExtension(BindingFactoryManager.class);
             JAXRSBindingFactory factory = new JAXRSBindingFactory();
             factory.setBus(sf.getBus());
