@@ -1350,6 +1350,8 @@ public class PDFParserTest extends TikaTest {
         List<Metadata> metadata = getRecursiveMetadata("testFlashInPDF.pdf");
         assertEquals(2, metadata.size());
         assertEquals("application/x-shockwave-flash", metadata.get(1).get(Metadata.CONTENT_TYPE));
+        assertEquals("TestMovie02.swf", metadata.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("15036", metadata.get(1).get(Metadata.CONTENT_LENGTH));
     }
 
 }

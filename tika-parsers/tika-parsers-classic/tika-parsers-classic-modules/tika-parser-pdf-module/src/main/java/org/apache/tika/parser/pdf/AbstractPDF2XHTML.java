@@ -47,7 +47,6 @@ import java.util.TreeMap;
 import javax.xml.stream.XMLStreamException;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.pdfbox.cos.COSArray;
 import org.apache.pdfbox.cos.COSDictionary;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -522,20 +521,17 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                     }
                 } else if (annotation instanceof PDAnnotationWidget) {
                     handleWidget((PDAnnotationWidget) annotation);
-                } else if ("RichMedia".equals(annotation.getSubtype())) {
-                    COSArray array = (COSArray) annotation.getCOSObject().getObjectFromPath(
-                            "RichMediaContent/Assets/Names/");
-                    if (array == null || array.size() < 2) {
-                        //should log
-                        continue;
+                } else {
+                    String annotationType = annotation.getSubtype();
+                    if (annotationType == null) {
+                        annotationType = "unknown";
                     }
-                    String name = array.getString(0);
-                    COSDictionary filespec = (COSDictionary) array.getObject(1);
-                    PDComplexFileSpecification cfs = new PDComplexFileSpecification(filespec);
-                    //TODO: do we want to tag this as a rich media type attachment
-                    //in the embedded file's metadata at some point?
-                    handlePDComplexFileSpec(name,
-                            "annotationRichMedia", cfs);
+                    for (COSDictionary fileSpec :
+                            findFileSpecs(annotation.getCOSObject())) {
+                        PDComplexFileSpecification cfs = new PDComplexFileSpecification(fileSpec);
+                        handlePDComplexFileSpec(cfs.getFilename(),
+                                annotationType, cfs);
+                    }
                 }
                 // TODO: remove once PDFBOX-1143 is fixed:
                 if (config.isExtractAnnotationText()) {
@@ -619,6 +615,12 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 }
             }
         }
+    }
+
+    private List<COSDictionary> findFileSpecs(COSDictionary cosDict) {
+        Set<COSName> types = new HashSet<>();
+        types.add(COSName.FILESPEC);
+        return PDFDOMUtil.findType(cosDict, types, MAX_RECURSION_DEPTH);
     }
 
     private void handlePDComplexFileSpec(String attachmentName,
@@ -733,6 +735,11 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             addNonNullAttribute("subtype", jsAction.getSubType(), attributes);
             xhtml.startElement("div", attributes);
             xhtml.endElement("div");
+        /*} else if (action instanceof PDActionSubmitForm) {
+            PDActionSubmitForm submitForm = (PDActionSubmitForm) action;
+            //these are typically urls, not actual file specification
+            PDFileSpecification fileSpecification = submitForm.getFile();
+            processDoc("", fileSpecification, new AttributesImpl());*/
         } else {
             xhtml.startElement("div", attributes);
             xhtml.endElement("div");
