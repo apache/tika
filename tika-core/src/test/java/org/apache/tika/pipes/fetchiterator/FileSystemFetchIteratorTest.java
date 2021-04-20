@@ -30,6 +30,8 @@ import java.util.stream.Stream;
 
 import org.junit.Test;
 
+import org.apache.tika.pipes.FetchEmitTuple;
+
 
 public class FileSystemFetchIteratorTest {
 

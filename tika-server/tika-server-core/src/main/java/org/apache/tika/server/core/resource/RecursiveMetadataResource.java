@@ -43,6 +43,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.server.core.MetadataList;
@@ -58,34 +59,21 @@ public class RecursiveMetadataResource {
 
     public static List<Metadata> parseMetadata(InputStream is, Metadata metadata,
                                                MultivaluedMap<String, String> httpHeaders,
-                                               UriInfo info, String handlerTypeName)
+                                               UriInfo info, HandlerConfig handlerConfig)
             throws Exception {
 
         final ParseContext context = new ParseContext();
         Parser parser = TikaResource.createParser();
-        // TODO: parameterize choice of max chars/max embedded attachments
+
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
-
-
         fillMetadata(parser, metadata, httpHeaders);
         fillParseContext(httpHeaders, metadata, context);
         TikaResource.logRequest(LOG, "/rmeta", metadata);
-
-        int writeLimit = -1;
-        if (httpHeaders.containsKey("writeLimit")) {
-            writeLimit = Integer.parseInt(httpHeaders.getFirst("writeLimit"));
-        }
-
-        int maxEmbeddedResources = -1;
-        if (httpHeaders.containsKey("maxEmbeddedResources")) {
-            maxEmbeddedResources = Integer.parseInt(httpHeaders.getFirst("maxEmbeddedResources"));
-        }
-
-        BasicContentHandlerFactory.HANDLER_TYPE type =
-                BasicContentHandlerFactory.parseHandlerType(handlerTypeName, DEFAULT_HANDLER_TYPE);
-        RecursiveParserWrapperHandler handler =
-                new RecursiveParserWrapperHandler(new BasicContentHandlerFactory(type, writeLimit),
-                        maxEmbeddedResources, TikaResource.getConfig().getMetadataFilter());
+        BasicContentHandlerFactory.HANDLER_TYPE type = handlerConfig.getType();
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
+                new BasicContentHandlerFactory(type, handlerConfig.getWriteLimit()),
+                handlerConfig.getMaxEmbeddedResources(),
+                TikaResource.getConfig().getMetadataFilter());
         try {
             TikaResource.parse(wrapper, LOG, "/rmeta", is, handler, metadata, context);
         } catch (TikaServerParseException e) {
@@ -133,7 +121,24 @@ public class RecursiveMetadataResource {
             throws Exception {
         return Response
                 .ok(parseMetadataToMetadataList(att.getObject(InputStream.class), new Metadata(),
-                        att.getHeaders(), info, handlerTypeName)).build();
+                        att.getHeaders(), info,
+                        buildHandlerConfig(att.getHeaders(), handlerTypeName))).build();
+    }
+
+    static HandlerConfig buildHandlerConfig(MultivaluedMap<String, String> httpHeaders,
+                                            String handlerTypeName) {
+        int writeLimit = -1;
+        if (httpHeaders.containsKey("writeLimit")) {
+            writeLimit = Integer.parseInt(httpHeaders.getFirst("writeLimit"));
+        }
+
+        int maxEmbeddedResources = -1;
+        if (httpHeaders.containsKey("maxEmbeddedResources")) {
+            maxEmbeddedResources = Integer.parseInt(httpHeaders.getFirst("maxEmbeddedResources"));
+        }
+        return new HandlerConfig(
+                BasicContentHandlerFactory.parseHandlerType(handlerTypeName, DEFAULT_HANDLER_TYPE),
+                writeLimit, maxEmbeddedResources);
     }
 
     /**
@@ -170,13 +175,14 @@ public class RecursiveMetadataResource {
         Metadata metadata = new Metadata();
         return Response.ok(parseMetadataToMetadataList(
                 TikaResource.getInputStream(is, metadata, httpHeaders), metadata,
-                httpHeaders.getRequestHeaders(), info, handlerTypeName)).build();
+                httpHeaders.getRequestHeaders(), info,
+                buildHandlerConfig(httpHeaders.getRequestHeaders(), handlerTypeName))).build();
     }
 
     private MetadataList parseMetadataToMetadataList(InputStream is, Metadata metadata,
                                                      MultivaluedMap<String, String> httpHeaders,
-                                                     UriInfo info, String handlerTypeName)
+                                                     UriInfo info, HandlerConfig handlerConfig)
             throws Exception {
-        return new MetadataList(parseMetadata(is, metadata, httpHeaders, info, handlerTypeName));
+        return new MetadataList(parseMetadata(is, metadata, httpHeaders, info, handlerConfig));
     }
 }

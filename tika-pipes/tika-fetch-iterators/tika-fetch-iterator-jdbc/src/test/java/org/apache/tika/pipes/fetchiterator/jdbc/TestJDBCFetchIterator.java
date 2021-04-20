@@ -45,7 +45,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
+import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.fetchiterator.FetchIterator;
 
 public class TestJDBCFetchIterator {

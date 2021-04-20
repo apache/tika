@@ -50,9 +50,11 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonFetchEmitTuple;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.pipes.FetchEmitTuple;
+import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
-import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
+import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.server.core.resource.EmitterResource;
 import org.apache.tika.server.core.writer.JSONObjWriter;
 
@@ -142,7 +144,7 @@ public class TikaEmitterTest extends CXFTestBase {
     @Test
     public void testGet() throws Exception {
 
-        String q = "?fn=fsf&fk=hello_world.xml";
+        String q = "?fn=fsf&fk=hello_world.xml&type=text";
         String getUrl = endPoint + EMITTER_PATH_AND_FS + q;
         Response response = WebClient.create(getUrl).accept("application/json").get();
         assertEquals(200, response.getStatus());
@@ -156,6 +158,23 @@ public class TikaEmitterTest extends CXFTestBase {
         assertEquals("Nikolai Lobachevsky", metadata.get("author"));
         assertEquals("你好，世界", metadata.get("title"));
         assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
+    }
+
+    @Test
+    public void testGetXML() throws Exception {
+
+        String q = "?fn=fsf&fk=hello_world.xml&type=xml";
+        String getUrl = endPoint + EMITTER_PATH_AND_FS + q;
+        Response response = WebClient.create(getUrl).accept("application/json").get();
+        assertEquals(200, response.getStatus());
+        List<Metadata> metadataList = null;
+        try (Reader reader = Files.newBufferedReader(TMP_OUTPUT_FILE)) {
+            metadataList = JsonMetadataList.fromJson(reader);
+        }
+        assertEquals(1, metadataList.size());
+        Metadata metadata = metadataList.get(0);
+        String xml = metadata.get(TikaCoreProperties.TIKA_CONTENT);
+        assertContains("<p>hello world</p>", xml);
     }
 
     @Test
@@ -193,9 +212,40 @@ public class TikaEmitterTest extends CXFTestBase {
     }
 
     @Test
+    public void testPostXML() throws Exception {
+
+        Metadata userMetadata = new Metadata();
+        userMetadata.set("my-key", "my-value");
+        for (int i = 0; i < VALUE_ARRAY.length; i++) {
+            userMetadata.add("my-key-multi", VALUE_ARRAY[i]);
+        }
+
+        FetchEmitTuple t =
+                new FetchEmitTuple(new FetchKey("fsf", "hello_world.xml"), new EmitKey("fse", ""),
+                        userMetadata,
+                        new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1, -1),
+                        FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
+        StringWriter writer = new StringWriter();
+        JsonFetchEmitTuple.toJson(t, writer);
+
+        String getUrl = endPoint + EMITTER_PATH;
+        Response response =
+                WebClient.create(getUrl).accept("application/json").post(writer.toString());
+        assertEquals(200, response.getStatus());
+
+        List<Metadata> metadataList = null;
+        try (Reader reader = Files.newBufferedReader(TMP_OUTPUT_FILE)) {
+            metadataList = JsonMetadataList.fromJson(reader);
+        }
+        assertEquals(1, metadataList.size());
+        Metadata metadata = metadataList.get(0);
+        assertContains("<p>hello world</p>", metadata.get(TikaCoreProperties.TIKA_CONTENT).trim());
+    }
+
+    @Test
     public void testPut() throws Exception {
 
-        String getUrl = endPoint + EMITTER_PATH_AND_FS;
+        String getUrl = endPoint + EMITTER_PATH_AND_FS + "/text";
         String metaPathKey = EmitterResource.EMIT_KEY_FOR_HTTP_HEADER;
 
         Response response = WebClient.create(getUrl).accept("application/json")
@@ -212,6 +262,25 @@ public class TikaEmitterTest extends CXFTestBase {
         assertEquals("Nikolai Lobachevsky", metadata.get("author"));
         assertEquals("你好，世界", metadata.get("title"));
         assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
+    }
+
+    @Test
+    public void testPutXML() throws Exception {
+
+        String putUrl = endPoint + EMITTER_PATH_AND_FS + "/xml";
+        String metaPathKey = EmitterResource.EMIT_KEY_FOR_HTTP_HEADER;
+
+        Response response = WebClient.create(putUrl).accept("application/json")
+                .header(metaPathKey, "hello_world.xml")
+                .put(ClassLoader.getSystemResourceAsStream("test-documents/mock/hello_world.xml"));
+        assertEquals(200, response.getStatus());
+        List<Metadata> metadataList = null;
+        try (Reader reader = Files.newBufferedReader(TMP_OUTPUT_FILE)) {
+            metadataList = JsonMetadataList.fromJson(reader);
+        }
+        assertEquals(1, metadataList.size());
+        Metadata metadata = metadataList.get(0);
+        assertContains("<p>hello world</p>", metadata.get(TikaCoreProperties.TIKA_CONTENT));
     }
 
     @Test

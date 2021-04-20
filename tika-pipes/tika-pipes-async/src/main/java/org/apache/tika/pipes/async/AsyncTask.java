@@ -18,7 +18,7 @@ package org.apache.tika.pipes.async;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
+import org.apache.tika.pipes.FetchEmitTuple;
 
 public class AsyncTask extends FetchEmitTuple {
 

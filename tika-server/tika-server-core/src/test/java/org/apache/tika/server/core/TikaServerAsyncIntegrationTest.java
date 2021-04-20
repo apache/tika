@@ -44,9 +44,10 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.serialization.JsonFetchEmitTupleList;
+import org.apache.tika.pipes.FetchEmitTuple;
+import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
-import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
 
 @Ignore("useful for development...need to turn it into a real unit test")
 public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
@@ -170,6 +171,7 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
 
     private FetchEmitTuple getFetchEmitTuple(String fileName) throws IOException {
         return new FetchEmitTuple(new FetchKey(FETCHER_NAME, fileName),
-                new EmitKey(EMITTER_NAME, ""), new Metadata(), ON_PARSE_EXCEPTION);
+                new EmitKey(EMITTER_NAME, ""), new Metadata(), HandlerConfig.DEFAULT_HANDLER_CONFIG,
+                ON_PARSE_EXCEPTION);
     }
 }

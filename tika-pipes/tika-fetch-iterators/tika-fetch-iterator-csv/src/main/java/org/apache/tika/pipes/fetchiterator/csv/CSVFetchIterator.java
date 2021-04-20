@@ -40,9 +40,10 @@ import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.pipes.FetchEmitTuple;
+import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
-import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
 import org.apache.tika.pipes.fetchiterator.FetchIterator;
 import org.apache.tika.utils.StringUtils;
 
@@ -92,6 +93,7 @@ public class CSVFetchIterator extends FetchIterator implements Initializable {
         this.emitKeyColumn = emitKeyColumn;
     }
 
+    @Field
     public void setCsvPath(Path csvPath) {
         this.csvPath = csvPath;
     }
@@ -110,7 +112,7 @@ public class CSVFetchIterator extends FetchIterator implements Initializable {
             }
 
             checkFetchEmitValidity(fetcherName, emitterName, fetchEmitKeyIndices, headers);
-
+            HandlerConfig handlerConfig = getHandlerConfig();
             for (CSVRecord record : records) {
                 String fetchKey = getFetchKey(fetchEmitKeyIndices, record);
                 String emitKey = getEmitKey(fetchEmitKeyIndices, record);
@@ -123,7 +125,8 @@ public class CSVFetchIterator extends FetchIterator implements Initializable {
                 }
                 Metadata metadata = loadMetadata(fetchEmitKeyIndices, headers, record);
                 tryToAdd(new FetchEmitTuple(new FetchKey(fetcherName, fetchKey),
-                        new EmitKey(emitterName, emitKey), metadata, getOnParseException()));
+                        new EmitKey(emitterName, emitKey), metadata, handlerConfig,
+                        getOnParseException()));
             }
         }
     }

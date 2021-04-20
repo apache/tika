@@ -21,10 +21,10 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
-import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
 
 public class AsyncData extends EmitData {
 

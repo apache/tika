@@ -26,7 +26,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.serialization.JsonFetchEmitTuple;
 import org.apache.tika.metadata.serialization.JsonFetchEmitTupleList;
-import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
+import org.apache.tika.pipes.FetchEmitTuple;
 
 public class TikaClient {
 

@@ -39,9 +39,10 @@ import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.pipes.FetchEmitTuple;
+import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
-import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
 import org.apache.tika.pipes.fetchiterator.FetchIterator;
 import org.apache.tika.utils.StringUtils;
 
@@ -99,6 +100,7 @@ public class JDBCFetchIterator extends FetchIterator implements Initializable {
         this.select = select;
     }
 
+
     @Override
     protected void enqueue() throws InterruptedException, IOException, TimeoutException {
         String fetcherName = getFetcherName();
@@ -106,6 +108,7 @@ public class JDBCFetchIterator extends FetchIterator implements Initializable {
         FetchEmitKeyIndices fetchEmitKeyIndices = null;
         List<String> headers = new ArrayList<>();
         int rowCount = 0;
+        HandlerConfig handlerConfig = getHandlerConfig();
         LOGGER.debug("select: {}", select);
         try (Statement st = db.createStatement()) {
             try (ResultSet rs = st.executeQuery(select)) {
@@ -116,7 +119,8 @@ public class JDBCFetchIterator extends FetchIterator implements Initializable {
                                 headers);
                     }
                     try {
-                        processRow(fetcherName, emitterName, headers, fetchEmitKeyIndices, rs);
+                        processRow(fetcherName, emitterName, headers, fetchEmitKeyIndices, rs,
+                                handlerConfig);
                     } catch (SQLException e) {
                         LOGGER.warn("Failed to insert: " + rs, e);
                     }
@@ -153,7 +157,8 @@ public class JDBCFetchIterator extends FetchIterator implements Initializable {
     }
 
     private void processRow(String fetcherName, String emitterName, List<String> headers,
-                            FetchEmitKeyIndices fetchEmitKeyIndices, ResultSet rs)
+                            FetchEmitKeyIndices fetchEmitKeyIndices, ResultSet rs,
+                            HandlerConfig handlerConfig)
             throws SQLException, TimeoutException, InterruptedException {
         Metadata metadata = new Metadata();
         String fetchKey = "";
@@ -182,7 +187,7 @@ public class JDBCFetchIterator extends FetchIterator implements Initializable {
         }
 
         tryToAdd(new FetchEmitTuple(new FetchKey(fetcherName, fetchKey),
-                new EmitKey(emitterName, emitKey), metadata, getOnParseException()));
+                new EmitKey(emitterName, emitKey), metadata, handlerConfig, getOnParseException()));
     }
 
     private String toString(ResultSet rs) throws SQLException {

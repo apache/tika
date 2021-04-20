@@ -14,7 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.fetchiterator;
+package org.apache.tika.pipes;
+
+import java.util.Objects;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.emitter.EmitKey;
@@ -23,19 +25,28 @@ import org.apache.tika.pipes.fetcher.FetchKey;
 public class FetchEmitTuple {
 
     public static final ON_PARSE_EXCEPTION DEFAULT_ON_PARSE_EXCEPTION = ON_PARSE_EXCEPTION.EMIT;
+
+    public enum ON_PARSE_EXCEPTION {
+        SKIP, EMIT
+    }
+
     private final FetchKey fetchKey;
     private EmitKey emitKey;
     private final Metadata metadata;
     private final ON_PARSE_EXCEPTION onParseException;
+    private HandlerConfig handlerConfig;
+
     public FetchEmitTuple(FetchKey fetchKey, EmitKey emitKey, Metadata metadata) {
-        this(fetchKey, emitKey, metadata, DEFAULT_ON_PARSE_EXCEPTION);
+        this(fetchKey, emitKey, metadata, HandlerConfig.DEFAULT_HANDLER_CONFIG,
+                DEFAULT_ON_PARSE_EXCEPTION);
     }
 
     public FetchEmitTuple(FetchKey fetchKey, EmitKey emitKey, Metadata metadata,
-                          ON_PARSE_EXCEPTION onParseException) {
+                          HandlerConfig handlerConfig, ON_PARSE_EXCEPTION onParseException) {
         this.fetchKey = fetchKey;
         this.emitKey = emitKey;
         this.metadata = metadata;
+        this.handlerConfig = handlerConfig;
         this.onParseException = onParseException;
     }
 
@@ -58,10 +69,13 @@ public class FetchEmitTuple {
     public void setEmitKey(EmitKey emitKey) {
         this.emitKey = emitKey;
     }
-    @Override
-    public String toString() {
-        return "FetchEmitTuple{" + "fetchKey=" + fetchKey + ", emitKey=" + emitKey + ", metadata=" +
-                metadata + ", onParseException=" + onParseException + '}';
+
+    public void setHandlerConfig(HandlerConfig handlerConfig) {
+        this.handlerConfig = handlerConfig;
+    }
+
+    public HandlerConfig getHandlerConfig() {
+        return handlerConfig == null ? HandlerConfig.DEFAULT_HANDLER_CONFIG : handlerConfig;
     }
 
     @Override
@@ -72,31 +86,22 @@ public class FetchEmitTuple {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         FetchEmitTuple that = (FetchEmitTuple) o;
-
-        if (fetchKey != null ? !fetchKey.equals(that.fetchKey) : that.fetchKey != null) {
-            return false;
-        }
-        if (emitKey != null ? !emitKey.equals(that.emitKey) : that.emitKey != null) {
-            return false;
-        }
-        if (metadata != null ? !metadata.equals(that.metadata) : that.metadata != null) {
-            return false;
-        }
-        return onParseException == that.onParseException;
+        return Objects.equals(fetchKey, that.fetchKey) && Objects.equals(emitKey, that.emitKey) &&
+                Objects.equals(metadata, that.metadata) &&
+                onParseException == that.onParseException &&
+                Objects.equals(handlerConfig, that.handlerConfig);
     }
 
     @Override
     public int hashCode() {
-        int result = fetchKey != null ? fetchKey.hashCode() : 0;
-        result = 31 * result + (emitKey != null ? emitKey.hashCode() : 0);
-        result = 31 * result + (metadata != null ? metadata.hashCode() : 0);
-        result = 31 * result + (onParseException != null ? onParseException.hashCode() : 0);
-        return result;
+        return Objects.hash(fetchKey, emitKey, metadata, onParseException, handlerConfig);
     }
 
-    public enum ON_PARSE_EXCEPTION {
-        SKIP, EMIT
+    @Override
+    public String toString() {
+        return "FetchEmitTuple{" + "fetchKey=" + fetchKey + ", emitKey=" + emitKey + ", metadata=" +
+                metadata + ", onParseException=" + onParseException + ", handlerConfig=" +
+                handlerConfig + '}';
     }
 }

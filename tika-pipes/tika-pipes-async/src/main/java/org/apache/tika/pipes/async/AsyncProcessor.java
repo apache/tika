@@ -46,7 +46,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.metadata.serialization.JsonFetchEmitTuple;
-import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
+import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.fetchiterator.FetchIterator;
 
 public class AsyncProcessor implements Closeable {

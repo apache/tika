@@ -46,9 +46,10 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.serialization.JsonFetchEmitTuple;
+import org.apache.tika.pipes.FetchEmitTuple;
+import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
-import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
 import org.apache.tika.utils.ProcessUtils;
 
 public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
@@ -242,7 +243,6 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
                              FetchEmitTuple.ON_PARSE_EXCEPTION onParseException) throws Exception {
 
         awaitServerStartup();
-        System.out.println(getJsonString(fileName, onParseException));
         Response response = WebClient
                 .create(endPoint + "/emit")
                 .accept("application/json")
@@ -264,7 +264,8 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
                                  FetchEmitTuple.ON_PARSE_EXCEPTION onParseException)
             throws IOException {
         FetchEmitTuple t = new FetchEmitTuple(new FetchKey(FETCHER_NAME, fileName),
-                new EmitKey(EMITTER_NAME, ""), new Metadata(), onParseException);
+                new EmitKey(EMITTER_NAME, ""), new Metadata(), HandlerConfig.DEFAULT_HANDLER_CONFIG,
+                onParseException);
         return JsonFetchEmitTuple.toJson(t);
     }
 }

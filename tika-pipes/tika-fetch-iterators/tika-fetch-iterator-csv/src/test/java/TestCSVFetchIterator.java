@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
-import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
+import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.fetchiterator.csv.CSVFetchIterator;
 
 public class TestCSVFetchIterator {

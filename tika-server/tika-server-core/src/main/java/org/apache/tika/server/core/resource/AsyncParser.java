@@ -30,9 +30,9 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.EmitKey;
-import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -112,7 +112,7 @@ public class AsyncParser implements Callable<Integer> {
                 .getFetcher(fetcherName).fetch(fetchKey, metadata)) {
             metadataList = RecursiveMetadataResource
                     .parseMetadata(stream, metadata, new MultivaluedHashMap<>(),
-                            new UriInfoImpl(new MessageImpl()), "text");
+                            new UriInfoImpl(new MessageImpl()), t.getHandlerConfig());
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {

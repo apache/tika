@@ -379,7 +379,6 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
                     } else if (r.nextFloat() < 0.02) {
                         file = TEST_HEAVY_HANG;
                     }
-                    System.out.println("writing file " + i + " : " + file);
                     response = WebClient.create(endPoint + META_PATH).accept("application/json")
                             .put(ClassLoader.getSystemResourceAsStream(file));
                 } catch (Exception e) {

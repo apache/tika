@@ -35,6 +35,10 @@ import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaTimeoutException;
+import org.apache.tika.pipes.FetchEmitTuple;
+import org.apache.tika.pipes.HandlerConfig;
+import org.apache.tika.sax.BasicContentHandlerFactory;
+
 /**
  * Abstract class that handles the testing for timeouts/thread safety
  * issues.  Concrete classes implement the blocking {@link #enqueue()}.
@@ -57,9 +61,14 @@ public abstract class FetchIterator
     private int queueSize = DEFAULT_QUEUE_SIZE;
     private String fetcherName;
     private String emitterName;
-    private int added = 0;
     private FetchEmitTuple.ON_PARSE_EXCEPTION onParseException =
             FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT;
+    private BasicContentHandlerFactory.HANDLER_TYPE handlerType =
+            BasicContentHandlerFactory.HANDLER_TYPE.TEXT;
+    private int writeLimit = -1;
+    private int maxEmbeddedResources = -1;
+
+    private int added = 0;
     private FutureTask<Integer> futureTask;
 
     public String getFetcherName() {
@@ -109,10 +118,30 @@ public abstract class FetchIterator
         this.onParseException = onParseException;
     }
 
+    @Field
+    public void setHandlerType(String handlerType) {
+        this.handlerType = BasicContentHandlerFactory
+                .parseHandlerType(handlerType, BasicContentHandlerFactory.HANDLER_TYPE.TEXT);
+    }
+
+    @Field
+    public void setWriteLimit(int writeLimit) {
+        this.writeLimit = writeLimit;
+    }
+
+    @Field
+    void setMaxEmbeddedResources(int maxEmbeddedResources) {
+        this.maxEmbeddedResources = maxEmbeddedResources;
+    }
+
     public Integer call() throws Exception {
         enqueue();
         tryToAdd(COMPLETED_SEMAPHORE);
         return added;
+    }
+
+    protected HandlerConfig getHandlerConfig() {
+        return new HandlerConfig(handlerType, writeLimit, maxEmbeddedResources);
     }
 
     protected abstract void enqueue() throws IOException, TimeoutException, InterruptedException;

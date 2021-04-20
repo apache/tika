@@ -19,7 +19,8 @@ package org.apache.tika.metadata.serialization;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
-import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
+import org.apache.tika.pipes.FetchEmitTuple;
+
 import org.junit.Test;
 
 import java.io.Reader;

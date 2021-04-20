@@ -47,7 +47,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.emitter.Emitter;
 import org.apache.tika.pipes.emitter.s3.S3Emitter;
 import org.apache.tika.pipes.fetcher.Fetcher;
-import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
 import org.apache.tika.pipes.fetchiterator.FetchIterator;
 
 @Ignore("turn these into actual tests")

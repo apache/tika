@@ -39,9 +39,10 @@ import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.pipes.FetchEmitTuple;
+import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
-import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
 import org.apache.tika.pipes.fetchiterator.FetchIterator;
 
 public class S3FetchIterator extends FetchIterator implements Initializable {
@@ -126,12 +127,13 @@ public class S3FetchIterator extends FetchIterator implements Initializable {
         String emitterName = getEmitterName();
         long start = System.currentTimeMillis();
         int count = 0;
+        HandlerConfig handlerConfig = getHandlerConfig();
         for (S3ObjectSummary summary : S3Objects.withPrefix(s3Client, bucket, prefix)) {
 
             long elapsed = System.currentTimeMillis() - start;
             LOGGER.debug("adding ({}) {} in {} ms", count, summary.getKey(), elapsed);
             tryToAdd(new FetchEmitTuple(new FetchKey(fetcherName, summary.getKey()),
-                    new EmitKey(emitterName, summary.getKey()), new Metadata(),
+                    new EmitKey(emitterName, summary.getKey()), new Metadata(), handlerConfig,
                     getOnParseException()));
             count++;
         }

@@ -31,6 +31,7 @@ import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
 

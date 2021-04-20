@@ -42,8 +42,8 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.serialization.JsonFetchEmitTuple;
+import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.fetchiterator.EmptyFetchIterator;
-import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
 import org.apache.tika.pipes.fetchiterator.FetchIterator;
 
 public class AsyncCli {
