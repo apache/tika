@@ -66,7 +66,8 @@ public class IntegrationTestBase extends TikaTest {
     public static void staticSetup() throws Exception {
         LogUtils.setLoggerClass(NullWebClientLogger.class);
         LOG_FILE = Files.createTempFile("tika-server-integration", ".xml");
-        Files.copy(TikaServerIntegrationTest.class.getResourceAsStream("/logging/log4j_forked.xml"),
+        Files.copy(
+                TikaServerIntegrationTest.class.getResourceAsStream("/logging/log4j2_forked.xml"),
                 LOG_FILE, StandardCopyOption.REPLACE_EXISTING);
         STREAMS_DIR = Files.createTempDirectory("tika-server-integration");
     }

@@ -32,7 +32,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import org.apache.log4j.Level;
 import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.H2Util;
 import org.apache.tika.eval.app.db.JDBCUtil;
@@ -40,8 +39,10 @@ import org.apache.tika.eval.app.db.TableInfo;
 import org.apache.tika.eval.app.io.XMLLogMsgHandler;
 import org.apache.tika.eval.app.io.XMLLogReader;
 import org.apache.tika.eval.app.reports.ResultsReporter;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.event.Level;
 
 /**
  * This is a very task specific class that reads a log file and updates

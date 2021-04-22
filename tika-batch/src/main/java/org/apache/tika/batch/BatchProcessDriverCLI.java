@@ -245,7 +245,6 @@ public class BatchProcessDriverCLI {
 
     private void start() throws Exception {
         ProcessBuilder builder = new ProcessBuilder(commandLine);
-        builder.directory(Paths.get(".").toFile());
         process = builder.start();
 
         errorWatcher = new StreamWatcher(process.getErrorStream());

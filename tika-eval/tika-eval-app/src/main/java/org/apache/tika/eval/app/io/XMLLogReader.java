@@ -27,11 +27,12 @@ import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Level;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.XMLReaderUtils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.event.Level;
 
 
 public class XMLLogReader {
@@ -50,7 +51,12 @@ public class XMLLogReader {
             switch (reader.getEventType()) {
                 case XMLStreamConstants.START_ELEMENT :
                     if ("event".equals(reader.getLocalName())) {
-                        level = Level.toLevel(reader.getAttributeValue("", "level"), Level.DEBUG);
+                        String levelString = reader.getAttributeValue("", "level");
+                        if (levelString != null) {
+                            level = Level.valueOf(levelString);
+                        } else {
+                            level = Level.DEBUG;
+                        }
                     } else if ("message".equals(reader.getLocalName())) {
                         try {
                             handler.handleMsg(level, reader.getElementText());

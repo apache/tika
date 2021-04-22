@@ -33,9 +33,12 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.utils.ProcessUtils;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,9 +46,11 @@ import org.junit.Test;
 public class TikaCLIBatchIntegrationTest {
 
     private Path testInputDir = Paths.get("src/test/resources/test-data");
+    private final String propsFileName = "log4j2_batch_process_test.properties";
     private String testInputDirForCommandLine;
     private Path tempOutputDir;
     private String tempOutputDirForCommandLine;
+    private Path customBatchLogging;
     private OutputStream out = null;
     private OutputStream err = null;
     private ByteArrayOutputStream outBuffer = null;
@@ -63,6 +68,8 @@ public class TikaCLIBatchIntegrationTest {
         System.setErr(errWriter);
         testInputDirForCommandLine = testInputDir.toAbsolutePath().toString();
         tempOutputDirForCommandLine = tempOutputDir.toAbsolutePath().toString();
+        customBatchLogging = tempOutputDir.resolve(propsFileName);
+        Files.copy(this.getClass().getResourceAsStream("/" + propsFileName), customBatchLogging);
     }
 
     @After
@@ -136,10 +143,8 @@ public class TikaCLIBatchIntegrationTest {
 
     @Test
     public void testProcessLogFileConfig() throws Exception {
-        String[] params = {"-i", testInputDirForCommandLine,
-                "-o", tempOutputDirForCommandLine,
-                "-numConsumers", "2",
-                "-JDlog4j.configuration=log4j_batch_process_test.properties"};
+        String[] params = {"-i", testInputDirForCommandLine, "-o", tempOutputDirForCommandLine,
+                "-numConsumers", "2", "-JDlog4j.configurationFile=" + customBatchLogging.toUri()};
         TikaCLI.main(params);
 
         assertFileExists(tempOutputDir.resolve("bad_xml.xml.xml"));

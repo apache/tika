@@ -324,7 +324,7 @@
     <juniversalchardet.version>1.0.3</juniversalchardet.version>
     <junrar.version>7.4.0</junrar.version>
     <libpst.version>0.9.3</libpst.version>
-    <log4j.version>1.2.17</log4j.version>
+    <log4j2.version>2.14.1</log4j2.version>
     <lombok.version>1.18.16</lombok.version>
     <lucene.version>8.7.0</lucene.version>
     <metadata.extractor.version>2.15.0.1</metadata.extractor.version>
@@ -344,6 +344,7 @@
     <poi.version>4.1.2</poi.version>
     <rome.version>1.15.0</rome.version>
     <sis.version>1.0</sis.version>
+      <!-- we'll need to stay on 1.7 until we're java modularized ? -->
     <slf4j.version>1.7.30</slf4j.version>
     <spring.version>5.3.3</spring.version>
     <sqlite.version>3.34.0</sqlite.version>
@@ -382,11 +383,11 @@
         <artifactId>slf4j-api</artifactId>
         <version>${slf4j.version}</version>
       </dependency>
-      <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-log4j12</artifactId>
-        <version>${slf4j.version}</version>
-      </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>${log4j2.version}</version>
+        </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-simple</artifactId>
