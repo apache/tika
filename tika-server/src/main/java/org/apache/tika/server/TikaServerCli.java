@@ -40,6 +40,7 @@ import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.cxf.binding.BindingFactoryManager;
+import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
@@ -52,7 +53,10 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.utils.BouncyCastleDigester;
 import org.apache.tika.parser.utils.CommonsDigester;
+import org.apache.tika.server.mbean.MBeanHelper;
 import org.apache.tika.server.mbean.ServerStatusExporter;
+import org.apache.tika.server.metrics.MetricsHelper;
+import org.apache.tika.server.metrics.MetricsResource;
 import org.apache.tika.server.resource.DetectorResource;
 import org.apache.tika.server.resource.LanguageResource;
 import org.apache.tika.server.resource.MetadataResource;
@@ -99,10 +103,10 @@ public class TikaServerCli {
             "Please make sure you know what you are doing.";
 
     private static final List<String> ONLY_IN_SPAWN_CHILD_MODE =
-            Arrays.asList(new String[] { "taskTimeoutMillis", "taskPulseMillis",
-            "pingTimeoutMillis", "pingPulseMillis", "maxFiles", "javaHome", "maxRestarts",
+            Arrays.asList("taskTimeoutMillis", "taskPulseMillis",
+                    "pingTimeoutMillis", "pingPulseMillis", "maxFiles", "javaHome", "maxRestarts",
                     "numRestarts",
-            "childStatusFile", "maxChildStartupMillis", "tmpFilePrefix"});
+                    "childStatusFile", "maxChildStartupMillis", "tmpFilePrefix");
 
     private static Options getOptions() {
         Options options = new Options();
@@ -116,6 +120,7 @@ public class TikaServerCli {
         options.addOption("s", "includeStack", false, "whether or not to return a stack trace\nif there is an exception during 'parse'");
         options.addOption("i", "id", true, "id to use for server in server status endpoint");
         options.addOption("status", false, "enable the status endpoint");
+        options.addOption("metrics", false, "enable metrics collection and expose them");
         options.addOption("?", "help", false, "this help message");
         options.addOption("enableUnsecureFeatures", false, "this is required to enable fileUrl.");
         options.addOption("enableFileUrl", false, "allows user to pass in fileUrl instead of InputStream.");
@@ -324,7 +329,10 @@ public class TikaServerCli {
             rCoreProviders.add(new SingletonResourceProvider(new TikaVersion()));
             if (line.hasOption("status")) {
                 rCoreProviders.add(new SingletonResourceProvider(new TikaServerStatus(serverStatus)));
-                registerServerStatusMBean(serverStatus);
+                MBeanHelper.registerServerStatusMBean(serverStatus);
+            }
+            if (line.hasOption("metrics")) {
+                rCoreProviders.add(new SingletonResourceProvider(new MetricsResource()));
             }
             List<ResourceProvider> rAllProviders = new ArrayList<>(rCoreProviders);
             rAllProviders.add(new SingletonResourceProvider(new TikaWelcome(rCoreProviders)));
@@ -360,11 +368,18 @@ public class TikaServerCli {
             String url = "http://" + host + ":" + port + "/";
             sf.setAddress(url);
             sf.setResourceComparator(new ProduceTypeResourceComparator());
+            if (line.hasOption("metrics")) {
+                MetricsHelper.initMetrics(sf);
+                MetricsHelper.registerPreStart(serverStatus, line.hasOption("status"));
+            }
             BindingFactoryManager manager = sf.getBus().getExtension(BindingFactoryManager.class);
             JAXRSBindingFactory factory = new JAXRSBindingFactory();
             factory.setBus(sf.getBus());
             manager.registerBindingFactory(JAXRSBindingFactory.JAXRS_BINDING_ID, factory);
-            sf.create();
+            Server server = sf.create();
+            if (line.hasOption("metrics")) {
+                MetricsHelper.registerPostStart(sf, server);
+            }
             LOG.info("Started Apache Tika server at {}", url);
     }
 
@@ -408,27 +423,6 @@ public class TikaServerCli {
         }
 
         return serverTimeouts;
-    }
-
-    /**
-     * Registers MBean server bean for server status (via exporter).
-     *
-     * @param serverStatus the server status to expose.
-     */
-    private static void registerServerStatusMBean(ServerStatus serverStatus) {
-        try {
-            MBeanServer server = ManagementFactory.getPlatformMBeanServer();
-            ServerStatusExporter mbean = new ServerStatusExporter(serverStatus);
-            final Class<? extends ServerStatusExporter> objectClass = mbean.getClass();
-            // Construct the ObjectName for the MBean we will register
-            ObjectName mbeanName = new ObjectName(
-                    String.format(Locale.ROOT, "%s:type=basic,name=%s", objectClass.getPackage().getName(), objectClass.getSimpleName())
-            );
-            server.registerMBean(mbean, mbeanName);
-            LOG.info("Registered Server Status MBean with objectname : {}", mbeanName);
-        } catch (Exception e) {
-            LOG.warn("Error registering MBean for status", e);
-        }
     }
 
 }
