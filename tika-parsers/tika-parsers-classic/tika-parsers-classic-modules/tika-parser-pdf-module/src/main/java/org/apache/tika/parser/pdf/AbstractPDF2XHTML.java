@@ -47,6 +47,8 @@ import java.util.TreeMap;
 import javax.xml.stream.XMLStreamException;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.pdfbox.cos.COSArray;
+import org.apache.pdfbox.cos.COSDictionary;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentCatalog;
@@ -514,23 +516,26 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 if (annotation instanceof PDAnnotationFileAttachment) {
                     PDAnnotationFileAttachment fann = (PDAnnotationFileAttachment) annotation;
                     if (fann.getFile() instanceof PDComplexFileSpecification) {
-                        PDComplexFileSpecification fileSpec =
-                                (PDComplexFileSpecification) fann.getFile();
-                        try {
-                            AttributesImpl attributes = new AttributesImpl();
-                            attributes.addAttribute("", "source", "source", "CDATA", "annotation");
-                            extractMultiOSPDEmbeddedFiles(fann.getAttachmentName(), fileSpec,
-                                    attributes);
-                        } catch (SAXException e) {
-                            throw new IOException("file embedded in annotation sax exception", e);
-                        } catch (TikaException e) {
-                            throw new IOException("file embedded in annotation tika exception", e);
-                        } catch (IOException e) {
-                            handleCatchableIOE(e);
-                        }
+                        handlePDComplexFileSpec(fann.getAttachmentName(),
+                                "annotationFileAttachment",
+                                (PDComplexFileSpecification)fann.getFile());
                     }
                 } else if (annotation instanceof PDAnnotationWidget) {
                     handleWidget((PDAnnotationWidget) annotation);
+                } else if ("RichMedia".equals(annotation.getSubtype())) {
+                    COSArray array = (COSArray) annotation.getCOSObject().getObjectFromPath(
+                            "RichMediaContent/Assets/Names/");
+                    if (array == null || array.size() < 2) {
+                        //should log
+                        continue;
+                    }
+                    String name = array.getString(0);
+                    COSDictionary filespec = (COSDictionary) array.getObject(1);
+                    PDComplexFileSpecification cfs = new PDComplexFileSpecification(filespec);
+                    //TODO: do we want to tag this as a rich media type attachment
+                    //in the embedded file's metadata at some point?
+                    handlePDComplexFileSpec(name,
+                            "annotationRichMedia", cfs);
                 }
                 // TODO: remove once PDFBOX-1143 is fixed:
                 if (config.isExtractAnnotationText()) {
@@ -604,7 +609,6 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
 
         if (config.isExtractFontNames()) {
-
             for (COSName n : page.getResources().getFontNames()) {
                 PDFont font = page.getResources().getFont(n);
                 if (font != null && font.getFontDescriptor() != null) {
@@ -616,6 +620,25 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             }
         }
     }
+
+    private void handlePDComplexFileSpec(String attachmentName,
+                                         String annotationType,
+                                         PDComplexFileSpecification fileSpec) throws IOException {
+        try {
+            AttributesImpl attributes = new AttributesImpl();
+            attributes.addAttribute("", "source", "source", "CDATA", annotationType);
+            extractMultiOSPDEmbeddedFiles(attachmentName, fileSpec,
+                    attributes);
+        } catch (SAXException e) {
+            throw new IOException("file embedded in annotation sax exception", e);
+        } catch (TikaException e) {
+            throw new IOException("file embedded in annotation tika exception", e);
+        } catch (IOException e) {
+            handleCatchableIOE(e);
+        }
+
+    }
+
 
     private void handleWidget(PDAnnotationWidget widget)
             throws TikaException, SAXException, IOException {

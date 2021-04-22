@@ -808,7 +808,8 @@ public class PDFParserTest extends TikaTest {
 
         //doc embedded inside an annotation
         r = getXML("testPDFFileEmbInAnnotation.pdf");
-        assertContains("<div source=\"annotation\" class=\"embedded\" id=\"Excel.xlsx\" />", r.xml);
+        assertContains("<div source=\"annotationFileAttachment\" class=\"embedded\" id=\"Excel" +
+                ".xlsx\" />", r.xml);
     }
 
     //Access checker tests
@@ -1343,4 +1344,12 @@ public class PDFParserTest extends TikaTest {
                 "testPDF_deeplyEmbeddedAttachments.pdf");
         assertEquals(21, metadataList.size());
     }
+
+    @Test
+    public void testEmbeddedRichMedia() throws Exception {
+        List<Metadata> metadata = getRecursiveMetadata("testFlashInPDF.pdf");
+        assertEquals(2, metadata.size());
+        assertEquals("application/x-shockwave-flash", metadata.get(1).get(Metadata.CONTENT_TYPE));
+    }
+
 }
