@@ -54,7 +54,7 @@ class AnalyzerDeserializer {
                     "root object must be object with an 'analyzers' element");
         }
         for (Iterator<Map.Entry<String, JsonNode>> it = root.get(ANALYZERS).fields();
-             it.hasNext(); ) {
+                it.hasNext(); ) {
             Map.Entry<String, JsonNode> e = it.next();
             String analyzerName = e.getKey();
             Analyzer analyzer = buildAnalyzer(analyzerName, e.getValue(), maxTokens);

@@ -67,12 +67,14 @@ public class FileProfiler extends AbstractProfiler {
             new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 24),
             new ColInfo(Cols.LENGTH, Types.BIGINT), new ColInfo(Cols.SHA256, Types.VARCHAR, 64),
             new ColInfo(Cols.TIKA_MIME_ID, Types.INTEGER),
-            new ColInfo(Cols.FILE_MIME_ID, Types.INTEGER)) : new TableInfo("file_profiles",
-            new ColInfo(Cols.FILE_PATH, Types.VARCHAR, 2048, "PRIMARY KEY"),
-            new ColInfo(Cols.FILE_NAME, Types.VARCHAR, 2048),
-            new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 24),
-            new ColInfo(Cols.LENGTH, Types.BIGINT), new ColInfo(Cols.SHA256, Types.VARCHAR, 64),
-            new ColInfo(Cols.TIKA_MIME_ID, Types.INTEGER));
+            new ColInfo(Cols.FILE_MIME_ID, Types.INTEGER)) :
+            new TableInfo("file_profiles",
+                    new ColInfo(Cols.FILE_PATH, Types.VARCHAR, 2048, "PRIMARY KEY"),
+                    new ColInfo(Cols.FILE_NAME, Types.VARCHAR, 2048),
+                    new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 24),
+                    new ColInfo(Cols.LENGTH, Types.BIGINT), new ColInfo(Cols.SHA256, Types.VARCHAR,
+                    64),
+                    new ColInfo(Cols.TIKA_MIME_ID, Types.INTEGER));
 
 
     public static TableInfo FILE_MIME_TABLE =

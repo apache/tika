@@ -80,7 +80,8 @@ public class CommonTokenCountManager {
     @Deprecated
     /**
      * @deprecated use {@link eval.textstats.CommonTokens} instead
-     */ public CommonTokenResult countTokenOverlaps(String langCode, Map<String, MutableInt> tokens)
+     */
+    public CommonTokenResult countTokenOverlaps(String langCode, Map<String, MutableInt> tokens)
             throws IOException {
         String actualLangCode = getActualLangCode(langCode);
         int numUniqueCommonTokens = 0;
