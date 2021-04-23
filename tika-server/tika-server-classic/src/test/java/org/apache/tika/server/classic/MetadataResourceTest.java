@@ -31,7 +31,9 @@ import java.util.Map;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import au.com.bytecode.opencsv.CSVReader;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.apache.cxf.helpers.IOUtils;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
@@ -81,13 +83,12 @@ public class MetadataResourceTest extends CXFTestBase {
 
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
 
-        CSVReader csvReader = new CSVReader(reader);
+        CSVParser csvReader = new CSVParser(reader, CSVFormat.EXCEL);
 
         Map<String, String> metadata = new HashMap<String, String>();
 
-        String[] nextLine;
-        while ((nextLine = csvReader.readNext()) != null) {
-            metadata.put(nextLine[0], nextLine[1]);
+        for (CSVRecord r : csvReader) {
+            metadata.put(r.get(0), r.get(1));
         }
         csvReader.close();
 
@@ -123,13 +124,12 @@ public class MetadataResourceTest extends CXFTestBase {
 
         // Check results
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        CSVReader csvReader = new CSVReader(reader);
+        CSVParser csvReader = new CSVParser(reader, CSVFormat.EXCEL);
 
         Map<String, String> metadata = new HashMap<String, String>();
 
-        String[] nextLine;
-        while ((nextLine = csvReader.readNext()) != null) {
-            metadata.put(nextLine[0], nextLine[1]);
+        for (CSVRecord r : csvReader) {
+            metadata.put(r.get(0), r.get(1));
         }
         csvReader.close();
 

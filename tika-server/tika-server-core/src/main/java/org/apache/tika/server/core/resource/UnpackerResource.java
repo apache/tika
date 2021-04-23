@@ -41,7 +41,8 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import au.com.bytecode.opencsv.CSVWriter;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
@@ -75,14 +76,15 @@ public class UnpackerResource {
 
     public static void metadataToCsv(Metadata metadata, OutputStream outputStream)
             throws IOException {
-        CSVWriter writer = new CSVWriter(new OutputStreamWriter(outputStream, UTF_8));
+        CSVPrinter writer =
+                new CSVPrinter(new OutputStreamWriter(outputStream, UTF_8), CSVFormat.EXCEL);
 
         for (String name : metadata.names()) {
             String[] values = metadata.getValues(name);
             ArrayList<String> list = new ArrayList<>(values.length + 1);
             list.add(name);
             list.addAll(Arrays.asList(values));
-            writer.writeNext(list.toArray(values));
+            writer.printRecord(values);
         }
 
         writer.close();

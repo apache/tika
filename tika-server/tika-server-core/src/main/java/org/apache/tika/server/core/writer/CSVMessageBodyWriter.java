@@ -33,7 +33,8 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyWriter;
 import javax.ws.rs.ext.Provider;
 
-import au.com.bytecode.opencsv.CSVWriter;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 
 import org.apache.tika.metadata.Metadata;
 
@@ -58,14 +59,15 @@ public class CSVMessageBodyWriter implements MessageBodyWriter<Metadata> {
                         MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream)
             throws IOException, WebApplicationException {
 
-        CSVWriter writer = new CSVWriter(new OutputStreamWriter(entityStream, UTF_8));
+        CSVPrinter writer =
+                new CSVPrinter(new OutputStreamWriter(entityStream, UTF_8), CSVFormat.EXCEL);
 
         for (String name : metadata.names()) {
             String[] values = metadata.getValues(name);
             ArrayList<String> list = new ArrayList<String>(values.length + 1);
             list.add(name);
             list.addAll(Arrays.asList(values));
-            writer.writeNext(list.toArray(values));
+            writer.printRecord(list);
         }
 
         // Don't close, just flush the stream

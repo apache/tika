@@ -296,7 +296,7 @@
     <commons.logging.version>1.2</commons.logging.version>
     <commons.math3.version>3.6.1</commons.math3.version>
     <ctakes.version>4.0.0.1</ctakes.version>
-    <cxf.version>3.4.2</cxf.version>
+    <cxf.version>3.4.3</cxf.version>
     <ddplist.version>1.23</ddplist.version>
     <dl4j.version>1.0.0-beta6</dl4j.version>
     <geoapi.version>3.0.1</geoapi.version>
@@ -318,7 +318,7 @@
     <jbig2.version>3.0.3</jbig2.version>
     <jdom2.version>2.0.6</jdom2.version>
     <jempbox.version>1.8.16</jempbox.version>
-    <jetty.version>9.4.35.v20201120</jetty.version>
+    <jetty.version>9.4.40.v20210413</jetty.version>
     <jhighlight.version>1.0.3</jhighlight.version>
     <joda.time.version>2.10.9</joda.time.version>
     <json.simple.version>1.1.1</json.simple.version>
