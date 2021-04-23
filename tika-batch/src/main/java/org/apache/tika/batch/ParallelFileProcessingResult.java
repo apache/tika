@@ -1,5 +1,3 @@
-package org.apache.tika.batch;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,8 @@ package org.apache.tika.batch;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.batch;
+
 
 public class ParallelFileProcessingResult {
     private final int considered;
@@ -26,11 +26,9 @@ public class ParallelFileProcessingResult {
     private final int exitStatus;
     private final String causeForTermination;
 
-    public ParallelFileProcessingResult(int considered, int added,
-                                        int consumed, int numberHandledExceptions,
-                                        double secondsElapsed,
-                                        int exitStatus,
-                                        String causeForTermination) {
+    public ParallelFileProcessingResult(int considered, int added, int consumed,
+                                        int numberHandledExceptions, double secondsElapsed,
+                                        int exitStatus, String causeForTermination) {
         this.considered = considered;
         this.added = added;
         this.consumed = consumed;
@@ -75,7 +73,6 @@ public class ParallelFileProcessingResult {
     }
 
     /**
-     *
      * @return seconds elapsed since the start of the batch processing
      */
     public double secondsElapsed() {
@@ -87,7 +84,6 @@ public class ParallelFileProcessingResult {
     }
 
     /**
-     *
      * @return intendedExitStatus
      */
     public int getExitStatus() {
@@ -96,14 +92,9 @@ public class ParallelFileProcessingResult {
 
     @Override
     public String toString() {
-        return "ParallelFileProcessingResult{" +
-                "considered=" + considered +
-                ", added=" + added +
-                ", consumed=" + consumed +
-                ", numberHandledExceptions=" + numberHandledExceptions +
-                ", secondsElapsed=" + secondsElapsed +
-                ", exitStatus=" + exitStatus +
-                ", causeForTermination='" + causeForTermination + '\'' +
-                '}';
+        return "ParallelFileProcessingResult{" + "considered=" + considered + ", added=" + added +
+                ", consumed=" + consumed + ", numberHandledExceptions=" + numberHandledExceptions +
+                ", secondsElapsed=" + secondsElapsed + ", exitStatus=" + exitStatus +
+                ", causeForTermination='" + causeForTermination + '\'' + '}';
     }
 }

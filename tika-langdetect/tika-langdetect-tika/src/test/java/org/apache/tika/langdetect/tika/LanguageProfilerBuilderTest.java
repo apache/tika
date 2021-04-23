@@ -22,9 +22,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -40,21 +37,19 @@ import org.junit.Test;
 import org.apache.tika.exception.TikaException;
 
 public class LanguageProfilerBuilderTest {
-    String profileName = "test-profile";
     private final String corpusName = "langbuilder/welsh_corpus.txt";
     private final String FILE_EXTENSION = "ngp";
     private final String LANGUAGE = "welsh";
     private final int maxlen = 1000;
+    String profileName = "test-profile";
     private Path tmpProfileModel;
 
     @Before
     public void setUp() throws Exception {
-        tmpProfileModel = Files.createTempFile("tika-lang",
-                ".ngp");
+        tmpProfileModel = Files.createTempFile("tika-lang", ".ngp");
         try (InputStream is = LanguageProfilerBuilderTest.class.getResourceAsStream(corpusName)) {
             LanguageProfilerBuilder ngramProfileBuilder =
-                    LanguageProfilerBuilder.create(profileName, is,
-                    UTF_8.name());
+                    LanguageProfilerBuilder.create(profileName, is, UTF_8.name());
             try (OutputStream os = Files.newOutputStream(tmpProfileModel)) {
                 ngramProfileBuilder.save(os);
                 assertEquals(maxlen, ngramProfileBuilder.getSorted().size());
@@ -68,6 +63,7 @@ public class LanguageProfilerBuilderTest {
             Files.delete(tmpProfileModel);
         }
     }
+
     @Test
     public void testNGramProfile() throws IOException, TikaException, URISyntaxException {
         LanguageProfile langProfile = loadProfile();
@@ -77,8 +73,7 @@ public class LanguageProfilerBuilderTest {
         assertTrue(identifier.isReasonablyCertain());
     }
 
-    private LanguageProfile loadProfile() throws IOException, TikaException,
-            URISyntaxException {
+    private LanguageProfile loadProfile() throws IOException, TikaException, URISyntaxException {
 
 
         LanguageProfile langProfile = new LanguageProfile();

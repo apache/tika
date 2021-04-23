@@ -16,14 +16,15 @@
  */
 package org.apache.tika.metadata.serialization;
 
+import java.io.IOException;
+import java.io.Writer;
+
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.EmitKey;
-
-import java.io.IOException;
-import java.io.Writer;
 
 public class JsonEmitData {
 

@@ -32,7 +32,7 @@ public class LangModel {
 
     public LangModel(long totalTokens) {
         this.totalTokens = totalTokens;
-        this.unseenPercentage = (double)1/(double)totalTokens;
+        this.unseenPercentage = (double) 1 / (double) totalTokens;
     }
 
 
@@ -54,7 +54,7 @@ public class LangModel {
     }
 
     public void add(String t, long tf) {
-        double p = (double)tf/(double)totalTokens;
+        double p = (double) tf / (double) totalTokens;
         percentages.put(t, p);
         counts.put(t, tf);
     }

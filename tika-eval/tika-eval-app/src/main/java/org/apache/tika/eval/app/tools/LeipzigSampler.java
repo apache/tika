@@ -40,7 +40,8 @@ public class LeipzigSampler {
         }
     }
 
-    private void execute(Path leipzigDir, int sentsPerLang, BufferedWriter writer) throws IOException {
+    private void execute(Path leipzigDir, int sentsPerLang, BufferedWriter writer)
+            throws IOException {
         Map<String, List<Path>> fileMap = LeipzigHelper.getFiles(leipzigDir);
         for (Map.Entry<String, List<Path>> e : fileMap.entrySet()) {
             List<String> sentences = new ArrayList<>();
@@ -71,6 +72,6 @@ public class LeipzigSampler {
 
     private String row(String lang, String s) {
         s = s.replaceAll("\\s+", " ");
-        return lang+"\t"+s+"\n";
+        return lang + "\t" + s + "\n";
     }
 }

@@ -16,13 +16,6 @@
  */
 package org.apache.tika.eval.app.batch;
 
-import org.apache.tika.batch.FileResourceConsumer;
-
-import org.apache.tika.eval.app.ExtractProfiler;
-import org.apache.tika.eval.app.FileProfiler;
-import org.apache.tika.eval.app.db.TableInfo;
-import org.apache.tika.util.PropsUtil;
-
 import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.SQLException;
@@ -30,6 +23,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.tika.batch.FileResourceConsumer;
+import org.apache.tika.eval.app.ExtractProfiler;
+import org.apache.tika.eval.app.FileProfiler;
+import org.apache.tika.eval.app.db.TableInfo;
+import org.apache.tika.util.PropsUtil;
 
 
 public class FileProfilerBuilder extends EvalConsumerBuilder {
@@ -57,8 +56,7 @@ public class FileProfilerBuilder extends EvalConsumerBuilder {
         if (inputDir == null) {
             throw new RuntimeException("Must specify -inputDir");
         }
-        return parameterizeProfiler(new FileProfiler(queue, inputDir,
-                getDBWriter(tableInfos)));
+        return parameterizeProfiler(new FileProfiler(queue, inputDir, getDBWriter(tableInfos)));
     }
 
 

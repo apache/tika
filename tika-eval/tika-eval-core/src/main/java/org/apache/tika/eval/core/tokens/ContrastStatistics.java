@@ -28,51 +28,51 @@ public class ContrastStatistics {
     TokenIntPair[] topNMoreA;
     TokenIntPair[] topNMoreB;
 
-     void setDiceCoefficient(double diceCoefficient) {
-        this.diceCoefficient = diceCoefficient;
-    }
-
-     void setOverlap(double overlap) {
-        this.overlap = overlap;
-    }
-
-     void setTopNUniqueA(TokenIntPair[] topNUniqueA) {
-        this.topNUniqueA = topNUniqueA;
-    }
-
-     void setTopNUniqueB(TokenIntPair[] topNUniqueB) {
-        this.topNUniqueB = topNUniqueB;
-    }
-
-     void setTopNMoreA(TokenIntPair[] topNMoreA) {
-        this.topNMoreA = topNMoreA;
-    }
-
-     void setTopNMoreB(TokenIntPair[] topNMoreB) {
-        this.topNMoreB = topNMoreB;
-    }
-
     public double getDiceCoefficient() {
         return diceCoefficient;
+    }
+
+    void setDiceCoefficient(double diceCoefficient) {
+        this.diceCoefficient = diceCoefficient;
     }
 
     public double getOverlap() {
         return overlap;
     }
 
+    void setOverlap(double overlap) {
+        this.overlap = overlap;
+    }
+
     public TokenIntPair[] getTopNUniqueA() {
         return topNUniqueA;
+    }
+
+    void setTopNUniqueA(TokenIntPair[] topNUniqueA) {
+        this.topNUniqueA = topNUniqueA;
     }
 
     public TokenIntPair[] getTopNUniqueB() {
         return topNUniqueB;
     }
 
+    void setTopNUniqueB(TokenIntPair[] topNUniqueB) {
+        this.topNUniqueB = topNUniqueB;
+    }
+
     public TokenIntPair[] getTopNMoreA() {
         return topNMoreA;
     }
 
+    void setTopNMoreA(TokenIntPair[] topNMoreA) {
+        this.topNMoreA = topNMoreA;
+    }
+
     public TokenIntPair[] getTopNMoreB() {
         return topNMoreB;
+    }
+
+    void setTopNMoreB(TokenIntPair[] topNMoreB) {
+        this.topNMoreB = topNMoreB;
     }
 }

@@ -16,23 +16,22 @@
  */
 package org.apache.tika.eval.core.metadata;
 
+import static org.junit.Assert.assertEquals;
+
+import org.junit.Test;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.filter.DefaultMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 public class TikaEvalMetadataFilterTest {
 
     @Test
     public void testBasic() throws Exception {
-        for (MetadataFilter filter : new MetadataFilter[]{
-                new TikaEvalMetadataFilter(),
+        for (MetadataFilter filter : new MetadataFilter[]{new TikaEvalMetadataFilter(),
                 //make sure that the TikaEvalMetadataFilter is loaded automatically
-                new DefaultMetadataFilter()
-        }) {
+                new DefaultMetadataFilter()}) {
             Metadata metadata = new Metadata();
             String content = "the quick brown fox, Zothro 1234 1235, jumped over the lazy dog";
             metadata.set(TikaCoreProperties.TIKA_CONTENT, content);

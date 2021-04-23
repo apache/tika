@@ -1,4 +1,3 @@
-package org.apache.tika.batch.fs;
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -15,6 +14,8 @@ package org.apache.tika.batch.fs;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.batch.fs;
+
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -32,42 +33,35 @@ import org.apache.tika.batch.FileResourceCrawler;
 
 public class FSDirectoryCrawler extends FileResourceCrawler {
 
-    public enum CRAWL_ORDER
-    {
-        SORTED, //alphabetical order; necessary for cross-platform unit tests
-        RANDOM, //shuffle
-        OS_ORDER //operating system chooses
-    }
-
     private final Path root;
     private final Path startDirectory;
     private final Comparator<Path> pathComparator = new FileNameComparator();
     private CRAWL_ORDER crawlOrder;
 
-    public FSDirectoryCrawler(ArrayBlockingQueue<FileResource> fileQueue,
-                              int numConsumers, Path root, CRAWL_ORDER crawlOrder) {
+    public FSDirectoryCrawler(ArrayBlockingQueue<FileResource> fileQueue, int numConsumers,
+                              Path root, CRAWL_ORDER crawlOrder) {
         super(fileQueue, numConsumers);
         this.root = root;
         this.startDirectory = root;
         this.crawlOrder = crawlOrder;
         if (!Files.isDirectory(startDirectory)) {
-            throw new RuntimeException("Crawler couldn't find this directory:" +
-                    startDirectory.toAbsolutePath());
+            throw new RuntimeException(
+                    "Crawler couldn't find this directory:" + startDirectory.toAbsolutePath());
         }
 
     }
 
-    public FSDirectoryCrawler(ArrayBlockingQueue<FileResource> fileQueue,
-                              int numConsumers, Path root, Path startDirectory,
-                              CRAWL_ORDER crawlOrder) {
+    public FSDirectoryCrawler(ArrayBlockingQueue<FileResource> fileQueue, int numConsumers,
+                              Path root, Path startDirectory, CRAWL_ORDER crawlOrder) {
         super(fileQueue, numConsumers);
         this.root = root;
         this.startDirectory = startDirectory;
         this.crawlOrder = crawlOrder;
-        assert(startDirectory.toAbsolutePath().startsWith(root.toAbsolutePath()));
+        assert (startDirectory.toAbsolutePath().startsWith(root.toAbsolutePath()));
 
-        if (! Files.isDirectory(startDirectory)) {
-            throw new RuntimeException("Crawler couldn't find this directory:" + startDirectory.toAbsolutePath());
+        if (!Files.isDirectory(startDirectory)) {
+            throw new RuntimeException(
+                    "Crawler couldn't find this directory:" + startDirectory.toAbsolutePath());
         }
     }
 
@@ -83,12 +77,13 @@ public class FSDirectoryCrawler extends FileResourceCrawler {
         }
 
         List<Path> files = new ArrayList<>();
-        try (DirectoryStream<Path> ds = Files.newDirectoryStream(directory)){
+        try (DirectoryStream<Path> ds = Files.newDirectoryStream(directory)) {
             for (Path p : ds) {
                 files.add(p);
             }
         } catch (IOException e) {
-            LOG.warn("FSFileAdder couldn't read {}: {}", directory.toAbsolutePath(), e.getMessage(), e);
+            LOG.warn("FSFileAdder couldn't read {}: {}", directory.toAbsolutePath(), e.getMessage(),
+                    e);
         }
         if (files.size() == 0) {
             LOG.info("Empty directory: {}", directory.toAbsolutePath());
@@ -144,6 +139,12 @@ public class FSDirectoryCrawler extends FileResourceCrawler {
      */
     public void handleFirstFileInDirectory(Path f) {
         //no-op
+    }
+
+    public enum CRAWL_ORDER {
+        SORTED, //alphabetical order; necessary for cross-platform unit tests
+        RANDOM, //shuffle
+        OS_ORDER //operating system chooses
     }
 
     //simple lexical order for the file name, we don't really care about localization.

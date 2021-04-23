@@ -17,22 +17,23 @@
 
 package org.apache.tika.example;
 
-import org.apache.tika.exception.TikaException;
-import org.junit.Before;
-import org.junit.Test;
-import org.xml.sax.SAXException;
-
-import java.io.IOException;
-import java.util.List;
-
 import static org.apache.tika.TikaTest.assertContains;
 import static org.apache.tika.TikaTest.assertNotContained;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
+import java.util.List;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.xml.sax.SAXException;
+
+import org.apache.tika.exception.TikaException;
+
 public class ContentHandlerExampleTest {
     ContentHandlerExample example;
-    
+
     @Before
     public void setUp() {
         example = new ContentHandlerExample();
@@ -47,7 +48,7 @@ public class ContentHandlerExampleTest {
     @Test
     public void testParseToHTML() throws IOException, SAXException, TikaException {
         String result = example.parseToHTML().trim();
-        
+
         assertContains("<html", result);
         assertContains("<head>", result);
         assertContains("<meta name=\"dc:creator\"", result);
@@ -59,7 +60,7 @@ public class ContentHandlerExampleTest {
     @Test
     public void testParseBodyToHTML() throws IOException, SAXException, TikaException {
         String result = example.parseBodyToHTML().trim();
-        
+
         assertNotContained("<html", result);
         assertNotContained("<head>", result);
         assertNotContained("<meta name=\"dc:creator\"", result);
@@ -71,7 +72,7 @@ public class ContentHandlerExampleTest {
     @Test
     public void testParseOnePartToHTML() throws IOException, SAXException, TikaException {
         String result = example.parseOnePartToHTML().trim();
-        
+
         assertNotContained("<html", result);
         assertNotContained("<head>", result);
         assertNotContained("<meta name=\"dc:creator\"", result);
@@ -87,7 +88,7 @@ public class ContentHandlerExampleTest {
     @Test
     public void testParseToPlainTextChunks() throws IOException, SAXException, TikaException {
         List<String> result = example.parseToPlainTextChunks();
-        
+
         assertEquals(3, result.size());
         for (String chunk : result) {
             assertTrue("Chunk under max size", chunk.length() <= example.MAXIMUM_TEXT_CHUNK_SIZE);
@@ -95,11 +96,11 @@ public class ContentHandlerExampleTest {
 
         assertContains("This is in the header", result.get(0));
         assertContains("Test Document", result.get(0));
-        
+
         assertContains("Testing", result.get(1));
         assertContains("1 2 3", result.get(1));
         assertContains("TestTable", result.get(1));
-        
+
         assertContains("Testing 123", result.get(2));
     }
 }

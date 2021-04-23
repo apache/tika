@@ -1,5 +1,3 @@
-package org.apache.tika.batch.fs;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,17 +14,17 @@ package org.apache.tika.batch.fs;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import static java.nio.charset.StandardCharsets.UTF_8;
+package org.apache.tika.batch.fs;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import org.apache.commons.io.IOUtils;
+import org.xml.sax.ContentHandler;
+
 import org.apache.tika.batch.FileResource;
 import org.apache.tika.batch.OutputStreamFactory;
 import org.apache.tika.batch.ParserFactory;
@@ -34,7 +32,6 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.ContentHandlerFactory;
-import org.xml.sax.ContentHandler;
 
 /**
  * Basic FileResourceConsumer that reads files from an input
@@ -42,15 +39,13 @@ import org.xml.sax.ContentHandler;
  * <p>
  * This catches all exceptions and errors and then logs them.
  * This will re-throw errors.
- *
  */
 public class BasicTikaFSConsumer extends AbstractFSConsumer {
 
-    private boolean parseRecursively = true;
     private final Parser parser;
     private final ContentHandlerFactory contentHandlerFactory;
     private final OutputStreamFactory fsOSFactory;
-
+    private boolean parseRecursively = true;
     private Charset outputEncoding = StandardCharsets.UTF_8;
 
     /**
@@ -59,12 +54,11 @@ public class BasicTikaFSConsumer extends AbstractFSConsumer {
      * @param contentHandlerFactory
      * @param fsOSFactory
      * @param tikaConfig
-     *
-     * @deprecated use {@link BasicTikaFSConsumer#BasicTikaFSConsumer(ArrayBlockingQueue, Parser, ContentHandlerFactory, OutputStreamFactory)}
+     * @deprecated use {@link BasicTikaFSConsumer#BasicTikaFSConsumer(ArrayBlockingQueue,
+     * Parser, ContentHandlerFactory, OutputStreamFactory)}
      */
     @Deprecated
-    public BasicTikaFSConsumer(ArrayBlockingQueue<FileResource> queue,
-                               ParserFactory parserFactory,
+    public BasicTikaFSConsumer(ArrayBlockingQueue<FileResource> queue, ParserFactory parserFactory,
                                ContentHandlerFactory contentHandlerFactory,
                                OutputStreamFactory fsOSFactory, TikaConfig tikaConfig) {
         super(queue);
@@ -73,8 +67,7 @@ public class BasicTikaFSConsumer extends AbstractFSConsumer {
         this.fsOSFactory = fsOSFactory;
     }
 
-    public BasicTikaFSConsumer(ArrayBlockingQueue<FileResource> queue,
-                               Parser parser,
+    public BasicTikaFSConsumer(ArrayBlockingQueue<FileResource> queue, Parser parser,
                                ContentHandlerFactory contentHandlerFactory,
                                OutputStreamFactory fsOSFactory) {
         super(queue);
@@ -111,8 +104,8 @@ public class BasicTikaFSConsumer extends AbstractFSConsumer {
         //now actually call parse!
         Throwable thrown = null;
         try {
-            parse(fileResource.getResourceId(), parser, is, handler,
-                    fileResource.getMetadata(), context);
+            parse(fileResource.getResourceId(), parser, is, handler, fileResource.getMetadata(),
+                    context);
         } catch (Error t) {
             throw t;
         } catch (Throwable t) {

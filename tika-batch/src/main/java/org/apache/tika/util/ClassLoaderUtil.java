@@ -1,5 +1,3 @@
-package org.apache.tika.util;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,8 @@ package org.apache.tika.util;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.util;
+
 public class ClassLoaderUtil {
 
     @SuppressWarnings("unchecked")
@@ -28,7 +28,8 @@ public class ClassLoaderUtil {
             if (iface.isAssignableFrom(clazz)) {
                 return (T) clazz.newInstance();
             }
-            throw new IllegalArgumentException(iface.toString() + " is not assignable from " + className);
+            throw new IllegalArgumentException(
+                    iface.toString() + " is not assignable from " + className);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         } catch (InstantiationException e) {

@@ -16,21 +16,20 @@
  */
 package org.apache.tika.example;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.tika.eval.core.textstats.CommonTokens;
 import org.apache.tika.eval.core.textstats.CompositeTextStatsCalculator;
 import org.apache.tika.eval.core.textstats.TextStatsCalculator;
 import org.apache.tika.eval.core.tokens.CommonTokenResult;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 
 /**
  * These examples create a new {@link CompositeTextStatsCalculator}
  * for each call.  This is extremely inefficient because the lang id
  * model has to be loaded and the common words for each call.
- *
  */
 public class TextStatsFromTikaEval {
 
@@ -56,7 +55,7 @@ public class TextStatsFromTikaEval {
 
          */
 
-        CommonTokenResult result = (CommonTokenResult)results.get(CommonTokens.class);
+        CommonTokenResult result = (CommonTokenResult) results.get(CommonTokens.class);
         result.getLangCode();
         return result.getOOV();
     }

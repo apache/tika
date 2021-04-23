@@ -26,6 +26,7 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
+
 import org.apache.tika.Tika;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
@@ -71,8 +72,9 @@ public class MetadataAwareLuceneIndexer {
         met.add(TikaCoreProperties.SUBJECT, "File");
         met.add(TikaCoreProperties.SUBJECT, "Indexing");
         met.add(TikaCoreProperties.SUBJECT, "Metadata");
-        met.set(Property.externalClosedChoise(TikaCoreProperties.RIGHTS.getName(), "public",
-                "private"), "public");
+        met.set(Property
+                        .externalClosedChoise(TikaCoreProperties.RIGHTS.getName(), "public", "private"),
+                "public");
         try (InputStream is = new FileInputStream(file)) {
             tika.parse(is, met);
             Document document = new Document();

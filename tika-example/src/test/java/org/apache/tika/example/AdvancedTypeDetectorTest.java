@@ -17,9 +17,9 @@
 
 package org.apache.tika.example;
 
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
+
+import org.junit.Test;
 
 @SuppressWarnings("deprecation")
 public class AdvancedTypeDetectorTest {

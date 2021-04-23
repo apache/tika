@@ -24,5 +24,6 @@ public class FSProperties {
     /**
      * File's relative path (including file name) from a given source root
      */
-    public final static Property FS_REL_PATH = Property.internalText(TIKA_BATCH_FS_NAMESPACE+":relative_path");
+    public final static Property FS_REL_PATH =
+            Property.internalText(TIKA_BATCH_FS_NAMESPACE + ":relative_path");
 }

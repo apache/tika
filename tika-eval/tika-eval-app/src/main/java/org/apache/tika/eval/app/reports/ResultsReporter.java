@@ -17,7 +17,6 @@
 package org.apache.tika.eval.app.reports;
 
 
-import javax.xml.parsers.DocumentBuilder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -33,6 +32,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.xml.parsers.DocumentBuilder;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
@@ -40,17 +40,18 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.poi.common.usermodel.HyperlinkType;
-import org.apache.tika.eval.app.ExtractComparer;
-import org.apache.tika.eval.app.ExtractProfiler;
-import org.apache.tika.eval.app.db.H2Util;
-import org.apache.tika.eval.app.db.JDBCUtil;
-import org.apache.tika.utils.XMLReaderUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import org.apache.tika.eval.app.ExtractComparer;
+import org.apache.tika.eval.app.ExtractProfiler;
+import org.apache.tika.eval.app.db.H2Util;
+import org.apache.tika.eval.app.db.JDBCUtil;
+import org.apache.tika.utils.XMLReaderUtils;
 
 public class ResultsReporter {
     private static final Logger LOG = LoggerFactory.getLogger(ResultsReporter.class);
@@ -59,45 +60,34 @@ public class ResultsReporter {
 
     static {
         OPTIONS = new Options();
-        OPTIONS.addOption("rd", "reportsDir", true, "directory for the reports. " +
-                "If not specified, will write to 'reports'" +
-                "BEWARE: Will overwrite existing reports without warning!")
-                .addOption("rf", "reportsFile", true, "xml specifying sql to call for the reports." +
-                        "If not specified, will use default reports in resources/tika-eval-*-config.xml")
-                .addOption("db", true, "default database (in memory H2). Specify a file name for the H2 database.")
-                .addOption("jdbc", true, "EXPERT: full jdbc connection string. Specify this or use -db <h2db_name>")
-                .addOption("jdbcdriver", true, "EXPERT: specify the jdbc driver class if all else fails")
-                .addOption("tablePrefix", true, "EXPERT: if not using the default tables, specify your table name prefix");
+        OPTIONS.addOption("rd", "reportsDir", true,
+                "directory for the reports. " + "If not specified, will write to 'reports'" +
+                        "BEWARE: Will overwrite existing reports without warning!")
+                .addOption("rf", "reportsFile", true,
+                        "xml specifying sql to call for the reports." +
+                                "If not specified, will use default reports in resources/tika-eval-*-config.xml")
+                .addOption("db", true,
+                        "default database (in memory H2). Specify a file name for the H2 database.")
+                .addOption("jdbc", true,
+                        "EXPERT: full jdbc connection string. Specify this or use -db <h2db_name>")
+                .addOption("jdbcdriver", true,
+                        "EXPERT: specify the jdbc driver class if all else fails")
+                .addOption("tablePrefix", true,
+                        "EXPERT: if not using the default tables, specify your table name prefix");
 
     }
-
-    public static void USAGE() {
-        HelpFormatter helpFormatter = new HelpFormatter();
-        helpFormatter.printHelp(
-                80,
-                "java -jar tika-eval-x.y.jar Report -db mydb [-rd myreports] [-rf myreports.xml]",
-                "Tool: Report",
-                ResultsReporter.OPTIONS,
-                "Note: for h2 db, do not include the .mv.db at the end of the db name.");
-
-    }
-
 
     List<String> before = new ArrayList<>();
     List<String> after = new ArrayList<>();
     List<Report> reports = new ArrayList<>();
 
+    public static void USAGE() {
+        HelpFormatter helpFormatter = new HelpFormatter();
+        helpFormatter.printHelp(80,
+                "java -jar tika-eval-x.y.jar Report -db mydb [-rd myreports] [-rf myreports.xml]",
+                "Tool: Report", ResultsReporter.OPTIONS,
+                "Note: for h2 db, do not include the .mv.db at the end of the db name.");
 
-    private void addBefore(String b) {
-        before.add(b);
-    }
-
-    private void addAfter(String a) {
-        after.add(a);
-    }
-
-    private void addReport(Report r) {
-        reports.add(r);
     }
 
     public static ResultsReporter build(Path p) throws Exception {
@@ -147,7 +137,8 @@ public class ResultsReporter {
             }
             if ("sql".equals(child.getNodeName())) {
                 if (r.sql != null) {
-                    throw new IllegalArgumentException("Can only have one sql statement per report");
+                    throw new IllegalArgumentException(
+                            "Can only have one sql statement per report");
                 }
                 r.sql = child.getTextContent();
             } else if ("colformats".equals(child.getNodeName())) {
@@ -226,12 +217,13 @@ public class ResultsReporter {
         if (commandLine.hasOption("db")) {
             String dbString = commandLine.getOptionValue("db");
             if (dbString.endsWith(".mv.db")) {
-                dbString = dbString.substring(0, dbString.length()-6);
+                dbString = dbString.substring(0, dbString.length() - 6);
                 LOG.debug("trimming .mv.db from db name");
             }
             Path db = Paths.get(dbString);
             if (!H2Util.databaseExists(db)) {
-                throw new RuntimeException("I'm sorry, but I couldn't find this h2 database: " + db);
+                throw new RuntimeException(
+                        "I'm sorry, but I couldn't find this h2 database: " + db);
             }
             dbUtil = new H2Util(db);
         } else if (commandLine.hasOption("jdbc")) {
@@ -289,11 +281,25 @@ public class ResultsReporter {
         }
 
         if (internalPath == null) {
-            throw new RuntimeException("Couldn't determine if this database was a 'profiler' or 'comparison' db");
+            throw new RuntimeException(
+                    "Couldn't determine if this database was a 'profiler' or 'comparison' db");
         }
         Path tmp = Files.createTempFile("tmp-tika-reports", ".xml");
-        Files.copy(ResultsReporter.class.getResourceAsStream(internalPath), tmp, StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(ResultsReporter.class.getResourceAsStream(internalPath), tmp,
+                StandardCopyOption.REPLACE_EXISTING);
         return tmp;
+    }
+
+    private void addBefore(String b) {
+        before.add(b);
+    }
+
+    private void addAfter(String a) {
+        after.add(a);
+    }
+
+    private void addReport(Report r) {
+        reports.add(r);
     }
 
     public void execute(Connection c, Path reportsDirectory) throws IOException, SQLException {

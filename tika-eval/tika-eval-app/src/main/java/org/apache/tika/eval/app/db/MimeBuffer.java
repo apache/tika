@@ -35,11 +35,12 @@ public class MimeBuffer extends AbstractDBBuffer {
     private final Connection connection;
 
 
-    public MimeBuffer(Connection connection, TableInfo mimeTable, TikaConfig config) throws SQLException {
-        st = connection.prepareStatement("insert into " + mimeTable.getName() + "( " +
-                Cols.MIME_ID.name() + ", " +
-                Cols.MIME_STRING.name() + ", " +
-                Cols.FILE_EXTENSION.name() + ") values (?,?,?)");
+    public MimeBuffer(Connection connection, TableInfo mimeTable, TikaConfig config)
+            throws SQLException {
+        st = connection.prepareStatement(
+                "insert into " + mimeTable.getName() + "( " + Cols.MIME_ID.name() + ", " +
+                        Cols.MIME_STRING.name() + ", " + Cols.FILE_EXTENSION.name() +
+                        ") values (?,?,?)");
         this.config = config;
         this.connection = connection;
     }

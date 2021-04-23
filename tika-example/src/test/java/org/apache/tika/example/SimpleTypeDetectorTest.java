@@ -1,9 +1,12 @@
 /*
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,19 +28,18 @@ import org.junit.Test;
 @SuppressWarnings("deprecation")
 public class SimpleTypeDetectorTest {
 
-	@Test
-	public void testSimpleTypeDetector() throws Exception {
-		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    @Test
+    public void testSimpleTypeDetector() throws Exception {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
-		PrintStream out = System.out;
-		System.setOut(new PrintStream(buffer, true, UTF_8.name()));
+        PrintStream out = System.out;
+        System.setOut(new PrintStream(buffer, true, UTF_8.name()));
 
-		SimpleTypeDetector.main(new String[] { "pom.xml" });
+        SimpleTypeDetector.main(new String[]{"pom.xml"});
 
-		System.setOut(out);
+        System.setOut(out);
 
-		assertEquals("pom.xml: application/xml",
-				buffer.toString(UTF_8.name()).trim());
-	}
+        assertEquals("pom.xml: application/xml", buffer.toString(UTF_8.name()).trim());
+    }
 
 }

@@ -44,28 +44,25 @@ public class CommonTokenCountManager {
 
     private static final Charset COMMON_TOKENS_CHARSET = StandardCharsets.UTF_8;
     private static final String TERM_FREQS = "#SUM_TERM_FREQS\t";
-
-    private Matcher digitsMatcher = Pattern.compile("(\\d+)").matcher("");
-
     private final Path commonTokensDir;
-
-    Map<String, LangModel> commonTokenMap = new ConcurrentHashMap<>();
-    Set<String> alreadyTriedToLoad = new HashSet<>();
-
     //if we have no model or if no langid is passed in
     //make this configurable
     private final String defaultLangCode;
+    Map<String, LangModel> commonTokenMap = new ConcurrentHashMap<>();
+    Set<String> alreadyTriedToLoad = new HashSet<>();
+    private Matcher digitsMatcher = Pattern.compile("(\\d+)").matcher("");
 
     public CommonTokenCountManager() {
         this(null, null);
     }
+
     public CommonTokenCountManager(Path commonTokensDir, String defaultLangCode) {
         if (defaultLangCode == null) {
             defaultLangCode = "";
         }
         this.defaultLangCode = defaultLangCode;
         this.commonTokensDir = commonTokensDir;
-        if (! "".equals(defaultLangCode)) {
+        if (!"".equals(defaultLangCode)) {
             tryToLoad(defaultLangCode);
             //if you couldn't load it, make sure to add an empty
             //set to prevent npes later
@@ -83,9 +80,8 @@ public class CommonTokenCountManager {
     @Deprecated
     /**
      * @deprecated use {@link eval.textstats.CommonTokens} instead
-     */
-    public CommonTokenResult countTokenOverlaps(String langCode,
-                                                Map<String, MutableInt> tokens) throws IOException {
+     */ public CommonTokenResult countTokenOverlaps(String langCode, Map<String, MutableInt> tokens)
+            throws IOException {
         String actualLangCode = getActualLangCode(langCode);
         int numUniqueCommonTokens = 0;
         int numCommonTokens = 0;
@@ -105,8 +101,8 @@ public class CommonTokenCountManager {
             }
 
         }
-        return new CommonTokenResult(actualLangCode, numUniqueCommonTokens,
-                numCommonTokens, numUniqueAlphabeticTokens, numAlphabeticTokens);
+        return new CommonTokenResult(actualLangCode, numUniqueCommonTokens, numCommonTokens,
+                numUniqueAlphabeticTokens, numAlphabeticTokens);
     }
 
 
@@ -118,6 +114,7 @@ public class CommonTokenCountManager {
     public Set<String> getLangs() {
         return commonTokenMap.keySet();
     }
+
     /**
      * @param lang
      * @return pair of actual language code used and a set of common
@@ -127,6 +124,7 @@ public class CommonTokenCountManager {
         String actualLangCode = getActualLangCode(lang);
         return Pair.of(actualLangCode, commonTokenMap.get(actualLangCode));
     }
+
     //return langcode for lang that you are actually using
     //lazily load the appropriate model
     private String getActualLangCode(String langCode) {
@@ -173,8 +171,8 @@ public class CommonTokenCountManager {
 
 
             if (is == null) {
-                String path = (p == null) ? "resource on class path: /common_tokens/"+langCode
-                        : p.toAbsolutePath().toString();
+                String path = (p == null) ? "resource on class path: /common_tokens/" + langCode :
+                        p.toAbsolutePath().toString();
                 LOG.warn("Couldn't find common tokens file for: '" + langCode + "' tried here: " +
                         path);
                 alreadyTriedToLoad.add(langCode);
@@ -204,8 +202,8 @@ public class CommonTokenCountManager {
                     if (t.length() > 0 && cols.length > 2) {
                         if (model == null) {
                             throw new IllegalArgumentException(
-                                    "Common tokens file must have included comment line "+
-                                            " with "+TERM_FREQS);
+                                    "Common tokens file must have included comment line " +
+                                            " with " + TERM_FREQS);
                         }
                         //document frequency
                         String df = cols[1];

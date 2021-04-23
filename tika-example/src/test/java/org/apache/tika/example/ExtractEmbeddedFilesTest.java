@@ -44,7 +44,7 @@ public class ExtractEmbeddedFilesTest {
     public void tearDown() throws IOException {
         //this does not act recursively, this only assumes single level directory
         try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(outputPath)) {
-            for (Path entry: dirStream) {
+            for (Path entry : dirStream) {
                 Files.delete(entry);
             }
         }

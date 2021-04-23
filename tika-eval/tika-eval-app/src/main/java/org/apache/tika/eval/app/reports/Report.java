@@ -49,15 +49,13 @@ public class Report {
 
     final String NULL_VALUE = "";//TODO: make this configurable!!!
     Map<String, XSLXCellFormatter> cellFormatters = new HashMap<>();
-    private XLSXNumFormatter defaultDoubleFormatter = new XLSXNumFormatter("0.000");
-    private XLSXNumFormatter defaultIntegerFormatter = new XLSXNumFormatter("0");
-    private CellStyle sqlCellStyle;
-
     String sql;
     String reportFilename;
     boolean includeSql = true;
-
     String reportName;
+    private XLSXNumFormatter defaultDoubleFormatter = new XLSXNumFormatter("0.000");
+    private XLSXNumFormatter defaultIntegerFormatter = new XLSXNumFormatter("0");
+    private CellStyle sqlCellStyle;
 
     public void writeReport(Connection c, Path reportsRoot) throws SQLException, IOException {
         LOG.info("Writing report: {} to {}", reportName, reportFilename);
@@ -89,7 +87,8 @@ public class Report {
         }
     }
 
-    private void dumpReportToWorkbook(Statement st, SXSSFWorkbook wb) throws IOException, SQLException {
+    private void dumpReportToWorkbook(Statement st, SXSSFWorkbook wb)
+            throws IOException, SQLException {
         ResultSet rs = st.executeQuery(sql);
 
         SXSSFSheet sheet = wb.createSheet("tika-eval Report");
@@ -102,7 +101,7 @@ public class Report {
         Row xssfRow = sheet.createRow(rowCount++);
         //write headers and cache them to check against styles
         for (int i = 1; i <= meta.getColumnCount(); i++) {
-            Cell cell = xssfRow.createCell(i-1);
+            Cell cell = xssfRow.createCell(i - 1);
             cell.setCellValue(meta.getColumnLabel(i));
             colNames.add(meta.getColumnLabel(i));
         }
@@ -111,7 +110,7 @@ public class Report {
         while (rs.next()) {
             xssfRow = sheet.createRow(rowCount++);
             for (int i = 1; i <= meta.getColumnCount(); i++) {
-                Cell cell = xssfRow.createCell(i-1);
+                Cell cell = xssfRow.createCell(i - 1);
                 XSLXCellFormatter formatter = cellFormatters.get(meta.getColumnLabel(i));
                 if (formatter == null) {
                     formatter = getDefaultFormatter(resultSetMetaData.getColumnType(i));
@@ -130,7 +129,7 @@ public class Report {
         }
 
         SXSSFSheet sqlSheet = wb.createSheet("tika-eval SQL");
-        sqlSheet.setColumnWidth(0, 100*250);
+        sqlSheet.setColumnWidth(0, 100 * 250);
         Row sqlRow = sqlSheet.createRow(0);
         short height = 5000;
         sqlRow.setHeight(height);
@@ -142,7 +141,7 @@ public class Report {
 
     private XSLXCellFormatter getDefaultFormatter(int columnType) {
         switch (columnType) {
-            case Types.INTEGER :
+            case Types.INTEGER:
                 return defaultIntegerFormatter;
             case Types.DOUBLE:
             case Types.FLOAT:
@@ -153,10 +152,10 @@ public class Report {
         }
     }
 
-    private void writeCell(ResultSetMetaData meta, int colIndex, ResultSet rs,
-                           Cell cell) throws SQLException {
+    private void writeCell(ResultSetMetaData meta, int colIndex, ResultSet rs, Cell cell)
+            throws SQLException {
 
-        switch(meta.getColumnType(colIndex)) {
+        switch (meta.getColumnType(colIndex)) {
             //fall through on numerics
             case Types.BIGINT:
             case Types.SMALLINT:
@@ -191,7 +190,8 @@ public class Report {
                 } else {
                     cell.setCellValue(rs.getString(colIndex));
                 }
-                LOG.warn("Couldn't find type for: {}. Defaulting to String", meta.getColumnType(colIndex));
+                LOG.warn("Couldn't find type for: {}. Defaulting to String",
+                        meta.getColumnType(colIndex));
         }
     }
 

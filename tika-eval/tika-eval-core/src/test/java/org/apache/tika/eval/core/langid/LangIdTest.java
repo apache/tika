@@ -27,9 +27,10 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
-import org.apache.tika.eval.core.tokens.CommonTokenCountManager;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import org.apache.tika.eval.core.tokens.CommonTokenCountManager;
 
 public class LangIdTest {
 
@@ -41,20 +42,17 @@ public class LangIdTest {
         //make sure that there is a common tokens file for every
         //language
         LanguageIDWrapper wrapper = new LanguageIDWrapper();
-        CommonTokenCountManager commonTokens =
-                new CommonTokenCountManager(null, "eng");
+        CommonTokenCountManager commonTokens = new CommonTokenCountManager(null, "eng");
 
         String[] langs = wrapper.getSupportedLanguages();
         Arrays.sort(langs);
         for (String lang : langs) {
             Set<String> tokens = commonTokens.getTokens(lang);
             if (tokens.size() == 0) {
-                System.out.println(String.format(Locale.US,
-                        "missing common tokens for: %s", lang));
-            } else if (tokens.size() < 250) {//ssw has 255
-                fail(String.format(Locale.US,
-                        "common tokens too small (%s) for: %s",
-                        tokens.size(), lang));
+                System.out.println(String.format(Locale.US, "missing common tokens for: %s", lang));
+            } else if (tokens.size() < 250) { //ssw has 255
+                fail(String.format(Locale.US, "common tokens too small (%s) for: %s", tokens.size(),
+                        lang));
 
             }
         }
@@ -62,7 +60,7 @@ public class LangIdTest {
         Set<String> supported = new HashSet<>(Arrays.asList(wrapper.getSupportedLanguages()));
         for (File f : p.toFile().listFiles()) {
             if (!supported.contains(f.getName())) {
-                fail("extra common tokens for: "+f.getName());
+                fail("extra common tokens for: " + f.getName());
             }
         }
     }

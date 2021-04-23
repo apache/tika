@@ -1,4 +1,3 @@
-package org.apache.tika.batch.fs;
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -15,7 +14,7 @@ package org.apache.tika.batch.fs;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+package org.apache.tika.batch.fs;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
@@ -30,10 +29,11 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.tika.batch.BatchProcess;
-import org.apache.tika.batch.BatchProcessDriverCLI;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import org.apache.tika.batch.BatchProcess;
+import org.apache.tika.batch.BatchProcessDriverCLI;
 
 /**
  * This runs a single process.  This was useful during development,
@@ -69,11 +69,10 @@ public class BatchProcessTest extends FSBatchTestBase {
         StreamStrings streamStrings = ex.execute();
 
         assertEquals(3, countChildren(outputDir));
-        for (Path hvyHang : listPaths(outputDir)){
+        for (Path hvyHang : listPaths(outputDir)) {
             assertTrue(Files.exists(hvyHang));
-            assertEquals("file length for "+hvyHang.getFileName()+" should be 0, but is: " +
-                            Files.size(hvyHang),
-                    0, Files.size(hvyHang));
+            assertEquals("file length for " + hvyHang.getFileName() + " should be 0, but is: " +
+                    Files.size(hvyHang), 0, Files.size(hvyHang));
         }
         assertContains(BatchProcess.BATCH_CONSTANTS.BATCH_PROCESS_FATAL_MUST_RESTART.toString(),
                 streamStrings.getErrString());
@@ -88,8 +87,8 @@ public class BatchProcessTest extends FSBatchTestBase {
         StreamStrings streamStrings = ex.execute();
         assertEquals(7, countChildren(outputDir));
 
-        for (int i = 0; i < 6; i++){
-            Path hvyHang = outputDir.resolve("test"+i+"_heavy_hang.xml.xml");
+        for (int i = 0; i < 6; i++) {
+            Path hvyHang = outputDir.resolve("test" + i + "_heavy_hang.xml.xml");
             assertTrue(Files.exists(hvyHang));
             assertEquals(0, Files.size(hvyHang));
         }
@@ -111,13 +110,14 @@ public class BatchProcessTest extends FSBatchTestBase {
         Map<String, String> args = getDefaultArgs("heavy_heavy_hangs", outputDir);
         args.put("numConsumers", "2");
         args.put("maxQueueSize", "2");
-        args.put("timeoutThresholdMillis", "100000000");//make sure that the batch process doesn't time out
+        args.put("timeoutThresholdMillis",
+                "100000000");//make sure that the batch process doesn't time out
         BatchProcessTestExecutor ex = new BatchProcessTestExecutor(args);
         StreamStrings streamStrings = ex.execute();
         assertEquals(2, countChildren(outputDir));
 
-        for (int i = 0; i < 2; i++){
-            Path hvyHang = outputDir.resolve("test"+i+"_heavy_hang.xml.xml");
+        for (int i = 0; i < 2; i++) {
+            Path hvyHang = outputDir.resolve("test" + i + "_heavy_hang.xml.xml");
             assertTrue(Files.exists(hvyHang));
             assertEquals(0, Files.size(hvyHang));
         }
@@ -152,7 +152,6 @@ public class BatchProcessTest extends FSBatchTestBase {
     }
 
 
-
     @Test(timeout = 15000)
     public void noRestart() throws Exception {
         Path outputDir = getNewOutputDir("no_restart");
@@ -168,7 +167,7 @@ public class BatchProcessTest extends FSBatchTestBase {
         assertTrue("test2_norestart.xml", Files.exists(test2));
         Path test3 = outputDir.resolve("test3_ok.xml.xml");
         assertFalse("test3_ok.xml", Files.exists(test3));
-        assertContains("exitStatus="+ BatchProcessDriverCLI.PROCESS_NO_RESTART_EXIT_CODE,
+        assertContains("exitStatus=" + BatchProcessDriverCLI.PROCESS_NO_RESTART_EXIT_CODE,
                 streamStrings.getOutString());
         assertContains("causeForTermination='MAIN_LOOP_EXCEPTION_NO_RESTART'",
                 streamStrings.getOutString());
@@ -177,7 +176,7 @@ public class BatchProcessTest extends FSBatchTestBase {
     /**
      * This tests to make sure that BatchProcess waits the appropriate
      * amount of time on an early termination before stopping.
-     *
+     * <p>
      * If this fails, then interruptible parsers (e.g. those with
      * nio channels) will be interrupted and there will be corrupted data.
      */
@@ -198,7 +197,7 @@ public class BatchProcessTest extends FSBatchTestBase {
         assertContains("<p>some content</p>",
                 readFileToString(outputDir.resolve("test0_sleep.xml.xml"), UTF_8));
 
-        assertContains("exitStatus="+BatchProcessDriverCLI.PROCESS_RESTART_EXIT_CODE,
+        assertContains("exitStatus=" + BatchProcessDriverCLI.PROCESS_RESTART_EXIT_CODE,
                 streamStrings.getOutString());
         assertContains("causeForTermination='BATCH_PROCESS_ALIVE_TOO_LONG'",
                 streamStrings.getOutString());
@@ -219,7 +218,8 @@ public class BatchProcessTest extends FSBatchTestBase {
         List<Path> paths = listPaths(outputDir);
         assertEquals(1, paths.size());
         assertEquals(0, Files.size(paths.get(0)));
-        assertContains("exitStatus="+BatchProcessDriverCLI.PROCESS_RESTART_EXIT_CODE, streamStrings.getOutString());
+        assertContains("exitStatus=" + BatchProcessDriverCLI.PROCESS_RESTART_EXIT_CODE,
+                streamStrings.getOutString());
         assertContains("causeForTermination='BATCH_PROCESS_ALIVE_TOO_LONG'",
                 streamStrings.getOutString());
     }
@@ -248,10 +248,12 @@ public class BatchProcessTest extends FSBatchTestBase {
         Map<String, String> args = getDefaultArgs("noisy_parsers", outputDir);
         args.put("numConsumers", "1");
         args.put("hangOnInit", "true");
-        BatchProcessTestExecutor ex = new BatchProcessTestExecutor(args, "/tika-batch-config-MockConsumersBuilder.xml");
+        BatchProcessTestExecutor ex =
+                new BatchProcessTestExecutor(args, "/tika-batch-config-MockConsumersBuilder.xml");
         StreamStrings streamStrings = ex.execute();
         assertEquals(BatchProcessDriverCLI.PROCESS_NO_RESTART_EXIT_CODE, ex.getExitValue());
-        assertContains("causeForTermination='CONSUMERS_MANAGER_DIDNT_INIT_IN_TIME_NO_RESTART'", streamStrings.getOutString());
+        assertContains("causeForTermination='CONSUMERS_MANAGER_DIDNT_INIT_IN_TIME_NO_RESTART'",
+                streamStrings.getOutString());
     }
 
     @Test(timeout = 10000)
@@ -262,7 +264,8 @@ public class BatchProcessTest extends FSBatchTestBase {
         args.put("numConsumers", "1");
         args.put("hangOnShutdown", "true");
 
-        BatchProcessTestExecutor ex = new BatchProcessTestExecutor(args, "/tika-batch-config-MockConsumersBuilder.xml");
+        BatchProcessTestExecutor ex =
+                new BatchProcessTestExecutor(args, "/tika-batch-config-MockConsumersBuilder.xml");
         StreamStrings streamStrings = ex.execute();
         assertEquals(BatchProcessDriverCLI.PROCESS_NO_RESTART_EXIT_CODE, ex.getExitValue());
         assertContains("ConsumersManager did not shutdown within", streamStrings.getOutString());
@@ -280,7 +283,8 @@ public class BatchProcessTest extends FSBatchTestBase {
         args.put("fileList", Paths.get(getResourceAsUri("/testFileList.txt")).toString());
         args.put("recursiveParserWrapper", "true");
         args.put("basicHandlerType", "text");
-        BatchProcessTestExecutor ex = new BatchProcessTestExecutor(args, "/tika-batch-config-MockConsumersBuilder.xml");
+        BatchProcessTestExecutor ex =
+                new BatchProcessTestExecutor(args, "/tika-batch-config-MockConsumersBuilder.xml");
         ex.execute();
         Path test1 = outputDir.resolve("test1.xml.json");
         Path test2 = outputDir.resolve("sub1a/test2.xml.json");
@@ -306,9 +310,9 @@ public class BatchProcessTest extends FSBatchTestBase {
         args.put("recursiveParserWrapper", "true");
         args.put("basicHandlerType", "text");
 
-        BatchProcessTestExecutor ex = new BatchProcessTestExecutor(args,
-                "/tika-batch-config-MockConsumersBuilder.xml",
-                "/log4j-on.properties");
+        BatchProcessTestExecutor ex =
+                new BatchProcessTestExecutor(args, "/tika-batch-config-MockConsumersBuilder.xml",
+                        "/log4j2-on.properties");
         StreamStrings ss = ex.execute();
         assertFalse(ss.getOutString().contains("error writing xml stream for"));
         assertContains("parse_ex resourceId=\"test0_bad_chars.xml\"", ss.getOutString());
@@ -323,9 +327,9 @@ public class BatchProcessTest extends FSBatchTestBase {
         args.put("recursiveParserWrapper", "true");
         args.put("basicHandlerType", "text");
 
-        BatchProcessTestExecutor ex = new BatchProcessTestExecutor(args,
-                "/tika-batch-config-test-suffix-override.xml",
-                "/log4j-on.properties");
+        BatchProcessTestExecutor ex =
+                new BatchProcessTestExecutor(args, "/tika-batch-config-test-suffix-override.xml",
+                        "/log4j2-on.properties");
         ex.execute();
         Path targ = outputDir.resolve("test0.xml.mysuffix");
         assertTrue(Files.isRegularFile(targ));
@@ -342,12 +346,12 @@ public class BatchProcessTest extends FSBatchTestBase {
         }
 
 
-
         public BatchProcessTestExecutor(Map<String, String> args, String configPath) {
-            this(args, configPath, "/log4j_process.properties");
+            this(args, configPath, "/log4j2_process.properties");
         }
 
-        public BatchProcessTestExecutor(Map<String, String> args, String configPath, String loggerProps) {
+        public BatchProcessTestExecutor(Map<String, String> args, String configPath,
+                                        String loggerProps) {
             this.args = args;
             this.configPath = configPath;
             this.loggerProps = loggerProps;
@@ -410,8 +414,7 @@ public class BatchProcessTest extends FSBatchTestBase {
 
         @Override
         public String toString() {
-            return "OUT>>"+outString+"<<\n"+
-                    "ERR>>"+errString+"<<\n";
+            return "OUT>>" + outString + "<<\n" + "ERR>>" + errString + "<<\n";
         }
     }
 }

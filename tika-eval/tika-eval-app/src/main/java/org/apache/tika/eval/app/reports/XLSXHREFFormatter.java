@@ -41,8 +41,7 @@ public class XLSXHREFFormatter implements XSLXCellFormatter {
     private CellStyle style;
     private int links = 0;
 
-    public XLSXHREFFormatter(String urlBase,
-                             HyperlinkType hyperlinkType) {
+    public XLSXHREFFormatter(String urlBase, HyperlinkType hyperlinkType) {
         this.urlBase = urlBase;
         this.linkType = hyperlinkType;
     }
@@ -60,11 +59,12 @@ public class XLSXHREFFormatter implements XSLXCellFormatter {
     }
 
     @Override
-    public void applyStyleAndValue(int dbColNum, ResultSet resultSet, Cell cell) throws SQLException {
+    public void applyStyleAndValue(int dbColNum, ResultSet resultSet, Cell cell)
+            throws SQLException {
         if (links < MAX_HYPERLINKS) {
             Hyperlink hyperlink = workbook.getCreationHelper().createHyperlink(linkType);
             String path = resultSet.getString(dbColNum);
-            String address = urlBase+path;
+            String address = urlBase + path;
             hyperlink.setAddress(address);
             cell.setHyperlink(hyperlink);
             cell.setCellStyle(style);

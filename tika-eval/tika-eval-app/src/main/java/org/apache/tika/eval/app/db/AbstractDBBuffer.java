@@ -27,7 +27,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * Abstract buffer for map of values and unique ids.
  * <p>
  * Use this for fast in memory lookups of smallish sets of values.
- *
  */
 abstract class AbstractDBBuffer {
 
@@ -55,7 +54,7 @@ abstract class AbstractDBBuffer {
             if (v != null) {
                 return v;
             }
-            v = m.size()+1;
+            v = m.size() + 1;
             m.put(key, v);
             write(v, key);
             numWrites++;

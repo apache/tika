@@ -16,22 +16,22 @@
  */
 package org.apache.tika.langdetect.lingo24;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.tika.langdetect.LanguageDetectorTest;
-import org.apache.tika.language.detect.LanguageDetector;
-import org.apache.tika.language.detect.LanguageResult;
-import org.apache.tika.language.detect.LanguageWriter;
-import org.junit.Test;
-
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
+
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
+import org.apache.commons.io.IOUtils;
+import org.junit.Test;
+
+import org.apache.tika.langdetect.LanguageDetectorTest;
+import org.apache.tika.language.detect.LanguageDetector;
+import org.apache.tika.language.detect.LanguageResult;
+import org.apache.tika.language.detect.LanguageWriter;
 
 /**
  * Test harness for the {@link org.apache.tika.langdetect.lingo24.Lingo24LangDetector}.
@@ -53,9 +53,9 @@ public class Lingo24LangDetectorTest {
     public void testLanguageDetection() throws Exception {
         // Reusing the test data from OptimaizeLangDetectorTest
         // Test taht we can at least read the test file
-        List<String> lines = IOUtils.readLines(
-                new InputStreamReader(
-                        LanguageDetectorTest.class.getResourceAsStream("text-test.tsv"), StandardCharsets.UTF_8));
+        List<String> lines = IOUtils.readLines(new InputStreamReader(
+                LanguageDetectorTest.class.getResourceAsStream("text-test.tsv"),
+                StandardCharsets.UTF_8));
         assertEquals(18, lines.size());
 
         LanguageDetector detector = new Lingo24LangDetector();
@@ -65,7 +65,9 @@ public class Lingo24LangDetectorTest {
 
         for (String line : lines) {
             String[] data = line.split("\t");
-            if (data.length != 2) continue;
+            if (data.length != 2) {
+                continue;
+            }
 
             writer.reset();
             writer.append(data[1]);

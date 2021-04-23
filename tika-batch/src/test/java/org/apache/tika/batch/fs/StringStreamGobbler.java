@@ -1,5 +1,3 @@
-package org.apache.tika.batch.fs;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,8 +14,9 @@ package org.apache.tika.batch.fs;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.batch.fs;
 
-import org.apache.commons.io.IOUtils;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -25,40 +24,40 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import org.apache.commons.io.IOUtils;
 
 public class StringStreamGobbler implements Runnable {
 
-        //plagiarized from org.apache.oodt's StreamGobbler
-        private final BufferedReader reader;
-        private volatile boolean running = true;
-        private final StringBuilder sb = new StringBuilder();
+    //plagiarized from org.apache.oodt's StreamGobbler
+    private final BufferedReader reader;
+    private final StringBuilder sb = new StringBuilder();
+    private volatile boolean running = true;
 
-        public StringStreamGobbler(InputStream is) {
-            this.reader = new BufferedReader(new InputStreamReader(new BufferedInputStream(is), UTF_8));
-        }
+    public StringStreamGobbler(InputStream is) {
+        this.reader = new BufferedReader(new InputStreamReader(new BufferedInputStream(is), UTF_8));
+    }
 
-        @Override
-        public void run() {
-            String line = null;
-            try {
-                while ((line = reader.readLine()) != null && this.running) {
-                    sb.append(line);
-                    sb.append("\n");
-                }
-            } catch (IOException e) {
-                //swallow ioe
+    @Override
+    public void run() {
+        String line = null;
+        try {
+            while ((line = reader.readLine()) != null && this.running) {
+                sb.append(line);
+                sb.append("\n");
             }
+        } catch (IOException e) {
+            //swallow ioe
         }
+    }
 
-        public void stopGobblingAndDie() {
-            running = false;
-            IOUtils.closeQuietly(reader);
-        }
+    public void stopGobblingAndDie() {
+        running = false;
+        IOUtils.closeQuietly(reader);
+    }
 
-        @Override
-        public String toString() {
-            return sb.toString();
+    @Override
+    public String toString() {
+        return sb.toString();
     }
 
 }

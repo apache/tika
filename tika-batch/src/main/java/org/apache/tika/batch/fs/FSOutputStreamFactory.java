@@ -1,4 +1,3 @@
-package org.apache.tika.batch.fs;
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -15,6 +14,8 @@ package org.apache.tika.batch.fs;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.batch.fs;
+
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -27,25 +28,17 @@ import java.util.zip.GZIPOutputStream;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
+
 import org.apache.tika.batch.OutputStreamFactory;
 import org.apache.tika.metadata.Metadata;
 
 public class FSOutputStreamFactory implements OutputStreamFactory {
 
-    public enum COMPRESSION {
-        NONE,
-        BZIP2,
-        GZIP,
-        ZIP
-    }
-
     private final FSUtil.HANDLE_EXISTING handleExisting;
     private final Path outputRoot;
     private final String suffix;
     private final COMPRESSION compression;
-
     /**
-     *
      * @param outputRoot
      * @param handleExisting
      * @param compression
@@ -55,9 +48,9 @@ public class FSOutputStreamFactory implements OutputStreamFactory {
     @Deprecated
     public FSOutputStreamFactory(File outputRoot, FSUtil.HANDLE_EXISTING handleExisting,
                                  COMPRESSION compression, String suffix) {
-        this(Paths.get(outputRoot.toURI()),
-                handleExisting, compression, suffix);
+        this(Paths.get(outputRoot.toURI()), handleExisting, compression, suffix);
     }
+
     public FSOutputStreamFactory(Path outputRoot, FSUtil.HANDLE_EXISTING handleExisting,
                                  COMPRESSION compression, String suffix) {
         this.handleExisting = handleExisting;
@@ -77,6 +70,7 @@ public class FSOutputStreamFactory implements OutputStreamFactory {
      * If mkdirs() fails, this will throw an IOException.
      * <p>
      * Finally, this will open an output stream for the appropriate output file.
+     *
      * @param metadata must have a value set for FSMetadataProperties.FS_ABSOLUTE_PATH or
      *                 else NullPointerException will be thrown!
      * @return OutputStream
@@ -85,15 +79,17 @@ public class FSOutputStreamFactory implements OutputStreamFactory {
     @Override
     public OutputStream getOutputStream(Metadata metadata) throws IOException {
         String initialRelativePath = metadata.get(FSProperties.FS_REL_PATH);
-        Path outputPath = FSUtil.getOutputPath(outputRoot, initialRelativePath, handleExisting, suffix);
+        Path outputPath =
+                FSUtil.getOutputPath(outputRoot, initialRelativePath, handleExisting, suffix);
         if (outputPath == null) {
             return null;
         }
         if (!Files.isDirectory(outputPath.getParent())) {
             Files.createDirectories(outputPath.getParent());
             //TODO: shouldn't need this any more in java 7, right?
-            if (! Files.isDirectory(outputPath.getParent())) {
-                throw new IOException("Couldn't create parent directory for:"+outputPath.toAbsolutePath());
+            if (!Files.isDirectory(outputPath.getParent())) {
+                throw new IOException(
+                        "Couldn't create parent directory for:" + outputPath.toAbsolutePath());
             }
         }
 
@@ -110,5 +106,9 @@ public class FSOutputStreamFactory implements OutputStreamFactory {
                 break;
         }
         return new BufferedOutputStream(os);
+    }
+
+    public enum COMPRESSION {
+        NONE, BZIP2, GZIP, ZIP
     }
 }

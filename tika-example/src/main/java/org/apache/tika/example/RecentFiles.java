@@ -36,6 +36,7 @@ import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.BytesRef;
+
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -48,27 +49,25 @@ import org.apache.tika.metadata.TikaCoreProperties;
 public class RecentFiles {
     private IndexReader reader;
 
-    private SimpleDateFormat rssDateFormat = new SimpleDateFormat(
-            "E, dd MMM yyyy HH:mm:ss z", Locale.getDefault());
+    private SimpleDateFormat rssDateFormat =
+            new SimpleDateFormat("E, dd MMM yyyy HH:mm:ss z", Locale.getDefault());
 
-    public String generateRSS(Path indexFile) throws CorruptIndexException,
-            IOException {
+    public String generateRSS(Path indexFile) throws CorruptIndexException, IOException {
         StringBuffer output = new StringBuffer();
         output.append(getRSSHeaders());
         IndexSearcher searcher = null;
         try {
             reader = DirectoryReader.open(FSDirectory.open(indexFile));
             searcher = new IndexSearcher(reader);
-            GregorianCalendar gc = new java.util.GregorianCalendar(TimeZone.getDefault(), Locale.getDefault());
+            GregorianCalendar gc =
+                    new java.util.GregorianCalendar(TimeZone.getDefault(), Locale.getDefault());
             gc.setTime(new Date());
             String nowDateTime = ISO8601.format(gc);
             gc.add(java.util.GregorianCalendar.MINUTE, -5);
             String fiveMinsAgo = ISO8601.format(gc);
-            TermRangeQuery query = new TermRangeQuery(
-                    TikaCoreProperties.CREATED.getName(),
-                    new BytesRef(fiveMinsAgo), new BytesRef(nowDateTime),
-                    true, true);
-            TopScoreDocCollector collector = TopScoreDocCollector.create(20,10000);
+            TermRangeQuery query = new TermRangeQuery(TikaCoreProperties.CREATED.getName(),
+                    new BytesRef(fiveMinsAgo), new BytesRef(nowDateTime), true, true);
+            TopScoreDocCollector collector = TopScoreDocCollector.create(20, 10000);
             searcher.search(query, collector);
             ScoreDoc[] hits = collector.topDocs().scoreDocs;
             for (ScoreDoc hit : hits) {
@@ -77,7 +76,9 @@ public class RecentFiles {
             }
 
         } finally {
-            if (reader != null) reader.close();
+            if (reader != null) {
+                reader.close();
+            }
         }
 
         output.append(getRSSFooters());
@@ -87,19 +88,18 @@ public class RecentFiles {
     public String getRSSItem(Document doc) {
         StringBuilder output = new StringBuilder();
         output.append("<item>");
-        output.append(emitTag("guid", doc.get(DublinCore.SOURCE.getName()),
-                "isPermalink", "true"));
+        output.append(emitTag("guid", doc.get(DublinCore.SOURCE.getName()), "isPermalink", "true"));
         output.append(emitTag("title", doc.get(TikaCoreProperties.TITLE.getName()), null, null));
-        output.append(emitTag("link", doc.get(DublinCore.SOURCE.getName()),
-                null, null));
+        output.append(emitTag("link", doc.get(DublinCore.SOURCE.getName()), null, null));
         output.append(emitTag("author", doc.get(TikaCoreProperties.CREATOR.getName()), null, null));
         for (String topic : doc.getValues(TikaCoreProperties.SUBJECT.getName())) {
             output.append(emitTag("category", topic, null, null));
         }
-        output.append(emitTag("pubDate", rssDateFormat.format(ISO8601.parse(doc
-                .get(TikaCoreProperties.CREATED.getName()))), null, null));
-        output.append(emitTag("description", doc.get(TikaCoreProperties.TITLE.getName()), null,
-                null));
+        output.append(emitTag("pubDate",
+                rssDateFormat.format(ISO8601.parse(doc.get(TikaCoreProperties.CREATED.getName()))),
+                null, null));
+        output.append(
+                emitTag("description", doc.get(TikaCoreProperties.TITLE.getName()), null, null));
         output.append("</item>");
         return output.toString();
     }
@@ -110,8 +110,8 @@ public class RecentFiles {
         output.append("<rss version=\"2.0\">");
         output.append("  <channel>");
         output.append("     <title>Tika in Action: Recent Files Feed.</title>");
-        output.append("     <description>Chapter 6 Examples demonstrating "
-                + "use of Tika Metadata for RSS.</description>");
+        output.append("     <description>Chapter 6 Examples demonstrating " +
+                "use of Tika Metadata for RSS.</description>");
         output.append("     <link>tikainaction.rss</link>");
         output.append("     <lastBuildDate>");
         output.append(rssDateFormat.format(new Date()));

@@ -16,8 +16,6 @@
  */
 package org.apache.tika.langdetect;
 
-import org.apache.commons.io.IOUtils;
-
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
@@ -28,12 +26,14 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.io.IOUtils;
+
 public abstract class LanguageDetectorTest {
 
     protected String[] getTestLanguages() throws IOException {
-    	List<String> result = new ArrayList<>();
-    	
-    	try (InputStream is = this.getClass().getResourceAsStream("language-codes.txt")) {
+        List<String> result = new ArrayList<>();
+
+        try (InputStream is = this.getClass().getResourceAsStream("language-codes.txt")) {
             List<String> lines = IOUtils.readLines(is, UTF_8);
             for (String line : lines) {
                 line = line.trim();
@@ -50,26 +50,27 @@ public abstract class LanguageDetectorTest {
             return result.toArray(new String[0]);
         }
     }
-    
+
 
     protected boolean hasTestLanguage(String language) {
-        InputStream stream = LanguageDetectorTest.class.getResourceAsStream("/language-tests/" + language + ".test");
+        InputStream stream = LanguageDetectorTest.class
+                .getResourceAsStream("/language-tests/" + language + ".test");
         if (stream != null) {
-        	IOUtils.closeQuietly(stream);
-        	return true;
+            IOUtils.closeQuietly(stream);
+            return true;
         } else {
-        	return false;
+            return false;
         }
     }
-    
+
     protected void writeTo(String language, Writer writer) throws IOException {
-    	writeTo(language, writer, Integer.MAX_VALUE);
+        writeTo(language, writer, Integer.MAX_VALUE);
     }
 
     protected void writeTo(String language, Writer writer, int limit) throws IOException {
         try (InputStream stream = LanguageDetectorTest.class
                 .getResourceAsStream("/language-tests/" + language + ".test")) {
-        	copyAtMost(new InputStreamReader(stream, UTF_8), writer, limit);
+            copyAtMost(new InputStreamReader(stream, UTF_8), writer, limit);
         }
     }
 
@@ -77,13 +78,13 @@ public abstract class LanguageDetectorTest {
         char[] buffer = new char[4096];
         int count = 0;
         int n = 0;
-        
+
         while ((-1 != (n = input.read(buffer))) && (count < limit)) {
-        	int bytesToCopy = Math.min(limit - count, n);
+            int bytesToCopy = Math.min(limit - count, n);
             output.write(buffer, 0, bytesToCopy);
             count += bytesToCopy;
         }
-        
+
         return count;
     }
 

@@ -16,13 +16,6 @@
  */
 package org.apache.tika.metadata.serialization;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-
-import org.apache.tika.pipes.FetchEmitTuple;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringWriter;
@@ -30,13 +23,20 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+
+import org.apache.tika.pipes.FetchEmitTuple;
+
 public class JsonFetchEmitTupleList {
 
     public static List<FetchEmitTuple> fromJson(Reader reader) throws IOException {
         JsonParser jParser = new JsonFactory().createParser(reader);
         JsonToken token = jParser.nextToken();
         if (token != JsonToken.START_ARRAY) {
-            throw new IOException("require start array, but see: "+token.name());
+            throw new IOException("require start array, but see: " + token.name());
         }
         List<FetchEmitTuple> list = new ArrayList<>();
         while (token != JsonToken.END_ARRAY) {

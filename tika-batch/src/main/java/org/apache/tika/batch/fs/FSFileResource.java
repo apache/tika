@@ -1,5 +1,3 @@
-package org.apache.tika.batch.fs;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,7 @@ package org.apache.tika.batch.fs;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.batch.fs;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,7 +47,6 @@ public class FSFileResource implements FileResource {
     private final Metadata metadata;
 
     /**
-     *
      * @param inputRoot
      * @param fullPath
      * @see FSFileResource#FSFileResource(Path, Path)
@@ -56,23 +54,22 @@ public class FSFileResource implements FileResource {
      */
     @Deprecated
     public FSFileResource(File inputRoot, File fullPath) {
-        this(Paths.get(inputRoot.getAbsolutePath()),
-                Paths.get(fullPath.getAbsolutePath()));
+        this(Paths.get(inputRoot.getAbsolutePath()), Paths.get(fullPath.getAbsolutePath()));
     }
 
     /**
      * Constructor
      *
      * @param inputRoot the input root for the file
-     * @param fullPath the full path to the file
+     * @param fullPath  the full path to the file
      * @throws IllegalArgumentException if the fullPath is not
-     * a child of inputRoot
+     *                                  a child of inputRoot
      */
     public FSFileResource(Path inputRoot, Path fullPath) {
         this.fullPath = fullPath;
         this.metadata = new Metadata();
         //child path must actually be a child
-        assert(fullPath.toAbsolutePath().startsWith(inputRoot.toAbsolutePath()));
+        assert (fullPath.toAbsolutePath().startsWith(inputRoot.toAbsolutePath()));
         this.relativePath = inputRoot.relativize(fullPath).toString();
 
         //need to set these now so that the filter can determine
@@ -109,7 +106,6 @@ public class FSFileResource implements FileResource {
     }
 
     /**
-     *
      * @return file's relativePath
      */
     @Override

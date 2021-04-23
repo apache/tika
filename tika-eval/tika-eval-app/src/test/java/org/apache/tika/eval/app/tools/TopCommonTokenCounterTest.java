@@ -26,11 +26,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.tika.TikaTest;
-import org.apache.tika.utils.ProcessUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import org.apache.tika.TikaTest;
+import org.apache.tika.utils.ProcessUtils;
 
 public class TopCommonTokenCounterTest extends TikaTest {
     private final static String INPUT_FILE = "lang_file.txt";
@@ -40,17 +41,14 @@ public class TopCommonTokenCounterTest extends TikaTest {
 
     @BeforeClass
     public static void setUp() throws Exception {
-        String[] docs = new String[] {
-                "th quick brown fox",
-                "jumped over th brown lazy",
-                "brown lazy fox",
-                "\u666e\u6797\u65af\u987f\u5927\u5b66",
-                "\u666e\u6797\u65af\u987f\u5927\u5b66"
-        };
+        String[] docs =
+                new String[]{"th quick brown fox", "jumped over th brown lazy", "brown lazy fox",
+                        "\u666e\u6797\u65af\u987f\u5927\u5b66",
+                        "\u666e\u6797\u65af\u987f\u5927\u5b66"};
 
         WORKING_DIR = Files.createTempDirectory("tika-eval-common-tokens");
-        try (BufferedWriter writer = Files.newBufferedWriter(WORKING_DIR.resolve(INPUT_FILE),
-                StandardCharsets.UTF_8)) {
+        try (BufferedWriter writer = Files
+                .newBufferedWriter(WORKING_DIR.resolve(INPUT_FILE), StandardCharsets.UTF_8)) {
             //do this 10 times to bump the numbers above the TopCommonTokenCounter's MIN_DOC_FREQ
             for (int i = 0; i < 10; i++) {
                 for (String d : docs) {
@@ -60,13 +58,10 @@ public class TopCommonTokenCounterTest extends TikaTest {
             }
             writer.flush();
         }
-        TopCommonTokenCounter.main(
-                new String[]{
-                        ProcessUtils.escapeCommandLine(
-                                WORKING_DIR.resolve(COMMON_TOKENS_FILE).toAbsolutePath().toString()),
-                        ProcessUtils.escapeCommandLine(
-                                WORKING_DIR.resolve(INPUT_FILE).toAbsolutePath().toString())
-                });
+        TopCommonTokenCounter.main(new String[]{ProcessUtils.escapeCommandLine(
+                WORKING_DIR.resolve(COMMON_TOKENS_FILE).toAbsolutePath().toString()),
+                ProcessUtils.escapeCommandLine(
+                        WORKING_DIR.resolve(INPUT_FILE).toAbsolutePath().toString())});
     }
 
     @AfterClass

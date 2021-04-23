@@ -16,19 +16,6 @@
  */
 package org.apache.tika.langdetect.lingo24;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.cxf.jaxrs.client.WebClient;
-import org.apache.tika.language.detect.LanguageConfidence;
-import org.apache.tika.language.detect.LanguageDetector;
-import org.apache.tika.language.detect.LanguageResult;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.core.Form;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import java.io.CharArrayWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,6 +24,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import javax.ws.rs.core.Form;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.cxf.jaxrs.client.WebClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.tika.language.detect.LanguageConfidence;
+import org.apache.tika.language.detect.LanguageDetector;
+import org.apache.tika.language.detect.LanguageResult;
 
 /**
  * An implementation of a Language Detector using the
@@ -65,18 +66,17 @@ public class Lingo24LangDetector extends LanguageDetector {
     /**
      * Default constructor which first checks for the presence of
      * the <code>langdetect.lingo24.properties</code> file to set the API Key.
-     *
+     * <p>
      * If a key is available, it sets the detector as available and also loads
      * the languages supported by the detector.
      */
-    public Lingo24LangDetector(){
+    public Lingo24LangDetector() {
         this.client = WebClient.create(LINGO24_TRANSLATE_URL_BASE + LINGO24_LANGID_ACTION);
         this.isAvailable = true;
         Properties config = new Properties();
         try {
-            config.load(Lingo24LangDetector.class
-                    .getResourceAsStream(
-                            "langdetect.lingo24.properties"));
+            config.load(
+                    Lingo24LangDetector.class.getResourceAsStream("langdetect.lingo24.properties"));
 
             this.userKey = config.getProperty("api.user-key");
 
@@ -136,6 +136,7 @@ public class Lingo24LangDetector extends LanguageDetector {
 
     /**
      * Detects the content's language using the Lingo24 API.
+     *
      * @param content the <code>String</code> content to be used for detection
      * @return the language detected or <code>null</code> if detection failed
      */
@@ -159,8 +160,7 @@ public class Lingo24LangDetector extends LanguageDetector {
         } catch (JsonProcessingException e) {
             LOG.warn("problem detecting ", e);
         }
-        if (element.has("success") &&
-                element.get("success").asText().equals("true")) {
+        if (element.has("success") && element.get("success").asText().equals("true")) {
             language = element.get("lang").asText();
         }
         return language;
@@ -169,6 +169,7 @@ public class Lingo24LangDetector extends LanguageDetector {
     /**
      * Load the supported languages from the <a href="https://developer.lingo24.com/premium-machine-translation-api">Premium MT API</a>.
      * Support is continually expanding.
+     *
      * @return <code>Set<String></code> of supported languages.
      */
     private Set<String> getAllLanguages() {
@@ -181,8 +182,8 @@ public class Lingo24LangDetector extends LanguageDetector {
         WebClient _client = null;
         try {
             _client = WebClient.create(LINGO24_TRANSLATE_URL_BASE + LINGO24_SOURCELANG_ACTION);
-            Response response = _client.accept(MediaType.APPLICATION_JSON)
-                    .query("user_key", userKey).get();
+            Response response =
+                    _client.accept(MediaType.APPLICATION_JSON).query("user_key", userKey).get();
 
             String json = response.readEntity(String.class);
             JsonNode jsonArray = new ObjectMapper().readTree(json).get("source_langs");

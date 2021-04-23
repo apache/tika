@@ -1,5 +1,3 @@
-package org.apache.tika.batch;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,8 +14,7 @@ package org.apache.tika.batch;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import java.util.Date;
+package org.apache.tika.batch;
 
 /**
  * Simple class to record the time when a FileResource's processing started.
@@ -70,8 +67,7 @@ class FileStarted {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result
-                + ((resourceId == null) ? 0 : resourceId.hashCode());
+        result = prime * result + ((resourceId == null) ? 0 : resourceId.hashCode());
         result = prime * result + (int) (started ^ (started >>> 32));
         return result;
     }

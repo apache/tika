@@ -16,10 +16,10 @@
  */
 package org.apache.tika.eval.core.textstats;
 
+import java.security.MessageDigest;
+
 import org.apache.commons.codec.binary.Base32;
 import org.apache.commons.codec.digest.DigestUtils;
-
-import java.security.MessageDigest;
 
 /**
  * Calculates the base32 encoded SHA-256 checksum on the analyzed text
@@ -35,6 +35,7 @@ public class TextSha256Signature implements BytesRefCalculator<String> {
 
     class TextSha256Instance implements BytesRefCalcInstance<String> {
         private MessageDigest messageDigest = DigestUtils.getSha256Digest();
+
         @Override
         public void update(byte[] bytes, int start, int len) {
             messageDigest.update(bytes, start, len);

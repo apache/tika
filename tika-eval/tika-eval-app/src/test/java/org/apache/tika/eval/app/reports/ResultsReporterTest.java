@@ -23,10 +23,11 @@ import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.Statement;
 
-import org.apache.tika.eval.app.db.H2Util;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import org.apache.tika.eval.app.db.H2Util;
 
 public class ResultsReporterTest {
     private Path configFile;
@@ -55,6 +56,6 @@ public class ResultsReporterTest {
     public void testBuilder() throws Exception {
         ResultsReporter r = ResultsReporter.build(configFile);
         r.execute(connection, Paths.get("reports"));
-        System.out.println("finished: "+ tmpDir.toString());
+        System.out.println("finished: " + tmpDir.toString());
     }
 }

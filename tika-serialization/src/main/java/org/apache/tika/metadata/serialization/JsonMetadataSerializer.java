@@ -33,8 +33,7 @@ public class JsonMetadataSerializer extends StdSerializer<Metadata> {
     }
 
     @Override
-    public void serialize(Metadata metadata,
-                          JsonGenerator jsonGenerator,
+    public void serialize(Metadata metadata, JsonGenerator jsonGenerator,
                           SerializerProvider serializerProvider) throws IOException {
         writeMetadataObject(metadata, jsonGenerator, false);
     }

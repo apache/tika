@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.batch.fs;
 
 import java.io.File;
@@ -31,6 +30,9 @@ import java.util.regex.Pattern;
  * reading from and writing to a file system (FS).
  */
 public class FSUtil {
+
+    private final static Pattern FILE_NAME_PATTERN =
+            Pattern.compile("\\A(.*?)(?:\\((\\d+)\\))?\\.([^\\.]+)\\Z");
 
     @Deprecated
     public static boolean checkThisIsAncestorOfThat(File ancestor, File child) {
@@ -52,15 +54,6 @@ public class FSUtil {
         }
         return checkThisIsAncestorOfThat(ancestor, child);
     }
-
-    public enum HANDLE_EXISTING {
-        OVERWRITE,
-        RENAME,
-        SKIP
-    }
-
-    private final static Pattern FILE_NAME_PATTERN =
-            Pattern.compile("\\A(.*?)(?:\\((\\d+)\\))?\\.([^\\.]+)\\Z");
 
     /**
      * Given an output root and an initial relative path,
@@ -94,9 +87,10 @@ public class FSUtil {
      */
     @Deprecated
     public static File getOutputFile(File outputRoot, String initialRelativePath,
-                                     HANDLE_EXISTING handleExisting, String suffix) throws IOException {
-        return getOutputPath(Paths.get(outputRoot.toURI()),
-                initialRelativePath, handleExisting, suffix).toFile();
+                                     HANDLE_EXISTING handleExisting, String suffix)
+            throws IOException {
+        return getOutputPath(Paths.get(outputRoot.toURI()), initialRelativePath, handleExisting,
+                suffix).toFile();
     }
 
     /**
@@ -129,11 +123,11 @@ public class FSUtil {
      * @throws IOException
      */
     public static Path getOutputPath(Path outputRoot, String initialRelativePath,
-                                     HANDLE_EXISTING handleExisting, String suffix) throws IOException {
+                                     HANDLE_EXISTING handleExisting, String suffix)
+            throws IOException {
 
         String localSuffix = (suffix == null) ? "" : suffix;
-        Path cand = FSUtil.resolveRelative(outputRoot,
-                initialRelativePath + "." + localSuffix);
+        Path cand = FSUtil.resolveRelative(outputRoot, initialRelativePath + "." + localSuffix);
         if (Files.exists(cand)) {
             if (handleExisting.equals(HANDLE_EXISTING.OVERWRITE)) {
                 return cand;
@@ -154,8 +148,7 @@ public class FSUtil {
         String fNameBase = null;
         String fNameExt = "";
         //this doesn't include the addition of the localSuffix
-        Path candOnly = FSUtil.resolveRelative(outputRoot,
-                initialRelativePath);
+        Path candOnly = FSUtil.resolveRelative(outputRoot, initialRelativePath);
         Matcher m = FILE_NAME_PATTERN.matcher(candOnly.getFileName().toString());
         if (m.find()) {
             fNameBase = m.group(1);
@@ -186,8 +179,8 @@ public class FSUtil {
         }
 
         if (Files.exists(cand)) {
-            throw new IOException("Couldn't find candidate output file after trying " +
-                    "very, very hard");
+            throw new IOException(
+                    "Couldn't find candidate output file after trying " + "very, very hard");
         }
         return cand;
     }
@@ -207,5 +200,9 @@ public class FSUtil {
             throw new IllegalArgumentException(other + " cannot be an absolute path!");
         }
         return p.resolve(op);
+    }
+
+    public enum HANDLE_EXISTING {
+        OVERWRITE, RENAME, SKIP
     }
 }

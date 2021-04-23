@@ -49,7 +49,7 @@ public class DumpTikaConfigExample {
         Charset encoding = UTF_8;
         TikaConfigSerializer.Mode mode = TikaConfigSerializer.Mode.CURRENT;
         String filename = null;
-        
+
         for (String arg : args) {
             if (arg.startsWith("-")) {
                 if (arg.contains("-dump-minimal")) {
@@ -60,7 +60,8 @@ public class DumpTikaConfigExample {
                     mode = TikaConfigSerializer.Mode.STATIC;
                 } else {
                     System.out.println("Use:");
-                    System.out.println("  DumpTikaConfig [--dump-minimal] [--dump-current] [--dump-static] [filename] [encoding]");
+                    System.out.println(
+                            "  DumpTikaConfig [--dump-minimal] [--dump-current] [--dump-static] [filename] [encoding]");
                     System.out.println("");
                     System.out.println("--dump-minimal    Produce the minimal config file");
                     System.out.println("--dump-current    The current (with defaults) config file");
@@ -73,14 +74,14 @@ public class DumpTikaConfigExample {
                 encoding = Charset.forName(arg);
             }
         }
-        
+
         Writer writer = null;
         if (filename != null) {
             writer = new OutputStreamWriter(new FileOutputStream(filename), encoding);
         } else {
             writer = new StringWriter();
         }
-        
+
         DumpTikaConfigExample ex = new DumpTikaConfigExample();
         TikaConfigSerializer.serialize(TikaConfig.getDefaultConfig(), mode, writer, encoding);
 

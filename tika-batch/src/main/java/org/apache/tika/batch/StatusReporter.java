@@ -1,5 +1,3 @@
-package org.apache.tika.batch;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -17,14 +15,16 @@ package org.apache.tika.batch;
  * limitations under the License.
  */
 
+package org.apache.tika.batch;
+
 import java.text.NumberFormat;
-import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.Callable;
 
-import org.apache.tika.util.DurationFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.tika.util.DurationFormatUtils;
 
 /**
  * Basic class to use for reporting status from both the crawler and the consumers.
@@ -52,7 +52,7 @@ public class StatusReporter implements Callable<IFileProcessorFutureResult> {
     /**
      * Initialize with the crawler and consumers
      *
-     * @param crawler   crawler to ping at intervals
+     * @param crawler          crawler to ping at intervals
      * @param consumersManager consumers to ping at intervals
      */
     public StatusReporter(FileResourceCrawler crawler, ConsumersManager consumersManager) {
@@ -86,23 +86,19 @@ public class StatusReporter implements Callable<IFileProcessorFutureResult> {
                 double elapsedSecs = (double) elapsed / (double) 1000;
                 int avg = (elapsedSecs > 5 || cnt > 100) ? (int) ((double) cnt / elapsedSecs) : -1;
 
-                String elapsedString = DurationFormatUtils.formatMillis(System.currentTimeMillis() - start);
-                String docsPerSec = avg > -1 ? String.format(Locale.ROOT,
-                        " (%s docs per sec)",
-                        numberFormat.format(avg)) : "";
-                String msg =
-                        String.format(
-                                Locale.ROOT,
-                                "Processed %s documents in %s%s.",
-                                numberFormat.format(cnt), elapsedString, docsPerSec);
+                String elapsedString =
+                        DurationFormatUtils.formatMillis(System.currentTimeMillis() - start);
+                String docsPerSec = avg > -1 ?
+                        String.format(Locale.ROOT, " (%s docs per sec)", numberFormat.format(avg)) :
+                        "";
+                String msg = String.format(Locale.ROOT, "Processed %s documents in %s%s.",
+                        numberFormat.format(cnt), elapsedString, docsPerSec);
                 report(msg);
-                if (exceptions == 1){
+                if (exceptions == 1) {
                     msg = "There has been one handled exception.";
                 } else {
-                    msg =
-                            String.format(Locale.ROOT,
-                                    "There have been %s handled exceptions.",
-                                    numberFormat.format(exceptions));
+                    msg = String.format(Locale.ROOT, "There have been %s handled exceptions.",
+                            numberFormat.format(exceptions));
                 }
                 report(msg);
 
@@ -112,7 +108,8 @@ public class StatusReporter implements Callable<IFileProcessorFutureResult> {
                 if (stillAlive == 1) {
                     msg = "There is one file processor still active.";
                 } else {
-                    msg = "There are " + numberFormat.format(stillAlive) + " file processors still active.";
+                    msg = "There are " + numberFormat.format(stillAlive) +
+                            " file processors still active.";
                 }
                 report(msg);
 
@@ -121,19 +118,19 @@ public class StatusReporter implements Callable<IFileProcessorFutureResult> {
                 if (crawled == 1) {
                     msg = "The directory crawler has considered 1 file,";
                 } else {
-                    msg = "The directory crawler has considered " +
-                            numberFormat.format(crawled) + " files, ";
+                    msg = "The directory crawler has considered " + numberFormat.format(crawled) +
+                            " files, ";
                 }
                 if (added == 1) {
                     msg += "and it has added 1 file.";
                 } else {
-                    msg += "and it has added " +
-                            numberFormat.format(crawler.getAdded()) + " files.";
+                    msg += "and it has added " + numberFormat.format(crawler.getAdded()) +
+                            " files.";
                 }
                 msg += "\n";
                 report(msg);
 
-                if (! crawler.isActive()) {
+                if (!crawler.isActive()) {
                     msg = "The directory crawler has completed its crawl.\n";
                     report(msg);
                 }
@@ -151,6 +148,7 @@ public class StatusReporter implements Callable<IFileProcessorFutureResult> {
 
     /**
      * Set the amount of time to sleep between reports.
+     *
      * @param sleepMillis length to sleep btwn reports in milliseconds
      */
     public void setSleepMillis(long sleepMillis) {
@@ -177,8 +175,8 @@ public class StatusReporter implements Callable<IFileProcessorFutureResult> {
             long elapsed = fs.getElapsedMillis();
             if (elapsed > staleThresholdMillis) {
                 String elapsedString = Double.toString((double) elapsed / (double) 1000);
-                report("A thread has been working on " + fs.getResourceId() +
-                        " for " + elapsedString + " seconds.");
+                report("A thread has been working on " + fs.getResourceId() + " for " +
+                        elapsedString + " seconds.");
             }
         }
     }
@@ -197,7 +195,7 @@ public class StatusReporter implements Callable<IFileProcessorFutureResult> {
     private int getStillAlive() {
         int ret = 0;
         for (FileResourceConsumer consumer : consumersManager.getConsumers()) {
-            if ( consumer.isStillActive()) {
+            if (consumer.isStillActive()) {
                 ret++;
             }
         }
@@ -206,6 +204,7 @@ public class StatusReporter implements Callable<IFileProcessorFutureResult> {
 
     /**
      * This returns a rough (unsynchronized) count of caught/handled exceptions.
+     *
      * @return rough count of exceptions
      */
     public int getRoughCountExceptions() {
@@ -218,9 +217,10 @@ public class StatusReporter implements Callable<IFileProcessorFutureResult> {
 
     /**
      * Set whether the main process is in the process of shutting down.
+     *
      * @param isShuttingDown
      */
-    public void setIsShuttingDown(boolean isShuttingDown){
+    public void setIsShuttingDown(boolean isShuttingDown) {
         this.isShuttingDown = isShuttingDown;
     }
 }

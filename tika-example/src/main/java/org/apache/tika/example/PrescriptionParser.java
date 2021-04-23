@@ -20,29 +20,29 @@ package org.apache.tika.example;
 import java.util.Collections;
 import java.util.Set;
 
+import org.xml.sax.ContentHandler;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.xml.ElementMetadataHandler;
 import org.apache.tika.parser.xml.XMLParser;
 import org.apache.tika.sax.TeeContentHandler;
-import org.xml.sax.ContentHandler;
 
 public class PrescriptionParser extends XMLParser {
     private static final long serialVersionUID = 7690682277511967388L;
 
     @Override
-    protected ContentHandler getContentHandler(ContentHandler handler,
-                                               Metadata metadata, ParseContext context) {
+    protected ContentHandler getContentHandler(ContentHandler handler, Metadata metadata,
+                                               ParseContext context) {
         String xpd = "http://example.com/2011/xpd";
 
-        ContentHandler doctor = new ElementMetadataHandler(xpd, "doctor",
-                metadata, "xpd:doctor");
-        ContentHandler patient = new ElementMetadataHandler(xpd, "patient",
-                metadata, "xpd:patient");
+        ContentHandler doctor = new ElementMetadataHandler(xpd, "doctor", metadata, "xpd:doctor");
+        ContentHandler patient =
+                new ElementMetadataHandler(xpd, "patient", metadata, "xpd:patient");
 
-        return new TeeContentHandler(super.getContentHandler(handler, metadata,
-                context), doctor, patient);
+        return new TeeContentHandler(super.getContentHandler(handler, metadata, context), doctor,
+                patient);
     }
 
     @Override

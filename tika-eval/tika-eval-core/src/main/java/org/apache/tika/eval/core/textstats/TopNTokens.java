@@ -20,15 +20,18 @@ import java.util.Map;
 
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+
 import org.apache.tika.eval.core.tokens.TokenCounts;
 import org.apache.tika.eval.core.tokens.TokenIntPair;
 
 public class TopNTokens implements TokenCountStatsCalculator<TokenIntPair[]> {
 
     private final int topN;
+
     public TopNTokens(int topN) {
         this.topN = topN;
     }
+
     @Override
     public TokenIntPair[] calculate(TokenCounts tokenCounts) {
         TokenCountPriorityQueue queue = new TokenCountPriorityQueue(topN);
@@ -38,8 +41,7 @@ public class TopNTokens implements TokenCountStatsCalculator<TokenIntPair[]> {
             String token = e.getKey();
             int termFreq = e.getValue().intValue();
 
-            if (queue.top() == null || queue.size() < topN ||
-                    termFreq >= queue.top().getValue()) {
+            if (queue.top() == null || queue.size() < topN || termFreq >= queue.top().getValue()) {
                 queue.insertWithOverflow(new TokenIntPair(token, termFreq));
             }
 

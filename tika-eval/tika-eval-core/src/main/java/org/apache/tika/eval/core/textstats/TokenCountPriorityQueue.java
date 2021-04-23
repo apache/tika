@@ -18,6 +18,7 @@
 package org.apache.tika.eval.core.textstats;
 
 import org.apache.lucene.util.PriorityQueue;
+
 import org.apache.tika.eval.core.tokens.TokenIntPair;
 
 public class TokenCountPriorityQueue extends PriorityQueue<TokenIntPair> {
@@ -40,7 +41,7 @@ public class TokenCountPriorityQueue extends PriorityQueue<TokenIntPair> {
         TokenIntPair[] topN = new TokenIntPair[size()];
         //now we reverse the queue
         TokenIntPair term = pop();
-        int i = topN.length-1;
+        int i = topN.length - 1;
         while (term != null && i > -1) {
             topN[i--] = term;
             term = pop();

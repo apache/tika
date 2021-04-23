@@ -1,5 +1,3 @@
-package org.apache.tika.util;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,7 @@ package org.apache.tika.util;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.util;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -31,7 +30,7 @@ public class PropsUtil {
     /**
      * Parses v.  If there is a problem, this returns defaultMissing.
      *
-     * @param v string to parse
+     * @param v              string to parse
      * @param defaultMissing value to return if value is null or unparseable
      * @return parsed value
      */
@@ -51,7 +50,7 @@ public class PropsUtil {
     /**
      * Parses v.  If there is a problem, this returns defaultMissing.
      *
-     * @param v string to parse
+     * @param v              string to parse
      * @param defaultMissing value to return if value is null or unparseable
      * @return parsed value
      */
@@ -70,7 +69,7 @@ public class PropsUtil {
     /**
      * Parses v.  If there is a problem, this returns defaultMissing.
      *
-     * @param v string to parse
+     * @param v              string to parse
      * @param defaultMissing value to return if value is null or unparseable
      * @return parsed value
      */
@@ -90,7 +89,7 @@ public class PropsUtil {
     /**
      * Parses v.  If there is a problem, this returns defaultMissing.
      *
-     * @param v string to parse
+     * @param v              string to parse
      * @param defaultMissing value to return if value is null or unparseable
      * @return parsed value
      * @see #getPath(String, Path)
@@ -105,7 +104,7 @@ public class PropsUtil {
             v = v.substring(1);
         }
         if (v.endsWith("\"")) {
-            v = v.substring(0, v.length()-1);
+            v = v.substring(0, v.length() - 1);
         }
 
         return new File(v);
@@ -114,7 +113,7 @@ public class PropsUtil {
     /**
      * Parses v.  If v is null, this returns defaultMissing.
      *
-     * @param v string to parse
+     * @param v              string to parse
      * @param defaultMissing value to return if value is null
      * @return parsed value
      */
@@ -128,7 +127,7 @@ public class PropsUtil {
     /**
      * Parses v.  If there is a problem, this returns defaultMissing.
      *
-     * @param v string to parse
+     * @param v              string to parse
      * @param defaultMissing value to return if value is null or unparseable
      * @return parsed value
      * @see #getPath(String, Path)
@@ -142,7 +141,7 @@ public class PropsUtil {
             v = v.substring(1);
         }
         if (v.endsWith("\"")) {
-            v = v.substring(0, v.length()-1);
+            v = v.substring(0, v.length() - 1);
         }
         return Paths.get(v);
     }

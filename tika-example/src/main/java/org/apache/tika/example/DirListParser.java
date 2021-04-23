@@ -17,6 +17,8 @@
 
 package org.apache.tika.example;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -25,6 +27,9 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -32,10 +37,6 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Parses the output of /bin/ls and counts the number of files and the number of
@@ -45,8 +46,17 @@ public class DirListParser implements Parser {
 
     private static final long serialVersionUID = 2717930544410610735L;
 
-    private static Set<MediaType> SUPPORTED_TYPES = new HashSet<>(
-            Collections.singletonList(MediaType.TEXT_PLAIN));
+    private static Set<MediaType> SUPPORTED_TYPES =
+            new HashSet<>(Collections.singletonList(MediaType.TEXT_PLAIN));
+
+    public static void main(String[] args) throws IOException, SAXException, TikaException {
+        DirListParser parser = new DirListParser();
+        Metadata met = new Metadata();
+        parser.parse(System.in, new BodyContentHandler(), met);
+
+        System.out.println("Num files: " + met.getValues("Filename").length);
+        System.out.println("Num executables: " + met.get("NumExecutables"));
+    }
 
     /*
      * (non-Javadoc)
@@ -76,15 +86,15 @@ public class DirListParser implements Parser {
      * org.xml.sax.ContentHandler, org.apache.tika.metadata.Metadata,
      * org.apache.tika.parser.ParseContext)
      */
-    public void parse(InputStream is, ContentHandler handler,
-                      Metadata metadata, ParseContext context) throws IOException,
-            SAXException, TikaException {
+    public void parse(InputStream is, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
 
         List<String> lines = FileUtils.readLines(TikaInputStream.get(is).getFile(), UTF_8);
         for (String line : lines) {
             String[] fileToks = line.split("\\s+");
-            if (fileToks.length < 8)
+            if (fileToks.length < 8) {
                 continue;
+            }
             String filePermissions = fileToks[0];
             String numHardLinks = fileToks[1];
             String fileOwner = fileToks[2];
@@ -102,25 +112,14 @@ public class DirListParser implements Parser {
                 fileName.append(" ");
             }
             fileName.deleteCharAt(fileName.length() - 1);
-            this.addMetadata(metadata, filePermissions, numHardLinks,
-                    fileOwner, fileOwnerGroup, fileSize,
-                    lastModDate.toString(), fileName.toString());
+            this.addMetadata(metadata, filePermissions, numHardLinks, fileOwner, fileOwnerGroup,
+                    fileSize, lastModDate.toString(), fileName.toString());
         }
     }
 
-    public static void main(String[] args) throws IOException, SAXException,
-            TikaException {
-        DirListParser parser = new DirListParser();
-        Metadata met = new Metadata();
-        parser.parse(System.in, new BodyContentHandler(), met);
-
-        System.out.println("Num files: " + met.getValues("Filename").length);
-        System.out.println("Num executables: " + met.get("NumExecutables"));
-    }
-
-    private void addMetadata(Metadata metadata, String filePerms,
-                             String numHardLinks, String fileOwner, String fileOwnerGroup,
-                             String fileSize, String lastModDate, String fileName) {
+    private void addMetadata(Metadata metadata, String filePerms, String numHardLinks,
+                             String fileOwner, String fileOwnerGroup, String fileSize,
+                             String lastModDate, String fileName) {
         metadata.add("FilePermissions", filePerms);
         metadata.add("NumHardLinks", numHardLinks);
         metadata.add("FileOwner", fileOwner);

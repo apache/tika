@@ -44,8 +44,8 @@ public class AbstractBufferTest {
     @Test(timeout = 30000)
     public void runTest() throws InterruptedException, ExecutionException {
         List<String> keys = new ArrayList<>();
-        Collections.addAll(keys, new String[]{
-                "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"});
+        Collections
+                .addAll(keys, new String[]{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"});
 
         int numGets = 100;
         int numTesters = 20;
@@ -53,9 +53,7 @@ public class AbstractBufferTest {
 
 
         ExecutorService ex = Executors.newFixedThreadPool(numTesters);
-        CompletionService<MyTestResult> completionService =
-                new ExecutorCompletionService<>(
-                        ex);
+        CompletionService<MyTestResult> completionService = new ExecutorCompletionService<>(ex);
         for (int i = 0; i < numTesters; i++) {
             completionService.submit(new Tester(keys, b, numGets));
         }
@@ -63,8 +61,7 @@ public class AbstractBufferTest {
         int results = 0;
         Map<String, Integer> combined = new HashMap<>();
         while (results < numTesters) {
-            Future<MyTestResult> futureResult =
-                    completionService.poll(1, TimeUnit.SECONDS);
+            Future<MyTestResult> futureResult = completionService.poll(1, TimeUnit.SECONDS);
             if (futureResult != null) {
                 results++;
                 assertEquals(keys.size(), futureResult.get().getMap().keySet().size());
@@ -82,11 +79,11 @@ public class AbstractBufferTest {
 
     private class Tester implements Callable<MyTestResult> {
 
-        private Random r = new Random();
-        private Map<String, Integer> m = new HashMap<>();
-        List<String> keys = new ArrayList<>();
         private final AbstractDBBuffer dbBuffer;
         private final int numGets;
+        List<String> keys = new ArrayList<>();
+        private Random r = new Random();
+        private Map<String, Integer> m = new HashMap<>();
 
         private Tester(List<String> inputKeys, AbstractDBBuffer buffer, int numGets) {
             keys.addAll(inputKeys);
@@ -129,16 +126,18 @@ public class AbstractBufferTest {
 
     private class MyTestResult {
         Map<String, Integer> m;
+
         private MyTestResult(Map<String, Integer> m) {
             this.m = m;
         }
+
         private Map<String, Integer> getMap() {
             return m;
         }
 
         @Override
         public String toString() {
-            return "MyTester: "+m.size();
+            return "MyTester: " + m.size();
         }
     }
 

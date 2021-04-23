@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 
+import org.w3c.dom.Node;
+
 import org.apache.tika.batch.ConsumersManager;
 import org.apache.tika.batch.FileResource;
 import org.apache.tika.batch.FileResourceConsumer;
@@ -38,7 +40,6 @@ import org.apache.tika.eval.app.db.MimeBuffer;
 import org.apache.tika.util.ClassLoaderUtil;
 import org.apache.tika.util.PropsUtil;
 import org.apache.tika.util.XMLDOMUtil;
-import org.w3c.dom.Node;
 
 public class EvalConsumersBuilder extends AbstractConsumersBuilder {
 
@@ -112,7 +113,7 @@ public class EvalConsumersBuilder extends AbstractConsumersBuilder {
     private Path getNonNullPath(Map<String, String> attrs, String key) {
         Path p = getPath(attrs, key);
         if (p == null) {
-            throw new RuntimeException("Must specify a file for this attribute: "+key);
+            throw new RuntimeException("Must specify a file for this attribute: " + key);
         }
         return p;
     }

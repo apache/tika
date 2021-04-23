@@ -27,8 +27,9 @@ import org.apache.commons.math3.util.FastMath;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
-import org.apache.tika.eval.core.textstats.TokenCountPriorityQueue;
+
 import org.apache.tika.eval.core.textstats.CompositeTextStatsCalculator;
+import org.apache.tika.eval.core.textstats.TokenCountPriorityQueue;
 import org.apache.tika.eval.core.textstats.TokenEntropy;
 import org.apache.tika.eval.core.textstats.TokenLengths;
 import org.apache.tika.eval.core.textstats.TopNTokens;
@@ -43,14 +44,11 @@ import org.apache.tika.eval.core.textstats.TopNTokens;
 public class TokenCounter {
 
 
+    private final TokenStatistics NULL_TOKEN_STAT =
+            new TokenStatistics(0, 0, new TokenIntPair[0], 0.0d, new SummaryStatistics());
+    private final Analyzer generalAnalyzer;
     Map<String, Map<String, MutableInt>> map = new HashMap<>(); //Map<field, Map<token, count>>
     Map<String, TokenStatistics> tokenStatistics = new HashMap<>();
-
-    private final TokenStatistics NULL_TOKEN_STAT = new TokenStatistics(
-            0, 0, new TokenIntPair[0], 0.0d, new SummaryStatistics());
-
-    private final Analyzer generalAnalyzer;
-
     private int topN = 10;
 
     public TokenCounter(Analyzer generalAnalyzer) throws IOException {
@@ -92,7 +90,8 @@ public class TokenCounter {
         double p = 0.0d;
         double base = 2.0;
 
-        org.apache.tika.eval.core.textstats.TokenCountPriorityQueue queue = new TokenCountPriorityQueue(topN);
+        org.apache.tika.eval.core.textstats.TokenCountPriorityQueue queue =
+                new TokenCountPriorityQueue(topN);
 
         SummaryStatistics summaryStatistics = new SummaryStatistics();
         for (Map.Entry<String, MutableInt> e : tokenMap.entrySet()) {
@@ -105,14 +104,13 @@ public class TokenCounter {
             for (int i = 0; i < e.getValue().intValue(); i++) {
                 summaryStatistics.addValue(len);
             }
-            if (queue.top() == null || queue.size() < topN ||
-                    termFreq >= queue.top().getValue()) {
+            if (queue.top() == null || queue.size() < topN || termFreq >= queue.top().getValue()) {
                 queue.insertWithOverflow(new TokenIntPair(token, termFreq));
             }
 
         }
         if (totalTokens > 0) {
-            ent = (-1.0d / (double)totalTokens) * ent;
+            ent = (-1.0d / (double) totalTokens) * ent;
         }
 
 /*            Collections.sort(allTokens);
@@ -121,8 +119,9 @@ public class TokenCounter {
                 topNList.add(allTokens.get(i));
             }*/
 
-        tokenStatistics.put(field, new TokenStatistics(totalUniqueTokens, totalTokens,
-                queue.getArray(), ent, summaryStatistics));
+        tokenStatistics.put(field,
+                new TokenStatistics(totalUniqueTokens, totalTokens, queue.getArray(), ent,
+                        summaryStatistics));
 
     }
 

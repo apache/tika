@@ -16,20 +16,20 @@
  */
 package org.apache.tika.metadata.serialization;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.pipes.HandlerConfig;
-import org.apache.tika.pipes.emitter.EmitKey;
-import org.apache.tika.pipes.fetcher.FetchKey;
-import org.apache.tika.pipes.FetchEmitTuple;
-import org.apache.tika.sax.BasicContentHandlerFactory;
-
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.pipes.FetchEmitTuple;
+import org.apache.tika.pipes.HandlerConfig;
+import org.apache.tika.pipes.emitter.EmitKey;
+import org.apache.tika.pipes.fetcher.FetchKey;
+import org.apache.tika.sax.BasicContentHandlerFactory;
 
 public class JsonFetchEmitTupleTest {
 

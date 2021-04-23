@@ -93,8 +93,7 @@ public class ExtractComparerBuilder extends EvalConsumerBuilder {
         }
 
         return parameterizeProfiler(new ExtractComparer(queue, inputRootDir, extractsA, extractsB,
-                buildExtractReader(localAttrs),
-                getDBWriter(getNonRefTableInfos())));
+                buildExtractReader(localAttrs), getDBWriter(getNonRefTableInfos())));
     }
 
 
@@ -104,8 +103,10 @@ public class ExtractComparerBuilder extends EvalConsumerBuilder {
 
         String tablePrefixB = localAttrs.get(TABLE_PREFIX_B_KEY);
 
-        tablePrefixA = (tablePrefixA == null || tablePrefixA.endsWith("_")) ? tablePrefixA : tablePrefixA+"_";
-        tablePrefixB = (tablePrefixB == null || tablePrefixB.endsWith("_")) ? tablePrefixB : tablePrefixB+"_";
+        tablePrefixA = (tablePrefixA == null || tablePrefixA.endsWith("_")) ? tablePrefixA :
+                tablePrefixA + "_";
+        tablePrefixB = (tablePrefixB == null || tablePrefixB.endsWith("_")) ? tablePrefixB :
+                tablePrefixB + "_";
 
         if (tablePrefixA != null) {
             for (TableInfo tableInfo : tableInfosA) {
@@ -121,7 +122,7 @@ public class ExtractComparerBuilder extends EvalConsumerBuilder {
 
         if (tablePrefixA != null || tablePrefixB != null) {
             String aAndB = (tablePrefixA == null) ? "" : tablePrefixA;
-            aAndB = (tablePrefixB == null) ? aAndB : aAndB+tablePrefixB;
+            aAndB = (tablePrefixB == null) ? aAndB : aAndB + tablePrefixB;
             for (TableInfo tableInfo : tableInfosAandB) {
                 tableInfo.setNamePrefix(aAndB);
             }

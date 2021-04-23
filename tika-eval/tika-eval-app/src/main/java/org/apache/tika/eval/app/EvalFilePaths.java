@@ -108,11 +108,8 @@ class EvalFilePaths {
 
     @Override
     public String toString() {
-        return "EvalFilePaths{" +
-                "relativeSourceFilePath=" + relativeSourceFilePath +
-                ", extractFile=" + extractFile +
-                ", sourceFileLength=" + sourceFileLength +
-                ", extractFileLength=" + extractFileLength +
-                '}';
+        return "EvalFilePaths{" + "relativeSourceFilePath=" + relativeSourceFilePath +
+                ", extractFile=" + extractFile + ", sourceFileLength=" + sourceFileLength +
+                ", extractFileLength=" + extractFileLength + '}';
     }
 }

@@ -1,5 +1,3 @@
-package org.apache.tika.batch;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,7 @@ package org.apache.tika.batch;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.batch;
 
 import java.util.Collections;
 import java.util.List;
@@ -26,16 +25,18 @@ import java.util.List;
  */
 public abstract class ConsumersManager {
 
+    private final List<FileResourceConsumer> consumers;
     //maximum time to allow the ConsumersManager for either init()
     //or shutdown()
     private long consumersManagerMaxMillis = 60000;
-    private final List<FileResourceConsumer> consumers;
 
     public ConsumersManager(List<FileResourceConsumer> consumers) {
         this.consumers = Collections.unmodifiableList(consumers);
     }
+
     /**
      * Get the consumers
+     *
      * @return consumers
      */
     public List<FileResourceConsumer> getConsumers() {
@@ -45,7 +46,7 @@ public abstract class ConsumersManager {
     /**
      * This is called by BatchProcess before submitting the threads
      */
-    public void init(){
+    public void init() {
 
     }
 
@@ -54,7 +55,7 @@ public abstract class ConsumersManager {
      * Beware! Some of the consumers may have hung or may not
      * have completed.
      */
-    public void shutdown(){
+    public void shutdown() {
 
     }
 
@@ -62,6 +63,7 @@ public abstract class ConsumersManager {
      * {@link org.apache.tika.batch.BatchProcess} will throw an exception
      * if the ConsumersManager doesn't complete init() or shutdown()
      * within this amount of time.
+     *
      * @return the maximum time allowed for init() or shutdown()
      */
     public long getConsumersManagerMaxMillis() {

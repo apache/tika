@@ -1,5 +1,3 @@
-package org.apache.tika.batch.builders;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,16 +14,20 @@ package org.apache.tika.batch.builders;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.batch.builders;
+
 
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import org.apache.tika.batch.FileResource;
 import org.w3c.dom.Node;
+
+import org.apache.tika.batch.FileResource;
 
 /**
  * Same as {@link org.apache.tika.batch.builders.ObjectFromDOMAndQueueBuilder},
  * but this is for objects that require access to the shared queue.
+ *
  * @param <T>
  */
 public interface ObjectFromDOMAndQueueBuilder<T> {

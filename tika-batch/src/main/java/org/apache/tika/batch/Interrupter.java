@@ -29,12 +29,10 @@ import org.slf4j.LoggerFactory;
  * EOF or if there is an exception from the parent's IO,
  * this will send a signal to shutdown the forked process.
  * <p>
- *     This will call System.exit(-1) if the process
- *     doesn't stop after {@link #pauseOnEarlyTermination}
- *     milliseconds.
+ * This will call System.exit(-1) if the process
+ * doesn't stop after {@link #pauseOnEarlyTermination}
+ * milliseconds.
  * </p>
- *
- *
  */
 public class Interrupter implements Callable<IFileProcessorFutureResult> {
     private static final Logger LOG = LoggerFactory.getLogger(Interrupter.class);
@@ -46,19 +44,19 @@ public class Interrupter implements Callable<IFileProcessorFutureResult> {
         this.pauseOnEarlyTermination = pauseOnEarlyTermination;
     }
 
-	public IFileProcessorFutureResult call() {
-		try{
-			InputStream is = System.in;
-			int byt = is.read();
-			while (byt > -1){
-				byt = is.read();
-			}
-		} catch (Throwable e) {
+    public IFileProcessorFutureResult call() {
+        try {
+            InputStream is = System.in;
+            int byt = is.read();
+            while (byt > -1) {
+                byt = is.read();
+            }
+        } catch (Throwable e) {
             LOG.warn("Exception from STDIN in CommandlineInterrupter.", e);
-		}
-		new Thread(new Doomsday()).start();
-		return new InterrupterFutureResult();
-	}
+        }
+        new Thread(new Doomsday()).start();
+        return new InterrupterFutureResult();
+    }
 
     private class Doomsday implements Runnable {
         @Override
@@ -67,14 +65,14 @@ public class Interrupter implements Callable<IFileProcessorFutureResult> {
                 return;
             }
             long start = System.currentTimeMillis();
-            long elapsed = System.currentTimeMillis()-start;
-            while (elapsed < (pauseOnEarlyTermination+EXTRA_GRACE_PERIOD_MILLIS)) {
+            long elapsed = System.currentTimeMillis() - start;
+            while (elapsed < (pauseOnEarlyTermination + EXTRA_GRACE_PERIOD_MILLIS)) {
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
                     return;
                 }
-                elapsed = System.currentTimeMillis()-start;
+                elapsed = System.currentTimeMillis() - start;
             }
             LOG.error("Interrupter timed out; now calling System.exit.");
             System.exit(-1);

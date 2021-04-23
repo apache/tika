@@ -30,18 +30,18 @@ import org.apache.tika.language.detect.LanguageResult;
  * This is Tika's original legacy, homegrown language detector.
  * As it is currently implemented, it computes vector distance
  * of trigrams between input string and language models.
- *
+ * <p>
  * Because it works only on trigrams, it is not suitable for short
  * texts.
- *
+ * <p>
  * There are better performing language detectors.  This module is still
  * here in the hopes that we'll get around to improving it, because
  * it is elegant and could be fairly trivially improved.
- *
  */
 public class TikaLanguageDetector extends LanguageDetector {
 
     StringBuilder sb = new StringBuilder();
+
     @Override
     public LanguageDetector loadModels() throws IOException {
         return this;
@@ -59,6 +59,7 @@ public class TikaLanguageDetector extends LanguageDetector {
 
     /**
      * not supported
+     *
      * @param languageProbabilities Map from language to probability
      * @return
      * @throws IOException
@@ -83,8 +84,8 @@ public class TikaLanguageDetector extends LanguageDetector {
         LanguageIdentifier langIder = new LanguageIdentifier(sb.toString());
         String lang = langIder.getLanguage();
         if (langIder.isReasonablyCertain()) {
-            return Collections.singletonList(new LanguageResult(lang, LanguageConfidence.MEDIUM,
-                    langIder.getRawScore()));
+            return Collections.singletonList(
+                    new LanguageResult(lang, LanguageConfidence.MEDIUM, langIder.getRawScore()));
         }
         return Collections.EMPTY_LIST;
     }

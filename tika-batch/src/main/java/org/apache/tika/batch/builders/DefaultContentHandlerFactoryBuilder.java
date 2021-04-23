@@ -1,5 +1,3 @@
-package org.apache.tika.batch.builders;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,13 +14,15 @@ package org.apache.tika.batch.builders;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.batch.builders;
 
 import java.util.Map;
+
+import org.w3c.dom.Node;
 
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.util.XMLDOMUtil;
-import org.w3c.dom.Node;
 
 /**
  * Builds BasicContentHandler with type defined by attribute "basicHandlerType"
@@ -39,8 +39,8 @@ public class DefaultContentHandlerFactoryBuilder implements IContentHandlerFacto
         Map<String, String> attributes = XMLDOMUtil.mapifyAttrs(node, runtimeAttributes);
         BasicContentHandlerFactory.HANDLER_TYPE type = null;
         String handlerTypeString = attributes.get("basicHandlerType");
-        type = BasicContentHandlerFactory.parseHandlerType(handlerTypeString,
-                BasicContentHandlerFactory.HANDLER_TYPE.TEXT);
+        type = BasicContentHandlerFactory
+                .parseHandlerType(handlerTypeString, BasicContentHandlerFactory.HANDLER_TYPE.TEXT);
         int writeLimit = -1;
         String writeLimitString = attributes.get("writeLimit");
         if (writeLimitString != null) {

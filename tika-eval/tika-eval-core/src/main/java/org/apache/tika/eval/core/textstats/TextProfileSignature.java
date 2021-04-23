@@ -16,22 +16,23 @@
  */
 package org.apache.tika.eval.core.textstats;
 
-import org.apache.commons.codec.binary.Base32;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.tika.eval.core.tokens.TokenCounts;
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.codec.binary.Base32;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.mutable.MutableInt;
+
+import org.apache.tika.eval.core.tokens.TokenCounts;
+
 /**
  * Copied nearly directly from Apache Nutch:
  * https://github.com/apache/nutch/blob/master/src/java/org/apache/nutch/crawl/TextProfileSignature.java
- *
+ * <p>
  * See documentation: https://nutch.apache.org/apidocs/apidocs-2.0/org/apache/nutch/crawl/TextProfileSignature.html
- *
+ * <p>
  * This returns the base32 encoded sha256
  */
 public class TextProfileSignature implements TokenCountStatsCalculator<String> {
@@ -45,7 +46,7 @@ public class TextProfileSignature implements TokenCountStatsCalculator<String> {
     @Override
     public String calculate(TokenCounts tokenCounts) {
         int maxFreq = -1;
-        for (Map.Entry<String, MutableInt> e : tokenCounts.getTokens().entrySet()){
+        for (Map.Entry<String, MutableInt> e : tokenCounts.getTokens().entrySet()) {
             if (e.getKey().length() >= minTokenLength) {
                 if (e.getValue().intValue() > maxFreq) {
                     maxFreq = e.getValue().intValue();
@@ -99,6 +100,7 @@ public class TextProfileSignature implements TokenCountStatsCalculator<String> {
     public void setQuantRate(float quantRate) {
         this.quantRate = quantRate;
     }
+
     private static class Token {
         public int cnt;
         public String val;

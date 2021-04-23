@@ -22,6 +22,7 @@ import java.util.Map;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.math3.util.FastMath;
+
 import org.apache.tika.eval.core.tokens.CommonTokenCountManager;
 import org.apache.tika.eval.core.tokens.LangModel;
 import org.apache.tika.eval.core.tokens.TokenCounts;
@@ -37,20 +38,21 @@ public class CommonTokensKLDivergence implements LanguageAwareTokenCountStats<Do
 
     @Override
     public Double calculate(List<LanguageResult> languages, TokenCounts tokenCounts) {
-        Pair<String, LangModel> pair = commonTokenCountManager.getLangTokens(languages.get(0).getLanguage());
+        Pair<String, LangModel> pair =
+                commonTokenCountManager.getLangTokens(languages.get(0).getLanguage());
         LangModel model = pair.getValue();
         double kl = 0.0;
         if (tokenCounts.getTokens().entrySet().size() == 0) {
             return 1.0;
         }
         for (Map.Entry<String, MutableInt> e : tokenCounts.getTokens().entrySet()) {
-            double p = (double)e.getValue().intValue()/(double)tokenCounts.getTotalTokens();
-            if (p == 0.0) {//shouldn't happen, but be defensive
+            double p = (double) e.getValue().intValue() / (double) tokenCounts.getTotalTokens();
+            if (p == 0.0) { //shouldn't happen, but be defensive
                 continue;
             }
-            double q  = model.getProbability(e.getKey());
+            double q = model.getProbability(e.getKey());
             kl += p * FastMath.log(q / p);
         }
-        return -1.0*kl;
+        return -1.0 * kl;
     }
 }

@@ -20,6 +20,7 @@ import org.apache.tika.eval.core.tokens.TokenCounts;
 
 /**
  * Interface for calculators that require token stats
+ *
  * @param <T>
  */
 public interface TokenCountStatsCalculator<T> extends TextStatsCalculator {

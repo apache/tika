@@ -19,14 +19,15 @@
   under the License.
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <groupId>org.apache</groupId>
     <artifactId>apache</artifactId>
     <version>21</version> <!-- fails with 22 and 23 in tika-eval-core -->
-    <relativePath />
+    <relativePath/>
   </parent>
 
   <groupId>org.apache.tika</groupId>
@@ -136,7 +137,7 @@
       <organization>NASA Jet Propulsion Laboratory</organization>
       <organizationUrl>http://www.jpl.nasa.gov</organizationUrl>
       <timezone>-8</timezone>
-      <properties />
+      <properties/>
       <roles>
         <role>committer</role>
       </roles>
@@ -146,7 +147,7 @@
       <id>mikemccand</id>
       <email>mikemccand@apache.org</email>
       <organization>IBM</organization>
-      <properties />
+      <properties/>
       <roles>
         <role>committer</role>
       </roles>
@@ -344,7 +345,7 @@
     <poi.version>4.1.2</poi.version>
     <rome.version>1.15.0</rome.version>
     <sis.version>1.0</sis.version>
-      <!-- we'll need to stay on 1.7 until we're java modularized ? -->
+    <!-- we'll need to stay on 1.7 until we're java modularized ? -->
     <slf4j.version>1.7.30</slf4j.version>
     <spring.version>5.3.3</spring.version>
     <sqlite.version>3.34.0</sqlite.version>
@@ -383,11 +384,11 @@
         <artifactId>slf4j-api</artifactId>
         <version>${slf4j.version}</version>
       </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j-impl</artifactId>
-            <version>${log4j2.version}</version>
-        </dependency>
+      <dependency>
+        <groupId>org.apache.logging.log4j</groupId>
+        <artifactId>log4j-slf4j-impl</artifactId>
+        <version>${log4j2.version}</version>
+      </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-simple</artifactId>
@@ -421,7 +422,6 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
-
 
 
   <build>
@@ -518,7 +518,8 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>${maven.surefire.version}</version> <!-- versions greater than this don't like System.exit calls in tika-batch -->
+        <version>${maven.surefire.version}
+        </version> <!-- versions greater than this don't like System.exit calls in tika-batch -->
         <configuration>
           <argLine>-Xmx3072m -Duser.timezone=UTC -Djava.awt.headless=true</argLine>
         </configuration>
@@ -547,17 +548,17 @@
           <autoVersionSubmodules>true</autoVersionSubmodules>
         </configuration>
         <dependencies>
-         <dependency>
-           <groupId>org.apache.maven.scm</groupId>
-           <artifactId>maven-scm-provider-gitexe</artifactId>
-           <version>1.11.2</version>
-         </dependency>
+          <dependency>
+            <groupId>org.apache.maven.scm</groupId>
+            <artifactId>maven-scm-provider-gitexe</artifactId>
+            <version>1.11.2</version>
+          </dependency>
           <dependency>
             <groupId>org.apache.maven.scm</groupId>
             <artifactId>maven-scm-api</artifactId>
             <version>1.11.2</version>
           </dependency>
-       </dependencies>
+        </dependencies>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -568,7 +569,7 @@
             <id>enforce</id>
             <configuration>
               <rules>
-                <dependencyConvergence />
+                <dependencyConvergence/>
                 <requireMavenVersion>
                   <version>3.5</version>
                 </requireMavenVersion>

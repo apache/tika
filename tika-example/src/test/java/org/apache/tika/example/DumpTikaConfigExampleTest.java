@@ -1,5 +1,3 @@
-package org.apache.tika.example;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,7 @@ package org.apache.tika.example;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.example;
 
 import static java.nio.charset.StandardCharsets.UTF_16LE;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -29,18 +28,20 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.config.TikaConfigSerializer;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.Parser;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 public class DumpTikaConfigExampleTest {
     private File configFile;
+
     @Before
     public void setUp() {
         try {
@@ -56,7 +57,7 @@ public class DumpTikaConfigExampleTest {
             configFile.delete();
         }
         if (configFile != null && configFile.exists()) {
-            throw new RuntimeException("Failed to clean up: "+configFile.getAbsolutePath());
+            throw new RuntimeException("Failed to clean up: " + configFile.getAbsolutePath());
         }
     }
 
@@ -66,20 +67,22 @@ public class DumpTikaConfigExampleTest {
         for (Charset charset : new Charset[]{UTF_8, UTF_16LE}) {
             for (TikaConfigSerializer.Mode mode : TikaConfigSerializer.Mode.values()) {
                 Writer writer = new OutputStreamWriter(new FileOutputStream(configFile), charset);
-                TikaConfigSerializer.serialize(TikaConfig.getDefaultConfig(), mode, writer, charset);
+                TikaConfigSerializer
+                        .serialize(TikaConfig.getDefaultConfig(), mode, writer, charset);
                 writer.flush();
                 writer.close();
-    
+
                 TikaConfig c = new TikaConfig(configFile);
                 assertTrue(c.getParser().toString(), c.getParser() instanceof CompositeParser);
-                assertTrue(c.getDetector().toString(), c.getDetector() instanceof CompositeDetector);
-    
+                assertTrue(c.getDetector().toString(),
+                        c.getDetector() instanceof CompositeDetector);
+
                 CompositeParser p = (CompositeParser) c.getParser();
                 assertTrue("enough parsers?", p.getParsers().size() > 130);
-    
+
                 CompositeDetector d = (CompositeDetector) c.getDetector();
                 assertTrue("enough detectors?", d.getDetectors().size() > 3);
-                
+
                 //just try to load it into autodetect to make sure no errors are thrown
                 Parser auto = new AutoDetectParser(c);
                 assertNotNull(auto);

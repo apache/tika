@@ -1,5 +1,3 @@
-package org.apache.tika.batch.builders;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,16 +14,18 @@ package org.apache.tika.batch.builders;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.batch.builders;
 
 import java.util.Map;
+
+import org.w3c.dom.Node;
 
 import org.apache.tika.batch.ConsumersManager;
 import org.apache.tika.batch.FileResourceCrawler;
 import org.apache.tika.batch.StatusReporter;
-import org.w3c.dom.Node;
 
 public interface StatusReporterBuilder {
 
-    public StatusReporter build(FileResourceCrawler crawler, ConsumersManager consumers,
-                                Node n, Map<String, String> commandlineArguments);
+    public StatusReporter build(FileResourceCrawler crawler, ConsumersManager consumers, Node n,
+                                Map<String, String> commandlineArguments);
 }

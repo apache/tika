@@ -1,5 +1,3 @@
-package org.apache.tika.batch;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,8 @@ package org.apache.tika.batch;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.batch;
+
 
 import java.io.Closeable;
 import java.io.Flushable;
@@ -23,22 +23,22 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.Date;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.SafeContentHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
 
 
 /**
@@ -49,53 +49,29 @@ import org.xml.sax.helpers.AttributesImpl;
  */
 public abstract class FileResourceConsumer implements Callable<IFileProcessorFutureResult> {
     protected static final Logger LOG = LoggerFactory.getLogger(FileResourceConsumer.class);
-
-    private enum STATE {
-        NOT_YET_STARTED,
-        ACTIVELY_CONSUMING,
-        SWALLOWED_POISON,
-        THREAD_INTERRUPTED,
-        EXCEEDED_MAX_CONSEC_WAIT_MILLIS,
-        ASKED_TO_SHUTDOWN,
-        TIMED_OUT,
-        CONSUMER_EXCEPTION,
-        CONSUMER_ERROR,
-        COMPLETED
-    }
-
     public static String TIMED_OUT = "timed_out";
     public static String OOM = "oom";
     public static String IO_IS = "io_on_inputstream";
     public static String IO_OS = "io_on_outputstream";
     public static String PARSE_ERR = "parse_err";
     public static String PARSE_EX = "parse_ex";
-
     public static String ELAPSED_MILLIS = "elapsedMS";
-
     private static AtomicInteger numConsumers = new AtomicInteger(-1);
-
-    private long maxConsecWaitInMillis = 10*60*1000;// 10 minutes
-
     private final ArrayBlockingQueue<FileResource> fileQueue;
-
     private final int consumerId;
-
     //used to lock checks on state to prevent
     private final Object lock = new Object();
-
+    private long maxConsecWaitInMillis = 10 * 60 * 1000;// 10 minutes
     //this records the file that is currently
     //being processed.  It is null if no file is currently being processed.
     //no need for volatile because of lock for checkForStales
     private FileStarted currentFile = null;
-
     //total number of files consumed; volatile so that reporter
     //sees the latest
     private volatile int numResourcesConsumed = 0;
-
     //total number of exceptions that were handled by subclasses;
     //volatile so that reporter sees the latest
     private volatile int numHandledExceptions = 0;
-
     //after this has been set to ACTIVELY_CONSUMING,
     //this should only be set by setEndedState.
     private volatile STATE currentState = STATE.NOT_YET_STARTED;
@@ -113,7 +89,8 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
             while (fileResource != null) {
                 LOG.trace("file consumer is about to process: {}", fileResource.getResourceId());
                 boolean consumed = _processFileResource(fileResource);
-                LOG.trace("file consumer has finished processing: {}", fileResource.getResourceId());
+                LOG.trace("file consumer has finished processing: {}",
+                        fileResource.getResourceId());
 
                 if (consumed) {
                     numResourcesConsumed++;
@@ -149,7 +126,6 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
      */
     public abstract boolean processFileResource(FileResource fileResource);
 
-
     /**
      * Make sure to call this appropriately!
      */
@@ -157,16 +133,16 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
         numHandledExceptions++;
     }
 
-
     /**
      * Returns whether or not the consumer is still could process
      * a file or is still processing a file (ACTIVELY_CONSUMING or ASKED_TO_SHUTDOWN)
+     *
      * @return whether this consumer is still active
      */
     public boolean isStillActive() {
         if (Thread.currentThread().isInterrupted()) {
             return false;
-        } else if( currentState == STATE.NOT_YET_STARTED ||
+        } else if (currentState == STATE.NOT_YET_STARTED ||
                 currentState == STATE.ACTIVELY_CONSUMING ||
                 currentState == STATE.ASKED_TO_SHUTDOWN) {
             return true;
@@ -200,7 +176,6 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
      * This offers another method for politely requesting
      * that a FileResourceConsumer stop processing
      * besides passing it {@link org.apache.tika.batch.PoisonFileResource}.
-     *
      */
     public void pleaseShutdown() {
         setEndedState(STATE.ASKED_TO_SHUTDOWN);
@@ -235,6 +210,7 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
      * is not processing a file or has been working on a file
      * for less than #staleThresholdMillis, then this will return null.
      * <p>
+     *
      * @param staleThresholdMillis threshold to determine whether the consumer has gone stale.
      * @return null or the file started that triggered the stale condition
      */
@@ -247,10 +223,10 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
         if (staleThresholdMillis < 0) {
             return null;
         }
-        synchronized(lock) {
+        synchronized (lock) {
             //check again once the lock has been obtained
-            if (currentState != STATE.ACTIVELY_CONSUMING
-                    && currentState != STATE.ASKED_TO_SHUTDOWN) {
+            if (currentState != STATE.ACTIVELY_CONSUMING &&
+                    currentState != STATE.ASKED_TO_SHUTDOWN) {
                 return null;
             }
             FileStarted tmp = currentFile;
@@ -259,10 +235,8 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
             }
             if (tmp.getElapsedMillis() > staleThresholdMillis) {
                 setEndedState(STATE.TIMED_OUT);
-                LOG.error("{}", getXMLifiedLogMsg(
-                        TIMED_OUT,
-                        tmp.getResourceId(),
-                        ELAPSED_MILLIS, Long.toString(tmp.getElapsedMillis())));
+                LOG.error("{}", getXMLifiedLogMsg(TIMED_OUT, tmp.getResourceId(), ELAPSED_MILLIS,
+                        Long.toString(tmp.getElapsedMillis())));
                 return tmp;
             }
         }
@@ -276,12 +250,13 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
     /**
      * Use this for structured output that captures resourceId and other attributes.
      *
-     * @param type entity name for exception
+     * @param type       entity name for exception
      * @param resourceId resourceId string
-     * @param t throwable can be null
-     * @param attrs (array of key0, value0, key1, value1, etc.)
+     * @param t          throwable can be null
+     * @param attrs      (array of key0, value0, key1, value1, etc.)
      */
-    protected String getXMLifiedLogMsg(String type, String resourceId, Throwable t, String... attrs) {
+    protected String getXMLifiedLogMsg(String type, String resourceId, Throwable t,
+                                       String... attrs) {
 
         ContentHandler toXML = new ToXMLContentHandler();
         SafeContentHandler handler = new SafeContentHandler(toXML);
@@ -321,7 +296,7 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
                 break;
             }
 
-            synchronized(lock) {
+            synchronized (lock) {
                 //need to lock here to prevent race condition with other threads setting state
                 if (currentState != STATE.ACTIVELY_CONSUMING) {
                     LOG.debug("Consumer already closed because of: {}", currentState);
@@ -336,7 +311,8 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
                 }
                 break;
             }
-            LOG.debug("{} is waiting for file and the queue size is: {}", consumerId, fileQueue.size());
+            LOG.debug("{} is waiting for file and the queue size is: {}", consumerId,
+                    fileQueue.size());
 
             long elapsed = System.currentTimeMillis() - start;
             if (maxConsecWaitInMillis > 0 && elapsed > maxConsecWaitInMillis) {
@@ -351,7 +327,7 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
         if (closeable != null) {
             try {
                 closeable.close();
-            } catch (IOException e){
+            } catch (IOException e) {
                 LOG.warn(e.getMessage(), e);
             }
         }
@@ -362,9 +338,9 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
         if (closeable == null) {
             return;
         }
-        if (closeable instanceof Flushable){
+        if (closeable instanceof Flushable) {
             try {
-                ((Flushable)closeable).flush();
+                ((Flushable) closeable).flush();
             } catch (IOException e) {
                 LOG.warn(e.getMessage(), e);
             }
@@ -377,9 +353,8 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
     //represent the initial cause; all subsequent calls
     //to set will be ignored!!!
     private void setEndedState(STATE cause) {
-        synchronized(lock) {
-            if (currentState == STATE.NOT_YET_STARTED ||
-                    currentState == STATE.ACTIVELY_CONSUMING ||
+        synchronized (lock) {
+            if (currentState == STATE.NOT_YET_STARTED || currentState == STATE.ACTIVELY_CONSUMING ||
                     currentState == STATE.ASKED_TO_SHUTDOWN) {
                 currentState = cause;
             }
@@ -390,17 +365,17 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
      * Utility method to handle logging equivalently among all
      * implementing classes.  Use, override or avoid as desired.
      *
-     * @param resourceId resourceId
-     * @param parser parser to use
-     * @param is inputStream (will be closed by this method!)
-     * @param handler handler for the content
-     * @param m metadata
+     * @param resourceId   resourceId
+     * @param parser       parser to use
+     * @param is           inputStream (will be closed by this method!)
+     * @param handler      handler for the content
+     * @param m            metadata
      * @param parseContext parse context
      * @throws Throwable (logs and then throws whatever was thrown (if anything)
      */
     protected void parse(final String resourceId, final Parser parser, InputStream is,
-                         final ContentHandler handler,
-                         final Metadata m, final ParseContext parseContext) throws Throwable {
+                         final ContentHandler handler, final Metadata m,
+                         final ParseContext parseContext) throws Throwable {
 
         try {
             parser.parse(is, handler, m, parseContext);
@@ -417,5 +392,11 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
         } finally {
             close(is);
         }
+    }
+
+    private enum STATE {
+        NOT_YET_STARTED, ACTIVELY_CONSUMING, SWALLOWED_POISON, THREAD_INTERRUPTED,
+        EXCEEDED_MAX_CONSEC_WAIT_MILLIS, ASKED_TO_SHUTDOWN, TIMED_OUT, CONSUMER_EXCEPTION,
+        CONSUMER_ERROR, COMPLETED
     }
 }

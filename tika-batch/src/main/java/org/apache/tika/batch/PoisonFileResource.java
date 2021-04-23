@@ -1,5 +1,3 @@
-package org.apache.tika.batch;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,39 +14,40 @@ package org.apache.tika.batch;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import org.apache.tika.metadata.Metadata;
+package org.apache.tika.batch;
 
 import java.io.InputStream;
+
+import org.apache.tika.metadata.Metadata;
 
 /**
  * Sentinel class for the crawler to add to the queue to let
  * the consumers know that they should shutdown.
  */
 class PoisonFileResource implements FileResource {
-  
-  /**
-   * always returns null
-   */
-  @Override
-  public Metadata getMetadata() {
-    return null;
-  }
 
-  /**
-   * always returns null
-   */
-  @Override
-  public InputStream openInputStream() {
-    return null;
-  }
+    /**
+     * always returns null
+     */
+    @Override
+    public Metadata getMetadata() {
+        return null;
+    }
 
-  /**
-   * always returns null
-   */
-  @Override
-  public String getResourceId() {
-    return null;
-  }
+    /**
+     * always returns null
+     */
+    @Override
+    public InputStream openInputStream() {
+        return null;
+    }
+
+    /**
+     * always returns null
+     */
+    @Override
+    public String getResourceId() {
+        return null;
+    }
 
 }

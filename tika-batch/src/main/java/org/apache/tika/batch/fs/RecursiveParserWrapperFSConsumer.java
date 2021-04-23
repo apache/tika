@@ -1,5 +1,3 @@
-package org.apache.tika.batch.fs;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,32 +14,27 @@ package org.apache.tika.batch.fs;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.batch.fs;
+
 
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import org.apache.commons.io.IOUtils;
+
 import org.apache.tika.batch.FileResource;
 import org.apache.tika.batch.OutputStreamFactory;
-import org.apache.tika.batch.ParserFactory;
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.filter.MetadataFilter;
-import org.apache.tika.metadata.filter.NoOpFilter;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
-import org.apache.tika.utils.ExceptionUtils;
-import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * This runs a RecursiveParserWrapper against an input file
@@ -56,16 +49,16 @@ public class RecursiveParserWrapperFSConsumer extends AbstractFSConsumer {
     private String outputEncoding = "UTF-8";
 
     /**
-     *
      * @param queue
-     * @param parser -- must be RecursiveParserWrapper or a ForkParser that wraps a RecursiveParserWrapper
+     * @param parser                -- must be RecursiveParserWrapper or a ForkParser that wraps a
+     *                              RecursiveParserWrapper
      * @param contentHandlerFactory
      * @param fsOSFactory
      */
-    public RecursiveParserWrapperFSConsumer(ArrayBlockingQueue<FileResource> queue,
-                                            Parser parser,
+    public RecursiveParserWrapperFSConsumer(ArrayBlockingQueue<FileResource> queue, Parser parser,
                                             ContentHandlerFactory contentHandlerFactory,
-                                            OutputStreamFactory fsOSFactory, MetadataFilter metadataFilter) {
+                                            OutputStreamFactory fsOSFactory,
+                                            MetadataFilter metadataFilter) {
         super(queue);
         this.contentHandlerFactory = contentHandlerFactory;
         this.fsOSFactory = fsOSFactory;
@@ -99,11 +92,10 @@ public class RecursiveParserWrapperFSConsumer extends AbstractFSConsumer {
         Throwable thrown = null;
         List<Metadata> metadataList = null;
         Metadata containerMetadata = fileResource.getMetadata();
-        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(contentHandlerFactory,
-                -1, metadataFilter);
+        RecursiveParserWrapperHandler handler =
+                new RecursiveParserWrapperHandler(contentHandlerFactory, -1, metadataFilter);
         try {
-            parse(fileResource.getResourceId(), parser, is, handler,
-                    containerMetadata, context);
+            parse(fileResource.getResourceId(), parser, is, handler, containerMetadata, context);
         } catch (Throwable t) {
             thrown = t;
         } finally {
@@ -128,7 +120,7 @@ public class RecursiveParserWrapperFSConsumer extends AbstractFSConsumer {
             if (thrown instanceof Error) {
                 throw (Error) thrown;
             } else if (thrown instanceof SecurityException) {
-                throw (SecurityException)thrown;
+                throw (SecurityException) thrown;
             } else {
                 return false;
             }

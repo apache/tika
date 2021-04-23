@@ -38,6 +38,7 @@ public class ExtractProfilerBuilder extends EvalConsumerBuilder {
 
     private final List<TableInfo> tableInfos;
     private final List<TableInfo> refTableInfos;
+
     public ExtractProfilerBuilder() {
         List<TableInfo> tableInfos = new ArrayList();
         tableInfos.add(AbstractProfiler.MIME_TABLE);
@@ -64,8 +65,8 @@ public class ExtractProfilerBuilder extends EvalConsumerBuilder {
             throw new RuntimeException("Must specify \"extracts\" -- directory to crawl");
         }
         if (!Files.isDirectory(extracts)) {
-            throw new RuntimeException("ROOT DIRECTORY DOES NOT EXIST: " +
-                    extracts.toAbsolutePath());
+            throw new RuntimeException(
+                    "ROOT DIRECTORY DOES NOT EXIST: " + extracts.toAbsolutePath());
         }
 
         Path inputDir = PropsUtil.getPath(localAttrs.get("inputDir"), null);
@@ -79,9 +80,9 @@ public class ExtractProfilerBuilder extends EvalConsumerBuilder {
         if (extracts == null && inputDir != null) {
             extracts = inputDir;
         }
-        return parameterizeProfiler(new ExtractProfiler(queue, inputDir, extracts,
-                buildExtractReader(localAttrs),
-                getDBWriter(tableInfos)));
+        return parameterizeProfiler(
+                new ExtractProfiler(queue, inputDir, extracts, buildExtractReader(localAttrs),
+                        getDBWriter(tableInfos)));
     }
 
 

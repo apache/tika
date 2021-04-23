@@ -18,6 +18,7 @@ package org.apache.tika.eval.core.textstats;
 
 /**
  * Interface for calculators that require a string
+ *
  * @param <T>
  */
 public interface BytesRefCalculator<T> extends TextStatsCalculator {
@@ -26,7 +27,9 @@ public interface BytesRefCalculator<T> extends TextStatsCalculator {
 
     interface BytesRefCalcInstance<T> {
         void update(byte[] bytes, int start, int len);
+
         T finish();
+
         Class getOuterClass();
     }
 

@@ -42,8 +42,7 @@ public class ContentTags {
         this(content, tags, false);
     }
 
-    private ContentTags(String content, Map<String, Integer> tags,
-                        boolean parseException) {
+    private ContentTags(String content, Map<String, Integer> tags, boolean parseException) {
         this.content = content;
         this.tags = tags;
         this.parseException = parseException;

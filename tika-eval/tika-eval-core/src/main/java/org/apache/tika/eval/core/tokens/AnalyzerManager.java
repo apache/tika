@@ -24,7 +24,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.tika.exception.TikaException;
 
 public class AnalyzerManager {
 
@@ -54,10 +53,10 @@ public class AnalyzerManager {
         Analyzer alphaIdeo = map.get(ALPHA_IDEOGRAPH);
         Analyzer common = map.get(COMMON_TOKENS);
         if (general == null) {
-            throw new IllegalStateException("Must specify "+GENERAL + " analyzer");
+            throw new IllegalStateException("Must specify " + GENERAL + " analyzer");
         }
         if (common == null) {
-            throw new IllegalStateException("Must specify "+ COMMON_TOKENS + " analyzer");
+            throw new IllegalStateException("Must specify " + COMMON_TOKENS + " analyzer");
         }
 
         return new AnalyzerManager(general, common);
@@ -65,6 +64,7 @@ public class AnalyzerManager {
 
     /**
      * This analyzer should be used to extract all tokens.
+     *
      * @return
      */
     public Analyzer getGeneralAnalyzer() {
@@ -74,6 +74,7 @@ public class AnalyzerManager {
     /**
      * This analyzer should be used to generate common tokens lists from
      * large corpora.  It is not used by tika-eval in profiling or comparing.
+     *
      * @return
      */
     public Analyzer getCommonTokensAnalyzer() {

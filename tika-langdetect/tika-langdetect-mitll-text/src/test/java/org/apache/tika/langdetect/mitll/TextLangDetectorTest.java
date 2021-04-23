@@ -16,19 +16,20 @@
  */
 package org.apache.tika.langdetect.mitll;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.tika.langdetect.LanguageDetectorTest;
-import org.apache.tika.language.detect.LanguageDetector;
-import org.apache.tika.language.detect.LanguageResult;
-import org.apache.tika.language.detect.LanguageWriter;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assume.assumeTrue;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assume.assumeTrue;
+import org.apache.commons.io.IOUtils;
+import org.junit.Test;
+
+import org.apache.tika.langdetect.LanguageDetectorTest;
+import org.apache.tika.language.detect.LanguageDetector;
+import org.apache.tika.language.detect.LanguageResult;
+import org.apache.tika.language.detect.LanguageWriter;
 
 /**
  * Created by trevorlewis on 3/7/16.
@@ -37,9 +38,9 @@ public class TextLangDetectorTest {
 
     @Test
     public void test() throws Exception {
-        List<String> lines = IOUtils.readLines(
-                LanguageDetectorTest.class.getResourceAsStream("text-test.tsv"),
-                StandardCharsets.UTF_8);
+        List<String> lines =
+                IOUtils.readLines(LanguageDetectorTest.class.getResourceAsStream("text-test.tsv"),
+                        StandardCharsets.UTF_8);
 
         assertEquals(18, lines.size());
 
@@ -50,7 +51,9 @@ public class TextLangDetectorTest {
 
         for (String line : lines) {
             String[] data = line.split("\t");
-            if (data.length != 2) continue;
+            if (data.length != 2) {
+                continue;
+            }
 
             writer.reset();
             writer.append(data[1]);

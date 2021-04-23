@@ -25,21 +25,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.eval.app.db.ColInfo;
 import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.JDBCUtil;
 import org.apache.tika.eval.app.db.MimeBuffer;
 import org.apache.tika.eval.app.db.TableInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This is still in its early stages.  The idea is to
  * get something working with h2 and then add to that
  * as necessary.
- *
+ * <p>
  * Beware, this deletes the db file with each initialization.
- *
+ * <p>
  * Each thread must construct its own DBWriter because each
  * DBWriter creates its own PreparedStatements at initialization.
  */
@@ -59,8 +60,9 @@ public class DBWriter implements IDBWriter {
     //<tableName, preparedStatement>
     private final Map<String, PreparedStatement> inserts = new HashMap<>();
     private final Map<String, LastInsert> lastInsertMap = new HashMap<>();
-    public DBWriter(Connection connection, List<TableInfo> tableInfos, JDBCUtil dbUtil, MimeBuffer mimeBuffer)
-            throws IOException, SQLException {
+
+    public DBWriter(Connection connection, List<TableInfo> tableInfos, JDBCUtil dbUtil,
+                    MimeBuffer mimeBuffer) throws IOException, SQLException {
 
         this.conn = connection;
         this.mimeBuffer = mimeBuffer;
@@ -112,19 +114,18 @@ public class DBWriter implements IDBWriter {
         try {
             PreparedStatement p = inserts.get(table.getName());
             if (p == null) {
-                throw new RuntimeException("Failed to create prepared statement for: "+
-                        table.getName());
+                throw new RuntimeException(
+                        "Failed to create prepared statement for: " + table.getName());
             }
             dbUtil.batchInsert(p, table, data);
             LastInsert lastInsert = lastInsertMap.get(table.getName());
             lastInsert.rowCount++;
-            long elapsed = System.currentTimeMillis()-lastInsert.lastInsert;
+            long elapsed = System.currentTimeMillis() - lastInsert.lastInsert;
             if (
-                    //elapsed > commitEveryXMS ||
-                lastInsert.rowCount % commitEveryXRows == 0) {
+                //elapsed > commitEveryXMS ||
+                    lastInsert.rowCount % commitEveryXRows == 0) {
                 LOG.info("writer ({}) on table ({}) is committing after {} rows and {} ms", myId,
-                        table.getName(),
-                        lastInsert.rowCount, elapsed);
+                        table.getName(), lastInsert.rowCount, elapsed);
                 p.executeBatch();
                 conn.commit();
                 lastInsert.lastInsert = System.currentTimeMillis();
@@ -137,6 +138,7 @@ public class DBWriter implements IDBWriter {
     /**
      * This closes the writer by executing batch and
      * committing changes.  This DOES NOT close the connection
+     *
      * @throws IOException
      */
     public void close() throws IOException {
@@ -149,7 +151,7 @@ public class DBWriter implements IDBWriter {
         }
         try {
             conn.commit();
-        } catch (SQLException e){
+        } catch (SQLException e) {
             throw new IOException(e);
         }
     }

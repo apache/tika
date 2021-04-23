@@ -47,6 +47,15 @@ public class H2Util extends JDBCUtil {
         }
         return true;
     }
+
+    private static String getConnectionString(Path db, boolean createDBIfItDoesntExist) {
+        String s = "jdbc:h2:" + FilenameUtils.separatorsToUnix(db.toAbsolutePath().toString());
+        if (!createDBIfItDoesntExist) {
+            s += ";IFEXISTS=TRUE";
+        }
+        return s;
+    }
+
     @Override
     public String getJDBCDriverClass() {
         return "org.h2.Driver";
@@ -55,7 +64,7 @@ public class H2Util extends JDBCUtil {
     @Override
     public boolean dropTableIfExists(Connection conn, String tableName) throws SQLException {
         Statement st = conn.createStatement();
-        String sql = "drop table if exists "+tableName;
+        String sql = "drop table if exists " + tableName;
         boolean success = st.execute(sql);
         st.close();
         return success;
@@ -64,14 +73,6 @@ public class H2Util extends JDBCUtil {
     @Override
     public String getConnectionString() {
         return getConnectionString(db, true);
-    }
-
-    private static String getConnectionString(Path db, boolean createDBIfItDoesntExist) {
-        String s = "jdbc:h2:"+ FilenameUtils.separatorsToUnix(db.toAbsolutePath().toString());
-        if (! createDBIfItDoesntExist) {
-            s += ";IFEXISTS=TRUE";
-        }
-        return s;
     }
 
     @Override

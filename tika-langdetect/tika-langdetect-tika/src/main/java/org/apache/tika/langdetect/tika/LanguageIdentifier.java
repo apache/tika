@@ -230,10 +230,11 @@ public class LanguageIdentifier {
 
     /**
      * 1 - vector distance between the language model and the content
+     *
      * @return
      */
     public float getRawScore() {
-        return (float)(1-distance);
+        return (float) (1 - distance);
     }
 
     /**

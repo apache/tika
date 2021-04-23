@@ -19,10 +19,11 @@ package org.apache.tika.batch.builders;
 import java.util.Locale;
 import java.util.Map;
 
+import org.w3c.dom.Node;
+
 import org.apache.tika.batch.ParserFactory;
 import org.apache.tika.util.ClassLoaderUtil;
 import org.apache.tika.util.XMLDOMUtil;
-import org.w3c.dom.Node;
 
 public class ParserFactoryBuilder implements IParserFactoryBuilder {
 
@@ -40,8 +41,8 @@ public class ParserFactoryBuilder implements IParserFactoryBuilder {
             } else if (bString.equals("false")) {
                 pf.setParseRecursively(false);
             } else {
-                throw new RuntimeException("parseRecursively must have value of \"true\" or \"false\": "+
-                bString);
+                throw new RuntimeException(
+                        "parseRecursively must have value of \"true\" or \"false\": " + bString);
             }
         }
         return pf;

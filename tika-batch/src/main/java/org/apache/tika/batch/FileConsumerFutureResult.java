@@ -1,5 +1,3 @@
-package org.apache.tika.batch;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,22 +14,23 @@ package org.apache.tika.batch;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.batch;
 
 class FileConsumerFutureResult implements IFileProcessorFutureResult {
 
-  private final FileStarted fileStarted;
-  private final int filesProcessed;
-  
-  public FileConsumerFutureResult(FileStarted fs, int filesProcessed) {
-    this.fileStarted = fs;
-    this.filesProcessed = filesProcessed;
-  }
-  
-  public FileStarted getFileStarted() {
-    return fileStarted;
-  }
-  
-  public int getFilesProcessed() {
-    return filesProcessed;
-  }
+    private final FileStarted fileStarted;
+    private final int filesProcessed;
+
+    public FileConsumerFutureResult(FileStarted fs, int filesProcessed) {
+        this.fileStarted = fs;
+        this.filesProcessed = filesProcessed;
+    }
+
+    public FileStarted getFileStarted() {
+        return fileStarted;
+    }
+
+    public int getFilesProcessed() {
+        return filesProcessed;
+    }
 }

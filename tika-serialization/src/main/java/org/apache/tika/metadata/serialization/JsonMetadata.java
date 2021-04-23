@@ -48,8 +48,8 @@ public class JsonMetadata {
             writer.write("null");
             return;
         }
-        try (JsonGenerator jsonGenerator = new JsonFactory().createGenerator(
-                new CloseShieldWriter(writer))) {
+        try (JsonGenerator jsonGenerator = new JsonFactory()
+                .createGenerator(new CloseShieldWriter(writer))) {
             if (PRETTY_PRINT) {
                 jsonGenerator.useDefaultPrettyPrinter();
             }
@@ -57,8 +57,8 @@ public class JsonMetadata {
         }
     }
 
-    static void writeMetadataObject(Metadata metadata,
-                                    JsonGenerator jsonGenerator, boolean prettyPrint) throws IOException {
+    static void writeMetadataObject(Metadata metadata, JsonGenerator jsonGenerator,
+                                    boolean prettyPrint) throws IOException {
         jsonGenerator.writeStartObject();
         String[] names = metadata.names();
         if (prettyPrint) {
@@ -83,7 +83,7 @@ public class JsonMetadata {
 
     /**
      * Read metadata from reader.
-     *
+     * <p>
      * This does not close the reader.
      *
      * @param reader reader to read from
@@ -92,8 +92,7 @@ public class JsonMetadata {
      */
     public static Metadata fromJson(Reader reader) throws IOException {
         Metadata m = null;
-        try (JsonParser jParser = new JsonFactory()
-                .createParser(new CloseShieldReader(reader))) {
+        try (JsonParser jParser = new JsonFactory().createParser(new CloseShieldReader(reader))) {
             m = readMetadataObject(jParser);
         }
         return m;
@@ -102,6 +101,7 @@ public class JsonMetadata {
     /**
      * expects that jParser has not yet started on object or
      * for jParser to be pointing to the start object.
+     *
      * @param jParser
      * @return
      * @throws IOException
@@ -122,8 +122,7 @@ public class JsonMetadata {
         while (token != JsonToken.END_OBJECT) {
             token = jParser.currentToken();
             if (token != JsonToken.FIELD_NAME) {
-                throw new IOException("expected field name, but got: "
-                        + token.name());
+                throw new IOException("expected field name, but got: " + token.name());
             }
             String key = jParser.getCurrentName();
             token = jParser.nextToken();
@@ -133,7 +132,7 @@ public class JsonMetadata {
                 }
             } else {
                 if (token != JsonToken.VALUE_STRING) {
-                    throw new IOException("expected string value, but found: "+token.name());
+                    throw new IOException("expected string value, but found: " + token.name());
                 }
                 String value = jParser.getValueAsString();
                 metadata.set(key, value);

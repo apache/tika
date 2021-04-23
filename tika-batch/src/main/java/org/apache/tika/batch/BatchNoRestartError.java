@@ -1,4 +1,3 @@
-package org.apache.tika.batch;
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -15,21 +14,23 @@ package org.apache.tika.batch;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.batch;
 
 /**
  * FileResourceConsumers should throw this if something
  * catastrophic has happened and the BatchProcess should shutdown
  * and not be restarted.
- *
  */
 public class BatchNoRestartError extends Error {
 
     public BatchNoRestartError(Throwable t) {
         super(t);
     }
+
     public BatchNoRestartError(String message) {
         super(message);
     }
+
     public BatchNoRestartError(String message, Throwable t) {
         super(message, t);
     }

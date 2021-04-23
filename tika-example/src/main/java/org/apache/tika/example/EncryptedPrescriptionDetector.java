@@ -34,8 +34,7 @@ import org.apache.tika.mime.MediaType;
 public class EncryptedPrescriptionDetector implements Detector {
     private static final long serialVersionUID = -1709652690773421147L;
 
-    public MediaType detect(InputStream stream, Metadata metadata)
-            throws IOException {
+    public MediaType detect(InputStream stream, Metadata metadata) throws IOException {
         Key key = Pharmacy.getKey();
         MediaType type = MediaType.OCTET_STREAM;
 
@@ -46,9 +45,8 @@ public class EncryptedPrescriptionDetector implements Detector {
             InputStream decrypted = new CipherInputStream(lookahead, cipher);
 
             QName name = new XmlRootExtractor().extractRootElement(decrypted);
-            if (name != null
-                    && "http://example.com/xpd".equals(name.getNamespaceURI())
-                    && "prescription".equals(name.getLocalPart())) {
+            if (name != null && "http://example.com/xpd".equals(name.getNamespaceURI()) &&
+                    "prescription".equals(name.getLocalPart())) {
                 type = MediaType.application("x-prescription");
             }
         } catch (GeneralSecurityException e) {
