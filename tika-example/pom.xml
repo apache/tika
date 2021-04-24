@@ -32,7 +32,7 @@
 
   <artifactId>tika-example</artifactId>
   <name>Apache Tika examples</name>
-  <url>http://tika.apache.org/</url>
+  <url>https://tika.apache.org/</url>
 
   <!-- List of dependencies that we depend on for the examples. See the full list of Tika
        modules and how to use them at http://mvnrepository.com/artifact/org.apache.tika.-->

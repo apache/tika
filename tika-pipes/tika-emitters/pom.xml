@@ -31,7 +31,7 @@
   <artifactId>tika-emitters</artifactId>
   <packaging>pom</packaging>
   <name>Apache Tika emitters</name>
-  <url>http://tika.apache.org/</url>
+  <url>https://tika.apache.org/</url>
 
   <modules>
     <module>tika-emitter-fs</module>

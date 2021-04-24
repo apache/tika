@@ -31,7 +31,7 @@
   <artifactId>tika-fetch-iterator-jdbc</artifactId>
 
   <name>Apache Tika Fetch Iterator - jdbc</name>
-  <url>http://tika.apache.org/</url>
+  <url>https://tika.apache.org/</url>
 
   <dependencies>
     <dependency>

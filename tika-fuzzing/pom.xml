@@ -28,7 +28,7 @@
 
   <artifactId>tika-fuzzing</artifactId>
   <name>Apache Tika fuzzing</name>
-  <url>http://tika.apache.org/</url>
+  <url>https://tika.apache.org/</url>
 
   <modelVersion>4.0.0</modelVersion>
 

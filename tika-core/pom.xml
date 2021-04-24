@@ -33,7 +33,7 @@
   <artifactId>tika-core</artifactId>
   <packaging>bundle</packaging>
   <name>Apache Tika core</name>
-  <url>http://tika.apache.org/</url>
+  <url>https://tika.apache.org/</url>
 
   <dependencies>
     <!-- See https://issues.apache.org/jira/browse/TIKA-2566 for more info -->

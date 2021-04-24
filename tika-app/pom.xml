@@ -32,7 +32,7 @@
 
   <artifactId>tika-app</artifactId>
   <name>Apache Tika application</name>
-  <url>http://tika.apache.org/</url>
+  <url>https://tika.apache.org/</url>
 
   <properties>
     <ikvm>${env.IKVM_HOME}</ikvm>

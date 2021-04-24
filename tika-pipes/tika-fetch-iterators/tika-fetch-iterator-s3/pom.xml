@@ -31,7 +31,7 @@
   <artifactId>tika-fetch-iterator-s3</artifactId>
 
   <name>Apache Tika Fetch Iterator - S3</name>
-  <url>http://tika.apache.org/</url>
+  <url>https://tika.apache.org/</url>
 
   <dependencies>
     <dependency>

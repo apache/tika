@@ -158,7 +158,7 @@ public class TikaWelcome {
         Matcher m = p.matcher(tikaVersion);
         if (m.find()) {
             String versionNumber = m.group();
-            String miredot = "http://tika.apache.org/" + versionNumber + "/miredot/index.html";
+            String miredot = "https://tika.apache.org/" + versionNumber + "/miredot/index.html";
             h.append(" and <a href=\"").append(miredot).append("\">").append(miredot)
                     .append("</a>");
         }

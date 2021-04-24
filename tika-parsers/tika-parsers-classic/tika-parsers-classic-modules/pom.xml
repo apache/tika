@@ -33,7 +33,7 @@
   <packaging>pom</packaging>
   <name>Apache Tika classic parser modules</name>
 
-  <url>http://tika.apache.org/</url>
+  <url>https://tika.apache.org/</url>
 
 
   <dependencies>

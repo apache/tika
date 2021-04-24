@@ -30,7 +30,7 @@
   <artifactId>tika-langdetect</artifactId>
   <packaging>pom</packaging>
   <name>Apache Tika language detection</name>
-  <url>http://tika.apache.org/</url>
+  <url>https://tika.apache.org/</url>
 
   <modules>
     <module>tika-langdetect-commons</module>
