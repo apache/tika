@@ -60,6 +60,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
     private static final String SLASH = "/";
 
     private static final String TEST_RECURSIVE_DOC = "test_recursive_embedded.docx";
+    private static final String TEST_NULL_POINTER = "mock/null_pointer.xml";
 
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
@@ -370,6 +371,22 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
                 metadataList.get(6).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
         TikaTest.assertNotContained("We hold these truths",
                 metadataList.get(6).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+
+    }
+
+    @Test
+    public void testNPE() throws Exception {
+        Response response = WebClient.create(endPoint + META_PATH).accept("application/json")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_NULL_POINTER));
+
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+        Metadata metadata = metadataList.get(0);
+        assertEquals("Nikolai Lobachevsky", metadata.get("author"));
+        assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
+        assertContains("some content", metadata.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertContains("null pointer message",
+                metadata.get(AbstractRecursiveParserWrapperHandler.CONTAINER_EXCEPTION));
 
     }
 }
