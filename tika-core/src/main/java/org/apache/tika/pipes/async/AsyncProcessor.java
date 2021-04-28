@@ -42,9 +42,6 @@ import org.apache.tika.pipes.fetchiterator.FetchIterator;
  * This is the main class for handling async requests. This manages
  * AsyncClients and AsyncEmitters.
  *
- * The AsyncClient and AsyncServer communicate over AsyncServer's
- * STDERR because the default log4j 2 appender writes to STDOUT.  If you configure logging for the
- * AsyncServer, DO NOT write to STDERR.
  */
 public class AsyncProcessor implements Closeable {
 
@@ -69,6 +66,7 @@ public class AsyncProcessor implements Closeable {
         this.executorService = Executors.newFixedThreadPool(numParserThreads + numEmitterThreads);
         this.executorCompletionService =
                 new ExecutorCompletionService<>(executorService);
+
         for (int i = 0; i < numParserThreads; i++) {
             executorCompletionService.submit(new FetchEmitWorker(tikaConfigPath, fetchEmitTuples,
                     emitData));
@@ -177,17 +175,16 @@ public class AsyncProcessor implements Closeable {
                     } else if (t == FetchIterator.COMPLETED_SEMAPHORE) {
                         return PARSER_FUTURE_CODE;
                     } else {
-                        EmitData emitData = null;
-
+                        AsyncResult result = null;
                         try {
-                            emitData = asyncClient.process(t);
+                            result = asyncClient.process(t);
                         } catch (IOException e) {
-                            e.printStackTrace();
-                            continue;
+                            result = AsyncResult.UNSPECIFIED_CRASH;
+
                         }
-                        if (emitData != null) {
+                        if (result.getStatus() == AsyncResult.STATUS.OK) {
                             //TODO -- add timeout, this currently hangs forever
-                            emitDataQueue.offer(emitData);
+                            emitDataQueue.offer(result.getEmitData());
                         }
                     }
                     checkActive();

@@ -78,10 +78,13 @@ public class AsyncClient implements Closeable {
         process.destroyForcibly();
     }
 
-    public EmitData process(FetchEmitTuple t) throws IOException {
+    public AsyncResult process(FetchEmitTuple t) throws IOException {
         if (! ping()) {
             restart();
         }
+        //TODO consider adding a timer here too
+        // this could block forever if the watchdog thread in the server fails
+        // or is starved
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bos)) {
             objectOutputStream.writeObject(t);
@@ -92,27 +95,40 @@ public class AsyncClient implements Closeable {
         output.write(bytes);
         output.flush();
 
-        int status = input.read();
+        long start = System.currentTimeMillis();
+        try {
+            return readResults(t);
+        } catch (IOException e) {
+            long elapsed = System.currentTimeMillis() - start;
+            if (elapsed > parseTimeoutMillis) {
+                LOG.warn("{} timed out", t.getId());
+                return AsyncResult.TIMEOUT;
+            }
+            return AsyncResult.UNSPECIFIED_CRASH;
+        }
+    }
 
+    private AsyncResult readResults(FetchEmitTuple t) throws IOException {
+        int status = input.read();
         //TODO clean this up, never return null
         if (status == AsyncServer.OOM) {
-            LOG.warn(t.getFetchKey().getFetchKey() + " oom");
+            LOG.warn(t.getId() + " oom");
             return null;
         } else if (status == AsyncServer.READY) {
         } else {
-
             throw new IOException("problem reading response from server " + status);
         }
         int length = input.readInt();
-        bytes = new byte[length];
+        byte[] bytes = new byte[length];
         input.readFully(bytes);
         try (ObjectInputStream objectInputStream =
                      new ObjectInputStream(new ByteArrayInputStream(bytes))) {
-            return (EmitData)objectInputStream.readObject();
+            return new AsyncResult((EmitData)objectInputStream.readObject());
         } catch (ClassNotFoundException e) {
             //this should be catastrophic
             throw new RuntimeException(e);
         }
+
     }
 
     private void restart() throws IOException {

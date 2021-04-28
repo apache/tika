@@ -37,6 +37,7 @@ import org.apache.tika.utils.StringUtils;
 
 public class JsonFetchEmitTuple {
 
+    public static final String ID = "id";
     public static final String FETCHER = "fetcher";
     public static final String FETCHKEY = "fetchKey";
     public static final String EMITTER = "emitter";
@@ -64,6 +65,7 @@ public class JsonFetchEmitTuple {
         if (token == JsonToken.START_OBJECT) {
             token = jParser.nextToken();
         }
+        String id = null;
         String fetcherName = null;
         String fetchKey = null;
         String emitterName = null;
@@ -77,7 +79,9 @@ public class JsonFetchEmitTuple {
                 throw new IOException("required field name, but see: " + token.name());
             }
             String name = jParser.getCurrentName();
-            if (FETCHER.equals(name)) {
+            if (ID.equals(name)) {
+                id = getValue(jParser);
+            } else if (FETCHER.equals(name)) {
                 fetcherName = getValue(jParser);
             } else if (FETCHKEY.equals(name)) {
                 fetchKey = getValue(jParser);
@@ -105,8 +109,10 @@ public class JsonFetchEmitTuple {
             }
             token = jParser.nextToken();
         }
-
-        return new FetchEmitTuple(new FetchKey(fetcherName, fetchKey),
+        if (id == null) {
+            id = fetchKey;
+        }
+        return new FetchEmitTuple(id, new FetchKey(fetcherName, fetchKey),
                 new EmitKey(emitterName, emitKey), metadata, handlerConfig, onParseException);
     }
 
@@ -162,6 +168,7 @@ public class JsonFetchEmitTuple {
 
     static void writeTuple(FetchEmitTuple t, JsonGenerator jsonGenerator) throws IOException {
         jsonGenerator.writeStartObject();
+        jsonGenerator.writeStringField(ID, t.getId());
         jsonGenerator.writeStringField(FETCHER, t.getFetchKey().getFetcherName());
         jsonGenerator.writeStringField(FETCHKEY, t.getFetchKey().getFetchKey());
         jsonGenerator.writeStringField(EMITTER, t.getEmitKey().getEmitterName());

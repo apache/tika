@@ -31,6 +31,7 @@ public class FetchEmitTuple implements Serializable {
         SKIP, EMIT
     }
 
+    private final String id;
     private final FetchKey fetchKey;
     private EmitKey emitKey;
     private final Metadata metadata;
@@ -42,8 +43,18 @@ public class FetchEmitTuple implements Serializable {
                 DEFAULT_ON_PARSE_EXCEPTION);
     }
 
+    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata metadata) {
+        this(id, fetchKey, emitKey, metadata, HandlerConfig.DEFAULT_HANDLER_CONFIG,
+                DEFAULT_ON_PARSE_EXCEPTION);
+    }
     public FetchEmitTuple(FetchKey fetchKey, EmitKey emitKey, Metadata metadata,
                           HandlerConfig handlerConfig, ON_PARSE_EXCEPTION onParseException) {
+        this(fetchKey.getFetchKey(), fetchKey, emitKey, metadata, handlerConfig, onParseException);
+    }
+
+    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata metadata,
+                          HandlerConfig handlerConfig, ON_PARSE_EXCEPTION onParseException) {
+        this.id = id;
         this.fetchKey = fetchKey;
         this.emitKey = emitKey;
         this.metadata = metadata;
@@ -51,6 +62,9 @@ public class FetchEmitTuple implements Serializable {
         this.onParseException = onParseException;
     }
 
+    public String getId() {
+        return id;
+    }
     public FetchKey getFetchKey() {
         return fetchKey;
     }
@@ -81,28 +95,32 @@ public class FetchEmitTuple implements Serializable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
         FetchEmitTuple that = (FetchEmitTuple) o;
-        return Objects.equals(fetchKey, that.fetchKey) && Objects.equals(emitKey, that.emitKey) &&
-                Objects.equals(metadata, that.metadata) &&
-                onParseException == that.onParseException &&
-                Objects.equals(handlerConfig, that.handlerConfig);
+
+        if (id != null ? !id.equals(that.id) : that.id != null) return false;
+        if (fetchKey != null ? !fetchKey.equals(that.fetchKey) : that.fetchKey != null)
+            return false;
+        if (emitKey != null ? !emitKey.equals(that.emitKey) : that.emitKey != null) return false;
+        if (metadata != null ? !metadata.equals(that.metadata) : that.metadata != null)
+            return false;
+        if (onParseException != that.onParseException) return false;
+        return handlerConfig != null ? handlerConfig.equals(that.handlerConfig) :
+                that.handlerConfig == null;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(fetchKey, emitKey, metadata, onParseException, handlerConfig);
+        int result = id != null ? id.hashCode() : 0;
+        result = 31 * result + (fetchKey != null ? fetchKey.hashCode() : 0);
+        result = 31 * result + (emitKey != null ? emitKey.hashCode() : 0);
+        result = 31 * result + (metadata != null ? metadata.hashCode() : 0);
+        result = 31 * result + (onParseException != null ? onParseException.hashCode() : 0);
+        result = 31 * result + (handlerConfig != null ? handlerConfig.hashCode() : 0);
+        return result;
     }
 
-    @Override
-    public String toString() {
-        return "FetchEmitTuple{" + "fetchKey=" + fetchKey + ", emitKey=" + emitKey + ", metadata=" +
-                metadata + ", onParseException=" + onParseException + ", handlerConfig=" +
-                handlerConfig + '}';
-    }
+
 }

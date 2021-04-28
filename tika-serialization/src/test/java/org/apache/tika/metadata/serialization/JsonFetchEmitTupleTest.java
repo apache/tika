@@ -42,7 +42,7 @@ public class JsonFetchEmitTupleTest {
         m.add("m2", "v3");
         m.add("m3", "v4");
 
-        FetchEmitTuple t = new FetchEmitTuple(new FetchKey("my_fetcher", "fetchKey1"),
+        FetchEmitTuple t = new FetchEmitTuple("my_id", new FetchKey("my_fetcher", "fetchKey1"),
                 new EmitKey("my_emitter", "emitKey1"), m,
                 new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.XML, 10000, 10),
                 FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);

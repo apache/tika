@@ -55,7 +55,8 @@ public class JsonFetchEmitTupleListTest {
         m.add("m2", "v3-" + i);
         m.add("m3", "v4-" + i);
 
-        return new FetchEmitTuple(new FetchKey("fetcher-" + i, "fetchkey-" + i),
+        return new FetchEmitTuple("id-" + i,
+                new FetchKey("fetcher-" + i, "fetchkey-" + i),
                 new EmitKey("emitter-" + i, "emitKey-" + i), m);
     }
 }
