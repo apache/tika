@@ -27,12 +27,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -57,10 +51,6 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.digestutils.BouncyCastleDigester;
 import org.apache.tika.parser.digestutils.CommonsDigester;
-import org.apache.tika.pipes.FetchEmitTuple;
-import org.apache.tika.pipes.emitter.EmitData;
-import org.apache.tika.server.core.resource.AsyncEmitter;
-import org.apache.tika.server.core.resource.AsyncParser;
 import org.apache.tika.server.core.resource.AsyncResource;
 import org.apache.tika.server.core.resource.DetectorResource;
 import org.apache.tika.server.core.resource.EmitterResource;
@@ -102,6 +92,7 @@ public class TikaServerProcess {
         options.addOption("i", "id", true,
                 "id to use for server in server status endpoint");
         options.addOption("?", "help", false, "this help message");
+        options.addOption("noFork", false, "if launched in no fork mode");
         options.addOption("forkedStatusFile", true,
                 "Not allowed in -noFork: temporary file used to communicate " +
                         "with forking process -- do not use this! " +
@@ -114,44 +105,40 @@ public class TikaServerProcess {
         return options;
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         LOG.info("Starting {} server", new Tika());
+        AsyncResource asyncResource = null;
         try {
             Options options = getOptions();
             CommandLineParser cliParser = new DefaultParser();
             CommandLine line = cliParser.parse(options, args);
             TikaServerConfig tikaServerConfig = TikaServerConfig.load(line);
             LOG.debug("forked config: {}", tikaServerConfig);
-            mainLoop(tikaServerConfig);
+            if (tikaServerConfig.isEnableUnsecureFeatures()) {
+                final AsyncResource localAsyncResource =
+                        new AsyncResource(tikaServerConfig.getConfigPath());
+                Runtime.getRuntime().addShutdownHook(new Thread() { public void run() {
+                        try {
+                            localAsyncResource.shutdownNow();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    } } );
+                asyncResource = localAsyncResource;
+            }
+
+
+            ServerDetails serverDetails = initServer(tikaServerConfig, asyncResource);
+            startServer(serverDetails);
+
         } catch (Exception e) {
             LOG.error("Can't start: ", e);
             System.exit(-1);
         }
     }
 
-    private static void mainLoop(TikaServerConfig tikaServerConfig) throws Exception {
-        AsyncResource asyncResource = null;
-        ArrayBlockingQueue<FetchEmitTuple> asyncFetchEmitQueue = null;
-        ArrayBlockingQueue<EmitData> asyncEmitData = null;
-        int numAsyncParserThreads = 10;
-        if (tikaServerConfig.isEnableUnsecureFeatures()) {
-            asyncResource = new AsyncResource();
-            asyncFetchEmitQueue = asyncResource.getFetchEmitQueue(10000);
-            asyncEmitData = asyncResource.getEmitDataQueue(1000);
-        }
+    private static void startServer(ServerDetails serverDetails) throws Exception {
 
-        ServerDetails serverDetails = initServer(tikaServerConfig, asyncResource);
-        ExecutorService executorService = Executors.newFixedThreadPool(numAsyncParserThreads + 1);
-        ExecutorCompletionService<Integer> executorCompletionService =
-                new ExecutorCompletionService<>(executorService);
-
-        if (asyncFetchEmitQueue != null) {
-            executorCompletionService.submit(new AsyncEmitter(asyncEmitData));
-            for (int i = 0; i < numAsyncParserThreads; i++) {
-                executorCompletionService
-                        .submit(new AsyncParser(asyncFetchEmitQueue, asyncEmitData));
-            }
-        }
         try {
             //start the server
             Server server = serverDetails.sf.create();
@@ -159,15 +146,7 @@ public class TikaServerProcess {
             LOG.warn("exception starting server", e);
             System.exit(DO_NOT_RESTART_EXIT_VALUE);
         }
-
         LOG.info("Started Apache Tika server {} at {}", serverDetails.serverId, serverDetails.url);
-
-        while (true) {
-            Future<Integer> future = executorCompletionService.poll(1, TimeUnit.MINUTES);
-            if (future != null) {
-                LOG.warn("Daemon should not stop: " + future.get());
-            }
-        }
     }
 
     //This returns the server, configured and ready to be started.

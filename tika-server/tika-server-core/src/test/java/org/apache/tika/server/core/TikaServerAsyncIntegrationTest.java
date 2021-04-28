@@ -19,6 +19,7 @@ package org.apache.tika.server.core;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -53,7 +54,7 @@ import org.apache.tika.pipes.fetcher.FetchKey;
 public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerAsyncIntegrationTest.class);
-    private static final int NUM_FILES = 1000;
+    private static final int NUM_FILES = 450;
     private static final String EMITTER_NAME = "fse";
     private static final String FETCHER_NAME = "fsf";
     private static FetchEmitTuple.ON_PARSE_EXCEPTION ON_PARSE_EXCEPTION =
@@ -63,7 +64,9 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
     private static String TIKA_CONFIG_XML;
     private static Path TIKA_CONFIG;
     private static List<String> FILE_LIST = new ArrayList<>();
-    private static String[] FILES = new String[]{"hello_world.xml", "null_pointer.xml"
+    private static String[] FILES = new String[]{
+            "hello_world.xml",
+            "null_pointer.xml"
             // "heavy_hang_30000.xml", "real_oom.xml", "system_exit.xml"
     };
 
@@ -131,21 +134,31 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
         Thread serverThread = new Thread() {
             @Override
             public void run() {
-                TikaServerCli.main(new String[]{"-p", INTEGRATION_TEST_PORT, "-config",
+                TikaServerCli.main(new String[]{
+                        //for debugging/development, use no fork; otherwise go with the default
+                        //"-noFork",
+                        "-p", INTEGRATION_TEST_PORT, "-config",
                         TIKA_CONFIG.toAbsolutePath().toString()});
             }
         };
         serverThread.start();
 
         try {
+            long start = System.currentTimeMillis();
+
             JsonNode response = sendAsync(FILE_LIST);
+            String status = response.get("status").asText();
+            if (! "ok".equals(status)) {
+                fail("bad status: '" + status + "' -> " + response.toPrettyString());
+            }
             int expected = (ON_PARSE_EXCEPTION == FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT) ?
                     FILE_LIST.size() : FILE_LIST.size() / 2;
             int targets = 0;
             while (targets < FILE_LIST.size()) {
                 targets = countTargets();
-                Thread.sleep(1000);
+                Thread.sleep(100);
             }
+            System.out.println("elapsed : " + (System.currentTimeMillis() - start));
         } finally {
             serverThread.interrupt();
         }

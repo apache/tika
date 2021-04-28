@@ -36,7 +36,6 @@
   </pluginRepositories>
 
   <dependencies>
-
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-translate</artifactId>

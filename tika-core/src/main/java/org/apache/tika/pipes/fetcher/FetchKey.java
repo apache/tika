@@ -16,11 +16,18 @@
  */
 package org.apache.tika.pipes.fetcher;
 
+import java.io.Serializable;
+
 /**
  * Pair of fetcherName (which fetcher to call) and the key
  * to send to that fetcher to retrieve a specific file.
  */
-public class FetchKey {
+public class FetchKey implements Serializable {
+    /**
+     * Serial version UID
+     */
+    private static final long serialVersionUID = -3861669115439125268L;
+
     private String fetcherName;
     private String fetchKey;
 

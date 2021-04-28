@@ -16,11 +16,17 @@
  */
 package org.apache.tika.pipes;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 import org.apache.tika.sax.BasicContentHandlerFactory;
 
-public class HandlerConfig {
+public class HandlerConfig implements Serializable {
+
+    /**
+     * Serial version UID
+     */
+    private static final long serialVersionUID = -3861669115439125268L;
 
     public static HandlerConfig DEFAULT_HANDLER_CONFIG =
             new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1, -1);

@@ -14,37 +14,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.emitter;
+package org.apache.tika.pipes.async;
 
-import java.io.Serializable;
-import java.util.List;
+public class OfferLargerThanQueueSize extends IllegalArgumentException {
+    private final int sizeOffered;
+    private final int queueSize;
 
-import org.apache.tika.metadata.Metadata;
-
-public class EmitData implements Serializable {
-    /**
-     * Serial version UID
-     */
-    private static final long serialVersionUID = -3861669115439125268L;
-
-    private final EmitKey emitKey;
-    private final List<Metadata> metadataList;
-
-    public EmitData(EmitKey emitKey, List<Metadata> metadataList) {
-        this.emitKey = emitKey;
-        this.metadataList = metadataList;
-    }
-
-    public EmitKey getEmitKey() {
-        return emitKey;
-    }
-
-    public List<Metadata> getMetadataList() {
-        return metadataList;
+    public OfferLargerThanQueueSize(int sizeOffered, int queueSize) {
+        this.sizeOffered = sizeOffered;
+        this.queueSize = queueSize;
     }
 
     @Override
-    public String toString() {
-        return "EmitData{" + "emitKey=" + emitKey + ", metadataList=" + metadataList + '}';
+    public String getMessage() {
+        return "sizeOffered (" + sizeOffered + ") is greater than queue size (" +
+                queueSize + ")";
+    }
+
+    public int getQueueSize() {
+        return queueSize;
+    }
+
+    public int getSizeOffered() {
+        return sizeOffered;
     }
 }

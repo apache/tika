@@ -14,37 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.emitter;
+package org.apache.tika.pipes.async;
 
-import java.io.Serializable;
-import java.util.List;
+import java.io.IOException;
+import java.nio.file.Path;
 
-import org.apache.tika.metadata.Metadata;
+class AsyncConfig {
 
-public class EmitData implements Serializable {
-    /**
-     * Serial version UID
-     */
-    private static final long serialVersionUID = -3861669115439125268L;
 
-    private final EmitKey emitKey;
-    private final List<Metadata> metadataList;
+    private AsyncClientConfig asyncClientConfig;
+    private AsyncClientConfig asyncRetryClientConfig;
+    private AsyncEmitterConfig asyncEmitterConfig;
 
-    public EmitData(EmitKey emitKey, List<Metadata> metadataList) {
-        this.emitKey = emitKey;
-        this.metadataList = metadataList;
+    public static AsyncConfig load(Path p) throws IOException {
+        AsyncConfig asyncConfig = new AsyncConfig();
+
+        return asyncConfig;
     }
 
-    public EmitKey getEmitKey() {
-        return emitKey;
-    }
 
-    public List<Metadata> getMetadataList() {
-        return metadataList;
-    }
-
-    @Override
-    public String toString() {
-        return "EmitData{" + "emitKey=" + emitKey + ", metadataList=" + metadataList + '}';
-    }
 }

@@ -141,9 +141,10 @@ public class TikaServerCli {
         return ret.toArray(new String[0]);
     }
 
-    public static void noFork(TikaServerConfig tikaServerConfig) {
+    public static void noFork(TikaServerConfig tikaServerConfig) throws Exception {
         List<String> args = tikaServerConfig
                 .getForkedProcessArgs(tikaServerConfig.getPort(), tikaServerConfig.getIdBase());
+        args.add("-noFork");
         TikaServerProcess.main(args.toArray(new String[0]));
     }
 

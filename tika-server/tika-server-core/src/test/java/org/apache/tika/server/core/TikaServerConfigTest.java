@@ -22,6 +22,10 @@ import static org.junit.Assert.assertTrue;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Options;
 import org.junit.Test;
 
 import org.apache.tika.config.TikaConfigTest;
@@ -31,8 +35,11 @@ public class TikaServerConfigTest {
     @Test
     public void testBasic() throws Exception {
         Set<String> settings = new HashSet<>();
+        CommandLineParser parser = new DefaultParser();
+        CommandLine emptyCommandLine = parser.parse(new Options(), new String[]{});
         TikaServerConfig config = TikaServerConfig
                 .load(TikaConfigTest.class.getResourceAsStream("/configs/tika-config-server.xml"),
+                        emptyCommandLine,
                         settings);
         assertEquals(-1, config.getMaxRestarts());
         assertEquals(54321, config.getTaskTimeoutMillis());

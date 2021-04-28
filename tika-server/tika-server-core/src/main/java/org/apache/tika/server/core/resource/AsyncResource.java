@@ -23,13 +23,9 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.TimeUnit;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -40,11 +36,14 @@ import javax.ws.rs.core.UriInfo;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonFetchEmitTupleList;
 import org.apache.tika.pipes.FetchEmitTuple;
+import org.apache.tika.pipes.async.AsyncProcessor;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.emitter.EmitterManager;
@@ -58,7 +57,13 @@ public class AsyncResource {
 
     private static final int DEFAULT_FETCH_EMIT_QUEUE_SIZE = 10000;
     long maxQueuePauseMs = 60000;
+    private final AsyncProcessor asyncProcessor;
     private ArrayBlockingQueue<FetchEmitTuple> queue;
+
+    public AsyncResource(java.nio.file.Path tikaConfigPath)
+            throws TikaException, IOException, SAXException {
+        this.asyncProcessor = new AsyncProcessor(tikaConfigPath);
+    }
 
     public ArrayBlockingQueue<FetchEmitTuple> getFetchEmitQueue(int queueSize) {
         this.queue = new ArrayBlockingQueue<>(queueSize);
@@ -106,26 +111,12 @@ public class AsyncResource {
             }
         }
         Instant start = Instant.now();
-        long elapsed = ChronoUnit.MILLIS.between(start, Instant.now());
-        List<FetchEmitTuple> notAdded = new ArrayList<>();
-        int addedCount = 0;
-        for (FetchEmitTuple t : request.getTuples()) {
-            boolean offered = false;
-            while (!offered && elapsed < maxQueuePauseMs) {
-                offered = queue.offer(t, 10, TimeUnit.MILLISECONDS);
-                elapsed = ChronoUnit.MILLIS.between(start, Instant.now());
-            }
-            if (!offered) {
-                notAdded.add(t);
-            } else {
-                addedCount++;
-            }
+        boolean offered = asyncProcessor.offer(request.getTuples(), maxQueuePauseMs);
+        if (offered) {
+            return ok(request.getTuples().size());
+        } else {
+            return throttle(request.getTuples().size());
         }
-
-        if (notAdded.size() > 0) {
-            return throttle(notAdded, addedCount);
-        }
-        return ok(request.getTuples().size());
     }
 
     private Map<String, Object> ok(int size) {
@@ -135,16 +126,10 @@ public class AsyncResource {
         return map;
     }
 
-    private Map<String, Object> throttle(List<FetchEmitTuple> notAdded, int added) {
-        List<String> fetchKeys = new ArrayList<>();
-        for (FetchEmitTuple t : notAdded) {
-            fetchKeys.add(t.getFetchKey().getFetchKey());
-        }
+    private Map<String, Object> throttle(int requestSize) {
         Map<String, Object> map = new HashMap<>();
         map.put("status", "throttled");
-        map.put("added", added);
-        map.put("skipped", notAdded.size());
-        map.put("skippedFetchKeys", fetchKeys);
+        map.put("msg", "not able to receive request of size " + requestSize + " at this time");
         return map;
     }
 
@@ -160,6 +145,10 @@ public class AsyncResource {
         try (Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8)) {
             return new AsyncRequest(JsonFetchEmitTupleList.fromJson(reader));
         }
+    }
+
+    public void shutdownNow() throws Exception {
+        asyncProcessor.close();
     }
 
 }

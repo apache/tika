@@ -17,18 +17,14 @@
 package org.apache.tika.pipes.async;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
@@ -38,68 +34,79 @@ import org.junit.Test;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.FetchEmitTuple;
+import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
+import org.apache.tika.pipes.fetchiterator.FetchIterator;
+import org.apache.tika.utils.ProcessUtils;
 
 public class AsyncProcessorTest {
 
-    private Path dbDir;
-    private Path dbFile;
-    private Connection connection;
+    private final String OOM = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
+            "<throw class=\"java.lang.OutOfMemoryError\">oom message</throw>\n</mock>";
+    private final String OK = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
+            "<metadata action=\"add\" name=\"dc:creator\">Nikolai Lobachevsky</metadata>" +
+            "<write element=\"p\">main_content</write>" + "</mock>";
     private Path tikaConfigPath;
+    private Path inputDir;
+    private final int totalFiles = 100;
+    private int ok = 0;
+    private int oom = 0;
 
     @Before
     public void setUp() throws SQLException, IOException {
-        dbDir = Files.createTempDirectory("async-db");
-        dbFile = dbDir.resolve("emitted-db");
-        String jdbc = "jdbc:h2:file:" + dbFile.toAbsolutePath().toString() + ";AUTO_SERVER=TRUE";
-        String sql = "create table emitted (id int auto_increment primary key, " +
-                "emitkey varchar(2000), json varchar(20000))";
-
-        connection = DriverManager.getConnection(jdbc);
-        connection.createStatement().execute(sql);
-        tikaConfigPath = dbDir.resolve("tika-config.xml");
+        inputDir = Files.createTempDirectory("tika-async-");
+        tikaConfigPath = Files.createTempFile("tika-config-", ".xml");
         String xml = "" + "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<properties>" +
                 "  <emitters>" + "  <emitter class=\"org.apache.tika.pipes.async.MockEmitter\">\n" +
                 "    <params>\n" + "      <param name=\"name\" type=\"string\">mock</param>\n" +
-                "      <param name=\"jdbc\" type=\"string\">" + jdbc + "</param>\n" +
                 "    </params>" + "  </emitter>" + "  </emitters>" + "  <fetchers>" +
-                "    <fetcher class=\"org.apache.tika.pipes.async.MockFetcher\">" +
-                "      <param name=\"name\" type=\"string\">mock</param>\n" + "    </fetcher>" +
+                "    <fetcher class=\"org.apache.tika.pipes.fetcher.FileSystemFetcher\">" +
+                "      <params><param name=\"name\" type=\"string\">mock</param>\n" +
+                "      <param name=\"basePath\" type=\"string\">" +
+                ProcessUtils.escapeCommandLine(inputDir.toAbsolutePath().toString())
+                + "</param></params>\n" +
+                "    </fetcher>" +
                 "  </fetchers>" + "</properties>";
         Files.write(tikaConfigPath, xml.getBytes(StandardCharsets.UTF_8));
+        Random r = new Random();
+        for (int i = 0; i < totalFiles; i++) {
+            if (r.nextFloat() < 0.1) {
+                Files.write(inputDir.resolve(i + ".xml"), OOM.getBytes(StandardCharsets.UTF_8));
+                oom++;
+            } else {
+                Files.write(inputDir.resolve(i + ".xml"), OK.getBytes(StandardCharsets.UTF_8));
+                ok++;
+            }
+        }
     }
 
     @After
     public void tearDown() throws SQLException, IOException {
-        connection.createStatement().execute("drop table emitted");
-        connection.close();
-        FileUtils.deleteDirectory(dbDir.toFile());
+        Files.delete(tikaConfigPath);
+        FileUtils.deleteDirectory(inputDir.toFile());
     }
 
     @Test
     public void testBasic() throws Exception {
-
-
-        AsyncProcessor processor = AsyncProcessor.build(tikaConfigPath);
-        int max = 100;
-        for (int i = 0; i < max; i++) {
-            FetchEmitTuple t = new FetchEmitTuple(new FetchKey("mock", "key-" + i),
+        AsyncProcessor processor = new AsyncProcessor(tikaConfigPath);
+        for (int i = 0; i < totalFiles; i++) {
+            FetchEmitTuple t = new FetchEmitTuple(new FetchKey("mock",  i + ".xml"),
                     new EmitKey("mock", "emit-" + i), new Metadata());
             processor.offer(t, 1000);
         }
+        for (int i = 0; i < 10; i++) {
+            processor.offer(FetchIterator.COMPLETED_SEMAPHORE, 1000);
+        }
+        //TODO clean this up
+        while (processor.checkActive()) {
+            Thread.sleep(100);
+        }
         processor.close();
-        String sql = "select emitkey from emitted";
         Set<String> emitKeys = new HashSet<>();
-        try (Statement st = connection.createStatement(); ResultSet rs = st.executeQuery(sql)) {
-            while (rs.next()) {
-                String emitKey = rs.getString(1);
-                emitKeys.add(emitKey);
-            }
+        for (EmitData d : MockEmitter.EMIT_DATA) {
+            emitKeys.add(d.getEmitKey().getEmitKey());
         }
-        assertEquals(max, emitKeys.size());
-        for (int i = 0; i < max; i++) {
-            assertTrue(emitKeys.contains("emit-" + i));
-        }
+        assertEquals(ok, emitKeys.size());
     }
 }

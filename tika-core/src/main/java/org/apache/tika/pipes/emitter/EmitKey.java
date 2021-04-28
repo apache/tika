@@ -16,7 +16,14 @@
  */
 package org.apache.tika.pipes.emitter;
 
-public class EmitKey {
+import java.io.Serializable;
+
+public class EmitKey implements Serializable {
+
+    /**
+     * Serial version UID
+     */
+    private static final long serialVersionUID = -3861669115439125268L;
 
     private String emitterName;
     private String emitKey;

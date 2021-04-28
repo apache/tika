@@ -130,7 +130,7 @@ public class TikaServerConfig {
         TikaServerConfig config = null;
         Set<String> settings = new HashSet<>();
         if (commandLine.hasOption("c")) {
-            config = load(Paths.get(commandLine.getOptionValue("c")), settings);
+            config = load(Paths.get(commandLine.getOptionValue("c")), commandLine, settings);
             config.setConfigPath(commandLine.getOptionValue("c"));
         } else {
             config = new TikaServerConfig();
@@ -175,13 +175,14 @@ public class TikaServerConfig {
         return config;
     }
 
-    static TikaServerConfig load(Path p, Set<String> settings) throws IOException, TikaException {
+    static TikaServerConfig load(Path p, CommandLine commandLine, Set<String> settings) throws IOException,
+            TikaException {
         try (InputStream is = Files.newInputStream(p)) {
-            return TikaServerConfig.load(is, settings);
+            return TikaServerConfig.load(is, commandLine, settings);
         }
     }
 
-    static TikaServerConfig load(InputStream is, Set<String> settings)
+    static TikaServerConfig load(InputStream is, CommandLine commandLine, Set<String> settings)
             throws IOException, TikaException {
         Node properties = null;
         try {
@@ -200,6 +201,10 @@ public class TikaServerConfig {
             if ("server".equals(child.getLocalName())) {
                 loadServerConfig(child, config, settings);
             }
+        }
+        //override a few things in config file
+        if (commandLine.hasOption("noFork")) {
+            config.setNoFork(true);
         }
         return config;
     }

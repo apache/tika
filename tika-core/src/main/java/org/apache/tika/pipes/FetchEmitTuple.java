@@ -16,13 +16,14 @@
  */
 package org.apache.tika.pipes;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
 
-public class FetchEmitTuple {
+public class FetchEmitTuple implements Serializable {
 
     public static final ON_PARSE_EXCEPTION DEFAULT_ON_PARSE_EXCEPTION = ON_PARSE_EXCEPTION.EMIT;
 

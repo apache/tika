@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.server.core.resource;
+package org.apache.tika.pipes.async;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.pipes.emitter.AbstractEmitter;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.Emitter;
+import org.apache.tika.pipes.emitter.EmitterManager;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
 import org.apache.tika.utils.ExceptionUtils;
 
@@ -42,6 +43,9 @@ import org.apache.tika.utils.ExceptionUtils;
  */
 public class AsyncEmitter implements Callable<Integer> {
 
+    static final EmitData EMIT_DATA_STOP_SEMAPHORE = new EmitData(null, null);
+    static final int EMITTER_FUTURE_CODE = 2;
+
     private static final Logger LOG = LoggerFactory.getLogger(AsyncEmitter.class);
 
     //TODO -- need to configure these
@@ -49,12 +53,14 @@ public class AsyncEmitter implements Callable<Integer> {
 
     private long maxEstimatedBytes = 10_000_000;
 
+    private final EmitterManager emitterManager;
     private final ArrayBlockingQueue<EmitData> emitDataQueue;
 
     Instant lastEmitted = Instant.now();
 
-    public AsyncEmitter(ArrayBlockingQueue<EmitData> emitData) {
+    public AsyncEmitter(ArrayBlockingQueue<EmitData> emitData, EmitterManager emitterManager) {
         this.emitDataQueue = emitData;
+        this.emitterManager = emitterManager;
     }
 
     @Override
@@ -63,6 +69,10 @@ public class AsyncEmitter implements Callable<Integer> {
 
         while (true) {
             EmitData emitData = emitDataQueue.poll(100, TimeUnit.MILLISECONDS);
+            if (emitData == EMIT_DATA_STOP_SEMAPHORE) {
+                cache.emitAll();
+                return EMITTER_FUTURE_CODE;
+            }
             if (emitData != null) {
                 //this can block on emitAll
                 cache.add(emitData);
@@ -116,11 +126,11 @@ public class AsyncEmitter implements Callable<Integer> {
             int emitted = 0;
             LOG.debug("about to emit {}", size);
             for (Map.Entry<String, List<EmitData>> e : map.entrySet()) {
-                Emitter emitter = TikaResource.getConfig()
-                        .getEmitterManager().getEmitter(e.getKey());
+                Emitter emitter = emitterManager.getEmitter(e.getKey());
                 tryToEmit(emitter, e.getValue());
                 emitted += e.getValue().size();
             }
+
             LOG.debug("emitted: {}", emitted);
             estimatedSize = 0;
             size = 0;

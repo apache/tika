@@ -16,9 +16,23 @@
  */
 package org.apache.tika.pipes.async;
 
-public interface AsyncEmitHook {
+import java.io.IOException;
+import java.nio.file.Path;
 
-    void onSuccess(AsyncTask task);
+class AsyncClientConfig {
 
-    void onFail(AsyncTask task);
+    private int fetchQueueSize = 20000;
+    private int numWorkers = 10;
+    private String[] workerJVMArgs;
+    private long parseTimeoutMs;
+    private long waitTimeoutMs;
+    private long maxFilesProcessed;
+
+    public static AsyncClientConfig load(Path p) throws IOException {
+        AsyncClientConfig asyncConfig = new AsyncClientConfig();
+
+        return asyncConfig;
+    }
+
+
 }
