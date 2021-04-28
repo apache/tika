@@ -18,14 +18,14 @@ package org.apache.tika.sax;
 
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.Serializable;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
-import java.util.UUID;
 
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+
+import org.apache.tika.exception.WriteLimitReachedException;
 
 /**
  * SAX event handler that writes content up to an optional write
@@ -33,10 +33,6 @@ import org.xml.sax.SAXException;
  */
 public class WriteOutContentHandler extends ContentHandlerDecorator {
 
-    /**
-     * The unique tag associated with exceptions from stream.
-     */
-    private final Serializable tag = UUID.randomUUID();
 
     /**
      * The maximum number of characters to write to the character stream.
@@ -101,7 +97,7 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
      * <p>
      * The internal string buffer is bounded at the given number of characters.
      * If this write limit is reached, then a {@link SAXException} is thrown.
-     * The {@link #isWriteLimitReached(Throwable)} method can be used to
+     * The {@link WriteLimitReachedException#isWriteLimitReached(Throwable)} method can be used to
      * detect this case.
      *
      * @param writeLimit maximum number of characters to include in the string,
@@ -119,7 +115,8 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
      * <p>
      * The internal string buffer is bounded at 100k characters. If this
      * write limit is reached, then a {@link SAXException} is thrown. The
-     * {@link #isWriteLimitReached(Throwable)} method can be used to detect
+     * {@link WriteLimitReachedException#isWriteLimitReached(Throwable)} method can be used to
+     * detect
      * this case.
      */
     public WriteOutContentHandler() {
@@ -140,7 +137,7 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
             throw new WriteLimitReachedException("Your document contained more than " + writeLimit +
                     " characters, and so your requested limit has been" +
                     " reached. To receive the full text of the document," +
-                    " increase your limit. (Text up to the limit is" + " however available).", tag);
+                    " increase your limit. (Text up to the limit is" + " however available).");
         }
     }
 
@@ -152,50 +149,11 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
         } else {
             super.ignorableWhitespace(ch, start, writeLimit - writeCount);
             writeCount = writeLimit;
-            throw new WriteLimitReachedException("Your document contained more than " + writeLimit +
+            throw new WriteLimitReachedException("Your document contained more than "
+                    + writeLimit +
                     " characters, and so your requested limit has been" +
                     " reached. To receive the full text of the document," +
-                    " increase your limit. (Text up to the limit is" + " however available).", tag);
+                    " increase your limit. (Text up to the limit is however available).");
         }
     }
-
-    /**
-     * Checks whether the given exception (or any of it's root causes) was
-     * thrown by this handler as a signal of reaching the write limit.
-     *
-     * @param t throwable
-     * @return <code>true</code> if the write limit was reached,
-     * <code>false</code> otherwise
-     * @since Apache Tika 0.7
-     */
-    public boolean isWriteLimitReached(Throwable t) {
-        if (t instanceof WriteLimitReachedException) {
-            return tag.equals(((WriteLimitReachedException) t).tag);
-        } else {
-            return t.getCause() != null && isWriteLimitReached(t.getCause());
-        }
-    }
-
-    /**
-     * The exception used as a signal when the write limit has been reached.
-     */
-    private static class WriteLimitReachedException extends SAXException {
-
-        /**
-         * Serial version UID
-         */
-        private static final long serialVersionUID = -1850581945459429943L;
-
-        /**
-         * Serializable tag of the handler that caused this exception
-         */
-        private final Serializable tag;
-
-        public WriteLimitReachedException(String message, Serializable tag) {
-            super(message);
-            this.tag = tag;
-        }
-
-    }
-
 }

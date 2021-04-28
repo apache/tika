@@ -30,6 +30,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.language.translate.Translator;
 import org.apache.tika.metadata.Metadata;
@@ -523,7 +524,7 @@ public class Tika {
             context.set(Parser.class, parser);
             parser.parse(stream, new BodyContentHandler(handler), metadata, context);
         } catch (SAXException e) {
-            if (!handler.isWriteLimitReached(e)) {
+            if (!WriteLimitReachedException.isWriteLimitReached(e)) {
                 // This should never happen with BodyContentHandler...
                 throw new TikaException("Unexpected SAX processing failure", e);
             }

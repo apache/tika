@@ -26,7 +26,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.exception.WriteLimitReached;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.exception.ZeroByteFileException;
 import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.io.TemporaryResources;
@@ -185,7 +185,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
      * @return
      */
     private boolean isWriteLimitReached(Throwable t) {
-        if (t instanceof WriteLimitReached) {
+        if (t instanceof WriteLimitReachedException) {
             return true;
         } else if (t.getMessage() != null &&
                 t.getMessage().indexOf("Your document contained more than") == 0) {
@@ -358,7 +358,13 @@ public class RecursiveParserWrapper extends ParserDecorator {
             int availableLength = Math.min(totalWriteLimit - totalChars, length);
             super.characters(ch, start, availableLength);
             if (availableLength < length) {
-                throw new WriteLimitReached();
+                throw new WriteLimitReachedException(
+                        "Your document contained more than " + totalWriteLimit +
+                                " characters, and so your requested limit has been" +
+                                " reached. To receive the full text of the document," +
+                                " increase your limit. (Text up to the limit is" +
+                                " however available)."
+                );
             }
         }
 
@@ -371,7 +377,12 @@ public class RecursiveParserWrapper extends ParserDecorator {
             int availableLength = Math.min(totalWriteLimit - totalChars, length);
             super.ignorableWhitespace(ch, start, availableLength);
             if (availableLength < length) {
-                throw new WriteLimitReached();
+                throw new WriteLimitReachedException("Your document contained more than "
+                        + totalWriteLimit +
+                        " characters, and so your requested limit has been" +
+                        " reached. To receive the full text of the document," +
+                        " increase your limit. (Text up to the limit is" + " however available)."
+                );
             }
         }
     }

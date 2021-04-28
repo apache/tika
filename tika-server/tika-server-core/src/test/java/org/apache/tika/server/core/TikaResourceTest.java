@@ -169,7 +169,7 @@ public class TikaResourceTest extends CXFTestBase {
         assertContains("Hello world", metadata.get(TikaCoreProperties.TIKA_CONTENT));
         assertNotFound("dissolve", metadata.get(TikaCoreProperties.TIKA_CONTENT));
         assertTrue(metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION).startsWith(
-                "org.apache.tika.sax.WriteOutContentHandler$WriteLimitReachedException"
+                "org.apache.tika.exception.WriteLimitReachedException"
         ));
     }
 

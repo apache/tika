@@ -597,7 +597,8 @@ public class TikaResourceTest extends CXFTestBase {
         assertNotFound("declare the causes", metadata.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("Microsoft Office Word", metadata.get(OfficeOpenXMLExtended.APPLICATION));
         assertTrue(metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION).startsWith(
-                "org.apache.tika.sax.WriteOutContentHandler$WriteLimitReachedException"));
+                "org.apache.tika.exception.WriteLimitReachedException"
+        ));
         assertNotFound("embed4.txt", metadata.get(TikaCoreProperties.TIKA_CONTENT));
 
     }

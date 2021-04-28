@@ -18,5 +18,26 @@ package org.apache.tika.exception;
 
 import org.xml.sax.SAXException;
 
-public class WriteLimitReached extends SAXException {
+public class WriteLimitReachedException extends SAXException {
+
+    public WriteLimitReachedException(String msg) {
+        super(msg);
+    }
+
+    /**
+     * Checks whether the given exception (or any of it's root causes) was
+     * thrown by this handler as a signal of reaching the write limit.
+     *
+     * @param t throwable
+     * @return <code>true</code> if the write limit was reached,
+     * <code>false</code> otherwise
+     * @since Apache Tika 2.0
+     */
+    public static boolean isWriteLimitReached(Throwable t) {
+        if (t instanceof WriteLimitReachedException) {
+            return true;
+        } else {
+            return t.getCause() != null && isWriteLimitReached(t.getCause());
+        }
+    }
 }
