@@ -100,7 +100,7 @@ public class RecursiveParserWrapperFSConsumer extends AbstractFSConsumer {
         List<Metadata> metadataList = null;
         Metadata containerMetadata = fileResource.getMetadata();
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(contentHandlerFactory,
-                -1, metadataFilter);
+                -1, -1, metadataFilter);
         try {
             parse(fileResource.getResourceId(), parser, is, handler,
                     containerMetadata, context);
