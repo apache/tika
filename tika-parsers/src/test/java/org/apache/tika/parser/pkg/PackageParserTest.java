@@ -24,16 +24,21 @@ import static org.junit.Assert.fail;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+
+import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.ParseContext;
 import org.junit.Test;
 
-public class PackageParserTest {
+public class PackageParserTest extends TikaTest {
 
     @Test
     public void testCoverage() throws Exception {
@@ -76,5 +81,11 @@ public class PackageParserTest {
             assertTrue("missing: "+mediaType, PackageParser.PACKAGE_SPECIALIZATIONS.contains(mediaType));
         }
         assertEquals(currentSpecializations.size(), PackageParser.PACKAGE_SPECIALIZATIONS.size());
+    }
+
+    @Test
+    public void handleNonUnicodeEntryName() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("gbk.zip");
+        assertContains("审计压缩", metadataList.get(1).get(Metadata.RESOURCE_NAME_KEY));
     }
 }
