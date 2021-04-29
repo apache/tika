@@ -59,6 +59,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
+import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -207,6 +208,14 @@ public class PackageParser extends AbstractEncodingDetectorParser {
             entrydata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, name);
         }
         return entrydata;
+    }
+
+    public PackageParser() {
+        super();
+    }
+
+    public PackageParser(EncodingDetector encodingDetector) {
+        super(encodingDetector);
     }
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -400,8 +409,9 @@ public class PackageParser extends AbstractEncodingDetectorParser {
             Charset candidate =
                     getEncodingDetector().detect(new ByteArrayInputStream(((ZipArchiveEntry) entry).getRawName()),
                         parentMetadata);
-            if (candidate != null)
+            if (candidate != null) {
                 name = new String(((ZipArchiveEntry) entry).getRawName(), candidate);
+            }
         }
         
         if (archive.canReadEntryData(entry)) {

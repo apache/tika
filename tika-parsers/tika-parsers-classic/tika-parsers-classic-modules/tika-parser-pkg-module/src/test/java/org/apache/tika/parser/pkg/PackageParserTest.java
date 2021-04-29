@@ -19,34 +19,24 @@ package org.apache.tika.parser.pkg;
 
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
-import org.hamcrest.CoreMatchers;
 import org.junit.Test;
-import org.xml.sax.SAXException;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.detect.zip.PackageConstants;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.BodyContentHandler;
 
-public class PackageParserTest {
+public class PackageParserTest extends TikaTest {
 
     @Test
     public void testCoverage() throws Exception {
@@ -91,29 +81,5 @@ public class PackageParserTest {
                     PackageParser.PACKAGE_SPECIALIZATIONS.contains(mediaType));
         }
         assertEquals(currentSpecializations.size(), PackageParser.PACKAGE_SPECIALIZATIONS.size());
-    }
-    
-    @Test
-    public void hanldeNonUnicodeEntryName() throws IOException {
-
-        BodyContentHandler handler = new BodyContentHandler();
-        EncodingDetector dummyDetector = new EncodingDetector() {
-            @Override
-            public Charset detect(InputStream inputStream, Metadata metadata) throws IOException {
-                return Charset.forName("GB18030");
-            }
-        };
-        PackageParser parser = new PackageParser();
-        parser.setEncodingDetector(dummyDetector);
-        ParseContext context = new ParseContext();
-        context.set(Parser.class, parser);
-        Metadata meta = new Metadata();
-        try {
-            parser.parse(this.getClass().getResourceAsStream("gbk.zip"), handler, meta, context);
-            String res = handler.toString();
-            assertThat(res,
-                    CoreMatchers.containsString("审计压缩包文件检索测试/集团邮件审计系统2021年自动巡检需求文档_V4.0.doc"));
-        } catch (SAXException | TikaException ignored) {
-        }
     }
 }
