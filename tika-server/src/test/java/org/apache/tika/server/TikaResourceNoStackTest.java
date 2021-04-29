@@ -17,9 +17,12 @@
 
 package org.apache.tika.server;
 
+import static org.apache.tika.TikaTest.assertNotContained;
 import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import javax.ws.rs.core.Response;
@@ -29,8 +32,13 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.Test;
 
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.serialization.JsonMetadata;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.server.resource.TikaResource;
 import org.apache.tika.server.writer.JSONMessageBodyWriter;
+import org.apache.tika.utils.ParserUtils;
 
 public class TikaResourceNoStackTest extends CXFTestBase {
 
@@ -75,9 +83,16 @@ public class TikaResourceNoStackTest extends CXFTestBase {
                 .header("writeLimit", "100")
                 .accept("application/json")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD_LONG));
-        assertEquals(500, response.getStatus());
-        String content = getStringFromInputStream((InputStream) response.getEntity());
-        assertEquals(0, content.length());
+        assertEquals(200, response.getStatus());
+        Metadata metadata =
+                JsonMetadata.fromJson(new InputStreamReader((InputStream) response.getEntity(),
+                        StandardCharsets.UTF_8));
+        assertEquals("true", metadata.get(
+                AbstractRecursiveParserWrapperHandler.WRITE_LIMIT_REACHED));
+        assertContains("When in the Course of human events",
+                metadata.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertNotContained("political bands",
+                metadata.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
     }
 
 }

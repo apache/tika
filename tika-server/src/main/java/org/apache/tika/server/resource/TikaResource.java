@@ -30,6 +30,7 @@ import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
@@ -38,6 +39,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.PasswordProvider;
+import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.html.BoilerpipeContentHandler;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.pdf.PDFParserConfig;
@@ -46,6 +48,7 @@ import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ExpandedTitleContentHandler;
 import org.apache.tika.sax.RichTextContentHandler;
+import org.apache.tika.sax.WriteOutContentHandler;
 import org.apache.tika.server.InputStreamFactory;
 import org.apache.tika.server.ServerStatus;
 import org.apache.tika.server.TikaServerParseException;
@@ -655,8 +658,13 @@ public class TikaResource {
         try {
             parse(parser, LOG, info.getPath(), inputStream, contentHandler, metadata, context);
         } catch (TikaServerParseException e) {
+            Throwable cause = e.getCause();
+            boolean writeLimitReached = false;
+            if (isWriteLimitReached(cause, 0)) {
+                metadata.set(AbstractRecursiveParserWrapperHandler.WRITE_LIMIT_REACHED, "true");
+                writeLimitReached = true;
+            }
             if (INCLUDE_STACK_TRACE) {
-                Throwable cause = e.getCause();
                 if (cause != null) {
                     metadata.add(AbstractRecursiveParserWrapperHandler.CONTAINER_EXCEPTION,
                             ExceptionUtils.getStackTrace(cause));
@@ -664,7 +672,7 @@ public class TikaResource {
                     metadata.add(AbstractRecursiveParserWrapperHandler.CONTAINER_EXCEPTION,
                             ExceptionUtils.getStackTrace(e));
                 }
-            } else {
+            } else if (! writeLimitReached) {
                 throw e;
             }
         } catch (OutOfMemoryError e) {
@@ -676,6 +684,21 @@ public class TikaResource {
             }
         } finally {
             metadata.add(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT, contentHandler.toString());
+        }
+    }
+
+    private boolean isWriteLimitReached(Throwable t, int depth) {
+        if (t == null) {
+            return false;
+        }
+        if (depth > 100) {
+            return false;
+        }
+        if (t.getMessage() != null &&
+                t.getMessage().indexOf("Your document contained more than") == 0) {
+            return true;
+        } else {
+            return isWriteLimitReached(t.getCause(), depth + 1);
         }
     }
 
