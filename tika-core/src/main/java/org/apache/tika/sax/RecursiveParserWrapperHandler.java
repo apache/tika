@@ -49,7 +49,7 @@ public class RecursiveParserWrapperHandler extends AbstractRecursiveParserWrappe
      * Create a handler with no limit on the number of embedded resources
      */
     public RecursiveParserWrapperHandler(ContentHandlerFactory contentHandlerFactory) {
-        this(contentHandlerFactory, -1, NoOpFilter.NOOP_FILTER);
+        this(contentHandlerFactory, -1, -1, NoOpFilter.NOOP_FILTER);
     }
 
     /**
@@ -58,12 +58,13 @@ public class RecursiveParserWrapperHandler extends AbstractRecursiveParserWrappe
      * @param maxEmbeddedResources number of embedded resources that will be parsed
      */
     public RecursiveParserWrapperHandler(ContentHandlerFactory contentHandlerFactory, int maxEmbeddedResources) {
-        this(contentHandlerFactory, maxEmbeddedResources, NoOpFilter.NOOP_FILTER);
+        this(contentHandlerFactory, maxEmbeddedResources, -1, NoOpFilter.NOOP_FILTER);
     }
 
-    public RecursiveParserWrapperHandler(ContentHandlerFactory contentHandlerFactory, int maxEmbeddedResources,
+    public RecursiveParserWrapperHandler(ContentHandlerFactory contentHandlerFactory,
+                                         int maxEmbeddedResources, int maxWriteLimit,
                                          MetadataFilter metadataFilter) {
-        super(contentHandlerFactory, maxEmbeddedResources);
+        super(contentHandlerFactory, maxEmbeddedResources, maxWriteLimit);
         this.metadataFilter = metadataFilter;
     }
 

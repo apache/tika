@@ -626,6 +626,19 @@ public class TikaResourceTest extends CXFTestBase {
         assertEquals(400, response.getStatus());
     }
 
+    @Test
+    public void testJsonWriteLimitEmbedded() throws Exception {
+        for (int i = 0; i < 8500; i += 500) {
+            Response response = WebClient.create(endPoint + TIKA_PATH + "/text").accept("application/json")
+                    .header("writeLimit",
+                            Integer.toString(i)).put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+            Metadata metadata = JsonMetadata.fromJson(
+                    new InputStreamReader(((InputStream) response.getEntity()), StandardCharsets.UTF_8));
+            int len = metadata.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT).length();
+            assertEquals(i, len);
+        }
+    }
+
     private MultipartBody testPDFLowerCaseOCRConfigPOSTBody() throws FileNotFoundException, URISyntaxException {
         ContentDisposition cd = new ContentDisposition(
                 "form-data; name=\"input\"; filename=\"testOCR.pdf\"");

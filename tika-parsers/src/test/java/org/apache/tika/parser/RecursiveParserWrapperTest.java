@@ -381,7 +381,7 @@ public class RecursiveParserWrapperTest extends TikaTest {
                         -1);
 
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(contentHandlerFactory,
-                -1, tikaConfig.getMetadataFilter());
+                -1, -1, tikaConfig.getMetadataFilter());
         try (InputStream is = getClass().getResourceAsStream(path)) {
             wrapper.parse(is, handler, metadata, context);
         }

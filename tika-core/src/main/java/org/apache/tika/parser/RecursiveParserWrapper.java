@@ -227,17 +227,15 @@ public class RecursiveParserWrapper extends ParserDecorator {
         long started = System.currentTimeMillis();
         parserState.recursiveParserWrapperHandler.startDocument();
         TemporaryResources tmp = new TemporaryResources();
-        int writeLimit = -1;
-        //TODO -- rely on a new interface WriteLimiting...?
-        //It'd be better not to tie this to a specific class
-        if (recursiveParserWrapperHandler instanceof BasicContentHandlerFactory) {
-            writeLimit =
-                    ((BasicContentHandlerFactory)recursiveParserWrapperHandler).getWriteLimit();
+        int totalWriteLimit = -1;
+        if (recursiveParserWrapperHandler instanceof AbstractRecursiveParserWrapperHandler) {
+            totalWriteLimit =
+                    ((AbstractRecursiveParserWrapperHandler)recursiveParserWrapperHandler).getTotalWriteLimit();
         }
         try {
             TikaInputStream tis = TikaInputStream.get(stream, tmp);
             RecursivelySecureContentHandler secureContentHandler =
-                        new RecursivelySecureContentHandler(localHandler, tis, writeLimit);
+                        new RecursivelySecureContentHandler(localHandler, tis, totalWriteLimit);
             context.set(RecursivelySecureContentHandler.class, secureContentHandler);
             getWrappedParser().parse(tis, secureContentHandler, metadata, context);
         } catch (SAXException e) {
@@ -493,6 +491,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
             }
             int availableLength = Math.min(totalWriteLimit - totalChars, length);
             super.characters(ch, start, availableLength);
+            totalChars += availableLength;
             if (availableLength < length) {
                 throw new WriteLimitReached();
             }
@@ -506,9 +505,11 @@ public class RecursiveParserWrapper extends ParserDecorator {
             }
             int availableLength = Math.min(totalWriteLimit - totalChars, length);
             super.ignorableWhitespace(ch, start, availableLength);
+
             if (availableLength < length) {
                 throw new WriteLimitReached();
             }
+            totalChars += availableLength;
         }
     }
 
