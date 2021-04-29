@@ -66,6 +66,7 @@ import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
@@ -574,8 +575,13 @@ public class TikaResource {
         try {
             parse(parser, LOG, info.getPath(), inputStream, contentHandler, metadata, context);
         } catch (TikaServerParseException e) {
+            Throwable cause = e.getCause();
+            boolean writeLimitReached = false;
+            if (WriteLimitReachedException.isWriteLimitReached(cause)) {
+                metadata.set(TikaCoreProperties.WRITE_LIMIT_REACHED, "true");
+                writeLimitReached = true;
+            }
             if (tikaServerConfig.isReturnStackTrace()) {
-                Throwable cause = e.getCause();
                 if (cause != null) {
                     metadata.add(TikaCoreProperties.CONTAINER_EXCEPTION,
                             ExceptionUtils.getStackTrace(cause));
@@ -583,7 +589,7 @@ public class TikaResource {
                     metadata.add(TikaCoreProperties.CONTAINER_EXCEPTION,
                             ExceptionUtils.getStackTrace(e));
                 }
-            } else {
+            } else if (! writeLimitReached) {
                 throw e;
             }
         } catch (OutOfMemoryError e) {
