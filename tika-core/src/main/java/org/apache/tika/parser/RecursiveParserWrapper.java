@@ -493,7 +493,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
             super.characters(ch, start, availableLength);
             totalChars += availableLength;
             if (availableLength < length) {
-                throw new WriteLimitReached();
+                throw new WriteLimitReached(totalWriteLimit);
             }
         }
 
@@ -507,13 +507,24 @@ public class RecursiveParserWrapper extends ParserDecorator {
             super.ignorableWhitespace(ch, start, availableLength);
 
             if (availableLength < length) {
-                throw new WriteLimitReached();
+                throw new WriteLimitReached(totalWriteLimit);
             }
             totalChars += availableLength;
         }
     }
 
     private static class WriteLimitReached extends SAXException {
-
+        final int writeLimit;
+        WriteLimitReached(int writeLimit) {
+            this.writeLimit = writeLimit;
+        }
+        @Override
+        public String getMessage() {
+            return "Your document contained more than " + writeLimit
+                    + " characters, and so your requested limit has been"
+                    + " reached. To receive the full text of the document,"
+                    + " increase your limit. (Text up to the limit is"
+                    + " however available).";
+        }
     }
 }

@@ -37,6 +37,8 @@ import org.apache.pdfbox.util.Matrix;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.WriteOutContentHandler;
+
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -114,8 +116,19 @@ class PDF2XHTML extends AbstractPDF2XHTML {
             }
         }
         if (pdf2XHTML.exceptions.size() > 0) {
+            tryWriteLimitReached(pdf2XHTML.exceptions);
             //throw the first
             throw new TikaException("Unable to extract PDF content", pdf2XHTML.exceptions.get(0));
+        }
+    }
+
+    private static void tryWriteLimitReached(List<IOException> exceptions) {
+        WriteOutContentHandler tmp = new WriteOutContentHandler();
+        for (IOException e : exceptions) {
+            if (tmp.isWriteLimitReached(e)) {
+
+            }
+
         }
     }
 

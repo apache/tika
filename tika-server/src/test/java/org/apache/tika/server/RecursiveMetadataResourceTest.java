@@ -406,4 +406,19 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
                 metadata.get(AbstractRecursiveParserWrapperHandler.CONTAINER_EXCEPTION));
 
     }
+
+    @Test
+    public void testWriteLimitInPDF() throws Exception {
+        int writeLimit = 10;
+        Response response = WebClient.create(endPoint + META_PATH).accept("application/json")
+                .header("writeLimit", Integer.toString(writeLimit))
+                .put(ClassLoader.getSystemResourceAsStream("testPDFTwoTextBoxes.pdf"));
+
+        assertEquals(200, response.getStatus());
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+        Metadata metadata = metadataList.get(0);
+        assertEquals("true",
+                metadata.get(AbstractRecursiveParserWrapperHandler.WRITE_LIMIT_REACHED));
+    }
 }

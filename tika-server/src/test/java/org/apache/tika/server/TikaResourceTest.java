@@ -17,6 +17,7 @@
 
 package org.apache.tika.server;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.cxf.helpers.HttpHeaderHelper.CONTENT_ENCODING;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -25,6 +26,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -694,9 +696,26 @@ public class TikaResourceTest extends CXFTestBase {
         assertTrue(metadata.get(AbstractRecursiveParserWrapperHandler.CONTAINER_EXCEPTION).startsWith(
                 "org.apache.tika.sax.WriteOutContentHandler$WriteLimitReachedException"
         ));
+        assertEquals("true",
+                metadata.get(AbstractRecursiveParserWrapperHandler.WRITE_LIMIT_REACHED));
     }
 
     @Test
+    public void testWriteLimitInPDF() throws Exception {
+        int writeLimit = 10;
+        Response response = WebClient.create(endPoint + TIKA_PATH).accept("application/json")
+                .header("writeLimit", Integer.toString(writeLimit))
+                .put(ClassLoader.getSystemResourceAsStream("testPDFTwoTextBoxes.pdf"));
+
+        assertEquals(200, response.getStatus());
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        Metadata metadata = JsonMetadata.fromJson(reader);
+        assertEquals("true",
+                metadata.get(AbstractRecursiveParserWrapperHandler.WRITE_LIMIT_REACHED));
+
+    }
+
+        @Test
     public void testJsonHandlerType() throws Exception {
         Response response = WebClient.create(endPoint + TIKA_PATH)
                 .accept("application/json")

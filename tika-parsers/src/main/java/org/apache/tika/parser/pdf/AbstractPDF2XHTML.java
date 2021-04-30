@@ -99,6 +99,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.sax.EmbeddedContentHandler;
@@ -425,10 +426,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
     void handleCatchableIOE(IOException e) throws IOException {
         if (config.getCatchIntermediateIOExceptions()) {
-            if (e.getCause() instanceof SAXException && e.getCause().getMessage() != null &&
-                    e.getCause().getMessage().contains("Your document contained more than")) {
-                //TODO -- is there a cleaner way of checking for:
-                // WriteOutContentHandler.WriteLimitReachedException?
+
+            if (isWriteLimitReached(e, 0)) {
                 throw e;
             }
 
@@ -443,6 +442,22 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
     }
 
+    boolean isWriteLimitReached(Throwable t, int depth) {
+        if (depth > MAX_RECURSION_DEPTH) {
+            return false;
+        }
+        if (t == null) {
+            return false;
+        }
+        if (t instanceof SAXException) {
+
+            String msg = t.getMessage();
+            if (msg != null && msg.contains("Your document contained more than")) {
+                return true;
+            }
+        }
+        return isWriteLimitReached(t.getCause(), depth + 1);
+    }
     void doOCROnCurrentPage() throws IOException, TikaException, SAXException {
         if (config.getOcrStrategy().equals(NO_OCR)) {
             return;
