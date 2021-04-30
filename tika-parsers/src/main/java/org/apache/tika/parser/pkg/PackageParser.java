@@ -47,6 +47,7 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
 
+import org.apache.tika.config.Field;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -232,6 +233,9 @@ public class PackageParser extends AbstractEncodingDetectorParser {
     static boolean isZipArchive(MediaType type) {
         return type.equals(ZIP) || type.equals(JAR);
     }
+
+    private boolean detectCharsetsInEntryNames = true;
+
 
     public PackageParser() {
         super();
@@ -423,7 +427,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
             throws SAXException, IOException, TikaException {
         String name = entry.getName();
         //Try to detect charset of archive entry in case of non-unicode filename is used
-        if (entry instanceof ZipArchiveEntry) {
+        if (detectCharsetsInEntryNames && entry instanceof ZipArchiveEntry) {
             Charset candidate =
                     getEncodingDetector().detect(new ByteArrayInputStream(((ZipArchiveEntry) entry).getRawName()),
                             parentMetadata);
@@ -531,5 +535,16 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         public void close() throws IOException {
             file.close();
         }
+    }
+
+    /**
+     * Whether or not to run the default charset detector against entry
+     * names in ZipFiles. The default is <code>true</code>.
+     *
+     * @param detectCharsetsInEntryNames
+     */
+    @Field
+    public void setDetectCharsetsInEntryNames(boolean detectCharsetsInEntryNames) {
+        this.detectCharsetsInEntryNames = detectCharsetsInEntryNames;
     }
 }
