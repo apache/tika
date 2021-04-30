@@ -33,7 +33,7 @@
   <url>https://tika.apache.org/</url>
 
   <modules>
-    <module>tika-langdetect-commons</module>
+    <module>tika-langdetect-test-commons</module>
     <module>tika-langdetect-tika</module>
     <module>tika-langdetect-lingo24</module>
     <module>tika-langdetect-optimaize</module>

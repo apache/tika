@@ -26,15 +26,13 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>tika-langdetect-commons</artifactId>
-
+  <artifactId>tika-langdetect-test-commons</artifactId>
 
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-core</artifactId>
       <version>${project.version}</version>
-      <scope>test</scope>
     </dependency>
   </dependencies>
   <build>
@@ -46,17 +44,10 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Automatic-Module-Name>org.apache.tika.langdetect.commons</Automatic-Module-Name>
+              <Automatic-Module-Name>org.apache.tika.langdetect.testcommons</Automatic-Module-Name>
             </manifestEntries>
           </archive>
         </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>test-jar</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
     </plugins>
   </build>
