@@ -39,11 +39,13 @@ import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.Test;
 
+import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.resource.RecursiveMetadataResource;
 import org.apache.tika.server.core.writer.MetadataListMessageBodyWriter;
@@ -362,6 +364,22 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         TikaTest.assertNotContained("We hold these truths",
                 metadataList.get(6).get(TikaCoreProperties.TIKA_CONTENT));
 
+    }
+
+    @Test
+    public void testWriteLimitInPDF() throws Exception {
+        int writeLimit = 10;
+        Response response = WebClient.create(endPoint + META_PATH).accept("application/json")
+                .header("writeLimit", Integer.toString(writeLimit))
+                .put(ClassLoader.getSystemResourceAsStream("test-documents/testPDFTwoTextBoxes" +
+                        ".pdf"));
+
+        assertEquals(200, response.getStatus());
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+        Metadata metadata = metadataList.get(0);
+        assertEquals("true",
+                metadata.get(TikaCoreProperties.WRITE_LIMIT_REACHED));
     }
 
 }

@@ -17,13 +17,16 @@
 
 package org.apache.tika.server.classic;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.cxf.helpers.HttpHeaderHelper.CONTENT_ENCODING;
+import static org.apache.tika.TikaTest.debug;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,6 +51,7 @@ import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadata;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.server.classic.config.PDFServerConfig;
 import org.apache.tika.server.classic.config.TesseractServerConfig;
 import org.apache.tika.server.core.CXFTestBase;
@@ -600,6 +604,22 @@ public class TikaResourceTest extends CXFTestBase {
                 "org.apache.tika.exception.WriteLimitReachedException"
         ));
         assertNotFound("embed4.txt", metadata.get(TikaCoreProperties.TIKA_CONTENT));
+
+    }
+
+    @Test
+    public void testWriteLimitInPDF() throws Exception {
+        int writeLimit = 10;
+        Response response = WebClient.create(endPoint + TIKA_PATH).accept("application/json")
+                .header("writeLimit", Integer.toString(writeLimit))
+                .put(ClassLoader.getSystemResourceAsStream(
+                        "test-documents/testPDFTwoTextBoxes.pdf"));
+
+        assertEquals(200, response.getStatus());
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        Metadata metadata = JsonMetadata.fromJson(reader);
+        assertEquals("true",
+                metadata.get(TikaCoreProperties.WRITE_LIMIT_REACHED));
 
     }
 }

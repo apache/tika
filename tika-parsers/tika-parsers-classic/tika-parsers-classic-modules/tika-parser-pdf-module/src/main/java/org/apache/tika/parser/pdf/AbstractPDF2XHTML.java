@@ -95,6 +95,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
@@ -426,13 +427,13 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     }
 
     void handleCatchableIOE(IOException e) throws IOException {
+
+        if (WriteLimitReachedException.isWriteLimitReached(e)) {
+            metadata.set(TikaCoreProperties.WRITE_LIMIT_REACHED, "true");
+            throw e;
+        }
+
         if (config.isCatchIntermediateIOExceptions()) {
-            if (e.getCause() instanceof SAXException && e.getCause().getMessage() != null &&
-                    e.getCause().getMessage().contains("Your document contained more than")) {
-                //TODO -- is there a cleaner way of checking for:
-                // WriteOutContentHandler.WriteLimitReachedException?
-                throw e;
-            }
 
             String msg = e.getMessage();
             if (msg == null) {
