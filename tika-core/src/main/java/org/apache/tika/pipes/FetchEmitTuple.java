@@ -17,7 +17,6 @@
 package org.apache.tika.pipes;
 
 import java.io.Serializable;
-import java.util.Objects;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.emitter.EmitKey;
@@ -122,5 +121,10 @@ public class FetchEmitTuple implements Serializable {
         return result;
     }
 
-
+    @Override
+    public String toString() {
+        return "FetchEmitTuple{" + "id='" + id + '\'' + ", fetchKey=" + fetchKey + ", emitKey=" +
+            emitKey + ", metadata=" + metadata + ", onParseException=" + onParseException +
+            ", handlerConfig=" + handlerConfig + '}';
+    }
 }

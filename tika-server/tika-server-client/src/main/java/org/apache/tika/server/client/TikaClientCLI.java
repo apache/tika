@@ -41,6 +41,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.fetchiterator.FetchIterator;
+import org.apache.tika.pipes.fetchiterator.FetchIteratorManager;
 
 public class TikaClientCLI {
 
@@ -65,7 +66,8 @@ public class TikaClientCLI {
         ExecutorService executorService = Executors.newFixedThreadPool(numThreads + 1);
         ExecutorCompletionService<Integer> completionService =
                 new ExecutorCompletionService<>(executorService);
-        final FetchIterator fetchIterator = config.getFetchIterator();
+        final FetchIterator fetchIterator =
+                FetchIteratorManager.build(tikaConfigPath).getFetchIterator();
         final ArrayBlockingQueue<FetchEmitTuple> queue =
                 new ArrayBlockingQueue<>(QUEUE_SIZE);
 

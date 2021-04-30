@@ -113,7 +113,7 @@ public class AsyncClient implements Closeable {
         //TODO clean this up, never return null
         if (status == AsyncServer.OOM) {
             LOG.warn(t.getId() + " oom");
-            return null;
+            return AsyncResult.OOM;
         } else if (status == AsyncServer.READY) {
         } else {
             throw new IOException("problem reading response from server " + status);

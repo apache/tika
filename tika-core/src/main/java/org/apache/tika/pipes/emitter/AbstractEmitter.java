@@ -19,7 +19,6 @@ package org.apache.tika.pipes.emitter;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.tika.config.Field;
 import org.apache.tika.metadata.Metadata;
 
 public abstract class AbstractEmitter implements Emitter {
@@ -44,7 +43,6 @@ public abstract class AbstractEmitter implements Emitter {
         return name;
     }
 
-    @Field
     public void setName(String name) {
         this.name = name;
     }

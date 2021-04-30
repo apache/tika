@@ -19,7 +19,7 @@
     <fetchers>
         <fetcher class="org.apache.tika.pipes.fetcher.http.HttpFetcher">
             <params>
-                <param name="name" type="string">http</param>
+                <name>http</name>
             </params>
         </fetcher>
     </fetchers>

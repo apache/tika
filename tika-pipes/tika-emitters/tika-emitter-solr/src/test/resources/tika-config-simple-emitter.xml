@@ -34,20 +34,20 @@
     <emitters>
         <emitter class="org.apache.tika.pipes.emitter.solr.SolrEmitter">
             <params>
-                <param name="name" type="string">solr1</param>
-                <param name="url" type="string">http://localhost:8983/solr/tika-test</param>
-                <param name="attachmentStrategy" type="string">concatenate-content</param>
-                <param name="contentField" type="string">content</param>
-                <param name="commitWithin" type="int">10</param>
+                <name>solr1</name>
+                <url>http://localhost:8983/solr/tika-test</url>
+                <attachmentStrategy>concatenate-content</attachmentStrategy>
+                <contentField>content</contentField>
+                <commitWithin>10</commitWithin>
             </params>
         </emitter>
         <emitter class="org.apache.tika.pipes.emitter.solr.SolrEmitter">
             <params>
-                <param name="name" type="string">solr2</param>
-                <param name="url" type="string">http://localhost:8983/solr/tika-test</param>
-                <param name="attachmentStrategy" type="string">parent-child</param>
-                <param name="contentField" type="string">content</param>
-                <param name="commitWithin" type="int">10</param>
+                <name>solr2</name>
+                <url>http://localhost:8983/solr/tika-test</url>
+                <attachmentStrategy>parent-child</attachmentStrategy>
+                <contentField>content</contentField>
+                <commitWithin>10</commitWithin>
             </params>
         </emitter>
     </emitters>

@@ -16,18 +16,18 @@
   limitations under the License.
 -->
 <properties>
-    <fetchIterators>
-        <fetchIterator class="org.apache.tika.pipes.fetchiterator.FileSystemFetchIterator">
-            <params>
-                <param name="fetcherName" type="string">fs1</param>
-                <param name="basePath" type="string">/my/base/path1</param>
-            </params>
-        </fetchIterator>
-        <fetchIterator class="org.apache.tika.pipes.fetchiterator.FileSystemFetchIterator">
-            <params>
-                <param name="fetcherName" type="string">fs2</param>
-                <param name="basePath" type="string">/my/base/path2</param>
-            </params>
-        </fetchIterator>
-    </fetchIterators>
+  <fetchIterators>
+    <fetchIterator class="org.apache.tika.pipes.fetchiterator.FileSystemFetchIterator">
+      <params>
+        <fetcherName>fs1</fetcherName>
+        <basePath>/my/base/path1</basePath>
+      </params>
+    </fetchIterator>
+    <fetchIterator class="org.apache.tika.pipes.fetchiterator.FileSystemFetchIterator">
+      <params>
+        <fetcherName>fs2</fetcherName>
+        <basePath>/my/base/path2</basePath>
+      </params>
+    </fetchIterator>
+  </fetchIterators>
 </properties>

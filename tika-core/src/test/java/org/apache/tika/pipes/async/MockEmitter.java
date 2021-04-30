@@ -23,28 +23,28 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.pipes.emitter.AbstractEmitter;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.EmitKey;
-import org.apache.tika.pipes.emitter.Emitter;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
 
-public class MockEmitter implements Emitter {
+public class MockEmitter extends AbstractEmitter {
+
+    static ArrayBlockingQueue<EmitData> EMIT_DATA = new ArrayBlockingQueue<>(10000);
 
     public MockEmitter() {
     }
 
-    static ArrayBlockingQueue<EmitData> EMIT_DATA = new ArrayBlockingQueue<>(10000);
-
-    @Override
-    public String getName() {
-        return "mock";
+    public static List<EmitData> getData() {
+        return new ArrayList<>(EMIT_DATA);
     }
 
     @Override
     public void emit(String emitKey, List<Metadata> metadataList)
             throws IOException, TikaEmitterException {
-        emit(Collections
-                .singletonList(new EmitData(new EmitKey(getName(), emitKey), metadataList)));
+        emit(
+                Collections.singletonList(new EmitData(new EmitKey(getName(), emitKey),
+                 metadataList)));
     }
 
     @Override
@@ -53,10 +53,6 @@ public class MockEmitter implements Emitter {
         for (EmitData d : emitData) {
             EMIT_DATA.offer(d);
         }
-    }
-
-    public static List<EmitData> getData() {
-        return new ArrayList<>(EMIT_DATA);
     }
 
 }

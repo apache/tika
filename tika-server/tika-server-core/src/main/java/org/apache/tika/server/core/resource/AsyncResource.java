@@ -58,11 +58,15 @@ public class AsyncResource {
     private static final int DEFAULT_FETCH_EMIT_QUEUE_SIZE = 10000;
     long maxQueuePauseMs = 60000;
     private final AsyncProcessor asyncProcessor;
+    private final FetcherManager fetcherManager;
+    private final EmitterManager emitterManager;
     private ArrayBlockingQueue<FetchEmitTuple> queue;
 
     public AsyncResource(java.nio.file.Path tikaConfigPath)
             throws TikaException, IOException, SAXException {
         this.asyncProcessor = new AsyncProcessor(tikaConfigPath);
+        this.fetcherManager = FetcherManager.load(tikaConfigPath);
+        this.emitterManager = EmitterManager.load(tikaConfigPath);
     }
 
     public ArrayBlockingQueue<FetchEmitTuple> getFetchEmitQueue(int queueSize) {
@@ -100,8 +104,6 @@ public class AsyncResource {
         //make sure that there are no problems with
         //the requested fetchers and emitters
         //throw early
-        FetcherManager fetcherManager = TikaResource.getConfig().getFetcherManager();
-        EmitterManager emitterManager = TikaResource.getConfig().getEmitterManager();
         for (FetchEmitTuple t : request.getTuples()) {
             if (!fetcherManager.getSupported().contains(t.getFetchKey().getFetcherName())) {
                 return badFetcher(t.getFetchKey());

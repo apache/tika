@@ -26,8 +26,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -156,31 +154,15 @@ public class TikaServerCli {
 
     private static List<PortIdPair> getPortIdPairs(TikaServerConfig tikaServerConfig) {
         List<PortIdPair> pairs = new ArrayList<>();
-        Matcher rangeMatcher = Pattern.compile("^(\\d+)-(\\d+)\\Z").matcher("");
-        String[] commaDelimited = tikaServerConfig.getPortString().split(",");
-        List<Integer> indivPorts = new ArrayList<>();
-        for (String val : commaDelimited) {
-            rangeMatcher.reset(val);
-            if (rangeMatcher.find()) {
-                int min = Math.min(Integer.parseInt(rangeMatcher.group(1)),
-                        Integer.parseInt(rangeMatcher.group(2)));
-                int max = Math.max(Integer.parseInt(rangeMatcher.group(1)),
-                        Integer.parseInt(rangeMatcher.group(2)));
-                for (int i = min; i <= max; i++) {
-                    indivPorts.add(i);
-                }
-            } else {
-                indivPorts.add(Integer.parseInt(val));
-            }
-        }
+        int[] ports = tikaServerConfig.getPorts();
         //if there's only one port, use only the idbase, otherwise append -$port
-        if (indivPorts.size() == 0) {
+        if (ports.length == 0) {
             throw new IllegalArgumentException(
-                    "Couldn't find any ports in: " + tikaServerConfig.getPortString());
-        } else if (indivPorts.size() == 1) {
-            pairs.add(new PortIdPair(indivPorts.get(0), tikaServerConfig.getIdBase()));
+                    "Couldn't find any ports in: " + tikaServerConfig.getPort());
+        } else if (ports.length == 1) {
+            pairs.add(new PortIdPair(ports[0], tikaServerConfig.getIdBase()));
         } else {
-            for (int p : indivPorts) {
+            for (int p : ports) {
                 pairs.add(new PortIdPair(p, tikaServerConfig.getIdBase() + "-" + p));
             }
         }

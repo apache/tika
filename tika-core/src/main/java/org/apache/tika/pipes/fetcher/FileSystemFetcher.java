@@ -98,10 +98,10 @@ public class FileSystemFetcher extends AbstractFetcher implements Initializable 
     public void checkInitialization(InitializableProblemHandler problemHandler)
             throws TikaConfigException {
         if (basePath == null || basePath.toString().trim().length() == 0) {
-            throw new IllegalArgumentException("'basePath' must be specified");
+            throw new TikaConfigException("'basePath' must be specified");
         }
         if (basePath.toAbsolutePath().toString().contains("\u0000")) {
-            throw new IllegalArgumentException(
+            throw new TikaConfigException(
                     "base path must not contain \u0000. " + "Seriously, what were you thinking?");
         }
     }

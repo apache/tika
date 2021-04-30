@@ -18,8 +18,6 @@ package org.apache.tika.server.core;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -27,22 +25,20 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.cli.CommandLine;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
+import org.apache.tika.config.ConfigBase;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.utils.ProcessUtils;
 import org.apache.tika.utils.StringUtils;
-import org.apache.tika.utils.XMLReaderUtils;
 
-public class TikaServerConfig {
+public class TikaServerConfig extends ConfigBase {
 
     public static final int DEFAULT_PORT = 9998;
     public static final String DEFAULT_HOST = "localhost";
@@ -103,15 +99,14 @@ public class TikaServerConfig {
     private String tempFilePrefix = "apache-tika-server-forked-tmp-"; //can be set for debugging
     private List<String> forkedJvmArgs = new ArrayList<>();
     private String idBase = UUID.randomUUID().toString();
-    private String portString = Integer.toString(DEFAULT_PORT);
-    private int port = DEFAULT_PORT;
+    private String port = Integer.toString(DEFAULT_PORT);
     private String host = DEFAULT_HOST;
     private int digestMarkLimit = DEFAULT_DIGEST_MARK_LIMIT;
     private String digest = "";
     //debug or info only
     private String logLevel = "";
     private Path configPath;
-    private List<String> endPoints = new ArrayList<>();
+    private List<String> endpoints = new ArrayList<>();
     //these should only be set in the forked process
     //and they are automatically set by the forking process
     private String forkedStatusFile;
@@ -136,20 +131,20 @@ public class TikaServerConfig {
             config = new TikaServerConfig();
         }
 
-        //overwrite with the commandline
+        //port, host, nofork and id can be overwritten on the commandline at runtime
         if (commandLine.hasOption("p")) {
-            int port = -1;
-            try {
-                config.setPort(Integer.parseInt(commandLine.getOptionValue("p")));
-            } catch (NumberFormatException e) {
-                //swallow
-            }
-            config.setPortString(commandLine.getOptionValue("p"));
+            config.setPort(commandLine.getOptionValue("p"));
             settings.add("port");
         }
+
         if (commandLine.hasOption("h")) {
             config.setHost(commandLine.getOptionValue("h"));
             settings.add("host");
+        }
+
+        if (commandLine.hasOption("noFork")) {
+            config.setNoFork(true);
+            settings.add("noFork");
         }
 
         if (commandLine.hasOption("i")) {
@@ -157,6 +152,7 @@ public class TikaServerConfig {
             settings.add("id");
         }
 
+        //this should only be set by the parent process
         if (commandLine.hasOption("numRestarts")) {
             config.setNumRestarts(Integer.parseInt(commandLine.getOptionValue("numRestarts")));
             settings.add("numRestarts");
@@ -165,11 +161,6 @@ public class TikaServerConfig {
         if (commandLine.hasOption("forkedStatusFile")) {
             config.setForkedStatusFile(commandLine.getOptionValue("forkedStatusFile"));
             settings.add("forkedStatusFile");
-        }
-
-        if (commandLine.hasOption("noFork")) {
-            config.setNoFork(true);
-            settings.add("noFork");
         }
         config.validateConsistency(settings);
         return config;
@@ -184,112 +175,14 @@ public class TikaServerConfig {
 
     static TikaServerConfig load(InputStream is, CommandLine commandLine, Set<String> settings)
             throws IOException, TikaException {
-        Node properties = null;
-        try {
-            properties = XMLReaderUtils.buildDOM(is).getDocumentElement();
-        } catch (SAXException e) {
-            throw new IOException(e);
-        }
-        if (!properties.getLocalName().equals("properties")) {
-            throw new TikaConfigException("expect settings as root node");
-        }
-        NodeList children = properties.getChildNodes();
-        TikaServerConfig config = new TikaServerConfig();
-
-        for (int i = 0; i < children.getLength(); i++) {
-            Node child = children.item(i);
-            if ("server".equals(child.getLocalName())) {
-                loadServerConfig(child, config, settings);
-            }
-        }
+        TikaServerConfig tikaServerConfig = new TikaServerConfig();
+        Set<String> configSettings = tikaServerConfig.configure("server", is);
+        settings.addAll(configSettings);
         //override a few things in config file
         if (commandLine.hasOption("noFork")) {
-            config.setNoFork(true);
+            tikaServerConfig.setNoFork(true);
         }
-        return config;
-    }
-
-    private static Set<String> loadServerConfig(Node server, TikaServerConfig config,
-                                                Set<String> settings) throws TikaConfigException {
-        NodeList params = server.getChildNodes();
-        for (int i = 0; i < params.getLength(); i++) {
-            Node param = params.item(i);
-            String localName = param.getLocalName();
-            String txt = param.getTextContent();
-            if ("configPath".equals(localName)) {
-                throw new TikaConfigException(
-                        "can't currently " + "set config path within a config file");
-            }
-            if ("endpoints".equals(localName)) {
-                config.addEndPoints(loadStringList("endpoint", param.getChildNodes()));
-            } else if ("forkedJVMArgs".equals(localName)) {
-                config.addJVMArgs(loadStringList("arg", param.getChildNodes()));
-            } else if (localName != null && txt != null) {
-                if ("port".equals(localName)) {
-                    config.setPortString(txt);
-                } else {
-                    tryToSet(config, localName, txt);
-                }
-            }
-            if (localName != null && txt != null) {
-                settings.add(localName);
-            }
-        }
-        return settings;
-    }
-
-    private static void tryToSet(TikaServerConfig config, String name, String value)
-            throws TikaConfigException {
-        String setter = "set" + name.substring(0, 1).toUpperCase(Locale.US) + name.substring(1);
-        Class[] types = new Class[]{String.class, boolean.class, int.class, long.class};
-        for (Class t : types) {
-            try {
-                Method m = TikaServerConfig.class.getMethod(setter, t);
-                if (t == int.class) {
-                    try {
-                        m.invoke(config, Integer.parseInt(value));
-                        return;
-                    } catch (IllegalAccessException | InvocationTargetException e) {
-                        throw new TikaConfigException("bad parameter " + setter, e);
-                    }
-                } else if (t == long.class) {
-                    try {
-                        m.invoke(config, Long.parseLong(value));
-                        return;
-                    } catch (IllegalAccessException | InvocationTargetException e) {
-                        throw new TikaConfigException("bad parameter " + setter, e);
-                    }
-                } else if (t == boolean.class) {
-                    try {
-                        m.invoke(config, Boolean.parseBoolean(value));
-                        return;
-                    } catch (IllegalAccessException | InvocationTargetException e) {
-                        throw new TikaConfigException("bad parameter " + setter, e);
-                    }
-                } else {
-                    try {
-                        m.invoke(config, value);
-                        return;
-                    } catch (IllegalAccessException | InvocationTargetException e) {
-                        throw new TikaConfigException("bad parameter " + setter, e);
-                    }
-                }
-            } catch (NoSuchMethodException e) {
-                //swallow
-            }
-        }
-        throw new TikaConfigException("Couldn't find setter: " + setter);
-    }
-
-    private static List<String> loadStringList(String itemName, NodeList nodelist) {
-        List<String> list = new ArrayList<>();
-        for (int i = 0; i < nodelist.getLength(); i++) {
-            Node n = nodelist.item(i);
-            if (itemName.equals(n.getLocalName())) {
-                list.add(n.getTextContent());
-            }
-        }
-        return list;
+        return tikaServerConfig;
     }
 
     public boolean isNoFork() {
@@ -300,19 +193,11 @@ public class TikaServerConfig {
         this.noFork = noFork;
     }
 
-    public String getPortString() {
-        return portString;
-    }
-
-    private void setPortString(String portString) {
-        this.portString = portString;
-    }
-
-    public int getPort() {
+    public String getPort() {
         return port;
     }
 
-    public void setPort(int port) {
+    public void setPort(String port) {
         this.port = port;
     }
 
@@ -369,6 +254,16 @@ public class TikaServerConfig {
         this.maxforkedStartupMillis = maxForkedStartupMillis;
     }
 
+    public List<String> getForkedProcessArgs(String portString, String id) {
+        int[] ports = getPorts(portString);
+        if (ports.length > 1 || ports.length == 0) {
+            throw new IllegalArgumentException(
+                    "must specify one and only one port here:" + portString);
+        }
+        int port = ports[0];
+        return getForkedProcessArgs(port, id);
+    }
+
     public List<String> getForkedProcessArgs(int port, String id) {
         //these are the arguments for the forked process
         List<String> args = new ArrayList<>();
@@ -403,6 +298,10 @@ public class TikaServerConfig {
         return new ArrayList<>(forkedJvmArgs);
     }
 
+    public void setForkedJvmArgs(List<String> forkedJvmArgs) {
+        this.forkedJvmArgs = new ArrayList<>(forkedJvmArgs);
+    }
+
     public String getTempFilePrefix() {
         return tempFilePrefix;
     }
@@ -419,12 +318,9 @@ public class TikaServerConfig {
         if (host == null) {
             throw new TikaConfigException("Must specify 'host'");
         }
-        if (!StringUtils.isBlank(portString)) {
-            try {
-                setPort(Integer.parseInt(portString));
-            } catch (NumberFormatException e) {
-                //swallow
-            }
+
+        if (!StringUtils.isBlank(port)) {
+            setPort(port);
         }
 
         if (isNoFork()) {
@@ -540,8 +436,12 @@ public class TikaServerConfig {
         this.returnStackTrace = returnStackTrace;
     }
 
-    public List<String> getEndPoints() {
-        return endPoints;
+    public List<String> getEndpoints() {
+        return endpoints;
+    }
+
+    public void setEndpoints(List<String> endpoints) {
+        this.endpoints = new ArrayList<>(endpoints);
     }
 
     public String getId() {
@@ -554,7 +454,7 @@ public class TikaServerConfig {
     }
 
     private void addEndPoints(List<String> endPoints) {
-        this.endPoints.addAll(endPoints);
+        this.endpoints.addAll(endPoints);
     }
 
     private void addJVMArgs(List<String> args) {
@@ -586,18 +486,30 @@ public class TikaServerConfig {
         this.maxforkedStartupMillis = maxforkedStartupMillis;
     }
 
-    @Override
-    public String toString() {
-        return "TikaServerConfig{" + "maxRestarts=" + maxRestarts + ", maxFiles=" + maxFiles +
-                ", taskTimeoutMillis=" + taskTimeoutMillis + ", taskPulseMillis=" +
-                taskPulseMillis + ", maxforkedStartupMillis=" + maxforkedStartupMillis +
-                ", enableUnsecureFeatures=" + enableUnsecureFeatures + ", cors='" + cors + '\'' +
-                ", returnStackTrace=" + returnStackTrace + ", noFork=" + noFork +
-                ", tempFilePrefix='" + tempFilePrefix + '\'' + ", forkedJvmArgs=" + forkedJvmArgs +
-                ", idBase='" + idBase + '\'' + ", portString='" + portString + '\'' + ", port=" +
-                port + ", host='" + host + '\'' + ", digestMarkLimit=" + digestMarkLimit +
-                ", digest='" + digest + '\'' + ", logLevel='" + logLevel + '\'' + ", configPath=" +
-                configPath + ", endPoints=" + endPoints + ", forkedStatusFile='" +
-                forkedStatusFile + '\'' + ", numRestarts=" + numRestarts + '}';
+    public int[] getPorts() {
+        return getPorts(port);
     }
+
+    private int[] getPorts(String portString) {
+        //throws NumberFormatException
+        Matcher rangeMatcher = Pattern.compile("^(\\d+)-(\\d+)\\Z").matcher("");
+        String[] commaDelimited = portString.split(",");
+        List<Integer> indivPorts = new ArrayList<>();
+        for (String val : commaDelimited) {
+            rangeMatcher.reset(val);
+            if (rangeMatcher.find()) {
+                int min = Math.min(Integer.parseInt(rangeMatcher.group(1)),
+                        Integer.parseInt(rangeMatcher.group(2)));
+                int max = Math.max(Integer.parseInt(rangeMatcher.group(1)),
+                        Integer.parseInt(rangeMatcher.group(2)));
+                for (int i = min; i <= max; i++) {
+                    indivPorts.add(i);
+                }
+            } else {
+                indivPorts.add(Integer.parseInt(val));
+            }
+        }
+        return indivPorts.stream().mapToInt(Integer::intValue).toArray();
+    }
+
 }

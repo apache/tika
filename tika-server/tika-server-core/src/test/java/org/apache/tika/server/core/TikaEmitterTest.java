@@ -53,7 +53,9 @@ import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
+import org.apache.tika.pipes.emitter.EmitterManager;
 import org.apache.tika.pipes.fetcher.FetchKey;
+import org.apache.tika.pipes.fetcher.FetcherManager;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.server.core.resource.EmitterResource;
 import org.apache.tika.server.core.writer.JSONObjWriter;
@@ -70,6 +72,8 @@ public class TikaEmitterTest extends CXFTestBase {
     private static Path TMP_OUTPUT_DIR;
     private static Path TMP_OUTPUT_FILE;
     private static String TIKA_CONFIG_XML;
+    private static FetcherManager FETCHER_MANAGER;
+    private static EmitterManager EMITTER_MANAGER;
     private static String HELLO_WORLD = "hello_world.xml";
     private static String HELLO_WORLD_JSON = "hello_world.xml.json";
 
@@ -93,14 +97,19 @@ public class TikaEmitterTest extends CXFTestBase {
         TIKA_CONFIG_XML =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" +
                         "<fetcher class=\"org.apache.tika.pipes.fetcher.FileSystemFetcher\">" +
-                        "<params>" + "<param name=\"name\" type=\"string\">fsf</param>" +
-                        "<param name=\"basePath\" type=\"string\">" + inputDir.toAbsolutePath() +
-                        "</param>" + "</params>" + "</fetcher>" + "</fetchers>" + "<emitters>" +
+                        "<params>" + "<name>fsf</name>" +
+                        "<basePath>" + inputDir.toAbsolutePath() +
+                        "</basePath>" + "</params>" + "</fetcher>" + "</fetchers>" + "<emitters>" +
                         "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" +
-                        "<params>" + "<param name=\"name\" type=\"string\">fse</param>" +
-                        "<param name=\"basePath\" type=\"string\">" +
-                        TMP_OUTPUT_DIR.toAbsolutePath() + "</param>" + "</params>" + "</emitter>" +
+                        "<params>" + "<name>fse</name>" +
+                        "<basePath>" +
+                        TMP_OUTPUT_DIR.toAbsolutePath() + "</basePath>" + "</params>" +
+                        "</emitter>" +
                         "</emitters>" + "</properties>";
+        Path tmp = Files.createTempFile("tika-emitter-", ".xml");
+        Files.write(tmp, TIKA_CONFIG_XML.getBytes(StandardCharsets.UTF_8));
+        FETCHER_MANAGER = FetcherManager.load(tmp);
+        EMITTER_MANAGER = EmitterManager.load(tmp);
     }
 
     @AfterClass
@@ -119,7 +128,7 @@ public class TikaEmitterTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         List<ResourceProvider> rCoreProviders = new ArrayList<ResourceProvider>();
-        rCoreProviders.add(new SingletonResourceProvider(new EmitterResource()));
+        rCoreProviders.add(new SingletonResourceProvider(new EmitterResource(FETCHER_MANAGER, EMITTER_MANAGER)));
         sf.setResourceProviders(rCoreProviders);
     }
 
@@ -138,7 +147,7 @@ public class TikaEmitterTest extends CXFTestBase {
 
     @Override
     protected InputStreamFactory getInputStreamFactory(TikaConfig tikaConfig) {
-        return new FetcherStreamFactory(tikaConfig.getFetcherManager());
+        return new FetcherStreamFactory(FETCHER_MANAGER);
     }
 
     @Test

@@ -16,16 +16,16 @@
   limitations under the License.
 -->
 <properties>
-    <emitters>
-        <emitter class="org.apache.tika.pipes.emitter.MockEmitter">
-            <params>
-                <param name="name" type="string">em1</param>
-            </params>
-        </emitter>
-        <emitter class="org.apache.tika.pipes.emitter.MockEmitter">
-            <params>
-                <param name="name" type="string">em2</param>
-            </params>
-        </emitter>
-    </emitters>
+  <emitters>
+    <emitter class="org.apache.tika.pipes.async.MockEmitter">
+      <params>
+        <name>em1</name>
+      </params>
+    </emitter>
+    <emitter class="org.apache.tika.pipes.async.MockEmitter">
+      <params>
+        <name>em2</name>
+      </params>
+    </emitter>
+  </emitters>
 </properties>

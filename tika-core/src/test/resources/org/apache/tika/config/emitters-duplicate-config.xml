@@ -19,12 +19,12 @@
     <emitters>
         <emitter class="org.apache.tika.pipes.emitter.MockEmitter">
             <params>
-                <param name="name" type="string">em1</param>
+                <name>em1</name>
             </params>
         </emitter>
         <emitter class="org.apache.tika.pipes.emitter.MockEmitter">
             <params>
-                <param name="name" type="string">em1</param>
+                <name>em1</name>
             </params>
         </emitter>
     </emitters>

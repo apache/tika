@@ -44,6 +44,7 @@ import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.pipes.fetcher.Fetcher;
+import org.apache.tika.pipes.fetcher.FetcherManager;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.utils.StringUtils;
@@ -76,6 +77,7 @@ public class AsyncServer implements Runnable {
     private final long serverWaitTimeoutMillis;
     private Parser parser;
     private TikaConfig tikaConfig;
+    private FetcherManager fetcherManager;
     private volatile boolean parsing;
     private volatile long since;
 
@@ -102,7 +104,7 @@ public class AsyncServer implements Runnable {
 
         AsyncServer server =
                 new AsyncServer(tikaConfig, System.in, System.out, serverParseTimeoutMillis,
-                        serverWaitTimeoutMillis);
+                serverWaitTimeoutMillis);
         System.setIn(new ByteArrayInputStream(new byte[0]));
         System.setOut(System.err);
 
@@ -119,11 +121,11 @@ public class AsyncServer implements Runnable {
                 synchronized (lock) {
                     long elapsed = System.currentTimeMillis() - since;
                     if (parsing && elapsed > serverParseTimeoutMillis) {
-                        //LOG.error("timeout");
+                        err("server timeout");
                         System.exit(1);
                     } else if (!parsing && serverWaitTimeoutMillis > 0 &&
                             elapsed > serverWaitTimeoutMillis) {
-                        //LOG.info("closing down from inactivity");
+                        err("closing down from inactivity");
                         System.exit(0);
                     }
                 }
@@ -132,6 +134,16 @@ public class AsyncServer implements Runnable {
         } catch (InterruptedException e) {
             //swallow
         }
+    }
+
+    private void err(String msg) {
+        System.err.println(msg);
+        System.err.flush();
+    }
+
+    private void err(Throwable t) {
+        t.printStackTrace();
+        System.err.flush();
     }
 
     public void processRequests() {
@@ -186,7 +198,7 @@ public class AsyncServer implements Runnable {
             output.write(bytes);
             output.flush();
         } catch (IOException e) {
-            e.printStackTrace();
+            err(e);
             //LOG.error("problem writing emit data", e);
             exit(1);
         }
@@ -206,8 +218,9 @@ public class AsyncServer implements Runnable {
             List<Metadata> metadataList = null;
             Fetcher fetcher = null;
             try {
-                fetcher = tikaConfig.getFetcherManager().getFetcher(fetcherName);
+                fetcher = fetcherManager.getFetcher(fetcherName);
             } catch (TikaException | IOException e) {
+                err(e);
                 //LOG.error("can't get fetcher", e);
                 throw new FetchException(e);
             }
@@ -217,6 +230,7 @@ public class AsyncServer implements Runnable {
             } catch (SecurityException e) {
                 throw e;
             } catch (TikaException | IOException e) {
+                err(e);
                 //LOG.error("problem reading from fetcher", e);
                 throw new FetchException(e);
             } catch (OutOfMemoryError e) {
@@ -246,6 +260,7 @@ public class AsyncServer implements Runnable {
         } catch (IOException e) {
             //swallow at this point
         }
+        err(oom);
         exit(1);
     }
 
@@ -255,23 +270,27 @@ public class AsyncServer implements Runnable {
         BasicContentHandlerFactory.HANDLER_TYPE type = BasicContentHandlerFactory.HANDLER_TYPE.TEXT;
 
 
-        RecursiveParserWrapperHandler handler =
-                new RecursiveParserWrapperHandler(new BasicContentHandlerFactory(type,
-                        fetchEmitTuple.getHandlerConfig().getWriteLimit()),
-                        fetchEmitTuple.getHandlerConfig().getMaxEmbeddedResources(),
-                        tikaConfig.getMetadataFilter());
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
+                new BasicContentHandlerFactory(type,
+                    fetchEmitTuple.getHandlerConfig().getWriteLimit()),
+                fetchEmitTuple.getHandlerConfig().getMaxEmbeddedResources(),
+                tikaConfig.getMetadataFilter());
         ParseContext parseContext = new ParseContext();
         FetchKey fetchKey = fetchEmitTuple.getFetchKey();
         try {
             parser.parse(stream, handler, metadata, parseContext);
         } catch (SAXException e) {
+            err(e);
             //LOG.warn("problem:" + fetchKey.getFetchKey(), e);
         } catch (EncryptedDocumentException e) {
+            err(e);
             //LOG.warn("encrypted:" + fetchKey.getFetchKey(), e);
         } catch (SecurityException e) {
+            err(e);
             //LOG.warn("security exception: " + fetchKey.getFetchKey());
             throw e;
         } catch (Exception e) {
+            err(e);
             //LOG.warn("exception: " + fetchKey.getFetchKey());
         } catch (OutOfMemoryError e) {
             //TODO, maybe return file type gathered so far and then crash?
@@ -302,18 +321,16 @@ public class AsyncServer implements Runnable {
             int length = input.readInt();
             byte[] bytes = new byte[length];
             input.readFully(bytes);
-            try (ObjectInputStream objectInputStream =
-                    new ObjectInputStream(new ByteArrayInputStream(bytes))) {
+            try (ObjectInputStream objectInputStream = new ObjectInputStream(
+                    new ByteArrayInputStream(bytes))) {
                 return (FetchEmitTuple) objectInputStream.readObject();
             }
         } catch (IOException e) {
-            e.printStackTrace();
-            System.err.flush();
+            err(e);
             //LOG.error("problem reading tuple", e);
             System.exit(1);
         } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-            System.err.flush();
+            err(e);
             //LOG.error("can't find class?!", e);
             System.exit(1);
         }
@@ -324,6 +341,7 @@ public class AsyncServer implements Runnable {
     private void initializeParser() throws TikaException, IOException, SAXException {
         //TODO allowed named configurations in tika config
         this.tikaConfig = new TikaConfig(tikaConfigPath);
+        this.fetcherManager = FetcherManager.load(tikaConfigPath);
         Parser autoDetectParser = new AutoDetectParser(this.tikaConfig);
         this.parser = new RecursiveParserWrapper(autoDetectParser);
 

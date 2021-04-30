@@ -16,16 +16,18 @@
   limitations under the License.
 -->
 <properties>
-    <server>
-        <taskTimeoutMillis>120000</taskTimeoutMillis>
-        <port>9999</port>
-        <maxFiles>1000</maxFiles>
-        <forkedJVMArgs>
-            <arg>-Xmx512m</arg>
-        </forkedJVMArgs>
-        <endpoints>
-            <endpoint>rmeta</endpoint>
-            <endpoint>status</endpoint>
-        </endpoints>
-    </server>
+  <server>
+    <params>
+      <taskTimeoutMillis>120000</taskTimeoutMillis>
+      <port>9999</port>
+      <maxFiles>1000</maxFiles>
+      <forkedJvmArgs>
+        <arg>-Xmx512m</arg>
+      </forkedJvmArgs>
+      <endpoints>
+        <endpoint>rmeta</endpoint>
+        <endpoint>status</endpoint>
+      </endpoints>
+    </params>
+  </server>
 </properties>

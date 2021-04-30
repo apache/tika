@@ -81,21 +81,20 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
         }
         TIKA_CONFIG = TMP_DIR.resolve("tika-config.xml");
         TIKA_CONFIG_TIMEOUT = TMP_DIR.resolve("tika-config-timeout.xml");
-
+        //TODO -- clean this up so that port is sufficient and we don't need portString
         String xml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" +
                 "<fetcher class=\"org.apache.tika.pipes.fetcher.FileSystemFetcher\">" + "<params>" +
-                "<param name=\"name\" type=\"string\">" + FETCHER_NAME + "</param>" +
-                "<param name=\"basePath\" type=\"string\">" + inputDir.toAbsolutePath() +
-                "</param>" + "</params>" + "</fetcher>" + "</fetchers>" + "<emitters>" +
+                "<name>" + FETCHER_NAME + "</name>" +
+                "<basePath>" + inputDir.toAbsolutePath() +
+                "</basePath>" + "</params>" + "</fetcher>" + "</fetchers>" + "<emitters>" +
                 "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" +
-                "<params>" + "<param name=\"name\" type=\"string\">" + EMITTER_NAME + "</param>" +
-
-                "<param name=\"basePath\" type=\"string\">" + TMP_OUTPUT_DIR.toAbsolutePath() +
-                "</param>" + "</params>" + "</emitter>" + "</emitters>" + "<server>" +
+                "<params>" + "<name>" + EMITTER_NAME + "</name>" +
+                "<basePath>" + TMP_OUTPUT_DIR.toAbsolutePath() +
+                "</basePath>" + "</params>" + "</emitter>" + "</emitters>" + "<server><params>" +
                 "<enableUnsecureFeatures>true</enableUnsecureFeatures>" + "<port>9999</port>" +
                 "<endpoints>" + "<endpoint>emit</endpoint>" + "<endpoint>status</endpoint>" +
                 "</endpoints>";
-        String xml2 = "</server>" + "</properties>";
+        String xml2 = "</params></server>" + "</properties>";
 
         String tikaConfigXML = xml1 + xml2;
 

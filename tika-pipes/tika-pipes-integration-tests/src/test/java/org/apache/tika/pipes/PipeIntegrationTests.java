@@ -41,13 +41,15 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.emitter.Emitter;
+import org.apache.tika.pipes.emitter.EmitterManager;
 import org.apache.tika.pipes.emitter.s3.S3Emitter;
 import org.apache.tika.pipes.fetcher.Fetcher;
+import org.apache.tika.pipes.fetcher.FetcherManager;
 import org.apache.tika.pipes.fetchiterator.FetchIterator;
+import org.apache.tika.pipes.fetchiterator.FetchIteratorManager;
 
 @Ignore("turn these into actual tests")
 public class PipeIntegrationTests {
@@ -86,17 +88,17 @@ public class PipeIntegrationTests {
 
     @Test
     public void testS3ToFS() throws Exception {
-        TikaConfig tikaConfig = getConfig("tika-config-s3ToFs.xml");
-        FetchIterator it = tikaConfig.getFetchIterator();
+        Fetcher fetcher = getFetcher("tika-config-s3ToFs.xml", "s3f");
+        FetchIterator fetchIterator = getFetchIterator("tika-config-s3ToFs.xml");
+
         int numConsumers = 1;
         ExecutorService es = Executors.newFixedThreadPool(numConsumers + 1);
         ExecutorCompletionService<Integer> completionService = new ExecutorCompletionService<>(es);
         ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(1000);
         for (int i = 0; i < numConsumers; i++) {
-            completionService.submit(new FSFetcherEmitter(queue,
-                    tikaConfig.getFetcherManager().getFetcher("s3"), null));
+            completionService.submit(new FSFetcherEmitter(queue, fetcher, null));
         }
-        for (FetchEmitTuple t : it) {
+        for (FetchEmitTuple t : fetchIterator) {
             queue.offer(t);
         }
         for (int i = 0; i < numConsumers; i++) {
@@ -115,18 +117,17 @@ public class PipeIntegrationTests {
 
     @Test
     public void testS3ToS3() throws Exception {
-        TikaConfig tikaConfig = getConfig("tika-config-s3Tos3.xml");
+        Fetcher fetcher = getFetcher("tika-config-s3Tos3.xml", "s3f");
+        Emitter emitter = getEmitter("tika-config-s3Tos3.xml", "s3e");
+        FetchIterator fetchIterator = getFetchIterator("tika-config-s3Tos3.xml");
         int numConsumers = 20;
         ExecutorService es = Executors.newFixedThreadPool(numConsumers + 1);
         ExecutorCompletionService<Integer> completionService = new ExecutorCompletionService<>(es);
         ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(1000);
         for (int i = 0; i < numConsumers; i++) {
-            completionService.submit(new S3FetcherEmitter(queue,
-                    tikaConfig.getFetcherManager().getFetcher("s3f"),
-                    (S3Emitter) tikaConfig.getEmitterManager().getEmitter("s3e")));
+            completionService.submit(new S3FetcherEmitter(queue, fetcher, (S3Emitter) emitter));
         }
-        FetchIterator it = tikaConfig.getFetchIterator();
-        for (FetchEmitTuple t : it) {
+        for (FetchEmitTuple t : fetchIterator) {
             queue.offer(t);
         }
         for (int i = 0; i < numConsumers; i++) {
@@ -143,10 +144,23 @@ public class PipeIntegrationTests {
         }
     }
 
-    private TikaConfig getConfig(String fileName) throws Exception {
-        try (InputStream is = PipeIntegrationTests.class.getResourceAsStream("/" + fileName)) {
-            return new TikaConfig(is);
-        }
+    private Fetcher getFetcher(String fileName, String fetcherName) throws Exception {
+        FetcherManager manager = FetcherManager.load(getPath(fileName));
+        return manager.getFetcher(fetcherName);
+    }
+
+    private Emitter getEmitter(String fileName, String emitterName) throws Exception {
+        EmitterManager manager = EmitterManager.load(getPath(fileName));
+        return manager.getEmitter(emitterName);
+    }
+
+    private FetchIterator getFetchIterator(String fileName) throws Exception {
+        FetchIteratorManager fim = FetchIteratorManager.build(getPath(fileName));
+        return fim.getFetchIterator();
+    }
+
+    private Path getPath(String fileName) throws Exception {
+        return Paths.get(PipeIntegrationTests.class.getResource("/" + fileName).toURI());
     }
 
 

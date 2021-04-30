@@ -49,8 +49,10 @@ import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.emitter.Emitter;
+import org.apache.tika.pipes.emitter.EmitterManager;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
 import org.apache.tika.pipes.fetcher.Fetcher;
+import org.apache.tika.pipes.fetcher.FetcherManager;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.StringUtils;
 
@@ -69,6 +71,14 @@ public class EmitterResource {
     private static final String EMIT_KEY_ABBREV = "ek";
 
     private static final Logger LOG = LoggerFactory.getLogger(EmitterResource.class);
+
+    private final FetcherManager fetcherManager;
+    private final EmitterManager emitterManager;
+
+    public EmitterResource(FetcherManager fetcherManager, EmitterManager emitterManager) {
+        this.fetcherManager = fetcherManager;
+        this.emitterManager = emitterManager;
+    }
 
     static EmitKey calcEmitKey(FetchEmitTuple t) {
         //use fetch key if emitter key is not specified
@@ -103,7 +113,7 @@ public class EmitterResource {
                                         @QueryParam(HANDLER_PARAM) String handlerTypeName)
             throws Exception {
         Metadata metadata = new Metadata();
-        Fetcher fetcher = TikaResource.getConfig().getFetcherManager().getFetcher(fetcherName);
+        Fetcher fetcher = fetcherManager.getFetcher(fetcherName);
         List<Metadata> metadataList;
         try (InputStream fetchedIs = fetcher.fetch(fetchKey, metadata)) {
             HandlerConfig handlerConfig = RecursiveMetadataResource
@@ -188,7 +198,7 @@ public class EmitterResource {
         Metadata metadata = new Metadata();
 
         List<Metadata> metadataList = null;
-        try (InputStream stream = TikaResource.getConfig().getFetcherManager()
+        try (InputStream stream = fetcherManager
                 .getFetcher(t.getFetchKey().getFetcherName())
                 .fetch(t.getFetchKey().getFetchKey(), metadata)) {
 
@@ -269,8 +279,7 @@ public class EmitterResource {
 
     private Map<String, String> emit(EmitKey emitKey, List<Metadata> metadataList)
             throws TikaException {
-        Emitter emitter =
-                TikaResource.getConfig().getEmitterManager().getEmitter(emitKey.getEmitterName());
+        Emitter emitter = emitterManager.getEmitter(emitKey.getEmitterName());
         String status = "ok";
         String exceptionMsg = "";
         try {

@@ -93,18 +93,20 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
         TIKA_CONFIG_XML =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" +
                         "<fetcher class=\"org.apache.tika.pipes.fetcher.FileSystemFetcher\">" +
-                        "<params>" + "<param name=\"name\" type=\"string\">" + FETCHER_NAME +
-                        "</param>" + "<param name=\"basePath\" type=\"string\">" +
-                        inputDir.toAbsolutePath() + "</param>" + "</params>" + "</fetcher>" +
+                        "<params>" + "<name>" + FETCHER_NAME +
+                        "</name>" + "<basePath>" +
+                        inputDir.toAbsolutePath() + "</basePath>" + "</params>" + "</fetcher>" +
                         "</fetchers>" + "<emitters>" +
                         "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" +
-                        "<params>" + "<param name=\"name\" type=\"string\">" + EMITTER_NAME +
-                        "</param>" +
+                        "<params>" + "<name>" + EMITTER_NAME +
+                        "</name>" +
 
-                        "<param name=\"basePath\" type=\"string\">" +
-                        TMP_OUTPUT_DIR.toAbsolutePath() + "</param>" + "</params>" + "</emitter>" +
+                        "<basePath>" +
+                        TMP_OUTPUT_DIR.toAbsolutePath() + "</basePath>" + "</params>" +
+                        "</emitter>" +
                         "</emitters>" +
-                        "<server><enableUnsecureFeatures>true</enableUnsecureFeatures></server>" +
+                        "<server><params>" +
+                        "<enableUnsecureFeatures>true</enableUnsecureFeatures></params></server>" +
                         "</properties>";
 
         FileUtils.write(TIKA_CONFIG.toFile(), TIKA_CONFIG_XML, UTF_8);

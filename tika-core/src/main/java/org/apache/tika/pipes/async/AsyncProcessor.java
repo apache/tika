@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.emitter.EmitData;
@@ -72,7 +71,7 @@ public class AsyncProcessor implements Closeable {
                     emitData));
         }
 
-        EmitterManager emitterManager = new TikaConfig(tikaConfigPath).getEmitterManager();
+        EmitterManager emitterManager = EmitterManager.load(tikaConfigPath);
         for (int i = 0; i < numEmitterThreads; i++) {
             executorCompletionService.submit(new AsyncEmitter(emitData, emitterManager));
         }
@@ -133,6 +132,7 @@ public class AsyncProcessor implements Closeable {
                     numParserThreadsFinished++;
                 }
             } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
                 throw new RuntimeException(e);
             }
             finished++;
@@ -180,7 +180,6 @@ public class AsyncProcessor implements Closeable {
                             result = asyncClient.process(t);
                         } catch (IOException e) {
                             result = AsyncResult.UNSPECIFIED_CRASH;
-
                         }
                         if (result.getStatus() == AsyncResult.STATUS.OK) {
                             //TODO -- add timeout, this currently hangs forever

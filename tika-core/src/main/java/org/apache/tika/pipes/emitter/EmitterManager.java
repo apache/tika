@@ -16,10 +16,17 @@
  */
 package org.apache.tika.pipes.emitter;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.apache.tika.config.ConfigBase;
+import org.apache.tika.exception.TikaConfigException;
 
 /**
  * Utility class that will apply the appropriate fetcher
@@ -27,10 +34,22 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>
  * This does not allow multiple fetchers supporting the same prefix.
  */
-public class EmitterManager {
+public class EmitterManager extends ConfigBase {
 
     private final Map<String, Emitter> emitterMap = new ConcurrentHashMap<>();
 
+    public static EmitterManager load(Path tikaConfigPath) throws IOException, TikaConfigException {
+        try (InputStream is = Files.newInputStream(tikaConfigPath) ) {
+            return EmitterManager.buildComposite(
+                    "emitters", EmitterManager.class,
+                    "emitter",
+                    Emitter.class, is);
+        }
+    }
+
+    private EmitterManager() {
+
+    }
 
     public EmitterManager(List<Emitter> emitters) {
         for (Emitter emitter : emitters) {

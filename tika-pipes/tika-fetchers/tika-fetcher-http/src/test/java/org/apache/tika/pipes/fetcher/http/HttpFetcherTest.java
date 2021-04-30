@@ -18,21 +18,19 @@ package org.apache.tika.pipes.fetcher.http;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.zip.GZIPInputStream;
 
 import org.junit.Ignore;
 import org.junit.Test;
-import org.xml.sax.SAXException;
 
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.pipes.fetcher.FetcherManager;
 
 @Ignore("requires network connectivity")
 public class HttpFetcherTest {
@@ -45,7 +43,7 @@ public class HttpFetcherTest {
         long end = start + 1408 - 1;
         Metadata metadata = new Metadata();
         HttpFetcher httpFetcher =
-                (HttpFetcher) getConfig("tika-config-http.xml").getFetcherManager()
+                (HttpFetcher) getFetcherManager("tika-config-http.xml")
                         .getFetcher("http");
         try (TemporaryResources tmp = new TemporaryResources()) {
             Path tmpPath = tmp.createTempFile();
@@ -57,8 +55,9 @@ public class HttpFetcherTest {
     }
 
 
-    TikaConfig getConfig(String path) throws TikaException, IOException, SAXException {
-        return new TikaConfig(HttpFetcherTest.class.getResourceAsStream("/" + path));
+    FetcherManager getFetcherManager(String path) throws Exception {
+        return FetcherManager.load(
+                Paths.get(HttpFetcherTest.class.getResource("/" + path).toURI()));
     }
 
 

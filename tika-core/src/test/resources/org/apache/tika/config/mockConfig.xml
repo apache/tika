@@ -16,15 +16,20 @@
   limitations under the License.
 -->
 <properties>
-  <server>
+
+  <mockConfig>
     <params>
-      <port>9999</port>
-      <taskTimeoutMillis>10000</taskTimeoutMillis>
-      <taskPulseMillis>100</taskPulseMillis>
-      <maxFiles>20</maxFiles>
-      <forkedJvmArgs>
-        <arg>-Xmx512m</arg>
-      </forkedJvmArgs>
+      <myString>hello-world</myString>
+      <myStrings>
+        <val>one</val>
+        <val>two</val>
+      </myStrings>
+      <mappings>
+        <entry from="from1" to="to1"/>
+        <entry from="from2" to="to2"/>
+      </mappings>
+      <myDouble>3.14259</myDouble>
+      <myInt>2</myInt>
     </params>
-  </server>
+  </mockConfig>
 </properties>

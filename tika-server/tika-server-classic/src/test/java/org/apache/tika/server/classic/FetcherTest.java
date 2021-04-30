@@ -23,6 +23,8 @@ import static org.junit.Assert.assertEquals;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import javax.ws.rs.core.Response;
@@ -38,6 +40,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.pipes.fetcher.FetcherManager;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.FetcherStreamFactory;
 import org.apache.tika.server.core.InputStreamFactory;
@@ -74,7 +77,15 @@ public class FetcherTest extends CXFTestBase {
 
     @Override
     protected InputStreamFactory getInputStreamFactory(TikaConfig tikaConfig) {
-        return new FetcherStreamFactory(tikaConfig.getFetcherManager());
+        try {
+            Path configPath =
+                    Paths.get(getClass().getResource(
+                            "/config/tika-config-url-fetcher.xml").toURI());
+            FetcherManager fetcherManager = FetcherManager.load(configPath);
+            return new FetcherStreamFactory(fetcherManager);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test

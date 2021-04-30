@@ -47,12 +47,6 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.mock.MockParser;
 import org.apache.tika.parser.multiple.FallbackParser;
-import org.apache.tika.pipes.emitter.Emitter;
-import org.apache.tika.pipes.emitter.EmitterManager;
-import org.apache.tika.pipes.fetcher.Fetcher;
-import org.apache.tika.pipes.fetcher.FetcherManager;
-import org.apache.tika.pipes.fetcher.FileSystemFetcher;
-import org.apache.tika.pipes.fetchiterator.FetchIterator;
 import org.apache.tika.utils.XMLReaderUtils;
 
 /**
@@ -338,8 +332,7 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
             assertEquals(33, XMLReaderUtils.getPoolSize());
             assertEquals(5, XMLReaderUtils.getMaxEntityExpansions());
             //make sure that there's actually a change in behavior
-            assertEquals("text/plain", detect("test-difficult-rdf1.xml",
-                    tikaConfig).toString());
+            assertEquals("text/plain", detect("test-difficult-rdf1.xml", tikaConfig).toString());
         } finally {
             XMLReaderUtils.setMaxEntityExpansions(XMLReaderUtils.DEFAULT_MAX_ENTITY_EXPANSIONS);
             XMLReaderUtils.setPoolSize(XMLReaderUtils.DEFAULT_POOL_SIZE);
@@ -362,61 +355,6 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
         getConfig("TIKA-3268-bad-parser-exclude.xml");
     }
 
-
-    @Test
-    public void testFetchers() throws Exception {
-        TikaConfig config = getConfig("fetchers-config.xml");
-        FetcherManager m = config.getFetcherManager();
-        Fetcher f1 = m.getFetcher("fs1");
-        assertEquals(Paths.get("/my/base/path1"), ((FileSystemFetcher) f1).getBasePath());
-
-        Fetcher f2 = m.getFetcher("fs2");
-        assertEquals(Paths.get("/my/base/path2"), ((FileSystemFetcher) f2).getBasePath());
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testDuplicateFetchers() throws Exception {
-        //can't have two fetchers with the same name
-        TikaConfig config = getConfig("fetchers-duplicate-config.xml");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testNoNameFetchers() throws Exception {
-        //can't have two fetchers with the same name
-        TikaConfig config = getConfig("fetchers-noname-config.xml");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testNoBasePathFetchers() throws Exception {
-        //can't have an fs fetcher with no basepath specified
-        TikaConfig config = getConfig("fetchers-nobasepath-config.xml");
-    }
-
-    @Test
-    public void testEmitters() throws Exception {
-        EmitterManager emitterManager = getConfig("emitters-config.xml").getEmitterManager();
-        Emitter em1 = emitterManager.getEmitter("em1");
-        assertNotNull(em1);
-        Emitter em2 = emitterManager.getEmitter("em2");
-        assertNotNull(em2);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testDuplicateEmitters() throws Exception {
-        getConfig("emitters-duplicate-config.xml").getEmitterManager();
-    }
-
-    @Test
-    public void testFetchIterator() throws Exception {
-        FetchIterator f = getConfig("fetch-iterator-config.xml").getFetchIterator();
-        assertEquals("fs1", f.getFetcherName());
-    }
-
-    @Test(expected = TikaConfigException.class)
-    public void testMultipleFetchIterators() throws Exception {
-        FetchIterator f = getConfig("fetch-iterator-multiple-config.xml").getFetchIterator();
-        assertEquals("fs1", f.getFetcherName());
-    }
 
     @Test
     public void testTimesInitiated() throws Exception {

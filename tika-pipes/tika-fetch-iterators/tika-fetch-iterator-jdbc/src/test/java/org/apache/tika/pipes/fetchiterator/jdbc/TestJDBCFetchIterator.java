@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
-import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -44,9 +43,9 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.fetchiterator.FetchIterator;
+import org.apache.tika.pipes.fetchiterator.FetchIteratorManager;
 
 public class TestJDBCFetchIterator {
 
@@ -89,10 +88,10 @@ public class TestJDBCFetchIterator {
 
     @Test
     public void testSimple() throws Exception {
-        TikaConfig tk = getConfig();
+        FetchIteratorManager fetchIteratorManager = getConfig();
         int numConsumers = 5;
 
-        FetchIterator fetchIterator = tk.getFetchIterator();
+        FetchIterator fetchIterator = fetchIteratorManager.getFetchIterator();
         ExecutorService es = Executors.newFixedThreadPool(numConsumers);
         ExecutorCompletionService<Integer> completionService =
                 new ExecutorCompletionService<>(es);
@@ -143,30 +142,32 @@ public class TestJDBCFetchIterator {
         assertEquals(NUM_ROWS, cnt);
     }
 
-    private TikaConfig getConfig() throws Exception {
+    private FetchIteratorManager getConfig() throws Exception {
         String config = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><properties>\n" +
                 "    <fetchIterators>\n" +
                 "        <fetchIterator " +
                 "       class=\"org.apache.tika.pipes.fetchiterator.jdbc.JDBCFetchIterator\">\n" +
                 "            <params>\n" +
-                "                <param name=\"fetcherName\" type=\"string\">s3f</param>\n" +
-                "                <param name=\"emitterName\" type=\"string\">s3e</param>\n" +
-                "                <param name=\"queueSize\" type=\"int\">57</param>\n" +
-                "                <param name=\"fetchKeyColumn\" " +
-                "                     type=\"string\">my_fetchkey</param>\n" +
-                "                <param name=\"emitKeyColumn\" " +
-                "                    type=\"string\">my_fetchkey</param>\n" +
-                "                <param name=\"select\" type=\"string\">" +
+                "                <fetcherName>s3f</fetcherName>\n" +
+                "                <emitterName>s3e</emitterName>\n" +
+                "                <queueSize>57</queueSize>\n" +
+                "                <fetchKeyColumn>my_fetchkey</fetchKeyColumn>\n" +
+                "                <emitKeyColumn>my_fetchkey</emitKeyColumn>\n" +
+                "                <select>" +
                 "select id as my_id, project as my_project, fetchKey as my_fetchKey " +
-                "from fetchkeys</param>\n" +
-                "                <param name=\"connection\" " +
-                "                type=\"string\">jdbc:h2:file:" + DB_DIR.toAbsolutePath() + "/" +
-                    db + "</param>\n" +
+                "from fetchkeys</select>\n" +
+                "                <connection>jdbc:h2:file:" + DB_DIR.toAbsolutePath() + "/" +
+                    db + "</connection>\n" +
                 "            </params>\n" +
                 "        </fetchIterator>\n" +
                 "    </fetchIterators>\n" +
                 "</properties>";
-        return new TikaConfig(new ByteArrayInputStream(config.getBytes(StandardCharsets.UTF_8)));
+        Path tmp = Files.createTempFile("tika-jdbc-", ".xml");
+        Files.write(tmp, config.getBytes(StandardCharsets.UTF_8));
+        FetchIteratorManager manager =
+                FetchIteratorManager.build(tmp);
+        Files.delete(tmp);
+        return manager;
     }
 
     private static class MockFetcher implements Callable<Integer> {

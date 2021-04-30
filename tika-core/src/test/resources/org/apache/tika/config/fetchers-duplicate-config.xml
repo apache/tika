@@ -16,18 +16,18 @@
   limitations under the License.
 -->
 <properties>
-    <fetchers>
-        <fetcher class="org.apache.tika.pipes.fetcher.FileSystemFetcher">
-            <params>
-                <param name="name" type="string">fs1</param>
-                <param name="basePath" type="string">/my/base/path1</param>
-            </params>
-        </fetcher>
-        <fetcher class="org.apache.tika.pipes.fetcher.FileSystemFetcher">
-            <params>
-                <param name="name" type="string">fs1</param>
-                <param name="basePath" type="string">/my/base/path2</param>
-            </params>
-        </fetcher>
-    </fetchers>
+  <fetchers>
+    <fetcher class="org.apache.tika.pipes.fetcher.FileSystemFetcher">
+      <params>
+          <name>fs1</name>
+          <basePath>/my/base/path1</basePath>
+      </params>
+    </fetcher>
+    <fetcher class="org.apache.tika.pipes.fetcher.FileSystemFetcher">
+      <params>
+        <name>fs1</name>
+          <basePath>/my/base/path2</basePath>
+      </params>
+    </fetcher>
+  </fetchers>
 </properties>

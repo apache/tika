@@ -18,6 +18,7 @@
 package org.apache.tika.server.core;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -48,9 +49,12 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.Tika;
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.digestutils.BouncyCastleDigester;
 import org.apache.tika.parser.digestutils.CommonsDigester;
+import org.apache.tika.pipes.emitter.EmitterManager;
+import org.apache.tika.pipes.fetcher.FetcherManager;
 import org.apache.tika.server.core.resource.AsyncResource;
 import org.apache.tika.server.core.resource.DetectorResource;
 import org.apache.tika.server.core.resource.EmitterResource;
@@ -153,8 +157,13 @@ public class TikaServerProcess {
     private static ServerDetails initServer(TikaServerConfig tikaServerConfig,
                                             AsyncResource asyncResource) throws Exception {
         String host = tikaServerConfig.getHost();
-        int port = tikaServerConfig.getPort();
+        int[] ports = tikaServerConfig.getPorts();
+        if (ports.length > 1) {
+            throw new IllegalArgumentException("there must be only one port here! " +
+                    "I see: " + tikaServerConfig.getPort());
+        }
 
+        int port = ports[0];
         // The Tika Configuration to use throughout
         TikaConfig tika;
 
@@ -183,13 +192,19 @@ public class TikaServerProcess {
             }
         }
 
+        //TODO -- clean this up -- only load as necessary
+        FetcherManager fetcherManager = null;
+        EmitterManager emitterManager = null;
         InputStreamFactory inputStreamFactory = null;
         if (tikaServerConfig.isEnableUnsecureFeatures()) {
-            inputStreamFactory = new FetcherStreamFactory(tika.getFetcherManager());
+            fetcherManager = FetcherManager.load(tikaServerConfig.getConfigPath());
+            inputStreamFactory = new FetcherStreamFactory(fetcherManager);
         } else {
             inputStreamFactory = new DefaultInputStreamFactory();
         }
-        logFetchersAndEmitters(tikaServerConfig.isEnableUnsecureFeatures(), tika);
+        //TODO -- figure out how to turn this back on
+        //logFetchersAndEmitters(tikaServerConfig.isEnableUnsecureFeatures(), fetcherManager,
+          //      emitterManager);
 
         String serverId = tikaServerConfig.getId();
         LOG.debug("SERVER ID:" + serverId);
@@ -216,7 +231,9 @@ public class TikaServerProcess {
 
         List<ResourceProvider> resourceProviders = new ArrayList<>();
         List<Object> providers = new ArrayList<>();
-        loadAllProviders(tikaServerConfig, asyncResource, serverStatus, resourceProviders,
+        loadAllProviders(tikaServerConfig, asyncResource, fetcherManager,
+                serverStatus,
+                resourceProviders,
                 providers);
 
         sf.setResourceProviders(resourceProviders);
@@ -241,16 +258,20 @@ public class TikaServerProcess {
     }
 
     private static void loadAllProviders(TikaServerConfig tikaServerConfig,
-                                         AsyncResource asyncResource, ServerStatus serverStatus,
+                                         AsyncResource asyncResource,
+                                         FetcherManager fetcherManager,
+                                         ServerStatus serverStatus,
                                          List<ResourceProvider> resourceProviders,
-                                         List<Object> writers) {
+                                         List<Object> writers)
+            throws TikaConfigException, IOException {
         List<ResourceProvider> tmpCoreProviders =
-                loadCoreProviders(tikaServerConfig, asyncResource, serverStatus);
+                loadCoreProviders(tikaServerConfig, asyncResource, fetcherManager, serverStatus);
 
         resourceProviders.addAll(tmpCoreProviders);
         resourceProviders.add(new SingletonResourceProvider(new TikaWelcome(tmpCoreProviders)));
 
         //for now, just load everything
+        //TODO figure out which ones to turn off
         writers.add(new TarWriter());
         writers.add(new ZipWriter());
         writers.add(new CSVMessageBodyWriter());
@@ -289,9 +310,11 @@ public class TikaServerProcess {
 
     private static List<ResourceProvider> loadCoreProviders(TikaServerConfig tikaServerConfig,
                                                             AsyncResource asyncResource,
-                                                            ServerStatus serverStatus) {
+                                                            FetcherManager fetcherManager,
+                                                            ServerStatus serverStatus)
+            throws TikaConfigException, IOException {
         List<ResourceProvider> resourceProviders = new ArrayList<>();
-        if (tikaServerConfig.getEndPoints().size() == 0) {
+        if (tikaServerConfig.getEndpoints().size() == 0) {
             resourceProviders.add(new SingletonResourceProvider(new MetadataResource()));
             resourceProviders.add(new SingletonResourceProvider(new RecursiveMetadataResource()));
             resourceProviders
@@ -306,7 +329,9 @@ public class TikaServerProcess {
             resourceProviders.add(new SingletonResourceProvider(new TikaParsers()));
             resourceProviders.add(new SingletonResourceProvider(new TikaVersion()));
             if (tikaServerConfig.isEnableUnsecureFeatures()) {
-                resourceProviders.add(new SingletonResourceProvider(new EmitterResource()));
+                resourceProviders.add(new SingletonResourceProvider(new EmitterResource(
+                        fetcherManager, EmitterManager.load(tikaServerConfig.getConfigPath())
+                )));
                 resourceProviders.add(new SingletonResourceProvider(asyncResource));
                 resourceProviders
                         .add(new SingletonResourceProvider(new TikaServerStatus(serverStatus)));
@@ -314,7 +339,7 @@ public class TikaServerProcess {
             resourceProviders.addAll(loadResourceServices());
             return resourceProviders;
         }
-        for (String endPoint : tikaServerConfig.getEndPoints()) {
+        for (String endPoint : tikaServerConfig.getEndpoints()) {
             if ("meta".equals(endPoint)) {
                 resourceProviders.add(new SingletonResourceProvider(new MetadataResource()));
             } else if ("rmeta".equals(endPoint)) {
@@ -341,7 +366,9 @@ public class TikaServerProcess {
             } else if ("version".equals(endPoint)) {
                 resourceProviders.add(new SingletonResourceProvider(new TikaVersion()));
             } else if ("emit".equals(endPoint)) {
-                resourceProviders.add(new SingletonResourceProvider(new EmitterResource()));
+                resourceProviders.add(new SingletonResourceProvider(
+                        new EmitterResource(fetcherManager,
+                                EmitterManager.load(tikaServerConfig.getConfigPath()))));
             } else if ("async".equals(endPoint)) {
                 resourceProviders.add(new SingletonResourceProvider(asyncResource));
             } else if ("status".equals(endPoint)) {
@@ -353,10 +380,11 @@ public class TikaServerProcess {
         return resourceProviders;
     }
 
-    private static void logFetchersAndEmitters(boolean enableUnsecureFeatures, TikaConfig tika) {
+    private static void logFetchersAndEmitters(boolean enableUnsecureFeatures,
+                                               FetcherManager fetcherManager, EmitterManager emitterManager) {
         if (enableUnsecureFeatures) {
             StringBuilder sb = new StringBuilder();
-            Set<String> supportedFetchers = tika.getFetcherManager().getSupported();
+            Set<String> supportedFetchers = fetcherManager.getSupported();
             sb.append("enableSecureFeatures has been selected.\n");
             if (supportedFetchers.size() == 0) {
                 sb.append("There are no fetchers specified in the TikaConfig");
@@ -368,7 +396,7 @@ public class TikaServerProcess {
                     sb.append(p).append("\n");
                 }
             }
-            Set<String> emitters = tika.getEmitterManager().getSupported();
+            Set<String> emitters = emitterManager.getSupported();
             if (supportedFetchers.size() == 0) {
                 sb.append("There are no emitters specified in the TikaConfig");
             } else {
@@ -381,11 +409,11 @@ public class TikaServerProcess {
             }
             LOG.info(sb.toString());
         } else {
-            if (tika.getEmitterManager().getSupported().size() > 0) {
+            if (emitterManager.getSupported().size() > 0) {
                 String warn =
                         "enableUnsecureFeatures has not been set to 'true' in the server " +
                                 "config file.\n" +
-                                "The " + tika.getEmitterManager().getSupported().size() +
+                                "The " + emitterManager.getSupported().size() +
                                 " emitter(s) that you've\n" +
                                 "specified in TikaConfig will not be available on the /emit " +
                                 "or /async endpoints.\n" +
@@ -395,11 +423,11 @@ public class TikaServerProcess {
                                 "the TikaConfig\n\n";
                 LOG.warn(warn);
             }
-            if (tika.getFetcherManager().getSupported().size() > 0) {
+            if (emitterManager.getSupported().size() > 0) {
                 String warn =
                         "enableUnsecureFeatures has not been set to 'true' in the server " +
                                 "config file.\n" +
-                                "The " + tika.getFetcherManager().getSupported().size() +
+                                "The " + emitterManager.getSupported().size() +
                                 " fetcher(s) that you've\n" +
                                 "specified in TikaConfig will not be available on the /emit " +
                                 "or /async endpoints.\n" +

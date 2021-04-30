@@ -47,9 +47,9 @@ public class AsyncProcessorTest {
     private final String OK = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
             "<metadata action=\"add\" name=\"dc:creator\">Nikolai Lobachevsky</metadata>" +
             "<write element=\"p\">main_content</write>" + "</mock>";
+    private final int totalFiles = 100;
     private Path tikaConfigPath;
     private Path inputDir;
-    private final int totalFiles = 100;
     private int ok = 0;
     private int oom = 0;
 
@@ -57,17 +57,15 @@ public class AsyncProcessorTest {
     public void setUp() throws SQLException, IOException {
         inputDir = Files.createTempDirectory("tika-async-");
         tikaConfigPath = Files.createTempFile("tika-config-", ".xml");
-        String xml = "" + "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<properties>" +
-                "  <emitters>" + "  <emitter class=\"org.apache.tika.pipes.async.MockEmitter\">\n" +
-                "    <params>\n" + "      <param name=\"name\" type=\"string\">mock</param>\n" +
-                "    </params>" + "  </emitter>" + "  </emitters>" + "  <fetchers>" +
+        String xml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<properties>" + "  <emitters>" +
+                "  <emitter class=\"org.apache.tika.pipes.async.MockEmitter\">\n" +
+                "    <params>\n" + "      <name>mock</name>\n" + "    </params>" + "  </emitter>" +
+                "  </emitters>" + "  <fetchers>" +
                 "    <fetcher class=\"org.apache.tika.pipes.fetcher.FileSystemFetcher\">" +
-                "      <params><param name=\"name\" type=\"string\">mock</param>\n" +
-                "      <param name=\"basePath\" type=\"string\">" +
-                ProcessUtils.escapeCommandLine(inputDir.toAbsolutePath().toString())
-                + "</param></params>\n" +
-                "    </fetcher>" +
-                "  </fetchers>" + "</properties>";
+                "      <params><name>mock</name>\n" + "      <basePath>" +
+                ProcessUtils.escapeCommandLine(inputDir.toAbsolutePath().toString()) +
+                "</basePath></params>\n" + "    </fetcher>" + "  </fetchers>" + "</properties>";
         Files.write(tikaConfigPath, xml.getBytes(StandardCharsets.UTF_8));
         Random r = new Random();
         for (int i = 0; i < totalFiles; i++) {
@@ -91,7 +89,7 @@ public class AsyncProcessorTest {
     public void testBasic() throws Exception {
         AsyncProcessor processor = new AsyncProcessor(tikaConfigPath);
         for (int i = 0; i < totalFiles; i++) {
-            FetchEmitTuple t = new FetchEmitTuple(new FetchKey("mock",  i + ".xml"),
+            FetchEmitTuple t = new FetchEmitTuple(new FetchKey("mock", i + ".xml"),
                     new EmitKey("mock", "emit-" + i), new Metadata());
             processor.offer(t, 1000);
         }

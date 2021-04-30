@@ -19,6 +19,8 @@ package org.apache.tika.config;
 import static org.junit.Assert.assertNotNull;
 
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.junit.After;
 
@@ -33,6 +35,13 @@ import org.apache.tika.parser.ParseContext;
  */
 public abstract class AbstractTikaConfigTest extends TikaTest {
     protected static ParseContext context = new ParseContext();
+
+    protected static Path getConfigFilePath(String config) throws Exception {
+        URL url = TikaConfig.class.getResource(config);
+        assertNotNull("Test Tika Config not found: " + config, url);
+        return Paths.get(url.toURI());
+    }
+
 
     protected static String getConfigPath(String config) throws Exception {
         URL url = TikaConfig.class.getResource(config);
