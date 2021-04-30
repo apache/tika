@@ -20,6 +20,9 @@ import org.xml.sax.SAXException;
 
 public class WriteLimitReachedException extends SAXException {
 
+    //in case of (hopefully impossible) cyclic exception
+    private final static int MAX_DEPTH = 100;
+
     public WriteLimitReachedException(String msg) {
         super(msg);
     }
@@ -34,10 +37,20 @@ public class WriteLimitReachedException extends SAXException {
      * @since Apache Tika 2.0
      */
     public static boolean isWriteLimitReached(Throwable t) {
+        return isWriteLimitReached(t, 0);
+    }
+
+    private static boolean isWriteLimitReached(Throwable t, int depth) {
+        if (t == null) {
+            return false;
+        }
+        if (depth > MAX_DEPTH) {
+            return false;
+        }
         if (t instanceof WriteLimitReachedException) {
             return true;
         } else {
-            return t.getCause() != null && isWriteLimitReached(t.getCause());
+            return t.getCause() != null && isWriteLimitReached(t.getCause(), depth + 1);
         }
     }
 }

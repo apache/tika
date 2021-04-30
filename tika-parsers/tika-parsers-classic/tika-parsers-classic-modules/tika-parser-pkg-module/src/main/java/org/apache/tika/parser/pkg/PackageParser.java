@@ -27,8 +27,10 @@ import static org.apache.tika.detect.zip.PackageConstants.TAR;
 import static org.apache.tika.detect.zip.PackageConstants.ZIP;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -57,6 +59,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
+import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -66,7 +69,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
+import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -82,7 +85,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * are not installed, an IOException will be thrown, and potentially
  * wrapped in a TikaException.
  */
-public class PackageParser extends AbstractParser {
+public class PackageParser extends AbstractEncodingDetectorParser {
 
     //We used to avoid overwriting file types if the file type
     //was a specialization of zip/tar.  We determined specialization of zip
@@ -205,6 +208,14 @@ public class PackageParser extends AbstractParser {
             entrydata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, name);
         }
         return entrydata;
+    }
+
+    public PackageParser() {
+        super();
+    }
+
+    public PackageParser(EncodingDetector encodingDetector) {
+        super(encodingDetector);
     }
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -392,6 +403,17 @@ public class PackageParser extends AbstractParser {
                             XHTMLContentHandler xhtml)
             throws SAXException, IOException, TikaException {
         String name = entry.getName();
+        
+        //Try to detect charset of archive entry in case of non-unicode filename is used
+        if (entry instanceof ZipArchiveEntry) {
+            Charset candidate =
+                    getEncodingDetector().detect(new ByteArrayInputStream(((ZipArchiveEntry) entry).getRawName()),
+                        parentMetadata);
+            if (candidate != null) {
+                name = new String(((ZipArchiveEntry) entry).getRawName(), candidate);
+            }
+        }
+        
         if (archive.canReadEntryData(entry)) {
             // Fetch the metadata on the entry contained in the archive
             Metadata entrydata =

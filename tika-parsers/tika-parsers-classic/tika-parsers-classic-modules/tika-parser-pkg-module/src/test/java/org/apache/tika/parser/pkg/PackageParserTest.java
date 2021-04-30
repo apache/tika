@@ -29,13 +29,14 @@ import java.util.Set;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.junit.Test;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.zip.PackageConstants;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.ParseContext;
 
-public class PackageParserTest {
+public class PackageParserTest extends TikaTest {
 
     @Test
     public void testCoverage() throws Exception {

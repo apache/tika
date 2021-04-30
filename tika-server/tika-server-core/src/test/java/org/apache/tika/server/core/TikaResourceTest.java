@@ -171,6 +171,7 @@ public class TikaResourceTest extends CXFTestBase {
         assertTrue(metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION).startsWith(
                 "org.apache.tika.exception.WriteLimitReachedException"
         ));
+        assertEquals("true", metadata.get(TikaCoreProperties.WRITE_LIMIT_REACHED));
     }
 
     @Test

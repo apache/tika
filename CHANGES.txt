@@ -45,7 +45,7 @@ Release 2.0.0-ALPHA - 01/13/2021
 
 
 Release 1.27 - ??
-
+   * Apply encoding detection to zip entry names via Ryan421 (TIKA-3374).
    * Add json output for /tika endpoint in tika-server (TIKA-3352).
    * Tika's OpenNLPDetector now covers 148 languages and language-script pairs (TIKA-3340).
 

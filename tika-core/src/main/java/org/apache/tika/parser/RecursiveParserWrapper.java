@@ -156,7 +156,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
             context.set(RecursivelySecureContentHandler.class, secureContentHandler);
             getWrappedParser().parse(tis, secureContentHandler, metadata, context);
         } catch (SAXException e) {
-            boolean wlr = isWriteLimitReached(e);
+            boolean wlr = WriteLimitReachedException.isWriteLimitReached(e);
             if (wlr == false) {
                 throw e;
             }
@@ -173,25 +173,6 @@ public class RecursiveParserWrapper extends ParserDecorator {
             metadata.set(TikaCoreProperties.PARSE_TIME_MILLIS, Long.toString(elapsedMillis));
             parserState.recursiveParserWrapperHandler.endDocument(localHandler, metadata);
             parserState.recursiveParserWrapperHandler.endDocument();
-        }
-    }
-
-    /**
-     * Copied/modified from WriteOutContentHandler.  Couldn't make that
-     * static, and we need to have something that will work
-     * with exceptions thrown from both BodyContentHandler and WriteOutContentHandler
-     *
-     * @param t
-     * @return
-     */
-    private boolean isWriteLimitReached(Throwable t) {
-        if (t instanceof WriteLimitReachedException) {
-            return true;
-        } else if (t.getMessage() != null &&
-                t.getMessage().indexOf("Your document contained more than") == 0) {
-            return true;
-        } else {
-            return t.getCause() != null && isWriteLimitReached(t.getCause());
         }
     }
 
@@ -259,7 +240,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
             try {
                 super.parse(stream, secureContentHandler, metadata, context);
             } catch (SAXException e) {
-                boolean wlr = isWriteLimitReached(e);
+                boolean wlr = WriteLimitReachedException.isWriteLimitReached(e);
                 if (wlr == true) {
                     metadata.add(TikaCoreProperties.WRITE_LIMIT_REACHED, "true");
                 } else {
