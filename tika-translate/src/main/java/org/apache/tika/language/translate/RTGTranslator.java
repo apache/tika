@@ -31,6 +31,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -124,7 +125,7 @@ public class RTGTranslator extends AbstractTranslator {
                 .accept(MediaType.APPLICATION_JSON)
                 .post(input);
         try (InputStreamReader reader = new InputStreamReader(
-                (InputStream) response.getEntity())) {
+							      (InputStream) response.getEntity(), Charset.defaultCharset())) {
             JSONParser parser = new JSONParser();
             JSONObject obj = (JSONObject) parser.parse(reader);
             List<String> sentences = (List<String>) obj.get("translation");

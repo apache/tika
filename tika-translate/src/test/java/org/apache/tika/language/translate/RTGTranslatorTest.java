@@ -20,6 +20,8 @@ package org.apache.tika.language.translate;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Locale;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
@@ -42,7 +44,7 @@ public class RTGTranslatorTest {
 	@Test
 	public void testSimpleTranslate() {
 		String source = "hola señor";
-		String expected = "hello sir";
+		String expected = "hello, sir.";
 
 		String result = null;
 		if (translator.isAvailable()) {
@@ -51,7 +53,7 @@ public class RTGTranslatorTest {
 				assertNotNull(result);
 				assertEquals("Result: [" + result
 						+ "]: not equal to expected: [" + expected + "]",
-						expected, result.toLowerCase());
+					     expected, result.toLowerCase(Locale.getDefault()));
 			} catch (Exception e) {
 				e.printStackTrace();
 				fail(e.getMessage());
