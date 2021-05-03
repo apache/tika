@@ -28,6 +28,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -455,7 +456,9 @@ public class TikaResource {
             logger.warn("{}: Encrypted document ({})", path, fileName, e);
             throw new TikaServerParseException(e);
         } catch (Exception e) {
-            logger.warn("{}: Text extraction failed ({})", path, fileName, e);
+            if (! WriteLimitReachedException.isWriteLimitReached(e)) {
+                logger.warn("{}: Text extraction failed ({})", path, fileName, e);
+            }
             throw new TikaServerParseException(e);
         } catch (OutOfMemoryError e) {
             logger.warn("{}: OOM ({})", path, fileName, e);
@@ -660,7 +663,7 @@ public class TikaResource {
         } catch (TikaServerParseException e) {
             Throwable cause = e.getCause();
             boolean writeLimitReached = false;
-            if (isWriteLimitReached(cause, 0)) {
+            if (WriteLimitReachedException.isWriteLimitReached(e)) {
                 metadata.set(AbstractRecursiveParserWrapperHandler.WRITE_LIMIT_REACHED, "true");
                 writeLimitReached = true;
             }
@@ -687,20 +690,6 @@ public class TikaResource {
         }
     }
 
-    private boolean isWriteLimitReached(Throwable t, int depth) {
-        if (t == null) {
-            return false;
-        }
-        if (depth > 100) {
-            return false;
-        }
-        if (t.getMessage() != null &&
-                t.getMessage().indexOf("Your document contained more than") == 0) {
-            return true;
-        } else {
-            return isWriteLimitReached(t.getCause(), depth + 1);
-        }
-    }
 
     private StreamingOutput produceOutput(final InputStream is, Metadata metadata, final MultivaluedMap<String, String> httpHeaders,
                                           final UriInfo info, final String format) {

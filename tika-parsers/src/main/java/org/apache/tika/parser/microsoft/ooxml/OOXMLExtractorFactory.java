@@ -44,6 +44,8 @@ import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
+
+import org.apache.tika.exception.RuntimeSAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -224,6 +226,8 @@ public class OOXMLExtractorFactory {
             throw new TikaException("Error creating OOXML extractor", e);
         } catch (XmlException e) {
             throw new TikaException("Error creating OOXML extractor", e);
+        } catch (RuntimeSAXException e) {
+            throw (SAXException) e.getCause();
         } finally {
             if (tmpRepairedCopy != null) {
                 if (pkg != null) {

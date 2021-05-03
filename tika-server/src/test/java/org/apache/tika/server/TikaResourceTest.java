@@ -715,7 +715,7 @@ public class TikaResourceTest extends CXFTestBase {
 
     }
 
-        @Test
+    @Test
     public void testJsonHandlerType() throws Exception {
         Response response = WebClient.create(endPoint + TIKA_PATH)
                 .accept("application/json")
@@ -743,4 +743,69 @@ public class TikaResourceTest extends CXFTestBase {
         assertNotFound("<p>", metadata.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
     }
 
+    /**
+    @Test
+    public void testWriteLimitInAll() throws Exception {
+        //specify your file directory here
+        Path testDocs = Paths.get("..../tika-parsers/src/test/resources/test-documents");
+        for (File f : testDocs.toFile().listFiles()) {
+            if (f.isDirectory()) {
+                continue;
+            }
+            System.out.println(f.getName());
+            testWriteLimit(f);
+        }
+    }
+
+    private void testWriteLimit(File f) throws Exception {
+        Response response =
+                WebClient.create(endPoint + TIKA_PATH + "/text").accept("application/json")
+                        .put(f);
+        assertEquals(200, response.getStatus());
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        Metadata metadata = JsonMetadata.fromJson(reader);
+        int totalLen = 0;
+        StringBuilder sb = new StringBuilder();
+        String txt = metadata.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT);
+        sb.append(txt);
+        totalLen += (txt == null) ? 0 : txt.length();
+        String fullText = sb.toString();
+
+        //        System.out.println(fullText);
+        Random r = new Random();
+        for (int i = 0; i < 20; i++) {
+            int writeLimit = r.nextInt(totalLen + 100);
+            response = WebClient.create(endPoint + TIKA_PATH + "/text").accept("application/json")
+                    .header("writeLimit", Integer.toString(writeLimit)).put(f);
+
+            assertEquals(200, response.getStatus());
+            reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+            Metadata writeLimitMetadata = JsonMetadata.fromJson(reader);
+            int len = 0;
+            StringBuilder extracted = new StringBuilder();
+
+            txt = writeLimitMetadata.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT);
+            len += (txt == null) ? 0 : txt.length();
+            extracted.append(txt);
+
+            if (totalLen > len) {
+                boolean wlr = false;
+
+                if ("true".equals(writeLimitMetadata
+                        .get(AbstractRecursiveParserWrapperHandler.WRITE_LIMIT_REACHED))) {
+                    wlr = true;
+                }
+
+                System.out.println(f.getName() + " " + len + " : " + writeLimit);
+                assertTrue(f.getName() + ": writelimit: " + writeLimit + " len: " + len,
+                        len <= writeLimit);
+                assertEquals(
+                        f.getName() + " : " + writeLimit + " : " + len + " total len: " + totalLen,
+                        true, wlr);
+            } else if (len > totalLen) {
+                fail("len should never be > totalLen " + len + "  : " + totalLen);
+            }
+        }
+    }
+    **/
 }

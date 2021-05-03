@@ -17,6 +17,7 @@
 package org.apache.tika.parser;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -287,6 +288,9 @@ public class CompositeParser extends AbstractParser {
                         "TIKA-198: Illegal IOException from " + parser, e);
             } catch (SAXException e) {
                 if (taggedHandler != null) taggedHandler.throwIfCauseOf(e);
+                if (WriteLimitReachedException.isWriteLimitReached(e)) {
+                    throw e;
+                }
                 throw new TikaException(
                         "TIKA-237: Illegal SAXException from " + parser, e);
             } catch (RuntimeException e) {

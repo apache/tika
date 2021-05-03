@@ -22,14 +22,16 @@ import java.math.BigInteger;
 import java.util.Date;
 
 import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.WordExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFStylesShim;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
 
-public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
+public class OOXMLTikaBodyPartHandler
+        implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
 
     private final static String P = "p";
 
@@ -70,7 +72,8 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
         this.includeMoveFromText = false;
     }
 
-    public OOXMLTikaBodyPartHandler(XHTMLContentHandler xhtml, XWPFStylesShim styles, XWPFListManager listManager, OfficeParserConfig parserConfig) {
+    public OOXMLTikaBodyPartHandler(XHTMLContentHandler xhtml, XWPFStylesShim styles,
+                                    XWPFListManager listManager, OfficeParserConfig parserConfig) {
         this.xhtml = xhtml;
         this.styles = styles;
         this.listManager = listManager;
@@ -79,114 +82,98 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
     }
 
     @Override
-    public void run(RunProperties runProperties, String contents) {
-        try {
-
-            // True if we are currently in the named style tag:
-            if (runProperties.isBold() != isBold) {
-                if (isStrikeThrough) {
-                    xhtml.endElement("strike");
-                    isStrikeThrough = false;
-                }
-                if (isUnderline) {
-                    xhtml.endElement("u");
-                    isUnderline = false;;
-                }
-                if (isItalics) {
-                    xhtml.endElement("i");
-                    isItalics = false;
-                }
-                if (runProperties.isBold()) {
-                    xhtml.startElement("b");
-                } else {
-                    xhtml.endElement("b");
-                }
-                isBold = runProperties.isBold();
+    public void run(RunProperties runProperties, String contents) throws SAXException {
+        // True if we are currently in the named style tag:
+        if (runProperties.isBold() != isBold) {
+            if (isStrikeThrough) {
+                xhtml.endElement("strike");
+                isStrikeThrough = false;
             }
-
-            if (runProperties.isItalics() != isItalics) {
-                if (isStrikeThrough) {
-                    xhtml.endElement("strike");
-                    isStrikeThrough = false;
-                }
-                if (isUnderline) {
-                    xhtml.endElement("u");
-                    isUnderline = false;
-                }
-                if (runProperties.isItalics()) {
-                    xhtml.startElement("i");
-                } else {
-                    xhtml.endElement("i");
-                }
-                isItalics = runProperties.isItalics();
+            if (isUnderline) {
+                xhtml.endElement("u");
+                isUnderline = false;
+                ;
             }
-
-            if (runProperties.isStrikeThrough() != isStrikeThrough) {
-                if (isUnderline) {
-                    xhtml.endElement("u");
-                    isUnderline = false;
-                }
-                if (runProperties.isStrikeThrough()) {
-                    xhtml.startElement("strike");
-                } else {
-                    xhtml.endElement("strike");
-                }
-                isStrikeThrough = runProperties.isStrikeThrough();
+            if (isItalics) {
+                xhtml.endElement("i");
+                isItalics = false;
             }
-
-            boolean runIsUnderlined = runProperties.getUnderline() != UnderlinePatterns.NONE;
-            if (runIsUnderlined != isUnderline) {
-                if (runIsUnderlined) {
-                    xhtml.startElement("u");
-                } else {
-                    xhtml.endElement("u");
-                }
-                isUnderline = runIsUnderlined;
+            if (runProperties.isBold()) {
+                xhtml.startElement("b");
+            } else {
+                xhtml.endElement("b");
             }
+            isBold = runProperties.isBold();
+        }
 
-            xhtml.characters(contents);
+        if (runProperties.isItalics() != isItalics) {
+            if (isStrikeThrough) {
+                xhtml.endElement("strike");
+                isStrikeThrough = false;
+            }
+            if (isUnderline) {
+                xhtml.endElement("u");
+                isUnderline = false;
+            }
+            if (runProperties.isItalics()) {
+                xhtml.startElement("i");
+            } else {
+                xhtml.endElement("i");
+            }
+            isItalics = runProperties.isItalics();
+        }
 
-        } catch (SAXException e) {
+        if (runProperties.isStrikeThrough() != isStrikeThrough) {
+            if (isUnderline) {
+                xhtml.endElement("u");
+                isUnderline = false;
+            }
+            if (runProperties.isStrikeThrough()) {
+                xhtml.startElement("strike");
+            } else {
+                xhtml.endElement("strike");
+            }
+            isStrikeThrough = runProperties.isStrikeThrough();
+        }
 
+        boolean runIsUnderlined = runProperties.getUnderline() != UnderlinePatterns.NONE;
+        if (runIsUnderlined != isUnderline) {
+            if (runIsUnderlined) {
+                xhtml.startElement("u");
+            } else {
+                xhtml.endElement("u");
+            }
+            isUnderline = runIsUnderlined;
+        }
+
+        xhtml.characters(contents);
+
+    }
+
+    @Override
+    public void hyperlinkStart(String link) throws SAXException {
+        if (link != null) {
+            xhtml.startElement("a", "href", link);
+            wroteHyperlinkStart = true;
         }
     }
 
     @Override
-    public void hyperlinkStart(String link) {
-        try {
-            if (link != null) {
-                xhtml.startElement("a", "href", link);
-                wroteHyperlinkStart = true;
-            }
-        } catch (SAXException e) {
-
+    public void hyperlinkEnd() throws SAXException {
+        if (wroteHyperlinkStart) {
+            closeStyleTags();
+            wroteHyperlinkStart = false;
+            xhtml.endElement("a");
         }
     }
 
     @Override
-    public void hyperlinkEnd() {
-        try {
-            if (wroteHyperlinkStart) {
-                closeStyleTags();
-                wroteHyperlinkStart = false;
-                xhtml.endElement("a");
-            }
-        } catch (SAXException e) {
-
-        }
-    }
-
-    @Override
-    public void startParagraph(ParagraphProperties paragraphProperties) {
+    public void startParagraph(ParagraphProperties paragraphProperties) throws SAXException {
 
         //if you're in a table cell and your after the first paragraph
         //make sure to prepend a \n
         if (tableCellDepth > 0 && pWithinCell > 0) {
-            try {
-                xhtml.characters(NEWLINE, 0, 1);
-            } catch (SAXException e) {
-                //swallow
-            }
+            xhtml.characters(NEWLINE, 0, 1);
         }
 
         if (pDepth == 0 && tableDepth == 0 && sdtDepth == 0) {
@@ -194,52 +181,38 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
             String styleClass = null;
             //TIKA-2144 check that styles is not null
             if (paragraphProperties.getStyleID() != null && styles != null) {
-                String styleName = styles.getStyleName(
-                        paragraphProperties.getStyleID()
-                );
+                String styleName = styles.getStyleName(paragraphProperties.getStyleID());
                 if (styleName != null) {
-                    WordExtractor.TagAndStyle tas = WordExtractor.buildParagraphTagAndStyle(
-                            styleName, false);
+                    WordExtractor.TagAndStyle tas =
+                            WordExtractor.buildParagraphTagAndStyle(styleName, false);
                     paragraphTag = tas.getTag();
                     styleClass = tas.getStyleClass();
                 }
             }
 
 
-            try {
-                if (styleClass == null) {
-                    xhtml.startElement(paragraphTag);
-                } else {
-                    xhtml.startElement(paragraphTag, "class", styleClass);
-                }
-            } catch (SAXException e) {
-
+            if (styleClass == null) {
+                xhtml.startElement(paragraphTag);
+            } else {
+                xhtml.startElement(paragraphTag, "class", styleClass);
             }
         }
 
-        try {
-            writeParagraphNumber(paragraphProperties.getNumId(),
-                    paragraphProperties.getIlvl(), listManager, xhtml);
-        } catch (SAXException e) {
-
-        }
+        writeParagraphNumber(paragraphProperties.getNumId(), paragraphProperties.getIlvl(),
+                listManager, xhtml);
         pDepth++;
     }
 
 
     @Override
-    public void endParagraph() {
-        try {
-            closeStyleTags();
-            if (pDepth == 1 && tableDepth == 0) {
-                xhtml.endElement(paragraphTag);
-            } else if (tableCellDepth > 0 && pWithinCell > 0){
-                xhtml.characters(NEWLINE, 0, 1);
-            } else if (tableCellDepth == 0) {
-                xhtml.characters(NEWLINE, 0, 1);
-            }
-        } catch (SAXException e) {
-
+    public void endParagraph() throws SAXException {
+        closeStyleTags();
+        if (pDepth == 1 && tableDepth == 0) {
+            xhtml.endElement(paragraphTag);
+        } else if (tableCellDepth > 0 && pWithinCell > 0) {
+            xhtml.characters(NEWLINE, 0, 1);
+        } else if (tableCellDepth == 0) {
+            xhtml.characters(NEWLINE, 0, 1);
         }
         if (tableCellDepth > 0) {
             pWithinCell++;
@@ -248,72 +221,44 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
     }
 
     @Override
-    public void startTable() {
-        try {
-            xhtml.startElement("table");
-            tableDepth++;
-        } catch (SAXException e) {
-
-        }
+    public void startTable() throws SAXException {
+        xhtml.startElement("table");
+        tableDepth++;
     }
 
     @Override
-    public void endTable() {
-        try {
-            xhtml.endElement("table");
-            tableDepth--;
-        } catch (SAXException e) {
-
-        }
+    public void endTable() throws SAXException {
+        xhtml.endElement("table");
+        tableDepth--;
     }
 
     @Override
-    public void startTableRow() {
-        try {
-            xhtml.startElement("tr");
-        } catch (SAXException e) {
-
-        }
+    public void startTableRow() throws SAXException {
+        xhtml.startElement("tr");
     }
 
     @Override
-    public void endTableRow() {
-        try {
-            xhtml.endElement("tr");
-        } catch (SAXException e) {
-
-        }
+    public void endTableRow() throws SAXException {
+        xhtml.endElement("tr");
     }
 
     @Override
-    public void startTableCell() {
-        try {
-            xhtml.startElement("td");
-        } catch (SAXException e) {
-
-        }
+    public void startTableCell() throws SAXException {
+        xhtml.startElement("td");
         tableCellDepth++;
     }
 
     @Override
-    public void endTableCell() {
-        try {
-            xhtml.endElement("td");
-        } catch (SAXException e) {
-
-        }
+    public void endTableCell() throws SAXException {
+        xhtml.endElement("td");
         pWithinCell = 0;
         tableCellDepth--;
     }
 
     @Override
-    public void startSDT() {
-        try {
-            closeStyleTags();
-            sdtDepth++;
-        } catch (SAXException e) {
-
-        }
+    public void startSDT() throws SAXException {
+        closeStyleTags();
+        sdtDepth++;
     }
 
     @Override
@@ -322,7 +267,8 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
     }
 
     @Override
-    public void startEditedSection(String editor, Date date, OOXMLWordAndPowerPointTextHandler.EditType editType) {
+    public void startEditedSection(String editor, Date date,
+                                   OOXMLWordAndPowerPointTextHandler.EditType editType) {
         //no-op
     }
 
@@ -337,28 +283,20 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
     }
 
     @Override
-    public void footnoteReference(String id) {
+    public void footnoteReference(String id) throws SAXException {
         if (id != null) {
-            try {
-                xhtml.characters("[");
-                xhtml.characters(id);
-                xhtml.characters("]");
-            } catch (SAXException e) {
-
-            }
+            xhtml.characters("[");
+            xhtml.characters(id);
+            xhtml.characters("]");
         }
     }
 
     @Override
-    public void endnoteReference(String id) {
+    public void endnoteReference(String id) throws SAXException {
         if (id != null) {
-            try {
-                xhtml.characters("[");
-                xhtml.characters(id);
-                xhtml.characters("]");
-            } catch (SAXException e) {
-
-            }
+            xhtml.characters("[");
+            xhtml.characters(id);
+            xhtml.characters("]");
         }
     }
 
@@ -368,52 +306,39 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
     }
 
     @Override
-    public void embeddedOLERef(String relId) {
+    public void embeddedOLERef(String relId) throws SAXException {
         if (relId == null) {
             return;
         }
-        try {
-            AttributesImpl attributes = new AttributesImpl();
-            attributes.addAttribute("", "class", "class", "CDATA", "embedded");
-            attributes.addAttribute("", "id", "id", "CDATA", relId);
-            xhtml.startElement("div", attributes);
-            xhtml.endElement("div");
-
-        } catch (SAXException e) {
-
-        }
+        AttributesImpl attributes = new AttributesImpl();
+        attributes.addAttribute("", "class", "class", "CDATA", "embedded");
+        attributes.addAttribute("", "id", "id", "CDATA", relId);
+        xhtml.startElement("div", attributes);
+        xhtml.endElement("div");
     }
 
     @Override
-    public void embeddedPicRef(String picFileName, String picDescription) {
+    public void embeddedPicRef(String picFileName, String picDescription) throws SAXException {
 
-        try {
-            AttributesImpl attr = new AttributesImpl();
-            if (picFileName != null) {
-                attr.addAttribute("", "src", "src", "CDATA", "embedded:" + picFileName);
-            }
-            if (picDescription != null) {
-                attr.addAttribute("", "alt", "alt", "CDATA", picDescription);
-            }
-
-            xhtml.startElement("img", attr);
-            xhtml.endElement("img");
-
-        } catch (SAXException e) {
-
+        AttributesImpl attr = new AttributesImpl();
+        if (picFileName != null) {
+            attr.addAttribute("", "src", "src", "CDATA", "embedded:" + picFileName);
         }
+        if (picDescription != null) {
+            attr.addAttribute("", "alt", "alt", "CDATA", picDescription);
+        }
+
+        xhtml.startElement("img", attr);
+        xhtml.endElement("img");
+
     }
 
     @Override
-    public void startBookmark(String id, String name) {
+    public void startBookmark(String id, String name) throws SAXException {
         //skip bookmarks within hyperlinks
-        if (name != null && ! wroteHyperlinkStart) {
-            try {
-                xhtml.startElement("a", "name", name);
-                xhtml.endElement("a");
-            } catch (SAXException e) {
-
-            }
+        if (name != null && !wroteHyperlinkStart) {
+            xhtml.startElement("a", "name", name);
+            xhtml.endElement("a");
         }
     }
 
@@ -445,8 +370,7 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
         }
     }
 
-    private void writeParagraphNumber(int numId, int ilvl,
-                                      XWPFListManager listManager,
+    private void writeParagraphNumber(int numId, int ilvl, XWPFListManager listManager,
                                       XHTMLContentHandler xhtml) throws SAXException {
 
         if (ilvl < 0 || numId < 0 || listManager == null) {

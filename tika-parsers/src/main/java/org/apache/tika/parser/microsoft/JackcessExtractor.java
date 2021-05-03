@@ -43,6 +43,7 @@ import com.healthmarketscience.jackcess.query.Query;
 import com.healthmarketscience.jackcess.util.OleBlob;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
@@ -227,6 +228,9 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                            m, parseContext);
                     handler.characters(h.toString());
                 } catch (SAXException e) {
+                    if (WriteLimitReachedException.isWriteLimitReached(e)) {
+                        throw e;
+                    }
                     //if something went wrong in htmlparser, just append the characters
                     handler.characters(v);
                 }

@@ -19,16 +19,15 @@ package org.apache.tika.parser;
 
 import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.exception.ZeroByteFileException;
 import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
-import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.sax.SecureContentHandler;
@@ -238,18 +237,16 @@ public class RecursiveParserWrapper extends ParserDecorator {
                         new RecursivelySecureContentHandler(localHandler, tis, totalWriteLimit);
             context.set(RecursivelySecureContentHandler.class, secureContentHandler);
             getWrappedParser().parse(tis, secureContentHandler, metadata, context);
-        } catch (SAXException e) {
-            boolean wlr = isWriteLimitReached(e);
-            if (wlr == false) {
-                throw e;
-            }
-            metadata.set(RecursiveParserWrapperHandler.WRITE_LIMIT_REACHED, "true");
         } catch (Throwable e) {
             //try our best to record the problem in the metadata object
             //then rethrow
-            String stackTrace = ExceptionUtils.getFilteredStackTrace(e);
-            metadata.add(RecursiveParserWrapperHandler.CONTAINER_EXCEPTION, stackTrace);
-            throw e;
+            if (WriteLimitReachedException.isWriteLimitReached(e)) {
+                metadata.set(RecursiveParserWrapperHandler.WRITE_LIMIT_REACHED, "true");
+            } else {
+                String stackTrace = ExceptionUtils.getFilteredStackTrace(e);
+                metadata.add(RecursiveParserWrapperHandler.CONTAINER_EXCEPTION, stackTrace);
+                throw e;
+            }
         } finally {
             tmp.dispose();
             long elapsedMillis = System.currentTimeMillis() - started;
@@ -312,24 +309,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
             throw new IllegalStateException("This is deprecated; please use a RecursiveParserWrapperHandler instead");
         }
     }
-    
-    /**
-     * Copied/modified from WriteOutContentHandler.  Couldn't make that 
-     * static, and we need to have something that will work 
-     * with exceptions thrown from both BodyContentHandler and WriteOutContentHandler
-     * @param t
-     * @return
-     */
-    private boolean isWriteLimitReached(Throwable t) {
-        if (t instanceof WriteLimitReached) {
-            return true;
-        } else if (t.getMessage() != null &&
-                t.getMessage().indexOf("Your document contained more than") == 0) {
-            return true;
-        } else {
-            return t.getCause() != null && isWriteLimitReached(t.getCause());
-        }
-    }
+
 
     private String getResourceName(Metadata metadata, ParserState state) {
         String objectName = "";
@@ -395,9 +375,10 @@ public class RecursiveParserWrapper extends ParserDecorator {
             try {
                 super.parse(stream, secureContentHandler, metadata, context);
             } catch (SAXException e) {
-                boolean wlr = isWriteLimitReached(e);
+                boolean wlr = WriteLimitReachedException.isWriteLimitReached(e);
                 if (wlr == true) {
                     metadata.add(WRITE_LIMIT_REACHED, "true");
+                    throw e;
                 } else {
                     if (catchEmbeddedExceptions) {
                         ParserUtils.recordParserFailure(this, e, metadata);
@@ -513,7 +494,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
         }
     }
 
-    private static class WriteLimitReached extends SAXException {
+    public static class WriteLimitReached extends SAXException {
         final int writeLimit;
         WriteLimitReached(int writeLimit) {
             this.writeLimit = writeLimit;

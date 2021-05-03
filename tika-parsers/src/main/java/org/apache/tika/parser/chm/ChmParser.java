@@ -97,15 +97,14 @@ public class ChmParser extends AbstractParser {
 
 
     private void parsePage(byte[] byteObject, Parser htmlParser,
-                           ContentHandler xhtml, ParseContext context) throws TikaException {// throws IOException
+                           ContentHandler xhtml, ParseContext context) throws SAXException,
+            TikaException {// throws IOException
         InputStream stream = null;
         Metadata metadata = new Metadata();
         ContentHandler handler = new EmbeddedContentHandler(new BodyContentHandler(xhtml));// -1
         try {
             stream = new ByteArrayInputStream(byteObject);
             htmlParser.parse(stream, handler, metadata, context);
-        } catch (SAXException e) {
-            throw new RuntimeException(e);
         } catch (IOException e) {
             // Pushback overflow from tagsoup
         }
