@@ -24,13 +24,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
 
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
+
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * This example demonstrates how to interrupt document parsing if
@@ -38,7 +39,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * <p>
  * {@link InterruptableParsingExample.InterruptingContentHandler} throws special exception as soon as
  * find {@code query} string in parsed file.
- *
+ * <p>
  * See also http://stackoverflow.com/questions/31939851
  */
 public class InterruptableParsingExample {
@@ -82,11 +83,13 @@ public class InterruptableParsingExample {
         public void characters(char[] ch, int start, int length) throws SAXException {
             sb.append(new String(ch, start, length).toLowerCase(Locale.getDefault()));
 
-            if (sb.toString().contains(query))
+            if (sb.toString().contains(query)) {
                 throw new QueryMatchedException();
+            }
 
-            if (sb.length() > 2 * query.length())
+            if (sb.length() > 2 * query.length()) {
                 sb.delete(0, sb.length() - query.length()); // keep tail with query.length() chars
+            }
         }
     }
 }

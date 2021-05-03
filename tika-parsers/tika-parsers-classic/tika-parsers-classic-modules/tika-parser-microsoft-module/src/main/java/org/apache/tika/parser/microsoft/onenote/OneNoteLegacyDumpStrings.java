@@ -16,21 +16,24 @@
  */
 package org.apache.tika.parser.microsoft.onenote;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.SAXException;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
+import org.xml.sax.SAXException;
+
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.sax.XHTMLContentHandler;
+
 /**
- * OneNote versions before OneNote 2010 do not have a published OpenSpec document, and the older formats are drastically
+ * OneNote versions before OneNote 2010 do not have a published OpenSpec document, and the older
+ * formats are drastically
  * incompatible with the later OpenSpecs.
- * Therefore, we resort to scraping out useful ASCII and UTF16LE strings using a similar algorithm used by the GNU "strings"
+ * Therefore, we resort to scraping out useful ASCII and UTF16LE strings using a similar
+ * algorithm used by the GNU "strings"
  * program.
- *
+ * <p>
  * This is only needed for OneNote versions prior to 2010.
  */
 class OneNoteLegacyDumpStrings {
@@ -44,13 +47,15 @@ class OneNoteLegacyDumpStrings {
     OneNoteDirectFileResource oneNoteDirectFileResource;
     XHTMLContentHandler xhtml;
 
-    public OneNoteLegacyDumpStrings(OneNoteDirectFileResource oneNoteDirectFileResource, XHTMLContentHandler xhtml) {
+    public OneNoteLegacyDumpStrings(OneNoteDirectFileResource oneNoteDirectFileResource,
+                                    XHTMLContentHandler xhtml) {
         this.oneNoteDirectFileResource = oneNoteDirectFileResource;
         this.xhtml = xhtml;
     }
 
     /**
      * Dump all "useful" Ascii and UTF16LE strings found in the file to the XHTMLContentHandler.
+     *
      * @throws TikaException
      * @throws SAXException
      */
@@ -60,7 +65,8 @@ class OneNoteLegacyDumpStrings {
     }
 
     /**
-     * Based on GNU "strings" implementation. Pulls out ascii text segments and writes them to the XHTMLContentHandler.
+     * Based on GNU "strings" implementation. Pulls out ascii text segments and writes them to
+     * the XHTMLContentHandler.
      */
     private void dumpAscii() throws SAXException, TikaException {
         try {
@@ -73,7 +79,7 @@ class OneNoteLegacyDumpStrings {
                 if (sz - pos < BUFFER_SIZE) {
                     nextBufferSize = sz - pos;
                 }
-                ByteBuffer byteBuffer = ByteBuffer.allocate((int)nextBufferSize);
+                ByteBuffer byteBuffer = ByteBuffer.allocate((int) nextBufferSize);
                 oneNoteDirectFileResource.read(byteBuffer);
                 for (long i = 0; i < nextBufferSize - 1; ++i) {
                     int b = byteBuffer.get((int) i);
@@ -94,8 +100,10 @@ class OneNoteLegacyDumpStrings {
             throw new TikaException("Could not extract text from legacy OneNote document", e);
         }
     }
+
     /**
-     * Based on GNU "strings" implementation. Pulls out UTF16 LE text segments and writes them to the XHTMLContentHandler.
+     * Based on GNU "strings" implementation. Pulls out UTF16 LE text segments and writes them to
+     * the XHTMLContentHandler.
      */
     private void dumpUtf16LE() throws SAXException, TikaException {
         try {
@@ -114,13 +122,13 @@ class OneNoteLegacyDumpStrings {
                 if (sz - pos < bufSize) {
                     nextBufferSize = sz - pos;
                 }
-                ByteBuffer byteBuffer = ByteBuffer.allocate((int)nextBufferSize);
+                ByteBuffer byteBuffer = ByteBuffer.allocate((int) nextBufferSize);
                 oneNoteDirectFileResource.read(byteBuffer);
                 for (long i = 0; i < nextBufferSize - 1; i++) {
-                    int c1 = byteBuffer.get((int)i) & 0xff;
-                    int c2 = byteBuffer.get((int)i+1);
+                    int c1 = byteBuffer.get((int) i) & 0xff;
+                    int c2 = byteBuffer.get((int) i + 1);
 
-                    if (c2 == 0x00 && c1 >= 0x20) {// add this back? && c1 < 0x7F) {
+                    if (c2 == 0x00 && c1 >= 0x20) { // add this back? && c1 < 0x7F) {
                         ++i;
                         os.write(c1);
                     } else {
@@ -138,14 +146,17 @@ class OneNoteLegacyDumpStrings {
             throw new TikaException("Could not extract text from legacy OneNote document", e);
         }
     }
+
     /**
-     * Writes a buffer of output characters if the (num alpha chars in the buffer) / (number of chars in the buffer) >
+     * Writes a buffer of output characters if the (num alpha chars in the buffer) / (number of
+     * chars in the buffer) >
      * ACCEPTABLE_ALPHA_TO_OTHER_CHAR_RATIO.
+     *
      * @param os Byte array output stream containing the buffer.
      */
     private void writeIfUseful(ByteArrayOutputStream os) throws SAXException {
         String str = new String(os.toByteArray(), StandardCharsets.ISO_8859_1);
-        String [] spl = str.split(" ");
+        String[] spl = str.split(" ");
         if (spl.length > 1) {
             int numAlpha = 0;
             for (int i = 0; i < str.length(); ++i) {

@@ -32,6 +32,7 @@ public class UnicodeBlockCounter implements StringStatsCalculator<Map<String, Mu
     private static final Logger LOG = LoggerFactory.getLogger(UnicodeBlockCounter.class);
 
     private final int maxContentLength;
+
     public UnicodeBlockCounter(int maxContentLength) {
         this.maxContentLength = maxContentLength;
     }

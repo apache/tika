@@ -23,13 +23,13 @@ import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Arrays;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
@@ -37,6 +37,14 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.config.Field;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
@@ -45,15 +53,8 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.recognition.ObjectRecogniser;
 import org.apache.tika.parser.captioning.CaptionObject;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
+import org.apache.tika.parser.recognition.ObjectRecogniser;
 
 /**
  * Tensorflow image captioner.
@@ -66,12 +67,9 @@ import org.xml.sax.SAXException;
 public class TensorflowRESTCaptioner implements ObjectRecogniser {
     private static final Logger LOG = LoggerFactory.getLogger(TensorflowRESTCaptioner.class);
 
-    private static final Set<MediaType> SUPPORTED_MIMES = Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList(new MediaType[]{
-                    MediaType.image("jpeg"),
-                    MediaType.image("png"),
-                    MediaType.image("gif")
-            })));
+    private static final Set<MediaType> SUPPORTED_MIMES = Collections.unmodifiableSet(new HashSet<>(
+            Arrays.asList(new MediaType[]{MediaType.image("jpeg"), MediaType.image("png"),
+                    MediaType.image("gif")})));
 
     private static final String LABEL_LANG = "eng";
 
@@ -108,8 +106,9 @@ public class TensorflowRESTCaptioner implements ObjectRecogniser {
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         try {
             healthUri = URI.create(apiBaseUri + "/ping");
-            apiUri = URI.create(apiBaseUri + String.format(Locale.getDefault(), "/caption/image?beam_size=%1$d&max_caption_length=%2$d",
-                    captions, maxCaptionLength));
+            apiUri = URI.create(apiBaseUri + String.format(Locale.getDefault(),
+                    "/caption/image?beam_size=%1$d&max_caption_length=%2$d", captions,
+                    maxCaptionLength));
 
             DefaultHttpClient client = new DefaultHttpClient();
             HttpResponse response = client.execute(new HttpGet(healthUri));
@@ -124,13 +123,14 @@ public class TensorflowRESTCaptioner implements ObjectRecogniser {
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler handler) throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler handler)
+            throws TikaConfigException {
         //TODO -- what do we want to check?
     }
 
     @Override
-    public List<CaptionObject> recognise(InputStream stream,
-                                         ContentHandler handler, Metadata metadata, ParseContext context)
+    public List<CaptionObject> recognise(InputStream stream, ContentHandler handler,
+                                         Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         List<CaptionObject> capObjs = new ArrayList<>();
         try {

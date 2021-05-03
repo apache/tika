@@ -17,67 +17,68 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <artifactId>tika-parsers-classic-modules</artifactId>
-        <groupId>org.apache.tika</groupId>
-        <version>2.0.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
-    </parent>
-    <modelVersion>4.0.0</modelVersion>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <parent>
+    <artifactId>tika-parsers-classic-modules</artifactId>
+    <groupId>org.apache.tika</groupId>
+    <version>2.0.0-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>tika-parser-text-module</artifactId>
+  <artifactId>tika-parser-text-module</artifactId>
 
-    <dependencies>
-        <dependency>
-            <groupId>com.googlecode.juniversalchardet</groupId>
-            <artifactId>juniversalchardet</artifactId>
-            <version>${juniversalchardet.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>commons-codec</groupId>
-            <artifactId>commons-codec</artifactId>
-            <version>${commons.codec.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-csv</artifactId>
-            <version>${commons.csv.version}</version>
-        </dependency>
-    </dependencies>
+  <dependencies>
+    <dependency>
+      <groupId>com.googlecode.juniversalchardet</groupId>
+      <artifactId>juniversalchardet</artifactId>
+      <version>${juniversalchardet.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-codec</groupId>
+      <artifactId>commons-codec</artifactId>
+      <version>${commons.codec.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-csv</artifactId>
+      <version>${commons.csv.version}</version>
+    </dependency>
+  </dependencies>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <archive>
-                        <manifestEntries>
-                            <Automatic-Module-Name>org.apache.tika.parser.txt</Automatic-Module-Name>
-                        </manifestEntries>
-                    </archive>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>test-jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.rat</groupId>
-                <artifactId>apache-rat-plugin</artifactId>
-                <version>${rat.version}</version>
-                <configuration>
-                    <excludes>
-                        <exclude>src/main/java/org/apache/tika/parser/txt/Charset*.java</exclude>
-                        <exclude>src/test/resources/test-documents/**</exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifestEntries>
+              <Automatic-Module-Name>org.apache.tika.parser.txt</Automatic-Module-Name>
+            </manifestEntries>
+          </archive>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>test-jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <version>${rat.version}</version>
+        <configuration>
+          <excludes>
+            <exclude>src/main/java/org/apache/tika/parser/txt/Charset*.java</exclude>
+            <exclude>src/test/resources/test-documents/**</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 
 </project>

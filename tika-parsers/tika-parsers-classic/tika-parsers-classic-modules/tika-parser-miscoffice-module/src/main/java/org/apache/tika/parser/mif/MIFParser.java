@@ -16,19 +16,6 @@
  */
 package org.apache.tika.parser.mif;
 
-import org.apache.commons.io.input.CloseShieldInputStream;
-import org.apache.tika.detect.AutoDetectReader;
-import org.apache.tika.detect.EncodingDetector;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractEncodingDetectorParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.EndDocumentShieldingContentHandler;
-import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -38,12 +25,24 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
+import org.apache.commons.io.input.CloseShieldInputStream;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
+import org.apache.tika.detect.AutoDetectReader;
+import org.apache.tika.detect.EncodingDetector;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractEncodingDetectorParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.EndDocumentShieldingContentHandler;
+import org.apache.tika.sax.XHTMLContentHandler;
+
 public class MIFParser extends AbstractEncodingDetectorParser {
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-                    MediaType.application("vnd.mif"),
-                    MediaType.application("x-maker"),
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(new HashSet<>(
+            Arrays.asList(MediaType.application("vnd.mif"), MediaType.application("x-maker"),
                     MediaType.application("x-mif"))));
 
     public MIFParser() {
@@ -60,11 +59,11 @@ public class MIFParser extends AbstractEncodingDetectorParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
 
-        try (AutoDetectReader reader = new AutoDetectReader(
-                new CloseShieldInputStream(stream), metadata, getEncodingDetector(context))) {
+        try (AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(stream),
+                metadata, getEncodingDetector(context))) {
 
             Charset charset = reader.getCharset();
             metadata.set(Metadata.CONTENT_ENCODING, charset.name());
@@ -73,7 +72,8 @@ public class MIFParser extends AbstractEncodingDetectorParser {
 
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             xhtml.startDocument();
-            EndDocumentShieldingContentHandler parseHandler = new EndDocumentShieldingContentHandler(xhtml);
+            EndDocumentShieldingContentHandler parseHandler =
+                    new EndDocumentShieldingContentHandler(xhtml);
             MIFExtractor.parse(reader, getContentHandler(parseHandler, metadata));
             xhtml.endDocument();
 
@@ -86,7 +86,7 @@ public class MIFParser extends AbstractEncodingDetectorParser {
     /**
      * Get the content handler to use.
      *
-     * @param handler the parent content handler.
+     * @param handler  the parent content handler.
      * @param metadata the metadata object.
      * @return the ContentHandler.
      */

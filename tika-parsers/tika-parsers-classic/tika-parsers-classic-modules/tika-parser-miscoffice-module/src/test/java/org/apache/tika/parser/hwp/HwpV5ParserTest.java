@@ -19,26 +19,25 @@ package org.apache.tika.parser.hwp;
 import static org.junit.Assert.assertEquals;
 
 import org.apache.commons.io.filefilter.RegexFileFilter;
+import org.junit.Test;
+
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
-import org.junit.Test;
 
 
 public class HwpV5ParserTest extends MultiThreadedTikaTest {
 
     @Test
     public void testHwpV5Parser() throws Exception {
-        for (Parser parser : new Parser[]{new HwpV5Parser(),
-                AUTO_DETECT_PARSER}) {
+        for (Parser parser : new Parser[]{new HwpV5Parser(), AUTO_DETECT_PARSER}) {
             XMLResult result = getXML("testHWP-v5b.hwp", parser);
             assertContains("<p>Apache Tika - \uCEE8\uD150\uCE20", result.xml);
             Metadata metadata = result.metadata;
-            assertEquals(
-                    "application/x-hwp-v5", metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("application/x-hwp-v5", metadata.get(Metadata.CONTENT_TYPE));
             assertEquals("Apache Tika", metadata.get(TikaCoreProperties.TITLE));
             assertEquals("SooMyung Lee", metadata.get(TikaCoreProperties.CREATOR));
 
@@ -52,9 +51,7 @@ public class HwpV5ParserTest extends MultiThreadedTikaTest {
         String content = result.xml;
         assertContains("<p>Apache Tika - \uCEE8\uD150\uCE20", content);
 
-        assertEquals(
-                "application/x-hwp-v5",
-                result.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-hwp-v5", result.metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Apache Tika", result.metadata.get(TikaCoreProperties.TITLE));
         assertEquals("SooMyung Lee", result.metadata.get(TikaCoreProperties.CREATOR));
     }
@@ -77,7 +74,7 @@ public class HwpV5ParserTest extends MultiThreadedTikaTest {
         int numIterations = 50;
         ParseContext[] parseContexts = new ParseContext[numThreads];
 
-        testMultiThreaded(new RecursiveParserWrapper(AUTO_DETECT_PARSER), parseContexts, numThreads, numIterations,
-                new RegexFileFilter(".*\\.hwp"));
+        testMultiThreaded(new RecursiveParserWrapper(AUTO_DETECT_PARSER), parseContexts, numThreads,
+                numIterations, new RegexFileFilter(".*\\.hwp"));
     }
 }

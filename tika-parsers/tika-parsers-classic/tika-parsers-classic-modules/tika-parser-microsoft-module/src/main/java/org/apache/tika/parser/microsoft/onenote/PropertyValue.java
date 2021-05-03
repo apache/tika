@@ -16,13 +16,14 @@
  */
 package org.apache.tika.parser.microsoft.onenote;
 
-import org.apache.tika.exception.TikaMemoryLimitException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.tika.exception.TikaMemoryLimitException;
 
 class PropertyValue {
 
@@ -37,8 +38,10 @@ class PropertyValue {
     PropertySet propertySet = new PropertySet(); // or used to house a single value
     FileChunkReference rawData = new FileChunkReference(); // FourBytesOfLengthFollowedByData
 
-    public void print(OneNoteDocument document, OneNotePtr pointer, int indentLevel) throws IOException, TikaMemoryLimitException {
-        boolean isRawText = true; //std::string(get_property_id_name(propertyId.id)).find("TextE")!=-1;
+    public void print(OneNoteDocument document, OneNotePtr pointer, int indentLevel)
+            throws IOException, TikaMemoryLimitException {
+        boolean isRawText =
+                true; //std::string(get_property_id_name(propertyId.id)).find("TextE")!=-1;
 
         long type = propertyId.type;
 
@@ -57,9 +60,8 @@ class PropertyValue {
                 content.dumpHex();
                 LOG.debug("]");
             }
-        } else if (type == 0x9 || type == 0x8
-          || type == 0xb || type == 0xc
-          || type == 0xa || type == 0xd) {
+        } else if (type == 0x9 || type == 0x8 || type == 0xb || type == 0xc || type == 0xa ||
+                type == 0xd) {
             String xtype = "contextID";
             if (type == 0x8 || type == 0x9) {
                 xtype = "OIDs";

@@ -16,15 +16,6 @@
  */
 package org.apache.tika.pipes.fetchiterator;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.pipes.emitter.EmitKey;
-import org.apache.tika.pipes.fetcher.FetchKey;
-
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
@@ -34,17 +25,24 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.concurrent.TimeoutException;
 
-public class FileSystemFetchIterator
-        extends FetchIterator implements Initializable {
+import org.apache.tika.config.Field;
+import org.apache.tika.config.Initializable;
+import org.apache.tika.config.InitializableProblemHandler;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.pipes.FetchEmitTuple;
+import org.apache.tika.pipes.emitter.EmitKey;
+import org.apache.tika.pipes.fetcher.FetchKey;
+
+public class FileSystemFetchIterator extends FetchIterator implements Initializable {
 
     private Path basePath;
 
     public FileSystemFetchIterator() {
-
     }
 
-    public FileSystemFetchIterator(String fetcherName, Path basePath) {
-        super(fetcherName);
+    public FileSystemFetchIterator(Path basePath) {
         this.basePath = basePath;
     }
 
@@ -55,9 +53,9 @@ public class FileSystemFetchIterator
 
     @Override
     protected void enqueue() throws InterruptedException, IOException, TimeoutException {
-        if (! Files.isDirectory(basePath)) {
-            throw new IllegalArgumentException("\"basePath\" directory does not exist: " +
-                    basePath.toAbsolutePath());
+        if (!Files.isDirectory(basePath)) {
+            throw new IllegalArgumentException(
+                    "\"basePath\" directory does not exist: " + basePath.toAbsolutePath());
         }
 
         try {
@@ -73,7 +71,8 @@ public class FileSystemFetchIterator
 
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler)
+            throws TikaConfigException {
         //these should all be fatal
         TikaConfig.mustNotBeEmpty("basePath", basePath);
         TikaConfig.mustNotBeEmpty("fetcherName", getFetcherName());
@@ -86,12 +85,15 @@ public class FileSystemFetchIterator
 
         private final String fetcherName;
         private final String emitterName;
+
         private FSFileVisitor(String fetcherName, String emitterName) {
             this.fetcherName = fetcherName;
             this.emitterName = emitterName;
         }
+
         @Override
-        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+                throws IOException {
             return FileVisitResult.CONTINUE;
         }
 
@@ -100,10 +102,8 @@ public class FileSystemFetchIterator
             String relPath = basePath.relativize(file).toString();
 
             try {
-                tryToAdd(new FetchEmitTuple(
-                        new FetchKey(fetcherName, relPath),
-                        new EmitKey(emitterName, relPath), new Metadata())
-                );
+                tryToAdd(new FetchEmitTuple(new FetchKey(fetcherName, relPath),
+                        new EmitKey(emitterName, relPath), new Metadata()));
             } catch (TimeoutException e) {
                 throw new IOException(e);
             } catch (InterruptedException e) {

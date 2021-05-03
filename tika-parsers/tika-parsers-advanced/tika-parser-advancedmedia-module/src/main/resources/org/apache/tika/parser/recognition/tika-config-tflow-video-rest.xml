@@ -25,7 +25,8 @@
                 <param name="topN" type="int">2</param>
                 <param name="minConfidence" type="double">0.015</param>
                 <param name="mode" type="string">fixed</param>
-                <param name="class" type="string">org.apache.tika.parser.recognition.tf.TensorflowRESTVideoRecogniser</param>
+                <param name="class" type="string">org.apache.tika.parser.recognition.tf.TensorflowRESTVideoRecogniser
+                </param>
             </params>
         </parser>
     </parsers>

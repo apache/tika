@@ -30,6 +30,9 @@ import org.apache.jempbox.xmp.ResourceRef;
 import org.apache.jempbox.xmp.XMPMetadata;
 import org.apache.jempbox.xmp.XMPSchemaDublinCore;
 import org.apache.jempbox.xmp.XMPSchemaMediaManagement;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -38,18 +41,15 @@ import org.apache.tika.metadata.XMPMM;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.DateUtils;
 import org.apache.tika.utils.XMLReaderUtils;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
 public class JempboxExtractor {
 
     //TODO: change signature to require parsecontext from parse
     private static final ParseContext EMPTY_PARSE_CONTEXT = new ParseContext();
-    private static volatile int MAX_EVENT_HISTORY_IN_XMPMM = 1024;
-
-    // The XMP spec says it must be unicode, but for most file formats it specifies "must be encoded in UTF-8"
+    // The XMP spec says it must be unicode, but for most file formats it specifies
+    // "must be encoded in UTF-8"
     private static final String DEFAULT_XMP_CHARSET = UTF_8.name();
-
+    private static volatile int MAX_EVENT_HISTORY_IN_XMPMM = 1024;
     private XMPPacketScanner scanner = new XMPPacketScanner();
     private Metadata metadata;
 
@@ -57,34 +57,12 @@ public class JempboxExtractor {
         this.metadata = metadata;
     }
 
-
-    public void parse(InputStream file) throws IOException, TikaException {
-        ByteArrayOutputStream xmpraw = new ByteArrayOutputStream();
-        if (!scanner.parse(file, xmpraw)) {
-            return;
-        }
-
-        XMPMetadata xmp = null;
-        try (InputStream decoded =
-                             new ByteArrayInputStream(xmpraw.toByteArray())
-        ) {
-            Document dom = XMLReaderUtils.buildDOM(decoded, EMPTY_PARSE_CONTEXT);
-            if (dom != null) {
-                xmp = new XMPMetadata(dom);
-            }
-        } catch (IOException|SAXException e) {
-            //
-        }
-        extractDublinCore(xmp, metadata);
-        extractXMPMM(xmp, metadata);
-    }
-
     /**
      * Tries to extract Dublin Core schema from XMP.  If XMPMetadata is null
      * or if the DC schema is null, this will return without throwing an exception.
      *
      * @param xmpMetadata XMPMetadata to process
-     * @param metadata Tika's metadata to write to
+     * @param metadata    Tika's metadata to write to
      */
     public static void extractDublinCore(XMPMetadata xmpMetadata, Metadata metadata) {
         if (xmpMetadata == null) {
@@ -94,6 +72,7 @@ public class JempboxExtractor {
         try {
             dc = xmpMetadata.getDublinCoreSchema();
         } catch (IOException e) {
+            //swallow
         }
         if (dc == null) {
             return;
@@ -112,7 +91,8 @@ public class JempboxExtractor {
                 metadata.add(TikaCoreProperties.SUBJECT, keyword);
             }
             // TODO should we set SUBJECT too?
-            // All tested photo managers set the same in Iptc.Application2.Keywords and Xmp.dc.subject
+            // All tested photo managers set the same in Iptc.Application2.Keywords
+            // and Xmp.dc.subject
         }
     }
 
@@ -132,8 +112,9 @@ public class JempboxExtractor {
 
     /**
      * Extracts Media Management metadata from XMP.
-     *
+     * <p>
      * Silently swallows exceptions.
+     *
      * @param xmp
      * @param metadata
      */
@@ -156,12 +137,18 @@ public class JempboxExtractor {
             ResourceRef derivedFrom = mmSchema.getDerivedFrom();
             if (derivedFrom != null) {
                 try {
-                    addMetadata(metadata, XMPMM.DERIVED_FROM_DOCUMENTID, derivedFrom.getDocumentID());
-                } catch (NullPointerException e) {}
+                    addMetadata(metadata, XMPMM.DERIVED_FROM_DOCUMENTID,
+                            derivedFrom.getDocumentID());
+                } catch (NullPointerException e) {
+                    //swallow
+                }
 
                 try {
-                    addMetadata(metadata, XMPMM.DERIVED_FROM_INSTANCEID, derivedFrom.getInstanceID());
-                } catch (NullPointerException e) {}
+                    addMetadata(metadata, XMPMM.DERIVED_FROM_INSTANCEID,
+                            derivedFrom.getInstanceID());
+                } catch (NullPointerException e) {
+                    //swallow
+                }
 
                 //TODO: not yet supported by XMPBox...extract OriginalDocumentID
                 //in DerivedFrom section
@@ -183,8 +170,8 @@ public class JempboxExtractor {
                         softwareAgent = stevt.getSoftwareAgent();
 
                         //instanceid can throw npe; getWhen can throw IOException
-                    } catch (NullPointerException|IOException e) {
-                       //swallow
+                    } catch (NullPointerException | IOException e) {
+                        //swallow
                     }
                     if (instanceId != null && instanceId.trim().length() > 0) {
                         //for absent data elements, pass in empty strings so
@@ -215,6 +202,13 @@ public class JempboxExtractor {
     }
 
     /**
+     * @return maximum number of events to extract from the XMPMM history.
+     */
+    public static int getMaxXMPMMHistory() {
+        return MAX_EVENT_HISTORY_IN_XMPMM;
+    }
+
+    /**
      * Maximum number of events to extract from the
      * event history in the XMP Media Management (XMPMM) section.
      * The extractor will silently stop adding events after it
@@ -226,11 +220,22 @@ public class JempboxExtractor {
         MAX_EVENT_HISTORY_IN_XMPMM = maxEvents;
     }
 
-    /**
-     *
-     * @return maximum number of events to extract from the XMPMM history.
-     */
-    public static int getMaxXMPMMHistory() {
-        return MAX_EVENT_HISTORY_IN_XMPMM;
+    public void parse(InputStream file) throws IOException, TikaException {
+        ByteArrayOutputStream xmpraw = new ByteArrayOutputStream();
+        if (!scanner.parse(file, xmpraw)) {
+            return;
+        }
+
+        XMPMetadata xmp = null;
+        try (InputStream decoded = new ByteArrayInputStream(xmpraw.toByteArray())) {
+            Document dom = XMLReaderUtils.buildDOM(decoded, EMPTY_PARSE_CONTEXT);
+            if (dom != null) {
+                xmp = new XMPMetadata(dom);
+            }
+        } catch (IOException | SAXException e) {
+            //
+        }
+        extractDublinCore(xmp, metadata);
+        extractXMPMM(xmp, metadata);
     }
 }

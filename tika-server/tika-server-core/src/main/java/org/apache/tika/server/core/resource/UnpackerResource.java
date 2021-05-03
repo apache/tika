@@ -21,14 +21,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.tika.server.core.resource.TikaResource.fillMetadata;
 import static org.apache.tika.server.core.resource.TikaResource.fillParseContext;
 
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -40,11 +32,26 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
-import au.com.bytecode.opencsv.CSVWriter;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
+
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.DefaultEmbeddedStreamTranslator;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -58,30 +65,26 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.RichTextContentHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
 
 @Path("/unpack")
 public class UnpackerResource {
-    private static final long MAX_ATTACHMENT_BYTES = 100*1024*1024;
-
     public static final String TEXT_FILENAME = "__TEXT__";
+    private static final long MAX_ATTACHMENT_BYTES = 100 * 1024 * 1024;
     private static final String META_FILENAME = "__METADATA__";
 
     private static final Logger LOG = LoggerFactory.getLogger(UnpackerResource.class);
 
-    public static void metadataToCsv(Metadata metadata, OutputStream outputStream) throws IOException {
-        CSVWriter writer = new CSVWriter(new OutputStreamWriter(outputStream, UTF_8));
+    public static void metadataToCsv(Metadata metadata, OutputStream outputStream)
+            throws IOException {
+        CSVPrinter writer =
+                new CSVPrinter(new OutputStreamWriter(outputStream, UTF_8), CSVFormat.EXCEL);
 
         for (String name : metadata.names()) {
             String[] values = metadata.getValues(name);
             ArrayList<String> list = new ArrayList<>(values.length + 1);
             list.add(name);
             list.addAll(Arrays.asList(values));
-            writer.writeNext(list.toArray(values));
+            writer.printRecord(values);
         }
 
         writer.close();
@@ -90,38 +93,30 @@ public class UnpackerResource {
     @Path("/{id:(/.*)?}")
     @PUT
     @Produces({"application/zip", "application/x-tar"})
-    public Map<String, byte[]> unpack(
-            InputStream is,
-            @Context HttpHeaders httpHeaders,
-            @Context UriInfo info
-    ) throws Exception {
-        return process(TikaResource.getInputStream(is, new Metadata(), httpHeaders), httpHeaders, info, false);
+    public Map<String, byte[]> unpack(InputStream is, @Context HttpHeaders httpHeaders,
+                                      @Context UriInfo info) throws Exception {
+        return process(TikaResource.getInputStream(is, new Metadata(), httpHeaders), httpHeaders,
+                info, false);
     }
 
     @Path("/all{id:(/.*)?}")
     @PUT
     @Produces({"application/zip", "application/x-tar"})
-    public Map<String, byte[]> unpackAll(
-            InputStream is,
-            @Context HttpHeaders httpHeaders,
-            @Context UriInfo info
-    ) throws Exception {
-        return process(TikaResource.getInputStream(is, new Metadata(), httpHeaders), httpHeaders, info, true);
+    public Map<String, byte[]> unpackAll(InputStream is, @Context HttpHeaders httpHeaders,
+                                         @Context UriInfo info) throws Exception {
+        return process(TikaResource.getInputStream(is, new Metadata(), httpHeaders), httpHeaders,
+                info, true);
     }
 
-    private Map<String, byte[]> process(
-            InputStream is,
-            @Context HttpHeaders httpHeaders,
-            @Context UriInfo info,
-            boolean saveAll
-    ) throws Exception {
+    private Map<String, byte[]> process(InputStream is, @Context HttpHeaders httpHeaders,
+                                        @Context UriInfo info, boolean saveAll) throws Exception {
         Metadata metadata = new Metadata();
         ParseContext pc = new ParseContext();
 
         Parser parser = TikaResource.createParser();
         if (parser instanceof DigestingParser) {
             //no need to digest for unwrapping
-            parser = ((DigestingParser)parser).getWrappedParser();
+            parser = ((DigestingParser) parser).getWrappedParser();
         }
         fillMetadata(parser, metadata, httpHeaders.getRequestHeaders());
         fillParseContext(httpHeaders.getRequestHeaders(), metadata, pc);
@@ -134,7 +129,8 @@ public class UnpackerResource {
         ByteArrayOutputStream text = new ByteArrayOutputStream();
 
         if (saveAll) {
-            ch = new BodyContentHandler(new RichTextContentHandler(new OutputStreamWriter(text, UTF_8)));
+            ch = new BodyContentHandler(
+                    new RichTextContentHandler(new OutputStreamWriter(text, UTF_8)));
         } else {
             ch = new DefaultHandler();
         }
@@ -164,7 +160,8 @@ public class UnpackerResource {
     private class MyEmbeddedDocumentExtractor implements EmbeddedDocumentExtractor {
         private final MutableInt count;
         private final Map<String, byte[]> zout;
-        private final EmbeddedStreamTranslator embeddedStreamTranslator = new DefaultEmbeddedStreamTranslator();
+        private final EmbeddedStreamTranslator embeddedStreamTranslator =
+                new DefaultEmbeddedStreamTranslator();
 
         MyEmbeddedDocumentExtractor(MutableInt count, Map<String, byte[]> zout) {
             this.count = count;
@@ -175,13 +172,14 @@ public class UnpackerResource {
             return true;
         }
 
-        public void parseEmbedded(InputStream inputStream, ContentHandler contentHandler, Metadata metadata, boolean b)
-                throws SAXException, IOException {
+        public void parseEmbedded(InputStream inputStream, ContentHandler contentHandler,
+                                  Metadata metadata, boolean b) throws SAXException, IOException {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             BoundedInputStream bis = new BoundedInputStream(MAX_ATTACHMENT_BYTES, inputStream);
             IOUtils.copy(bis, bos);
             if (bis.hasHitBound()) {
-                throw new IOException(new TikaMemoryLimitException(MAX_ATTACHMENT_BYTES+1, MAX_ATTACHMENT_BYTES));
+                throw new IOException(new TikaMemoryLimitException(MAX_ATTACHMENT_BYTES + 1,
+                        MAX_ATTACHMENT_BYTES));
             }
             byte[] data = bos.toByteArray();
 
@@ -194,7 +192,8 @@ public class UnpackerResource {
 
             if (!name.contains(".") && contentType != null) {
                 try {
-                    String ext = TikaResource.getConfig().getMimeRepository().forName(contentType).getExtension();
+                    String ext = TikaResource.getConfig().getMimeRepository().forName(contentType)
+                            .getExtension();
 
                     if (ext != null) {
                         name += ext;
@@ -205,7 +204,8 @@ public class UnpackerResource {
             }
             try (InputStream is = new ByteArrayInputStream(data)) {
                 if (embeddedStreamTranslator.shouldTranslate(is, metadata)) {
-                    InputStream translated = embeddedStreamTranslator.translate(new ByteArrayInputStream(data), metadata);
+                    InputStream translated = embeddedStreamTranslator
+                            .translate(new ByteArrayInputStream(data), metadata);
                     ByteArrayOutputStream bos2 = new ByteArrayOutputStream();
                     IOUtils.copy(translated, bos2);
                     data = bos2.toByteArray();
@@ -237,7 +237,7 @@ public class UnpackerResource {
                 normalizedName = normalizedName.substring(prefixLength);
             }
             if (zout.containsKey(normalizedName)) {
-                return UUID.randomUUID().toString()+"-"+normalizedName;
+                return UUID.randomUUID().toString() + "-" + normalizedName;
             }
             return normalizedName;
         }

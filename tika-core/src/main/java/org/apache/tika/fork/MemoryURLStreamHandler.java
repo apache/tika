@@ -32,12 +32,12 @@ class MemoryURLStreamHandler extends URLStreamHandler {
     private static final AtomicInteger counter = new AtomicInteger();
 
     private static final List<MemoryURLStreamRecord> records =
-        new LinkedList<MemoryURLStreamRecord>();
+            new LinkedList<MemoryURLStreamRecord>();
 
     public static URL createURL(byte[] data) {
         try {
             int i = counter.incrementAndGet();
-            URL url =  new URL("tika-in-memory", "localhost", "/" + i);
+            URL url = new URL("tika-in-memory", "localhost", "/" + i);
 
             MemoryURLStreamRecord record = new MemoryURLStreamRecord();
             record.url = new WeakReference<URL>(url);

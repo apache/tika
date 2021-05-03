@@ -16,6 +16,18 @@
  */
 package org.apache.tika.parser.xliff;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
+
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -25,17 +37,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.EndDocumentShieldingContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
 
 /**
  * Parser for XLZ Archives.
@@ -61,21 +62,18 @@ public class XLZParser extends AbstractParser {
      * XLF Extension
      */
     private static final String XLF = ".xlf";
+    /**
+     * Shared Parser instance.
+     */
+    private Parser xliffParser = new XLIFF12Parser();
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
-    /**
-     * Shared Parser instance.
-     */
-    private Parser xliffParser = new XLIFF12Parser();
-
-    public void parse(
-            InputStream stream, ContentHandler baseHandler,
-            Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler baseHandler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
 
         ZipFile zipFile = null;
         ZipInputStream zipStream = null;
@@ -114,6 +112,7 @@ public class XLZParser extends AbstractParser {
             handler.reallyEndDocument();
         }
     }
+
     private void handleZipStream(ZipInputStream zipStream, Metadata metadata, ParseContext context,
                                  EndDocumentShieldingContentHandler handler)
             throws IOException, TikaException, SAXException {
@@ -130,8 +129,8 @@ public class XLZParser extends AbstractParser {
         }
     }
 
-    private void handleZipFile(ZipFile zipFile, Metadata metadata,
-                               ParseContext context, EndDocumentShieldingContentHandler handler)
+    private void handleZipFile(ZipFile zipFile, Metadata metadata, ParseContext context,
+                               EndDocumentShieldingContentHandler handler)
             throws IOException, TikaException, SAXException {
 
         Enumeration<? extends ZipEntry> entries = zipFile.entries();

@@ -16,8 +16,9 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
+
+import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Cell of content. Classes that implement this interface are used by

@@ -34,7 +34,7 @@ public class WPInputStreamTest {
             wpInputStream.readWPByte();
             fail("should have thrown EOF");
         } catch (EOFException e) {
-
+            //swallow
         }
     }
 
@@ -45,7 +45,7 @@ public class WPInputStreamTest {
             wpInputStream.readWPShort();
             fail("should have thrown EOF");
         } catch (EOFException e) {
-
+            //swallow
         }
     }
 
@@ -56,7 +56,7 @@ public class WPInputStreamTest {
             wpInputStream.readWPChar();
             fail("should have thrown EOF");
         } catch (EOFException e) {
-
+            //swallow
         }
     }
 
@@ -66,7 +66,7 @@ public class WPInputStreamTest {
             wpInputStream.readWPHex();
             fail("should have thrown EOF");
         } catch (EOFException e) {
-
+            //swallow
         }
     }
 
@@ -76,7 +76,7 @@ public class WPInputStreamTest {
             wpInputStream.readWPHexString(10);
             fail("should have thrown EOF");
         } catch (EOFException e) {
-
+            //swallow
         }
     }
 
@@ -86,7 +86,7 @@ public class WPInputStreamTest {
             wpInputStream.readWPLong();
             fail("should have thrown EOF");
         } catch (EOFException e) {
-
+            //swallow
         }
     }
 
@@ -97,7 +97,7 @@ public class WPInputStreamTest {
             wpInputStream.readWPString(10);
             fail("should have thrown EOF");
         } catch (EOFException e) {
-
+            //swallow
         }
     }
 

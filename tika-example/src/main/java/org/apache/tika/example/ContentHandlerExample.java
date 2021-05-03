@@ -22,6 +22,9 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
@@ -32,14 +35,14 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.sax.xpath.Matcher;
 import org.apache.tika.sax.xpath.MatchingContentHandler;
 import org.apache.tika.sax.xpath.XPathParser;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * Examples of using different Content Handlers to
  * get different parts of the file's contents
  */
 public class ContentHandlerExample {
+    protected final int MAXIMUM_TEXT_CHUNK_SIZE = 40;
+
     /**
      * Example of extracting the plain text of the contents.
      * Will return only the "body" part of the document
@@ -74,8 +77,7 @@ public class ContentHandlerExample {
      * head part, as a string
      */
     public String parseBodyToHTML() throws IOException, SAXException, TikaException {
-        ContentHandler handler = new BodyContentHandler(
-                new ToXMLContentHandler());
+        ContentHandler handler = new BodyContentHandler(new ToXMLContentHandler());
 
         AutoDetectParser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
@@ -92,9 +94,10 @@ public class ContentHandlerExample {
     public String parseOnePartToHTML() throws IOException, SAXException, TikaException {
         // Only get things under html -> body -> div (class=header)
         XPathParser xhtmlParser = new XPathParser("xhtml", XHTMLContentHandler.XHTML);
-        Matcher divContentMatcher = xhtmlParser.parse("/xhtml:html/xhtml:body/xhtml:div/descendant::node()");
-        ContentHandler handler = new MatchingContentHandler(
-                new ToXMLContentHandler(), divContentMatcher);
+        Matcher divContentMatcher =
+                xhtmlParser.parse("/xhtml:html/xhtml:body/xhtml:div/descendant::node()");
+        ContentHandler handler =
+                new MatchingContentHandler(new ToXMLContentHandler(), divContentMatcher);
 
         AutoDetectParser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
@@ -103,8 +106,6 @@ public class ContentHandlerExample {
             return handler.toString();
         }
     }
-
-    protected final int MAXIMUM_TEXT_CHUNK_SIZE = 40;
 
     /**
      * Example of extracting the plain text in chunks, with each chunk

@@ -16,25 +16,27 @@
  */
 package org.apache.tika.eval.core.textstats;
 
-import org.apache.commons.codec.binary.Base32;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.tika.eval.core.langid.LanguageIDWrapper;
-import org.apache.tika.eval.core.tokens.CommonTokenResult;
-import org.apache.tika.language.detect.LanguageResult;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import org.apache.commons.codec.binary.Base32;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.junit.Test;
+
+import org.apache.tika.eval.core.langid.LanguageIDWrapper;
+import org.apache.tika.eval.core.tokens.CommonTokenResult;
+import org.apache.tika.language.detect.LanguageResult;
 
 public class TextStatsTest {
 
     @Test
     public void testBasic() throws Exception {
-        String txt = "The quick brown fox &&^&%@! ; ; ; ;;; ;;; 8675309 jumped over tHe lazy wombat";
+        String txt =
+                "The quick brown fox &&^&%@! ; ; ; ;;; ;;; 8675309 jumped over tHe lazy wombat";
         String txtCleaned = "the quick brown fox 8675309 jumped over the lazy wombat";
         List<TextStatsCalculator> calcs = new ArrayList<>();
         calcs.add(new TextProfileSignature());
@@ -47,28 +49,30 @@ public class TextStatsTest {
         Map<Class, Object> stats = calc.calculate(txt);
 
 
-        CommonTokenResult ctr = (CommonTokenResult)stats.get(CommonTokens.class);
+        CommonTokenResult ctr = (CommonTokenResult) stats.get(CommonTokens.class);
         assertEquals("eng", ctr.getLangCode());
-        assertEquals( 9, ctr.getAlphabeticTokens());
-        assertEquals( 8, ctr.getCommonTokens());
-        assertEquals( 7, ctr.getUniqueCommonTokens());
-        assertEquals( 8, ctr.getUniqueAlphabeticTokens());
-        assertEquals( 0.11, ctr.getOOV(), 0.02);
+        assertEquals(9, ctr.getAlphabeticTokens());
+        assertEquals(8, ctr.getCommonTokens());
+        assertEquals(7, ctr.getUniqueCommonTokens());
+        assertEquals(8, ctr.getUniqueAlphabeticTokens());
+        assertEquals(0.11, ctr.getOOV(), 0.02);
 
 
-        assertEquals(77, (int)stats.get(ContentLengthCalculator.class));
+        assertEquals(77, (int) stats.get(ContentLengthCalculator.class));
 
-        assertEquals(3.12, (double)stats.get(TokenEntropy.class), 0.01);
+        assertEquals(3.12, (double) stats.get(TokenEntropy.class), 0.01);
 
-        List<LanguageResult> probabilities = (List<LanguageResult>) stats.get(LanguageIDWrapper.class);
+        List<LanguageResult> probabilities =
+                (List<LanguageResult>) stats.get(LanguageIDWrapper.class);
         assertEquals("eng", probabilities.get(0).getLanguage());
         assertEquals(0.02, probabilities.get(1).getRawScore(), 0.01);
 
-        String textProfileSignature = (String)stats.get(TextProfileSignature.class);
-        assertEquals("XF3W27O7IWOJVVNQ4HLKYYPCPPX3L2M72YSEMZ3WADL4VTXVITIA====", textProfileSignature);
+        String textProfileSignature = (String) stats.get(TextProfileSignature.class);
+        assertEquals("XF3W27O7IWOJVVNQ4HLKYYPCPPX3L2M72YSEMZ3WADL4VTXVITIA====",
+                textProfileSignature);
 
-        assertEquals(new Base32().encodeAsString(
-                DigestUtils.sha256(txtCleaned.getBytes(StandardCharsets.UTF_8))),
+        assertEquals(new Base32()
+                        .encodeAsString(DigestUtils.sha256(txtCleaned.getBytes(StandardCharsets.UTF_8))),
                 stats.get(TextSha256Signature.class));
     }
 
@@ -82,13 +86,15 @@ public class TextStatsTest {
 
         Map<Class, Object> stats = calc.calculate(txt);
 
-        List<LanguageResult> probabilities = (List<LanguageResult>) stats.get(LanguageIDWrapper.class);
+        List<LanguageResult> probabilities =
+                (List<LanguageResult>) stats.get(LanguageIDWrapper.class);
         assertEquals("cmn", probabilities.get(0).getLanguage());
         assertEquals(0.009, probabilities.get(1).getRawScore(), 0.01);
 
 
-        String textProfileSignature = (String)stats.get(TextProfileSignature.class);
-        assertEquals("XKXLY6FNIGK2KGEF6HOSKSVGYDLLOFIAGO73RLMJ22PZVXBTXFFA====", textProfileSignature);
+        String textProfileSignature = (String) stats.get(TextProfileSignature.class);
+        assertEquals("XKXLY6FNIGK2KGEF6HOSKSVGYDLLOFIAGO73RLMJ22PZVXBTXFFA====",
+                textProfileSignature);
 
         //now test that if a user accidentally sets mintoken length > 2
         //the output will the be same as empty text
@@ -97,7 +103,7 @@ public class TextStatsTest {
         calc = new CompositeTextStatsCalculator(calcs);
 
         stats = calc.calculate("");
-        String emptyStringSignature = (String)stats.get(TextProfileSignature.class);
+        String emptyStringSignature = (String) stats.get(TextProfileSignature.class);
 
         calcs.clear();
         TextProfileSignature tPs = new TextProfileSignature();
@@ -106,7 +112,7 @@ public class TextStatsTest {
         calc = new CompositeTextStatsCalculator(calcs);
 
         stats = calc.calculate(txt);
-        assertEquals(emptyStringSignature, (String)stats.get(TextProfileSignature.class));
+        assertEquals(emptyStringSignature, (String) stats.get(TextProfileSignature.class));
 
     }
 }

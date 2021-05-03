@@ -16,14 +16,6 @@
  */
 package org.apache.tika.io;
 
-import java.io.IOException;
-import java.lang.invoke.MethodHandle;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.nio.ByteBuffer;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.Objects;
 import static java.lang.invoke.MethodHandles.Lookup;
 import static java.lang.invoke.MethodHandles.constant;
 import static java.lang.invoke.MethodHandles.dropArguments;
@@ -32,25 +24,36 @@ import static java.lang.invoke.MethodHandles.guardWithTest;
 import static java.lang.invoke.MethodHandles.lookup;
 import static java.lang.invoke.MethodType.methodType;
 
+import java.io.IOException;
+import java.lang.invoke.MethodHandle;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.Objects;
+
 /**
  * Copied/pasted from the Apache Lucene/Solr project.
  */
 public class MappedBufferCleaner {
-    /** Reference to a BufferCleaner that does unmapping; {@code null} if not supported. */
-    private static final BufferCleaner CLEANER;
-
     /**
      * <code>true</code>, if this platform supports unmapping mmapped files.
      */
     public static final boolean UNMAP_SUPPORTED;
-
     /**
-     * if {@link #UNMAP_SUPPORTED} is {@code false}, this contains the reason why unmapping is not supported.
+     * if {@link #UNMAP_SUPPORTED} is {@code false}, this contains the reason  why unmapping is
+     * not supported.
      */
     public static final String UNMAP_NOT_SUPPORTED_REASON;
+    /**
+     * Reference to a BufferCleaner that does unmapping; {@code null} if not supported.
+     */
+    private static final BufferCleaner CLEANER;
 
     static {
-        final Object hack = AccessController.doPrivileged((PrivilegedAction<Object>) MappedBufferCleaner::unmapHackImpl);
+        final Object hack = AccessController
+                .doPrivileged((PrivilegedAction<Object>) MappedBufferCleaner::unmapHackImpl);
         if (hack instanceof BufferCleaner) {
             CLEANER = (BufferCleaner) hack;
             UNMAP_SUPPORTED = true;
@@ -74,12 +77,9 @@ public class MappedBufferCleaner {
             CLEANER.freeBuffer("", b);
         }
     }
-    //Copied/pasted from Lucene's MMapDirectory
-    private interface BufferCleaner {
-        void freeBuffer(String resourceDescription, ByteBuffer b) throws IOException;
-    }
 
-    //"Needs access to private APIs in DirectBuffer, sun.misc.Cleaner, and sun.misc.Unsafe to enable hack")
+    //"Needs access to private APIs in DirectBuffer, sun.misc.Cleaner, and sun.misc.Unsafe to
+    // enable hack")
     private static Object unmapHackImpl() {
         final Lookup lookup = lookup();
         try {
@@ -96,7 +96,8 @@ public class MappedBufferCleaner {
                 final Object theUnsafe = f.get(null);
                 return newBufferCleaner(ByteBuffer.class, unmapper.bindTo(theUnsafe));
             } catch (SecurityException se) {
-                // rethrow to report errors correctly (we need to catch it here, as we also catch RuntimeException below!):
+                // rethrow to report errors correctly (we need to catch it here, as we also
+                // catch RuntimeException below!):
                 throw se;
             } catch (ReflectiveOperationException | RuntimeException e) {
                 // *** sun.misc.Cleaner unmapping (Java 8) ***
@@ -113,47 +114,66 @@ public class MappedBufferCleaner {
                  *   if (Objects.nonNull(cleaner)) {
                  *     cleaner.clean();
                  *   } else {
-                 *     noop(cleaner); // the noop is needed because MethodHandles#guardWithTest always needs ELSE
+                 *     noop(cleaner); // the noop is needed because MethodHandles#guardWithTest
+                 * always needs ELSE
                  *   }
                  * }
                  */
-                final MethodHandle cleanMethod = lookup.findVirtual(cleanerClass, "clean", methodType(void.class));
-                final MethodHandle nonNullTest = lookup.findStatic(Objects.class, "nonNull", methodType(boolean.class, Object.class))
+                final MethodHandle cleanMethod =
+                        lookup.findVirtual(cleanerClass, "clean", methodType(void.class));
+                final MethodHandle nonNullTest = lookup.findStatic(Objects.class, "nonNull",
+                        methodType(boolean.class, Object.class))
                         .asType(methodType(boolean.class, cleanerClass));
-                final MethodHandle noop = dropArguments(constant(Void.class, null).asType(methodType(void.class)), 0, cleanerClass);
-                final MethodHandle unmapper = filterReturnValue(directBufferCleanerMethod, guardWithTest(nonNullTest, cleanMethod, noop))
+                final MethodHandle noop =
+                        dropArguments(constant(Void.class, null).asType(methodType(void.class)), 0,
+                                cleanerClass);
+                final MethodHandle unmapper = filterReturnValue(directBufferCleanerMethod,
+                        guardWithTest(nonNullTest, cleanMethod, noop))
                         .asType(methodType(void.class, ByteBuffer.class));
                 return newBufferCleaner(directBufferClass, unmapper);
             }
         } catch (SecurityException se) {
-            return "Unmapping is not supported, because not all required permissions are given to the Tika JAR file: " + se +
-                    " [Please grant at least the following permissions: RuntimePermission(\"accessClassInPackage.sun.misc\") " +
+            return "Unmapping is not supported, because not all required permissions are given to" +
+                    "  the Tika JAR file: " + se +
+                    " [Please grant at least the following permissions: " +
+                    " RuntimePermission(\"accessClassInPackage.sun.misc\") " +
                     " and ReflectPermission(\"suppressAccessChecks\")]";
         } catch (ReflectiveOperationException | RuntimeException e) {
-            return "Unmapping is not supported on this platform, because internal Java APIs are not compatible with this Lucene version: " + e;
+            return "Unmapping is not supported on this platform, because internal Java APIs are " +
+                    "not compatible with this Lucene version: " +
+                    e;
         }
     }
 
-    private static BufferCleaner newBufferCleaner(final Class<?> unmappableBufferClass, final MethodHandle unmapper) {
+    private static BufferCleaner newBufferCleaner(final Class<?> unmappableBufferClass,
+                                                  final MethodHandle unmapper) {
         assert Objects.equals(methodType(void.class, ByteBuffer.class), unmapper.type());
         return (String resourceDescription, ByteBuffer buffer) -> {
             if (!buffer.isDirect()) {
                 throw new IllegalArgumentException("unmapping only works with direct buffers");
             }
             if (!unmappableBufferClass.isInstance(buffer)) {
-                throw new IllegalArgumentException("buffer is not an instance of " + unmappableBufferClass.getName());
+                throw new IllegalArgumentException(
+                        "buffer is not an instance of " + unmappableBufferClass.getName());
             }
-            final Throwable error = AccessController.doPrivileged((PrivilegedAction<Throwable>) () -> {
-                try {
-                    unmapper.invokeExact(buffer);
-                    return null;
-                } catch (Throwable t) {
-                    return t;
-                }
-            });
+            final Throwable error =
+                    AccessController.doPrivileged((PrivilegedAction<Throwable>) () -> {
+                        try {
+                            unmapper.invokeExact(buffer);
+                            return null;
+                        } catch (Throwable t) {
+                            return t;
+                        }
+                    });
             if (error != null) {
-                throw new IOException("Unable to unmap the mapped buffer: " + resourceDescription, error);
+                throw new IOException("Unable to unmap the mapped buffer: " + resourceDescription,
+                        error);
             }
         };
+    }
+
+    //Copied/pasted from Lucene's MMapDirectory
+    private interface BufferCleaner {
+        void freeBuffer(String resourceDescription, ByteBuffer b) throws IOException;
     }
 }

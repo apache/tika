@@ -17,18 +17,7 @@
 
 package org.apache.tika;
 
-import org.apache.tika.detect.Detector;
-import org.apache.tika.detect.XmlRootExtractor;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.BasicContentHandlerFactory;
-import org.apache.tika.sax.RecursiveParserWrapperHandler;
-import org.apache.tika.utils.XMLReaderUtils;
+import static org.junit.Assert.assertEquals;
 
 import java.io.FileFilter;
 import java.io.IOException;
@@ -54,12 +43,108 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
+import org.apache.tika.detect.Detector;
+import org.apache.tika.detect.XmlRootExtractor;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
+import org.apache.tika.utils.XMLReaderUtils;
 
 public class MultiThreadedTikaTest extends TikaTest {
     //TODO: figure out how to make failures reproducible a la Lucene/Solr with a seed
     //TODO: Consider randomizing the Locale and timezone, like Lucene/Solr...
     XmlRootExtractor ex = new XmlRootExtractor();
+
+    public static Path[] getTestFiles(final FileFilter fileFilter)
+            throws URISyntaxException, IOException {
+        Path root = Paths.get(MultiThreadedTikaTest.class.getResource("/test-documents").toURI());
+        final List<Path> files = new ArrayList<>();
+        Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                    throws IOException {
+                if (fileFilter != null && !fileFilter.accept(file.toFile())) {
+                    return FileVisitResult.CONTINUE;
+                }
+                if (!attrs.isDirectory()) {
+                    files.add(file);
+                }
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        return files.toArray(new Path[0]);
+    }
+
+    private static ConcurrentHashMap<Path, MediaType> getBaselineDetection(Detector detector,
+                                                                           Path[] files) {
+
+        ConcurrentHashMap<Path, MediaType> baseline = new ConcurrentHashMap<>();
+        XmlRootExtractor extractor = new XmlRootExtractor();
+        for (Path f : files) {
+            Metadata metadata = new Metadata();
+            try (TikaInputStream tis = TikaInputStream.get(f, metadata)) {
+                baseline.put(f, detector.detect(tis, metadata));
+                baseline.put(f, detector.detect(tis, metadata));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return baseline;
+    }
+
+    private static ConcurrentHashMap<Path, Extract> getBaseline(Parser parser, Path[] files,
+                                                                ParseContext parseContext) {
+        ConcurrentHashMap<Path, Extract> baseline = new ConcurrentHashMap<>();
+
+        for (Path f : files) {
+            try (TikaInputStream is = TikaInputStream.get(f)) {
+
+                List<Metadata> metadataList = getRecursiveMetadata(is, parser, parseContext);
+                baseline.put(f, new Extract(metadataList));
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                //swallow
+            }
+        }
+        return baseline;
+    }
+
+    private static List<Metadata> getRecursiveMetadata(InputStream is, Parser parser,
+                                                       ParseContext parseContext) throws Exception {
+        //different from parent TikaTest in that this extracts text.
+        //can't extract xhtml because "tmp" file names wind up in
+        //content's metadata and they'll differ by file.
+        parseContext = new ParseContext();
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
+                -1);
+        parser.parse(is, handler, new Metadata(), parseContext);
+        return handler.getMetadataList();
+    }
+
+    private static void assertExtractEquals(Extract extractA, Extract extractB) {
+        //this currently only checks the basics
+        //might want to add more checks
+
+        assertEquals("number of embedded files", extractA.metadataList.size(),
+                extractB.metadataList.size());
+
+        for (int i = 0; i < extractA.metadataList.size(); i++) {
+            assertEquals("number of metadata elements in attachment: " + i,
+                    extractA.metadataList.get(i).size(), extractB.metadataList.get(i).size());
+
+            assertEquals("content in attachment: " + i,
+                    extractA.metadataList.get(i).get(TikaCoreProperties.TIKA_CONTENT),
+                    extractB.metadataList.get(i).get(TikaCoreProperties.TIKA_CONTENT));
+        }
+    }
 
     /**
      * This calls {@link #testEach(Parser parser, Path[], ParseContext[], int, int)} and
@@ -67,23 +152,27 @@ public class MultiThreadedTikaTest extends TikaTest {
      *
      * @param numThreads    number of threads to use
      * @param numIterations number of iterations per thread
-     * @param filter        file filter to select files from "/test-documents"; if <code>null</code>,
+     * @param filter        file filter to select files from "/test-documents"; if
+     *                      <code>null</code>,
      *                      all files will be used
      * @throws Exception
      */
-    protected void testMultiThreaded(Parser parser, ParseContext[] parseContext, int numThreads, int numIterations, FileFilter filter) throws Exception {
+    protected void testMultiThreaded(Parser parser, ParseContext[] parseContext, int numThreads,
+                                     int numIterations, FileFilter filter) throws Exception {
         Path[] allFiles = getTestFiles(filter);
         testEach(parser, allFiles, parseContext, numThreads, numIterations);
         testAll(parser, allFiles, parseContext, numThreads, numIterations);
     }
 
-    public void testDetector(Detector detector, int numThreads, int numIterations, FileFilter filter, int randomlyResizeSAXPool) throws Exception {
+    public void testDetector(Detector detector, int numThreads, int numIterations,
+                             FileFilter filter, int randomlyResizeSAXPool) throws Exception {
         Path[] files = getTestFiles(filter);
         testDetectorEach(detector, files, numThreads, numIterations, randomlyResizeSAXPool);
         testDetectorOnAll(detector, files, numThreads, numIterations, randomlyResizeSAXPool);
     }
 
-    void testDetectorEach(Detector detector, Path[] files, int numThreads, int numIterations, int randomlyResizeSAXPool) {
+    void testDetectorEach(Detector detector, Path[] files, int numThreads, int numIterations,
+                          int randomlyResizeSAXPool) {
         for (Path p : files) {
             Path[] toTest = new Path[1];
             toTest[0] = p;
@@ -91,7 +180,8 @@ public class MultiThreadedTikaTest extends TikaTest {
         }
     }
 
-    private void testDetectorOnAll(Detector detector, Path[] toTest, int numThreads, int numIterations, int randomlyResizeSAXPool) {
+    private void testDetectorOnAll(Detector detector, Path[] toTest, int numThreads,
+                                   int numIterations, int randomlyResizeSAXPool) {
         Map<Path, MediaType> truth = getBaselineDetection(detector, toTest);
         //if all files caused an exception
         if (truth.size() == 0) {
@@ -106,7 +196,8 @@ public class MultiThreadedTikaTest extends TikaTest {
         int actualThreadCount = numThreads + Math.max(randomlyResizeSAXPool, 0);
         ExecutorService ex = Executors.newFixedThreadPool(actualThreadCount);
         try {
-            _testDetectorOnAll(detector, testFiles, numThreads, numIterations, truth, ex, randomlyResizeSAXPool);
+            _testDetectorOnAll(detector, testFiles, numThreads, numIterations, truth, ex,
+                    randomlyResizeSAXPool);
         } finally {
             ex.shutdown();
             ex.shutdownNow();
@@ -114,12 +205,15 @@ public class MultiThreadedTikaTest extends TikaTest {
     }
 
     private void _testDetectorOnAll(Detector detector, Path[] testFiles, int numThreads,
-                                    int numIterations, Map<Path, MediaType> truth, ExecutorService ex, int randomlyResizeSAXPool) {
-        ExecutorCompletionService<Integer> executorCompletionService = new ExecutorCompletionService<>(ex);
+                                    int numIterations, Map<Path, MediaType> truth,
+                                    ExecutorService ex, int randomlyResizeSAXPool) {
+        ExecutorCompletionService<Integer> executorCompletionService =
+                new ExecutorCompletionService<>(ex);
 
         executorCompletionService.submit(new SAXPoolResizer(randomlyResizeSAXPool));
         for (int i = 0; i < numThreads; i++) {
-            executorCompletionService.submit(new TikaDetectorRunner(detector, numIterations, testFiles, truth));
+            executorCompletionService
+                    .submit(new TikaDetectorRunner(detector, numIterations, testFiles, truth));
         }
 
         int completed = 0;
@@ -155,7 +249,8 @@ public class MultiThreadedTikaTest extends TikaTest {
      * @param numThreads    number of threads to use
      * @param numIterations number of iterations per thread
      */
-    protected void testEach(Parser parser, Path[] files, ParseContext[] parseContext, int numThreads, int numIterations) {
+    protected void testEach(Parser parser, Path[] files, ParseContext[] parseContext,
+                            int numThreads, int numIterations) {
         for (Path p : files) {
             Path[] toTest = new Path[1];
             toTest[0] = p;
@@ -176,7 +271,8 @@ public class MultiThreadedTikaTest extends TikaTest {
      * @param numThreads    number of parser threads
      * @param numIterations number of iterations per parser
      */
-    protected void testAll(Parser parser, Path[] files, ParseContext[] parseContext, int numThreads, int numIterations) {
+    protected void testAll(Parser parser, Path[] files, ParseContext[] parseContext, int numThreads,
+                           int numIterations) {
 
         Map<Path, Extract> truth = getBaseline(parser, files, parseContext[0]);
         //if all files caused an exception
@@ -199,14 +295,18 @@ public class MultiThreadedTikaTest extends TikaTest {
         }
     }
 
-    private void _testAll(Parser parser, Path[] testFiles, ParseContext[] parseContext, int numThreads, int numIterations,
-                          Map<Path, Extract> truth, ExecutorService ex) {
+    private void _testAll(Parser parser, Path[] testFiles, ParseContext[] parseContext,
+                          int numThreads, int numIterations, Map<Path, Extract> truth,
+                          ExecutorService ex) {
 
-        ExecutorCompletionService<Integer> executorCompletionService = new ExecutorCompletionService<>(ex);
+        ExecutorCompletionService<Integer> executorCompletionService =
+                new ExecutorCompletionService<>(ex);
 
         //use the same parser in all threads
         for (int i = 0; i < numThreads; i++) {
-            executorCompletionService.submit(new TikaRunner(parser, parseContext[i], numIterations, testFiles, truth));
+            executorCompletionService
+                    .submit(new TikaRunner(parser, parseContext[i], numIterations, testFiles,
+                            truth));
         }
 
         int completed = 0;
@@ -226,130 +326,9 @@ public class MultiThreadedTikaTest extends TikaTest {
         }
     }
 
-    public static Path[] getTestFiles(final FileFilter fileFilter) throws URISyntaxException, IOException {
-        Path root = Paths.get(
-                MultiThreadedTikaTest.class.getResource("/test-documents").toURI());
-        final List<Path> files = new ArrayList<>();
-        Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                if (fileFilter != null && !fileFilter.accept(file.toFile())) {
-                    return FileVisitResult.CONTINUE;
-                }
-                if (!attrs.isDirectory()) {
-                    files.add(file);
-                }
-                return FileVisitResult.CONTINUE;
-            }
-        });
-        return files.toArray(new Path[0]);
-    }
-
-    private static ConcurrentHashMap<Path, MediaType> getBaselineDetection(Detector detector, Path[] files) {
-
-        ConcurrentHashMap<Path, MediaType> baseline = new ConcurrentHashMap<>();
-        XmlRootExtractor extractor = new XmlRootExtractor();
-        for (Path f : files) {
-            Metadata metadata = new Metadata();
-            try (TikaInputStream tis = TikaInputStream.get(f, metadata)) {
-                baseline.put(f, detector.detect(tis, metadata));
-                baseline.put(f, detector.detect(tis, metadata));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        return baseline;
-    }
-
-    private static ConcurrentHashMap<Path, Extract> getBaseline(Parser parser, Path[] files, ParseContext parseContext) {
-        ConcurrentHashMap<Path, Extract> baseline = new ConcurrentHashMap<>();
-
-        for (Path f : files) {
-            try (TikaInputStream is = TikaInputStream.get(f)) {
-
-                List<Metadata> metadataList = getRecursiveMetadata(is, parser, parseContext);
-                baseline.put(f, new Extract(metadataList));
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                //swallow
-            }
-        }
-        return baseline;
-    }
-
-    private static List<Metadata> getRecursiveMetadata(InputStream is,
-                                                       Parser parser, ParseContext parseContext) throws Exception {
-        //different from parent TikaTest in that this extracts text.
-        //can't extract xhtml because "tmp" file names wind up in
-        //content's metadata and they'll differ by file.
-        parseContext = new ParseContext();
-        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
-                -1);
-        parser.parse(is, handler, new Metadata(), parseContext);
-        return handler.getMetadataList();
-    }
-
-    private class SAXPoolResizer implements Callable<Integer> {
-        private final int maxResize;
-        private final Random rand = new Random();
-        SAXPoolResizer(int maxResize) {
-            this.maxResize = maxResize;
-        }
-
-        public Integer call() throws TikaException  {
-            int resized = 0;
-            while (true) {
-                try {
-                    Thread.yield();
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    return resized;
-                }
-                if (maxResize > 0 && rand.nextFloat() > 0.01) {
-                    int sz = rand.nextInt(maxResize)+1;
-                    XMLReaderUtils.setPoolSize(sz);
-                    resized++;
-                }
-            }
-        }
-    }
-
-    private class TikaDetectorRunner implements Callable<Integer> {
-        private final Detector detector;
-        private final int iterations;
-        private final Path[] files;
-        private final Map<Path, MediaType> truth;
-        private final Random random = new Random();
-
-        private TikaDetectorRunner(Detector detector, int iterations, Path[] files, Map<Path, MediaType> truth) {
-            this.detector = detector;
-            this.iterations = iterations;
-            this.files = files;
-            this.truth = truth;
-        }
-
-        @Override
-        public Integer call() throws Exception {
-            for (int i = 0; i < iterations; i++) {
-                int randIndex = random.nextInt(files.length);
-                Path testFile = files[randIndex];
-                Metadata metadata = new Metadata();
-                try (TikaInputStream tis = TikaInputStream.get(testFile, metadata)) {
-                    MediaType mediaType = detector.detect(tis, metadata);
-                    assertEquals("failed on: " + testFile.getFileName(), truth.get(testFile), mediaType);
-                }
-            }
-            return 1;
-        }
-
-    }
-
-
     //TODO: make this return something useful besides an integer
     private static class TikaRunner implements Callable<Integer> {
-        private static AtomicInteger threadCount = new AtomicInteger(0);
+        private static final AtomicInteger threadCount = new AtomicInteger(0);
         private final Parser parser;
         private final int iterations;
         private final Path[] files;
@@ -357,7 +336,9 @@ public class MultiThreadedTikaTest extends TikaTest {
         private final ParseContext parseContext;
         private final Random random = new Random();
         private final int threadNumber;
-        private TikaRunner(Parser parser, ParseContext parseContext, int iterations, Path[] files, Map<Path, Extract> truth) {
+
+        private TikaRunner(Parser parser, ParseContext parseContext, int iterations, Path[] files,
+                           Map<Path, Extract> truth) {
             this.parser = parser;
             this.iterations = iterations;
             this.files = files;
@@ -389,28 +370,69 @@ public class MultiThreadedTikaTest extends TikaTest {
 
     }
 
-    private static void assertExtractEquals(Extract extractA, Extract extractB) {
-        //this currently only checks the basics
-        //might want to add more checks
-
-        assertEquals("number of embedded files", extractA.metadataList.size(),
-                extractB.metadataList.size());
-
-        for (int i = 0; i < extractA.metadataList.size(); i++) {
-            assertEquals("number of metadata elements in attachment: " + i,
-                    extractA.metadataList.get(i).size(), extractB.metadataList.get(i).size());
-
-            assertEquals("content in attachment: " + i,
-                    extractA.metadataList.get(i).get(TikaCoreProperties.TIKA_CONTENT),
-                    extractB.metadataList.get(i).get(TikaCoreProperties.TIKA_CONTENT));
-        }
-    }
-
     private static class Extract {
         final List<Metadata> metadataList;
 
         private Extract(List<Metadata> metadataList) {
             this.metadataList = metadataList;
         }
+    }
+
+    private class SAXPoolResizer implements Callable<Integer> {
+        private final int maxResize;
+        private final Random rand = new Random();
+
+        SAXPoolResizer(int maxResize) {
+            this.maxResize = maxResize;
+        }
+
+        public Integer call() throws TikaException {
+            int resized = 0;
+            while (true) {
+                try {
+                    Thread.yield();
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    return resized;
+                }
+                if (maxResize > 0 && rand.nextFloat() > 0.01) {
+                    int sz = rand.nextInt(maxResize) + 1;
+                    XMLReaderUtils.setPoolSize(sz);
+                    resized++;
+                }
+            }
+        }
+    }
+
+    private class TikaDetectorRunner implements Callable<Integer> {
+        private final Detector detector;
+        private final int iterations;
+        private final Path[] files;
+        private final Map<Path, MediaType> truth;
+        private final Random random = new Random();
+
+        private TikaDetectorRunner(Detector detector, int iterations, Path[] files,
+                                   Map<Path, MediaType> truth) {
+            this.detector = detector;
+            this.iterations = iterations;
+            this.files = files;
+            this.truth = truth;
+        }
+
+        @Override
+        public Integer call() throws Exception {
+            for (int i = 0; i < iterations; i++) {
+                int randIndex = random.nextInt(files.length);
+                Path testFile = files[randIndex];
+                Metadata metadata = new Metadata();
+                try (TikaInputStream tis = TikaInputStream.get(testFile, metadata)) {
+                    MediaType mediaType = detector.detect(tis, metadata);
+                    assertEquals("failed on: " + testFile.getFileName(), truth.get(testFile),
+                            mediaType);
+                }
+            }
+            return 1;
+        }
+
     }
 }

@@ -22,8 +22,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeTrue;
 
 import java.io.InputStream;
 import java.util.Arrays;
@@ -32,13 +30,19 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.apache.pdfbox.rendering.ImageType;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
@@ -63,11 +67,6 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerDecorator;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
 
 /**
  * Test case for parsing pdf files.
@@ -181,8 +180,14 @@ public class PDFParserTest extends TikaTest {
         assertEquals("true", metadata.get("pdf:encrypted"));
         assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("The Bank of England", metadata.get(TikaCoreProperties.CREATOR));
-        assertEquals("Speeches by Andrew G Haldane", metadata.get(OfficeOpenXMLCore.SUBJECT));
-        assertEquals("Rethinking the Financial Network, Speech by Andrew G Haldane, Executive Director, Financial Stability delivered at the Financial Student Association, Amsterdam on 28 April 2009", metadata.get(TikaCoreProperties.TITLE));
+        assertEquals("Speeches by Andrew G Haldane",
+                metadata.get(OfficeOpenXMLCore.SUBJECT));
+        assertEquals(
+                "Rethinking the Financial Network, Speech by Andrew G Haldane, " +
+                        "Executive Director, Financial Stability " +
+                        "delivered at the Financial Student " +
+                        "Association, Amsterdam on 28 April 2009",
+                metadata.get(TikaCoreProperties.TITLE));
 
         assertContains("RETHINKING THE FINANCIAL NETWORK", r.xml);
         assertContains("On 16 November 2002", r.xml);
@@ -203,7 +208,11 @@ public class PDFParserTest extends TikaTest {
         assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("The Bank of England", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("Speeches by Andrew G Haldane", metadata.get(OfficeOpenXMLCore.SUBJECT));
-        assertEquals("Rethinking the Financial Network, Speech by Andrew G Haldane, Executive Director, Financial Stability delivered at the Financial Student Association, Amsterdam on 28 April 2009", metadata.get(TikaCoreProperties.TITLE));
+        assertEquals(
+                "Rethinking the Financial Network, Speech by Andrew G Haldane, " +
+                        "Executive Director, Financial Stability delivered at the " +
+                        "Financial Student Association, Amsterdam on 28 April 2009",
+                metadata.get(TikaCoreProperties.TITLE));
 
         assertContains("RETHINKING THE FINANCIAL NETWORK", r.xml);
         assertContains("On 16 November 2002", r.xml);
@@ -235,11 +244,14 @@ public class PDFParserTest extends TikaTest {
     @Test
     public void testTwoTextBoxes() throws Exception {
         String content;
-        try (InputStream stream = getResourceAsStream("/test-documents/testPDFTwoTextBoxes.pdf")) {
+        try (InputStream stream = getResourceAsStream(
+                "/test-documents/testPDFTwoTextBoxes.pdf")) {
             content = getText(stream, AUTO_DETECT_PARSER);
         }
         content = content.replaceAll("\\s+", " ");
-        assertContains("Left column line 1 Left column line 2 Right column line 1 Right column line 2", content);
+        assertContains(
+                "Left column line 1 Left column line 2 Right column line 1 Right column line 2",
+                content);
     }
 
     @Test
@@ -263,52 +275,56 @@ public class PDFParserTest extends TikaTest {
         assertContains("Here is a citation:", content);
         assertContains("Figure 1 This is a caption for Figure 1", content);
         assertContains("(Kramer)", content);
-        assertContains("Row 1 Col 1 Row 1 Col 2 Row 1 Col 3 Row 2 Col 1 Row 2 Col 2 Row 2 Col 3", content.replaceAll("\\s+"," "));
-        assertContains("Row 1 column 1 Row 2 column 1 Row 1 column 2 Row 2 column 2", content.replaceAll("\\s+"," "));
+        assertContains("Row 1 Col 1 Row 1 Col 2 Row 1 Col 3 Row " +
+                        "2 Col 1 Row 2 Col 2 Row 2 Col 3",
+                content.replaceAll("\\s+", " "));
+        assertContains("Row 1 column 1 Row 2 column 1 Row 1 column 2 Row 2 column 2",
+                content.replaceAll("\\s+", " "));
         assertContains("This is a hyperlink", content);
         assertContains("Here is a list:", content);
-        for(int row=1;row<=3;row++) {
+        for (int row = 1; row <= 3; row++) {
             //assertContains("·\tBullet " + row, content);
             //assertContains("\u00b7\tBullet " + row, content);
             assertContains("Bullet " + row, content);
         }
         assertContains("Here is a numbered list:", content);
-        for(int row=1;row<=3;row++) {
+        for (int row = 1; row <= 3; row++) {
             //assertContains(row + ")\tNumber bullet " + row, content);
             assertContains(row + ") Number bullet " + row, content);
         }
 
-        for(int row=1;row<=2;row++) {
-            for(int col=1;col<=3;col++) {
+        for (int row = 1; row <= 2; row++) {
+            for (int col = 1; col <= 3; col++) {
                 assertContains("Row " + row + " Col " + col, content);
             }
         }
 
         assertContains("Keyword1 Keyword2", content);
-        assertEquals("Keyword1 Keyword2",
-                     metadata.get(Office.KEYWORDS));
+        assertEquals("Keyword1 Keyword2", metadata.get(Office.KEYWORDS));
 
         assertContains("Subject is here", content);
-        assertEquals("Subject is here",
-                     metadata.get(OfficeOpenXMLCore.SUBJECT));
+        assertEquals("Subject is here", metadata.get(OfficeOpenXMLCore.SUBJECT));
 
         assertContains("Suddenly some Japanese text:", content);
         // Special version of (GHQ)
         assertContains("\uff08\uff27\uff28\uff31\uff09", content);
         // 6 other characters
-        assertContains("\u30be\u30eb\u30b2\u3068\u5c3e\u5d0e\u3001\u6de1\u3005\u3068\u6700\u671f", content);
+        assertContains("\u30be\u30eb\u30b2\u3068\u5c3e" +
+                        "\u5d0e\u3001\u6de1\u3005\u3068\u6700\u671f",
+                content);
 
         assertContains("And then some Gothic text:", content);
         // TODO: I saved the word doc as a PDF, but that
         // process somehow, apparently lost the gothic
         // chars, so we cannot test this here:
-        //assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A", content);
+        //assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44
+        // \uD800\uDF39\uD800\uDF43\uD800\uDF3A", content);
     }
 
     @Test
     public void testAnnotations() throws Exception {
         String content;
-        try(InputStream stream = getResourceAsStream("/test-documents/testAnnotations.pdf")){
+        try (InputStream stream = getResourceAsStream("/test-documents/testAnnotations.pdf")) {
             content = getText(stream, AUTO_DETECT_PARSER);
         }
         content = content.replaceAll("[\\s\u00a0]+", " ");
@@ -318,7 +334,7 @@ public class PDFParserTest extends TikaTest {
         // Test w/ annotation text disabled:
         PDFParser pdfParser = new PDFParser();
         pdfParser.getPDFParserConfig().setExtractAnnotationText(false);
-        try(InputStream stream = getResourceAsStream("/test-documents/testAnnotations.pdf")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/testAnnotations.pdf")) {
             content = getText(stream, pdfParser);
         }
         content = content.replaceAll("[\\s\u00a0]+", " ");
@@ -340,8 +356,7 @@ public class PDFParserTest extends TikaTest {
 
         // TIKA-738: make sure no extra </p> tags
         String xml = getXML("testAnnotations.pdf").xml;
-        assertEquals(substringCount("<p>", xml),
-                substringCount("</p>", xml));
+        assertEquals(substringCount("<p>", xml), substringCount("</p>", xml));
     }
 
     // TIKA-981
@@ -377,7 +392,7 @@ public class PDFParserTest extends TikaTest {
     @Test
     public void testLinks() throws Exception {
         final XMLResult result = getXML("testPDFVarious.pdf");
-        assertContains("<div class=\"annotation\"><a href=\"http://tika.apache.org/\">"+
+        assertContains("<div class=\"annotation\"><a href=\"http://tika.apache.org/\">" +
                 "http://tika.apache.org/</a></div>", result.xml);
     }
 
@@ -453,14 +468,18 @@ public class PDFParserTest extends TikaTest {
         // Default is false (do not sort):
         String content = getText(stream, parser);
         content = content.replaceAll("\\s+", " ");
-        assertContains("Left column line 1 Left column line 2 Right column line 1 Right column line 2", content);
+        assertContains(
+                "Left column line 1 Left column line 2 Right column line 1 Right column line 2",
+                content);
 
         parser.setSortByPosition(true);
         stream = getResourceAsStream("/test-documents/testPDFTwoTextBoxes.pdf");
         content = getText(stream, parser);
         content = content.replaceAll("\\s+", " ");
         // Column text is now interleaved:
-        assertContains("Left column line 1 Right column line 1 Left colu mn line 2 Right column line 2", content);
+        assertContains(
+                "Left column line 1 Right column line 1 Left colu mn line 2 Right column line 2",
+                content);
 
         //now try setting autodetect via parsecontext
         ParseContext context = new ParseContext();
@@ -469,7 +488,9 @@ public class PDFParserTest extends TikaTest {
         // Default is false (do not sort):
         content = getText("testPDFTwoTextBoxes.pdf", new Metadata(), context);
         content = content.replaceAll("\\s+", " ");
-        assertContains("Left column line 1 Left column line 2 Right column line 1 Right column line 2", content);
+        assertContains(
+                "Left column line 1 Left column line 2 Right column line 1 Right column line 2",
+                content);
 
         config.setSortByPosition(true);
         context.set(PDFParserConfig.class, config);
@@ -477,7 +498,9 @@ public class PDFParserTest extends TikaTest {
         content = getText("testPDFTwoTextBoxes.pdf", new Metadata(), context);
         content = content.replaceAll("\\s+", " ");
         // Column text is now interleaved:
-        assertContains("Left column line 1 Right column line 1 Left colu mn line 2 Right column line 2", content);
+        assertContains(
+                "Left column line 1 Right column line 1 Left colu mn line 2 Right column line 2",
+                content);
 
     }
 
@@ -502,7 +525,6 @@ public class PDFParserTest extends TikaTest {
         String xml = getXML("testPDF_bookmarks.pdf", parseContext).xml;
         assertNotContained("Denmark bookmark is here", xml);
     }
-
 
 
     // TIKA-973
@@ -623,8 +645,7 @@ public class PDFParserTest extends TikaTest {
             String extensionVersionTruth = pdfExtensionVersions.get(e.getKey());
             if (extensionVersionTruth != null) {
                 assertEquals("pdf:PDFExtensionVersion :: " + extensionVersionTruth,
-                        extensionVersionTruth,
-                        r.metadata.get("pdf:PDFExtensionVersion"));
+                        extensionVersionTruth, r.metadata.get("pdf:PDFExtensionVersion"));
             }
             assertEquals("pdf:PDFVersion", pdfVersions.get(e.getKey()),
                     r.metadata.get("pdf:PDFVersion"));
@@ -635,8 +656,7 @@ public class PDFParserTest extends TikaTest {
 
         for (String hit : new String[]{"application/pdf; version=1.7",
                 "application/pdf; version=\"A-1b\"",
-                "application/pdf; version=\"1.7 Adobe Extension Level 8\""
-        }) {
+                "application/pdf; version=\"1.7 Adobe Extension Level 8\""}) {
             assertTrue(hit, versions.contains(hit));
         }
 
@@ -682,7 +702,8 @@ public class PDFParserTest extends TikaTest {
             if (v != null) {
                 if (v.equals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString())) {
                     inline++;
-                } else if (v.equals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString())) {
+                } else if (v
+                        .equals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString())) {
                     attach++;
                 }
             }
@@ -702,7 +723,8 @@ public class PDFParserTest extends TikaTest {
             if (v != null) {
                 if (v.equals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString())) {
                     inline++;
-                } else if (v.equals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString())) {
+                } else if (v
+                        .equals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString())) {
                     attach++;
                 }
             }
@@ -724,7 +746,8 @@ public class PDFParserTest extends TikaTest {
             if (v != null) {
                 if (v.equals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString())) {
                     inline++;
-                } else if (v.equals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString())) {
+                } else if (v
+                        .equals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString())) {
                     attach++;
                 }
             }
@@ -748,7 +771,8 @@ public class PDFParserTest extends TikaTest {
             if (v != null) {
                 if (v.equals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString())) {
                     inline++;
-                } else if (v.equals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString())) {
+                } else if (v
+                        .equals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString())) {
                     attach++;
                 }
             }
@@ -762,7 +786,8 @@ public class PDFParserTest extends TikaTest {
         List<Metadata> metadatas = getRecursiveMetadata("testPDF_multiFormatEmbFiles.pdf");
         assertEquals("metadata size", 5, metadatas.size());
         Metadata firstAttachment = metadatas.get(1);
-        assertEquals("attachment file name", "Test.txt", firstAttachment.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("attachment file name", "Test.txt",
+                firstAttachment.get(TikaCoreProperties.RESOURCE_NAME_KEY));
     }
 
     @Test //TIKA-1427
@@ -783,7 +808,8 @@ public class PDFParserTest extends TikaTest {
 
         //doc embedded inside an annotation
         r = getXML("testPDFFileEmbInAnnotation.pdf");
-        assertContains("<div source=\"annotation\" class=\"embedded\" id=\"Excel.xlsx\" />", r.xml);
+        assertContains("<div source=\"annotationFileAttachment\" class=\"embedded\" id=\"Excel" +
+                ".xlsx\" />", r.xml);
     }
 
     //Access checker tests
@@ -791,10 +817,8 @@ public class PDFParserTest extends TikaTest {
     @Test
     public void testLegacyAccessChecking() throws Exception {
         //test that default behavior doesn't throw AccessPermissionException
-        for (String file : new String[]{
-                "testPDF_no_extract_no_accessibility_owner_empty.pdf",
-                "testPDF_no_extract_yes_accessibility_owner_empty.pdf",
-        }) {
+        for (String file : new String[]{"testPDF_no_extract_no_accessibility_owner_empty.pdf",
+                "testPDF_no_extract_yes_accessibility_owner_empty.pdf",}) {
             String xml = getXML(file).xml;
             assertContains("Hello World", xml);
         }
@@ -810,10 +834,8 @@ public class PDFParserTest extends TikaTest {
         ParseContext context = new ParseContext();
         context.set(PasswordProvider.class, provider);
 
-        for (String path : new String[]{
-                "testPDF_no_extract_no_accessibility_owner_user.pdf",
-                "testPDF_no_extract_yes_accessibility_owner_user.pdf",
-        }) {
+        for (String path : new String[]{"testPDF_no_extract_no_accessibility_owner_user.pdf",
+                "testPDF_no_extract_yes_accessibility_owner_user.pdf",}) {
             assertContains("Hello World", getXML(path, context).xml);
         }
     }
@@ -828,11 +850,10 @@ public class PDFParserTest extends TikaTest {
         context.set(PDFParserConfig.class, config);
 
         //test exception for empty password
-        for (String path : new String[]{
-                "testPDF_no_extract_no_accessibility_owner_empty.pdf",
-                "testPDF_no_extract_yes_accessibility_owner_empty.pdf",
-        }) {
-            assertException("/test-documents/" + path, AUTO_DETECT_PARSER, context, AccessPermissionException.class);
+        for (String path : new String[]{"testPDF_no_extract_no_accessibility_owner_empty.pdf",
+                "testPDF_no_extract_yes_accessibility_owner_empty.pdf",}) {
+            assertException("/test-documents/" + path, AUTO_DETECT_PARSER, context,
+                    AccessPermissionException.class);
         }
 
         config.setAccessChecker(new AccessChecker(true));
@@ -840,8 +861,7 @@ public class PDFParserTest extends TikaTest {
                 AUTO_DETECT_PARSER, context, AccessPermissionException.class);
 
         assertContains("Hello World",
-                getXML("testPDF_no_extract_yes_accessibility_owner_empty.pdf",
-                        context).xml);
+                getXML("testPDF_no_extract_yes_accessibility_owner_empty.pdf", context).xml);
     }
 
     @Test
@@ -862,22 +882,18 @@ public class PDFParserTest extends TikaTest {
         context.set(PDFParserConfig.class, config);
 
         //test bad passwords
-        for (String path : new String[]{
-                "testPDF_no_extract_no_accessibility_owner_empty.pdf",
-                "testPDF_no_extract_yes_accessibility_owner_empty.pdf",
-        }) {
-            assertException("/test-documents/" + path, AUTO_DETECT_PARSER,
-                    context, EncryptedDocumentException.class);
+        for (String path : new String[]{"testPDF_no_extract_no_accessibility_owner_empty.pdf",
+                "testPDF_no_extract_yes_accessibility_owner_empty.pdf",}) {
+            assertException("/test-documents/" + path, AUTO_DETECT_PARSER, context,
+                    EncryptedDocumentException.class);
         }
 
         //bad password is still a bad password
         config.setAccessChecker(new AccessChecker(true));
-        for (String path : new String[]{
-                "testPDF_no_extract_no_accessibility_owner_empty.pdf",
-                "testPDF_no_extract_yes_accessibility_owner_empty.pdf",
-        }) {
-            assertException("/test-documents/" + path, AUTO_DETECT_PARSER,
-                    context, EncryptedDocumentException.class);
+        for (String path : new String[]{"testPDF_no_extract_no_accessibility_owner_empty.pdf",
+                "testPDF_no_extract_yes_accessibility_owner_empty.pdf",}) {
+            assertException("/test-documents/" + path, AUTO_DETECT_PARSER, context,
+                    EncryptedDocumentException.class);
         }
 
         //now test documents that require this "user" password
@@ -885,14 +901,13 @@ public class PDFParserTest extends TikaTest {
                 AUTO_DETECT_PARSER, context, AccessPermissionException.class);
 
         assertContains("Hello World",
-                    getXML("testPDF_no_extract_yes_accessibility_owner_user.pdf", context).xml);
+                getXML("testPDF_no_extract_yes_accessibility_owner_user.pdf", context).xml);
 
         config.setAccessChecker(new AccessChecker(false));
-        for (String path : new String[]{
-                "testPDF_no_extract_no_accessibility_owner_user.pdf",
-                "testPDF_no_extract_yes_accessibility_owner_user.pdf",
-        }) {
-            assertException("/test-documents/" + path, AUTO_DETECT_PARSER, context, AccessPermissionException.class);
+        for (String path : new String[]{"testPDF_no_extract_no_accessibility_owner_user.pdf",
+                "testPDF_no_extract_yes_accessibility_owner_user.pdf",}) {
+            assertException("/test-documents/" + path, AUTO_DETECT_PARSER, context,
+                    AccessPermissionException.class);
         }
     }
 
@@ -913,33 +928,29 @@ public class PDFParserTest extends TikaTest {
         context.set(PasswordProvider.class, passwordProvider);
         context.set(PDFParserConfig.class, config);
 
-        //with owner's password, text can be extracted, no matter the AccessibilityChecker's settings
-        for (String path : new String[]{
-                "testPDF_no_extract_no_accessibility_owner_user.pdf",
+        //with owner's password, text can be extracted, no matter the
+        // AccessibilityChecker's settings
+        for (String path : new String[]{"testPDF_no_extract_no_accessibility_owner_user.pdf",
                 "testPDF_no_extract_yes_accessibility_owner_user.pdf",
                 "testPDF_no_extract_no_accessibility_owner_empty.pdf",
-                "testPDF_no_extract_yes_accessibility_owner_empty.pdf",
-        }) {
+                "testPDF_no_extract_yes_accessibility_owner_empty.pdf",}) {
 
             assertContains("Hello World", getXML(path, context).xml);
         }
 
         //really, with owner's password, all extraction is allowed
         config.setAccessChecker(new AccessChecker(false));
-        for (String path : new String[]{
-                "testPDF_no_extract_no_accessibility_owner_user.pdf",
+        for (String path : new String[]{"testPDF_no_extract_no_accessibility_owner_user.pdf",
                 "testPDF_no_extract_yes_accessibility_owner_user.pdf",
                 "testPDF_no_extract_no_accessibility_owner_empty.pdf",
-                "testPDF_no_extract_yes_accessibility_owner_empty.pdf",
-        }) {
+                "testPDF_no_extract_yes_accessibility_owner_empty.pdf",}) {
             assertContains("Hello World", getXML(path, context).xml);
         }
     }
 
     @Test
     public void testNoXMP() throws Exception {
-        assertEquals("false",
-                getXML("testPDF.pdf").metadata.get(PDF.HAS_XMP));
+        assertEquals("false", getXML("testPDF.pdf").metadata.get(PDF.HAS_XMP));
     }
 
     @Test
@@ -959,8 +970,7 @@ public class PDFParserTest extends TikaTest {
         //contains content existing only in the "regular" pdf
         assertContains("Mount Rushmore National Memorial", r.xml);
         //contains xfa fields and data
-        assertContains("<li fieldName=\"School_Name\">School Name: my_school</li>",
-            r.xml);
+        assertContains("<li fieldName=\"School_Name\">School Name: my_school</li>", r.xml);
     }
 
     @Test
@@ -980,54 +990,35 @@ public class PDFParserTest extends TikaTest {
     public void testXMPMM() throws Exception {
 
         Metadata m = getXML("testPDF_twoAuthors.pdf").metadata;
-        assertEquals("uuid:0e46913c-72b9-40c0-8232-69e362abcd1e",
-                m.get(XMPMM.DOCUMENTID));
+        assertEquals("uuid:0e46913c-72b9-40c0-8232-69e362abcd1e", m.get(XMPMM.DOCUMENTID));
 
         m = getXML("testPDF_Version.11.x.PDFA-1b.pdf").metadata;
-        assertEquals("uuid:cccee1fc-51b3-4b52-ac86-672af3974d25",
-                m.get(XMPMM.DOCUMENTID));
+        assertEquals("uuid:cccee1fc-51b3-4b52-ac86-672af3974d25", m.get(XMPMM.DOCUMENTID));
 
         //now test for 7 elements in each parallel array
         //from the history section
-        assertArrayEquals(new String[]{
-                "uuid:0313504b-a0b0-4dac-a9f0-357221f2eadf",
-                "uuid:edc4279e-0d5f-465e-b13e-1298402fd11c",
-                "uuid:f565b775-43f3-4a9a-8541-e98c4115db6d",
-                "uuid:9fd5e0a8-14a5-4920-ad7f-870c0b8ee65f",
-                "uuid:09b6cfba-efde-4e07-a77f-70de858cc0aa",
-                "uuid:1e4ffbd7-dabc-4aae-801c-15b3404ade36",
-                "uuid:c1669773-a6ca-4bdd-aade-519030d0af00"
-        }, m.getValues(XMPMM.HISTORY_EVENT_INSTANCEID));
+        assertArrayEquals(
+                new String[]{"uuid:0313504b-a0b0-4dac-a9f0-357221f2eadf",
+                    "uuid:edc4279e-0d5f-465e-b13e-1298402fd11c",
+                    "uuid:f565b775-43f3-4a9a-8541-e98c4115db6d",
+                    "uuid:9fd5e0a8-14a5-4920-ad7f-870c0b8ee65f",
+                    "uuid:09b6cfba-efde-4e07-a77f-70de858cc0aa",
+                    "uuid:1e4ffbd7-dabc-4aae-801c-15b3404ade36",
+                    "uuid:c1669773-a6ca-4bdd-aade-519030d0af00"},
+                m.getValues(XMPMM.HISTORY_EVENT_INSTANCEID));
 
-        assertArrayEquals(new String[]{
-                "converted",
-                "converted",
-                "converted",
-                "converted",
-                "converted",
-                "converted",
-                "converted"
-        }, m.getValues(XMPMM.HISTORY_ACTION));
+        assertArrayEquals(
+                new String[]{"converted", "converted", "converted", "converted", "converted",
+                        "converted", "converted"}, m.getValues(XMPMM.HISTORY_ACTION));
 
-        assertArrayEquals(new String[]{
-                "Preflight",
-                "Preflight",
-                "Preflight",
-                "Preflight",
-                "Preflight",
-                "Preflight",
-                "Preflight"
-        }, m.getValues(XMPMM.HISTORY_SOFTWARE_AGENT));
+        assertArrayEquals(
+                new String[]{"Preflight", "Preflight", "Preflight", "Preflight", "Preflight",
+                        "Preflight", "Preflight"}, m.getValues(XMPMM.HISTORY_SOFTWARE_AGENT));
 
-        assertArrayEquals(new String[]{
-                "2014-03-04T23:50:41Z",
-                "2014-03-04T23:50:42Z",
-                "2014-03-04T23:51:34Z",
-                "2014-03-04T23:51:36Z",
-                "2014-03-04T23:51:37Z",
-                "2014-03-04T23:52:22Z",
-                "2014-03-04T23:54:48Z"
-        }, m.getValues(XMPMM.HISTORY_WHEN));
+        assertArrayEquals(
+                new String[]{"2014-03-04T23:50:41Z", "2014-03-04T23:50:42Z", "2014-03-04T23:51:34Z",
+                        "2014-03-04T23:51:36Z", "2014-03-04T23:51:37Z", "2014-03-04T23:52:22Z",
+                        "2014-03-04T23:54:48Z"}, m.getValues(XMPMM.HISTORY_WHEN));
     }
 
     @Test
@@ -1070,16 +1061,21 @@ public class PDFParserTest extends TikaTest {
 
     @Test
     public void testInitializationViaConfig() throws Exception {
-        try (InputStream is = getResourceAsStream("/org/apache/tika/parser/pdf/tika-config.xml")) {
+        try (InputStream is = getResourceAsStream(
+                "/org/apache/tika/parser/pdf/tika-config.xml")) {
             assertNotNull(is);
             TikaConfig tikaConfig = new TikaConfig(is);
             Parser p = new AutoDetectParser(tikaConfig);
 
-            String text = getText(getResourceAsStream("/test-documents/testPDFTwoTextBoxes.pdf"), p);
+            String text =
+                    getText(getResourceAsStream("/test-documents/testPDFTwoTextBoxes.pdf"), p);
             text = text.replaceAll("\\s+", " ");
 
             // Column text is now interleaved:
-            assertContains("Left column line 1 Right column line 1 Left colu mn line 2 Right column line 2", text);
+            assertContains(
+                    "Left column line 1 Right column line 1 " +
+                            "Left colu mn line 2 Right column line 2",
+                    text);
 
             //test overriding underlying settings with PDFParserConfig
             ParseContext pc = new ParseContext();
@@ -1098,28 +1094,34 @@ public class PDFParserTest extends TikaTest {
             config.setOcrDPI(10000);
             config.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.NO_OCR);
             pc.set(PDFParserConfig.class, config);
-            text = getText("testPDFTwoTextBoxes.pdf",
-                    p, new Metadata(), pc);
+            text = getText("testPDFTwoTextBoxes.pdf", p, new Metadata(), pc);
             text = text.replaceAll("\\s+", " ");
 
             // Column text is now interleaved:
-            assertContains("Left column line 1 Right column line 1 Left colu mn line 2 Right column line 2"
-                    , text);
+            assertContains(
+                    "Left column line 1 Right column line 1 Left " +
+                            "colu mn line 2 Right column line 2",
+                    text);
         }
     }
 
     @Test
     public void testInitializationOfNonPrimitivesViaConfig() throws Exception {
-        try (InputStream is = getResourceAsStream("/org/apache/tika/parser/pdf/tika-config-non-primitives.xml")) {
+        try (InputStream is = getResourceAsStream(
+                "/org/apache/tika/parser/pdf/tika-config-non-primitives.xml")) {
             assertNotNull(is);
             TikaConfig tikaConfig = new TikaConfig(is);
             AutoDetectParser p = new AutoDetectParser(tikaConfig);
             Map<MediaType, Parser> parsers = p.getParsers();
             Parser composite = parsers.get(MediaType.application("pdf"));
-            Parser pdfParser = ((CompositeParser)composite).getParsers().get(MediaType.application("pdf"));
-            assertEquals("org.apache.tika.parser.pdf.PDFParser", pdfParser.getClass().getName());
-            assertEquals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY, ((PDFParser)pdfParser).getPDFParserConfig().getOcrStrategy());
-            assertEquals(ImageType.RGB, ((PDFParser)pdfParser).getPDFParserConfig().getOcrImageType());
+            Parser pdfParser =
+                    ((CompositeParser) composite).getParsers().get(MediaType.application("pdf"));
+            assertEquals("org.apache.tika.parser.pdf.PDFParser",
+                    pdfParser.getClass().getName());
+            assertEquals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY,
+                    ((PDFParser) pdfParser).getPDFParserConfig().getOcrStrategy());
+            assertEquals(ImageType.RGB,
+                    ((PDFParser) pdfParser).getPDFParserConfig().getOcrImageType());
         }
     }
 
@@ -1141,7 +1143,8 @@ public class PDFParserTest extends TikaTest {
 
     @Test
     public void testConfiguringMoreParams() throws Exception {
-        try (InputStream configIs = getResourceAsStream("/org/apache/tika/parser/pdf/tika-inline-config.xml")) {
+        try (InputStream configIs = getResourceAsStream(
+                "/org/apache/tika/parser/pdf/tika-inline-config.xml")) {
             assertNotNull(configIs);
             TikaConfig tikaConfig = new TikaConfig(configIs);
             AutoDetectParser p = new AutoDetectParser(tikaConfig);
@@ -1150,9 +1153,10 @@ public class PDFParserTest extends TikaTest {
             assertEquals(2, metadata.size());
             Map<MediaType, Parser> parsers = p.getParsers();
             Parser composite = parsers.get(MediaType.application("pdf"));
-            Parser pdfParser = ((CompositeParser)composite).getParsers().get(MediaType.application("pdf"));
+            Parser pdfParser =
+                    ((CompositeParser) composite).getParsers().get(MediaType.application("pdf"));
             assertTrue(pdfParser instanceof PDFParser);
-            PDFParserConfig pdfParserConfig = ((PDFParser)pdfParser).getPDFParserConfig();
+            PDFParserConfig pdfParserConfig = ((PDFParser) pdfParser).getPDFParserConfig();
             assertEquals(new AccessChecker(true), pdfParserConfig.getAccessChecker());
             assertEquals(true, pdfParserConfig.isExtractInlineImages());
             assertEquals(false, pdfParserConfig.isExtractUniqueInlineImagesOnly());
@@ -1183,10 +1187,10 @@ public class PDFParserTest extends TikaTest {
 
     @Test
     public void testLanguageMetadata() throws Exception {
-        assertEquals("de-CH", getXML("testPDF-custommetadata.pdf")
-                .metadata.get(TikaCoreProperties.LANGUAGE));
-        assertEquals("zh-CN", getXML("testPDFFileEmbInAnnotation.pdf")
-                .metadata.get(TikaCoreProperties.LANGUAGE));
+        assertEquals("de-CH",
+                getXML("testPDF-custommetadata.pdf").metadata.get(TikaCoreProperties.LANGUAGE));
+        assertEquals("zh-CN",
+                getXML("testPDFFileEmbInAnnotation.pdf").metadata.get(TikaCoreProperties.LANGUAGE));
     }
 
     @Test
@@ -1221,7 +1225,7 @@ public class PDFParserTest extends TikaTest {
         pdfParserConfig.setDetectAngles(true);
         ParseContext parseContext = new ParseContext();
         parseContext.set(PDFParserConfig.class, pdfParserConfig);
-        metadataList = getRecursiveMetadata("testPDF_bad_page_303226.pdf", parseContext,true);
+        metadataList = getRecursiveMetadata("testPDF_bad_page_303226.pdf", parseContext, true);
         m = metadataList.get(0);
         totalChars = m.getIntValues(PDF.CHARACTERS_PER_PAGE);
         unmappedUnicodeChars = m.getIntValues(PDF.UNMAPPED_UNICODE_CHARS_PER_PAGE);
@@ -1296,11 +1300,13 @@ public class PDFParserTest extends TikaTest {
         assertNull(context.get(ZeroByteFileException.IgnoreZeroByteFileException.class));
         assertEquals(2, metadataList.size());
         assertEquals("image/png", metadataList.get(1).get(Metadata.CONTENT_TYPE));
-        assertEquals("/image0.png", metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
-        assertEquals(261, (int)metadataList.get(1).getInt(Metadata.IMAGE_LENGTH));
-        assertEquals(934, (int)metadataList.get(1).getInt(Metadata.IMAGE_WIDTH));
+        assertEquals("/image0.png",
+                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        assertEquals(261, (int) metadataList.get(1).getInt(Metadata.IMAGE_LENGTH));
+        assertEquals(934, (int) metadataList.get(1).getInt(Metadata.IMAGE_WIDTH));
         assertEquals("image0.png", metadataList.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
     }
+
     /**
      * Simple class to count end of document events.  If functionality is useful,
      * move to org.apache.tika in src/test
@@ -1329,4 +1335,50 @@ public class PDFParserTest extends TikaTest {
             return true;
         }
     }
+
+    @Test
+    public void testDeeplyEmbeddedAttachments() throws Exception {
+        //test file comes from pdfcpu issue #120: https://github.com/pdfcpu/pdfcpu/issues/201
+        //in our regression corpus: pdfcpu-201-0.zip-0.pdf");
+        List<Metadata> metadataList = getRecursiveMetadata(
+                "testPDF_deeplyEmbeddedAttachments.pdf");
+        assertEquals(21, metadataList.size());
+    }
+
+    @Test
+    public void testEmbeddedRichMedia() throws Exception {
+        List<Metadata> metadata = getRecursiveMetadata("testFlashInPDF.pdf");
+        assertEquals(2, metadata.size());
+        assertEquals("application/x-shockwave-flash", metadata.get(1).get(Metadata.CONTENT_TYPE));
+        assertEquals("TestMovie02.swf", metadata.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("15036", metadata.get(1).get(Metadata.CONTENT_LENGTH));
+    }
+
+    /**
+    @Test
+    public void testWriteLimit() throws Exception {
+        for (int i = 0; i < 10000; i += 13) {
+            Metadata metadata = testWriteLimit("testPDF_childAttachments.pdf", i);
+            assertEquals("true", metadata.get(TikaCoreProperties.WRITE_LIMIT_REACHED));
+            int len = metadata.get(TikaCoreProperties.TIKA_CONTENT).length();
+            System.out.println(len + " : " + i);
+            assertTrue(len <= i);
+        }
+    }
+
+    private Metadata testWriteLimit(String fileName, int limit) throws Exception {
+        BasicContentHandlerFactory factory = new BasicContentHandlerFactory(
+                BasicContentHandlerFactory.HANDLER_TYPE.TEXT, limit
+        );
+        ContentHandler contentHandler = factory.getNewContentHandler();
+        Metadata metadata = new Metadata();
+        ParseContext parseContext = new ParseContext();
+        try (InputStream is = getResourceAsStream("/test-documents/" + fileName)) {
+            AUTO_DETECT_PARSER.parse(is, contentHandler, metadata, parseContext);
+        } catch (WriteLimitReachedException e) {
+            //e.printStackTrace();
+        }
+        metadata.set(TikaCoreProperties.TIKA_CONTENT, contentHandler.toString());
+        return metadata;
+    }*/
 }

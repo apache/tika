@@ -42,17 +42,9 @@ import org.slf4j.LoggerFactory;
 
 public class JDBCUtil {
     private static final Logger LOG = LoggerFactory.getLogger(JDBCUtil.class);
-
-    public enum CREATE_TABLE {
-        DROP_IF_EXISTS,
-        SKIP_IF_EXISTS,
-        THROW_EX_IF_EXISTS,
-    }
-
     private final String connectionString;
     private String driverClass;
     private Connection connection = null;
-
     public JDBCUtil(String connectionString, String driverClass) {
         this.connectionString = connectionString;
         this.driverClass = driverClass;
@@ -73,9 +65,111 @@ public class JDBCUtil {
                     }
 
                 } catch (IOException e) {
-
+                    //swallow
                 }
             }
+        }
+    }
+
+    @Deprecated
+    /**
+     * @deprecated use {@link #batchInsert(PreparedStatement, TableInfo, Map)}
+     */ public static int insert(PreparedStatement insertStatement, TableInfo table,
+                                 Map<Cols, String> data) throws SQLException {
+
+        //clear parameters before setting
+        insertStatement.clearParameters();
+        try {
+            int i = 1;
+            for (ColInfo colInfo : table.getColInfos()) {
+                updateInsertStatement(i, insertStatement, colInfo, data.get(colInfo.getName()));
+                i++;
+            }
+            for (Cols c : data.keySet()) {
+                if (!table.containsColumn(c)) {
+                    throw new IllegalArgumentException(
+                            "Can't add data to " + c + " because it doesn't exist in the table: " +
+                                    table.getName());
+                }
+            }
+            return insertStatement.executeUpdate();
+        } catch (SQLException e) {
+            LOG.warn("couldn't insert data for this row: {}", e.getMessage());
+            return -1;
+        }
+    }
+
+    public static void batchInsert(PreparedStatement insertStatement, TableInfo table,
+                                   Map<Cols, String> data) throws SQLException {
+
+        try {
+            int i = 1;
+            for (ColInfo colInfo : table.getColInfos()) {
+                updateInsertStatement(i, insertStatement, colInfo, data.get(colInfo.getName()));
+                i++;
+            }
+            for (Cols c : data.keySet()) {
+                if (!table.containsColumn(c)) {
+                    throw new IllegalArgumentException(
+                            "Can't add data to " + c + " because it doesn't exist in the table: " +
+                                    table.getName());
+                }
+            }
+            insertStatement.addBatch();
+        } catch (SQLException e) {
+            LOG.warn("couldn't insert data for this row: {}", e.getMessage());
+        }
+    }
+
+    public static void updateInsertStatement(int dbColOffset, PreparedStatement st, ColInfo colInfo,
+                                             String value) throws SQLException {
+        if (value == null) {
+            st.setNull(dbColOffset, colInfo.getType());
+            return;
+        }
+        try {
+            switch (colInfo.getType()) {
+                case Types.VARCHAR:
+                    if (value != null && value.length() > colInfo.getPrecision()) {
+                        value = value.substring(0, colInfo.getPrecision());
+                        LOG.warn("truncated varchar value in {} : {}", colInfo.getName(), value);
+                    }
+                    //postgres doesn't allow \0000
+                    value = value.replaceAll("\u0000", " ");
+                    st.setString(dbColOffset, value);
+                    break;
+                case Types.CHAR:
+                    //postgres doesn't allow \0000
+                    value = value.replaceAll("\u0000", " ");
+                    st.setString(dbColOffset, value);
+                    break;
+                case Types.DOUBLE:
+                    st.setDouble(dbColOffset, Double.parseDouble(value));
+                    break;
+                case Types.FLOAT:
+                    st.setDouble(dbColOffset, Float.parseFloat(value));
+                    break;
+                case Types.INTEGER:
+                    st.setInt(dbColOffset, Integer.parseInt(value));
+                    break;
+                case Types.BIGINT:
+                    st.setLong(dbColOffset, Long.parseLong(value));
+                    break;
+                case Types.BOOLEAN:
+                    st.setBoolean(dbColOffset, Boolean.parseBoolean(value));
+                    break;
+                default:
+                    throw new UnsupportedOperationException(
+                            "Don't yet support type: " + colInfo.getType());
+            }
+        } catch (NumberFormatException e) {
+            if (!"".equals(value)) {
+                LOG.warn("number format exception: {} : {}", colInfo.getName(), value);
+            }
+            st.setNull(dbColOffset, colInfo.getType());
+        } catch (SQLException e) {
+            LOG.warn("sqlexception: {} : {}", colInfo, value);
+            st.setNull(dbColOffset, colInfo.getType());
         }
     }
 
@@ -114,7 +208,6 @@ public class JDBCUtil {
         return driverClass;
     }
 
-
     public boolean dropTableIfExists(Connection conn, String tableName) throws SQLException {
         if (containsTable(tableName)) {
             try (Statement st = conn.createStatement()) {
@@ -125,11 +218,9 @@ public class JDBCUtil {
         return true;
     }
 
-
     public String getConnectionString() {
         return connectionString;
     }
-
 
     public Set<String> getTables(Connection connection) throws SQLException {
         Set<String> tables = new HashSet<>();
@@ -144,109 +235,8 @@ public class JDBCUtil {
         return tables;
     }
 
-    @Deprecated
-    /**
-     * @deprecated use {@link #batchInsert(PreparedStatement, TableInfo, Map)}
-     */
-    public static int insert(PreparedStatement insertStatement,
-                             TableInfo table,
-                             Map<Cols, String> data) throws SQLException {
-
-        //clear parameters before setting
-        insertStatement.clearParameters();
-        try {
-            int i = 1;
-            for (ColInfo colInfo : table.getColInfos()) {
-                updateInsertStatement(i, insertStatement, colInfo, data.get(colInfo.getName()));
-                i++;
-            }
-            for (Cols c : data.keySet()) {
-                if (!table.containsColumn(c)) {
-                    throw new IllegalArgumentException("Can't add data to " + c +
-                            " because it doesn't exist in the table: " + table.getName());
-                }
-            }
-            return insertStatement.executeUpdate();
-        } catch (SQLException e) {
-            LOG.warn("couldn't insert data for this row: {}", e.getMessage());
-            return -1;
-        }
-    }
-
-    public static void batchInsert(PreparedStatement insertStatement,
-                                   TableInfo table,
-                                   Map<Cols, String> data) throws SQLException {
-
-        try {
-            int i = 1;
-            for (ColInfo colInfo : table.getColInfos()) {
-                updateInsertStatement(i, insertStatement, colInfo, data.get(colInfo.getName()));
-                i++;
-            }
-            for (Cols c : data.keySet()) {
-                if (!table.containsColumn(c)) {
-                    throw new IllegalArgumentException("Can't add data to " + c +
-                            " because it doesn't exist in the table: " + table.getName());
-                }
-            }
-            insertStatement.addBatch();
-        } catch (SQLException e) {
-            LOG.warn("couldn't insert data for this row: {}", e.getMessage());
-        }
-    }
-
-    public static void updateInsertStatement(int dbColOffset, PreparedStatement st,
-                                             ColInfo colInfo, String value) throws SQLException {
-        if (value == null) {
-            st.setNull(dbColOffset, colInfo.getType());
-            return;
-        }
-        try {
-            switch (colInfo.getType()) {
-                case Types.VARCHAR:
-                    if (value != null && value.length() > colInfo.getPrecision()) {
-                        value = value.substring(0, colInfo.getPrecision());
-                        LOG.warn("truncated varchar value in {} : {}", colInfo.getName(), value);
-                    }
-                    //postgres doesn't allow \0000
-                    value = value.replaceAll("\u0000", " ");
-                    st.setString(dbColOffset, value);
-                    break;
-                case Types.CHAR:
-                    //postgres doesn't allow \0000
-                    value = value.replaceAll("\u0000", " ");
-                    st.setString(dbColOffset, value);
-                    break;
-                case Types.DOUBLE:
-                    st.setDouble(dbColOffset, Double.parseDouble(value));
-                    break;
-                case Types.FLOAT:
-                    st.setDouble(dbColOffset, Float.parseFloat(value));
-                    break;
-                case Types.INTEGER:
-                    st.setInt(dbColOffset, Integer.parseInt(value));
-                    break;
-                case Types.BIGINT:
-                    st.setLong(dbColOffset, Long.parseLong(value));
-                    break;
-                case Types.BOOLEAN:
-                    st.setBoolean(dbColOffset, Boolean.parseBoolean(value));
-                    break;
-                default:
-                    throw new UnsupportedOperationException("Don't yet support type: " + colInfo.getType());
-            }
-        } catch (NumberFormatException e) {
-            if (!"".equals(value)) {
-                LOG.warn("number format exception: {} : {}", colInfo.getName(), value);
-            }
-            st.setNull(dbColOffset, colInfo.getType());
-        } catch (SQLException e) {
-            LOG.warn("sqlexception: {} : {}", colInfo, value);
-            st.setNull(dbColOffset, colInfo.getType());
-        }
-    }
-
-    public void createTables(List<TableInfo> tableInfos, CREATE_TABLE createTable) throws SQLException, IOException {
+    public void createTables(List<TableInfo> tableInfos, CREATE_TABLE createTable)
+            throws SQLException, IOException {
 
         Connection conn = getConnection();
         for (TableInfo tableInfo : tableInfos) {
@@ -312,5 +302,9 @@ public class JDBCUtil {
             st.close();
         }
         conn.commit();
+    }
+
+    public enum CREATE_TABLE {
+        DROP_IF_EXISTS, SKIP_IF_EXISTS, THROW_EX_IF_EXISTS,
     }
 }

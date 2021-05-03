@@ -16,14 +16,7 @@
  */
 package org.apache.tika.parser.ner;
 
-import org.apache.tika.Tika;
-import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.ner.opennlp.OpenNLPNERecogniser;
-import org.apache.tika.parser.ner.regex.RegexNERecogniser;
-import org.junit.Test;
+import static org.junit.Assume.assumeTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -31,10 +24,18 @@ import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashSet;
 
-import static org.junit.Assume.assumeTrue;
+import org.junit.Test;
+
+import org.apache.tika.Tika;
+import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ner.opennlp.OpenNLPNERecogniser;
+import org.apache.tika.parser.ner.regex.RegexNERecogniser;
 
 /**
- *Test case for {@link NamedEntityParser}
+ * Test case for {@link NamedEntityParser}
  */
 public class NamedEntityParserTest extends TikaTest {
 
@@ -53,7 +54,8 @@ public class NamedEntityParserTest extends TikaTest {
             Metadata md = new Metadata();
             tika.parse(new ByteArrayInputStream(text.getBytes(Charset.defaultCharset())), md);
 
-            HashSet<String> set = new HashSet<String>(Arrays.asList(md.getValues(TikaCoreProperties.TIKA_PARSED_BY)));
+            HashSet<String> set = new HashSet<String>(
+                    Arrays.asList(md.getValues(TikaCoreProperties.TIKA_PARSED_BY)));
             assumeTrue(set.contains(NamedEntityParser.class.getName()));
 
             set.clear();
@@ -76,7 +78,8 @@ public class NamedEntityParserTest extends TikaTest {
 
     @Test
     public void testNerChain() throws Exception {
-        String classNames = OpenNLPNERecogniser.class.getName() + "," + RegexNERecogniser.class.getName();
+        String classNames =
+                OpenNLPNERecogniser.class.getName() + "," + RegexNERecogniser.class.getName();
         System.setProperty(NamedEntityParser.SYS_PROP_NER_IMPL, classNames);
         try (InputStream is = getResourceAsStream(CONFIG_FILE)) {
             TikaConfig config = new TikaConfig(is);

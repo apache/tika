@@ -1,5 +1,3 @@
-package org.apache.tika.batch.fs;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,7 @@ package org.apache.tika.batch.fs;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.batch.fs;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,7 +37,7 @@ public abstract class AbstractFSConsumer extends FileResourceConsumer {
      * check for whether the os is null, which is the signal
      * that the output file already exists and should be skipped.
      *
-     * @param fsOSFactory factory that creates the outputstream
+     * @param fsOSFactory  factory that creates the outputstream
      * @param fileResource used by the OSFactory to create the stream
      * @return the OutputStream or null if the output file already exists
      */
@@ -51,14 +50,14 @@ public abstract class AbstractFSConsumer extends FileResourceConsumer {
             //This can happen if the disk has run out of space,
             //or if there was a failure with mkdirs in fsOSFactory
             LOG.error("{}", getXMLifiedLogMsg(IO_OS, fileResource.getResourceId(), e));
-            throw new BatchNoRestartError("IOException trying to open output stream for " +
-                    fileResource.getResourceId(), e);
+            throw new BatchNoRestartError(
+                    "IOException trying to open output stream for " + fileResource.getResourceId(),
+                    e);
         }
         return os;
     }
 
     /**
-     *
      * @param fileResource
      * @return inputStream, can be null if there is an exception opening IS
      */

@@ -23,7 +23,9 @@ import java.io.InputStream;
 
 class InputStreamProxy extends InputStream implements ForkProxy {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = 4350939227765568438L;
 
     private final int resource;

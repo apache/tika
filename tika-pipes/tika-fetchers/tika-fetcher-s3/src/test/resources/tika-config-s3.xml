@@ -19,9 +19,10 @@
     <fetchers>
         <fetcher class="org.apache.tika.pipes.fetcher.s3.S3Fetcher">
             <params>
-                <param name="name" type="string">s3</param>
-                <param name="region" type="string">us-east-1</param>
-                <param name="profile" type="string">my_profile</param>
+                <name>s3</name>
+                <region>us-east-1</region>
+                <profile>my_profile</profile>
+                <credentialsProvider>profile</credentialsProvider>
             </params>
         </fetcher>
     </fetchers>

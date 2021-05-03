@@ -17,15 +17,16 @@
 
 package org.apache.tika.example;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.IOException;
 
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-
 public class LanguageDetectorExampleTest {
     LanguageDetectorExample languageDetectorExample;
+
     @Before
     public void setUp() {
         languageDetectorExample = new LanguageDetectorExample();

@@ -16,7 +16,12 @@
  */
 package org.apache.tika.eval.core.metadata;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.commons.lang3.StringUtils;
+
 import org.apache.tika.eval.core.langid.LanguageIDWrapper;
 import org.apache.tika.eval.core.textstats.BasicTokenCountStatsCalculator;
 import org.apache.tika.eval.core.textstats.CommonTokens;
@@ -31,32 +36,31 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.filter.MetadataFilter;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 public class TikaEvalMetadataFilter implements MetadataFilter {
 
-    public static String TIKA_EVAL_NS = "tika-eval"+ TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    public static String TIKA_EVAL_NS = "tika-eval" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
-    public static Property NUM_TOKENS = Property.externalInteger(TIKA_EVAL_NS+"numTokens");
+    public static Property NUM_TOKENS = Property.externalInteger(TIKA_EVAL_NS + "numTokens");
 
     public static Property NUM_UNIQUE_TOKENS =
-            Property.externalInteger(TIKA_EVAL_NS+"numUniqueTokens");
+            Property.externalInteger(TIKA_EVAL_NS + "numUniqueTokens");
 
-    public static Property NUM_ALPHA_TOKENS = Property.externalInteger(TIKA_EVAL_NS+"numAlphaTokens");
+    public static Property NUM_ALPHA_TOKENS =
+            Property.externalInteger(TIKA_EVAL_NS + "numAlphaTokens");
 
     public static Property NUM_UNIQUE_ALPHA_TOKENS =
-            Property.externalInteger(TIKA_EVAL_NS+"numUniqueAlphaTokens");
+            Property.externalInteger(TIKA_EVAL_NS + "numUniqueAlphaTokens");
 
-    public static Property LANGUAGE = Property.externalText(TIKA_EVAL_NS+"lang");
+    public static Property LANGUAGE = Property.externalText(TIKA_EVAL_NS + "lang");
 
-    public static Property LANGUAGE_CONFIDENCE = Property.externalReal(TIKA_EVAL_NS+"langConfidence");
+    public static Property LANGUAGE_CONFIDENCE =
+            Property.externalReal(TIKA_EVAL_NS + "langConfidence");
 
-    public static Property OUT_OF_VOCABULARY = Property.externalReal(TIKA_EVAL_NS+"oov");
+    public static Property OUT_OF_VOCABULARY = Property.externalReal(TIKA_EVAL_NS + "oov");
 
 
     static CompositeTextStatsCalculator TEXT_STATS_CALCULATOR;
+
     static {
         List<TextStatsCalculator> calcs = new ArrayList<>();
         calcs.add(new BasicTokenCountStatsCalculator());
@@ -77,13 +81,13 @@ public class TikaEvalMetadataFilter implements MetadataFilter {
     private void calcStats(String content, Metadata metadata) {
         Map<Class, Object> results = TEXT_STATS_CALCULATOR.calculate(content);
 
-        TokenCounts tokenCounts = (TokenCounts)results.get(BasicTokenCountStatsCalculator.class);
+        TokenCounts tokenCounts = (TokenCounts) results.get(BasicTokenCountStatsCalculator.class);
         metadata.set(NUM_TOKENS, tokenCounts.getTotalTokens());
         metadata.set(NUM_UNIQUE_TOKENS, tokenCounts.getTotalUniqueTokens());
 
 
         //common token results
-        CommonTokenResult commonTokenResult = (CommonTokenResult)results.get(CommonTokens.class);
+        CommonTokenResult commonTokenResult = (CommonTokenResult) results.get(CommonTokens.class);
         metadata.set(NUM_ALPHA_TOKENS, commonTokenResult.getAlphabeticTokens());
         metadata.set(NUM_UNIQUE_ALPHA_TOKENS, commonTokenResult.getUniqueAlphabeticTokens());
         if (commonTokenResult.getAlphabeticTokens() > 0) {
@@ -93,7 +97,8 @@ public class TikaEvalMetadataFilter implements MetadataFilter {
         }
 
         //languages
-        List<LanguageResult> probabilities = (List<LanguageResult>) results.get(LanguageIDWrapper.class);
+        List<LanguageResult> probabilities =
+                (List<LanguageResult>) results.get(LanguageIDWrapper.class);
         if (probabilities.size() > 0) {
             metadata.set(LANGUAGE, probabilities.get(0).getLanguage());
             metadata.set(LANGUAGE_CONFIDENCE, probabilities.get(0).getRawScore());

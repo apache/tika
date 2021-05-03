@@ -17,12 +17,13 @@
 
 package org.apache.tika.parser.mif;
 
+import static org.junit.Assert.assertEquals;
+
+import org.junit.Test;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * Test case for the Adobe MIF Parser.

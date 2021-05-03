@@ -28,7 +28,7 @@ public class EncryptedDocumentException extends TikaException {
     public EncryptedDocumentException(String info) {
         super(info);
     }
-    
+
     public EncryptedDocumentException(String info, Throwable th) {
         super(info, th);
     }

@@ -16,12 +16,14 @@
  */
 package org.apache.tika.config;
 
-import org.apache.tika.exception.TikaConfigException;
-
-import java.lang.reflect.*;
+import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+
+import org.apache.tika.exception.TikaConfigException;
 
 /**
  * This class stores metdata for {@link Field} annotation are used to map them
@@ -36,24 +38,24 @@ public class ParamField {
     //NOTE: since (primitive type) is NOT AssignableFrom (BoxedType),
     // we just use boxed type for everything!
     // Example : short.class.isAssignableFrom(Short.class) ? false
-    private static final Map<Class<?>, Class<?>> PRIMITIVE_MAP
-            = new HashMap<Class<?>, Class<?>>(){{
-        put(int.class, Integer.class);
-        put(short.class, Short.class);
-        put(boolean.class, Boolean.class);
-        put(long.class, Long.class);
-        put(float.class, Float.class);
-        put(double.class, Double.class);
-    }};
-
+    private static final Map<Class<?>, Class<?>> PRIMITIVE_MAP =
+            new HashMap<Class<?>, Class<?>>() {{
+                    put(int.class, Integer.class);
+                    put(short.class, Short.class);
+                    put(boolean.class, Boolean.class);
+                    put(long.class, Long.class);
+                    put(float.class, Float.class);
+                    put(double.class, Double.class);
+                }};
+    private final String name;
+    private final Class<?> type;
+    private final boolean required;
     private java.lang.reflect.Field field;
     private Method setter;
-    private String name;
-    private Class<?> type;
-    private boolean required;
 
     /**
      * Creates a ParamField object
+     *
      * @param member a field or method which has {@link Field} annotation
      */
     public ParamField(AccessibleObject member) throws TikaConfigException {
@@ -91,9 +93,10 @@ public class ParamField {
 
     /**
      * Sets given value to the annotated field of bean
-     * @param bean bean with annotation for field
+     *
+     * @param bean  bean with annotation for field
      * @param value value of field
-     * @throws IllegalAccessException when it occurs
+     * @throws IllegalAccessException    when it occurs
      * @throws InvocationTargetException when it occurs
      */
     public void assignValue(Object bean, Object value)
@@ -114,14 +117,14 @@ public class ParamField {
             if (params.length != 1) {
                 String msg = "Invalid setter method. Must have one and only one parameter. ";
                 if (setter.getName().startsWith("get")) {
-                    msg += "Perhaps the annotation is misplaced on " +
-                            setter.getName() + " while a set'X' is expected?";
+                    msg += "Perhaps the annotation is misplaced on " + setter.getName() +
+                            " while a set'X' is expected?";
                 }
                 throw new TikaConfigException(msg);
             }
             type = params[0];
         }
-        if (type.isPrimitive() && PRIMITIVE_MAP.containsKey(type)){
+        if (type.isPrimitive() && PRIMITIVE_MAP.containsKey(type)) {
             type = PRIMITIVE_MAP.get(type); //primitive types have hard time
         }
         return type;
@@ -135,8 +138,8 @@ public class ParamField {
             } else {
                 String setterName = setter.getName();
                 if (setterName.startsWith("set") && setterName.length() > 3) {
-                    name = setterName.substring(3, 4).toLowerCase(Locale.ROOT)
-                            + setterName.substring(4);
+                    name = setterName.substring(3, 4).toLowerCase(Locale.ROOT) +
+                            setterName.substring(4);
                 } else {
                     name = setter.getName();
                 }
@@ -149,10 +152,7 @@ public class ParamField {
 
     @Override
     public String toString() {
-        return "ParamField{" +
-                "name='" + name + '\'' +
-                ", type=" + type +
-                ", required=" + required +
-                '}';
+        return "ParamField{" + "name='" + name + '\'' + ", type=" + type + ", required=" +
+                required + '}';
     }
 }

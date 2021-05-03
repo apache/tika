@@ -16,16 +16,9 @@
  */
 package org.apache.tika.utils;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Param;
-import org.apache.tika.config.ParamField;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaConfigException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.InvocationTargetException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -37,8 +30,18 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.tika.config.Field;
+import org.apache.tika.config.Param;
+import org.apache.tika.config.ParamField;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaConfigException;
+
 /**
  * This class contains utilities for dealing with tika annotations
+ *
  * @since Apache Tika 1.14
  */
 public class AnnotationUtils {
@@ -47,17 +50,17 @@ public class AnnotationUtils {
     /**
      * Cache for annotations for Bean classes which have {@link Field}
      */
-    private static final Map<Class<?>, List<ParamField>> PARAM_INFO =
-            new HashMap<>();
+    private static final Map<Class<?>, List<ParamField>> PARAM_INFO = new HashMap<>();
 
     /**
      * Collects all the fields and methods for an annotation
-     * @param clazz bean class with annotations
+     *
+     * @param clazz      bean class with annotations
      * @param annotation annotation class
      * @return list of accessible objects such as fields and methods
      */
-    private static List<AccessibleObject> collectInfo(
-            Class<?> clazz, Class<? extends Annotation> annotation) {
+    private static List<AccessibleObject> collectInfo(Class<?> clazz,
+                                                      Class<? extends Annotation> annotation) {
 
         Class superClazz = clazz;
         List<AccessibleObject> members = new ArrayList<>();
@@ -71,7 +74,7 @@ public class AnnotationUtils {
 
         for (final AccessibleObject member : members) {
             if (member.isAnnotationPresent(annotation)) {
-                AccessController.doPrivileged(new PrivilegedAction<Void>(){
+                AccessController.doPrivileged(new PrivilegedAction<Void>() {
                     @Override
                     public Void run() {
                         member.setAccessible(true);
@@ -86,15 +89,17 @@ public class AnnotationUtils {
 
     /**
      * Assigns the param values to bean
+     *
      * @throws TikaConfigException when an error occurs while assigning params
      */
-    public static void assignFieldParams(Object bean, Map<String, Param> params) throws TikaConfigException {
+    public static void assignFieldParams(Object bean, Map<String, Param> params)
+            throws TikaConfigException {
         Class<?> beanClass = bean.getClass();
         if (!PARAM_INFO.containsKey(beanClass)) {
-            synchronized (TikaConfig.class){
+            synchronized (TikaConfig.class) {
                 if (!PARAM_INFO.containsKey(beanClass)) {
-                    List<AccessibleObject> aObjs = collectInfo(beanClass,
-                            org.apache.tika.config.Field.class);
+                    List<AccessibleObject> aObjs =
+                            collectInfo(beanClass, org.apache.tika.config.Field.class);
                     List<ParamField> fields = new ArrayList<>(aObjs.size());
 
                     for (AccessibleObject aObj : aObjs) {
@@ -112,25 +117,31 @@ public class AnnotationUtils {
         for (ParamField field : fields) {
             validFieldNames.add(field.getName());
             Param<?> param = params.get(field.getName());
-            if (param != null){
+            if (param != null) {
                 if (field.getType().isAssignableFrom(param.getType())) {
                     try {
                         field.assignValue(bean, param.getValue());
-                    } catch (Exception e) {
+                    } catch (InvocationTargetException e) {
+                        LOG.error("Error assigning value '{}' to '{}'", param.getValue(), param.getName());
+                        final Throwable cause = e.getCause() == null ? e : e.getCause();
+                        throw new TikaConfigException(cause.getMessage(), cause);
+                    } catch (IllegalAccessException e) {
+                        LOG.error("Error assigning value '{}' to '{}'", param.getValue(), param.getName());
                         throw new TikaConfigException(e.getMessage(), e);
                     }
                 } else {
-                    String msg = String.format(Locale.ROOT, "Value '%s' of type '%s' cant be" +
-                            " assigned to field '%s' of defined type '%s'",
-                            param.getValue(), param.getValue().getClass(),
-                            field.getName(), field.getType());
+                    String msg = String.format(Locale.ROOT,
+                            "Value '%s' of type '%s' can't be" +
+                                    " assigned to field '%s' of defined type '%s'",
+                            param.getValue(),
+                            param.getValue().getClass(), field.getName(), field.getType());
                     throw new TikaConfigException(msg);
                 }
-            } else if (field.isRequired()){
+            } else if (field.isRequired()) {
                 //param not supplied but field is declared as required?
-                String msg = String.format(Locale.ROOT, "Param %s is required for %s," +
-                        " but it is not given in config.", field.getName(),
-                        bean.getClass().getName());
+                String msg = String.format(Locale.ROOT,
+                        "Param %s is required for %s," + " but it is not given in config.",
+                        field.getName(), bean.getClass().getName());
                 throw new TikaConfigException(msg);
             } else {
                 LOG.debug("Param not supplied, field is not mandatory");

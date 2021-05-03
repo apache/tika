@@ -17,6 +17,7 @@
 package org.apache.tika.parser.microsoft;
 
 import org.apache.poi.util.IOUtils;
+
 import org.apache.tika.config.Field;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
@@ -35,44 +36,17 @@ public abstract class AbstractOfficeParser extends AbstractParser {
      * @param parseContext
      */
     public void configure(ParseContext parseContext) {
-        OfficeParserConfig officeParserConfig = parseContext.get(OfficeParserConfig.class, defaultOfficeParserConfig);
+        OfficeParserConfig officeParserConfig =
+                parseContext.get(OfficeParserConfig.class, defaultOfficeParserConfig);
         parseContext.set(OfficeParserConfig.class, officeParserConfig);
     }
 
     /**
-     * @see OfficeParserConfig#isIncludeDeletedContent
-     *
      * @return
+     * @see OfficeParserConfig#isIncludeDeletedContent
      */
     public boolean isIncludeDeletedContent() {
         return defaultOfficeParserConfig.isIncludeDeletedContent();
-    }
-
-    /**
-     * @see OfficeParserConfig#isIncludeMoveFromContent()
-     *
-     * @return
-     */
-
-    public boolean isIncludeMoveFromContent() {
-        return defaultOfficeParserConfig.isIncludeMoveFromContent();
-    }
-
-    /**
-     * @see OfficeParserConfig#isUseSAXDocxExtractor()
-     *
-     * @return
-     */
-    public boolean isUseSAXDocxExtractor() {
-        return defaultOfficeParserConfig.isUseSAXDocxExtractor();
-    }
-
-    /**
-     * @see OfficeParserConfig#isExtractMacros()
-     * @return whether or not to extract macros
-     */
-    public boolean isExtractMacros() {
-        return defaultOfficeParserConfig.isExtractMacros();
     }
 
     @Field
@@ -80,14 +54,26 @@ public abstract class AbstractOfficeParser extends AbstractParser {
         defaultOfficeParserConfig.setIncludeDeletedContent(includeDeletedConent);
     }
 
+    /**
+     * @return
+     * @see OfficeParserConfig#isIncludeMoveFromContent()
+     */
+
+    public boolean isIncludeMoveFromContent() {
+        return defaultOfficeParserConfig.isIncludeMoveFromContent();
+    }
+
     @Field
     public void setIncludeMoveFromContent(boolean includeMoveFromContent) {
         defaultOfficeParserConfig.setIncludeMoveFromContent(includeMoveFromContent);
     }
-    
-    @Field
-    public void setIncludeShapeBasedContent(boolean includeShapeBasedContent) {
-        defaultOfficeParserConfig.setIncludeShapeBasedContent(includeShapeBasedContent);
+
+    /**
+     * @return
+     * @see OfficeParserConfig#isUseSAXDocxExtractor()
+     */
+    public boolean isUseSAXDocxExtractor() {
+        return defaultOfficeParserConfig.isUseSAXDocxExtractor();
     }
 
     @Field
@@ -95,14 +81,27 @@ public abstract class AbstractOfficeParser extends AbstractParser {
         defaultOfficeParserConfig.setUseSAXDocxExtractor(useSAXDocxExtractor);
     }
 
-    @Field
-    public void setUseSAXPptxExtractor(boolean useSAXPptxExtractor) {
-        defaultOfficeParserConfig.setUseSAXPptxExtractor(useSAXPptxExtractor);
+    /**
+     * @return whether or not to extract macros
+     * @see OfficeParserConfig#isExtractMacros()
+     */
+    public boolean isExtractMacros() {
+        return defaultOfficeParserConfig.isExtractMacros();
     }
 
     @Field
     public void setExtractMacros(boolean extractMacros) {
         defaultOfficeParserConfig.setExtractMacros(extractMacros);
+    }
+
+    @Field
+    public void setIncludeShapeBasedContent(boolean includeShapeBasedContent) {
+        defaultOfficeParserConfig.setIncludeShapeBasedContent(includeShapeBasedContent);
+    }
+
+    @Field
+    public void setUseSAXPptxExtractor(boolean useSAXPptxExtractor) {
+        defaultOfficeParserConfig.setUseSAXPptxExtractor(useSAXPptxExtractor);
     }
 
     @Field
@@ -114,23 +113,23 @@ public abstract class AbstractOfficeParser extends AbstractParser {
         defaultOfficeParserConfig.isConcatenatePhoneticRuns();
     }
 
+    public boolean isExtractAllAlternativesFromMSG() {
+        return defaultOfficeParserConfig.isExtractAllAlternativesFromMSG();
+    }
+
     /**
      * Some .msg files can contain body content in html, rtf and/or text.
      * The default behavior is to pick the first non-null value and include only that.
      * If you'd like to extract all non-null body content, which is likely duplicative,
      * set this value to true.
      *
-     * @param extractAllAlternativesFromMSG whether or not to extract all alternative parts from msg files
+     * @param extractAllAlternativesFromMSG whether or not to extract all alternative parts from
+     *                                     msg files
      * @since 1.17
      */
     @Field
     public void setExtractAllAlternativesFromMSG(boolean extractAllAlternativesFromMSG) {
         defaultOfficeParserConfig.setExtractAllAlternativesFromMSG(extractAllAlternativesFromMSG);
-    }
-
-
-    public boolean isExtractAllAlternativesFromMSG() {
-        return defaultOfficeParserConfig.isExtractAllAlternativesFromMSG();
     }
 
     /**

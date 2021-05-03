@@ -29,8 +29,7 @@ public class TokenStatistics {
     private final double entropy;
     private final SummaryStatistics summaryStatistics;
 
-    public TokenStatistics(int totalUniqueTokens, int totalTokens,
-                           TokenIntPair[] topN,
+    public TokenStatistics(int totalUniqueTokens, int totalTokens, TokenIntPair[] topN,
                            double entropy, SummaryStatistics summaryStatistics) {
         this.totalUniqueTokens = totalUniqueTokens;
         this.totalTokens = totalTokens;
@@ -39,6 +38,13 @@ public class TokenStatistics {
         this.summaryStatistics = summaryStatistics;
     }
 
+    private static boolean doubleEquals(double a, double b) {
+        return doubleEquals(a, b, 0.000000000001d);
+    }
+
+    private static boolean doubleEquals(double a, double b, double epsilon) {
+        return a == b || Math.abs(a - b) < epsilon;
+    }
 
     public int getTotalTokens() {
 
@@ -61,44 +67,67 @@ public class TokenStatistics {
         return summaryStatistics;
     }
 
-
     @Override
     public String toString() {
-        return "TokenStatistics{" +
-                "totalTokens=" + totalTokens +
-                ", totalUniqueTokens=" + totalUniqueTokens +
-                ", topN=" + Arrays.toString(topN) +
-                ", entropy=" + entropy +
-                ", summaryStatistics=" + summaryStatistics +
-                '}';
+        return "TokenStatistics{" + "totalTokens=" + totalTokens + ", totalUniqueTokens=" +
+                totalUniqueTokens + ", topN=" + Arrays.toString(topN) + ", entropy=" + entropy +
+                ", summaryStatistics=" + summaryStatistics + '}';
     }
 
     @Override
     public boolean equals(Object o) {
 
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         TokenStatistics that = (TokenStatistics) o;
 
-        if (totalTokens != that.totalTokens) return false;
-        if (totalUniqueTokens != that.totalUniqueTokens) return false;
-        if (!doubleEquals(that.entropy, entropy)) return false;
+        if (totalTokens != that.totalTokens) {
+            return false;
+        }
+        if (totalUniqueTokens != that.totalUniqueTokens) {
+            return false;
+        }
+        if (!doubleEquals(that.entropy, entropy)) {
+            return false;
+        }
         // Probably incorrect - comparing Object[] arrays with Arrays.equals
-        if (!Arrays.equals(topN, that.topN)) return false;
+        if (!Arrays.equals(topN, that.topN)) {
+            return false;
+        }
 
         SummaryStatistics thatS = ((TokenStatistics) o).summaryStatistics;
-        if (summaryStatistics.getN() != thatS.getN()) return false;
+        if (summaryStatistics.getN() != thatS.getN()) {
+            return false;
+        }
 
         //if both have n==0, don't bother with the stats
-        if (summaryStatistics.getN() ==0L) return true;
+        if (summaryStatistics.getN() == 0L) {
+            return true;
+        }
         //TODO: consider adding others...
-        if (!doubleEquals(summaryStatistics.getGeometricMean(), thatS.getGeometricMean())) return false;
-        if (!doubleEquals(summaryStatistics.getMax(), thatS.getMax())) return false;
-        if (!doubleEquals(summaryStatistics.getMean(), thatS.getMean())) return false;
-        if (!doubleEquals(summaryStatistics.getMin(), thatS.getMin())) return false;
-        if (!doubleEquals(summaryStatistics.getSum(), thatS.getSum())) return false;
-        if (!doubleEquals(summaryStatistics.getStandardDeviation(), thatS.getStandardDeviation())) return false;
+        if (!doubleEquals(summaryStatistics.getGeometricMean(), thatS.getGeometricMean())) {
+            return false;
+        }
+        if (!doubleEquals(summaryStatistics.getMax(), thatS.getMax())) {
+            return false;
+        }
+        if (!doubleEquals(summaryStatistics.getMean(), thatS.getMean())) {
+            return false;
+        }
+        if (!doubleEquals(summaryStatistics.getMin(), thatS.getMin())) {
+            return false;
+        }
+        if (!doubleEquals(summaryStatistics.getSum(), thatS.getSum())) {
+            return false;
+        }
+        if (!doubleEquals(summaryStatistics.getStandardDeviation(), thatS.getStandardDeviation())) {
+            return false;
+        }
         return true;
     }
 
@@ -113,14 +142,6 @@ public class TokenStatistics {
         result = 31 * result + (int) (temp ^ (temp >>> 32));
         result = 31 * result + summaryStatistics.hashCode();
         return result;
-    }
-
-    private static boolean doubleEquals(double a, double b) {
-        return doubleEquals(a, b, 0.000000000001d);
-    }
-
-    private static boolean doubleEquals(double a, double b, double epsilon) {
-        return a == b || Math.abs(a - b) < epsilon;
     }
 
 

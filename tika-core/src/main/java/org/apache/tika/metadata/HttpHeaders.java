@@ -18,9 +18,9 @@ package org.apache.tika.metadata;
 
 /**
  * A collection of HTTP header names.
- * 
+ *
  * @see <a href="http://rfc-ref.org/RFC-TEXTS/2616/">Hypertext Transfer Protocol --
- *      HTTP/1.1 (RFC 2616)</a>
+ * HTTP/1.1 (RFC 2616)</a>
  */
 public interface HttpHeaders {
 

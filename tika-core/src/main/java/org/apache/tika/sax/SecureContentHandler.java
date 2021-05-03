@@ -19,11 +19,12 @@ package org.apache.tika.sax;
 import java.io.IOException;
 import java.util.LinkedList;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TikaInputStream;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 
 /**
  * Content handler decorator that attempts to prevent denial of service
@@ -34,8 +35,8 @@ import org.xml.sax.SAXException;
  * An exception gets thrown if the output seems excessive compared to the
  * input document. This is a strong indication of a zip bomb.
  *
- * @since Apache Tika 0.4
  * @see <a href="https://issues.apache.org/jira/browse/TIKA-216">TIKA-216</a>
+ * @since Apache Tika 0.4
  */
 public class SecureContentHandler extends ContentHandlerDecorator {
 
@@ -43,22 +44,18 @@ public class SecureContentHandler extends ContentHandlerDecorator {
      * The input stream that Tika is parsing.
      */
     private final TikaInputStream stream;
-
+    /**
+     * Current number of nested &lt;div class="package-entr"&gt; elements.
+     */
+    private final LinkedList<Integer> packageEntryDepths = new LinkedList<Integer>();
     /**
      * Number of output characters that Tika has produced so far.
      */
     private long characterCount = 0;
-
     /**
      * The current XML element depth.
      */
     private int currentDepth = 0;
-
-    /**
-     * Current number of nested &lt;div class="package-entr"&gt; elements.
-     */
-    private LinkedList<Integer> packageEntryDepths = new LinkedList<Integer>();
-
     /**
      * Output threshold.
      */
@@ -86,10 +83,9 @@ public class SecureContentHandler extends ContentHandlerDecorator {
      * the given counting input stream.
      *
      * @param handler the content handler to be decorated
-     * @param stream the input stream to be parsed
+     * @param stream  the input stream to be parsed
      */
-    public SecureContentHandler(
-            ContentHandler handler, TikaInputStream stream) {
+    public SecureContentHandler(ContentHandler handler, TikaInputStream stream) {
         super(handler);
         this.stream = stream;
     }
@@ -147,6 +143,24 @@ public class SecureContentHandler extends ContentHandlerDecorator {
         return maxDepth;
     }
 
+    /**
+     * Sets the maximum XML element nesting level. If this depth level is
+     * exceeded then an exception gets thrown.
+     *
+     * @param depth maximum XML element nesting level
+     */
+    public void setMaximumDepth(int depth) {
+        this.maxDepth = depth;
+    }
+
+    /**
+     * Returns the maximum package entry nesting level.
+     *
+     * @return maximum package entry nesting level
+     */
+    public int getMaximumPackageEntryDepth() {
+        return maxPackageEntryDepth;
+    }
 
     /**
      * Sets the maximum package entry nesting level. If this depth level is
@@ -159,26 +173,6 @@ public class SecureContentHandler extends ContentHandlerDecorator {
     }
 
     /**
-     * Returns the maximum package entry nesting level.
-     *
-     * @return maximum package entry nesting level
-     */
-    public int getMaximumPackageEntryDepth() {
-        return maxPackageEntryDepth;
-    }
-
-
-    /**
-     * Sets the maximum XML element nesting level. If this depth level is
-     * exceeded then an exception gets thrown.
-     *
-     * @param depth maximum XML element nesting level
-     */
-    public void setMaximumDepth(int depth) {
-        this.maxDepth = depth;
-    }
-
-    /**
      * Converts the given {@link SAXException} to a corresponding
      * {@link TikaException} if it's caused by this instance detecting
      * a zip bomb.
@@ -187,8 +181,7 @@ public class SecureContentHandler extends ContentHandlerDecorator {
      * @throws TikaException zip bomb exception
      */
     public void throwIfCauseOf(SAXException e) throws TikaException {
-        if (e instanceof SecureSAXException
-                && ((SecureSAXException) e).isCausedBy(this)) {
+        if (e instanceof SecureSAXException && ((SecureSAXException) e).isCausedBy(this)) {
             throw new TikaException("Zip bomb detected!", e);
         }
     }
@@ -213,37 +206,30 @@ public class SecureContentHandler extends ContentHandlerDecorator {
      * @param length number of new output characters produced
      * @throws SAXException if a zip bomb is detected
      */
-    private void advance(int length) throws SAXException {
+    protected void advance(int length) throws SAXException {
         characterCount += length;
         long byteCount = getByteCount();
-        if (characterCount > threshold
-                && characterCount > byteCount * ratio) {
+        if (characterCount > threshold && characterCount > byteCount * ratio) {
             throw new SecureSAXException(
-                    "Suspected zip bomb: "
-                    + byteCount + " input bytes produced "
-                    + characterCount + " output characters");
+                    "Suspected zip bomb: " + byteCount + " input bytes produced " + characterCount +
+                            " output characters");
         }
     }
 
     @Override
-    public void startElement(
-            String uri, String localName, String name, Attributes atts)
+    public void startElement(String uri, String localName, String name, Attributes atts)
             throws SAXException {
         currentDepth++;
         if (currentDepth >= maxDepth) {
             throw new SecureSAXException(
-                    "Suspected zip bomb: "
-                    + currentDepth + " levels of XML element nesting");
+                    "Suspected zip bomb: " + currentDepth + " levels of XML element nesting");
         }
 
-        if ("div".equals(name)
-                && "package-entry".equals(atts.getValue("class"))) {
+        if ("div".equals(name) && "package-entry".equals(atts.getValue("class"))) {
             packageEntryDepths.addLast(currentDepth);
             if (packageEntryDepths.size() >= maxPackageEntryDepth) {
-                throw new SecureSAXException(
-                        "Suspected zip bomb: "
-                        + packageEntryDepths.size()
-                        + " levels of package entry nesting");
+                throw new SecureSAXException("Suspected zip bomb: " + packageEntryDepths.size() +
+                        " levels of package entry nesting");
             }
         }
 
@@ -251,12 +237,10 @@ public class SecureContentHandler extends ContentHandlerDecorator {
     }
 
     @Override
-    public void endElement(
-            String uri, String localName, String name) throws SAXException {
+    public void endElement(String uri, String localName, String name) throws SAXException {
         super.endElement(uri, localName, name);
 
-        if (!packageEntryDepths.isEmpty()
-                && packageEntryDepths.getLast() == currentDepth) {
+        if (!packageEntryDepths.isEmpty() && packageEntryDepths.getLast() == currentDepth) {
             packageEntryDepths.removeLast();
         }
 
@@ -264,15 +248,13 @@ public class SecureContentHandler extends ContentHandlerDecorator {
     }
 
     @Override
-    public void characters(char[] ch, int start, int length)
-            throws SAXException {
+    public void characters(char[] ch, int start, int length) throws SAXException {
         advance(length);
         super.characters(ch, start, length);
     }
 
     @Override
-    public void ignorableWhitespace(char[] ch, int start, int length)
-            throws SAXException {
+    public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
         advance(length);
         super.ignorableWhitespace(ch, start, length);
     }
@@ -284,7 +266,9 @@ public class SecureContentHandler extends ContentHandlerDecorator {
      */
     private class SecureSAXException extends SAXException {
 
-        /** Serial version UID.*/
+        /**
+         * Serial version UID.
+         */
         private static final long serialVersionUID = 2285245380321771445L;
 
         public SecureSAXException(String message) throws SAXException {

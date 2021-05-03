@@ -22,16 +22,16 @@
     <fetchIterators>
         <fetchIterator class="org.apache.tika.pipes.fetchiterator.FileSystemFetchIterator">
             <params>
-                <param name="fetcherName" type="string">fs</param>
-                <param name="basePath" type="string">fix</param>
+                <fetcherName>fs</fetcherName>
+                <basePath>fix</basePath>
             </params>
         </fetchIterator>
     </fetchIterators>
     <fetchers>
         <fetcher class="org.apache.tika.pipes.fetcher.FileSystemFetcher">
             <params>
-                <param name="name" type="string">fs</param>
-                <param name="basePath" type="string">fix</param>
+                <name>fs</name>
+                <basePath>fix</basePath>
             </params>
         </fetcher>
     </fetchers>
@@ -51,8 +51,8 @@
     <emitters>
         <emitter class="org.apache.tika.pipes.emitter.fs.FileSystemEmitter">
             <params>
-                <param name="name" type="string">fs</param>
-                <param name="basePath" type="string">fix</param>
+                <name>fs</name>
+                <basePath>fix</basePath>
             </params>
         </emitter>
         <!--

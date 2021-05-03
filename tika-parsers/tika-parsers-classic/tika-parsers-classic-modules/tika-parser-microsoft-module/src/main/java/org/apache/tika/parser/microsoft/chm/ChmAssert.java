@@ -27,139 +27,154 @@ import org.apache.tika.exception.TikaException;
 public class ChmAssert {
     /**
      * Checks a validity of the chmBlockSegment parameters
-     * 
-     * @param data
-     *            byte[]
-     * @param resetTable
-     *            ChmLzxcResetTable
-     * @param blockNumber
-     *            int
-     * @param lzxcBlockOffset
-     *            int
-     * @param lzxcBlockLength
-     *            int
-     * @throws TikaException 
+     *
+     * @param data            byte[]
+     * @param resetTable      ChmLzxcResetTable
+     * @param blockNumber     int
+     * @param lzxcBlockOffset int
+     * @param lzxcBlockLength int
+     * @throws TikaException
      */
-    public static final void assertChmBlockSegment(byte[] data,
-                                                   ChmLzxcResetTable resetTable, int blockNumber, int lzxcBlockOffset,
+    public static final void assertChmBlockSegment(byte[] data, ChmLzxcResetTable resetTable,
+                                                   int blockNumber, int lzxcBlockOffset,
                                                    int lzxcBlockLength) throws TikaException {
-        if ((data == null))
+        if ((data == null)) {
             throw new TikaException("data[] is null");
+        }
 
-        if ((data.length <= 0))
+        if ((data.length <= 0)) {
             throw new TikaException("data[] length should be greater than zero");
+        }
 
-        if (resetTable == null)
+        if (resetTable == null) {
             throw new TikaException("resetTable is null");
+        }
 
-        if (resetTable.getBlockAddress().length <= 1)
-            throw new TikaException("resetTable.getBlockAddress().length should be greater than zero");
+        if (resetTable.getBlockAddress().length <= 1) {
+            throw new TikaException(
+                    "resetTable.getBlockAddress().length should be greater than zero");
+        }
 
-        if (blockNumber < 0)
+        if (blockNumber < 0) {
             throw new TikaException("blockNumber should be positive number");
+        }
 
-        if (lzxcBlockOffset < 0)
+        if (lzxcBlockOffset < 0) {
             throw new TikaException("lzxcBlockOffset should be positive number");
+        }
 
-        if (lzxcBlockLength < 0)
+        if (lzxcBlockLength < 0) {
             throw new TikaException("lzxcBlockLength should be positive number");
+        }
     }
 
     /**
      * Checks if InputStream is not null
-     * 
-     * @param is
-     *            InputStream
-     * @throws ChmParsingException 
-     * @throws IOException 
+     *
+     * @param is InputStream
+     * @throws ChmParsingException
+     * @throws IOException
      */
     public static final void assertInputStreamNotNull(InputStream is) throws IOException {
-        if (is == null)
+        if (is == null) {
             throw new IOException("input sream is null");
+        }
     }
 
     /**
      * Checks validity of ChmAccessor parameters
-     * 
+     *
      * @param data
      * @param chmAccessor
      * @param count
-     * @throws ChmParsingException 
+     * @throws ChmParsingException
      */
-    public static final void assertChmAccessorParameters(byte[] data,
-            ChmAccessor<?> chmAccessor, int count) throws ChmParsingException {
+    public static final void assertChmAccessorParameters(byte[] data, ChmAccessor<?> chmAccessor,
+                                                         int count) throws ChmParsingException {
         assertByteArrayNotNull(data);
         assertChmAccessorNotNull(chmAccessor);
     }
 
     /**
      * Checks if byte[] is not null
-     * 
+     *
      * @param data
-     * @throws ChmParsingException 
+     * @throws ChmParsingException
      */
     public static final void assertByteArrayNotNull(byte[] data) throws ChmParsingException {
-        if (data == null)
+        if (data == null) {
             throw new ChmParsingException("byte[] data is null");
+        }
     }
 
     /**
      * Checks if ChmAccessor is not null In case of null throws exception
-     * 
+     *
      * @param chmAccessor
-     * @throws ChmParsingException 
+     * @throws ChmParsingException
      */
-    public static final void assertChmAccessorNotNull(ChmAccessor<?> chmAccessor) throws ChmParsingException {
-        if (chmAccessor == null)
+    public static final void assertChmAccessorNotNull(ChmAccessor<?> chmAccessor)
+            throws ChmParsingException {
+        if (chmAccessor == null) {
             throw new ChmParsingException("chm header is null");
+        }
     }
 
     /**
      * Checks validity of the DirectoryListingEntry's parameters In case of
      * invalid parameter(s) throws an exception
-     * 
-     * @param name_length
-     *            length of the chm entry name
-     * @param name
-     *            chm entry name
-     * @param entryType
-     *            EntryType
+     *
+     * @param name_length length of the chm entry name
+     * @param name        chm entry name
+     * @param entryType   EntryType
      * @param offset
      * @param length
-     * @throws ChmParsingException 
+     * @throws ChmParsingException
      */
-    public static final void assertDirectoryListingEntry(int name_length,
-            String name, ChmCommons.EntryType entryType, int offset, int length) throws ChmParsingException {
-        if (name_length < 0)
+    public static final void assertDirectoryListingEntry(int name_length, String name,
+                                                         ChmCommons.EntryType entryType, int offset,
+                                                         int length) throws ChmParsingException {
+        if (name_length < 0) {
             throw new ChmParsingException("invalid name length");
-        if (name == null)
+        }
+        if (name == null) {
             throw new ChmParsingException("invalid name");
+        }
 
-        if ((entryType != ChmCommons.EntryType.COMPRESSED)
-                && (entryType != ChmCommons.EntryType.UNCOMPRESSED))
-            throw new ChmParsingException("invalid compressed type, should be EntryType.COMPRESSED | EntryType.UNCOMPRESSED");
+        if ((entryType != ChmCommons.EntryType.COMPRESSED) &&
+                (entryType != ChmCommons.EntryType.UNCOMPRESSED)) {
+            throw new ChmParsingException(
+                    "invalid compressed type, should be EntryType.COMPRESSED | EntryType" +
+                            ".UNCOMPRESSED");
+        }
 
-        if (offset < 0)
+        if (offset < 0) {
             throw new ChmParsingException("invalid offset");
+        }
 
-        if (length < 0)
+        if (length < 0) {
             throw new ChmParsingException("invalid length");
+        }
     }
 
-    public static void assertCopyingDataIndex(int index, int dataLength) throws ChmParsingException {
-        if (index >= dataLength)
+    public static void assertCopyingDataIndex(int index, int dataLength)
+            throws ChmParsingException {
+        if (index >= dataLength) {
             throw new ChmParsingException("cannot parse chm file index > data.length");
+        }
     }
 
     /**
      * Checks if int param is greater than zero In case param &lt;= 0 throws an
      * exception
-     * 
+     *
      * @param param
-     * @throws ChmParsingException 
+     * @throws ChmParsingException
      */
     public static void assertPositiveInt(int param) throws ChmParsingException {
-        if (param <= 0)
-            throw new ChmParsingException("resetTable.getBlockAddress().length should be greater than zero");
+        if (param <= 0) {
+            throw new ChmParsingException(
+                    "resetTable.getBlockAddress().length should be greater than zero");
+        }
     }
 }

@@ -31,9 +31,11 @@ public class TemporaryResourcesTest {
         Path tempFile;
         try (TemporaryResources tempResources = new TemporaryResources()) {
             tempFile = tempResources.createTempFile();
-            assertTrue("Temp file should exist while TempResources is used", Files.exists(tempFile));
+            assertTrue("Temp file should exist while TempResources is used",
+                    Files.exists(tempFile));
         }
-        assertTrue("Temp file should not exist after TempResources is closed", Files.notExists(tempFile));
+        assertTrue("Temp file should not exist after TempResources is closed",
+                Files.notExists(tempFile));
     }
 
 }

@@ -21,7 +21,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
 import java.io.InputStream;
-
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -29,39 +28,39 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 
 import org.apache.commons.io.IOUtils;
-//TODO: don't hardcode optimaize
-import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
-import org.apache.tika.language.detect.LanguageResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
+import org.apache.tika.language.detect.LanguageResult;
+
 @Path("/language")
 public class LanguageResource {
-	private static final Logger LOG = LoggerFactory.getLogger(LanguageResource.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LanguageResource.class);
 
-	@PUT
-	@POST
-	@Path("/stream")
-	@Consumes("*/*")
-	@Produces("text/plain")
-	public String detect(final InputStream is) throws IOException {
-		String fileTxt = IOUtils.toString(is, UTF_8);
-		LanguageResult language = new OptimaizeLangDetector().loadModels().detect(fileTxt);
-		String detectedLang = language.getLanguage();
-		LOG.info("Detecting language for incoming resource: [{}]", detectedLang);
-		return detectedLang;
-	}
+    @PUT
+    @POST
+    @Path("/stream")
+    @Consumes("*/*")
+    @Produces("text/plain")
+    public String detect(final InputStream is) throws IOException {
+        String fileTxt = IOUtils.toString(is, UTF_8);
+        LanguageResult language = new OptimaizeLangDetector().loadModels().detect(fileTxt);
+        String detectedLang = language.getLanguage();
+        LOG.info("Detecting language for incoming resource: [{}]", detectedLang);
+        return detectedLang;
+    }
 
-	@PUT
-	@POST
-	@Path("/string")
-	@Consumes("*/*")
-	@Produces("text/plain")
-	public String detect(final String string) throws IOException {
-		LanguageResult language = new OptimaizeLangDetector().loadModels().detect(string);
-		String detectedLang = language.getLanguage();
-		LOG.info("Detecting language for incoming resource: [{}]", detectedLang);
-		return detectedLang;
-	}
+    @PUT
+    @POST
+    @Path("/string")
+    @Consumes("*/*")
+    @Produces("text/plain")
+    public String detect(final String string) throws IOException {
+        LanguageResult language = new OptimaizeLangDetector().loadModels().detect(string);
+        String detectedLang = language.getLanguage();
+        LOG.info("Detecting language for incoming resource: [{}]", detectedLang);
+        return detectedLang;
+    }
 
 }

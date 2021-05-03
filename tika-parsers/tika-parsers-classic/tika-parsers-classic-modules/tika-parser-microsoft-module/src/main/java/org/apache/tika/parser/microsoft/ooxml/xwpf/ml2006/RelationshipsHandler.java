@@ -51,14 +51,15 @@ class RelationshipsHandler extends AbstractPartHandler {
     }
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes atts)
+            throws SAXException {
         if (uri.equals(REL_NS)) {
             if (localName.equals("Relationship")) {
                 String id = atts.getValue("", "Id");
                 String type = atts.getValue("", "Type");
                 String target = atts.getValue("", "Target");
                 String targetModeString = atts.getValue("", "TargetMode");
-                TargetMode targetMode = "EXTERNAL".equals(targetModeString)? TargetMode.EXTERNAL :
+                TargetMode targetMode = "EXTERNAL".equals(targetModeString) ? TargetMode.EXTERNAL :
                         TargetMode.INTERNAL;
                 relationshipsManager.addRelationship(getName(), id, type, target, targetMode);
             }

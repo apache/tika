@@ -22,34 +22,34 @@ package org.apache.tika.metadata;
  */
 public interface ClimateForcast {
 
-    public static final String PROGRAM_ID = "prg_ID";
+    String PROGRAM_ID = "prg_ID";
 
-    public static final String COMMAND_LINE = "cmd_ln";
+    String COMMAND_LINE = "cmd_ln";
 
-    public static final String HISTORY = "history";
+    String HISTORY = "history";
 
-    public static final String TABLE_ID = "table_id";
+    String TABLE_ID = "table_id";
 
-    public static final String INSTITUTION = "institution";
+    String INSTITUTION = "institution";
 
-    public static final String SOURCE = "source";
+    String SOURCE = "source";
 
-    public static final String CONTACT = "contact";
+    String CONTACT = "contact";
 
-    public static final String PROJECT_ID = "project_id";
+    String PROJECT_ID = "project_id";
 
-    public static final String CONVENTIONS = "Conventions";
+    String CONVENTIONS = "Conventions";
 
-    public static final String REFERENCES = "references";
+    String REFERENCES = "references";
 
-    public static final String ACKNOWLEDGEMENT = "acknowledgement";
+    String ACKNOWLEDGEMENT = "acknowledgement";
 
-    public static final String REALIZATION = "realization";
+    String REALIZATION = "realization";
 
-    public static final String EXPERIMENT_ID = "experiment_id";
+    String EXPERIMENT_ID = "experiment_id";
 
-    public static final String COMMENT = "comment";
+    String COMMENT = "comment";
 
-    public static final String MODEL_NAME_ENGLISH = "model_name_english";
+    String MODEL_NAME_ENGLISH = "model_name_english";
 
 }

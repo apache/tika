@@ -28,6 +28,9 @@ import org.apache.poi.hemf.record.emf.HemfRecordType;
 import org.apache.poi.hemf.record.emf.HemfText;
 import org.apache.poi.hemf.usermodel.HemfPicture;
 import org.apache.poi.util.RecordFormatException;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -38,8 +41,6 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * Extracts files embedded in EMF and offers a
@@ -56,8 +57,22 @@ public class EMFParser extends AbstractParser {
     private static final MediaType MEDIA_TYPE = MediaType.image("emf");
     private static final MediaType WMF_MEDIA_TYPE = MediaType.image("wmf");
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MEDIA_TYPE);
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MEDIA_TYPE);
+
+    private static void handleEmbedded(byte[] data,
+                                       EmbeddedDocumentExtractor embeddedDocumentExtractor,
+                                       ContentHandler handler) throws TikaException, SAXException {
+        try (InputStream is = TikaInputStream.get(data)) {
+            Metadata embeddedMetadata = new Metadata();
+            if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
+                embeddedDocumentExtractor
+                        .parseEmbedded(is, new EmbeddedContentHandler(handler), embeddedMetadata,
+                                false);
+            }
+        } catch (IOException e) {
+            //swallow
+        }
+    }
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -65,8 +80,8 @@ public class EMFParser extends AbstractParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
 
         EmbeddedDocumentExtractor embeddedDocumentExtractor = null;
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
@@ -79,19 +94,22 @@ public class EMFParser extends AbstractParser {
             StringBuilder buffer = new StringBuilder();
             for (HemfRecord record : ex) {
                 if (record.getEmfRecordType() == HemfRecordType.comment) {
-                    HemfComment.EmfCommentData commentData = ((HemfComment.EmfComment) record).getCommentData();
+                    HemfComment.EmfCommentData commentData =
+                            ((HemfComment.EmfComment) record).getCommentData();
                     if (commentData instanceof HemfComment.EmfCommentDataMultiformats) {
                         if (embeddedDocumentExtractor == null) {
-                            embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+                            embeddedDocumentExtractor =
+                                    EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
                         }
-                        handleMultiFormats(
-                                (HemfComment.EmfCommentDataMultiformats)commentData, xhtml, embeddedDocumentExtractor);
+                        handleMultiFormats((HemfComment.EmfCommentDataMultiformats) commentData,
+                                xhtml, embeddedDocumentExtractor);
                     } else if (commentData instanceof HemfComment.EmfCommentDataWMF) {
                         if (embeddedDocumentExtractor == null) {
-                            embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+                            embeddedDocumentExtractor =
+                                    EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
                         }
-                        handleWMF(((HemfComment.EmfCommentDataWMF) commentData).getWMFData(),
-                                xhtml, embeddedDocumentExtractor);
+                        handleWMF(((HemfComment.EmfCommentDataWMF) commentData).getWMFData(), xhtml,
+                                embeddedDocumentExtractor);
                     }
                 } else if (record.getEmfRecordType().equals(HemfRecordType.extTextOutW)) {
 
@@ -119,7 +137,8 @@ public class EMFParser extends AbstractParser {
                 xhtml.characters(buffer.toString());
                 xhtml.endElement("p");
             }
-        } catch (RecordFormatException e) { //POI's hemfparser can throw these for "parse exceptions"
+        } catch (RecordFormatException e) { //POI's hemfparser can throw these for "parse
+            // exceptions"
             throw new TikaException(e.getMessage(), e);
         } catch (RuntimeException e) { //convert Runtime to RecordFormatExceptions
             throw new TikaException(e.getMessage(), e);
@@ -128,13 +147,15 @@ public class EMFParser extends AbstractParser {
     }
 
     private void handleWMF(byte[] bytes, ContentHandler contentHandler,
-                           EmbeddedDocumentExtractor embeddedDocumentExtractor) throws IOException, SAXException, TikaException {
+                           EmbeddedDocumentExtractor embeddedDocumentExtractor)
+            throws IOException, SAXException, TikaException {
         Metadata embeddedMetadata = new Metadata();
         embeddedMetadata.set(Metadata.CONTENT_TYPE, WMF_MEDIA_TYPE.toString());
         if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
             try (InputStream is = TikaInputStream.get(bytes)) {
-                embeddedDocumentExtractor.parseEmbedded(is,
-                        new EmbeddedContentHandler(contentHandler), embeddedMetadata, false);
+                embeddedDocumentExtractor
+                        .parseEmbedded(is, new EmbeddedContentHandler(contentHandler),
+                                embeddedMetadata, false);
 
             }
 
@@ -142,27 +163,14 @@ public class EMFParser extends AbstractParser {
 
     }
 
-    private void handleMultiFormats(HemfComment.EmfCommentDataMultiformats commentData, ContentHandler handler,
-                                    EmbeddedDocumentExtractor embeddedDocumentExtractor) throws IOException, TikaException, SAXException {
+    private void handleMultiFormats(HemfComment.EmfCommentDataMultiformats commentData,
+                                    ContentHandler handler,
+                                    EmbeddedDocumentExtractor embeddedDocumentExtractor)
+            throws IOException, TikaException, SAXException {
 
-        for (HemfComment.EmfCommentDataFormat dataFormat :
-                commentData.getFormats()) {
+        for (HemfComment.EmfCommentDataFormat dataFormat : commentData.getFormats()) {
             //is this right?!
             handleEmbedded(dataFormat.getRawData(), embeddedDocumentExtractor, handler);
-        }
-    }
-
-    private static void handleEmbedded(byte[] data,
-                                       EmbeddedDocumentExtractor embeddedDocumentExtractor,
-                                       ContentHandler handler) throws TikaException, SAXException {
-        try (InputStream is = TikaInputStream.get(data)) {
-            Metadata embeddedMetadata = new Metadata();
-            if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
-                embeddedDocumentExtractor.parseEmbedded(is,
-                        new EmbeddedContentHandler(handler), embeddedMetadata, false);
-            }
-        } catch (IOException e) {
-
         }
     }
 }

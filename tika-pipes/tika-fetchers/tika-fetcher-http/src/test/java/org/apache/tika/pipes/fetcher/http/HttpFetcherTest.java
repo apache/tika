@@ -16,47 +16,48 @@
  */
 package org.apache.tika.pipes.fetcher.http;
 
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TemporaryResources;
-import org.apache.tika.metadata.Metadata;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.xml.sax.SAXException;
+import static org.junit.Assert.assertEquals;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.zip.GZIPInputStream;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.pipes.fetcher.FetcherManager;
 
 @Ignore("requires network connectivity")
 public class HttpFetcherTest {
 
-        @Test
-        public void testRange() throws Exception {
-            String url =
-                    "https://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2020-45/segments/1603107869785.9/warc/CC-MAIN-20201020021700-20201020051700-00529.warc.gz";
-            long start = 969596307;
-            long end = start + 1408 - 1;
-            Metadata metadata = new Metadata();
-            HttpFetcher httpFetcher = (HttpFetcher) getConfig("tika-config-http.xml")
-                    .getFetcherManager().getFetcher("http");
-            try (TemporaryResources tmp = new TemporaryResources()) {
-                Path tmpPath = tmp.createTempFile();
-                try (InputStream is = httpFetcher.fetch(url, start, end, metadata)) {
-                    Files.copy(new GZIPInputStream(is), tmpPath, StandardCopyOption.REPLACE_EXISTING);
-                }
-                assertEquals(2461, Files.size(tmpPath));
+    @Test
+    public void testRange() throws Exception {
+        String url =
+                "https://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2020-45/segments/1603107869785.9/warc/CC-MAIN-20201020021700-20201020051700-00529.warc.gz";
+        long start = 969596307;
+        long end = start + 1408 - 1;
+        Metadata metadata = new Metadata();
+        HttpFetcher httpFetcher =
+                (HttpFetcher) getFetcherManager("tika-config-http.xml")
+                        .getFetcher("http");
+        try (TemporaryResources tmp = new TemporaryResources()) {
+            Path tmpPath = tmp.createTempFile();
+            try (InputStream is = httpFetcher.fetch(url, start, end, metadata)) {
+                Files.copy(new GZIPInputStream(is), tmpPath, StandardCopyOption.REPLACE_EXISTING);
             }
+            assertEquals(2461, Files.size(tmpPath));
         }
+    }
 
 
-    TikaConfig getConfig(String path) throws TikaException, IOException, SAXException {
-            return new TikaConfig(HttpFetcherTest.class.getResourceAsStream("/"+path));
+    FetcherManager getFetcherManager(String path) throws Exception {
+        return FetcherManager.load(
+                Paths.get(HttpFetcherTest.class.getResource("/" + path).toURI()));
     }
 
 

@@ -16,11 +16,11 @@
  */
 package org.apache.tika.parser.microsoft.chm;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.util.Arrays;
 
 import org.apache.tika.exception.TikaException;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Description Note: not always exists An index chunk has the following format:
@@ -33,7 +33,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * indicates "continued to the next byte". Bytes are stored most significant to
  * least significant. So, for example, $EA $15 is (((0xEA&amp;0x7F)&lt;&lt;7)|0x15) =
  * 0x3515.
- * 
+ *
  * <p>
  * Note: This class is not in use
  */
@@ -66,19 +66,18 @@ public class ChmPmgiHeader implements ChmAccessor<ChmPmgiHeader> {
         this.currentPlace = currentPlace;
     }
 
-    private void unmarshalCharArray(byte[] data, ChmPmgiHeader chmPmgiHeader,
-            int count) throws ChmParsingException {
+    private void unmarshalCharArray(byte[] data, ChmPmgiHeader chmPmgiHeader, int count)
+            throws ChmParsingException {
         int index = -1;
         ChmAssert.assertByteArrayNotNull(data);
         ChmAssert.assertChmAccessorNotNull(chmPmgiHeader);
         ChmAssert.assertPositiveInt(count);
         this.setDataRemained(data.length);
-            index = ChmCommons.indexOf(data,
-                    ChmConstants.CHM_PMGI_MARKER.getBytes(UTF_8));
+        index = ChmCommons.indexOf(data, ChmConstants.CHM_PMGI_MARKER.getBytes(UTF_8));
 
-        if (index >= 0)
+        if (index >= 0) {
             System.arraycopy(data, index, chmPmgiHeader.getSignature(), 0, count);
-        else{
+        } else {
             //Some chm documents (actually most of them) do not contain
             //PMGI header, in this case, we just notice about it.
         }
@@ -89,12 +88,13 @@ public class ChmPmgiHeader implements ChmAccessor<ChmPmgiHeader> {
     private long unmarshalUInt32(byte[] data, long dest) throws ChmParsingException {
         ChmAssert.assertByteArrayNotNull(data);
 
-        if (4 > getDataRemained())
+        if (4 > getDataRemained()) {
             throw new ChmParsingException("4 > dataLenght");
-        dest = (data[this.getCurrentPlace()] & 0xff)
-                | (data[this.getCurrentPlace() + 1] & 0xff) << 8
-                | (data[this.getCurrentPlace() + 2] & 0xff) << 16
-                | (data[this.getCurrentPlace() + 3] & 0xff) << 24;
+        }
+        dest = (data[this.getCurrentPlace()] & 0xff) |
+                (data[this.getCurrentPlace() + 1] & 0xff) << 8 |
+                (data[this.getCurrentPlace() + 2] & 0xff) << 16 |
+                (data[this.getCurrentPlace() + 3] & 0xff) << 24;
 
         setDataRemained(this.getDataRemained() - 4);
         this.setCurrentPlace(this.getCurrentPlace() + 4);
@@ -103,7 +103,7 @@ public class ChmPmgiHeader implements ChmAccessor<ChmPmgiHeader> {
 
     /**
      * Returns pmgi signature if exists
-     * 
+     *
      * @return signature
      */
     public byte[] getSignature() {
@@ -112,7 +112,7 @@ public class ChmPmgiHeader implements ChmAccessor<ChmPmgiHeader> {
 
     /**
      * Sets pmgi signature
-     * 
+     *
      * @param signature
      */
     protected void setSignature(byte[] signature) {
@@ -121,7 +121,7 @@ public class ChmPmgiHeader implements ChmAccessor<ChmPmgiHeader> {
 
     /**
      * Returns pmgi free space
-     * 
+     *
      * @return free_space
      */
     public long getFreeSpace() {
@@ -130,7 +130,7 @@ public class ChmPmgiHeader implements ChmAccessor<ChmPmgiHeader> {
 
     /**
      * Sets pmgi free space
-     * 
+     *
      * @param free_space
      */
     protected void setFreeSpace(long free_space) {
@@ -143,26 +143,29 @@ public class ChmPmgiHeader implements ChmAccessor<ChmPmgiHeader> {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("signature:=" + new String(getSignature(), UTF_8) + ", ");
-        sb.append("free space:=" + getFreeSpace()
-                + System.getProperty("line.separator"));
+        sb.append("free space:=" + getFreeSpace() + System.getProperty("line.separator"));
         return sb.toString();
     }
 
     // @Override
     public void parse(byte[] data, ChmPmgiHeader chmPmgiHeader) throws TikaException {
         /* we only know how to deal with a 0x8 byte structures */
-        if (data.length < ChmConstants.CHM_PMGI_LEN)
+        if (data.length < ChmConstants.CHM_PMGI_LEN) {
             throw new TikaException("we only know how to deal with a 0x8 byte structures");
+        }
 
         /* unmarshal fields */
         chmPmgiHeader.unmarshalCharArray(data, chmPmgiHeader, ChmConstants.CHM_SIGNATURE_LEN);
-        chmPmgiHeader.setFreeSpace(chmPmgiHeader.unmarshalUInt32(data, chmPmgiHeader.getFreeSpace()));
+        chmPmgiHeader
+                .setFreeSpace(chmPmgiHeader.unmarshalUInt32(data, chmPmgiHeader.getFreeSpace()));
 
         /* check structure */
         if (!Arrays.equals(chmPmgiHeader.getSignature(),
-                ChmConstants.CHM_PMGI_MARKER.getBytes(UTF_8)))
+                ChmConstants.CHM_PMGI_MARKER.getBytes(UTF_8))) {
             throw new TikaException(
-                    "it does not seem to be valid a PMGI signature, check ChmItsp index_root if it was -1, means no PMGI, use PMGL insted");
+                    "it does not seem to be valid a PMGI signature, check ChmItsp index_root if " +
+                            "it was -1, means no PMGI, use PMGL insted");
+        }
 
     }
 }

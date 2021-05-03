@@ -16,19 +16,20 @@
  */
 package org.apache.tika.detect;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.junit.Before;
+import org.junit.Test;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * Test cases for the {@link NameDetector} class.
@@ -40,9 +41,7 @@ public class NameDetectorTest {
     @Before
     public void setUp() {
         Map<Pattern, MediaType> patterns = new HashMap<Pattern, MediaType>();
-        patterns.put(
-                Pattern.compile(".*\\.txt", Pattern.CASE_INSENSITIVE),
-                MediaType.TEXT_PLAIN);
+        patterns.put(Pattern.compile(".*\\.txt", Pattern.CASE_INSENSITIVE), MediaType.TEXT_PLAIN);
         patterns.put(Pattern.compile("README"), MediaType.TEXT_PLAIN);
         patterns.put(Pattern.compile(".*\\.hdr"), MediaType.application("envi.hdr"));
         detector = new NameDetector(patterns);
@@ -78,9 +77,7 @@ public class NameDetectorTest {
         assertDetect(MediaType.TEXT_PLAIN, "http://foo/test.txt#pdf");
 
         // tough one
-        assertDetect(
-                MediaType.TEXT_PLAIN,
-                " See http://www.example.com:1234/README.txt?a=b#c \n");
+        assertDetect(MediaType.TEXT_PLAIN, " See http://www.example.com:1234/README.txt?a=b#c \n");
         assertDetect(MediaType.TEXT_PLAIN, "See README.txt"); // even this!
         assertDetect(MediaType.OCTET_STREAM, "See README");   // but not this
 
@@ -90,15 +87,13 @@ public class NameDetectorTest {
         assertDetect(MediaType.OCTET_STREAM, "");
         assertDetect(MediaType.OCTET_STREAM, null);
         try {
-            assertEquals(
-                    MediaType.OCTET_STREAM,
-                    detector.detect(null, new Metadata()));
+            assertEquals(MediaType.OCTET_STREAM, detector.detect(null, new Metadata()));
         } catch (IOException e) {
             fail("NameDetector should never throw an IOException");
         }
     }
 
-    private void assertDetect(MediaType type, String name){
+    private void assertDetect(MediaType type, String name) {
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
         try {

@@ -32,6 +32,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
+
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -50,9 +54,6 @@ import org.apache.tika.parser.xml.XMLParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.LinkContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
 
 public class TIAParsingExample {
     public static String parseToStringExample() throws Exception {
@@ -154,8 +155,8 @@ public class TIAParsingExample {
         Parser parser = new AutoDetectParser();
         LinkContentHandler linkCollector = new LinkContentHandler();
         try (OutputStream output = new FileOutputStream(new File(filename))) {
-            ContentHandler handler = new TeeContentHandler(
-                    new BodyContentHandler(output), linkCollector);
+            ContentHandler handler =
+                    new TeeContentHandler(new BodyContentHandler(output), linkCollector);
             parser.parse(stream, handler, metadata, context);
         }
     }
@@ -190,8 +191,8 @@ public class TIAParsingExample {
             private static final long serialVersionUID = 4424210691523343833L;
 
             @Override
-            public void parse(InputStream stream, ContentHandler handler,
-                              Metadata metadata, ParseContext context)
+            public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                              ParseContext context)
                     throws IOException, SAXException, TikaException {
                 // custom processing of the component document
             }

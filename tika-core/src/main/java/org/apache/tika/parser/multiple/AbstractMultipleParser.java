@@ -31,6 +31,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
@@ -44,78 +47,140 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.utils.ParserUtils;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * Abstract base class for parser wrappers which may / will
- *  process a given stream multiple times, merging the results
- *  of the various parsers used.
+ * process a given stream multiple times, merging the results
+ * of the various parsers used.
  * End users should normally use {@link FallbackParser} or
- *  {@link SupplementingParser} along with a Strategy.
+ * {@link SupplementingParser} along with a Strategy.
  * Note that unless you give a {@link ContentHandlerFactory},
- *  you'll get content from every parser tried mushed together!
+ * you'll get content from every parser tried mushed together!
  *
  * @since Apache Tika 1.18
  */
 public abstract class AbstractMultipleParser extends AbstractParser {
+    protected static final String METADATA_POLICY_CONFIG_KEY = "metadataPolicy";
     /**
      * Serial version UID.
      */
     private static final long serialVersionUID = 5383668090329836559L;
-
     /**
-     * The various strategies for handling metadata emitted by
-     *  multiple parsers.
-     * Note that not all will be supported by all subclasses.
+     * How we should handle metadata clashes
      */
-    public enum MetadataPolicy {
-        /**
-         * Before moving onto another parser, throw away
-         *  all previously seen metadata
-         */
-        DISCARD_ALL,
-        /**
-         * The first parser to output a given key wins,
-         *  merge in non-clashing other keys
-         */
-        FIRST_WINS,
-        /**
-         * The last parser to output a given key wins,
-         *  overriding previous parser values for a
-         *  clashing key.
-         */
-        LAST_WINS,
-        /**
-         * Where multiple parsers output a given key,
-         *  store all their different (unique) values
-         */
-        KEEP_ALL
-    };
-    protected static final String METADATA_POLICY_CONFIG_KEY = "metadataPolicy";
-    
+    private final MetadataPolicy policy;
+    /**
+     * List of the multiple parsers to try.
+     */
+    private final Collection<? extends Parser> parsers;
+    /**
+     * Computed list of Mime Types to offer, which is all
+     * those in common between the parsers.
+     * For explicit mimetypes only, use a {@link ParserDecorator}
+     */
+    private final Set<MediaType> offeredTypes;
     /**
      * Media type registry.
      */
     private MediaTypeRegistry registry;
-    
-    /**
-     * How we should handle metadata clashes
-     */
-    private MetadataPolicy policy;
-    
-    /**
-     * List of the multiple parsers to try.
-     */
-    private Collection<? extends Parser> parsers;
-    
-    /**
-     * Computed list of Mime Types to offer, which is all
-     *  those in common between the parsers.
-     * For explicit mimetypes only, use a {@link ParserDecorator}
-     */
-    private Set<MediaType> offeredTypes;
-    
+
+    @SuppressWarnings("rawtypes")
+    public AbstractMultipleParser(MediaTypeRegistry registry, Collection<? extends Parser> parsers,
+                                  Map<String, Param> params) {
+        this(registry, getMetadataPolicy(params), parsers);
+    }
+
+    public AbstractMultipleParser(MediaTypeRegistry registry, MetadataPolicy policy,
+                                  Parser... parsers) {
+        this(registry, policy, Arrays.asList(parsers));
+    }
+
+    public AbstractMultipleParser(MediaTypeRegistry registry, MetadataPolicy policy,
+                                  Collection<? extends Parser> parsers) {
+        this.policy = policy;
+        this.parsers = parsers;
+        this.registry = registry;
+
+        // TODO Only offer those in common to several/all parser
+        // TODO Some sort of specialisation / subtype support
+        this.offeredTypes = new HashSet<>();
+        for (Parser parser : parsers) {
+            offeredTypes.addAll(parser.getSupportedTypes(new ParseContext()));
+        }
+    }
+
+    @SuppressWarnings("rawtypes")
+    protected static MetadataPolicy getMetadataPolicy(Map<String, Param> params) {
+        if (params.containsKey(METADATA_POLICY_CONFIG_KEY)) {
+            return (MetadataPolicy) params.get(METADATA_POLICY_CONFIG_KEY).getValue();
+        }
+        throw new IllegalArgumentException(
+                "Required parameter '" + METADATA_POLICY_CONFIG_KEY + "' not supplied");
+    }
+
+    protected static Metadata mergeMetadata(Metadata newMetadata, Metadata lastMetadata,
+                                            MetadataPolicy policy) {
+        if (policy == MetadataPolicy.DISCARD_ALL) {
+            return newMetadata;
+        }
+
+        for (String n : lastMetadata.names()) {
+            // If this is one of the metadata keys we're setting ourselves
+            //  for tracking/errors, then always keep the latest one!
+            if (n.equals(TikaCoreProperties.TIKA_PARSED_BY.getName())) {
+                continue;
+            }
+            if (n.equals(ParserUtils.EMBEDDED_PARSER.getName())) {
+                continue;
+            }
+            if (n.equals(TikaCoreProperties.EMBEDDED_EXCEPTION.getName())) {
+                continue;
+            }
+
+            // Merge as per policy
+            String[] newVals = newMetadata.getValues(n);
+            String[] oldVals = lastMetadata.getValues(n);
+            if (newVals == null || newVals.length == 0) {
+                // Metadata only in previous run, keep old values
+                for (String val : oldVals) {
+                    newMetadata.add(n, val);
+                }
+            } else if (Arrays.deepEquals(oldVals, newVals)) {
+                // Metadata is the same, nothing to do
+                continue;
+            } else {
+                switch (policy) {
+                    case FIRST_WINS:
+                        // Use the earlier value(s) in place of this/these one/s
+                        newMetadata.remove(n);
+                        for (String val : oldVals) {
+                            newMetadata.add(n, val);
+                        }
+                        continue;
+                    case LAST_WINS:
+                        // Most recent (last) parser has already won
+                        continue;
+                    case KEEP_ALL:
+                        // Start with old list, then add any new unique values
+                        List<String> vals = new ArrayList<>(Arrays.asList(oldVals));
+                        newMetadata.remove(n);
+                        for (String oldVal : oldVals) {
+                            newMetadata.add(n, oldVal);
+                        }
+                        for (String newVal : newVals) {
+                            if (!vals.contains(newVal)) {
+                                newMetadata.add(n, newVal);
+                                vals.add(newVal);
+                            }
+                        }
+
+                        continue;
+                }
+            }
+        }
+        return newMetadata;
+    }
+
     /**
      * Returns the media type registry used to infer type relationships.
      *
@@ -134,113 +199,79 @@ public abstract class AbstractMultipleParser extends AbstractParser {
         this.registry = registry;
     }
 
-    @SuppressWarnings("rawtypes")
-    protected static MetadataPolicy getMetadataPolicy(Map<String, Param> params) {
-        if (params.containsKey(METADATA_POLICY_CONFIG_KEY)) {
-            return (MetadataPolicy)params.get(METADATA_POLICY_CONFIG_KEY).getValue();
-        }
-        throw new IllegalArgumentException("Required parameter '"+METADATA_POLICY_CONFIG_KEY+"' not supplied");
-    }
-    @SuppressWarnings("rawtypes")
-    public AbstractMultipleParser(MediaTypeRegistry registry, 
-                                  Collection<? extends Parser> parsers,
-                                  Map<String, Param> params) {
-        this(registry, getMetadataPolicy(params), parsers);
-    }
-    public AbstractMultipleParser(MediaTypeRegistry registry, MetadataPolicy policy,
-                                  Parser... parsers) {
-        this(registry, policy, Arrays.asList(parsers));
-    }
-    public AbstractMultipleParser(MediaTypeRegistry registry, MetadataPolicy policy,
-                                  Collection<? extends Parser> parsers) {
-        this.policy = policy;
-        this.parsers = parsers;
-        this.registry = registry;
-        
-        // TODO Only offer those in common to several/all parser
-        // TODO Some sort of specialisation / subtype support
-        this.offeredTypes = new HashSet<>();
-        for (Parser parser : parsers) {
-            offeredTypes.addAll(
-                    parser.getSupportedTypes(new ParseContext())
-            );
-        }
-    }
-    
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return offeredTypes;
     }
-    
+
     public MetadataPolicy getMetadataPolicy() {
         return policy;
     }
+
     public List<Parser> getAllParsers() {
         return Collections.unmodifiableList(new ArrayList<>(parsers));
     }
-    
+
     /**
      * Used to allow implementations to prepare or change things
-     *  before parsing occurs
+     * before parsing occurs
      */
-    protected void parserPrepare(Parser parser, Metadata metadata,
-                                 ParseContext context) {}
+    protected void parserPrepare(Parser parser, Metadata metadata, ParseContext context) {
+    }
 
     /**
      * Used to notify implementations that a Parser has Finished
-     *  or Failed, and to allow them to decide to continue or 
-     *  abort further parsing
+     * or Failed, and to allow them to decide to continue or
+     * abort further parsing
      */
-    protected abstract boolean parserCompleted(
-            Parser parser, Metadata metadata, ContentHandler handler, 
-            ParseContext context, Exception exception);
-    
+    protected abstract boolean parserCompleted(Parser parser, Metadata metadata,
+                                               ContentHandler handler, ParseContext context,
+                                               Exception exception);
+
     /**
-     * Processes the given Stream through one or more parsers, 
-     *  resetting things between parsers as requested by policy.
+     * Processes the given Stream through one or more parsers,
+     * resetting things between parsers as requested by policy.
      * The actual processing is delegated to one or more {@link Parser}s.
-     * 
-     * Note that you'll get text from every parser this way, to have 
-     *  control of which content is from which parser you need to
-     *  call the method with a {@link ContentHandlerFactory} instead. 
+     * <p>
+     * Note that you'll get text from every parser this way, to have
+     * control of which content is from which parser you need to
+     * call the method with a {@link ContentHandlerFactory} instead.
      */
     @Override
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
         parse(stream, handler, null, metadata, context);
     }
+
     /**
-     * Processes the given Stream through one or more parsers, 
-     *  resetting things between parsers as requested by policy.
+     * Processes the given Stream through one or more parsers,
+     * resetting things between parsers as requested by policy.
      * The actual processing is delegated to one or more {@link Parser}s.
      * You will get one ContentHandler fetched for each Parser used.
      * TODO Do we need to return all the ContentHandler instances we created?
-     * @deprecated The {@link ContentHandlerFactory} override is still experimental 
-     *  and the method signature is subject to change before Tika 2.0
+     *
+     * @deprecated The {@link ContentHandlerFactory} override is still experimental
+     * and the method signature is subject to change before Tika 2.0
      */
-    public void parse(
-            InputStream stream, ContentHandlerFactory handlers,
-            Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandlerFactory handlers, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
         parse(stream, null, handlers, metadata, context);
     }
-    private void parse(InputStream stream, 
-            ContentHandler handler, ContentHandlerFactory handlerFactory,
-            Metadata originalMetadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+
+    private void parse(InputStream stream, ContentHandler handler,
+                       ContentHandlerFactory handlerFactory, Metadata originalMetadata,
+                       ParseContext context) throws IOException, SAXException, TikaException {
         // Track the metadata between parsers, so we can apply our policy
         Metadata lastMetadata = cloneMetadata(originalMetadata);
         Metadata metadata = lastMetadata;
-        
+
         // Start tracking resources, so we can clean up when done
         TemporaryResources tmp = new TemporaryResources();
         try {
             // Ensure we'll be able to re-read safely, buffering to disk if so,
             //  to permit Parsers 2+ to be able to read the same data
             InputStream taggedStream = ParserUtils.ensureStreamReReadable(stream, tmp);
-            
+
             for (Parser p : parsers) {
                 // Get a new handler for this parser, if we can
                 // If not, the user will get text from every parser
@@ -248,13 +279,13 @@ public abstract class AbstractMultipleParser extends AbstractParser {
                 if (handlerFactory != null) {
                     handler = handlerFactory.getNewContentHandler();
                 }
-                
+
                 // Record that we used this parser
                 recordParserDetails(p, originalMetadata);
 
                 // Prepare an near-empty Metadata, will merge after
                 metadata = cloneMetadata(originalMetadata);
-                
+
                 // Notify the implementation of what we're about to do
                 parserPrepare(p, metadata, context);
 
@@ -268,25 +299,31 @@ public abstract class AbstractMultipleParser extends AbstractParser {
                     recordParserFailure(p, e, metadata);
                     failure = e;
                 }
-                
+
                 // Notify the implementation how it went
                 boolean tryNext = parserCompleted(p, metadata, handler, context, failure);
-                
+
                 // Handle metadata merging / clashes
                 metadata = mergeMetadata(metadata, lastMetadata, policy);
-                
+
                 // Abort if requested, with the exception if there was one
                 if (!tryNext) {
-                   if (failure != null) {
-                       if (failure instanceof IOException) throw (IOException)failure;
-                       if (failure instanceof SAXException) throw (SAXException)failure;
-                       if (failure instanceof TikaException) throw (TikaException)failure;
-                       throw new TikaException("Unexpected RuntimeException from " + p, failure);
-                   }
-                   // Abort processing, don't try any more parsers
-                   break;
+                    if (failure != null) {
+                        if (failure instanceof IOException) {
+                            throw (IOException) failure;
+                        }
+                        if (failure instanceof SAXException) {
+                            throw (SAXException) failure;
+                        }
+                        if (failure instanceof TikaException) {
+                            throw (TikaException) failure;
+                        }
+                        throw new TikaException("Unexpected RuntimeException from " + p, failure);
+                    }
+                    // Abort processing, don't try any more parsers
+                    break;
                 }
-                
+
                 // Prepare for the next parser, if present
                 lastMetadata = cloneMetadata(metadata);
                 taggedStream = ParserUtils.streamResetForReRead(taggedStream, tmp);
@@ -294,7 +331,7 @@ public abstract class AbstractMultipleParser extends AbstractParser {
         } finally {
             tmp.dispose();
         }
-        
+
         // Finally, copy the latest metadata back onto their supplied object
         for (String n : metadata.names()) {
             originalMetadata.remove(n);
@@ -303,60 +340,33 @@ public abstract class AbstractMultipleParser extends AbstractParser {
             }
         }
     }
-    
-    protected static Metadata mergeMetadata(Metadata newMetadata, Metadata lastMetadata, MetadataPolicy policy) {
-        if (policy == MetadataPolicy.DISCARD_ALL) {
-            return newMetadata;
-        }
-        
-        for (String n : lastMetadata.names()) {
-            // If this is one of the metadata keys we're setting ourselves
-            //  for tracking/errors, then always keep the latest one!
-            if (n.equals(TikaCoreProperties.TIKA_PARSED_BY.getName())) continue;
-            if (n.equals(ParserUtils.EMBEDDED_PARSER.getName())) continue;
-            if (n.equals(TikaCoreProperties.EMBEDDED_EXCEPTION.getName())) continue;
-            
-            // Merge as per policy 
-            String[] newVals = newMetadata.getValues(n);
-            String[] oldVals = lastMetadata.getValues(n);
-            if (newVals == null || newVals.length == 0) {
-                // Metadata only in previous run, keep old values
-                for (String val : oldVals) {
-                    newMetadata.add(n, val);
-                }
-            } else if (Arrays.deepEquals(oldVals, newVals)) {
-                // Metadata is the same, nothing to do
-                continue;
-            } else {
-                switch (policy) {
-                case FIRST_WINS:
-                    // Use the earlier value(s) in place of this/these one/s
-                    newMetadata.remove(n);
-                    for (String val : oldVals) {
-                        newMetadata.add(n, val);
-                    }
-                    continue;
-                case LAST_WINS:
-                    // Most recent (last) parser has already won
-                    continue;
-                case KEEP_ALL:
-                    // Start with old list, then add any new unique values
-                    List<String> vals = new ArrayList<>(Arrays.asList(oldVals));
-                    newMetadata.remove(n);
-                    for (String oldVal : oldVals) {
-                        newMetadata.add(n, oldVal);
-                    }
-                    for (String newVal : newVals) {
-                        if (! vals.contains(newVal)) {
-                            newMetadata.add(n, newVal);
-                            vals.add(newVal);
-                        }
-                    }
-                    
-                    continue;
-                }
-            }
-        }
-        return newMetadata;
+
+    /**
+     * The various strategies for handling metadata emitted by
+     * multiple parsers.
+     * Note that not all will be supported by all subclasses.
+     */
+    public enum MetadataPolicy {
+        /**
+         * Before moving onto another parser, throw away
+         * all previously seen metadata
+         */
+        DISCARD_ALL,
+        /**
+         * The first parser to output a given key wins,
+         * merge in non-clashing other keys
+         */
+        FIRST_WINS,
+        /**
+         * The last parser to output a given key wins,
+         * overriding previous parser values for a
+         * clashing key.
+         */
+        LAST_WINS,
+        /**
+         * Where multiple parsers output a given key,
+         * store all their different (unique) values
+         */
+        KEEP_ALL
     }
 }

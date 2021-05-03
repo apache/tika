@@ -18,10 +18,11 @@ package org.apache.tika.parser.ibooks;
 
 import static org.junit.Assert.assertEquals;
 
+import org.junit.Test;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.junit.Test;
 
 public class iBooksParserTest extends TikaTest {
 
@@ -30,14 +31,10 @@ public class iBooksParserTest extends TikaTest {
 
         XMLResult xmlResult = getXML("testiBooks.ibooks");
 
-        assertEquals("application/x-ibooks+zip",
-                xmlResult.metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("en-GB",
-                xmlResult.metadata.get(TikaCoreProperties.LANGUAGE));
-        assertEquals("iBooks Author v1.0",
-                xmlResult.metadata.get(TikaCoreProperties.CONTRIBUTOR));
-        assertEquals("Apache",
-                xmlResult.metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("application/x-ibooks+zip", xmlResult.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("en-GB", xmlResult.metadata.get(TikaCoreProperties.LANGUAGE));
+        assertEquals("iBooks Author v1.0", xmlResult.metadata.get(TikaCoreProperties.CONTRIBUTOR));
+        assertEquals("Apache", xmlResult.metadata.get(TikaCoreProperties.CREATOR));
 
         String content = xmlResult.xml;
         //appears twice in section 1
@@ -52,7 +49,8 @@ public class iBooksParserTest extends TikaTest {
 
         //this is a legacy comment...I can't find this content in the current ibooks
         //test file.  I think we're good?
-        /* TODO For some reason, the xhtml files in iBooks-style ePub are not parsed properly, and the content comes back empty.git che
+        /* TODO For some reason, the xhtml files in iBooks-style ePub are not parsed properly,
+            and the content comes back empty.git che
             String content = handler.toString();
             System.out.println("content="+content);
             assertContains("Plus a simple div", content);

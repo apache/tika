@@ -17,22 +17,6 @@
 
 package org.apache.tika.parser.ner;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.tika.Tika;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.ner.opennlp.OpenNLPNERecogniser;
-import org.apache.tika.parser.ner.regex.RegexNERecogniser;
-import org.apache.tika.sax.XHTMLContentHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -44,17 +28,33 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
+import org.apache.tika.Tika;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.ner.opennlp.OpenNLPNERecogniser;
+import org.apache.tika.parser.ner.regex.RegexNERecogniser;
+import org.apache.tika.sax.XHTMLContentHandler;
+
 /**
- *
  * This implementation of {@link org.apache.tika.parser.Parser} extracts
  * entity names from text content and adds it to the metadata.
  * <p>All the metadata keys will have a common suffix {@value #MD_KEY_PREFIX}</p>
  * <p>The Named Entity recogniser implementation can be changed by setting the
  * system property {@value #SYS_PROP_NER_IMPL} value to a name of class that
  * implements {@link NERecogniser} contract</p>
+ *
  * @see OpenNLPNERecogniser
  * @see NERecogniser
- *
  */
 public class NamedEntityParser extends AbstractParser {
     public static final Logger LOG = LoggerFactory.getLogger(NamedEntityParser.class);
@@ -64,12 +64,11 @@ public class NamedEntityParser extends AbstractParser {
             OpenNLPNERecogniser.class.getName() + "," + RegexNERecogniser.class.getName();
     public static final String SYS_PROP_NER_IMPL = "ner.impl.class";
 
-    public Tika secondaryParser;
-
     static {
         MEDIA_TYPES.add(MediaType.TEXT_PLAIN);
     }
 
+    public Tika secondaryParser;
     private List<NERecogniser> nerChain;
     private volatile boolean initialized = false;
     private volatile boolean available = false;
@@ -82,19 +81,15 @@ public class NamedEntityParser extends AbstractParser {
 
         //TODO: read class name from context or config
         //There can be multiple classes in the form of comma separated class names;
-        String classNamesString = System.getProperty(SYS_PROP_NER_IMPL,
-                DEFAULT_NER_IMPL);
+        String classNamesString = System.getProperty(SYS_PROP_NER_IMPL, DEFAULT_NER_IMPL);
         String[] classNames = classNamesString.split(",");
         this.nerChain = new ArrayList<>(classNames.length);
         for (String className : classNames) {
             className = className.trim();
-            LOG.info("going to load, instantiate and bind the instance of {}",
-                    className);
+            LOG.info("going to load, instantiate and bind the instance of {}", className);
             try {
-                NERecogniser recogniser =
-                        (NERecogniser) Class.forName(className).newInstance();
-                LOG.info("{} is available ? {}", className,
-                        recogniser.isAvailable());
+                NERecogniser recogniser = (NERecogniser) Class.forName(className).newInstance();
+                LOG.info("{} is available ? {}", className, recogniser.isAvailable());
                 if (recogniser.isAvailable()) {
                     nerChain.add(recogniser);
                 }
@@ -107,7 +102,7 @@ public class NamedEntityParser extends AbstractParser {
             this.secondaryParser = new Tika(config);
             this.available = !nerChain.isEmpty();
             LOG.info("Number of NERecognisers in chain {}", nerChain.size());
-        } catch (Exception e){
+        } catch (Exception e) {
             LOG.error(e.getMessage(), e);
             this.available = false;
         }
@@ -117,9 +112,8 @@ public class NamedEntityParser extends AbstractParser {
         return MEDIA_TYPES;
     }
 
-    public void parse(InputStream inputStream, ContentHandler contentHandler,
-                      Metadata metadata, ParseContext parseContext)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream inputStream, ContentHandler contentHandler, Metadata metadata,
+                      ParseContext parseContext) throws IOException, SAXException, TikaException {
 
         if (!initialized) {
             initialize(parseContext);
@@ -128,10 +122,10 @@ public class NamedEntityParser extends AbstractParser {
             return;
         }
 
-        Reader reader = MediaType.TEXT_PLAIN.toString()
-                .equals(metadata.get(Metadata.CONTENT_TYPE))
-                ? new InputStreamReader(inputStream, StandardCharsets.UTF_8)
-                : secondaryParser.parse(inputStream);
+        Reader reader =
+                MediaType.TEXT_PLAIN.toString().equals(metadata.get(Metadata.CONTENT_TYPE)) ?
+                        new InputStreamReader(inputStream, StandardCharsets.UTF_8) :
+                        secondaryParser.parse(inputStream);
 
         String text = IOUtils.toString(reader);
         IOUtils.closeQuietly(reader);
@@ -157,15 +151,11 @@ public class NamedEntityParser extends AbstractParser {
      * writes the content to the given XHTML
      * content handler
      *
-     * @param content
-     *          the content which needs to be written
-     * @param xhtml
-     *          XHTML content handler
-     * @throws SAXException
-     *           if the XHTML SAX events could not be handled
-     *
+     * @param content the content which needs to be written
+     * @param xhtml   XHTML content handler
+     * @throws SAXException if the XHTML SAX events could not be handled
      */
-    private void extractOutput(String content, XHTMLContentHandler xhtml) throws SAXException{
+    private void extractOutput(String content, XHTMLContentHandler xhtml) throws SAXException {
         xhtml.startDocument();
         xhtml.startElement("div");
         xhtml.characters(content);

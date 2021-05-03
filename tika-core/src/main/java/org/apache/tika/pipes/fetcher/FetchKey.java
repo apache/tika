@@ -16,13 +16,25 @@
  */
 package org.apache.tika.pipes.fetcher;
 
+import java.io.Serializable;
+
 /**
  * Pair of fetcherName (which fetcher to call) and the key
  * to send to that fetcher to retrieve a specific file.
  */
-public class FetchKey {
-    private final String fetcherName;
-    private final String fetchKey;
+public class FetchKey implements Serializable {
+    /**
+     * Serial version UID
+     */
+    private static final long serialVersionUID = -3861669115439125268L;
+
+    private String fetcherName;
+    private String fetchKey;
+
+    //this is for serialization...yuck
+    public FetchKey(){
+
+    }
 
     public FetchKey(String fetcherName, String fetchKey) {
         this.fetcherName = fetcherName;
@@ -33,27 +45,33 @@ public class FetchKey {
         return fetcherName;
     }
 
-    public String getKey() {
+    public String getFetchKey() {
         return fetchKey;
     }
 
     @Override
     public String toString() {
-        return "FetcherKeyPair{" +
-                "fetcherName='" + fetcherName + '\'' +
-                ", fetchKey='" + fetchKey + '\'' +
-                '}';
+        return "FetcherKeyPair{" + "fetcherName='" + fetcherName + '\'' + ", fetchKey='" +
+                fetchKey + '\'' + '}';
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         FetchKey fetchKey = (FetchKey) o;
 
-        if (fetcherName != null ? !fetcherName.equals(fetchKey.fetcherName) : fetchKey.fetcherName != null) return false;
-        return this.fetchKey != null ? this.fetchKey.equals(fetchKey.fetchKey) : fetchKey.fetchKey == null;
+        if (fetcherName != null ? !fetcherName.equals(fetchKey.fetcherName) :
+                fetchKey.fetcherName != null) {
+            return false;
+        }
+        return this.fetchKey != null ? this.fetchKey.equals(fetchKey.fetchKey) :
+                fetchKey.fetchKey == null;
     }
 
     @Override

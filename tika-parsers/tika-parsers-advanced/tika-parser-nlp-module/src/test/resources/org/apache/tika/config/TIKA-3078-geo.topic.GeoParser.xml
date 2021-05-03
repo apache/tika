@@ -16,15 +16,15 @@
   limitations under the License.
 -->
 <properties>
-  <parsers>
-    <parser class="org.apache.tika.parser.DefaultParser">
-      <parser-exclude class="org.apache.tika.parser.geo.GeoParser"/>
-    </parser>
-    <parser class="org.apache.tika.parser.geo.GeoParser">
-      <params>
-        <param name="gazetteerRestEndpoint" type="string">http://localhost/gazetteerRestEndpoint</param>
-        <param name="nerModelUrl" type="string">file:/ner/model/url</param>
-      </params>
-    </parser>
-  </parsers>
+    <parsers>
+        <parser class="org.apache.tika.parser.DefaultParser">
+            <parser-exclude class="org.apache.tika.parser.geo.GeoParser"/>
+        </parser>
+        <parser class="org.apache.tika.parser.geo.GeoParser">
+            <params>
+                <param name="gazetteerRestEndpoint" type="string">http://localhost/gazetteerRestEndpoint</param>
+                <param name="nerModelUrl" type="string">file:/ner/model/url</param>
+            </params>
+        </parser>
+    </parsers>
 </properties>

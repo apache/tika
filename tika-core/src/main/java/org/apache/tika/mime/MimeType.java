@@ -31,50 +31,14 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
      * Serial version UID.
      */
     private static final long serialVersionUID = 4357830439860729201L;
-
-    /**
-     * Checks that the given string is a valid Internet media type name
-     * based on rules from RFC 2054 section 5.3. For validation purposes the
-     * rules can be simplified to the following:
-     * <pre>
-     * name := token "/" token
-     * token := 1*&lt;any (US-ASCII) CHAR except SPACE, CTLs, or tspecials&gt;
-     * tspecials :=  "(" / ")" / "&lt;" / "&gt;" / "@" / "," / ";" / ":" /
-     *               "\" / <"> / "/" / "[" / "]" / "?" / "="
-     * </pre>
-     *
-     * @param name name string
-     * @return <code>true</code> if the string is a valid media type name,
-     *         <code>false</code> otherwise
-     */
-    public static boolean isValid(String name) {
-        if (name == null) {
-            throw new IllegalArgumentException("Name is missing");
-        }
-
-        boolean slash = false;
-        for (int i = 0; i < name.length(); i++) {
-            char ch = name.charAt(i);
-            if (ch <= ' ' || ch >= 127 || ch == '(' || ch == ')' ||
-                    ch == '<' || ch == '>' || ch == '@' || ch == ',' ||
-                    ch == ';' || ch == ':' || ch == '\\' || ch == '"' ||
-                    ch == '[' || ch == ']' || ch == '?' || ch == '=') {
-                return false;
-            } else if (ch == '/') {
-                if (slash || i == 0 || i + 1 == name.length()) {
-                    return false;
-                }
-                slash = true;
-            }
-        }
-        return slash;
-    }
-
     /**
      * The normalized media type name.
      */
     private final MediaType type;
-
+    /**
+     * The minimum length of data to provides for magic analyzis
+     */
+    private final int minLength = 0;
     /**
      * The MimeType acronym
      */
@@ -84,32 +48,31 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
      * The http://en.wikipedia.org/wiki/Uniform_Type_Identifier
      */
     private String uti = "";
-    
+
     /**
      * Documentation Links
      */
     private List<URI> links = Collections.emptyList();
-    
+
     /**
      * Description of this media type.
      */
     private String description = "";
 
-    /** The magics associated to this Mime-Type */
+    /**
+     * The magics associated to this Mime-Type
+     */
     private List<Magic> magics = null;
 
-    /** The root-XML associated to this Mime-Type */
+    /**
+     * The root-XML associated to this Mime-Type
+     */
     private List<RootXML> rootXML = null;
-
-    /** The minimum length of data to provides for magic analyzis */
-    private int minLength = 0;
-
     /**
      * All known file extensions of this type, in order of preference
      * (best first).
      */
     private List<String> extensions = null;
-
     /**
      * Whether this mime-type is used for server-side scripts,
      * and thus cannot reliably be used for filename-based type detection
@@ -130,6 +93,43 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
             throw new IllegalArgumentException("Media type name is missing");
         }
         this.type = type;
+    }
+
+    /**
+     * Checks that the given string is a valid Internet media type name
+     * based on rules from RFC 2054 section 5.3. For validation purposes the
+     * rules can be simplified to the following:
+     * <pre>
+     * name := token "/" token
+     * token := 1*&lt;any (US-ASCII) CHAR except SPACE, CTLs, or tspecials&gt;
+     * tspecials :=  "(" / ")" / "&lt;" / "&gt;" / "@" / "," / ";" / ":" /
+     *               "\" / <"> / "/" / "[" / "]" / "?" / "="
+     * </pre>
+     *
+     * @param name name string
+     * @return <code>true</code> if the string is a valid media type name,
+     * <code>false</code> otherwise
+     */
+    public static boolean isValid(String name) {
+        if (name == null) {
+            throw new IllegalArgumentException("Name is missing");
+        }
+
+        boolean slash = false;
+        for (int i = 0; i < name.length(); i++) {
+            char ch = name.charAt(i);
+            if (ch <= ' ' || ch >= 127 || ch == '(' || ch == ')' || ch == '<' || ch == '>' ||
+                    ch == '@' || ch == ',' || ch == ';' || ch == ':' || ch == '\\' || ch == '"' ||
+                    ch == '[' || ch == ']' || ch == '?' || ch == '=') {
+                return false;
+            } else if (ch == '/') {
+                if (slash || i == 0 || i + 1 == name.length()) {
+                    return false;
+                }
+                slash = true;
+            }
+        }
+        return slash;
     }
 
     /**
@@ -170,7 +170,7 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
         }
         this.description = description;
     }
-    
+
 
     /**
      * Returns an acronym for this mime type.
@@ -192,13 +192,12 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
         }
         acronym = v;
     }
-    
+
     /**
      * Get the UTI for this mime type.
-     * 
-     * @see <a href="http://en.wikipedia.org/wiki/Uniform_Type_Identifier">http://en.wikipedia.org/wiki/Uniform_Type_Identifier</a>
-     * 
+     *
      * @return The Uniform Type Identifier
+     * @see <a href="http://en.wikipedia.org/wiki/Uniform_Type_Identifier">http://en.wikipedia.org/wiki/Uniform_Type_Identifier</a>
      */
     public String getUniformTypeIdentifier() {
         return uti;
@@ -218,22 +217,23 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
 
     /**
      * Get a list of links to help document this mime type
-     * 
+     *
      * @return an array of links (will never be null)
      */
     public List<URI> getLinks() {
-      return links; // this is already unmodifiable
+        return links; // this is already unmodifiable
     }
 
     /**
      * Add a link to this mime type
+     *
      * @param link
      */
     void addLink(URI link) {
-        if(link==null) {
+        if (link == null) {
             throw new IllegalArgumentException("Missing Link");
         }
-        List<URI> copy = new ArrayList<URI>(links.size()+1);
+        List<URI> copy = new ArrayList<URI>(links.size() + 1);
         copy.addAll(links);
         copy.add(link);
         links = Collections.unmodifiableList(copy);
@@ -319,6 +319,82 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
         isInterpreted = interpreted;
     }
 
+    public int compareTo(MimeType mime) {
+        return type.compareTo(mime.type);
+    }
+
+    //----------------------------------------------------------< Comparable >
+
+    public boolean equals(Object o) {
+        if (o instanceof MimeType) {
+            MimeType that = (MimeType) o;
+            return this.type.equals(that.type);
+        }
+
+        return false;
+    }
+
+    //--------------------------------------------------------------< Object >
+
+    public int hashCode() {
+        return type.hashCode();
+    }
+
+    /**
+     * Returns the name of this media type.
+     *
+     * @return media type name
+     */
+    public String toString() {
+        return type.toString();
+    }
+
+    /**
+     * Returns the preferred file extension of this type, or an empty string
+     * if no extensions are known. Use the {@link #getExtensions()} method to
+     * get the full list of known extensions of this type.
+     *
+     * @return preferred file extension or empty string
+     * @since Apache Tika 0.9
+     */
+    public String getExtension() {
+        if (extensions == null) {
+            return "";
+        } else {
+            return extensions.get(0);
+        }
+    }
+
+    /**
+     * Returns the list of all known file extensions of this media type.
+     *
+     * @return known extensions in order of preference (best first)
+     * @since Apache Tika 0.10
+     */
+    public List<String> getExtensions() {
+        if (extensions != null) {
+            return Collections.unmodifiableList(extensions);
+        } else {
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Adds a known file extension to this type.
+     *
+     * @param extension file extension
+     */
+    void addExtension(String extension) {
+        if (extensions == null) {
+            extensions = Collections.singletonList(extension);
+        } else if (extensions.size() == 1) {
+            extensions = new ArrayList<String>(extensions);
+        }
+        if (!extensions.contains(extension)) {
+            extensions.add(extension);
+        }
+    }
+
     /**
      * Defines a RootXML description. RootXML is made of a localName and/or a
      * namespaceURI.
@@ -352,29 +428,22 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
                 if (!this.namespaceURI.equals(namespaceURI)) {
                     return false;
                 }
-            }
-            else{
+            } else {
                 // else if it was empty then check to see if the provided namespaceURI
                 // is empty. If it is not, then these two aren't equal and return false
-                if(!isEmpty(namespaceURI)){
+                if (!isEmpty(namespaceURI)) {
                     return false;
                 }
             }
 
             //Compare root element's local name
             if (!isEmpty(this.localName)) {
-                if (!this.localName.equals(localName)) {
-                    return false;
-                }
-            }
-            else{
+                return this.localName.equals(localName);
+            } else {
                 // else if it was empty then check to see if the provided localName
-                // is empty. If it is not, then these two aren't equal and return false 
-                if(!isEmpty(localName)){
-                    return false;
-                }
+                // is empty. If it is not, then these two aren't equal and return false
+                return isEmpty(localName);
             }
-            return true;
         }
 
         /**
@@ -398,82 +467,6 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
 
         public String toString() {
             return type + ", " + namespaceURI + ", " + localName;
-        }
-    }
-
-    //----------------------------------------------------------< Comparable >
-
-    public int compareTo(MimeType mime) {
-        return type.compareTo(mime.type);
-    }
-
-    //--------------------------------------------------------------< Object >
-
-    public boolean equals(Object o) {
-        if (o instanceof MimeType) {
-            MimeType that = (MimeType) o;
-            return this.type.equals(that.type);
-        }
-
-        return false;
-    }
-
-    public int hashCode() {
-        return type.hashCode();
-    }
-
-    /**
-     * Returns the name of this media type.
-     *
-     * @return media type name
-     */
-    public String toString() {
-        return type.toString();
-    }
-
-    /**
-     * Returns the preferred file extension of this type, or an empty string
-     * if no extensions are known. Use the {@link #getExtensions()} method to
-     * get the full list of known extensions of this type.
-     *
-     * @since Apache Tika 0.9
-     * @return preferred file extension or empty string
-     */
-    public String getExtension() {
-        if (extensions == null) {
-            return "";
-        } else {
-            return extensions.get(0);
-        }
-    }
-
-    /**
-     * Returns the list of all known file extensions of this media type.
-     *
-     * @since Apache Tika 0.10
-     * @return known extensions in order of preference (best first)
-     */
-    public List<String> getExtensions() {
-        if (extensions != null) {
-            return Collections.unmodifiableList(extensions);
-        } else {
-            return Collections.emptyList();
-        }
-    }
-
-    /**
-     * Adds a known file extension to this type.
-     *
-     * @param extension file extension
-     */
-    void addExtension(String extension) {
-        if (extensions == null) {
-            extensions = Collections.singletonList(extension);
-        } else if (extensions.size() == 1) {
-            extensions = new ArrayList<String>(extensions);
-        }
-        if (!extensions.contains(extension)) {
-            extensions.add(extension);
         }
     }
 

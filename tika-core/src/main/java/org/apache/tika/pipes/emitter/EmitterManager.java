@@ -16,30 +16,48 @@
  */
 package org.apache.tika.pipes.emitter;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.tika.config.ConfigBase;
+import org.apache.tika.exception.TikaConfigException;
+
 /**
  * Utility class that will apply the appropriate fetcher
  * to the fetcherString based on the prefix.
- *
+ * <p>
  * This does not allow multiple fetchers supporting the same prefix.
  */
-public class EmitterManager {
+public class EmitterManager extends ConfigBase {
 
     private final Map<String, Emitter> emitterMap = new ConcurrentHashMap<>();
 
+    public static EmitterManager load(Path tikaConfigPath) throws IOException, TikaConfigException {
+        try (InputStream is = Files.newInputStream(tikaConfigPath) ) {
+            return EmitterManager.buildComposite(
+                    "emitters", EmitterManager.class,
+                    "emitter",
+                    Emitter.class, is);
+        }
+    }
+
+    private EmitterManager() {
+
+    }
 
     public EmitterManager(List<Emitter> emitters) {
         for (Emitter emitter : emitters) {
-                if (emitterMap.containsKey(emitter.getName())) {
-                    throw new IllegalArgumentException(
-                            "Multiple emitters cannot support the same name: "
-                            + emitter.getName());
-                }
-                emitterMap.put(emitter.getName(), emitter);
+            if (emitterMap.containsKey(emitter.getName())) {
+                throw new IllegalArgumentException(
+                        "Multiple emitters cannot support the same name: " + emitter.getName());
+            }
+            emitterMap.put(emitter.getName(), emitter);
 
         }
     }
@@ -52,8 +70,7 @@ public class EmitterManager {
     public Emitter getEmitter(String emitterName) {
         Emitter emitter = emitterMap.get(emitterName);
         if (emitter == null) {
-            throw new IllegalArgumentException("Can't find emitter for prefix: "+
-                    emitterName);
+            throw new IllegalArgumentException("Can't find emitter for prefix: " + emitterName);
         }
         return emitter;
     }

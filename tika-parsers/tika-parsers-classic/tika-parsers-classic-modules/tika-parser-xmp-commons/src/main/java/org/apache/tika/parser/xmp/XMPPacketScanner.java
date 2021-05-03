@@ -19,11 +19,11 @@
 
 package org.apache.tika.parser.xmp;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-
-import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
  * This class is a parser for XMP packets. By default, it tries to locate the first XMP packet

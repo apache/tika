@@ -1,5 +1,3 @@
-package org.apache.tika.batch.mock;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,13 +14,16 @@ package org.apache.tika.batch.mock;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.batch.mock;
+
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
+
+import org.w3c.dom.Node;
 
 import org.apache.tika.batch.ConsumersManager;
 import org.apache.tika.batch.FileResource;
 import org.apache.tika.batch.fs.builders.BasicTikaFSConsumersBuilder;
-import org.w3c.dom.Node;
 
 public class MockConsumersBuilder extends BasicTikaFSConsumersBuilder {
 

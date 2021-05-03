@@ -16,14 +16,14 @@
  */
 package org.apache.tika.config;
 
-import static org.apache.tika.TikaTest.assertContains;
-import static org.apache.tika.TikaTest.assertNotContained;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.List;
+
+import org.junit.Test;
 
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.CompositeParser;
@@ -33,12 +33,11 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.executable.ExecutableParser;
 import org.apache.tika.parser.xml.XMLParser;
-import org.junit.Test;
 
 /**
  * Junit test class for {@link TikaConfig}, which cover things
- *  that {@link TikaConfigTest} can't do due to a need for the
- *  full set of parsers
+ * that {@link TikaConfigTest} can't do due to a need for the
+ * full set of parsers
  */
 public class TikaParserConfigTest extends AbstractTikaConfigTest {
     @Test
@@ -47,63 +46,64 @@ public class TikaParserConfigTest extends AbstractTikaConfigTest {
         assertNotNull(config.getParser());
         assertNotNull(config.getDetector());
         Parser parser = config.getParser();
-        
+
         MediaType PDF = MediaType.application("pdf");
         MediaType JPEG = MediaType.image("jpeg");
-        
-        
+
+
         // Has two parsers
         assertEquals(CompositeParser.class, parser.getClass());
-        CompositeParser cParser = (CompositeParser)parser;
+        CompositeParser cParser = (CompositeParser) parser;
         assertEquals(2, cParser.getAllComponentParsers().size());
-        
+
         // Both are decorated
         assertTrue(cParser.getAllComponentParsers().get(0) instanceof ParserDecorator);
         assertTrue(cParser.getAllComponentParsers().get(1) instanceof ParserDecorator);
-        ParserDecorator p0 = (ParserDecorator)cParser.getAllComponentParsers().get(0);
-        ParserDecorator p1 = (ParserDecorator)cParser.getAllComponentParsers().get(1);
-        
-        
+        ParserDecorator p0 = (ParserDecorator) cParser.getAllComponentParsers().get(0);
+        ParserDecorator p1 = (ParserDecorator) cParser.getAllComponentParsers().get(1);
+
+
         // DefaultParser will be wrapped with excludes
         assertEquals(DefaultParser.class, p0.getWrappedParser().getClass());
-        
+
         assertNotContained(PDF, p0.getSupportedTypes(context));
         assertContains(PDF, p0.getWrappedParser().getSupportedTypes(context));
         assertNotContained(JPEG, p0.getSupportedTypes(context));
         assertContains(JPEG, p0.getWrappedParser().getSupportedTypes(context));
-        
-        
+
+
         // Will have an empty parser for PDF
         assertEquals(EmptyParser.class, p1.getWrappedParser().getClass());
         assertEquals(1, p1.getSupportedTypes(context).size());
         assertContains(PDF, p1.getSupportedTypes(context));
         assertNotContained(PDF, p1.getWrappedParser().getSupportedTypes(context));
     }
-    
+
     @Test
     public void testParserExcludeFromDefault() throws Exception {
         TikaConfig config = getConfig("TIKA-1558-exclude.xml");
         assertNotNull(config.getParser());
         assertNotNull(config.getDetector());
-        CompositeParser parser = (CompositeParser)config.getParser();
-        
+        CompositeParser parser = (CompositeParser) config.getParser();
+
         MediaType PE_EXE = MediaType.application("x-msdownload");
         MediaType ELF = MediaType.application("x-elf");
-        
-        
+
+
         // Get the DefaultParser from the config
-        ParserDecorator confWrappedParser = (ParserDecorator)parser.getParsers().get(MediaType.APPLICATION_XML);
+        ParserDecorator confWrappedParser =
+                (ParserDecorator) parser.getParsers().get(MediaType.APPLICATION_XML);
         assertNotNull(confWrappedParser);
-        DefaultParser confParser = (DefaultParser)confWrappedParser.getWrappedParser();
-        
+        DefaultParser confParser = (DefaultParser) confWrappedParser.getWrappedParser();
+
         // Get a fresh "default" DefaultParser
         DefaultParser normParser = new DefaultParser(config.getMediaTypeRegistry());
-        
-        
+
+
         // The default one will offer the Executable Parser
         assertContains(PE_EXE, normParser.getSupportedTypes(context));
         assertContains(ELF, normParser.getSupportedTypes(context));
-        
+
         boolean hasExec = false;
         for (Parser p : normParser.getParsers().values()) {
             if (p instanceof ExecutableParser) {
@@ -112,17 +112,19 @@ public class TikaParserConfigTest extends AbstractTikaConfigTest {
             }
         }
         assertTrue(hasExec);
-        
-        
+
+
         // The one from the config won't
         assertNotContained(PE_EXE, confParser.getSupportedTypes(context));
         assertNotContained(ELF, confParser.getSupportedTypes(context));
-        
+
         for (Parser p : confParser.getParsers().values()) {
-            if (p instanceof ExecutableParser)
+            if (p instanceof ExecutableParser) {
                 fail("Shouldn't have the Executable Parser from config");
+            }
         }
     }
+
     /**
      * TIKA-1558 It should be possible to exclude Parsers from being picked up by
      * DefaultParser.
@@ -150,8 +152,9 @@ public class TikaParserConfigTest extends AbstractTikaConfigTest {
         parsers = cp.getAllComponentParsers();
 
         for (Parser p : parsers) {
-            if (p instanceof XMLParser)
+            if (p instanceof XMLParser) {
                 fail("Custom config should not include an XMLParser (" + p.getClass() + ").");
+            }
         }
     }
 }

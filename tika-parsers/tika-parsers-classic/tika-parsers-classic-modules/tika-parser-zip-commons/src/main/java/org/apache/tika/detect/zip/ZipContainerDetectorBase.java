@@ -16,31 +16,31 @@
  */
 package org.apache.tika.detect.zip;
 
-import java.io.InputStream;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.OfflineContentHandler;
-import org.apache.tika.utils.XMLReaderUtils;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
 
 abstract class ZipContainerDetectorBase {
 
 
+    /**
+     * To be considered as an IPA file, it needs to match all of these
+     */
+    private static HashSet<Pattern> ipaEntryPatterns = new HashSet<Pattern>() {
+        private static final long serialVersionUID = 6545295886322115362L;
 
-
-
-
-
+        {
+            add(Pattern.compile("^Payload/$"));
+            add(Pattern.compile("^Payload/.*\\.app/$"));
+            add(Pattern.compile("^Payload/.*\\.app/_CodeSignature/$"));
+            add(Pattern.compile("^Payload/.*\\.app/_CodeSignature/CodeResources$"));
+            add(Pattern.compile("^Payload/.*\\.app/Info\\.plist$"));
+            add(Pattern.compile("^Payload/.*\\.app/PkgInfo$"));
+        }
+    };
 
     static MediaType detectJar(Set<String> entryNames) {
         if (entryNames.contains("META-INF/MANIFEST.MF")) {
@@ -75,8 +75,7 @@ abstract class ZipContainerDetectorBase {
         //look for a single kml at the main level
         boolean kmlFound = false;
         for (String entryFileName : entryFileNames) {
-            if (entryFileName.indexOf('/') != -1
-                    || entryFileName.indexOf('\\') != -1) {
+            if (entryFileName.indexOf('/') != -1 || entryFileName.indexOf('\\') != -1) {
                 continue;
             }
             if (entryFileName.endsWith(".kml") && !kmlFound) {
@@ -90,23 +89,10 @@ abstract class ZipContainerDetectorBase {
         return null;
     }
 
-    /**
-     * To be considered as an IPA file, it needs to match all of these
-     */
-    private static HashSet<Pattern> ipaEntryPatterns = new HashSet<Pattern>() {
-        private static final long serialVersionUID = 6545295886322115362L;
-        {
-            add(Pattern.compile("^Payload/$"));
-            add(Pattern.compile("^Payload/.*\\.app/$"));
-            add(Pattern.compile("^Payload/.*\\.app/_CodeSignature/$"));
-            add(Pattern.compile("^Payload/.*\\.app/_CodeSignature/CodeResources$"));
-            add(Pattern.compile("^Payload/.*\\.app/Info\\.plist$"));
-            add(Pattern.compile("^Payload/.*\\.app/PkgInfo$"));
-        }};
     @SuppressWarnings("unchecked")
     static MediaType detectIpa(Set<String> entryNames) {
         // Note - consider generalising this logic, if another format needs many regexp matching
-        Set<Pattern> tmpPatterns = (Set<Pattern>)ipaEntryPatterns.clone();
+        Set<Pattern> tmpPatterns = (Set<Pattern>) ipaEntryPatterns.clone();
 
         for (String entryName : entryNames) {
             Iterator<Pattern> ip = tmpPatterns.iterator();
@@ -123,7 +109,6 @@ abstract class ZipContainerDetectorBase {
         }
         return null;
     }
-
 
 
 }

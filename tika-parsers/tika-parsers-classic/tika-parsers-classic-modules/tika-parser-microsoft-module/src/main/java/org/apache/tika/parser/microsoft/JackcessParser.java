@@ -24,10 +24,13 @@ import java.util.Collections;
 import java.util.Locale;
 import java.util.Set;
 
-import com.healthmarketscience.jackcess.CryptCodecProvider;
 import com.healthmarketscience.jackcess.Database;
 import com.healthmarketscience.jackcess.DatabaseBuilder;
+import com.healthmarketscience.jackcess.crypt.CryptCodecProvider;
 import com.healthmarketscience.jackcess.util.LinkResolver;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -39,8 +42,6 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * Parser that handles Microsoft Access files via
@@ -51,21 +52,20 @@ import org.xml.sax.SAXException;
  */
 public class JackcessParser extends AbstractParser {
 
-    public static final String SUMMARY_PROPERTY_PREFIX = "MDB_SUMMARY_PROP" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
-    public static String MDB_PROPERTY_PREFIX = "MDB_PROP" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
-    public static String USER_DEFINED_PROPERTY_PREFIX = "MDB_USER_PROP" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
-    public static Property MDB_PW = Property.externalText("Password");
+    public static final String SUMMARY_PROPERTY_PREFIX =
+            "MDB_SUMMARY_PROP" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
     private final static LinkResolver IGNORE_LINK_RESOLVER = new IgnoreLinkResolver();
+    private static final long serialVersionUID = -752276948656079347L;
+    private static final MediaType MEDIA_TYPE = MediaType.application("x-msaccess");
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MEDIA_TYPE);
 
     //TODO: figure out how to get this info
     // public static Property LINKED_DATABASES = Property.externalTextBag("LinkedDatabases");
-
-    private static final long serialVersionUID = -752276948656079347L;
-
-    private static final MediaType MEDIA_TYPE = MediaType.application("x-msaccess");
-
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MEDIA_TYPE);
-
+    public static String MDB_PROPERTY_PREFIX =
+            "MDB_PROP" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    public static String USER_DEFINED_PROPERTY_PREFIX =
+            "MDB_USER_PROP" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    public static Property MDB_PW = Property.externalText("Password");
     private Locale locale = Locale.ROOT;
 
     @Override
@@ -90,13 +90,12 @@ public class JackcessParser extends AbstractParser {
             if (password == null) {
                 //do this to ensure encryption/wrong password exception vs. more generic
                 //"need right codec" error message.
-                db = new DatabaseBuilder(tis.getFile())
-                        .setCodecProvider(new CryptCodecProvider())
+                db = new DatabaseBuilder(tis.getFile()).setCodecProvider(new CryptCodecProvider())
                         .setReadOnly(true).open();
             } else {
                 db = new DatabaseBuilder(tis.getFile())
-                        .setCodecProvider(new CryptCodecProvider(password))
-                        .setReadOnly(true).open();
+                        .setCodecProvider(new CryptCodecProvider(password)).setReadOnly(true)
+                        .open();
             }
             db.setLinkResolver(IGNORE_LINK_RESOLVER);//just in case
             JackcessExtractor ex = new JackcessExtractor(metadata, context, locale);

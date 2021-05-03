@@ -16,11 +16,10 @@
  */
 package org.apache.tika.server.core;
 
-import org.apache.cxf.common.logging.AbstractDelegatingLogger;
-import org.apache.tika.server.core.TikaServerIntegrationTest;
-
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+
+import org.apache.cxf.common.logging.AbstractDelegatingLogger;
 
 /**
  * null logger to swallow client messages

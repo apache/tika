@@ -37,6 +37,7 @@ public abstract class AbstractEncodingDetectorParser extends AbstractParser {
     public AbstractEncodingDetectorParser(EncodingDetector encodingDetector) {
         this.encodingDetector = encodingDetector;
     }
+
     /**
      * Look for an EncodingDetetor in the ParseContext.  If it hasn't been
      * passed in, use the original EncodingDetector from initialization.

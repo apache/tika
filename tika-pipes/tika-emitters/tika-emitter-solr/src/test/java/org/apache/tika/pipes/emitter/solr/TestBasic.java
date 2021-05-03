@@ -17,19 +17,22 @@
 package org.apache.tika.pipes.emitter.solr;
 
 
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.pipes.emitter.EmitData;
-import org.apache.tika.pipes.emitter.EmitKey;
-import org.apache.tika.pipes.emitter.Emitter;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.filter.MetadataFilter;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.filter.MetadataFilter;
+import org.apache.tika.pipes.emitter.EmitData;
+import org.apache.tika.pipes.emitter.EmitKey;
+import org.apache.tika.pipes.emitter.Emitter;
+import org.apache.tika.pipes.emitter.EmitterManager;
 
 @Ignore("requires solr to be up and running")
 public class TestBasic {
@@ -38,9 +41,11 @@ public class TestBasic {
     public void testBasic() throws Exception {
         TikaConfig tikaConfig = new TikaConfig(
                 TestBasic.class.getResourceAsStream("/tika-config-simple-emitter.xml"));
-        Emitter emitter = tikaConfig.getEmitterManager().getEmitter("solr1");
-        List<Metadata> metadataList = getParentChild(tikaConfig,
-                "id1", 2);
+        EmitterManager emitterManager = EmitterManager.load(
+                Paths.get(TestBasic.class.getResource("/tika-config-simple-emitter.xml").toURI())
+        );
+        Emitter emitter = emitterManager.getEmitter("solr1");
+        List<Metadata> metadataList = getParentChild(tikaConfig, "id1", 2);
 
         emitter.emit("1", metadataList);
     }
@@ -49,20 +54,21 @@ public class TestBasic {
     public void testBatch() throws Exception {
         TikaConfig tikaConfig = new TikaConfig(
                 TestBasic.class.getResourceAsStream("/tika-config-simple-emitter.xml"));
-        Emitter emitter = tikaConfig.getEmitterManager().getEmitter("solr2");
+        EmitterManager emitterManager = EmitterManager.load(
+                Paths.get(TestBasic.class.getResource("/tika-config-simple-emitter.xml").toURI())
+        );
+        Emitter emitter = emitterManager.getEmitter("solr2");
         List<EmitData> emitData = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            List<Metadata> metadataList = getParentChild(tikaConfig,
-                    "batch_"+i, 4);
-            emitData.add(new EmitData(
-                    new EmitKey(emitter.getName(),  "batch_"+i),
-                    metadataList));
+            List<Metadata> metadataList = getParentChild(tikaConfig, "batch_" + i, 4);
+            emitData.add(new EmitData(new EmitKey(emitter.getName(),
+                    "batch_" + i), metadataList));
         }
         emitter.emit(emitData);
     }
 
-    private List<Metadata> getParentChild(TikaConfig tikaConfig,
-                                          String id, int numChildren) throws TikaException {
+    private List<Metadata> getParentChild(TikaConfig tikaConfig, String id, int numChildren)
+            throws TikaException {
         List<Metadata> metadataList = new ArrayList<>();
         MetadataFilter filter = tikaConfig.getMetadataFilter();
 
@@ -75,7 +81,7 @@ public class TestBasic {
         m1.add(TikaCoreProperties.CREATOR, "secondAuthor");
         filter.filter(m1);
         metadataList.add(m1);
-        for (int i = 1; i < numChildren; i++ ) {
+        for (int i = 1; i < numChildren; i++) {
             Metadata m2 = new Metadata();
             m2.set(TikaCoreProperties.EMBEDDED_RESOURCE_PATH, "/path_to_this.txt");
             m2.set(TikaCoreProperties.TIKA_CONTENT, "fox jumped over the lazy " + i);

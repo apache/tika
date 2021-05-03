@@ -19,7 +19,8 @@
   under the License.
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -32,7 +33,7 @@
   <artifactId>tika-xmp</artifactId>
   <packaging>bundle</packaging>
   <name>Apache Tika XMP</name>
-  <url>http://tika.apache.org/</url>
+  <url>https://tika.apache.org/</url>
 
   <build>
     <plugins>
@@ -53,7 +54,7 @@
               org.apache.tika.xmp,
               org.apache.tika.xmp.convert
             </Export-Package>
-            <Private-Package />
+            <Private-Package/>
           </instructions>
         </configuration>
       </plugin>

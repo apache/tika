@@ -49,7 +49,7 @@ public interface Detector extends Serializable {
      * <p>
      * The given input metadata is only read, not modified, by the detector.
      *
-     * @param input document input stream, or <code>null</code>
+     * @param input    document input stream, or <code>null</code>
      * @param metadata input metadata for the document
      * @return detected media type, or <code>application/octet-stream</code>
      * @throws IOException if the document input stream could not be read

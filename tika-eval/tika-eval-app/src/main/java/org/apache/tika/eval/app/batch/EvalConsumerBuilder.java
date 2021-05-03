@@ -27,6 +27,9 @@ import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.batch.FileResource;
 import org.apache.tika.batch.FileResourceConsumer;
 import org.apache.tika.config.TikaConfig;
@@ -40,8 +43,6 @@ import org.apache.tika.eval.app.io.ExtractReader;
 import org.apache.tika.eval.app.io.ExtractReaderException;
 import org.apache.tika.eval.app.io.IDBWriter;
 import org.apache.tika.util.PropsUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public abstract class EvalConsumerBuilder {
 
@@ -50,11 +51,11 @@ public abstract class EvalConsumerBuilder {
     protected ArrayBlockingQueue<FileResource> queue;
     Map<String, String> localAttrs;
     JDBCUtil dbUtil;
-    private MimeBuffer mimeBuffer;
     AtomicInteger initialized = new AtomicInteger(0);
+    private MimeBuffer mimeBuffer;
 
     public MimeBuffer init(ArrayBlockingQueue<FileResource> queue, Map<String, String> localAttrs,
-                     JDBCUtil dbUtil, boolean forceDrop) throws IOException, SQLException {
+                           JDBCUtil dbUtil, boolean forceDrop) throws IOException, SQLException {
         if (initialized.getAndIncrement() > 0) {
             throw new RuntimeException("Can only init a consumer builder once!");
         }
@@ -65,8 +66,9 @@ public abstract class EvalConsumerBuilder {
         //step 1. update the table names with prefixes
         updateTableInfosWithPrefixes(localAttrs);
 
-        JDBCUtil.CREATE_TABLE createRegularTable = (forceDrop) ? JDBCUtil.CREATE_TABLE.DROP_IF_EXISTS :
-                JDBCUtil.CREATE_TABLE.THROW_EX_IF_EXISTS;
+        JDBCUtil.CREATE_TABLE createRegularTable =
+                (forceDrop) ? JDBCUtil.CREATE_TABLE.DROP_IF_EXISTS :
+                        JDBCUtil.CREATE_TABLE.THROW_EX_IF_EXISTS;
 
         JDBCUtil.CREATE_TABLE createRefTable = (forceDrop) ? JDBCUtil.CREATE_TABLE.DROP_IF_EXISTS :
                 JDBCUtil.CREATE_TABLE.SKIP_IF_EXISTS;
@@ -90,13 +92,11 @@ public abstract class EvalConsumerBuilder {
     protected abstract void updateTableInfosWithPrefixes(Map<String, String> attrs);
 
     /**
-     *
      * @return only the ref tables
      */
     protected abstract List<TableInfo> getRefTableInfos();
 
     /**
-     *
      * @return the main tables, not including the ref tables
      */
     protected abstract List<TableInfo> getNonRefTableInfos();
@@ -107,12 +107,12 @@ public abstract class EvalConsumerBuilder {
 
     public void populateRefTables() throws IOException, SQLException {
         boolean refTablesPopulated = true;
-        try{
+        try {
             Connection connection = dbUtil.getConnection();
             for (TableInfo tableInfo : getRefTableInfos()) {
                 int rows = 0;
-                try (ResultSet rs = connection.createStatement().executeQuery("select * from "+
-                        tableInfo.getName())) {
+                try (ResultSet rs = connection.createStatement()
+                        .executeQuery("select * from " + tableInfo.getName())) {
                     while (rs.next()) {
                         rows++;
                     }
@@ -147,8 +147,7 @@ public abstract class EvalConsumerBuilder {
             writer.writeRow(AbstractProfiler.REF_PARSE_EXCEPTION_TYPES, m);
         }
 
-        for (ExtractReaderException.TYPE t :
-                ExtractReaderException.TYPE.values()) {
+        for (ExtractReaderException.TYPE t : ExtractReaderException.TYPE.values()) {
             m.clear();
             m.put(Cols.EXTRACT_EXCEPTION_ID, Integer.toString(t.ordinal()));
             m.put(Cols.EXTRACT_EXCEPTION_DESCRIPTION, t.name());
@@ -173,8 +172,9 @@ public abstract class EvalConsumerBuilder {
         } else if (alterExtractString.equalsIgnoreCase("concatenate_content")) {
             alterExtractList = ExtractReader.ALTER_METADATA_LIST.CONCATENATE_CONTENT_INTO_FIRST;
         } else {
-            throw new RuntimeException("options for alterExtract: as_is, first_only, concatenate_content." +
-                    " I don't understand:" + alterExtractString);
+            throw new RuntimeException(
+                    "options for alterExtract: as_is, first_only, concatenate_content." +
+                            " I don't understand:" + alterExtractString);
         }
         return alterExtractList;
     }
@@ -194,7 +194,8 @@ public abstract class EvalConsumerBuilder {
             abstractProfiler.setMaxContentLength(maxContentLength);
         }
 
-        int maxContentLengthForLangId = PropsUtil.getInt(localAttrs.get("maxContentLengthForLangId"), -2);
+        int maxContentLengthForLangId =
+                PropsUtil.getInt(localAttrs.get("maxContentLengthForLangId"), -2);
         if (maxContentLengthForLangId > -2) {
             abstractProfiler.setMaxContentLengthForLangId(maxContentLengthForLangId);
         }
@@ -227,7 +228,8 @@ public abstract class EvalConsumerBuilder {
                 throw new IllegalArgumentException("Column offset must be specified!");
             }
             if (aVal == bVal && ! map.get(a).equals(map.get(b))) {
-                throw new IllegalArgumentException("Column offsets must be unique: " + a + " and " + b + " both have: "+aVal);
+                throw new IllegalArgumentException("Column offsets must be unique: " + a + "
+                 and " + b + " both have: "+aVal);
             }
             if (aVal < bVal) {
                 return -1;

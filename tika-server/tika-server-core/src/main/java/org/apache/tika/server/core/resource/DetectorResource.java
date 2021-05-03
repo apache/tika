@@ -17,6 +17,8 @@
 
 package org.apache.tika.server.core.resource;
 
+import java.io.IOException;
+import java.io.InputStream;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -24,16 +26,15 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriInfo;
-import java.io.IOException;
-import java.io.InputStream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.server.core.ServerStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Path("/detect")
 public class DetectorResource {
@@ -43,12 +44,13 @@ public class DetectorResource {
     public DetectorResource(ServerStatus serverStatus) {
         this.serverStatus = serverStatus;
     }
+
     @PUT
     @Path("stream")
     @Consumes("*/*")
     @Produces("text/plain")
-    public String detect(final InputStream is,
-                         @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
+    public String detect(final InputStream is, @Context HttpHeaders httpHeaders,
+                         @Context final UriInfo info) {
         Metadata met = new Metadata();
 
         String filename = TikaResource.detectFilename(httpHeaders.getRequestHeaders());
@@ -56,11 +58,12 @@ public class DetectorResource {
         met.add(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
         long taskId = serverStatus.start(ServerStatus.TASK.DETECT, filename);
 
-        try (TikaInputStream tis = TikaInputStream.get(TikaResource.getInputStream(is, met, httpHeaders))) {
+        try (TikaInputStream tis = TikaInputStream
+                .get(TikaResource.getInputStream(is, met, httpHeaders))) {
             return TikaResource.getConfig().getDetector().detect(tis, met).toString();
         } catch (IOException e) {
-            LOG.warn("Unable to detect MIME type for file. Reason: {} ({})",
-                    e.getMessage(), filename, e);
+            LOG.warn("Unable to detect MIME type for file. Reason: {} ({})", e.getMessage(),
+                    filename, e);
             return MediaType.OCTET_STREAM.toString();
         } catch (OutOfMemoryError e) {
             LOG.error("OOM while detecting: ({})", filename, e);

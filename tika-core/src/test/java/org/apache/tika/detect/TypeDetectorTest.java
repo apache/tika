@@ -16,32 +16,33 @@
  */
 package org.apache.tika.detect;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 
 /**
  * Test cases for the {@link TypeDetector} class.
  */
 public class TypeDetectorTest {
 
-    private Detector detector = new TypeDetector();
-    
-    private static final Map<String, String> params = new
-        TreeMap<String, String>();
-    static{
+    private static Map<String, String> params = new TreeMap<>();
+
+    static {
         params.put("a", "b");
     }
-    
-    private static final MediaType TEXT_PLAIN_A_EQ_B = 
-          new MediaType("text", "plain", params);
+
+    private static MediaType TEXT_PLAIN_A_EQ_B = new MediaType("text", "plain", params);
+
+
+    private final Detector detector = new TypeDetector();
 
     @Test
     public void testDetect() {
@@ -57,15 +58,13 @@ public class TypeDetectorTest {
         assertDetect(MediaType.OCTET_STREAM, "");
         assertDetect(MediaType.OCTET_STREAM, null);
         try {
-            assertEquals(
-                    MediaType.OCTET_STREAM,
-                    detector.detect(null, new Metadata()));
+            assertEquals(MediaType.OCTET_STREAM, detector.detect(null, new Metadata()));
         } catch (IOException e) {
             fail("TypeDetector should never throw an IOException");
         }
     }
 
-    private void assertDetect(MediaType type, String name){
+    private void assertDetect(MediaType type, String name) {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, name);
         try {

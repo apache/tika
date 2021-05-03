@@ -38,8 +38,8 @@ public class DBConsumersManager extends ConsumersManager {
     private final MimeBuffer mimeBuffer;
     private final List<LogTablePair> errorLogs = new ArrayList<>();
 
-    public DBConsumersManager(JDBCUtil dbUtil, MimeBuffer mimeBuffer, List<FileResourceConsumer> consumers)
-            throws SQLException {
+    public DBConsumersManager(JDBCUtil dbUtil, MimeBuffer mimeBuffer,
+                              List<FileResourceConsumer> consumers) throws SQLException {
         super(consumers);
         this.conn = dbUtil.getConnection();
         this.mimeBuffer = mimeBuffer;
@@ -51,8 +51,8 @@ public class DBConsumersManager extends ConsumersManager {
 
         for (FileResourceConsumer consumer : getConsumers()) {
             if (consumer instanceof AbstractProfiler) {
-                try{
-                    ((AbstractProfiler)consumer).closeWriter();
+                try {
+                    ((AbstractProfiler) consumer).closeWriter();
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }

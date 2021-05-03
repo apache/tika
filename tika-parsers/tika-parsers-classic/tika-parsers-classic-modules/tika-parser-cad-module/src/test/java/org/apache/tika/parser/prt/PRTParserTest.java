@@ -20,12 +20,13 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
 
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
 
 public class PRTParserTest extends TikaTest {
     /**
@@ -33,34 +34,33 @@ public class PRTParserTest extends TikaTest {
      */
     @Test
     public void testPRTParserBasics() throws Exception {
-       try (InputStream input = getResourceAsStream("/test-documents/testCADKEY.prt")) {
-          Metadata metadata = new Metadata();
-          ContentHandler handler = new BodyContentHandler();
-          new PRTParser().parse(input, handler, metadata);
+        try (InputStream input = getResourceAsStream("/test-documents/testCADKEY.prt")) {
+            Metadata metadata = new Metadata();
+            ContentHandler handler = new BodyContentHandler();
+            new PRTParser().parse(input, handler, metadata);
 
-          assertEquals("application/x-prt", metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("application/x-prt", metadata.get(Metadata.CONTENT_TYPE));
 
-          // This file has a date
-          assertEquals("2011-06-20T16:54:00",
-                  metadata.get(TikaCoreProperties.CREATED));
+            // This file has a date
+            assertEquals("2011-06-20T16:54:00", metadata.get(TikaCoreProperties.CREATED));
 
-          // But no description
-          assertEquals(null, metadata.get(TikaCoreProperties.DESCRIPTION));
+            // But no description
+            assertEquals(null, metadata.get(TikaCoreProperties.DESCRIPTION));
 
-          String contents = handler.toString();
+            String contents = handler.toString();
 
-          assertContains("Front View", contents);
-          assertContains("Back View", contents);
-          assertContains("Bottom View", contents);
-          assertContains("Right View", contents);
-          assertContains("Left View", contents);
-          //assertContains("Isometric View", contents); // Can't detect yet
-          assertContains("Axonometric View", contents);
+            assertContains("Front View", contents);
+            assertContains("Back View", contents);
+            assertContains("Bottom View", contents);
+            assertContains("Right View", contents);
+            assertContains("Left View", contents);
+            //assertContains("Isometric View", contents); // Can't detect yet
+            assertContains("Axonometric View", contents);
 
-          assertContains("You've managed to extract all the text!", contents);
-          assertContains("This is more text", contents);
-          assertContains("Text Inside a PRT file", contents);
-       }
+            assertContains("You've managed to extract all the text!", contents);
+            assertContains("This is more text", contents);
+            assertContains("Text Inside a PRT file", contents);
+        }
     }
 
     /**
@@ -68,43 +68,42 @@ public class PRTParserTest extends TikaTest {
      */
     @Test
     public void testPRTParserComplex() throws Exception {
-       try (InputStream input = getResourceAsStream("/test-documents/testCADKEY2.prt")) {
-          Metadata metadata = new Metadata();
-          ContentHandler handler = new BodyContentHandler();
-          new PRTParser().parse(input, handler, metadata);
+        try (InputStream input = getResourceAsStream("/test-documents/testCADKEY2.prt")) {
+            Metadata metadata = new Metadata();
+            ContentHandler handler = new BodyContentHandler();
+            new PRTParser().parse(input, handler, metadata);
 
-          assertEquals("application/x-prt", metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("application/x-prt", metadata.get(Metadata.CONTENT_TYPE));
 
-          // File has both a date and a description
-          assertEquals("1997-04-01T08:59:00",
-                  metadata.get(TikaCoreProperties.CREATED));
-          assertEquals("TIKA TEST PART DESCRIPTION INFORMATION\r\n",
-                  metadata.get(TikaCoreProperties.DESCRIPTION));
+            // File has both a date and a description
+            assertEquals("1997-04-01T08:59:00", metadata.get(TikaCoreProperties.CREATED));
+            assertEquals("TIKA TEST PART DESCRIPTION INFORMATION\r\n",
+                    metadata.get(TikaCoreProperties.DESCRIPTION));
 
-          String contents = handler.toString();
+            String contents = handler.toString();
 
-          assertContains("ITEM", contents);
-          assertContains("REQ.", contents);
-          assertContains("DESCRIPTION", contents);
-          assertContains("MAT'L", contents);
-          assertContains("TOLERANCES UNLESS", contents);
-          assertContains("FRACTIONS", contents);
-          assertContains("ANGLES", contents);
-          assertContains("Acme Corporation", contents);
+            assertContains("ITEM", contents);
+            assertContains("REQ.", contents);
+            assertContains("DESCRIPTION", contents);
+            assertContains("MAT'L", contents);
+            assertContains("TOLERANCES UNLESS", contents);
+            assertContains("FRACTIONS", contents);
+            assertContains("ANGLES", contents);
+            assertContains("Acme Corporation", contents);
 
-          assertContains("DATE", contents);
-          assertContains("CHANGE", contents);
-          assertContains("DRAWN BY", contents);
-          assertContains("SCALE", contents);
-          assertContains("TIKA TEST DRAWING", contents);
-          assertContains("TIKA LETTERS", contents);
-          assertContains("5.82", contents);
-          assertContains("112" + '\u00b0', contents); // Degrees
-          assertContains("TIKA TEST LETTER", contents);
-          assertContains("17.11", contents);
-          assertContains('\u00d8' + "\ufffd2.000", contents); // Diameter
-          assertContains("Diameter", contents);
-          assertContains("The Apache Tika toolkit", contents);
-       }
+            assertContains("DATE", contents);
+            assertContains("CHANGE", contents);
+            assertContains("DRAWN BY", contents);
+            assertContains("SCALE", contents);
+            assertContains("TIKA TEST DRAWING", contents);
+            assertContains("TIKA LETTERS", contents);
+            assertContains("5.82", contents);
+            assertContains("112" + '\u00b0', contents); // Degrees
+            assertContains("TIKA TEST LETTER", contents);
+            assertContains("17.11", contents);
+            assertContains('\u00d8' + "\ufffd2.000", contents); // Diameter
+            assertContains("Diameter", contents);
+            assertContains("The Apache Tika toolkit", contents);
+        }
     }
 }

@@ -16,43 +16,8 @@
  */
 package org.apache.tika.parser.mail;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.james.mime4j.MimeException;
-import org.apache.james.mime4j.codec.DecodeMonitor;
-import org.apache.james.mime4j.codec.DecoderUtil;
-import org.apache.james.mime4j.dom.address.Address;
-import org.apache.james.mime4j.dom.address.AddressList;
-import org.apache.james.mime4j.dom.address.Mailbox;
-import org.apache.james.mime4j.dom.address.MailboxList;
-import org.apache.james.mime4j.dom.field.AddressListField;
-import org.apache.james.mime4j.dom.field.DateTimeField;
-import org.apache.james.mime4j.dom.field.MailboxListField;
-import org.apache.james.mime4j.dom.field.ParsedField;
-import org.apache.james.mime4j.dom.field.UnstructuredField;
-import org.apache.james.mime4j.field.LenientFieldParser;
-import org.apache.james.mime4j.message.MaximalBodyDescriptor;
-import org.apache.james.mime4j.parser.ContentHandler;
-import org.apache.james.mime4j.stream.BodyDescriptor;
-import org.apache.james.mime4j.stream.Field;
-import org.apache.tika.detect.Detector;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.EmbeddedDocumentUtil;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Message;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.csv.TextAndCSVParser;
-import org.apache.tika.parser.html.HtmlParser;
-import org.apache.tika.parser.mailcommons.MailUtil;
-import org.apache.tika.parser.txt.TXTParser;
-import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.sax.EmbeddedContentHandler;
-import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.SAXException;
+import static org.apache.tika.utils.DateUtils.MIDDAY;
+import static org.apache.tika.utils.DateUtils.UTC;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -73,8 +38,44 @@ import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.apache.tika.utils.DateUtils.MIDDAY;
-import static org.apache.tika.utils.DateUtils.UTC;
+import org.apache.commons.io.IOUtils;
+import org.apache.james.mime4j.MimeException;
+import org.apache.james.mime4j.codec.DecodeMonitor;
+import org.apache.james.mime4j.codec.DecoderUtil;
+import org.apache.james.mime4j.dom.address.Address;
+import org.apache.james.mime4j.dom.address.AddressList;
+import org.apache.james.mime4j.dom.address.Mailbox;
+import org.apache.james.mime4j.dom.address.MailboxList;
+import org.apache.james.mime4j.dom.field.AddressListField;
+import org.apache.james.mime4j.dom.field.DateTimeField;
+import org.apache.james.mime4j.dom.field.MailboxListField;
+import org.apache.james.mime4j.dom.field.ParsedField;
+import org.apache.james.mime4j.dom.field.UnstructuredField;
+import org.apache.james.mime4j.field.LenientFieldParser;
+import org.apache.james.mime4j.message.MaximalBodyDescriptor;
+import org.apache.james.mime4j.parser.ContentHandler;
+import org.apache.james.mime4j.stream.BodyDescriptor;
+import org.apache.james.mime4j.stream.Field;
+import org.xml.sax.SAXException;
+
+import org.apache.tika.detect.Detector;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Message;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.csv.TextAndCSVParser;
+import org.apache.tika.parser.html.HtmlParser;
+import org.apache.tika.parser.mailcommons.MailUtil;
+import org.apache.tika.parser.txt.TXTParser;
+import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.EmbeddedContentHandler;
+import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Bridge between mime4j's content handler and the generic Sax content handler
@@ -93,7 +94,7 @@ class MailContentHandler implements ContentHandler {
     //use this pattern to insert space: 10:30 am
     private static final Pattern AM_PM = Pattern.compile("(?i)(\\d)([ap]m)\\b");
 
-    private static final DateFormat[] ALTERNATE_DATE_FORMATS = new DateFormat[] {
+    private static final DateFormat[] ALTERNATE_DATE_FORMATS = new DateFormat[]{
             //note that the string is "cleaned" before processing:
             //1) condense multiple whitespace to single space
             //2) trim()
@@ -125,39 +126,21 @@ class MailContentHandler implements ContentHandler {
             createDateFormat("EEE d MMM yy", MIDDAY, false),
             createDateFormat("d MMM yy", MIDDAY, false),
             createDateFormat("yy/MM/dd", MIDDAY, false),
-            createDateFormat("MM/dd/yy", MIDDAY, false)
-    };
-
-    private static DateFormat createDateFormat(String format, TimeZone timezone) {
-        return createDateFormat(format, timezone, true);
-    }
-
-    private static DateFormat createDateFormat(String format, TimeZone timezone, boolean isLenient) {
-        SimpleDateFormat sdf =
-                new SimpleDateFormat(format, new DateFormatSymbols(Locale.US));
-        if (timezone != null) {
-            sdf.setTimeZone(timezone);
-        }
-        sdf.setLenient(isLenient);
-        return sdf;
-    }
-
-
+            createDateFormat("MM/dd/yy", MIDDAY, false)};
     private final XHTMLContentHandler handler;
     private final Metadata metadata;
     private final ParseContext parseContext;
-    private boolean strictParsing = false;
     private final boolean extractAllAlternatives;
     private final EmbeddedDocumentExtractor extractor;
     private final Detector detector;
+    private boolean strictParsing = false;
     //this is used to buffer a multipart body that
     //keeps track of multipart/alternative and its children
     private Stack<Part> alternativePartBuffer = new Stack<>();
-
     private Stack<BodyDescriptor> parts = new Stack<>();
-
     MailContentHandler(XHTMLContentHandler xhtml, Detector detector, Metadata metadata,
-                       ParseContext context, boolean strictParsing, boolean extractAllAlternatives) {
+                       ParseContext context, boolean strictParsing,
+                       boolean extractAllAlternatives) {
         this.handler = xhtml;
         this.metadata = metadata;
         this.parseContext = context;
@@ -172,9 +155,50 @@ class MailContentHandler implements ContentHandler {
         this.detector = detector;
     }
 
+    private static DateFormat createDateFormat(String format, TimeZone timezone) {
+        return createDateFormat(format, timezone, true);
+    }
+
+    private static DateFormat createDateFormat(String format, TimeZone timezone,
+                                               boolean isLenient) {
+        SimpleDateFormat sdf = new SimpleDateFormat(format, new DateFormatSymbols(Locale.US));
+        if (timezone != null) {
+            sdf.setTimeZone(timezone);
+        }
+        sdf.setLenient(isLenient);
+        return sdf;
+    }
+
+    private static synchronized Date tryOtherDateFormats(String text) {
+        if (text == null) {
+            return null;
+        }
+        text = text.replaceAll("\\s+", " ").trim();
+        //strip out commas
+        text = text.replaceAll(",", "");
+
+        Matcher matcher = GENERAL_TIME_ZONE_NO_MINUTES_PATTERN.matcher(text);
+        if (matcher.find()) {
+            text = matcher.replaceFirst("GMT$1$2:00");
+        }
+
+        matcher = AM_PM.matcher(text);
+        if (matcher.find()) {
+            text = matcher.replaceFirst("$1 $2");
+        }
+
+        for (DateFormat format : ALTERNATE_DATE_FORMATS) {
+            try {
+                return format.parse(text);
+            } catch (ParseException e) {
+                //continue
+            }
+        }
+        return null;
+    }
+
     @Override
-    public void body(BodyDescriptor body, InputStream is) throws MimeException,
-            IOException {
+    public void body(BodyDescriptor body, InputStream is) throws MimeException, IOException {
         // use a different metadata object
         // in order to specify the mime type of the
         // sub part without damaging the main metadata
@@ -193,10 +217,11 @@ class MailContentHandler implements ContentHandler {
             String contentDispositionType = maximalBody.getContentDispositionType();
             if (contentDispositionType != null && !contentDispositionType.isEmpty()) {
                 StringBuilder contentDisposition = new StringBuilder(contentDispositionType);
-                Map<String, String> contentDispositionParameters = maximalBody.getContentDispositionParameters();
+                Map<String, String> contentDispositionParameters =
+                        maximalBody.getContentDispositionParameters();
                 for (Entry<String, String> param : contentDispositionParameters.entrySet()) {
-                    contentDisposition.append("; ")
-                            .append(param.getKey()).append("=\"").append(param.getValue()).append('"');
+                    contentDisposition.append("; ").append(param.getKey()).append("=\"")
+                            .append(param.getValue()).append('"');
                 }
 
                 String contentDispositionFileName = maximalBody.getContentDispositionFilename();
@@ -256,12 +281,13 @@ class MailContentHandler implements ContentHandler {
                 }
             }
         } catch (IOException e) {
-
+            //swallow
         }
         return false;
     }
 
-    private void handleEmbedded(TikaInputStream tis, Metadata metadata) throws MimeException, IOException {
+    private void handleEmbedded(TikaInputStream tis, Metadata metadata)
+            throws MimeException, IOException {
 
         String disposition = metadata.get(Metadata.CONTENT_DISPOSITION);
         boolean isInline = false;
@@ -272,7 +298,7 @@ class MailContentHandler implements ContentHandler {
                 isInline = true;
             }
         }
-        if (! isInline) {
+        if (!isInline) {
             metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
         }
@@ -346,7 +372,7 @@ class MailContentHandler implements ContentHandler {
      * Header for the whole message or its parts
      *
      * @see <a href="http://james.apache.org/mime4j/apidocs/org/apache/james/mime4j/parser/">
-     *     http://james.apache.org/mime4j/apidocs/org/apache/james/mime4j/parser/</a>
+     * http://james.apache.org/mime4j/apidocs/org/apache/james/mime4j/parser/</a>
      * Field.html
      */
     public void field(Field field) throws MimeException {
@@ -359,8 +385,8 @@ class MailContentHandler implements ContentHandler {
         try {
             String fieldname = field.getName();
 
-            ParsedField parsedField = LenientFieldParser.getParser().parse(
-                    field, DecodeMonitor.SILENT);
+            ParsedField parsedField =
+                    LenientFieldParser.getParser().parse(field, DecodeMonitor.SILENT);
             if (fieldname.equalsIgnoreCase("From")) {
                 MailboxListField fromField = (MailboxListField) parsedField;
                 MailboxList mailboxList = fromField.getMailboxList();
@@ -402,7 +428,8 @@ class MailContentHandler implements ContentHandler {
 
                 if (contentType.getType().equalsIgnoreCase("multipart")) {
                     metadata.set(Message.MULTIPART_SUBTYPE, contentType.getSubtype());
-                    metadata.set(Message.MULTIPART_BOUNDARY, contentType.getParameters().get("boundary"));
+                    metadata.set(Message.MULTIPART_BOUNDARY,
+                            contentType.getParameters().get("boundary"));
                 } else {
                     metadata.add(Metadata.MESSAGE_RAW_HEADER_PREFIX + parsedField.getName(),
                             field.getBody());
@@ -415,7 +442,7 @@ class MailContentHandler implements ContentHandler {
                 }
                 metadata.set(TikaCoreProperties.CREATED, date);
             } else {
-                metadata.add(Metadata.MESSAGE_RAW_HEADER_PREFIX+parsedField.getName(),
+                metadata.add(Metadata.MESSAGE_RAW_HEADER_PREFIX + parsedField.getName(),
                         field.getBody());
             }
         } catch (RuntimeException me) {
@@ -425,35 +452,8 @@ class MailContentHandler implements ContentHandler {
         }
     }
 
-    private static synchronized Date tryOtherDateFormats(String text) {
-        if (text == null) {
-            return null;
-        }
-        text = text.replaceAll("\\s+", " ").trim();
-        //strip out commas
-        text = text.replaceAll(",", "");
-
-        Matcher matcher = GENERAL_TIME_ZONE_NO_MINUTES_PATTERN.matcher(text);
-        if (matcher.find()) {
-            text = matcher.replaceFirst("GMT$1$2:00");
-        }
-
-        matcher = AM_PM.matcher(text);
-        if (matcher.find()) {
-            text = matcher.replaceFirst("$1 $2");
-        }
-
-        for (DateFormat format : ALTERNATE_DATE_FORMATS) {
-            try {
-                return format.parse(text);
-            } catch (ParseException e) {
-            }
-        }
-        return null;
-    }
-
-    private void processAddressList(ParsedField field, String addressListType,
-                                    String metadataField) throws MimeException {
+    private void processAddressList(ParsedField field, String addressListType, String metadataField)
+            throws MimeException {
         AddressListField toField = (AddressListField) field;
         if (toField.isValidField()) {
             AddressList addressList = toField.getAddressList();
@@ -461,8 +461,7 @@ class MailContentHandler implements ContentHandler {
                 metadata.add(metadataField, getDisplayString(address));
             }
         } else {
-            String to = stripOutFieldPrefix(field,
-                    addressListType);
+            String to = stripOutFieldPrefix(field, addressListType);
             for (String eachTo : to.split(",")) {
                 metadata.add(metadataField, eachTo.trim());
             }
@@ -517,9 +516,9 @@ class MailContentHandler implements ContentHandler {
     public void startMultipart(BodyDescriptor descr) throws MimeException {
         parts.push(descr);
 
-        if (! extractAllAlternatives) {
-            if (alternativePartBuffer.size() == 0
-                    && MULTIPART_ALTERNATIVE.equalsIgnoreCase(descr.getMimeType())) {
+        if (!extractAllAlternatives) {
+            if (alternativePartBuffer.size() == 0 &&
+                    MULTIPART_ALTERNATIVE.equalsIgnoreCase(descr.getMimeType())) {
                 Part part = new Part(descr);
                 alternativePartBuffer.push(part);
             } else if (alternativePartBuffer.size() > 0) {
@@ -551,7 +550,7 @@ class MailContentHandler implements ContentHandler {
         }
 
         if (part instanceof BodyContents) {
-            handleInlineBodyPart((BodyContents)part);
+            handleInlineBodyPart((BodyContents) part);
             return;
         }
 
@@ -579,13 +578,14 @@ class MailContentHandler implements ContentHandler {
         Parser parser = null;
         boolean inlineText = false;
         if (MediaType.TEXT_HTML.toString().equalsIgnoreCase(contentType)) {
-            parser =
-                    EmbeddedDocumentUtil.tryToFindExistingLeafParser(HtmlParser.class, parseContext);
+            parser = EmbeddedDocumentUtil
+                    .tryToFindExistingLeafParser(HtmlParser.class, parseContext);
         } else if (MediaType.TEXT_PLAIN.toString().equalsIgnoreCase(contentType)) {
             parser =
                     EmbeddedDocumentUtil.tryToFindExistingLeafParser(TXTParser.class, parseContext);
             if (parser == null) {
-                parser = EmbeddedDocumentUtil.tryToFindExistingLeafParser(TextAndCSVParser.class, parseContext);
+                parser = EmbeddedDocumentUtil
+                        .tryToFindExistingLeafParser(TextAndCSVParser.class, parseContext);
                 inlineText = true;
             }
         }
@@ -602,13 +602,12 @@ class MailContentHandler implements ContentHandler {
             try {
                 Metadata inlineMetadata = new Metadata();
                 if (inlineText) {
-                    inlineMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, MediaType.TEXT_PLAIN.toString());
+                    inlineMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
+                            MediaType.TEXT_PLAIN.toString());
                 }
-                parser.parse(
-                        new ByteArrayInputStream(part.bytes),
-                        new EmbeddedContentHandler(new BodyContentHandler(handler)),
-                        inlineMetadata, parseContext
-                );
+                parser.parse(new ByteArrayInputStream(part.bytes),
+                        new EmbeddedContentHandler(new BodyContentHandler(handler)), inlineMetadata,
+                        parseContext);
             } catch (SAXException | TikaException e) {
                 throw new MimeException(e);
             }
@@ -620,7 +619,7 @@ class MailContentHandler implements ContentHandler {
             return 0;
         }
         if (part instanceof BodyContents) {
-            String contentType = ((BodyContents)part).metadata.get(Metadata.CONTENT_TYPE);
+            String contentType = ((BodyContents) part).metadata.get(Metadata.CONTENT_TYPE);
             if (contentType == null) {
                 return 0;
             } else if (contentType.equalsIgnoreCase(MediaType.TEXT_PLAIN.toString())) {

@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.microsoft.xml;
 
-import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,8 +24,15 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import javax.xml.namespace.QName;
 
 import org.apache.commons.codec.binary.Base64;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+import org.xml.sax.helpers.DefaultHandler;
+
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
@@ -36,21 +42,24 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.TeeContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Parses wordml 2003 format word files.  These are single xml files
  * that predate ooxml.
- *
+ * <p>
  * See <a href="https://en.wikipedia.org/wiki/Microsoft_Office_XML_formats">https://en.wikipedia.org/wiki/Microsoft_Office_XML_formats</a>
  */
 public class WordMLParser extends AbstractXML2003Parser {
     //map between wordml and xhtml entities
     private static final Map<String, String> WORDML_TO_XHTML;
+    //ignore all characters within these elements
+    private static final Set<QName> IGNORE_CHARACTERS = Collections.unmodifiableSet(new HashSet<>(
+            Arrays.asList(new QName(WORD_ML_URL, HLINK), new QName(WORD_ML_URL, PICT),
+                    new QName(WORD_ML_URL, BIN_DATA),
+                    new QName(MS_OFFICE_PROPERTIES_URN, DOCUMENT_PROPERTIES))));
+    private static final MediaType MEDIA_TYPE = MediaType.application("vnd.ms-wordml");
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MEDIA_TYPE);
+
     static {
         Map<String, String> m = new HashMap<>();
         m.put(P, P);
@@ -59,18 +68,7 @@ public class WordMLParser extends AbstractXML2003Parser {
         m.put("tc", TD);//not a typo -- table cell -> tc
         WORDML_TO_XHTML = Collections.unmodifiableMap(m);
     }
-
-    //ignore all characters within these elements
-    private static final Set<QName> IGNORE_CHARACTERS =
-            Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-                new QName(WORD_ML_URL, HLINK),
-                new QName(WORD_ML_URL, PICT),
-                new QName(WORD_ML_URL, BIN_DATA),
-                new QName(MS_OFFICE_PROPERTIES_URN, DOCUMENT_PROPERTIES))));
-
-
-    private static final MediaType MEDIA_TYPE = MediaType.application("vnd.ms-wordml");
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MEDIA_TYPE); //immutable
+    //immutable
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -78,14 +76,11 @@ public class WordMLParser extends AbstractXML2003Parser {
     }
 
     @Override
-    protected ContentHandler getContentHandler(ContentHandler ch,
-                                        Metadata metadata, ParseContext context) {
+    protected ContentHandler getContentHandler(ContentHandler ch, Metadata metadata,
+                                               ParseContext context) {
 
-        return new TeeContentHandler(
-                super.getContentHandler(ch, metadata, context),
-                new WordMLHandler(ch),
-                new HyperlinkHandler(ch,
-                        WORD_ML_URL),
+        return new TeeContentHandler(super.getContentHandler(ch, metadata, context),
+                new WordMLHandler(ch), new HyperlinkHandler(ch, WORD_ML_URL),
                 new PictHandler(ch, metadata,
                         EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context)));
     }
@@ -143,12 +138,12 @@ public class WordMLParser extends AbstractXML2003Parser {
         }
 
         @Override
-        public void characters(char[] str , int offset, int len) throws SAXException {
+        public void characters(char[] str, int offset, int len) throws SAXException {
             if (!ignoreCharacters && inBody) {
                 handler.characters(str, offset, len);
             }
         }
-        
+
         @Override
         public void endElement(String uri, String localName, String qName) throws SAXException {
             if (WORD_ML_URL.equals(uri)) {
@@ -182,13 +177,13 @@ public class WordMLParser extends AbstractXML2003Parser {
         final StringBuilder buffer = new StringBuilder();
         final Metadata parentMetadata;
         final ContentHandler handler;
+        final Base64 base64 = new Base64();
         byte[] rawBytes = null;
         EmbeddedDocumentExtractor embeddedDocumentExtractor;
         boolean inPict = false;
         boolean inBin = false;
         String pictName = null;
         String pictSource = null;
-        final Base64 base64 = new Base64();
 
         public PictHandler(ContentHandler handler, Metadata metadata,
                            EmbeddedDocumentExtractor embeddedDocumentExtractor) {
@@ -216,11 +211,11 @@ public class WordMLParser extends AbstractXML2003Parser {
                     String src = attrs.getValue("", "src");
                     //title appears to be the original file name
                     String title = attrs.getValue(MS_OFFICE_PROPERTIES_URN, "title");
-                    if (title != null && ! title.equals("")) {
+                    if (title != null && !title.equals("")) {
                         if (src != null) {
                             //take the extention from the src and append it to the title
                             int i = src.lastIndexOf(".");
-                            if (i > -1 && i +1 < src.length()) {
+                            if (i > -1 && i + 1 < src.length()) {
                                 String ext = src.substring(i);
                                 title += ext;
                             }
@@ -232,10 +227,10 @@ public class WordMLParser extends AbstractXML2003Parser {
         }
 
         @Override
-        public void characters(char[] str , int offset, int len) throws SAXException {
+        public void characters(char[] str, int offset, int len) throws SAXException {
             if (inBin) {
                 buffer.append(str, offset, len);
-            } else if (inPict){
+            } else if (inPict) {
                 handler.characters(str, offset, len);
             }
         }
@@ -256,13 +251,10 @@ public class WordMLParser extends AbstractXML2003Parser {
                 inPict = false;
                 AttributesImpl attrs = new AttributesImpl();
                 if (pictName != null) {
-                    attrs.addAttribute(XHTMLContentHandler.XHTML,
-                            HREF, HREF, CDATA, pictName);
+                    attrs.addAttribute(XHTMLContentHandler.XHTML, HREF, HREF, CDATA, pictName);
                 }
-                handler.startElement(XHTMLContentHandler.XHTML,
-                        IMG, IMG, attrs);
-                handler.endElement(
-                        XHTMLContentHandler.XHTML, IMG, IMG);
+                handler.startElement(XHTMLContentHandler.XHTML, IMG, IMG, attrs);
+                handler.endElement(XHTMLContentHandler.XHTML, IMG, IMG);
                 handleEmbedded();
             } else if (BIN_DATA.equals(localName)) {
                 inBin = false;
@@ -276,7 +268,7 @@ public class WordMLParser extends AbstractXML2003Parser {
                     //reset
                     buffer.setLength(0);
                 }
-                if (success && ! inPict) {
+                if (success && !inPict) {
                     handleEmbedded();
                 }
             }
@@ -293,8 +285,7 @@ public class WordMLParser extends AbstractXML2003Parser {
                         metadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, pictSource);
                     }
                     if (embeddedDocumentExtractor.shouldParseEmbedded(metadata)) {
-                        embeddedDocumentExtractor.parseEmbedded(is,
-                                handler, metadata, false);
+                        embeddedDocumentExtractor.parseEmbedded(is, handler, metadata, false);
                     }
                 } catch (IOException e) {
                     //log

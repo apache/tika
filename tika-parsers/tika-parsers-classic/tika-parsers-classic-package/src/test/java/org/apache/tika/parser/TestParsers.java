@@ -24,18 +24,17 @@ import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.InputStream;
 
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.xml.sax.helpers.DefaultHandler;
+
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Junit test class for Tika {@link Parser}s.
@@ -56,8 +55,8 @@ public class TestParsers extends MultiThreadedTikaTest {
     public void testWORDxtraction() throws Exception {
         Parser parser = tika.getParser();
         Metadata metadata = new Metadata();
-        try (TikaInputStream tis = TikaInputStream.get(
-                getResourceAsStream("/test-documents/testWORD.doc"))) {
+        try (TikaInputStream tis = TikaInputStream
+                .get(getResourceAsStream("/test-documents/testWORD.doc"))) {
             try (InputStream stream = new FileInputStream(tis.getFile())) {
                 parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
             }
@@ -69,12 +68,11 @@ public class TestParsers extends MultiThreadedTikaTest {
     public void testEXCELExtraction() throws Exception {
         final String expected = "Numbers and their Squares";
         Metadata metadata = new Metadata();
-        try (TikaInputStream tis =
-                     TikaInputStream.get(getResourceAsStream("/test-documents/testEXCEL.xls"))) {
+        try (TikaInputStream tis = TikaInputStream
+                .get(getResourceAsStream("/test-documents/testEXCEL.xls"))) {
             File file = tis.getFile();
             String s1 = tika.parseToString(file);
-            assertTrue("Text does not contain '" + expected + "'", s1
-                    .contains(expected));
+            assertTrue("Text does not contain '" + expected + "'", s1.contains(expected));
             Parser parser = tika.getParser();
             try (InputStream stream = new FileInputStream(file)) {
                 parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
@@ -85,18 +83,17 @@ public class TestParsers extends MultiThreadedTikaTest {
 
     @Test
     public void testOptionalHyphen() throws Exception {
-        String[] extensions =
-                new String[]{"ppt", "pptx", "doc", "docx", "rtf", "pdf"};
+        String[] extensions = new String[]{"ppt", "pptx", "doc", "docx", "rtf", "pdf"};
         for (String extension : extensions) {
-            try (TikaInputStream tis = TikaInputStream.get(
-                    getResourceAsStream("/test-documents/testOptionalHyphen." + extension))) {
+            try (TikaInputStream tis = TikaInputStream
+                    .get(getResourceAsStream("/test-documents/testOptionalHyphen." + extension))) {
 
                 String content = tika.parseToString(tis.getFile());
-                assertTrue("optional hyphen was not handled for '" + extension + "' file type: " + content,
-                        content.contains("optionalhyphen") ||
-                                content.contains("optional\u00adhyphen") ||   // soft hyphen
-                                content.contains("optional\u200bhyphen") ||   // zero width space
-                                content.contains("optional\u2027"));          // hyphenation point
+                assertTrue("optional hyphen was not handled for '" + extension + "' file type: " +
+                        content, content.contains("optionalhyphen") ||
+                        content.contains("optional\u00adhyphen") ||   // soft hyphen
+                        content.contains("optional\u200bhyphen") ||   // zero width space
+                        content.contains("optional\u2027"));          // hyphenation point
             }
         }
 
@@ -104,8 +101,8 @@ public class TestParsers extends MultiThreadedTikaTest {
 
     private void verifyComment(String extension, String fileName) throws Exception {
         String content = null;
-        try (TikaInputStream tis = TikaInputStream.get(
-                getResourceAsStream("/test-documents/" + fileName + "." + extension))) {
+        try (TikaInputStream tis = TikaInputStream
+                .get(getResourceAsStream("/test-documents/" + fileName + "." + extension))) {
             content = tika.parseToString(tis.getFile());
         }
         assertTrue(extension + ": content=" + content + " did not extract text",
@@ -116,8 +113,8 @@ public class TestParsers extends MultiThreadedTikaTest {
 
     @Test
     public void testComment() throws Exception {
-        final String[] extensions = new String[]{"ppt", "pptx", "doc",
-                "docx", "xls", "xlsx", "pdf", "rtf"};
+        final String[] extensions =
+                new String[]{"ppt", "pptx", "doc", "docx", "xls", "xlsx", "pdf", "rtf"};
         for (String extension : extensions) {
             verifyComment(extension, "testComment");
         }
@@ -130,7 +127,7 @@ public class TestParsers extends MultiThreadedTikaTest {
         //this runs against all files in /test-documents
         ParseContext[] contexts = new ParseContext[10];
         for (int i = 0; i < 10; i++) {
-             contexts[i] = new ParseContext();
+            contexts[i] = new ParseContext();
         }
         testMultiThreaded(AUTO_DETECT_PARSER, contexts, 10, 100, new FileFilter() {
             @Override

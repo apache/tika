@@ -23,6 +23,8 @@ import java.io.File;
 import java.io.InputStream;
 
 import org.apache.commons.io.FileUtils;
+import org.xml.sax.ContentHandler;
+
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
@@ -37,7 +39,6 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
-import org.xml.sax.ContentHandler;
 
 /**
  * Demonstrates how to call the different components within Tika: its
@@ -86,23 +87,25 @@ public class MyFirstTika {
         System.out.println("Examining: [" + filename + "]");
 
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
-        System.out.println("The MIME type (based on filename) is: ["
-                + mimeRegistry.detect(null, metadata) + "]");
+        System.out.println(
+                "The MIME type (based on filename) is: [" + mimeRegistry.detect(null, metadata) +
+                        "]");
 
         InputStream stream = TikaInputStream.get(new File(filename));
-        System.out.println("The MIME type (based on MAGIC) is: ["
-                + mimeRegistry.detect(stream, metadata) + "]");
+        System.out.println(
+                "The MIME type (based on MAGIC) is: [" + mimeRegistry.detect(stream, metadata) +
+                        "]");
 
         stream = TikaInputStream.get(new File(filename));
         Detector detector = tikaConfig.getDetector();
-        System.out.println("The MIME type (based on the Detector interface) is: ["
-                + detector.detect(stream, metadata) + "]");
+        System.out.println("The MIME type (based on the Detector interface) is: [" +
+                detector.detect(stream, metadata) + "]");
 
         LanguageDetector langDetector = new OptimaizeLangDetector().loadModels();
-        LanguageResult lang = langDetector.detect(FileUtils.readFileToString(new File(filename), UTF_8));
+        LanguageResult lang =
+                langDetector.detect(FileUtils.readFileToString(new File(filename), UTF_8));
 
-        System.out.println("The language of this content is: ["
-                + lang.getLanguage() + "]");
+        System.out.println("The language of this content is: [" + lang.getLanguage() + "]");
 
         // Get a non-detecting parser that handles all the types it can
         Parser parser = tikaConfig.getParser();

@@ -24,41 +24,40 @@ import java.util.Map;
 import org.apache.tika.parser.geo.gazetteer.Location;
 
 public class GeoTag {
-	Location location = new Location();
-	List<GeoTag> alternatives = new ArrayList<GeoTag>();
+    Location location = new Location();
+    List<GeoTag> alternatives = new ArrayList<GeoTag>();
 
-	public void setMain(String name, String longitude, String latitude) {
-		this.location.setName(name);
-		this.location.setLatitude(longitude);
-		this.location.setLongitude(latitude);
-		
-	}
+    public void setMain(String name, String longitude, String latitude) {
+        this.location.setName(name);
+        this.location.setLatitude(longitude);
+        this.location.setLongitude(latitude);
 
-	public void addAlternative(GeoTag geotag) {
-		alternatives.add(geotag);
-	}
+    }
 
-	/*
-	 * Store resolved geoName entities in a GeoTag
-	 * 
-	 * @param resolvedGeonames resolved entities
-	 * 
-	 * @param bestNER best name entity among all the extracted entities for the
-	 * input stream
-	 */
-	public void toGeoTag(Map<String, List<Location>> resolvedGeonames,
-			String bestNER) {
+    public void addAlternative(GeoTag geotag) {
+        alternatives.add(geotag);
+    }
 
-		for (String key : resolvedGeonames.keySet()) {
-			List<Location> cur = resolvedGeonames.get(key);
-			if (key.equals(bestNER)) {
-				this.location = cur.get(0);
-				
-			} else {
-				GeoTag alter = new GeoTag();
-				alter.location = cur.get(0);
-				this.addAlternative(alter);
-			}
-		}
-	}
+    /*
+     * Store resolved geoName entities in a GeoTag
+     *
+     * @param resolvedGeonames resolved entities
+     *
+     * @param bestNER best name entity among all the extracted entities for the
+     * input stream
+     */
+    public void toGeoTag(Map<String, List<Location>> resolvedGeonames, String bestNER) {
+
+        for (String key : resolvedGeonames.keySet()) {
+            List<Location> cur = resolvedGeonames.get(key);
+            if (key.equals(bestNER)) {
+                this.location = cur.get(0);
+
+            } else {
+                GeoTag alter = new GeoTag();
+                alter.location = cur.get(0);
+                this.addAlternative(alter);
+            }
+        }
+    }
 }

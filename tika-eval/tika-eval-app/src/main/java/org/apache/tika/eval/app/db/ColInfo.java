@@ -53,8 +53,8 @@ public class ColInfo {
     public Cols getName() {
         return name;
     }
+
     /**
-     *
      * @return constraints string or null
      */
     public String getConstraints() {
@@ -63,6 +63,7 @@ public class ColInfo {
 
     /**
      * Gets the precision.  This can be null!
+     *
      * @return precision or null
      */
     public Integer getPrecision() {
@@ -70,26 +71,26 @@ public class ColInfo {
     }
 
     public String getSqlDef() {
-        if (type == Types.VARCHAR){
-            return "VARCHAR("+precision+")";
+        if (type == Types.VARCHAR) {
+            return "VARCHAR(" + precision + ")";
         } else if (type == Types.CHAR) {
-            return "CHAR("+precision+")";
+            return "CHAR(" + precision + ")";
         }
         switch (type) {
-            case Types.FLOAT :
+            case Types.FLOAT:
                 return "FLOAT";
-            case Types.DOUBLE :
+            case Types.DOUBLE:
                 return "DOUBLE";
-            case Types.BLOB :
+            case Types.BLOB:
                 return "BLOB";
-            case Types.INTEGER :
+            case Types.INTEGER:
                 return "INTEGER";
-            case Types.BIGINT :
+            case Types.BIGINT:
                 return "BIGINT";
-            case Types.BOOLEAN :
+            case Types.BOOLEAN:
                 return "BOOLEAN";
         }
-        throw new UnsupportedOperationException("Don't yet recognize a type for: "+type);
+        throw new UnsupportedOperationException("Don't yet recognize a type for: " + type);
     }
 
     @Override

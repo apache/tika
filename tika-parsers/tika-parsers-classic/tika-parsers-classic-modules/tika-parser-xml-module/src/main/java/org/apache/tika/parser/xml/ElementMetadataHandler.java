@@ -18,11 +18,12 @@ package org.apache.tika.parser.xml;
 
 import java.util.Arrays;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
+
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 
 /**
  * SAX event handler that maps the contents of an XML element into
@@ -44,21 +45,17 @@ public class ElementMetadataHandler extends AbstractMetadataHandler {
     private final Metadata metadata;
 
     private final String name;
-    private Property targetProperty;
-
     private final boolean allowDuplicateValues;
     private final boolean allowEmptyValues;
-
     /**
      * The buffer used to capture characters when inside a bag li element.
      */
     private final StringBuilder bufferBagged = new StringBuilder();
-
     /**
      * The buffer used to capture characters inside standard elements.
      */
     private final StringBuilder bufferBagless = new StringBuilder();
-
+    private Property targetProperty;
     /**
      * Whether or not the value was found in a standard element structure or inside a bag.
      */
@@ -70,13 +67,12 @@ public class ElementMetadataHandler extends AbstractMetadataHandler {
     /**
      * Constructor for string metadata keys.
      *
-     * @param uri the uri of the namespace of the element
+     * @param uri       the uri of the namespace of the element
      * @param localName the local name of the element
-     * @param metadata the Tika metadata object to populate
-     * @param name the Tika metadata field key
+     * @param metadata  the Tika metadata object to populate
+     * @param name      the Tika metadata field key
      */
-    public ElementMetadataHandler(
-            String uri, String localName, Metadata metadata, String name) {
+    public ElementMetadataHandler(String uri, String localName, Metadata metadata, String name) {
         super(metadata, name);
         this.uri = uri;
         this.localName = localName;
@@ -91,15 +87,15 @@ public class ElementMetadataHandler extends AbstractMetadataHandler {
      * Constructor for string metadata keys which allows change of behavior
      * for duplicate and empty entry values.
      *
-     * @param uri the uri of the namespace of the element
-     * @param localName the local name of the element
-     * @param metadata the Tika metadata object to populate
-     * @param name the Tika metadata field key
+     * @param uri                  the uri of the namespace of the element
+     * @param localName            the local name of the element
+     * @param metadata             the Tika metadata object to populate
+     * @param name                 the Tika metadata field key
      * @param allowDuplicateValues add duplicate values to the Tika metadata
-     * @param allowEmptyValues add empty values to the Tika metadata
+     * @param allowEmptyValues     add empty values to the Tika metadata
      */
-    public ElementMetadataHandler(
-            String uri, String localName, Metadata metadata, String name, boolean allowDuplicateValues, boolean allowEmptyValues) {
+    public ElementMetadataHandler(String uri, String localName, Metadata metadata, String name,
+                                  boolean allowDuplicateValues, boolean allowEmptyValues) {
         super(metadata, name);
         this.uri = uri;
         this.localName = localName;
@@ -113,13 +109,13 @@ public class ElementMetadataHandler extends AbstractMetadataHandler {
     /**
      * Constructor for Property metadata keys.
      *
-     * @param uri the uri of the namespace of the element
-     * @param localName the local name of the element
-     * @param metadata the Tika metadata object to populate
+     * @param uri            the uri of the namespace of the element
+     * @param localName      the local name of the element
+     * @param metadata       the Tika metadata object to populate
      * @param targetProperty the Tika metadata Property key
      */
-    public ElementMetadataHandler(
-            String uri, String localName, Metadata metadata, Property targetProperty) {
+    public ElementMetadataHandler(String uri, String localName, Metadata metadata,
+                                  Property targetProperty) {
         super(metadata, targetProperty);
         this.uri = uri;
         this.localName = localName;
@@ -135,15 +131,16 @@ public class ElementMetadataHandler extends AbstractMetadataHandler {
      * Constructor for Property metadata keys which allows change of behavior
      * for duplicate and empty entry values.
      *
-     * @param uri the uri of the namespace of the element
-     * @param localName the local name of the element
-     * @param metadata the Tika metadata object to populate
-     * @param targetProperty the Tika metadata Property key
+     * @param uri                  the uri of the namespace of the element
+     * @param localName            the local name of the element
+     * @param metadata             the Tika metadata object to populate
+     * @param targetProperty       the Tika metadata Property key
      * @param allowDuplicateValues add duplicate values to the Tika metadata
-     * @param allowEmptyValues add empty values to the Tika metadata
+     * @param allowEmptyValues     add empty values to the Tika metadata
      */
-    public ElementMetadataHandler(
-            String uri, String localName, Metadata metadata, Property targetProperty, boolean allowDuplicateValues, boolean allowEmptyValues) {
+    public ElementMetadataHandler(String uri, String localName, Metadata metadata,
+                                  Property targetProperty, boolean allowDuplicateValues,
+                                  boolean allowEmptyValues) {
         super(metadata, targetProperty);
         this.uri = uri;
         this.localName = localName;
@@ -164,14 +161,11 @@ public class ElementMetadataHandler extends AbstractMetadataHandler {
         return (uri.equals(this.uri) && localName.equals(this.localName)) ||
                 (parentMatchLevel > 0 &&
                         ((uri.equals(URI_RDF) && localName.equals(LOCAL_NAME_RDF_BAG)) ||
-                        (uri.equals(URI_RDF) && localName.equals(LOCAL_NAME_RDF_LI))
-                )
-        );
+                                (uri.equals(URI_RDF) && localName.equals(LOCAL_NAME_RDF_LI))));
     }
 
     @Override
-    public void startElement(
-            String uri, String localName, String name, Attributes attributes) {
+    public void startElement(String uri, String localName, String name, Attributes attributes) {
         if (isMatchingElement(uri, localName)) {
             matchLevel++;
         }
@@ -230,7 +224,8 @@ public class ElementMetadataHandler extends AbstractMetadataHandler {
                     value = "";
                 }
                 String[] previous = metadata.getValues(name);
-                if (previous == null || !Arrays.asList(previous).contains(value) || allowDuplicateValues) {
+                if (previous == null || !Arrays.asList(previous).contains(value) ||
+                        allowDuplicateValues) {
                     metadata.add(targetProperty, value);
                 }
             }

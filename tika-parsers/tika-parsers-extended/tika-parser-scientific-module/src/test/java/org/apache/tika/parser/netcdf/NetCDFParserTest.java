@@ -17,19 +17,20 @@
 package org.apache.tika.parser.netcdf;
 
 //JDK imports
+
+import static org.apache.tika.TikaTest.assertContains;
+import static org.junit.Assert.assertEquals;
+
 import java.io.InputStream;
 
-//TIKA imports
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
-
-import static org.apache.tika.TikaTest.assertContains;
-import static org.junit.Assert.assertEquals;
 
 /**
  * Test cases to exercise the {@link NetCDFParser}.
@@ -47,17 +48,14 @@ public class NetCDFParserTest {
             parser.parse(stream, handler, metadata, new ParseContext());
         }
 
-        assertEquals(metadata.get(TikaCoreProperties.TITLE),
-                "model output prepared for IPCC AR4");
+        assertEquals(metadata.get(TikaCoreProperties.TITLE), "model output prepared for IPCC AR4");
         assertEquals(metadata.get(Metadata.CONTACT), "ccsm@ucar.edu");
-        assertEquals(metadata.get(Metadata.PROJECT_ID),
-                "IPCC Fourth Assessment");
+        assertEquals(metadata.get(Metadata.PROJECT_ID), "IPCC Fourth Assessment");
         assertEquals(metadata.get(Metadata.CONVENTIONS), "CF-1.0");
         assertEquals(metadata.get(Metadata.REALIZATION), "1");
         assertEquals(metadata.get(Metadata.EXPERIMENT_ID),
                 "720 ppm stabilization experiment (SRESA1B)");
-        assertEquals(metadata.get("File-Type-Description"), 
-                "NetCDF-3/CDM");
+        assertEquals(metadata.get("File-Type-Description"), "NetCDF-3/CDM");
 
         String content = handler.toString();
         assertContains("long_name = \"Surface area\"", content);
@@ -65,7 +63,6 @@ public class NetCDFParserTest {
         assertContains("float lat(lat=128)", content);
         assertContains("double lat_bnds(lat=128, bnds=2)", content);
         assertContains("double lon_bnds(lon=256, bnds=2)", content);
-        
 
 
     }

@@ -24,6 +24,9 @@ import java.nio.file.Path;
 import java.util.UUID;
 
 import org.apache.commons.io.FilenameUtils;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
@@ -37,15 +40,14 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 public class ExtractEmbeddedFiles {
     private Parser parser = new AutoDetectParser();
     private Detector detector = ((AutoDetectParser) parser).getDetector();
     private TikaConfig config = TikaConfig.getDefaultConfig();
 
-    public void extract(InputStream is, Path outputDir) throws SAXException, TikaException, IOException {
+    public void extract(InputStream is, Path outputDir)
+            throws SAXException, TikaException, IOException {
         Metadata m = new Metadata();
         ParseContext c = new ParseContext();
         ContentHandler h = new BodyContentHandler(-1);
@@ -72,8 +74,8 @@ public class ExtractEmbeddedFiles {
         }
 
         @Override
-        public void parseEmbedded(InputStream stream, ContentHandler handler, Metadata metadata, boolean outputHtml)
-                throws SAXException, IOException {
+        public void parseEmbedded(InputStream stream, ContentHandler handler, Metadata metadata,
+                                  boolean outputHtml) throws SAXException, IOException {
 
             //try to get the name of the embedded file from the metadata
             String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
@@ -97,8 +99,8 @@ public class ExtractEmbeddedFiles {
 
             if (name.indexOf('.') == -1 && contentType != null) {
                 try {
-                    name += config.getMimeRepository().forName(
-                            contentType.toString()).getExtension();
+                    name += config.getMimeRepository().forName(contentType.toString())
+                            .getExtension();
                 } catch (MimeTypeException e) {
                     e.printStackTrace();
                 }
@@ -106,7 +108,7 @@ public class ExtractEmbeddedFiles {
 
             Path outputFile = outputDir.resolve(name);
             if (Files.exists(outputFile)) {
-                outputFile = outputDir.resolve(UUID.randomUUID().toString()+"-"+name);
+                outputFile = outputDir.resolve(UUID.randomUUID().toString() + "-" + name);
             }
             Files.createDirectories(outputFile.getParent());
             Files.copy(stream, outputFile);

@@ -28,40 +28,38 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class MediaTypeRegistry implements Serializable {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = 4710974869988895410L;
+    /**
+     * Registry of known media types, including type aliases. A canonical
+     * media type is handled as an identity mapping, while an alias is stored
+     * as a mapping from the alias to the corresponding canonical type.
+     */
+    private final Map<MediaType, MediaType> registry = new ConcurrentHashMap<>();
+    /**
+     * Known type inheritance relationships. The mapping is from a media type
+     * to the closest supertype.
+     */
+    private final Map<MediaType, MediaType> inheritance = new HashMap<MediaType, MediaType>();
 
     /**
      * Returns the built-in media type registry included in Tika.
      *
-     * @since Apache Tika 0.8
      * @return default media type registry
+     * @since Apache Tika 0.8
      */
     public static MediaTypeRegistry getDefaultRegistry() {
         return MimeTypes.getDefaultMimeTypes().getMediaTypeRegistry();
     }
 
     /**
-     * Registry of known media types, including type aliases. A canonical
-     * media type is handled as an identity mapping, while an alias is stored
-     * as a mapping from the alias to the corresponding canonical type.
-     */
-    private final Map<MediaType, MediaType> registry =
-        new ConcurrentHashMap<>();
-
-    /**
-     * Known type inheritance relationships. The mapping is from a media type
-     * to the closest supertype.
-     */
-    private final Map<MediaType, MediaType> inheritance =
-        new HashMap<MediaType, MediaType>();
-
-    /**
      * Returns the set of all known canonical media types. Type aliases are
      * not included in the returned set.
      *
-     * @since Apache Tika 0.8
      * @return canonical media types
+     * @since Apache Tika 0.8
      */
     public SortedSet<MediaType> getTypes() {
         return new TreeSet<MediaType>(registry.values());
@@ -70,9 +68,9 @@ public class MediaTypeRegistry implements Serializable {
     /**
      * Returns the set of known aliases of the given canonical media type.
      *
-     * @since Apache Tika 0.8
      * @param type canonical media type
      * @return known aliases
+     * @since Apache Tika 0.8
      */
     public SortedSet<MediaType> getAliases(MediaType type) {
         SortedSet<MediaType> aliases = new TreeSet<>();
@@ -83,13 +81,13 @@ public class MediaTypeRegistry implements Serializable {
         }
         return aliases;
     }
-    
+
     /**
      * Returns the set of known children of the given canonical media type
-     * 
-     * @since Apache Tika 1.8
+     *
      * @param type canonical media type
      * @return known children
+     * @since Apache Tika 1.8
      */
     public SortedSet<MediaType> getChildTypes(MediaType type) {
         SortedSet<MediaType> children = new TreeSet<MediaType>();
@@ -131,11 +129,11 @@ public class MediaTypeRegistry implements Serializable {
      * Checks whether the given media type a is a specialization of a more
      * generic type b. Both types should be already normalised.
      *
-     * @since Apache Tika 0.8
      * @param a media type, normalised
      * @param b suspected supertype, normalised
      * @return <code>true</code> if b is a supertype of a,
-     *         <code>false</code> otherwise
+     * <code>false</code> otherwise
+     * @since Apache Tika 0.8
      */
     public boolean isSpecializationOf(MediaType a, MediaType b) {
         return isInstanceOf(getSupertype(a), b);
@@ -145,11 +143,11 @@ public class MediaTypeRegistry implements Serializable {
      * Checks whether the given media type equals the given base type or
      * is a specialization of it. Both types should be already normalised.
      *
-     * @since Apache Tika 1.2
      * @param a media type, normalised
      * @param b base type, normalised
      * @return <code>true</code> if b equals a or is a specialization of it,
-     *         <code>false</code> otherwise
+     * <code>false</code> otherwise
+     * @since Apache Tika 1.2
      */
     public boolean isInstanceOf(MediaType a, MediaType b) {
         return a != null && (a.equals(b) || isSpecializationOf(a, b));
@@ -160,11 +158,11 @@ public class MediaTypeRegistry implements Serializable {
      * the result equals the given base type or is a specialization of it.
      * The given base type should already be normalised.
      *
-     * @since Apache Tika 1.2
      * @param a media type
      * @param b base type, normalised
      * @return <code>true</code> if b equals a or is a specialization of it,
-     *         <code>false</code> otherwise
+     * <code>false</code> otherwise
+     * @since Apache Tika 1.2
      */
     public boolean isInstanceOf(String a, MediaType b) {
         return isInstanceOf(normalize(MediaType.parse(a)), b);
@@ -172,17 +170,17 @@ public class MediaTypeRegistry implements Serializable {
 
     /**
      * Returns the supertype of the given type. If the media type database
-     * has an explicit inheritance rule for the type, then that is used. 
-     * Next, if the given type has any parameters, then the respective base 
-     * type (parameter-less) is returned. Otherwise built-in heuristics like 
-     * text/... -&gt; text/plain and .../...+xml -&gt; application/xml are used. 
+     * has an explicit inheritance rule for the type, then that is used.
+     * Next, if the given type has any parameters, then the respective base
+     * type (parameter-less) is returned. Otherwise built-in heuristics like
+     * text/... -&gt; text/plain and .../...+xml -&gt; application/xml are used.
      * Finally application/octet-stream is returned for all types for which no other
      * supertype is known, and the return value for application/octet-stream
      * is <code>null</code>.
      *
-     * @since Apache Tika 0.8
      * @param type media type
      * @return supertype, or <code>null</code> for application/octet-stream
+     * @since Apache Tika 0.8
      */
     public MediaType getSupertype(MediaType type) {
         if (type == null) {
@@ -195,10 +193,9 @@ public class MediaTypeRegistry implements Serializable {
             return MediaType.APPLICATION_XML;
         } else if (type.getSubtype().endsWith("+zip")) {
             return MediaType.APPLICATION_ZIP;
-        } else if ("text".equals(type.getType())
-                && !MediaType.TEXT_PLAIN.equals(type)) {
+        } else if ("text".equals(type.getType()) && !MediaType.TEXT_PLAIN.equals(type)) {
             return MediaType.TEXT_PLAIN;
-        } else if(type.getType().contains("empty") && !MediaType.EMPTY.equals(type)){
+        } else if (type.getType().contains("empty") && !MediaType.EMPTY.equals(type)) {
             return MediaType.EMPTY;
         } else if (!MediaType.OCTET_STREAM.equals(type)) {
             return MediaType.OCTET_STREAM;

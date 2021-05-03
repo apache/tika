@@ -16,19 +16,17 @@
  */
 package org.apache.tika.fork;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
-import org.apache.tika.sax.RecursiveParserWrapperHandler;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.util.Arrays;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
 
 class RecursiveMetadataContentHandlerResource implements ForkResource {
 
@@ -39,8 +37,7 @@ class RecursiveMetadataContentHandlerResource implements ForkResource {
         this.handler = handler;
     }
 
-    public Throwable process(DataInputStream input, DataOutputStream output)
-            throws IOException {
+    public Throwable process(DataInputStream input, DataOutputStream output) throws IOException {
         try {
             internalProcess(input);
             return null;
@@ -49,17 +46,19 @@ class RecursiveMetadataContentHandlerResource implements ForkResource {
         }
     }
 
-    private void internalProcess(DataInputStream input)
-            throws IOException, SAXException {
+    private void internalProcess(DataInputStream input) throws IOException, SAXException {
         byte embeddedOrMain = input.readByte();
         byte handlerAndMetadataOrMetadataOnly = input.readByte();
 
         ContentHandler localContentHandler = DEFAULT_HANDLER;
-        if (handlerAndMetadataOrMetadataOnly == RecursiveMetadataContentHandlerProxy.HANDLER_AND_METADATA) {
-            localContentHandler = (ContentHandler)readObject(input);
-        } else if (handlerAndMetadataOrMetadataOnly != RecursiveMetadataContentHandlerProxy.METADATA_ONLY) {
-            throw new IllegalArgumentException("Expected HANDLER_AND_METADATA or METADATA_ONLY, but got:"
-                    +handlerAndMetadataOrMetadataOnly);
+        if (handlerAndMetadataOrMetadataOnly ==
+                RecursiveMetadataContentHandlerProxy.HANDLER_AND_METADATA) {
+            localContentHandler = (ContentHandler) readObject(input);
+        } else if (handlerAndMetadataOrMetadataOnly !=
+                RecursiveMetadataContentHandlerProxy.METADATA_ONLY) {
+            throw new IllegalArgumentException(
+                    "Expected HANDLER_AND_METADATA or METADATA_ONLY, but got:" +
+                            handlerAndMetadataOrMetadataOnly);
         }
 
         Metadata metadata = (Metadata) readObject(input);
@@ -68,11 +67,12 @@ class RecursiveMetadataContentHandlerResource implements ForkResource {
         } else if (embeddedOrMain == RecursiveMetadataContentHandlerProxy.MAIN_DOCUMENT) {
             handler.endDocument(localContentHandler, metadata);
         } else {
-            throw new IllegalArgumentException("Expected either 0x01 or 0x02, but got: "+embeddedOrMain);
+            throw new IllegalArgumentException(
+                    "Expected either 0x01 or 0x02, but got: " + embeddedOrMain);
         }
         byte isComplete = input.readByte();
         if (isComplete != RecursiveMetadataContentHandlerProxy.COMPLETE) {
-            throw new IOException("Expected the 'complete' signal, but got: "+isComplete);
+            throw new IOException("Expected the 'complete' signal, but got: " + isComplete);
         }
     }
 

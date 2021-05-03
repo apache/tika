@@ -19,11 +19,12 @@ package org.apache.tika.sax;
 import java.io.OutputStream;
 import java.io.Writer;
 
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.sax.xpath.Matcher;
 import org.apache.tika.sax.xpath.MatchingContentHandler;
 import org.apache.tika.sax.xpath.XPathParser;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * Content handler decorator that only passes everything inside
@@ -35,14 +36,13 @@ public class BodyContentHandler extends ContentHandlerDecorator {
     /**
      * XHTML XPath parser.
      */
-    private static final XPathParser PARSER =
-        new XPathParser("xhtml", XHTMLContentHandler.XHTML);
+    private static final XPathParser PARSER = new XPathParser("xhtml", XHTMLContentHandler.XHTML);
 
     /**
      * The XPath matcher used to select the XHTML body contents.
      */
     private static final Matcher MATCHER =
-        PARSER.parse("/xhtml:html/xhtml:body/descendant::node()");
+            PARSER.parse("/xhtml:html/xhtml:body/descendant::node()");
 
     /**
      * Creates a content handler that passes all XHTML body events to the
@@ -82,9 +82,9 @@ public class BodyContentHandler extends ContentHandlerDecorator {
      * The internal string buffer is bounded at the given number of characters.
      * If this write limit is reached, then a {@link SAXException} is thrown.
      *
-     * @since Apache Tika 0.7
      * @param writeLimit maximum number of characters to include in the string,
      *                   or -1 to disable the write limit
+     * @since Apache Tika 0.7
      */
     public BodyContentHandler(int writeLimit) {
         this(new WriteOutContentHandler(writeLimit));

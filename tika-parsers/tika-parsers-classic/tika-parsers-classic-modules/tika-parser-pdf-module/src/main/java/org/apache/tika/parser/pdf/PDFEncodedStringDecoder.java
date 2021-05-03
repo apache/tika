@@ -47,8 +47,7 @@ import org.apache.pdfbox.pdfparser.COSParser;
  */
 class PDFEncodedStringDecoder {
 
-    private static final String[] PDF_ENCODING_BOMS = {
-            "\\376\\377", //UTF-16BE
+    private static final String[] PDF_ENCODING_BOMS = {"\\376\\377", //UTF-16BE
             "\\377\\376", //UTF-16LE
             "\\357\\273\\277"//UTF-8
     };
@@ -56,6 +55,7 @@ class PDFEncodedStringDecoder {
     /**
      * Does this string contain an octal-encoded UTF BOM?
      * Call this statically to determine if you should bother creating a new parser to parse it.
+     *
      * @param s
      * @return
      */
@@ -102,7 +102,6 @@ class PDFEncodedStringDecoder {
         }
 
         /**
-         *
          * @return parsed string or null if something went wrong.
          */
         String myParseCOSString() {
@@ -112,6 +111,7 @@ class PDFEncodedStringDecoder {
                     return cosString.getString();
                 }
             } catch (IOException e) {
+                //swallow
             }
             return null;
         }

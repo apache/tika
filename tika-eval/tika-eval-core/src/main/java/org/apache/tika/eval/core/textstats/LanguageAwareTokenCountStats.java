@@ -23,6 +23,7 @@ import org.apache.tika.language.detect.LanguageResult;
 
 /**
  * Interface for calculators that require language probabilities and token stats
+ *
  * @param <T>
  */
 public interface LanguageAwareTokenCountStats<T> extends TextStatsCalculator {

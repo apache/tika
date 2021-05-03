@@ -20,6 +20,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
+
 import org.apache.tika.utils.ExceptionUtils;
 
 public class EvalExceptionUtils {

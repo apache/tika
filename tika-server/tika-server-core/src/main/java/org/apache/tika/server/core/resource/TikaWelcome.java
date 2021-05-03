@@ -16,14 +16,6 @@
  */
 package org.apache.tika.server.core.resource;
 
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.HEAD;
-import javax.ws.rs.OPTIONS;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -36,8 +28,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.HEAD;
+import javax.ws.rs.OPTIONS;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
+
 import org.apache.tika.Tika;
 import org.apache.tika.server.core.HTMLHelper;
 
@@ -77,8 +78,11 @@ public class TikaWelcome {
         for (Class<?> endpoint : endpoints) {
             Path p = endpoint.getAnnotation(Path.class);
             String basePath = null;
-            if (p != null)
-                basePath = p.value().endsWith("/") ? p.value().substring(0, p.value().length()-2):p.value();
+            if (p != null) {
+                basePath =
+                        p.value().endsWith("/") ? p.value().substring(0, p.value().length() - 2) :
+                                p.value();
+            }
 
             for (Method m : endpoint.getMethods()) {
                 String httpMethod = null;
@@ -105,12 +109,11 @@ public class TikaWelcome {
                         mPath = "";
                     }
                     if (methodPath != null) {
-			if(methodPath.startsWith("/")){
-			    mPath += methodPath;
-			}
-			else{
-			    mPath += "/"+ methodPath;
-			}
+                        if (methodPath.startsWith("/")) {
+                            mPath += methodPath;
+                        } else {
+                            mPath += "/" + methodPath;
+                        }
                     }
                     if (produces == null) {
                         produces = new String[0];
@@ -155,11 +158,8 @@ public class TikaWelcome {
         Matcher m = p.matcher(tikaVersion);
         if (m.find()) {
             String versionNumber = m.group();
-            String miredot = "http://tika.apache.org/" + versionNumber + "/miredot/index.html";
-            h.append(" and <a href=\"")
-                    .append(miredot)
-                    .append("\">")
-                    .append(miredot)
+            String miredot = "https://tika.apache.org/" + versionNumber + "/miredot/index.html";
+            h.append(" and <a href=\"").append(miredot).append("\">").append(miredot)
                     .append("</a>");
         }
         h.append("</p>\n");
@@ -223,8 +223,8 @@ public class TikaWelcome {
         public final String httpMethod;
         public final List<String> produces;
 
-        protected Endpoint(Class<?> endpoint, Method method, String path,
-                           String httpMethod, String[] produces) {
+        protected Endpoint(Class<?> endpoint, Method method, String path, String httpMethod,
+                           String[] produces) {
             this.className = endpoint.getCanonicalName();
             this.methodName = method.getName();
             this.path = path;

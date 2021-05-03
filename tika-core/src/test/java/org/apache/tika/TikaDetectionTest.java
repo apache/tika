@@ -152,7 +152,8 @@ public class TikaDetectionTest {
         assertEquals("application/vnd.acucobol", tika.detect("x.acu"));
         assertEquals("application/vnd.acucorp", tika.detect("x.atc"));
         assertEquals("application/vnd.acucorp", tika.detect("x.acutc"));
-        assertEquals("application/vnd.adobe.air-application-installer-package+zip", tika.detect("x.air"));
+        assertEquals("application/vnd.adobe.air-application-installer-package+zip",
+                tika.detect("x.air"));
         assertEquals("application/vnd.adobe.xdp+xml", tika.detect("x.xdp"));
         assertEquals("application/vnd.adobe.xfdf", tika.detect("x.xfdf"));
         assertEquals("application/vnd.airzip.filesecure.azf", tika.detect("x.azf"));
@@ -161,7 +162,8 @@ public class TikaDetectionTest {
         assertEquals("application/vnd.americandynamics.acc", tika.detect("x.acc"));
         assertEquals("application/vnd.amiga.ami", tika.detect("x.ami"));
         assertEquals("application/vnd.android.package-archive", tika.detect("x.apk"));
-        assertEquals("application/vnd.anser-web-certificate-issue-initiation", tika.detect("x.cii"));
+        assertEquals("application/vnd.anser-web-certificate-issue-initiation",
+                tika.detect("x.cii"));
         assertEquals("application/vnd.anser-web-funds-transfer-initiation", tika.detect("x.fti"));
         assertEquals("application/vnd.antix.game-component", tika.detect("x.atx"));
         assertEquals("application/vnd.apple.installer+xml", tika.detect("x.mpkg"));
@@ -305,7 +307,8 @@ public class TikaDetectionTest {
         assertEquals("application/vnd.koan", tika.detect("x.skm"));
         assertEquals("application/vnd.kodak-descriptor", tika.detect("x.sse"));
         assertEquals("application/vnd.llamagraphics.life-balance.desktop", tika.detect("x.lbd"));
-        assertEquals("application/vnd.llamagraphics.life-balance.exchange+xml", tika.detect("x.lbe"));
+        assertEquals("application/vnd.llamagraphics.life-balance.exchange+xml",
+                tika.detect("x.lbe"));
         assertEquals("application/vnd.lotus-1-2-3", tika.detect("x.123"));
         assertEquals("application/vnd.lotus-approach", tika.detect("x.apr"));
         assertEquals("application/vnd.lotus-freelance", tika.detect("x.pre"));
@@ -341,7 +344,8 @@ public class TikaDetectionTest {
         assertEquals("application/vnd.ms-excel", tika.detect("x.xlt"));
         assertEquals("application/vnd.ms-excel", tika.detect("x.xlw"));
         assertEquals("application/vnd.ms-excel.addin.macroenabled.12", tika.detect("x.xlam"));
-        assertEquals("application/vnd.ms-excel.sheet.binary.macroenabled.12", tika.detect("x.xlsb"));
+        assertEquals("application/vnd.ms-excel.sheet.binary.macroenabled.12",
+                tika.detect("x.xlsb"));
         assertEquals("application/vnd.ms-excel.sheet.macroenabled.12", tika.detect("x.xlsm"));
         assertEquals("application/vnd.ms-excel.template.macroenabled.12", tika.detect("x.xltm"));
         assertEquals("application/vnd.ms-fontobject", tika.detect("x.eot"));
@@ -354,10 +358,13 @@ public class TikaDetectionTest {
         assertEquals("application/vnd.ms-powerpoint", tika.detect("x.pps"));
         assertEquals("application/vnd.ms-powerpoint", tika.detect("x.pot"));
         assertEquals("application/vnd.ms-powerpoint.addin.macroenabled.12", tika.detect("x.ppam"));
-        assertEquals("application/vnd.ms-powerpoint.presentation.macroenabled.12", tika.detect("x.pptm"));
+        assertEquals("application/vnd.ms-powerpoint.presentation.macroenabled.12",
+                tika.detect("x.pptm"));
         assertEquals("application/vnd.ms-powerpoint.slide.macroenabled.12", tika.detect("x.sldm"));
-        assertEquals("application/vnd.ms-powerpoint.slideshow.macroenabled.12", tika.detect("x.ppsm"));
-        assertEquals("application/vnd.ms-powerpoint.template.macroenabled.12", tika.detect("x.potm"));
+        assertEquals("application/vnd.ms-powerpoint.slideshow.macroenabled.12",
+                tika.detect("x.ppsm"));
+        assertEquals("application/vnd.ms-powerpoint.template.macroenabled.12",
+                tika.detect("x.potm"));
         assertEquals("application/vnd.ms-project", tika.detect("x.mpp"));
         assertEquals("application/vnd.ms-project", tika.detect("x.mpt"));
         assertEquals("application/vnd.ms-word.document.macroenabled.12", tika.detect("x.docm"));
@@ -393,9 +400,11 @@ public class TikaDetectionTest {
         assertEquals("application/vnd.oasis.opendocument.image", tika.detect("x.odi"));
         assertEquals("application/vnd.oasis.opendocument.image-template", tika.detect("x.oti"));
         assertEquals("application/vnd.oasis.opendocument.presentation", tika.detect("x.odp"));
-        assertEquals("application/vnd.oasis.opendocument.presentation-template", tika.detect("x.otp"));
+        assertEquals("application/vnd.oasis.opendocument.presentation-template",
+                tika.detect("x.otp"));
         assertEquals("application/vnd.oasis.opendocument.spreadsheet", tika.detect("x.ods"));
-        assertEquals("application/vnd.oasis.opendocument.spreadsheet-template", tika.detect("x.ots"));
+        assertEquals("application/vnd.oasis.opendocument.spreadsheet-template",
+                tika.detect("x.ots"));
         assertEquals("application/vnd.oasis.opendocument.text", tika.detect("x.odt"));
         assertEquals("application/vnd.oasis.opendocument.text-master", tika.detect("x.otm"));
         assertEquals("application/vnd.oasis.opendocument.text-template", tika.detect("x.ott"));
@@ -403,14 +412,22 @@ public class TikaDetectionTest {
         assertEquals("application/vnd.olpc-sugar", tika.detect("x.xo"));
         assertEquals("application/vnd.oma.dd2+xml", tika.detect("x.dd2"));
         assertEquals("application/vnd.openofficeorg.extension", tika.detect("x.oxt"));
-        assertEquals("application/vnd.openxmlformats-officedocument.presentationml.presentation", tika.detect("x.pptx"));
-        assertEquals("application/vnd.openxmlformats-officedocument.presentationml.slide", tika.detect("x.sldx"));
-        assertEquals("application/vnd.openxmlformats-officedocument.presentationml.slideshow", tika.detect("x.ppsx"));
-        assertEquals("application/vnd.openxmlformats-officedocument.presentationml.template", tika.detect("x.potx"));
-        assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", tika.detect("x.xlsx"));
-        assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.template", tika.detect("x.xltx"));
-        assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document", tika.detect("x.docx"));
-        assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.template", tika.detect("x.dotx"));
+        assertEquals("application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                tika.detect("x.pptx"));
+        assertEquals("application/vnd.openxmlformats-officedocument.presentationml.slide",
+                tika.detect("x.sldx"));
+        assertEquals("application/vnd.openxmlformats-officedocument.presentationml.slideshow",
+                tika.detect("x.ppsx"));
+        assertEquals("application/vnd.openxmlformats-officedocument.presentationml.template",
+                tika.detect("x.potx"));
+        assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                tika.detect("x.xlsx"));
+        assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.template",
+                tika.detect("x.xltx"));
+        assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                tika.detect("x.docx"));
+        assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.template",
+                tika.detect("x.dotx"));
         assertEquals("application/vnd.osgi.dp", tika.detect("x.dp"));
         assertEquals("chemical/x-pdb", tika.detect("x.pdb"));
         assertEquals("application/vnd.palm", tika.detect("x.pqa"));

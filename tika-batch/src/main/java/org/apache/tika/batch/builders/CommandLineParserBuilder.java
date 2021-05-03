@@ -1,5 +1,3 @@
-package org.apache.tika.batch.builders;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,22 +14,23 @@ package org.apache.tika.batch.builders;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.batch.builders;
 
-import javax.xml.parsers.DocumentBuilder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Locale;
+import javax.xml.parsers.DocumentBuilder;
 
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.utils.XMLReaderUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * Reads configurable options from a config file and returns org.apache.commons.cli.Options
@@ -45,7 +44,7 @@ public class CommandLineParserBuilder {
         try {
             DocumentBuilder docBuilder = XMLReaderUtils.getDocumentBuilder();
             doc = docBuilder.parse(is);
-        } catch (TikaException|SAXException e) {
+        } catch (TikaException | SAXException e) {
             throw new IOException(e);
         }
 
@@ -89,9 +88,8 @@ public class CommandLineParserBuilder {
         String longOpt = getString(map, "longOpt", "");
         boolean isRequired = getBoolean(map, "required", false);
         boolean hasArg = getBoolean(map, "hasArg", false);
-        if(opt.trim().length() == 0 || description.trim().length() == 0) {
-            throw new IllegalArgumentException(
-                    "Must specify at least option and description");
+        if (opt.trim().length() == 0 || description.trim().length() == 0) {
+            throw new IllegalArgumentException("Must specify at least option and description");
         }
         Option option = new Option(opt, description);
         if (longOpt.trim().length() > 0) {

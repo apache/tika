@@ -21,12 +21,13 @@ package org.apache.tika.eval.core.util;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 
+import org.junit.Ignore;
+import org.junit.Test;
+
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
-import org.junit.Ignore;
-import org.junit.Test;
 
 @Ignore("Fix mimetype.getExtension to work with these and then we can get rid of MimeUtil")
 public class MimeUtilTest {

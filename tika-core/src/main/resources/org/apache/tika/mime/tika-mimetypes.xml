@@ -683,6 +683,17 @@
       <!-- Sometimes has a UTF-8 Byte Order Mark first -->
       <match value="\xef\xbb\xbf%PDF-" type="string" offset="0"/>
     </magic>
+    <magic priority="40">
+      <!-- Higher priority than matlab's priority=20 %% match
+      Low priority match for %PDF-#.# near the start of the file -->
+      <!-- Can trigger false positives, so set the priority rather low here -->
+      <match value="%%" type="string" offset="0:128">
+            <match value="%PDF-1." type="string" offset="1:512"/>
+      </match>
+        <match value="%%" type="string" offset="0:128">
+            <match value="%PDF-2." type="string" offset="1:512"/>
+        </match>
+    </magic>
     <magic priority="20">
       <!-- Low priority match for %PDF-#.# near the start of the file -->
       <!-- Can trigger false positives, so set the priority rather low here -->
@@ -7393,7 +7404,14 @@
 
   <mime-type type="text/x-yaml">
     <_comment>YAML source code</_comment>
+    <alias type="application/x-yaml" />
+    <alias type="application/x-yml" />
+    <alias type="application/yaml" />
+    <alias type="text/vnd.yaml" />
+    <alias type="text/yaml" />
+    <alias type="text/x-yml" />
     <glob pattern="*.yaml"/>
+    <glob pattern="*.yml"/>
     <sub-class-of type="text/plain"/>
   </mime-type>
 

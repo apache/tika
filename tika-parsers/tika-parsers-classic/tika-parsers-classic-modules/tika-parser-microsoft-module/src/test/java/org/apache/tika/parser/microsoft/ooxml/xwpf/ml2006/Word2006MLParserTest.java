@@ -23,6 +23,9 @@ import java.io.File;
 import java.io.FileFilter;
 import java.util.List;
 
+import org.junit.AfterClass;
+import org.junit.Test;
+
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -31,11 +34,8 @@ import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.utils.XMLReaderUtils;
-import org.junit.AfterClass;
-import org.junit.Test;
 
 
 public class Word2006MLParserTest extends MultiThreadedTikaTest {
@@ -76,7 +76,7 @@ public class Word2006MLParserTest extends MultiThreadedTikaTest {
         assertContains("My Document Title", content);
         assertContains("My Document Subtitle", content);
 
-        assertContains("<p>\t<a href=\"#_Toc467647605\">Heading1	3</a></p>", content);
+        assertContains("<p>\t<a href=\"#_Toc467647605\">Heading1\t3</a></p>", content);
 
 
         //TODO: integrate numbering
@@ -180,22 +180,21 @@ public class Word2006MLParserTest extends MultiThreadedTikaTest {
     @Test(timeout = 60000)
     public void testMultiThreaded() throws Exception {
         XMLReaderUtils.setPoolSize(4);
-        int numThreads = XMLReaderUtils.getPoolSize()*2;
+        int numThreads = XMLReaderUtils.getPoolSize() * 2;
         ParseContext[] contexts = new ParseContext[numThreads];
         for (int i = 0; i < contexts.length; i++) {
             contexts[i] = new ParseContext();
         }
 
-        testMultiThreaded(AUTO_DETECT_PARSER, contexts, numThreads, 2,
-                new FileFilter() {
-                    @Override
-                    public boolean accept(File pathname) {
-                        if (pathname.getName().equals("testWORD_2006ml.xml")) {
-                            return true;
-                        }
-                        return false;
-                    }
-                });
+        testMultiThreaded(AUTO_DETECT_PARSER, contexts, numThreads, 2, new FileFilter() {
+            @Override
+            public boolean accept(File pathname) {
+                if (pathname.getName().equals("testWORD_2006ml.xml")) {
+                    return true;
+                }
+                return false;
+            }
+        });
 
     }
 

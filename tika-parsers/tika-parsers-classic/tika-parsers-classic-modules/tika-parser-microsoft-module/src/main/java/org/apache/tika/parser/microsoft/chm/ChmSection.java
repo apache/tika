@@ -38,7 +38,18 @@ public class ChmSection {
         this.prevcontent = prevconent;
         //setData(data);
     }
-    
+
+    /**
+     * @param args
+     * @throws TikaException
+     */
+    public static void main(String[] args) throws TikaException {
+        byte[] array = {4, 78, -67, 90, 1, -33};
+        ChmSection chmSection = new ChmSection(array);
+        System.out.println("before " + Arrays.toString(array));
+        System.out.println("after " + Arrays.toString(chmSection.reverseByteOrder(array)));
+    }
+
     /* Utilities */
     public byte[] reverseByteOrder(byte[] toBeReversed) throws TikaException {
         ChmCommons.assertByteArrayNotNull(toBeReversed);
@@ -57,11 +68,10 @@ public class ChmSection {
     public int peekBits(int bit) {
         return getDesyncBits(bit, 0);
     }
-    
+
     private int getDesyncBits(int bit, int removeBit) {
         while (getTotal() < 16) {
-            setBuffer((getBuffer() << 16) + unmarshalUByte()
-                    + (unmarshalUByte() << 8));
+            setBuffer((getBuffer() << 16) + unmarshalUByte() + (unmarshalUByte() << 8));
             setTotal(getTotal() + 16);
         }
         int tmp = (getBuffer() >>> (getTotal() - bit));
@@ -78,8 +88,9 @@ public class ChmSection {
         if (getSwath() < getData().length) {
             setSwath(getSwath() + 1);
             return getData()[getSwath() - 1];
-        } else
+        } else {
             return 0;
+        }
     }
 
     public int getLeft() {
@@ -93,12 +104,14 @@ public class ChmSection {
     public byte[] getPrevContent() {
         return prevcontent;
     }
-    
+
     public BigInteger getBigInteger(int i) {
-        if (getData() == null)
+        if (getData() == null) {
             return BigInteger.ZERO;
-        if (getData().length - getSwath() < i)
+        }
+        if (getData().length - getSwath() < i) {
             i = getData().length - getSwath();
+        }
         byte[] tmp = new byte[i];
         for (int j = i - 1; j >= 0; j--) {
             tmp[i - j - 1] = getData()[getSwath() + j];
@@ -128,8 +141,9 @@ public class ChmSection {
     }
 
     public byte[] unmarshalBytes(int i) {
-        if (i == 0)
+        if (i == 0) {
             return new byte[1];
+        }
         byte[] t = new byte[i];
         for (int j = 0; j < i; j++)
             t[j] = getData()[j + getSwath()];
@@ -150,6 +164,10 @@ public class ChmSection {
         return bi;
     }
 
+//    private void setData(byte[] data) {
+//        this.data = data;
+//    }
+
     public char unmarshalUtfChar() {
         byte ob;
         int i = 1;
@@ -157,8 +175,7 @@ public class ChmSection {
         ob = this.getByte();
         if (ob < 0) {
             i = 2;
-            while ((ob << (24 + i)) < 0)
-                i++;
+            while ((ob << (24 + i)) < 0) i++;
         }
         ba = new byte[i];
         ba[0] = ob;
@@ -168,21 +185,16 @@ public class ChmSection {
             j++;
         }
         i = ba.length;
-        if (i == 1)
+        if (i == 1) {
             return (char) ba[0];
-        else {
+        } else {
             int n;
             n = ba[0] & 15; // 00001111b, gets last 4 bits
             j = 1;
-            while (j < i)
-                n = (n << 6) + (ba[j++] & 63);// 00111111b,gets last 6 bits
+            while (j < i) n = (n << 6) + (ba[j++] & 63);// 00111111b,gets last 6 bits
             return (char) n;
         }
     }
-
-//    private void setData(byte[] data) {
-//        this.data = data;
-//    }
 
     public int getSwath() {
         return swath;
@@ -206,16 +218,5 @@ public class ChmSection {
 
     private void setBuffer(int buffer) {
         this.buffer = buffer;
-    }
-
-    /**
-     * @param args
-     * @throws TikaException 
-     */
-    public static void main(String[] args) throws TikaException {
-        byte[] array = { 4, 78, -67, 90, 1, -33 };
-        ChmSection chmSection = new ChmSection(array);
-        System.out.println("before " + Arrays.toString(array));
-        System.out.println("after " + Arrays.toString(chmSection.reverseByteOrder(array)));
     }
 }

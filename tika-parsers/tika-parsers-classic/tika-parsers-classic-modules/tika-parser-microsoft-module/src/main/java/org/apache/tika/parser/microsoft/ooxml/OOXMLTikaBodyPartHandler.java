@@ -22,14 +22,16 @@ import java.math.BigInteger;
 import java.util.Date;
 
 import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.WordExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFStylesShim;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
 
-public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
+public class OOXMLTikaBodyPartHandler
+        implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
 
     private static final String P = "p";
 
@@ -70,7 +72,8 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
         this.includeMoveFromText = false;
     }
 
-    public OOXMLTikaBodyPartHandler(XHTMLContentHandler xhtml, XWPFStylesShim styles, XWPFListManager listManager, OfficeParserConfig parserConfig) {
+    public OOXMLTikaBodyPartHandler(XHTMLContentHandler xhtml, XWPFStylesShim styles,
+                                    XWPFListManager listManager, OfficeParserConfig parserConfig) {
         this.xhtml = xhtml;
         this.styles = styles;
         this.listManager = listManager;
@@ -90,7 +93,8 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
                 }
                 if (isUnderline) {
                     xhtml.endElement("u");
-                    isUnderline = false;;
+                    isUnderline = false;
+                    ;
                 }
                 if (isItalics) {
                     xhtml.endElement("i");
@@ -147,7 +151,7 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
             xhtml.characters(contents);
 
         } catch (SAXException e) {
-
+            //swallow
         }
     }
 
@@ -159,7 +163,7 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
                 wroteHyperlinkStart = true;
             }
         } catch (SAXException e) {
-
+            //swallow
         }
     }
 
@@ -172,7 +176,7 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
                 xhtml.endElement("a");
             }
         } catch (SAXException e) {
-
+            //swallow
         }
     }
 
@@ -194,12 +198,10 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
             String styleClass = null;
             //TIKA-2144 check that styles is not null
             if (paragraphProperties.getStyleID() != null && styles != null) {
-                String styleName = styles.getStyleName(
-                        paragraphProperties.getStyleID()
-                );
+                String styleName = styles.getStyleName(paragraphProperties.getStyleID());
                 if (styleName != null) {
-                    WordExtractor.TagAndStyle tas = WordExtractor.buildParagraphTagAndStyle(
-                            styleName, false);
+                    WordExtractor.TagAndStyle tas =
+                            WordExtractor.buildParagraphTagAndStyle(styleName, false);
                     paragraphTag = tas.getTag();
                     styleClass = tas.getStyleClass();
                 }
@@ -213,15 +215,15 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
                     xhtml.startElement(paragraphTag, "class", styleClass);
                 }
             } catch (SAXException e) {
-
+                //swallow
             }
         }
 
         try {
-            writeParagraphNumber(paragraphProperties.getNumId(),
-                    paragraphProperties.getIlvl(), listManager, xhtml);
+            writeParagraphNumber(paragraphProperties.getNumId(), paragraphProperties.getIlvl(),
+                    listManager, xhtml);
         } catch (SAXException e) {
-
+            //swallow
         }
         pDepth++;
     }
@@ -233,13 +235,13 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
             closeStyleTags();
             if (pDepth == 1 && tableDepth == 0) {
                 xhtml.endElement(paragraphTag);
-            } else if (tableCellDepth > 0 && pWithinCell > 0){
+            } else if (tableCellDepth > 0 && pWithinCell > 0) {
                 xhtml.characters(NEWLINE, 0, 1);
             } else if (tableCellDepth == 0) {
                 xhtml.characters(NEWLINE, 0, 1);
             }
         } catch (SAXException e) {
-
+            //swallow
         }
         if (tableCellDepth > 0) {
             pWithinCell++;
@@ -253,7 +255,7 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
             xhtml.startElement("table");
             tableDepth++;
         } catch (SAXException e) {
-
+            //swallow
         }
     }
 
@@ -263,7 +265,7 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
             xhtml.endElement("table");
             tableDepth--;
         } catch (SAXException e) {
-
+            //swallow
         }
     }
 
@@ -272,7 +274,7 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
         try {
             xhtml.startElement("tr");
         } catch (SAXException e) {
-
+            //swallow
         }
     }
 
@@ -281,7 +283,7 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
         try {
             xhtml.endElement("tr");
         } catch (SAXException e) {
-
+            //swallow
         }
     }
 
@@ -290,7 +292,7 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
         try {
             xhtml.startElement("td");
         } catch (SAXException e) {
-
+            //swallow
         }
         tableCellDepth++;
     }
@@ -300,7 +302,7 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
         try {
             xhtml.endElement("td");
         } catch (SAXException e) {
-
+            //swallow
         }
         pWithinCell = 0;
         tableCellDepth--;
@@ -312,7 +314,7 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
             closeStyleTags();
             sdtDepth++;
         } catch (SAXException e) {
-
+            //swallow
         }
     }
 
@@ -322,7 +324,8 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
     }
 
     @Override
-    public void startEditedSection(String editor, Date date, OOXMLWordAndPowerPointTextHandler.EditType editType) {
+    public void startEditedSection(String editor, Date date,
+                                   OOXMLWordAndPowerPointTextHandler.EditType editType) {
         //no-op
     }
 
@@ -344,7 +347,7 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
                 xhtml.characters(id);
                 xhtml.characters("]");
             } catch (SAXException e) {
-
+                //swallow
             }
         }
     }
@@ -357,7 +360,7 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
                 xhtml.characters(id);
                 xhtml.characters("]");
             } catch (SAXException e) {
-
+                //swallow
             }
         }
     }
@@ -380,7 +383,7 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
             xhtml.endElement("div");
 
         } catch (SAXException e) {
-
+            //swallow
         }
     }
 
@@ -400,19 +403,19 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
             xhtml.endElement("img");
 
         } catch (SAXException e) {
-
+            //swallow
         }
     }
 
     @Override
     public void startBookmark(String id, String name) {
         //skip bookmarks within hyperlinks
-        if (name != null && ! wroteHyperlinkStart) {
+        if (name != null && !wroteHyperlinkStart) {
             try {
                 xhtml.startElement("a", "name", name);
                 xhtml.endElement("a");
             } catch (SAXException e) {
-
+                //swallow
             }
         }
     }
@@ -445,8 +448,7 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
         }
     }
 
-    private void writeParagraphNumber(int numId, int ilvl,
-                                      XWPFListManager listManager,
+    private void writeParagraphNumber(int numId, int ilvl, XWPFListManager listManager,
                                       XHTMLContentHandler xhtml) throws SAXException {
 
         if (ilvl < 0 || numId < 0 || listManager == null) {

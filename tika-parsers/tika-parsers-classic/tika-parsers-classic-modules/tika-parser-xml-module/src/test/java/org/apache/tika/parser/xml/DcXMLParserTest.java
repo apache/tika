@@ -22,13 +22,14 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
 
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.helpers.DefaultHandler;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.helpers.DefaultHandler;
 
 public class DcXMLParserTest extends TikaTest {
 
@@ -39,9 +40,7 @@ public class DcXMLParserTest extends TikaTest {
             ContentHandler handler = new BodyContentHandler();
             new DcXMLParser().parse(input, handler, metadata);
 
-            assertEquals(
-                    "application/xml",
-                    metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("application/xml", metadata.get(Metadata.CONTENT_TYPE));
             assertEquals("Tika test document", metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Rida Benjelloun", metadata.get(TikaCoreProperties.CREATOR));
 
@@ -55,12 +54,9 @@ public class DcXMLParserTest extends TikaTest {
             assertEquals("JDOM", metadata.getValues(TikaCoreProperties.SUBJECT)[3]);
             assertEquals("Indexation", metadata.getValues(TikaCoreProperties.SUBJECT)[4]);
 
-            assertEquals(
-                    "Framework d\'indexation des documents XML, HTML, PDF etc..",
+            assertEquals("Framework d\'indexation des documents XML, HTML, PDF etc..",
                     metadata.get(TikaCoreProperties.DESCRIPTION));
-            assertEquals(
-                    "http://www.apache.org",
-                    metadata.get(TikaCoreProperties.IDENTIFIER));
+            assertEquals("http://www.apache.org", metadata.get(TikaCoreProperties.IDENTIFIER));
             assertEquals("test", metadata.get(TikaCoreProperties.TYPE));
             assertEquals("application/msword", metadata.get(TikaCoreProperties.FORMAT));
             assertEquals("Fr", metadata.get(TikaCoreProperties.LANGUAGE));
@@ -72,14 +68,15 @@ public class DcXMLParserTest extends TikaTest {
             assertEquals("2000-12-01T00:00:00.000Z", metadata.get(TikaCoreProperties.CREATED));
         }
     }
-    
+
     @Test
     public void testXMLParserNonAsciiChars() throws Exception {
         try (InputStream input = getResourceAsStream("/test-documents/testXML.xml")) {
             Metadata metadata = new Metadata();
             new DcXMLParser().parse(input, new DefaultHandler(), metadata);
 
-            final String expected = "Archim\u00E8de et Lius \u00E0 Ch\u00E2teauneuf testing chars en \u00E9t\u00E9";
+            final String expected =
+                    "Archim\u00E8de et Lius \u00E0 Ch\u00E2teauneuf testing chars en \u00E9t\u00E9";
             assertEquals(expected, metadata.get(TikaCoreProperties.RIGHTS));
         }
     }
@@ -87,7 +84,7 @@ public class DcXMLParserTest extends TikaTest {
     // TIKA-1048
     @Test
     public void testNoSpaces() throws Exception {
-      String text = getXML("testXML2.xml").xml;
-      assertFalse(text.contains("testSubject"));
+        String text = getXML("testXML2.xml").xml;
+        assertFalse(text.contains("testSubject"));
     }
 }

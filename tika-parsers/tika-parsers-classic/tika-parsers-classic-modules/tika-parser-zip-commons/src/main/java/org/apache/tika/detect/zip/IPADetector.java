@@ -16,12 +16,6 @@
  */
 package org.apache.tika.detect.zip;
 
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
-import org.apache.commons.compress.archivers.zip.ZipFile;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.mime.MediaType;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Enumeration;
@@ -29,6 +23,12 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.regex.Pattern;
+
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipFile;
+
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.mime.MediaType;
 
 public class IPADetector implements ZipContainerDetector {
 
@@ -39,6 +39,7 @@ public class IPADetector implements ZipContainerDetector {
      */
     private static HashSet<Pattern> ipaEntryPatterns = new HashSet<Pattern>() {
         private static final long serialVersionUID = 6545295886322115362L;
+
         {
             add(Pattern.compile("^Payload/$"));
             add(Pattern.compile("^Payload/.*\\.app/$"));
@@ -46,7 +47,8 @@ public class IPADetector implements ZipContainerDetector {
             add(Pattern.compile("^Payload/.*\\.app/_CodeSignature/CodeResources$"));
             add(Pattern.compile("^Payload/.*\\.app/Info\\.plist$"));
             add(Pattern.compile("^Payload/.*\\.app/PkgInfo$"));
-        }};
+        }
+    };
 
     @Override
     public MediaType detect(ZipFile zip, TikaInputStream tis) throws IOException {
@@ -76,8 +78,7 @@ public class IPADetector implements ZipContainerDetector {
     }
 
     @Override
-    public MediaType streamingDetectUpdate(ZipArchiveEntry zae,
-                                           InputStream zis,
+    public MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis,
                                            StreamingDetectContext detectContext) {
         String name = zae.getName();
         TmpPatterns tmp = detectContext.get(TmpPatterns.class);
@@ -114,6 +115,6 @@ public class IPADetector implements ZipContainerDetector {
     }
 
     private static class TmpPatterns {
-        Set<Pattern> patterns = (Set<Pattern>)ipaEntryPatterns.clone();
+        Set<Pattern> patterns = (Set<Pattern>) ipaEntryPatterns.clone();
     }
 }

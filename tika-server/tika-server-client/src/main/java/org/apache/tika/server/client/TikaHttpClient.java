@@ -16,6 +16,11 @@
  */
 package org.apache.tika.server.client;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -24,15 +29,10 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.pipes.emitter.TikaEmitterException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
+import org.apache.tika.exception.TikaException;
 
 /**
  * Low-level class to handle the http layer.
@@ -48,11 +48,27 @@ class TikaHttpClient {
     private final String emitEndPointUrl;
     private final String asyncEndPointUrl;
     private final String tikaUrl;
-    private int maxRetries = 3;
+    private final int maxRetries = 3;
     //if can't make contact with Tika server, max wait time in ms
-    private long maxWaitForTikaMs = 120000;
+    private final long maxWaitForTikaMs = 120000;
     //how often to ping /tika (in ms) to see if the server is up and running
-    private long pulseWaitForTikaMs = 1000;
+    private final long pulseWaitForTikaMs = 1000;
+
+    /**
+     * @param baseUrl    url to base endpoint
+     * @param httpHost
+     * @param httpClient
+     */
+    private TikaHttpClient(String baseUrl, HttpHost httpHost, HttpClient httpClient) {
+        if (!baseUrl.endsWith("/")) {
+            baseUrl += "/";
+        }
+        this.emitEndPointUrl = baseUrl + EMIT_ENDPOINT;
+        this.asyncEndPointUrl = baseUrl + ASYNC_ENDPOINT;
+        this.tikaUrl = baseUrl + TIKA_ENDPOINT;
+        this.httpHost = httpHost;
+        this.httpClient = httpClient;
+    }
 
     static TikaHttpClient get(String baseUrl) throws TikaClientConfigException {
         URI uri;
@@ -67,23 +83,6 @@ class TikaHttpClient {
         return new TikaHttpClient(baseUrl, httpHost, client);
     }
 
-    /**
-     *
-     * @param baseUrl url to base endpoint
-     * @param httpHost
-     * @param httpClient
-     */
-    private TikaHttpClient(String baseUrl, HttpHost httpHost, HttpClient httpClient) {
-        if (! baseUrl.endsWith("/")) {
-            baseUrl += "/";
-        }
-        this.emitEndPointUrl = baseUrl+EMIT_ENDPOINT;
-        this.asyncEndPointUrl = baseUrl+ASYNC_ENDPOINT;
-        this.tikaUrl = baseUrl+TIKA_ENDPOINT;
-        this.httpHost = httpHost;
-        this.httpClient = httpClient;
-    }
-
     public TikaEmitterResult postJsonAsync(String jsonRequest) {
         return postJson(asyncEndPointUrl, jsonRequest);
     }
@@ -93,7 +92,6 @@ class TikaHttpClient {
     }
 
     private TikaEmitterResult postJson(String endPoint, String jsonRequest) {
-        System.out.println("NED:"+endPoint);
         HttpPost post = new HttpPost(endPoint);
         ByteArrayEntity entity = new ByteArrayEntity(jsonRequest.getBytes(StandardCharsets.UTF_8));
         post.setEntity(entity);
@@ -115,6 +113,7 @@ class TikaHttpClient {
                 try {
                     msg = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
                 } catch (IOException e) {
+                    //swallow
                 }
                 long elapsed = System.currentTimeMillis() - start;
                 TikaEmitterResult.STATUS status = TikaEmitterResult.STATUS.OK;
@@ -127,16 +126,11 @@ class TikaHttpClient {
             }
         } catch (TimeoutWaitingForTikaException e) {
             long elapsed = System.currentTimeMillis() - start;
-            return new TikaEmitterResult(
-                    TikaEmitterResult.STATUS.TIMED_OUT_WAITING_FOR_TIKA,
-                    elapsed, ""
-            );
+            return new TikaEmitterResult(TikaEmitterResult.STATUS.TIMED_OUT_WAITING_FOR_TIKA,
+                    elapsed, "");
         }
         long elapsed = System.currentTimeMillis() - start;
-        return new TikaEmitterResult(
-                TikaEmitterResult.STATUS.EXCEEDED_MAX_RETRIES,
-                elapsed, ""
-        );
+        return new TikaEmitterResult(TikaEmitterResult.STATUS.EXCEEDED_MAX_RETRIES, elapsed, "");
     }
 
 
@@ -148,7 +142,7 @@ class TikaHttpClient {
             try {
                 Thread.sleep(pulseWaitForTikaMs);
             } catch (InterruptedException e) {
-
+                //swallow
             }
 
             HttpGet get = new HttpGet(tikaUrl);
@@ -159,16 +153,14 @@ class TikaHttpClient {
                     return;
                 }
             } catch (IOException e) {
-                elapsed = System.currentTimeMillis()-start;
-                LOGGER.debug("waiting for server; failed to reach it: {} ms",
-                        elapsed);
+                elapsed = System.currentTimeMillis() - start;
+                LOGGER.debug("waiting for server; failed to reach it: {} ms", elapsed);
             }
 
-            elapsed = System.currentTimeMillis()-start;
+            elapsed = System.currentTimeMillis() - start;
         }
 
-        LOGGER.warn("Timeout waiting for tika server {} in {} ms", tikaUrl,
-                elapsed);
+        LOGGER.warn("Timeout waiting for tika server {} in {} ms", tikaUrl, elapsed);
         throw new TimeoutWaitingForTikaException("");
     }
 

@@ -20,6 +20,9 @@ package org.apache.tika.example;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.language.detect.LanguageHandler;
 import org.apache.tika.language.detect.LanguageResult;
@@ -28,15 +31,12 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.DelegatingParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.TeeContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 public class LanguageDetectingParser extends DelegatingParser {
     private static final long serialVersionUID = 4291320409396502774L;
 
-    public void parse(InputStream stream, ContentHandler handler,
-                      final Metadata metadata, ParseContext context) throws SAXException,
-            IOException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, final Metadata metadata,
+                      ParseContext context) throws SAXException, IOException, TikaException {
         LanguageHandler langHandler = new LanguageHandler();
         ContentHandler tee = new TeeContentHandler(handler, langHandler);
 

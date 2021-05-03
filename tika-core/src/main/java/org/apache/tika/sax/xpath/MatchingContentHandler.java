@@ -18,11 +18,12 @@ package org.apache.tika.sax.xpath;
 
 import java.util.LinkedList;
 
-import org.apache.tika.sax.ContentHandlerDecorator;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
+
+import org.apache.tika.sax.ContentHandlerDecorator;
 
 /**
  * Content handler decorator that only passes the elements, attributes,
@@ -39,8 +40,7 @@ public class MatchingContentHandler extends ContentHandlerDecorator {
         this.matcher = matcher;
     }
 
-    public void startElement(
-            String uri, String localName, String name, Attributes attributes)
+    public void startElement(String uri, String localName, String name, Attributes attributes)
             throws SAXException {
         matchers.addFirst(matcher);
         matcher = matcher.descend(uri, localName);
@@ -50,8 +50,7 @@ public class MatchingContentHandler extends ContentHandlerDecorator {
             String attributeURI = attributes.getURI(i);
             String attributeName = attributes.getLocalName(i);
             if (matcher.matchesAttribute(attributeURI, attributeName)) {
-                matches.addAttribute(
-                        attributeURI, attributeName, attributes.getQName(i),
+                matches.addAttribute(attributeURI, attributeName, attributes.getQName(i),
                         attributes.getType(i), attributes.getValue(i));
             }
         }
@@ -61,14 +60,12 @@ public class MatchingContentHandler extends ContentHandlerDecorator {
             if (!matcher.matchesElement()) {
                 // Force the matcher to match the current element, so the
                 // endElement method knows to emit the correct event
-                matcher =
-                    new CompositeMatcher(matcher, ElementMatcher.INSTANCE);
+                matcher = new CompositeMatcher(matcher, ElementMatcher.INSTANCE);
             }
         }
     }
 
-    public void endElement(String uri, String localName, String name)
-            throws SAXException {
+    public void endElement(String uri, String localName, String name) throws SAXException {
         if (matcher.matchesElement()) {
             super.endElement(uri, localName, name);
         }
@@ -79,15 +76,13 @@ public class MatchingContentHandler extends ContentHandlerDecorator {
         }
     }
 
-    public void characters(char[] ch, int start, int length)
-            throws SAXException {
+    public void characters(char[] ch, int start, int length) throws SAXException {
         if (matcher.matchesText()) {
             super.characters(ch, start, length);
         }
     }
 
-    public void ignorableWhitespace(char[] ch, int start, int length)
-            throws SAXException {
+    public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
         if (matcher.matchesText()) {
             super.ignorableWhitespace(ch, start, length);
         }

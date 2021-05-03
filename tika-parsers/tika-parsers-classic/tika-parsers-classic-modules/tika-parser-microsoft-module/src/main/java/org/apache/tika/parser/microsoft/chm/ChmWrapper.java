@@ -122,19 +122,19 @@ public class ChmWrapper {
         this.lzxBlockLength = lzxBlockLength;
     }
 
-    protected void setChmItspHeader(ChmItspHeader chmItspHeader) {
-        this.chmItspHeader = chmItspHeader;
-    }
-
     protected ChmItspHeader getChmItspHeader() {
         return chmItspHeader;
     }
 
-    protected void setIndexOfResetData(int indexOfResetData) {
-        this.indexOfResetData = indexOfResetData;
+    protected void setChmItspHeader(ChmItspHeader chmItspHeader) {
+        this.chmItspHeader = chmItspHeader;
     }
 
     protected int getIndexOfResetData() {
         return indexOfResetData;
+    }
+
+    protected void setIndexOfResetData(int indexOfResetData) {
+        this.indexOfResetData = indexOfResetData;
     }
 }

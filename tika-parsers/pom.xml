@@ -17,26 +17,62 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <groupId>org.apache.tika</groupId>
-        <artifactId>tika-parent</artifactId>
-        <version>2.0.0-SNAPSHOT</version>
-        <relativePath>../tika-parent/pom.xml</relativePath>
-    </parent>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <parent>
+    <groupId>org.apache.tika</groupId>
+    <artifactId>tika-parent</artifactId>
+    <version>2.0.0-SNAPSHOT</version>
+    <relativePath>../tika-parent/pom.xml</relativePath>
+  </parent>
 
-    <modelVersion>4.0.0</modelVersion>
+  <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>tika-parsers</artifactId>
+  <artifactId>tika-parsers</artifactId>
 
-    <packaging>pom</packaging>
-    <modules>
-        <!-- basic parsers - avoid network dependent parsers, native code -->
-        <module>tika-parsers-classic</module>
-        <!-- allow network dependent parsers and native code  -->
-        <module>tika-parsers-extended</module>
-        <!-- potentially massive dependencies (e.g. dl4j)    -->
-        <module>tika-parsers-advanced</module>
-    </modules>
+  <packaging>pom</packaging>
+  <modules>
+    <!-- basic parsers - avoid network dependent parsers, native code -->
+    <module>tika-parsers-classic</module>
+    <!-- allow network dependent parsers and native code  -->
+    <module>tika-parsers-extended</module>
+    <!-- potentially massive dependencies (e.g. dl4j)    -->
+    <module>tika-parsers-advanced</module>
+  </modules>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>${checkstyle.plugin.version}</version>
+        <dependencies>
+          <dependency>
+            <groupId>com.puppycrawl.tools</groupId>
+            <artifactId>checkstyle</artifactId>
+            <version>${puppycrawl.version}</version>
+          </dependency>
+        </dependencies>
+        <executions>
+          <execution>
+            <id>validate</id>
+            <phase>validate</phase>
+            <configuration>
+              <configLocation>checkstyle.xml</configLocation>
+              <encoding>UTF-8</encoding>
+              <consoleOutput>false</consoleOutput>
+              <includeTestSourceDirectory>true</includeTestSourceDirectory>
+              <testSourceDirectories>${project.basedir}/src/test/java</testSourceDirectories>
+              <violationSeverity>error</violationSeverity>
+              <failOnViolation>true</failOnViolation>
+            </configuration>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 
 </project>

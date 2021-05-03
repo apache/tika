@@ -28,9 +28,10 @@ import java.util.Set;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.junit.Test;
+
 import org.apache.tika.eval.core.tokens.AlphaIdeographFilterFactory;
 import org.apache.tika.eval.core.tokens.AnalyzerManager;
-import org.junit.Test;
 
 public class AnalyzerManagerTest {
 
@@ -65,7 +66,8 @@ public class AnalyzerManagerTest {
         Set<String> seen = new HashSet<>();
         while (ts.incrementToken()) {
             String t = termAtt.toString();
-            if (AlphaIdeographFilterFactory.isAlphabetic(t.toCharArray(), t.length()) && t.contains("5")) {
+            if (AlphaIdeographFilterFactory.isAlphabetic(t.toCharArray(), t.length()) &&
+                    t.contains("5")) {
                 fail("Shouldn't have found a numeric");
             }
             seen.add(termAtt.toString());

@@ -28,6 +28,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import opennlp.tools.namefind.NameFinderME;
+import opennlp.tools.namefind.TokenNameFinderModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -36,25 +43,16 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.geo.gazetteer.GeoGazetteerClient;
 import org.apache.tika.parser.geo.gazetteer.Location;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
-import opennlp.tools.namefind.NameFinderME;
-import opennlp.tools.namefind.TokenNameFinderModel;
 
 public class GeoParser extends AbstractParser {
     private static final long serialVersionUID = -2241391757440215491L;
     private static final Logger LOG = LoggerFactory.getLogger(GeoParser.class);
-    private static final MediaType MEDIA_TYPE = 
-                                    MediaType.application("geotopic");
-    private static final Set<MediaType> SUPPORTED_TYPES = 
-                                    Collections.singleton(MEDIA_TYPE);
-    
+    private static final MediaType MEDIA_TYPE = MediaType.application("geotopic");
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MEDIA_TYPE);
+
     private GeoParserConfig defaultConfig = new GeoParserConfig();
     private GeoGazetteerClient gazetteerClient;
-    
+
     private boolean initialized;
     private URL modelUrl;
     private NameFinderME nameFinder;
@@ -67,24 +65,25 @@ public class GeoParser extends AbstractParser {
 
     /**
      * Initializes this parser
+     *
      * @param geoParserConfig config to load the url model from and set the gazetteer client
      */
     public void initialize(GeoParserConfig geoParserConfig) {
         try {
-          if (this.modelUrl != null && this.modelUrl.toURI().equals(modelUrl.toURI())) {
-              return;
-          }
+            if (this.modelUrl != null && this.modelUrl.toURI().equals(modelUrl.toURI())) {
+                return;
+            }
         } catch (URISyntaxException e1) {
-              throw new RuntimeException(e1.getMessage());
+            throw new RuntimeException(e1.getMessage());
         }
-        
+
         this.modelUrl = geoParserConfig.getNerModelUrl();
         gazetteerClient = new GeoGazetteerClient(geoParserConfig);
-        
+
         // Check if the NER model is available, and if the
         //  lucene-geo-gazetteer is available
         this.available = modelUrl != null && gazetteerClient.checkAvail();
-        
+
         if (this.available) {
             try {
                 TokenNameFinderModel model = new TokenNameFinderModel(modelUrl);
@@ -98,9 +97,8 @@ public class GeoParser extends AbstractParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context) throws IOException,
-            SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
 
         /*----------------configure this parser by ParseContext Object---------------------*/
 
@@ -110,7 +108,7 @@ public class GeoParser extends AbstractParser {
             return;
         }
         NameEntityExtractor extractor = null;
-        
+
         try {
             extractor = new NameEntityExtractor(nameFinder);
         } catch (Exception e) {
@@ -118,16 +116,19 @@ public class GeoParser extends AbstractParser {
             return;
         }
 
-        /*----------------get locationNameEntities and best nameEntity for the input stream---------------------*/
+        /*----------------get locationNameEntities and best nameEntity for the
+        input stream---------------------*/
         extractor.getAllNameEntitiesfromInput(stream);
         extractor.getBestNameEntity();
         ArrayList<String> locationNameEntities = extractor.locationNameEntities;
         String bestner = extractor.bestNameEntity;
 
-        /*------------------------resolve geonames for each ner, store results in a hashmap---------------------*/
+        /*------------------------resolve geonames for each ner,
+        store results in a hashmap---------------------*/
         Map<String, List<Location>> resolvedGeonames = searchGeoNames(locationNameEntities);
 
-        /*----------------store locationNameEntities and their geonames in a geotag, each input has one geotag---------------------*/
+        /*----------------store locationNameEntities and their geonames in a
+        geotag, each input has one geotag---------------------*/
         GeoTag geotag = new GeoTag();
         geotag.toGeoTag(resolvedGeonames, bestner);
 
@@ -139,16 +140,13 @@ public class GeoParser extends AbstractParser {
         for (int i = 0; i < geotag.alternatives.size(); ++i) {
             GeoTag alter = (GeoTag) geotag.alternatives.get(i);
             metadata.add("Optional_NAME" + (i + 1), alter.location.getName());
-            metadata.add("Optional_LONGITUDE" + (i + 1),
-                         alter.location.getLongitude());
-            metadata.add("Optional_LATITUDE" + (i + 1),
-                         alter.location.getLatitude());
+            metadata.add("Optional_LONGITUDE" + (i + 1), alter.location.getLongitude());
+            metadata.add("Optional_LATITUDE" + (i + 1), alter.location.getLatitude());
         }
     }
 
-    public Map<String, List<Location>> searchGeoNames(
-            ArrayList<String> locationNameEntities) {
-    	return gazetteerClient.getLocations(locationNameEntities);
+    public Map<String, List<Location>> searchGeoNames(ArrayList<String> locationNameEntities) {
+        return gazetteerClient.getLocations(locationNameEntities);
     }
 
     public boolean isAvailable(GeoParserConfig geoParserConfig) {
@@ -158,13 +156,20 @@ public class GeoParser extends AbstractParser {
         return this.available;
     }
 
+    public String getGazetteerRestEndpoint() {
+        return defaultConfig.getGazetteerRestEndpoint();
+    }
+
     @Field
     public void setGazetteerRestEndpoint(String gazetteerRestEndpoint) {
         defaultConfig.setGazetteerRestEndpoint(gazetteerRestEndpoint);
     }
 
+    public URL getNerModelUrl() {
+        return defaultConfig.getNerModelUrl();
+    }
+
     /**
-     *
      * @param nerModelUrl url for the NER model
      * @throws IllegalArgumentException for a malformed URL
      */
@@ -173,15 +178,7 @@ public class GeoParser extends AbstractParser {
         try {
             defaultConfig.setNerModelUrl(new URL(nerModelUrl));
         } catch (MalformedURLException e) {
-            throw new IllegalArgumentException("malformed url "+nerModelUrl, e);
+            throw new IllegalArgumentException("malformed url " + nerModelUrl, e);
         }
-    }
-
-    public String getGazetteerRestEndpoint() {
-        return defaultConfig.getGazetteerRestEndpoint();
-    }
-
-    public URL getNerModelUrl() {
-        return defaultConfig.getNerModelUrl();
     }
 }

@@ -18,15 +18,17 @@ package org.apache.tika.batch.builders;
 
 import java.util.Map;
 
-import org.apache.tika.batch.Interrupter;
 import org.w3c.dom.Node;
+
+import org.apache.tika.batch.Interrupter;
 
 /**
  * Builds an Interrupter
  */
 public class InterrupterBuilder {
 
-    public Interrupter build(Node n, long pauseOnEarlyTermination, Map<String, String> commandlineArguments) {
+    public Interrupter build(Node n, long pauseOnEarlyTermination,
+                             Map<String, String> commandlineArguments) {
         return new Interrupter(pauseOnEarlyTermination);
     }
 }

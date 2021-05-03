@@ -34,8 +34,8 @@ import org.apache.tika.metadata.TikaCoreProperties;
  */
 @SuppressWarnings("deprecation")
 public class TrecDocumentGenerator {
-    public TrecDocument summarize(File file) throws FileNotFoundException,
-            IOException, TikaException {
+    public TrecDocument summarize(File file)
+            throws FileNotFoundException, IOException, TikaException {
         Tika tika = new Tika();
         Metadata met = new Metadata();
 

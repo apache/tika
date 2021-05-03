@@ -26,22 +26,22 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.TimeZone;
 
-import org.apache.tika.Tika;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.xml.sax.helpers.DefaultHandler;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPMM;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.xml.sax.helpers.DefaultHandler;
 
 public class JpegParserTest {
 
-    private final Parser parser = new JpegParser();
     static TimeZone CURR_TIME_ZONE = TimeZone.getDefault();
+    private final Parser parser = new JpegParser();
 
     //As of Drew Noakes' metadata-extractor 2.8.1,
     //unspecified timezones appear to be set to
@@ -58,11 +58,13 @@ public class JpegParserTest {
     public static void resetDefaultTimeZone() {
         TimeZone.setDefault(CURR_TIME_ZONE);
     }
+
     @Test
     public void testJPEG() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-        try (InputStream stream = getClass().getResourceAsStream("/test-documents/testJPEG_EXIF.jpg")) {
+        try (InputStream stream = getClass()
+                .getResourceAsStream("/test-documents/testJPEG_EXIF.jpg")) {
             parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
         }
 
@@ -108,7 +110,8 @@ public class JpegParserTest {
     public void testJPEGGeo() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-        try (InputStream stream = getClass().getResourceAsStream("/test-documents/testJPEG_GEO.jpg")) {
+        try (InputStream stream = getClass()
+                .getResourceAsStream("/test-documents/testJPEG_GEO.jpg")) {
             parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
         }
 
@@ -138,10 +141,12 @@ public class JpegParserTest {
         // Common tags
         assertEquals("Date/Time Original for when the photo was taken, unspecified time zone",
                 "2009-08-11T09:09:45", metadata.get(TikaCoreProperties.CREATED));
-        assertEquals("This image has different Date/Time than Date/Time Original, so it is probably modification date",
+        assertEquals(
+                "This image has different Date/Time than Date/Time Original, " +
+                        "so it is probably modification date",
                 "2009-10-02T23:02:49", metadata.get(TikaCoreProperties.MODIFIED));
-        assertEquals("Date/Time Original should be stored in EXIF field too",
-                "2009-08-11T09:09:45", metadata.get(TIFF.ORIGINAL_DATE));
+        assertEquals("Date/Time Original should be stored in EXIF field too", "2009-08-11T09:09:45",
+                metadata.get(TIFF.ORIGINAL_DATE));
         assertEquals("canon-55-250", metadata.getValues(TikaCoreProperties.SUBJECT)[0]);
     }
 
@@ -154,7 +159,8 @@ public class JpegParserTest {
     public void testJPEGGeo2() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-        try (InputStream stream = getClass().getResourceAsStream("/test-documents/testJPEG_GEO_2.jpg")) {
+        try (InputStream stream = getClass()
+                .getResourceAsStream("/test-documents/testJPEG_GEO_2.jpg")) {
             parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
         }
 
@@ -167,15 +173,19 @@ public class JpegParserTest {
     public void testJPEGTitleAndDescription() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-        try (InputStream stream = getClass().getResourceAsStream("/test-documents/testJPEG_commented.jpg")) {
+        try (InputStream stream = getClass()
+                .getResourceAsStream("/test-documents/testJPEG_commented.jpg")) {
             parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
         }
 
         // embedded comments with non-ascii characters
         assertEquals("Tosteberga \u00C4ngar", metadata.get(TikaCoreProperties.TITLE));
-        assertEquals("Bird site in north eastern Sk\u00E5ne, Sweden.\n(new line)", metadata.get(TikaCoreProperties.DESCRIPTION));
-        assertEquals("Some Tourist", metadata.get(TikaCoreProperties.CREATOR)); // Dublin Core
-        // xmp handles spaces in keywords, returns "bird watching, nature reserve, coast, grazelands"
+        assertEquals("Bird site in north eastern Sk\u00E5ne, Sweden.\n(new line)",
+                metadata.get(TikaCoreProperties.DESCRIPTION));
+        assertEquals("Some Tourist", metadata.get(TikaCoreProperties.CREATOR));
+        // Dublin Core
+        // xmp handles spaces in keywords, returns "bird watching,
+        // nature reserve, coast, grazelands"
         // but we have to replace them with underscore
 
         List<String> keywords = Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT));
@@ -210,14 +220,15 @@ public class JpegParserTest {
     public void testJPEGTitleAndDescriptionPhotoshop() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-        try (InputStream stream =
-                     getClass().getResourceAsStream("/test-documents/testJPEG_commented_pspcs2mac.jpg")) {
+        try (InputStream stream = getClass()
+                .getResourceAsStream("/test-documents/testJPEG_commented_pspcs2mac.jpg")) {
             parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
         }
 
         // embedded comments with non-ascii characters
         assertEquals("Tosteberga \u00C4ngar", metadata.get(TikaCoreProperties.TITLE));
-        assertEquals("Bird site in north eastern Sk\u00E5ne, Sweden.\n(new line)", metadata.get(TikaCoreProperties.DESCRIPTION));
+        assertEquals("Bird site in north eastern Sk\u00E5ne, Sweden.\n(new line)",
+                metadata.get(TikaCoreProperties.DESCRIPTION));
         assertEquals("Some Tourist", metadata.get(TikaCoreProperties.CREATOR));
         List<String> keywords = Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT));
         assertTrue("got " + keywords, keywords.contains("bird watching"));
@@ -227,27 +238,31 @@ public class JpegParserTest {
     public void testJPEGTitleAndDescriptionXnviewmp() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-        try (InputStream stream =
-                     getClass().getResourceAsStream("/test-documents/testJPEG_commented_xnviewmp026.jpg")) {
+        try (InputStream stream = getClass()
+                .getResourceAsStream("/test-documents/testJPEG_commented_xnviewmp026.jpg")) {
             parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
         }
 
         // XnViewMp's default comment dialog has only comment, not headline.
         // Comment is embedded only if "Write comments in XMP" is enabled in settings
-        assertEquals("Bird site in north eastern Sk\u00E5ne, Sweden.\n(new line)", metadata.get(TikaCoreProperties.DESCRIPTION));
-        // xmp handles spaces in keywords, returns "bird watching, nature reserve, coast, grazelands"
+        assertEquals("Bird site in north eastern Sk\u00E5ne, Sweden.\n(new line)",
+                metadata.get(TikaCoreProperties.DESCRIPTION));
+        // xmp handles spaces in keywords, returns "bird watching, nature reserve,
+        // coast, grazelands"
         // but we have to replace them with underscore
         String[] subject = metadata.getValues(TikaCoreProperties.SUBJECT);
         List<String> keywords = Arrays.asList(subject);
         assertTrue("'coast'" + " not in " + keywords, keywords.contains("coast"));
-        assertTrue("'nature reserve'" + " not in " + keywords, keywords.contains("nature reserve"));
+        assertTrue("'nature reserve'" + " not in " + keywords,
+                keywords.contains("nature reserve"));
     }
 
     @Test
     public void testJPEGoddTagComponent() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-        try (InputStream stream = getClass().getResourceAsStream("/test-documents/testJPEG_oddTagComponent.jpg")) {
+        try (InputStream stream = getClass()
+                .getResourceAsStream("/test-documents/testJPEG_oddTagComponent.jpg")) {
             parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
         }
 
@@ -261,8 +276,8 @@ public class JpegParserTest {
     public void testJPEGEmptyEXIFDateTime() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-        try (InputStream stream =
-                     getClass().getResourceAsStream("/test-documents/testJPEG_EXIF_emptyDateTime.jpg")) {
+        try (InputStream stream = getClass()
+                .getResourceAsStream("/test-documents/testJPEG_EXIF_emptyDateTime.jpg")) {
             parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
         }
         assertEquals("300.0", metadata.get(TIFF.RESOLUTION_HORIZONTAL));
@@ -273,15 +288,14 @@ public class JpegParserTest {
     public void testJPEGXMPMM() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-        try (InputStream stream =
-                     getClass().getResourceAsStream("/test-documents/testJPEG_EXIF_emptyDateTime.jpg")) {
+        try (InputStream stream = getClass()
+                .getResourceAsStream("/test-documents/testJPEG_EXIF_emptyDateTime.jpg")) {
             parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
         }
 
         //TODO: when jempbox is fixed/xmpbox is used
         //add tests for history...currently not extracted
-        assertEquals("xmp.did:49E997348D4911E1AB62EBF9B374B234",
-                metadata.get(XMPMM.DOCUMENTID));
+        assertEquals("xmp.did:49E997348D4911E1AB62EBF9B374B234", metadata.get(XMPMM.DOCUMENTID));
     }
 
 }

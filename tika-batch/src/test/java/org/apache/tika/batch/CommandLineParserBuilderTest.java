@@ -1,5 +1,3 @@
-package org.apache.tika.batch;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,13 +14,16 @@ package org.apache.tika.batch;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.batch;
+
 
 import java.io.InputStream;
 
 import org.apache.commons.cli.Options;
+import org.junit.Test;
+
 import org.apache.tika.batch.builders.CommandLineParserBuilder;
 import org.apache.tika.batch.fs.FSBatchTestBase;
-import org.junit.Test;
 
 
 public class CommandLineParserBuilderTest extends FSBatchTestBase {

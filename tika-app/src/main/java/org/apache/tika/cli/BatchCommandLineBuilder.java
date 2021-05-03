@@ -62,12 +62,12 @@ class BatchCommandLineBuilder {
 
         boolean hasLog4j = false;
         for (String k : jvmOpts.keySet()) {
-            if (k.startsWith("-Dlog4j.configuration=")) {
+            if (k.startsWith("-Dlog4j.configurationFile=")) {
                 hasLog4j = true;
                 break;
             }
         }
-        //use the log4j config file inside the app /resources/log4j_batch_process.properties
+        //use the log4j config file inside the app /resources/log4j2_batch_process.properties
         if (! hasLog4j) {
             jvmOpts.put("-Dlog4j.configuration=log4j_batch_process.properties", "");
         }

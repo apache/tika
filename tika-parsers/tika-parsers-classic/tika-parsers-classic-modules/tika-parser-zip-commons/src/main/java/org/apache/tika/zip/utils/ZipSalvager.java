@@ -23,12 +23,16 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.zip.ZipException;
 
+import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.tika.utils.RereadableInputStream;
 
 public class ZipSalvager {
 
@@ -40,55 +44,87 @@ public class ZipSalvager {
      * may be truncated, but the result should be a valid zip file.
      * <p>
      * This does nothing fancy to fix the underlying broken zip.
+     * <p>
+     * This will close the inputstream
      *
      * @param brokenZip
      * @param salvagedZip
      */
-    public static void salvageCopy(InputStream brokenZip, File salvagedZip) {
-        try (ZipArchiveOutputStream outputStream = new ZipArchiveOutputStream(salvagedZip)) {
-            ZipArchiveInputStream zipArchiveInputStream = new ZipArchiveInputStream(brokenZip);
-            ZipArchiveEntry zae = zipArchiveInputStream.getNextZipEntry();
-            while (zae != null) {
+    public static void salvageCopy(InputStream brokenZip, File salvagedZip,
+                                   boolean allowStoredEntries) throws IOException {
+
+        try {
+            if (!(brokenZip instanceof RereadableInputStream)) {
+                brokenZip = new RereadableInputStream(brokenZip, 50000, true);
+            }
+
+            try (ZipArchiveOutputStream outputStream = new ZipArchiveOutputStream(salvagedZip);
+                    ZipArchiveInputStream zipArchiveInputStream = new ZipArchiveInputStream(
+                            new CloseShieldInputStream(brokenZip), "UTF8", false,
+                            allowStoredEntries)) {
+                ZipArchiveEntry zae = zipArchiveInputStream.getNextZipEntry();
                 try {
-                    if (!zae.isDirectory() && zipArchiveInputStream.canReadEntryData(zae)) {
-                        //create a new ZAE and copy over only the name so that
-                        //if there is bad info (e.g. CRC) in brokenZip's zae, that
-                        //won't be propagated or cause an exception
-                        outputStream.putArchiveEntry(new ZipArchiveEntry(zae.getName()));
-                        //this will copy an incomplete stream...so there
-                        //could be truncation of the xml/contents, but the zip file
-                        //should be intact.
-                        boolean successfullyCopied = false;
-                        try {
-                            IOUtils.copy(zipArchiveInputStream, outputStream);
-                            successfullyCopied = true;
-                        } catch (IOException e) {
-                            //this can hit a "truncated ZipFile" IOException
-                        }
-                        outputStream.flush();
-                        outputStream.closeArchiveEntry();
-                        if (!successfullyCopied) {
-                            break;
-                        }
+                    processZAE(zae, zipArchiveInputStream, outputStream);
+                } catch (UnsupportedZipFeatureException uzfe) {
+                    if (uzfe.getFeature() ==
+                            UnsupportedZipFeatureException.Feature.DATA_DESCRIPTOR) {
+                        //percolate up to allow for retry
+                        throw uzfe;
                     }
-                    zae = zipArchiveInputStream.getNextZipEntry();
+                    //else swallow
                 } catch (ZipException | EOFException e) {
+                    //swallow
+                }
+                outputStream.flush();
+                outputStream.finish();
+            } catch (UnsupportedZipFeatureException e) {
+                //now retry
+                if (allowStoredEntries == false &&
+                        e.getFeature() == UnsupportedZipFeatureException.Feature.DATA_DESCRIPTOR) {
+                    ((RereadableInputStream) brokenZip).rewind();
+                    salvageCopy(brokenZip, salvagedZip, true);
+                } else {
+                    throw e;
+                }
+            } catch (IOException e) {
+                LOG.warn("problem fixing zip", e);
+            }
+        } finally {
+            brokenZip.close();
+        }
+    }
+
+    private static void processZAE(ZipArchiveEntry zae, ZipArchiveInputStream zipArchiveInputStream,
+                                   ZipArchiveOutputStream outputStream) throws IOException {
+        while (zae != null) {
+            if (!zae.isDirectory() && zipArchiveInputStream.canReadEntryData(zae)) {
+                //create a new ZAE and copy over only the name so that
+                //if there is bad info (e.g. CRC) in brokenZip's zae, that
+                //won't be propagated or cause an exception
+                outputStream.putArchiveEntry(new ZipArchiveEntry(zae.getName()));
+                //this will copy an incomplete stream...so there
+                //could be truncation of the xml/contents, but the zip file
+                //should be intact.
+                boolean successfullyCopied = false;
+                try {
+                    IOUtils.copy(zipArchiveInputStream, outputStream);
+                    successfullyCopied = true;
+                } catch (IOException e) {
+                    //this can hit a "truncated ZipFile" IOException
+                }
+                outputStream.flush();
+                outputStream.closeArchiveEntry();
+                if (!successfullyCopied) {
                     break;
                 }
-
             }
-            outputStream.flush();
-            outputStream.finish();
-
-
-        } catch (IOException e) {
-            LOG.warn("problem fixing zip", e);
+            zae = zipArchiveInputStream.getNextZipEntry();
         }
     }
 
     public static void salvageCopy(File brokenZip, File salvagedZip) throws IOException {
         try (InputStream is = Files.newInputStream(brokenZip.toPath())) {
-            salvageCopy(is, salvagedZip);
+            salvageCopy(is, salvagedZip, false);
         }
     }
 }

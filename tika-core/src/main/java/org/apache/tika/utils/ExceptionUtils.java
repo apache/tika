@@ -44,8 +44,7 @@ public class ExceptionUtils {
      */
     public static String getFilteredStackTrace(Throwable t) {
         Throwable cause = t;
-        if ((t.getClass().equals(TikaException.class)) &&
-                t.getCause() != null) {
+        if ((t.getClass().equals(TikaException.class)) && t.getCause() != null) {
             cause = t.getCause();
         }
         return getStackTrace(cause);
@@ -53,6 +52,7 @@ public class ExceptionUtils {
 
     /**
      * Get the full stacktrace as a string
+     *
      * @param t
      * @return
      */
@@ -77,6 +77,7 @@ public class ExceptionUtils {
      * <p>
      * E.g. <code>java.lang.IllegalStateException: Potential loop detected </code>
      * will be trimmed to <code>java.lang.IllegalStateException</code>
+     *
      * @param trace string view of stack trace
      * @return trimmed stack trace
      */

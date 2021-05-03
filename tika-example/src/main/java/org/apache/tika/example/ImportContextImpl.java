@@ -30,12 +30,13 @@ import org.apache.jackrabbit.server.io.IOListener;
 import org.apache.jackrabbit.server.io.IOUtil;
 import org.apache.jackrabbit.server.io.ImportContext;
 import org.apache.jackrabbit.webdav.io.InputContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.detect.Detector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * <code>ImportContextImpl</code>...
@@ -47,11 +48,9 @@ public class ImportContextImpl implements ImportContext {
     private final Item importRoot;
     private final String systemId;
     private final File inputFile;
-
+    private final MediaType type;
     private InputContext inputCtx;
     private boolean completed;
-
-    private final MediaType type;
 
     /**
      * Creates a new item import context. The specified InputStream is written
@@ -69,14 +68,12 @@ public class ImportContextImpl implements ImportContext {
      * @throws IOException
      * @see ImportContext#informCompleted(boolean)
      */
-    public ImportContextImpl(Item importRoot, String systemId,
-                             InputContext ctx, InputStream stream, IOListener ioListener,
-                             Detector detector) throws IOException {
+    public ImportContextImpl(Item importRoot, String systemId, InputContext ctx, InputStream stream,
+                             IOListener ioListener, Detector detector) throws IOException {
         this.importRoot = importRoot;
         this.systemId = systemId;
         this.inputCtx = ctx;
-        this.ioListener = (ioListener != null) ? ioListener
-                : new DefaultIOListener(LOG);
+        this.ioListener = (ioListener != null) ? ioListener : new DefaultIOListener(LOG);
 
         Metadata metadata = new Metadata();
         if (ctx != null && ctx.getContentType() != null) {
@@ -168,7 +165,8 @@ public class ImportContextImpl implements ImportContext {
             length = inputFile.length();
         }
         if (length < 0) {
-            LOG.debug("Unable to determine content length -> default value = {}", IOUtil.UNDEFINED_LENGTH);
+            LOG.debug("Unable to determine content length -> default value = {}",
+                    IOUtil.UNDEFINED_LENGTH);
         }
         return length;
     }

@@ -29,6 +29,8 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.exception.TikaException;
@@ -36,139 +38,145 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.SAXException;
 
 public class ISATabUtils {
 
-	/**
-	 * INVESTIGATION
-	 */
-	
-	// Investigation section.
-	private static final String[] sections = {
-			"ONTOLOGY SOURCE REFERENCE",
-			"INVESTIGATION", 
-			"INVESTIGATION PUBLICATIONS", 
-			"INVESTIGATION CONTACTS"
-		};
-	
-	// STUDY section (inside the Study section)
-	private static final String studySectionField = "STUDY";
-	
-	// Study File Name (inside the STUDY section)
-	private static final String studyFileNameField = "Study File Name";
-	
-	public static void parseInvestigation(InputStream stream, XHTMLContentHandler handler, Metadata metadata, ParseContext context, String studyFileName) throws IOException, TikaException, SAXException {
+    /**
+     * INVESTIGATION
+     */
 
-		TikaConfig tikaConfig = context.get(TikaConfig.class);
-		if (tikaConfig == null) {
-			tikaConfig = TikaConfig.getDefaultConfig();
-		}
-		// Automatically detect the character encoding
-		try (AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(stream),
-				metadata, tikaConfig.getEncodingDetector())) {
-			extractMetadata(reader, metadata, studyFileName);
-		}
-	}
-	
-	public static void parseInvestigation(InputStream stream, XHTMLContentHandler handler, Metadata metadata, ParseContext context) throws IOException, TikaException, SAXException {
-		parseInvestigation(stream, handler, metadata, context, null);
-	}
-	
-	public static void parseStudy(InputStream stream, XHTMLContentHandler xhtml, Metadata metadata, ParseContext context) throws IOException, TikaException, SAXException {
-		TikaInputStream tis = TikaInputStream.get(stream);
-		// Automatically detect the character encoding
-		TikaConfig tikaConfig = context.get(TikaConfig.class);
-		if (tikaConfig == null) {
-			tikaConfig = TikaConfig.getDefaultConfig();
-		}
-		try (AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(tis),
-				metadata, tikaConfig.getEncodingDetector());
-			 CSVParser csvParser = new CSVParser(reader, CSVFormat.TDF)) {
-			Iterator<CSVRecord> iterator = csvParser.iterator();
+    // Investigation section.
+    private static final String[] sections =
+            {"ONTOLOGY SOURCE REFERENCE", "INVESTIGATION", "INVESTIGATION PUBLICATIONS",
+                    "INVESTIGATION CONTACTS"};
 
-			xhtml.startElement("table");
+    // STUDY section (inside the Study section)
+    private static final String studySectionField = "STUDY";
 
-			xhtml.startElement("thead");
-			if (iterator.hasNext()) {
-				CSVRecord record = iterator.next();
-				for (int i = 0; i < record.size(); i++) {
-					xhtml.startElement("th");
-					xhtml.characters(record.get(i));
-					xhtml.endElement("th");
-				}
-			}
-			xhtml.endElement("thead");
+    // Study File Name (inside the STUDY section)
+    private static final String studyFileNameField = "Study File Name";
 
-			xhtml.startElement("tbody");
-			while (iterator.hasNext()) {
-				CSVRecord record = iterator.next();
-				xhtml.startElement("tr");
-				for (int j = 0; j < record.size(); j++) {
-					xhtml.startElement("td");
-					xhtml.characters(record.get(j));
-					xhtml.endElement("td");
-				}
-				xhtml.endElement("tr");
-			}
-			xhtml.endElement("tbody");
+    public static void parseInvestigation(InputStream stream, XHTMLContentHandler handler,
+                                          Metadata metadata, ParseContext context,
+                                          String studyFileName)
+            throws IOException, TikaException, SAXException {
 
-			xhtml.endElement("table");
-		}
-	}
-	
-	public static void parseAssay(InputStream stream, XHTMLContentHandler xhtml, Metadata metadata, ParseContext context) throws IOException, TikaException, SAXException {
-		TikaInputStream tis = TikaInputStream.get(stream);
-		
-		// Automatically detect the character encoding
+        TikaConfig tikaConfig = context.get(TikaConfig.class);
+        if (tikaConfig == null) {
+            tikaConfig = TikaConfig.getDefaultConfig();
+        }
+        // Automatically detect the character encoding
+        try (AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(stream),
+                metadata, tikaConfig.getEncodingDetector())) {
+            extractMetadata(reader, metadata, studyFileName);
+        }
+    }
 
-		TikaConfig tikaConfig = context.get(TikaConfig.class);
-		if (tikaConfig == null) {
-			tikaConfig = TikaConfig.getDefaultConfig();
-		}
-		try (AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(tis),
-				metadata, tikaConfig.getEncodingDetector());
-			 CSVParser csvParser = new CSVParser(reader, CSVFormat.TDF)) {
-			xhtml.startElement("table");
+    public static void parseInvestigation(InputStream stream, XHTMLContentHandler handler,
+                                          Metadata metadata, ParseContext context)
+            throws IOException, TikaException, SAXException {
+        parseInvestigation(stream, handler, metadata, context, null);
+    }
 
-			Iterator<CSVRecord> iterator = csvParser.iterator();
+    public static void parseStudy(InputStream stream, XHTMLContentHandler xhtml, Metadata metadata,
+                                  ParseContext context)
+            throws IOException, TikaException, SAXException {
+        TikaInputStream tis = TikaInputStream.get(stream);
+        // Automatically detect the character encoding
+        TikaConfig tikaConfig = context.get(TikaConfig.class);
+        if (tikaConfig == null) {
+            tikaConfig = TikaConfig.getDefaultConfig();
+        }
+        try (AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(tis),
+                metadata, tikaConfig.getEncodingDetector());
+                CSVParser csvParser = new CSVParser(reader, CSVFormat.TDF)) {
+            Iterator<CSVRecord> iterator = csvParser.iterator();
 
-			xhtml.startElement("thead");
-			if (iterator.hasNext()) {
-				CSVRecord record = iterator.next();
-				for (int i = 0; i < record.size(); i++) {
-					xhtml.startElement("th");
-					xhtml.characters(record.get(i));
-					xhtml.endElement("th");
-				}
-			}
-			xhtml.endElement("thead");
+            xhtml.startElement("table");
 
-			xhtml.startElement("tbody");
-			while (iterator.hasNext()) {
-				CSVRecord record = iterator.next();
-				xhtml.startElement("tr");
-				for (int j = 0; j < record.size(); j++) {
-					xhtml.startElement("td");
-					xhtml.characters(record.get(j));
-					xhtml.endElement("td");
-				}
-				xhtml.endElement("tr");
-			}
-			xhtml.endElement("tbody");
+            xhtml.startElement("thead");
+            if (iterator.hasNext()) {
+                CSVRecord record = iterator.next();
+                for (int i = 0; i < record.size(); i++) {
+                    xhtml.startElement("th");
+                    xhtml.characters(record.get(i));
+                    xhtml.endElement("th");
+                }
+            }
+            xhtml.endElement("thead");
 
-			xhtml.endElement("table");
-		}
-	}
-	
-	private static void extractMetadata(Reader reader, Metadata metadata, String studyFileName) throws IOException {
-		boolean investigationSection = false;
-		boolean studySection = false;
-		boolean studyTarget = false;
-				
-		Map<String, String> map = new HashMap<String, String>();
+            xhtml.startElement("tbody");
+            while (iterator.hasNext()) {
+                CSVRecord record = iterator.next();
+                xhtml.startElement("tr");
+                for (int j = 0; j < record.size(); j++) {
+                    xhtml.startElement("td");
+                    xhtml.characters(record.get(j));
+                    xhtml.endElement("td");
+                }
+                xhtml.endElement("tr");
+            }
+            xhtml.endElement("tbody");
 
-		try (CSVParser csvParser = new CSVParser(reader, CSVFormat.TDF)) {
+            xhtml.endElement("table");
+        }
+    }
+
+    public static void parseAssay(InputStream stream, XHTMLContentHandler xhtml, Metadata metadata,
+                                  ParseContext context)
+            throws IOException, TikaException, SAXException {
+        TikaInputStream tis = TikaInputStream.get(stream);
+
+        // Automatically detect the character encoding
+
+        TikaConfig tikaConfig = context.get(TikaConfig.class);
+        if (tikaConfig == null) {
+            tikaConfig = TikaConfig.getDefaultConfig();
+        }
+        try (AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(tis),
+                metadata, tikaConfig.getEncodingDetector());
+                CSVParser csvParser = new CSVParser(reader, CSVFormat.TDF)) {
+            xhtml.startElement("table");
+
+            Iterator<CSVRecord> iterator = csvParser.iterator();
+
+            xhtml.startElement("thead");
+            if (iterator.hasNext()) {
+                CSVRecord record = iterator.next();
+                for (int i = 0; i < record.size(); i++) {
+                    xhtml.startElement("th");
+                    xhtml.characters(record.get(i));
+                    xhtml.endElement("th");
+                }
+            }
+            xhtml.endElement("thead");
+
+            xhtml.startElement("tbody");
+            while (iterator.hasNext()) {
+                CSVRecord record = iterator.next();
+                xhtml.startElement("tr");
+                for (int j = 0; j < record.size(); j++) {
+                    xhtml.startElement("td");
+                    xhtml.characters(record.get(j));
+                    xhtml.endElement("td");
+                }
+                xhtml.endElement("tr");
+            }
+            xhtml.endElement("tbody");
+
+            xhtml.endElement("table");
+        }
+    }
+
+    private static void extractMetadata(Reader reader, Metadata metadata, String studyFileName)
+            throws IOException {
+        boolean investigationSection = false;
+        boolean studySection = false;
+        boolean studyTarget = false;
+
+        Map<String, String> map = new HashMap<String, String>();
+
+        try (CSVParser csvParser = new CSVParser(reader, CSVFormat.TDF)) {
 
             for (CSVRecord record : csvParser) {
                 String field = record.get(0);
@@ -184,7 +192,8 @@ public class ISATabUtils {
                         }
                         String value = record.get(1);
                         map.put(field, value);
-                        studyTarget = (field.equals(studyFileNameField)) && (value.equals(studyFileName));
+                        studyTarget =
+                                (field.equals(studyFileNameField)) && (value.equals(studyFileName));
                         if (studyTarget) {
                             mapStudyToMetadata(map, metadata);
                             studySection = false;
@@ -194,24 +203,24 @@ public class ISATabUtils {
                     }
                 }
             }
-		} catch (IOException ioe) {
-			throw ioe;
-		}
-	}
-	
-	private static void addMetadata(String field, CSVRecord record, Metadata metadata) {
-		if ((record ==null) || (record.size() <= 1)) {
-			return;
-		}
-		
-		for (int i = 1; i < record.size(); i++) {
-			metadata.add(field, record.get(i));
-		}
-	}
-	
-	private static void mapStudyToMetadata(Map<String, String> map, Metadata metadata) {
-		for (Map.Entry<String, String> entry : map.entrySet()) {
-			metadata.add(entry.getKey(), entry.getValue());
-		}
-	}
+        } catch (IOException ioe) {
+            throw ioe;
+        }
+    }
+
+    private static void addMetadata(String field, CSVRecord record, Metadata metadata) {
+        if ((record == null) || (record.size() <= 1)) {
+            return;
+        }
+
+        for (int i = 1; i < record.size(); i++) {
+            metadata.add(field, record.get(i));
+        }
+    }
+
+    private static void mapStudyToMetadata(Map<String, String> map, Metadata metadata) {
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            metadata.add(entry.getKey(), entry.getValue());
+        }
+    }
 }

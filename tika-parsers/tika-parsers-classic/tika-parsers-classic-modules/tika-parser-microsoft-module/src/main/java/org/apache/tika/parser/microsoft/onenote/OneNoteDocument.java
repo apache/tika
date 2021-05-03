@@ -16,12 +16,12 @@
  */
 package org.apache.tika.parser.microsoft.onenote;
 
-import org.apache.commons.lang3.tuple.Pair;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.lang3.tuple.Pair;
 
 class OneNoteDocument {
     OneNoteHeader header;
@@ -60,7 +60,8 @@ class OneNoteDocument {
         currentRevision = fn.gosid;
     }
 
-    public void registerAdditionalRevisionRole(ExtendedGUID gosid, long revisionRole, ExtendedGUID gctxid) {
+    public void registerAdditionalRevisionRole(ExtendedGUID gosid, long revisionRole,
+                                               ExtendedGUID gctxid) {
         revisionRoleMap.put(gosid, Pair.of(revisionRole, gctxid));
     }
 
@@ -86,7 +87,8 @@ class OneNoteDocument {
         return revisionManifestLists;
     }
 
-    public OneNoteDocument setRevisionManifestLists(Map<ExtendedGUID, FileNodePtr> revisionManifestLists) {
+    public OneNoteDocument setRevisionManifestLists(
+            Map<ExtendedGUID, FileNodePtr> revisionManifestLists) {
         this.revisionManifestLists = revisionManifestLists;
         return this;
     }
@@ -113,7 +115,8 @@ class OneNoteDocument {
         return revisionRoleMap;
     }
 
-    public OneNoteDocument setRevisionRoleMap(Map<ExtendedGUID, Pair<Long, ExtendedGUID>> revisionRoleMap) {
+    public OneNoteDocument setRevisionRoleMap(
+            Map<ExtendedGUID, Pair<Long, ExtendedGUID>> revisionRoleMap) {
         this.revisionRoleMap = revisionRoleMap;
         return this;
     }

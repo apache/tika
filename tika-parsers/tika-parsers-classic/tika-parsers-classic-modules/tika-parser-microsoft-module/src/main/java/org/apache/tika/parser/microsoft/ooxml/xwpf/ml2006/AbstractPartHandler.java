@@ -16,9 +16,10 @@
  */
 package org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006;
 
-import org.apache.tika.exception.TikaException;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+
+import org.apache.tika.exception.TikaException;
 
 abstract class AbstractPartHandler extends DefaultHandler implements PartHandler {
 
@@ -26,12 +27,12 @@ abstract class AbstractPartHandler extends DefaultHandler implements PartHandler
 
     public abstract String getContentType();
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public String getName() {
         return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     /**

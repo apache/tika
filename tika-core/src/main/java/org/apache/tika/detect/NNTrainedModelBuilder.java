@@ -21,56 +21,55 @@ package org.apache.tika.detect;
 import org.apache.tika.mime.MediaType;
 
 public class NNTrainedModelBuilder {
-	private MediaType type;
+    private MediaType type;
 
-	private int numOfInputs;
-	private int numOfHidden;
-	private int numOfOutputs;
+    private int numOfInputs;
+    private int numOfHidden;
+    private int numOfOutputs;
 
-	private float[] params;
+    private float[] params;
 
-	public MediaType getType() {
-		return this.type;
-	}
+    public MediaType getType() {
+        return this.type;
+    }
 
-	public int getNumOfInputs() {
-		return numOfInputs;
-	}
+    public void setType(final MediaType type) {
+        this.type = type;
+    }
 
-	public int getNumOfHidden() {
-		return numOfHidden;
-	}
+    public int getNumOfInputs() {
+        return numOfInputs;
+    }
 
-	public int getNumOfOutputs() {
-		return numOfOutputs;
-	}
+    public void setNumOfInputs(final int numOfInputs) {
+        this.numOfInputs = numOfInputs;
+    }
 
-	public float[] getParams() {
-		return params;
-	}
+    public int getNumOfHidden() {
+        return numOfHidden;
+    }
 
-	public void setType(final MediaType type) {
-		this.type = type;
-	}
+    public void setNumOfHidden(final int numOfHidden) {
+        this.numOfHidden = numOfHidden;
+    }
 
-	public void setNumOfInputs(final int numOfInputs) {
-		this.numOfInputs = numOfInputs;
-	}
+    public int getNumOfOutputs() {
+        return numOfOutputs;
+    }
 
-	public void setNumOfHidden(final int numOfHidden) {
-		this.numOfHidden = numOfHidden;
-	}
+    public void setNumOfOutputs(final int numOfOutputs) {
+        this.numOfOutputs = numOfOutputs;
+    }
 
-	public void setNumOfOutputs(final int numOfOutputs) {
-		this.numOfOutputs = numOfOutputs;
-	}
+    public float[] getParams() {
+        return params;
+    }
 
-	public void setParams(float[] params) {
-		this.params = params;
-	}
+    public void setParams(float[] params) {
+        this.params = params;
+    }
 
-	public NNTrainedModel build() {
-		return new NNTrainedModel(numOfInputs, numOfHidden, numOfOutputs,
-				params);
-	}
+    public NNTrainedModel build() {
+        return new NNTrainedModel(numOfInputs, numOfHidden, numOfOutputs, params);
+    }
 }

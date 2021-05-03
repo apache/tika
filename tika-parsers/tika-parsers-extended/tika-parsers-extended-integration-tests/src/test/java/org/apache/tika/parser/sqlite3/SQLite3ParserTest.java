@@ -16,7 +16,20 @@
  */
 package org.apache.tika.parser.sqlite3;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertEquals;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.commons.io.IOUtils;
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.extractor.EmbeddedResourceHandler;
 import org.apache.tika.extractor.ParserContainerExtractor;
@@ -32,18 +45,6 @@ import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
 
 public class SQLite3ParserTest extends TikaTest {
     private final static String TEST_FILE_NAME = "testSqlite3b.db";
@@ -59,8 +60,7 @@ public class SQLite3ParserTest extends TikaTest {
         }
 
         try (InputStream is = getResourceAsStream(TEST_FILE1);
-             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ) {
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();) {
             IOUtils.copy(is, bos);
             try (InputStream stream = new ByteArrayInputStream(bos.toByteArray())) {
                 _testBasic(stream);
@@ -118,7 +118,10 @@ public class SQLite3ParserTest extends TikaTest {
         String xml = handler.toString();
         //just includes headers for embedded documents
         assertContains("<table name=\"my_table1\"><thead><tr>", xml);
-        assertContains("<td><span type=\"blob\" column_name=\"BYTES_COL\" row_number=\"0\"><div class=\"package-entry\"><h1>BYTES_COL_0.doc</h1>", xml);
+        assertContains(
+                "<td><span type=\"blob\" column_name=\"BYTES_COL\" row_number=\"0\">" +
+                        "<div class=\"package-entry\"><h1>BYTES_COL_0.doc</h1>",
+                xml);
         //but no other content
         assertNotContained("dog", xml);
         assertNotContained("alt=\"image1.png\"", xml);
@@ -129,13 +132,10 @@ public class SQLite3ParserTest extends TikaTest {
     @Test
     public void testRecursiveParserWrapper() throws Exception {
 
-        RecursiveParserWrapper wrapper =
-                new RecursiveParserWrapper(AUTO_DETECT_PARSER);
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER);
         Metadata metadata = new Metadata();
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new BasicContentHandlerFactory(
-                        BasicContentHandlerFactory.HANDLER_TYPE.BODY, -1)
-        );
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.BODY, -1));
 
         try (InputStream is = getResourceAsStream(TEST_FILE1)) {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, TEST_FILE_NAME);
@@ -154,11 +154,14 @@ public class SQLite3ParserTest extends TikaTest {
         String table2 = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         assertContains("do eiusmod tempor\n", table2);
 
-        assertContains("The quick brown fox", metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
-        assertContains("The quick brown fox", metadataList.get(4).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("The quick brown fox",
+                metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("The quick brown fox",
+                metadataList.get(4).get(TikaCoreProperties.TIKA_CONTENT));
 
         //confirm .doc was added to blob
-        assertEquals("/BYTES_COL_0.doc/image1.png", metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        assertEquals("/BYTES_COL_0.doc/image1.png",
+                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
     }
 
     @Test
@@ -182,18 +185,9 @@ public class SQLite3ParserTest extends TikaTest {
             String s = new String(byteArr, 0, Math.min(byteArr.length, 1000), UTF_8);
             strings[i] = s;
         }
-        byte[] oleBytes = new byte[]{
-                (byte) -48,
-                (byte) -49,
-                (byte) 17,
-                (byte) -32,
-                (byte) -95,
-                (byte) -79,
-                (byte) 26,
-                (byte) -31,
-                (byte) 0,
-                (byte) 0,
-        };
+        byte[] oleBytes =
+                new byte[]{(byte) -48, (byte) -49, (byte) 17, (byte) -32, (byte) -95, (byte) -79,
+                        (byte) 26, (byte) -31, (byte) 0, (byte) 0,};
         //test OLE
         for (int i = 0; i < 10; i++) {
             assertEquals(oleBytes[i], byteCopier.bytes.get(0)[i]);
@@ -225,14 +219,12 @@ public class SQLite3ParserTest extends TikaTest {
     }
 
 
-
     public static class InputStreamResettingHandler implements EmbeddedResourceHandler {
 
         public List<byte[]> bytes = new ArrayList<byte[]>();
 
         @Override
-        public void handle(String filename, MediaType mediaType,
-                           InputStream stream) {
+        public void handle(String filename, MediaType mediaType, InputStream stream) {
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             if (!stream.markSupported()) {
                 stream = TikaInputStream.get(stream);

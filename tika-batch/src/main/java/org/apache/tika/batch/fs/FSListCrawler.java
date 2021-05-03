@@ -1,4 +1,3 @@
-package org.apache.tika.batch.fs;
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -15,6 +14,8 @@ package org.apache.tika.batch.fs;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.batch.fs;
+
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -41,7 +42,6 @@ public class FSListCrawler extends FileResourceCrawler {
     private final Path root;
 
     /**
-     *
      * @param fileQueue
      * @param numConsumers
      * @param root
@@ -49,12 +49,12 @@ public class FSListCrawler extends FileResourceCrawler {
      * @param encoding
      * @throws FileNotFoundException
      * @throws UnsupportedEncodingException
-     * @deprecated
      * @see #FSListCrawler(ArrayBlockingQueue, int, Path, Path, Charset)
+     * @deprecated
      */
     @Deprecated
-    public FSListCrawler(ArrayBlockingQueue<FileResource> fileQueue,
-                         int numConsumers, File root, File list, String encoding)
+    public FSListCrawler(ArrayBlockingQueue<FileResource> fileQueue, int numConsumers, File root,
+                         File list, String encoding)
             throws FileNotFoundException, UnsupportedEncodingException {
         super(fileQueue, numConsumers);
         reader = new BufferedReader(new InputStreamReader(new FileInputStream(list), encoding));
@@ -67,17 +67,16 @@ public class FSListCrawler extends FileResourceCrawler {
      * <p>
      * The list should be paths relative to the root.
      *
-     * @param fileQueue queue for batch
+     * @param fileQueue    queue for batch
      * @param numConsumers number of consumers
-     * @param root root input director
-     * @param list text file list (one file per line) of paths relative to
-     *             the root for processing
-     * @param charset charset of the file
+     * @param root         root input director
+     * @param list         text file list (one file per line) of paths relative to
+     *                     the root for processing
+     * @param charset      charset of the file
      * @throws IOException
      */
-    public FSListCrawler(ArrayBlockingQueue<FileResource> fileQueue,
-                         int numConsumers, Path root, Path list, Charset charset)
-            throws IOException {
+    public FSListCrawler(ArrayBlockingQueue<FileResource> fileQueue, int numConsumers, Path root,
+                         Path list, Charset charset) throws IOException {
         super(fileQueue, numConsumers);
         reader = Files.newBufferedReader(list, charset);
         this.root = root;
@@ -91,7 +90,7 @@ public class FSListCrawler extends FileResourceCrawler {
                 throw new InterruptedException("file adder interrupted");
             }
             Path f = Paths.get(root.toString(), line);
-            if (! Files.exists(f)) {
+            if (!Files.exists(f)) {
                 LOG.warn("File doesn't exist: {}", f.toAbsolutePath());
                 line = nextLine();
                 continue;

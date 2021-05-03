@@ -17,11 +17,11 @@
 
 package org.apache.tika.server.core;
 
-import org.apache.tika.metadata.Metadata;
-
-import javax.ws.rs.core.HttpHeaders;
 import java.io.IOException;
 import java.io.InputStream;
+import javax.ws.rs.core.HttpHeaders;
+
+import org.apache.tika.metadata.Metadata;
 
 /**
  * Interface to allow for custom/consistent creation of InputStream
@@ -31,6 +31,7 @@ import java.io.InputStream;
  */
 public interface InputStreamFactory {
 
-    InputStream getInputSteam(InputStream is, Metadata metadata, HttpHeaders httpHeaders) throws IOException;
+    InputStream getInputSteam(InputStream is, Metadata metadata, HttpHeaders httpHeaders)
+            throws IOException;
 
 }

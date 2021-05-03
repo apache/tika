@@ -16,11 +16,6 @@
  */
 package org.apache.tika.parser.image;
 
-import javax.imageio.IIOException;
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.metadata.IIOMetadata;
-import javax.imageio.stream.ImageInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -28,24 +23,26 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
-
+import javax.imageio.IIOException;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.metadata.IIOMetadata;
+import javax.imageio.stream.ImageInputStream;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.XHTMLContentHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 
 public class ImageParser extends AbstractImageParser {
     /**
@@ -61,15 +58,11 @@ public class ImageParser extends AbstractImageParser {
     private static final Set<MediaType> TMP_SUPPORTED;
 
     static {
-        TMP_SUPPORTED = new HashSet<>(Arrays.asList(
-                MAIN_BMP_TYPE,
-                OLD_BMP_TYPE,
-                MediaType.image("gif"),
-                MediaType.image("png"),
-                MediaType.image("vnd.wap.wbmp"),
-                MediaType.image("x-icon"),
-                MediaType.image("x-xcf"),
-                MediaType.image("x-jbig2")));
+        TMP_SUPPORTED = new HashSet<>(
+                Arrays.asList(MAIN_BMP_TYPE, OLD_BMP_TYPE, MediaType.image("gif"),
+                        MediaType.image("png"), MediaType.image("vnd.wap.wbmp"),
+                        MediaType.image("x-icon"), MediaType.image("x-xcf"),
+                        MediaType.image("x-jbig2")));
         //add try/catch class.forName() for image types relying on
         //provided dependencies
     }
@@ -106,9 +99,8 @@ public class ImageParser extends AbstractImageParser {
         }
     }
 
-    private static void loadNode(
-            Metadata metadata, Node node, String parents,
-            boolean addThisNodeName) {
+    private static void loadNode(Metadata metadata, Node node, String parents,
+                                 boolean addThisNodeName) {
         if (addThisNodeName) {
             if (parents.length() > 0) {
                 parents += " ";
@@ -164,19 +156,20 @@ public class ImageParser extends AbstractImageParser {
 
 
     @Override
-    void extractMetadata(InputStream stream, ContentHandler contentHandler, Metadata metadata, ParseContext parseContext) throws IOException, SAXException, TikaException {
+    void extractMetadata(InputStream stream, ContentHandler contentHandler, Metadata metadata,
+                         ParseContext parseContext)
+            throws IOException, SAXException, TikaException {
         String type = metadata.get(Metadata.CONTENT_TYPE);
         if (type == null) {
             return;
         }
         try {
-            Iterator<ImageReader> iterator =
-                    ImageIO.getImageReadersByMIMEType(type);
+            Iterator<ImageReader> iterator = ImageIO.getImageReadersByMIMEType(type);
             if (iterator.hasNext()) {
                 ImageReader reader = iterator.next();
                 try {
-                    try (ImageInputStream imageStream = ImageIO.createImageInputStream(
-                            new CloseShieldInputStream(stream))) {
+                    try (ImageInputStream imageStream = ImageIO
+                            .createImageInputStream(new CloseShieldInputStream(stream))) {
                         reader.setInput(imageStream);
 
                         metadata.set(Metadata.IMAGE_WIDTH, Integer.toString(reader.getWidth(0)));
@@ -193,14 +186,14 @@ public class ImageParser extends AbstractImageParser {
 
             // Translate certain Metadata tags from the ImageIO
             //  specific namespace into the general Tika one
-            setIfPresent(metadata, "CommentExtensions CommentExtension", TikaCoreProperties.COMMENTS);
+            setIfPresent(metadata, "CommentExtensions CommentExtension",
+                    TikaCoreProperties.COMMENTS);
             setIfPresent(metadata, "markerSequence com", TikaCoreProperties.COMMENTS);
             setIfPresent(metadata, "Data BitsPerSample", Metadata.BITS_PER_SAMPLE);
         } catch (IIOException e) {
             // TIKA-619: There is a known bug in the Sun API when dealing with GIF images
             //  which Tika will just ignore.
-            if (!(e.getMessage() != null &&
-                    e.getMessage().equals("Unexpected block type 0!") &&
+            if (!(e.getMessage() != null && e.getMessage().equals("Unexpected block type 0!") &&
                     type.equals("image/gif"))) {
                 throw new TikaException(type + " parse error", e);
             }

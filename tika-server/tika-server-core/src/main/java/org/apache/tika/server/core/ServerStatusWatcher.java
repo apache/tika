@@ -17,10 +17,6 @@
 
 package org.apache.tika.server.core;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.Buffer;
@@ -33,6 +29,9 @@ import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.time.Instant;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class ServerStatusWatcher implements Runnable {
 
 
@@ -44,9 +43,9 @@ public class ServerStatusWatcher implements Runnable {
     private final ByteBuffer statusBuffer = ByteBuffer.allocate(16);
     private volatile boolean shuttingDown = false;
 
-    public ServerStatusWatcher(ServerStatus serverStatus,
-                               InputStream inputStream, Path forkedStatusPath,
-                               TikaServerConfig tikaServerConfig) throws InterruptedException {
+    public ServerStatusWatcher(ServerStatus serverStatus, InputStream inputStream,
+                               Path forkedStatusPath, TikaServerConfig tikaServerConfig)
+            throws InterruptedException {
         this.serverStatus = serverStatus;
         this.tikaServerConfig = tikaServerConfig;
         this.forkedStatusPath = forkedStatusPath;
@@ -79,8 +78,7 @@ public class ServerStatusWatcher implements Runnable {
 
     }
 
-    private synchronized void writeStatus(boolean shuttingDown)
-            throws InterruptedException {
+    private synchronized void writeStatus(boolean shuttingDown) throws InterruptedException {
         if (this.shuttingDown == true) {
             return;
         }
@@ -90,9 +88,8 @@ public class ServerStatusWatcher implements Runnable {
 
         Instant started = Instant.now();
         long elapsed = Duration.between(started, Instant.now()).toMillis();
-        try (FileChannel channel = FileChannel.open(forkedStatusPath,
-                StandardOpenOption.CREATE,
-                StandardOpenOption.WRITE)) {
+        try (FileChannel channel = FileChannel
+                .open(forkedStatusPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
             while (elapsed < tikaServerConfig.getTaskTimeoutMillis()) {
                 try (FileLock lock = channel.tryLock()) {
                     if (lock != null) {
@@ -113,7 +110,8 @@ public class ServerStatusWatcher implements Runnable {
         } catch (IOException e) {
             LOG.warn("Couldn't open forked status file for writing", e);
         }
-        throw new FatalException("Couldn't write to status file after trying for " + elapsed + " millis.");
+        throw new FatalException(
+                "Couldn't write to status file after trying for " + elapsed + " millis.");
     }
 
     private void checkForHitMaxFiles() {
@@ -135,13 +133,14 @@ public class ServerStatusWatcher implements Runnable {
                 if (status.fileName.isPresent()) {
                     LOG.error("Timeout task {}, millis elapsed {}, file {}" +
                                     "consider increasing the allowable time with the " +
-                                    "<taskTimeoutMillis/> parameter",
-                            status.task.toString(), millisElapsed, status.fileName.get());
+                                    "<taskTimeoutMillis/> parameter", status.task.toString(),
+                            millisElapsed,
+                            status.fileName.get());
                 } else {
                     LOG.error("Timeout task {}, millis elapsed {}; " +
                                     "consider increasing the allowable time with the " +
-                                    "<taskTimeoutMillis/> parameter",
-                            status.task.toString(), millisElapsed);
+                                    "<taskTimeoutMillis/> parameter", status.task.toString(),
+                            millisElapsed);
                 }
             }
         }
@@ -168,6 +167,15 @@ public class ServerStatusWatcher implements Runnable {
         System.exit(status.getShutdownCode());
     }
 
+    private static class FatalException extends RuntimeException {
+        public FatalException() {
+            super();
+        }
+
+        public FatalException(String msg) {
+            super(msg);
+        }
+    }
 
     //This is an internal thread that pulses every ServerTimeouts#pingPulseMillis
     //within the forked process to see if the forked process should terminate.
@@ -181,7 +189,8 @@ public class ServerStatusWatcher implements Runnable {
                 checkForTaskTimeouts();
                 ServerStatus.STATUS currStatus = serverStatus.getStatus();
                 if (currStatus != ServerStatus.STATUS.OPERATING) {
-                    LOG.warn("forked process observed " + currStatus.name() + " and is shutting down.");
+                    LOG.warn("forked process observed " + currStatus.name() +
+                            " and is shutting down.");
                     shutdown(currStatus);
                 } else {
                     long elapsed = Duration.between(lastWrite, Instant.now()).toMillis();
@@ -202,16 +211,6 @@ public class ServerStatusWatcher implements Runnable {
                     return;
                 }
             }
-        }
-    }
-
-    private static class FatalException extends RuntimeException {
-        public FatalException() {
-            super();
-        }
-
-        public FatalException(String msg) {
-            super(msg);
         }
     }
 }

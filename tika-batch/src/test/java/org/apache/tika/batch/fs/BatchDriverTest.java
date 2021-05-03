@@ -27,14 +27,15 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.tika.batch.BatchProcessDriverCLI;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import org.apache.tika.batch.BatchProcessDriverCLI;
+
 public class BatchDriverTest extends FSBatchTestBase {
 
-    //for debugging, turn logging off/on via resources/log4j.properties for the driver
-    //and log4j_process.properties for the process.
+    //for debugging, turn logging off/on via resources/log4j2.properties for the driver
+    //and log4j2_process.properties for the process.
 
     @Test(timeout = 15000)
     public void oneHeavyHangTest() throws Exception {
@@ -84,7 +85,7 @@ public class BatchDriverTest extends FSBatchTestBase {
         String[] args = getDefaultCommandLineArgsArr("no_restart", outputDir, null);
         String[] mod = Arrays.copyOf(args, args.length + 2);
         mod[args.length] = "-numConsumers";
-        mod[args.length+1] = "1";
+        mod[args.length + 1] = "1";
 
         BatchProcessDriverCLI driver = getNewDriver("/tika-batch-config-test.xml", mod);
         driver.execute();
@@ -217,12 +218,13 @@ public class BatchDriverTest extends FSBatchTestBase {
         assertEquals(6, countChildren(outputDir));
         assertTrue(driver.getNumRestarts() > 1);
         for (int i = 0; i < 3; i++) {
-            assertEquals("problem with "+i, 0, Files.size(outputDir.resolve("test"+i+"_system_exit.xml.xml")));
+            assertEquals("problem with " + i, 0,
+                    Files.size(outputDir.resolve("test" + i + "_system_exit.xml.xml")));
         }
         //sys exit may prevent test3 from running successfully
         for (int i = 5; i < 6; i++) {
             assertContains("first test file",
-                    readFileToString(outputDir.resolve("test"+i+"_ok.xml.xml"), UTF_8));
+                    readFileToString(outputDir.resolve("test" + i + "_ok.xml.xml"), UTF_8));
         }
     }
 
@@ -239,12 +241,13 @@ public class BatchDriverTest extends FSBatchTestBase {
         assertEquals(6, countChildren(outputDir));
 
         for (int i = 0; i < 3; i++) {
-            assertEquals("problem with "+i, 0, Files.size(outputDir.resolve("test"+i+"_thread_interrupt.xml.xml")));
+            assertEquals("problem with " + i, 0,
+                    Files.size(outputDir.resolve("test" + i + "_thread_interrupt.xml.xml")));
         }
         //sys exit may prevent test3 from running successfully
         for (int i = 5; i < 6; i++) {
             assertContains("first test file",
-                    readFileToString(outputDir.resolve("test"+i+"_ok.xml.xml"), UTF_8));
+                    readFileToString(outputDir.resolve("test" + i + "_ok.xml.xml"), UTF_8));
         }
     }
 

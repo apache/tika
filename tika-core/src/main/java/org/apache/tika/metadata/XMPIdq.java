@@ -22,7 +22,9 @@ public interface XMPIdq {
 
     String PREFIX = "xmpidq";
 
-    /** The xmpidq prefix followed by the colon delimiter */
+    /**
+     * The xmpidq prefix followed by the colon delimiter
+     */
     String PREFIX_ = PREFIX + ":";
 
     /**

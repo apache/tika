@@ -1,4 +1,3 @@
-package org.apache.tika.sax;
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -15,6 +14,8 @@ package org.apache.tika.sax;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.sax;
+
 
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -30,6 +31,19 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 public class BasicContentHandlerFactory implements ContentHandlerFactory {
 
+    private final HANDLER_TYPE type;
+    private final int writeLimit;
+
+    /**
+     * @param type       basic type of handler
+     * @param writeLimit max number of characters to store; if < 0,
+     *                   the handler will store all characters
+     */
+    public BasicContentHandlerFactory(HANDLER_TYPE type, int writeLimit) {
+        this.type = type;
+        this.writeLimit = writeLimit;
+    }
+
     /**
      * Tries to parse string into handler type.  Returns default if string is null or
      * parse fails.
@@ -37,7 +51,7 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory {
      * Options: xml, html, text, body, ignore (no content)
      *
      * @param handlerTypeName string to parse
-     * @param defaultType type to return if parse fails
+     * @param defaultType     type to return if parse fails
      * @return handler type
      */
     public static HANDLER_TYPE parseHandlerType(String handlerTypeName, HANDLER_TYPE defaultType) {
@@ -47,38 +61,21 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory {
 
         String lcHandlerTypeName = handlerTypeName.toLowerCase(Locale.ROOT);
         switch (lcHandlerTypeName) {
-            case "xml" : return HANDLER_TYPE.XML;
-            case "text" : return HANDLER_TYPE.TEXT;
-            case "txt" : return HANDLER_TYPE.TEXT;
-            case "html" : return HANDLER_TYPE.HTML;
-            case "body" : return HANDLER_TYPE.BODY;
-            case "ignore" : return HANDLER_TYPE.IGNORE;
-            default : return defaultType;
+            case "xml":
+                return HANDLER_TYPE.XML;
+            case "text":
+                return HANDLER_TYPE.TEXT;
+            case "txt":
+                return HANDLER_TYPE.TEXT;
+            case "html":
+                return HANDLER_TYPE.HTML;
+            case "body":
+                return HANDLER_TYPE.BODY;
+            case "ignore":
+                return HANDLER_TYPE.IGNORE;
+            default:
+                return defaultType;
         }
-    }
-
-    /**
-     * Common handler types for content.
-     */
-    public enum HANDLER_TYPE {
-        BODY,
-        IGNORE, //don't store content
-        TEXT,
-        HTML,
-        XML
-    }
-
-    private final HANDLER_TYPE type;
-    private final int writeLimit;
-
-    /**
-     *
-     * @param type basic type of handler
-     * @param writeLimit max number of characters to store; if < 0, the handler will store all characters
-     */
-    public BasicContentHandlerFactory(HANDLER_TYPE type, int writeLimit) {
-        this.type = type;
-        this.writeLimit = writeLimit;
     }
 
     @Override
@@ -90,7 +87,7 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory {
             return new DefaultHandler();
         }
         if (writeLimit > -1) {
-            switch(type) {
+            switch (type) {
                 case TEXT:
                     return new WriteOutContentHandler(new ToTextContentHandler(), writeLimit);
                 case HTML:
@@ -116,7 +113,8 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory {
     }
 
     @Override
-    public ContentHandler getNewContentHandler(OutputStream os, String encoding) throws UnsupportedEncodingException {
+    public ContentHandler getNewContentHandler(OutputStream os, String encoding)
+            throws UnsupportedEncodingException {
         return getNewContentHandler(os, Charset.forName(encoding));
     }
 
@@ -131,16 +129,20 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory {
                 switch (type) {
                     case BODY:
                         return new WriteOutContentHandler(
-                                new BodyContentHandler(
-                                        new OutputStreamWriter(os, charset)), writeLimit);
+                                new BodyContentHandler(new OutputStreamWriter(os, charset)),
+                                writeLimit);
                     case TEXT:
-                        return new WriteOutContentHandler(new ToTextContentHandler(os, charset.name()), writeLimit);
+                        return new WriteOutContentHandler(
+                                new ToTextContentHandler(os, charset.name()), writeLimit);
                     case HTML:
-                        return new WriteOutContentHandler(new ToHTMLContentHandler(os, charset.name()), writeLimit);
+                        return new WriteOutContentHandler(
+                                new ToHTMLContentHandler(os, charset.name()), writeLimit);
                     case XML:
-                        return new WriteOutContentHandler(new ToXMLContentHandler(os, charset.name()), writeLimit);
+                        return new WriteOutContentHandler(
+                                new ToXMLContentHandler(os, charset.name()), writeLimit);
                     default:
-                        return new WriteOutContentHandler(new ToTextContentHandler(os, charset.name()), writeLimit);
+                        return new WriteOutContentHandler(
+                                new ToTextContentHandler(os, charset.name()), writeLimit);
                 }
             } else {
                 switch (type) {
@@ -158,16 +160,26 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory {
                 }
             }
         } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("couldn't find charset for name: "+charset);
+            throw new RuntimeException("couldn't find charset for name: " + charset);
         }
     }
 
     /**
-     *
      * @return handler type used by this factory
      */
     public HANDLER_TYPE getType() {
         return type;
     }
 
+    /**
+     * Common handler types for content.
+     */
+    public enum HANDLER_TYPE {
+        BODY, IGNORE, //don't store content
+        TEXT, HTML, XML
+    }
+
+    public int getWriteLimit() {
+        return writeLimit;
+    }
 }

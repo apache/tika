@@ -17,11 +17,20 @@
 
 package org.apache.tika.parser.grib;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.File;
 import java.util.Collections;
 import java.util.Set;
+
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import ucar.nc2.Attribute;
+import ucar.nc2.Dimension;
+import ucar.nc2.NetcdfFile;
+import ucar.nc2.Variable;
+import ucar.nc2.dataset.NetcdfDataset;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -32,20 +41,11 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import ucar.nc2.Attribute;
-import ucar.nc2.Dimension;
-import ucar.nc2.NetcdfFile;
-import ucar.nc2.Variable;
-import ucar.nc2.dataset.NetcdfDataset;
 
 public class GribParser extends AbstractParser {
 
-    private static final long serialVersionUID = 7855458954474247655L;
-
     public static final String GRIB_MIME_TYPE = "application/x-grib2";
-
+    private static final long serialVersionUID = 7855458954474247655L;
     private final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.application("x-grib2"));
 
@@ -53,9 +53,8 @@ public class GribParser extends AbstractParser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler,
-                      Metadata metadata, ParseContext context) throws IOException,
-            SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
 
         //Set MIME type as grib2
         metadata.set(Metadata.CONTENT_TYPE, GRIB_MIME_TYPE);
@@ -86,8 +85,9 @@ public class GribParser extends AbstractParser {
             xhtml.characters("dimensions:");
             xhtml.newline();
 
-            for (Dimension dim : ncFile.getDimensions()){
-                xhtml.element("li", dim.getFullName() + "=" + String.valueOf(dim.getLength()) + ";");
+            for (Dimension dim : ncFile.getDimensions()) {
+                xhtml.element("li",
+                        dim.getFullName() + "=" + String.valueOf(dim.getLength()) + ";");
                 xhtml.newline();
             }
 
@@ -95,9 +95,10 @@ public class GribParser extends AbstractParser {
             xhtml.characters("variables:");
             xhtml.newline();
 
-            for (Variable var : ncFile.getVariables()){
-                xhtml.element("p", String.valueOf(var.getDataType()) + var.getNameAndDimensions() + ";");
-                for(Attribute element : var.getAttributes()){
+            for (Variable var : ncFile.getVariables()) {
+                xhtml.element("p",
+                        String.valueOf(var.getDataType()) + var.getNameAndDimensions() + ";");
+                for (Attribute element : var.getAttributes()) {
                     xhtml.element("li", " :" + element + ";");
                     xhtml.newline();
                 }

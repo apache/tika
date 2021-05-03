@@ -40,8 +40,12 @@ public class XUserDefinedCharset extends Charset {
             @Override
             protected CoderResult decodeLoop(ByteBuffer in, CharBuffer out) {
                 while (true) {
-                    if (!in.hasRemaining()) return CoderResult.UNDERFLOW;
-                    if (!out.hasRemaining()) return CoderResult.OVERFLOW;
+                    if (!in.hasRemaining()) {
+                        return CoderResult.UNDERFLOW;
+                    }
+                    if (!out.hasRemaining()) {
+                        return CoderResult.OVERFLOW;
+                    }
                     byte b = in.get();
                     out.append((char) ((b >= 0) ? b : 0xF700 + (b & 0xFF)));
                 }

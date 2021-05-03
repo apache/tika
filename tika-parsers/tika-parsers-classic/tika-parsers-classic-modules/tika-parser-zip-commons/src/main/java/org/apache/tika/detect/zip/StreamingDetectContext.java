@@ -21,17 +21,21 @@ import java.util.Map;
 
 public class StreamingDetectContext {
 
-    /** Serial version UID. */
+    /**
+     * Serial version UID.
+     */
     private static final long serialVersionUID = -5921436862145826534L;
 
-    /** Map of objects in this context */
+    /**
+     * Map of objects in this context
+     */
     private final Map<String, Object> context = new HashMap<String, Object>();
 
     /**
      * Adds the given value to the context as an implementation of the given
      * interface.
      *
-     * @param key the interface implemented by the given value
+     * @param key   the interface implemented by the given value
      * @param value the value to be added, or <code>null</code> to remove
      */
     public <T> void set(Class<T> key, T value) {
@@ -47,7 +51,7 @@ public class StreamingDetectContext {
      *
      * @param key the interface implemented by the requested object
      * @return the object that implements the given interface,
-     *         or <code>null</code> if not found
+     * or <code>null</code> if not found
      */
     @SuppressWarnings("unchecked")
     public <T> T get(Class<T> key) {
@@ -58,10 +62,10 @@ public class StreamingDetectContext {
      * Returns the object in this context that implements the given interface,
      * or the given default value if such an object is not found.
      *
-     * @param key the interface implemented by the requested object
+     * @param key          the interface implemented by the requested object
      * @param defaultValue value to return if the requested object is not found
      * @return the object that implements the given interface,
-     *         or the given default value if not found
+     * or the given default value if not found
      */
     public <T> T get(Class<T> key, T defaultValue) {
         T value = get(key);

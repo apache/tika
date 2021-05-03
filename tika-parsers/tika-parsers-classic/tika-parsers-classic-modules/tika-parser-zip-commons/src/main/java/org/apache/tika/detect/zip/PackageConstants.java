@@ -17,6 +17,7 @@
 package org.apache.tika.detect.zip;
 
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+
 import org.apache.tika.mime.MediaType;
 
 public class PackageConstants {

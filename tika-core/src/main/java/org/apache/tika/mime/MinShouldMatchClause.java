@@ -25,7 +25,7 @@ class MinShouldMatchClause implements Clause {
 
     /**
      * Minimum number of clauses that need to match.
-     *
+     * <p>
      * Throws IllegalArgumentException if min <= 0,
      * if clauses is null or has size == 0, or if min > clauses.size()
      *
@@ -39,11 +39,10 @@ class MinShouldMatchClause implements Clause {
         }
 
         if (min > clauses.size()) {
-            throw new IllegalArgumentException("min (" +
-                    min+ ") cannot be > clauses.size ("+
-                    clauses.size() +")");
+            throw new IllegalArgumentException(
+                    "min (" + min + ") cannot be > clauses.size (" + clauses.size() + ")");
         } else if (min <= 0) {
-            throw new IllegalArgumentException("min cannot be <= 0: "+min);
+            throw new IllegalArgumentException("min cannot be <= 0: " + min);
         }
 
         this.min = min;
@@ -71,7 +70,7 @@ class MinShouldMatchClause implements Clause {
     }
 
     public String toString() {
-        return "minShouldMatch (min: "+min+") " + clauses;
+        return "minShouldMatch (min: " + min + ") " + clauses;
     }
 
 }

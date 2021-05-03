@@ -16,11 +16,7 @@
  */
 package org.apache.tika.metadata.serialization;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.pipes.emitter.EmitKey;
-import org.apache.tika.pipes.fetcher.FetchKey;
-import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.io.Reader;
 import java.io.StringReader;
@@ -28,7 +24,12 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.pipes.FetchEmitTuple;
+import org.apache.tika.pipes.emitter.EmitKey;
+import org.apache.tika.pipes.fetcher.FetchKey;
 
 public class JsonFetchEmitTupleListTest {
 
@@ -48,15 +49,14 @@ public class JsonFetchEmitTupleListTest {
 
     private FetchEmitTuple getFetchEmitTuple(int i) {
         Metadata m = new Metadata();
-        m.add("m1", "v1-"+i);
-        m.add("m1", "v1-"+i);
-        m.add("m2", "v2-"+i);
-        m.add("m2", "v3-"+i);
-        m.add("m3", "v4-"+i);
+        m.add("m1", "v1-" + i);
+        m.add("m1", "v1-" + i);
+        m.add("m2", "v2-" + i);
+        m.add("m2", "v3-" + i);
+        m.add("m3", "v4-" + i);
 
-        return new FetchEmitTuple(
-                new FetchKey("fetcher-"+i, "fetchkey-"+i),
-                new EmitKey("emitter-"+i, "emitKey-"+i),
-                m);
+        return new FetchEmitTuple("id-" + i,
+                new FetchKey("fetcher-" + i, "fetchkey-" + i),
+                new EmitKey("emitter-" + i, "emitKey-" + i), m);
     }
 }

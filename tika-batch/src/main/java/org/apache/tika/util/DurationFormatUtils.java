@@ -1,5 +1,3 @@
-package org.apache.tika.util;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,7 @@ package org.apache.tika.util;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.util;
 
 /**
  * Functionality and naming conventions (roughly) copied from org.apache.commons.lang3

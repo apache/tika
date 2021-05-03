@@ -16,22 +16,24 @@
  */
 package org.apache.tika.parser.xml;
 
+import static org.junit.Assert.assertEquals;
+
+import java.io.InputStream;
+
+import org.junit.Test;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
-import org.junit.Test;
-
-import java.io.InputStream;
-
-import static org.junit.Assert.assertEquals;
 
 public class FictionBookParserTest {
 
     //not sure why this isn't passing
     @Test
     public void testEmbedded() throws Exception {
-        try (InputStream input = FictionBookParserTest.class.getResourceAsStream("/test-documents/test.fb2")) {
+        try (InputStream input = FictionBookParserTest.class
+                .getResourceAsStream("/test-documents/test.fb2")) {
             ContainerExtractor extractor = new ParserContainerExtractor();
             TikaInputStream stream = TikaInputStream.get(input);
 

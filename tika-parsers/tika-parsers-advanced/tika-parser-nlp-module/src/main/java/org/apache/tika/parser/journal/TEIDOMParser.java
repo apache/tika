@@ -22,11 +22,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.utils.XMLReaderUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -34,23 +31,64 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.utils.XMLReaderUtils;
+
 public class TEIDOMParser {
 
     public TEIDOMParser() {
     }
 
-    public Metadata parse(String source, ParseContext parseContext) throws TikaException, SAXException, IOException {
+    //returns first child with this name, null otherwise
+    private static Node getFirstChild(NodeList childNodes, String name) {
+        for (int i = 0; i < childNodes.getLength(); i++) {
+            Node n = childNodes.item(i);
+            if (n.getNodeName().equals(name)) {
+                return n;
+            }
+        }
+        return null;
+    }
 
-        Document root = XMLReaderUtils.buildDOM(
-                new ByteArrayInputStream(source.getBytes(StandardCharsets.UTF_8)), parseContext);
+    private static String getFirstAttribute(Node node, String ns, String name) {
+        if (node.hasAttributes()) {
+            NamedNodeMap attrs = node.getAttributes();
+            for (int i = 0; i < attrs.getLength(); i++) {
+                Node attr = attrs.item(i);
+                if (attr.getLocalName().equals(name)) {
+                    return attr.getNodeValue();
+                }
+            }
+        }
+        return null;
+    }
+
+    private static List<Node> getChildNodes(NodeList childNodes, String localName) {
+        List<Node> ret = new ArrayList<>();
+        for (int i = 0; i < childNodes.getLength(); i++) {
+            Node child = childNodes.item(i);
+            if (child.getLocalName() != null && child.getLocalName().equals(localName)) {
+                ret.add(child);
+            }
+        }
+        return ret;
+    }
+
+    public Metadata parse(String source, ParseContext parseContext)
+            throws TikaException, SAXException, IOException {
+
+        Document root = XMLReaderUtils
+                .buildDOM(new ByteArrayInputStream(source.getBytes(StandardCharsets.UTF_8)),
+                        parseContext);
 
         Metadata metadata = new Metadata();
         createGrobidMetadata(source, root.getDocumentElement(), metadata);
         return metadata;
     }
 
-    private void createGrobidMetadata(String source, Element root,
-                                      Metadata metadata) {
+    private void createGrobidMetadata(String source, Element root, Metadata metadata) {
         if (root != null) {
 
             Node text = getFirstChild(root.getChildNodes(), "text");
@@ -130,8 +168,7 @@ public class TEIDOMParser {
             metadata.add("Address", getMetadataAddresses(authorList));
             metadata.add("Affiliation", getMetadataAffiliations(authorList));
             metadata.add("Authors", getMetadataAuthors(authorList));
-            metadata.add("FullAffiliations",
-                    getMetadataFullAffiliations(authorList));
+            metadata.add("FullAffiliations", getMetadataFullAffiliations(authorList));
 
 
         } else {
@@ -189,8 +226,9 @@ public class TEIDOMParser {
                 }
             }
 
-            if (affilBuilder.length() > 0)
+            if (affilBuilder.length() > 0) {
                 affilBuilder.deleteCharAt(affilBuilder.length() - 1);
+            }
 
             metAuthors.append(affilBuilder.toString());
             metAuthors.append(" ");
@@ -387,8 +425,9 @@ public class TEIDOMParser {
     private String printOrBlank(String val) {
         if (val != null && !val.equals("")) {
             return val + " ";
-        } else
+        } else {
             return " ";
+        }
     }
 
     class Author {
@@ -471,9 +510,9 @@ public class TEIDOMParser {
          */
         @Override
         public String toString() {
-            return "Author [surName=" + surName + ", middleName=" + middleName != null ? middleName
-                    : "" + ", firstName=" + firstName + ", affiliations=" + affiliations
-                    + "]";
+            return "Author [surName=" + surName + ", middleName=" + middleName != null ?
+                    middleName :
+                    "" + ", firstName=" + firstName + ", affiliations=" + affiliations + "]";
         }
 
     }
@@ -525,9 +564,14 @@ public class TEIDOMParser {
         @Override
         public boolean equals(Object obj) {
             Affiliation otherA = (Affiliation) obj;
-            return this.getAddress().equals(otherA.getAddress())
-                    && this.getOrgName().equals(otherA.getOrgName());
+            return this.getAddress().equals(otherA.getAddress()) &&
+                    this.getOrgName().equals(otherA.getOrgName());
 
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(orgName, address);
         }
 
         /*
@@ -563,11 +607,11 @@ public class TEIDOMParser {
             this.typeNames = typeNames;
         }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see java.lang.Object#toString()
-     */
+        /*
+         * (non-Javadoc)
+         *
+         * @see java.lang.Object#toString()
+         */
 
         @Override
         public String toString() {
@@ -577,6 +621,11 @@ public class TEIDOMParser {
                 builder.append(" ");
             }
             return builder.toString();
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(typeNames);
         }
 
         /*
@@ -597,8 +646,9 @@ public class TEIDOMParser {
             } else {
                 if (this.typeNames == null) {
                     return true;
-                } else
+                } else {
                     return false;
+                }
             }
 
         }
@@ -650,10 +700,14 @@ public class TEIDOMParser {
         @Override
         public boolean equals(Object obj) {
             OrgTypeName otherOrgName = (OrgTypeName) obj;
-            return this.type.equals(otherOrgName.getType())
-                    && this.name.equals(otherOrgName.getName());
+            return this.type.equals(otherOrgName.getType()) &&
+                    this.name.equals(otherOrgName.getName());
         }
 
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, type);
+        }
     }
 
     private class Address {
@@ -744,10 +798,15 @@ public class TEIDOMParser {
                 return otherA.getRegion() == null;
             }
 
-            return this.settlment.equals(otherA.getSettlment())
-                    && this.country.equals(otherA.getCountry())
-                    && this.postCode.equals(otherA.getPostCode())
-                    && this.region.equals(otherA.getRegion());
+            return this.settlment.equals(otherA.getSettlment()) &&
+                    this.country.equals(otherA.getCountry()) &&
+                    this.postCode.equals(otherA.getPostCode()) &&
+                    this.region.equals(otherA.getRegion());
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(region, postCode, settlment, country);
         }
 
         /*
@@ -837,46 +896,16 @@ public class TEIDOMParser {
                         return this.key.equals(otherC.getKey());
                     }
                 } else {
-                    return this.key.equals(otherC.getKey())
-                            && this.content.equals(otherC.getContent());
+                    return this.key.equals(otherC.getKey()) &&
+                            this.content.equals(otherC.getContent());
                 }
             }
         }
-    }
 
-    //returns first child with this name, null otherwise
-    private static Node getFirstChild(NodeList childNodes, String name) {
-        for (int i = 0; i < childNodes.getLength(); i++) {
-            Node n = childNodes.item(i);
-            if (n.getNodeName().equals(name)) {
-                return n;
-            }
+        @Override
+        public int hashCode() {
+            return Objects.hash(key, content);
         }
-        return null;
-    }
-
-    private static String getFirstAttribute(Node node, String ns, String name) {
-        if (node.hasAttributes()) {
-            NamedNodeMap attrs = node.getAttributes();
-            for (int i = 0; i < attrs.getLength(); i++) {
-                Node attr = attrs.item(i);
-                if (attr.getLocalName().equals(name)) {
-                    return attr.getNodeValue();
-                }
-            }
-        }
-        return null;
-    }
-
-    private static List<Node> getChildNodes(NodeList childNodes, String localName) {
-        List<Node> ret = new ArrayList<>();
-        for (int i = 0; i < childNodes.getLength(); i++) {
-            Node child = childNodes.item(i);
-            if (child.getLocalName() != null && child.getLocalName().equals(localName)) {
-                ret.add(child);
-            }
-        }
-        return ret;
     }
 
 }

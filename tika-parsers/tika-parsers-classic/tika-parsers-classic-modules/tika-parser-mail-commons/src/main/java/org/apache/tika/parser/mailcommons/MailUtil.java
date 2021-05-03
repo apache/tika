@@ -37,8 +37,7 @@ public class MailUtil {
      * @param emailProperty
      * @param metadata
      */
-    public static void setPersonAndEmail(String string,
-                                         Property personProperty,
+    public static void setPersonAndEmail(String string, Property personProperty,
                                          Property emailProperty, Metadata metadata) {
 
         StringBuffer sb = new StringBuffer();
@@ -63,9 +62,8 @@ public class MailUtil {
      * @param emailProperty
      * @param metadata
      */
-    public static void addPersonAndEmail(String string,
-                                      Property personProperty,
-                                      Property emailProperty, Metadata metadata) {
+    public static void addPersonAndEmail(String string, Property personProperty,
+                                         Property emailProperty, Metadata metadata) {
 
         StringBuffer sb = new StringBuffer();
         String email = extractEmail(string, sb);
@@ -100,6 +98,7 @@ public class MailUtil {
 
     /**
      * If the chunk looks like it contains an email
+     *
      * @param chunk to analyse
      * @return {@code true} if chunk looks like it contains an email
      */

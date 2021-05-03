@@ -16,14 +16,15 @@
  */
 package org.apache.tika.config;
 
-import org.apache.tika.detect.Detector;
-import org.apache.tika.parser.Parser;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
 import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
+
+import org.apache.tika.detect.Detector;
+import org.apache.tika.parser.Parser;
 
 /**
  * Bundle activator that adjust the class loading mechanism of the

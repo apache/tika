@@ -19,15 +19,16 @@ package org.apache.tika.config;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import org.junit.Test;
+
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.language.translate.DefaultTranslator;
 import org.apache.tika.language.translate.EmptyTranslator;
-import org.junit.Test;
 
 /**
  * Junit test class for {@link TikaConfig}, which cover things
- *  that {@link TikaConfigTest} can't do due to a need for the
- *  full set of translators
+ * that {@link TikaConfigTest} can't do due to a need for the
+ * full set of translators
  */
 public class TikaTranslatorConfigTest extends AbstractTikaConfigTest {
     @Test
@@ -36,30 +37,30 @@ public class TikaTranslatorConfigTest extends AbstractTikaConfigTest {
         assertNotNull(config.getTranslator());
         assertEquals(DefaultTranslator.class, config.getTranslator().getClass());
     }
-    
+
     @Test
     public void testRequestsDefault() throws Exception {
         TikaConfig config = getConfig("TIKA-1702-translator-default.xml");
         assertNotNull(config.getParser());
         assertNotNull(config.getDetector());
         assertNotNull(config.getTranslator());
-        
+
         assertEquals(DefaultTranslator.class, config.getTranslator().getClass());
     }
-    
+
     @Test
     public void testRequestsEmpty() throws Exception {
         TikaConfig config = getConfig("TIKA-1702-translator-empty.xml");
         assertNotNull(config.getParser());
         assertNotNull(config.getDetector());
         assertNotNull(config.getTranslator());
-        
+
         assertEquals(EmptyTranslator.class, config.getTranslator().getClass());
     }
-    
+
     /**
      * Currently, Translators don't support Composites, so
-     *  if multiple translators are given, throw a TikaConfigException
+     * if multiple translators are given, throw a TikaConfigException
      */
     @Test(expected = TikaConfigException.class)
     public void testRequestsMultiple() throws Exception {
@@ -67,7 +68,7 @@ public class TikaTranslatorConfigTest extends AbstractTikaConfigTest {
         assertNotNull(config.getParser());
         assertNotNull(config.getDetector());
         assertNotNull(config.getTranslator());
-        
+
         assertEquals(EmptyTranslator.class, config.getTranslator().getClass());
     }
 }

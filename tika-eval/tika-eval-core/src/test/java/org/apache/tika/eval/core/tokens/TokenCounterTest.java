@@ -46,11 +46,13 @@ public class TokenCounterTest {
 
     @Test
     public void testBasic() throws Exception {
-        String s = " bde cde def abc efg f f f f ghijklmnop a a a a a a a a a a a a a a a a a b b b b b b b b b b b b b";
+        String s =
+                " bde cde def abc efg f f f f ghijklmnop a a a a a a a a a a a a a a a a a b b b b b b b b b b b b b";
         TokenCounter counter = new TokenCounter(analyzerManager.getGeneralAnalyzer());
         counter.add(FIELD, s);
         TokenStatistics simpleTokenStatistics = counter.getTokenStatistics(FIELD);
-        LuceneTokenCounter tokenCounter = new LuceneTokenCounter(analyzerManager.getGeneralAnalyzer());
+        LuceneTokenCounter tokenCounter =
+                new LuceneTokenCounter(analyzerManager.getGeneralAnalyzer());
         tokenCounter.add(FIELD, s);
         assertEquals(simpleTokenStatistics, tokenCounter.getTokenStatistics(FIELD));
     }
@@ -66,13 +68,14 @@ public class TokenCounterTest {
             long start = System.currentTimeMillis();
             TokenCounter counter = new TokenCounter(analyzerManager.getGeneralAnalyzer());
             counter.add(FIELD, s);
-            simple += System.currentTimeMillis()-start;
+            simple += System.currentTimeMillis() - start;
             TokenStatistics simpleTokenStatistics = counter.getTokenStatistics(FIELD);
 
             start = System.currentTimeMillis();
-            LuceneTokenCounter tokenCounter = new LuceneTokenCounter(analyzerManager.getGeneralAnalyzer());
+            LuceneTokenCounter tokenCounter =
+                    new LuceneTokenCounter(analyzerManager.getGeneralAnalyzer());
             tokenCounter.add(FIELD, s);
-            lucene += System.currentTimeMillis()-start;
+            lucene += System.currentTimeMillis() - start;
             assertEquals(s, simpleTokenStatistics, tokenCounter.getTokenStatistics(FIELD));
         }
     }
@@ -80,7 +83,8 @@ public class TokenCounterTest {
     @Test
     public void testCommonTokens() throws Exception {
         TokenCounter tokenCounter = new TokenCounter(analyzerManager.getCommonTokensAnalyzer());
-        String s = "the http://www.cnn.com and blahdeblah@apache.org are in valuable www.sites.org 普林斯顿大学";
+        String s =
+                "the http://www.cnn.com and blahdeblah@apache.org are in valuable www.sites.org 普林斯顿大学";
         tokenCounter.add(FIELD, s);
         Map<String, MutableInt> tokens = tokenCounter.getTokens(FIELD);
         assertEquals(new MutableInt(2), tokens.get("___url___"));
@@ -115,7 +119,7 @@ public class TokenCounterTest {
         int uniqueVocabTerms = 10000;
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < len; i++) {
-            sb.append(Integer.toString(r.nextInt(uniqueVocabTerms)+100000));
+            sb.append(Integer.toString(r.nextInt(uniqueVocabTerms) + 100000));
             sb.append(" ");
         }
         return sb.toString();

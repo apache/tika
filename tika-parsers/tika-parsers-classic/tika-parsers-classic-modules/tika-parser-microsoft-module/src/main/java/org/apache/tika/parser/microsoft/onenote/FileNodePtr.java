@@ -44,7 +44,8 @@ class FileNodePtr {
      * <p>
      * For example 0, 4, 15 would mean
      * <p>
-     * document.root.children.get(0).childFileNodeList.children.get(4).childFileNodeList.children.get(15)
+     * document.root.children.get(0).childFileNodeList.children.get(4).
+     * childFileNodeList.children.get(15)
      *
      * @param document
      * @return

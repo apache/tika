@@ -22,7 +22,9 @@ public interface XMP {
 
     String PREFIX = "xmp";
 
-    /** The xmp prefix followed by the colon delimiter */
+    /**
+     * The xmp prefix followed by the colon delimiter
+     */
     String PREFIX_ = PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
     /**

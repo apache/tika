@@ -16,16 +16,18 @@
   limitations under the License.
 -->
 <properties>
-    <server>
-        <port>9999</port>
-        <taskTimeoutMillis>54321</taskTimeoutMillis>
-        <enableUnsecureFeatures>true</enableUnsecureFeatures>
-        <maxFiles>20</maxFiles>
-        <forkedJVMArgs>
-            <arg>-Xmx2g</arg>
-        </forkedJVMArgs>
-        <endpoints>
-            <endpoint>rmeta</endpoint>
-        </endpoints>
-    </server>
+  <server>
+    <params>
+      <port>9999</port>
+      <taskTimeoutMillis>54321</taskTimeoutMillis>
+      <enableUnsecureFeatures>true</enableUnsecureFeatures>
+      <maxFiles>20</maxFiles>
+      <forkedJvmArgs>
+        <arg>-Xmx2g</arg>
+      </forkedJvmArgs>
+      <endpoints>
+        <endpoint>rmeta</endpoint>
+      </endpoints>
+    </params>
+  </server>
 </properties>

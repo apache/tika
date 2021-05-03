@@ -28,30 +28,28 @@ import org.apache.tika.parser.ParseContext;
  * @since Apache Tika 1.11
  */
 public class ConcurrentUtils {
-    
+
     /**
-     * 
      * Execute a runnable using an ExecutorService from the ParseContext if possible.
      * Otherwise fallback to individual threads.
-     * 
+     *
      * @param context
      * @param runnable
      * @return
      */
     public static Future execute(ParseContext context, Runnable runnable) {
-        
+
         Future future = null;
         ExecutorService executorService = context.get(ExecutorService.class);
-        if(executorService == null) {
+        if (executorService == null) {
             FutureTask task = new FutureTask<>(runnable, null);
             Thread thread = new Thread(task, "Tika Thread");
             thread.start();
             future = task;
-        }
-        else {
+        } else {
             future = executorService.submit(runnable);
         }
-        
+
         return future;
     }
 }

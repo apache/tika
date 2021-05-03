@@ -17,19 +17,6 @@
 
 package org.apache.tika.parser.microsoft.rtf;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentUtil;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Office;
-import org.apache.tika.metadata.OfficeOpenXMLCore;
-import org.apache.tika.metadata.OfficeOpenXMLExtended;
-import org.apache.tika.metadata.Property;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.utils.CharsetUtils;
-import org.xml.sax.SAXException;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
@@ -47,6 +34,20 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Stack;
 import java.util.TimeZone;
+
+import org.apache.commons.io.IOUtils;
+import org.xml.sax.SAXException;
+
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
+import org.apache.tika.metadata.OfficeOpenXMLCore;
+import org.apache.tika.metadata.OfficeOpenXMLExtended;
+import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.CharsetUtils;
 
 /* Tokenizes and performs a "shallow" parse of the RTF
  * document, just enough to properly decode the text.
@@ -136,13 +137,11 @@ final class TextExtractor {
     // (f0, f1, f2, etc.) to fonts and charsets, using the
     // \fcharsetN control word.  This mapping maps from the
     // N to corresponding Java charset:
-    private static final Map<Integer, Charset> FCHARSET_MAP =
-            new HashMap<Integer, Charset>();
+    private static final Map<Integer, Charset> FCHARSET_MAP = new HashMap<Integer, Charset>();
     // The RTF may specify the \ansicpgN charset in the
     // header; this maps the N to the corresponding Java
     // character set:
-    private static final Map<Integer, Charset> ANSICPG_MAP =
-            new HashMap<Integer, Charset>();
+    private static final Map<Integer, Charset> ANSICPG_MAP = new HashMap<Integer, Charset>();
 
     static {
         FCHARSET_MAP.put(0, WINDOWS_1252); // ANSI
@@ -250,8 +249,7 @@ final class TextExtractor {
     // Holds the font table from this RTF doc, mapping
     // the font number (from \fN control word) to the
     // corresponding charset:
-    private final Map<Integer, Charset> fontToCharset =
-            new HashMap<Integer, Charset>();
+    private final Map<Integer, Charset> fontToCharset = new HashMap<Integer, Charset>();
     // Group stack: when we open a new group, we push
     // the previous group state onto the stack; when we
     // close the group, we restore it
@@ -347,14 +345,11 @@ final class TextExtractor {
     }
 
     protected static boolean isHexChar(int ch) {
-        return (ch >= '0' && ch <= '9') ||
-                (ch >= 'a' && ch <= 'f') ||
-                (ch >= 'A' && ch <= 'F');
+        return (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
     }
 
     private static boolean isAlpha(int ch) {
-        return (ch >= 'a' && ch <= 'z') ||
-                (ch >= 'A' && ch <= 'Z');
+        return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
     }
 
     private static boolean isDigit(int ch) {
@@ -486,12 +481,11 @@ final class TextExtractor {
                     // parsed document closing brace
                     break;
                 }
-            } else if (groupState.objdata == true ||
-                    groupState.pictDepth == 1) {
+            } else if (groupState.objdata == true || groupState.pictDepth == 1) {
                 embObjHandler.writeHexChar(b);
-            } else if (b != '\r' && b != '\n'
-                    && (!groupState.ignore || nextMetaData != null ||
-                    groupState.sn == true || groupState.sv == true)) {
+            } else if (b != '\r' && b != '\n' &&
+                    (!groupState.ignore || nextMetaData != null || groupState.sn == true ||
+                            groupState.sv == true)) {
                 // Linefeed and carriage return are not
                 // significant
                 if (ansiSkip != 0) {
@@ -511,7 +505,8 @@ final class TextExtractor {
         out.endDocument();
     }
 
-    private void parseControlToken(PushbackInputStream in) throws IOException, SAXException, TikaException {
+    private void parseControlToken(PushbackInputStream in)
+            throws IOException, SAXException, TikaException {
         int b = in.read();
         if (b == '\'') {
             // escaped hex char
@@ -528,7 +523,8 @@ final class TextExtractor {
         }
     }
 
-    private void parseHexChar(PushbackInputStream in) throws IOException, SAXException, TikaException {
+    private void parseHexChar(PushbackInputStream in)
+            throws IOException, SAXException, TikaException {
         int hex1 = in.read();
         if (!isHexChar(hex1)) {
             // DOC ERROR (malformed hex escape): ignore 
@@ -556,7 +552,8 @@ final class TextExtractor {
         }
     }
 
-    private void parseControlWord(int firstChar, PushbackInputStream in) throws IOException, SAXException, TikaException {
+    private void parseControlWord(int firstChar, PushbackInputStream in)
+            throws IOException, SAXException, TikaException {
         addControl(firstChar);
 
         int b = in.read();
@@ -648,7 +645,8 @@ final class TextExtractor {
         }
     }
 
-    private void endParagraph(boolean preserveStyles) throws IOException, SAXException, TikaException {
+    private void endParagraph(boolean preserveStyles)
+            throws IOException, SAXException, TikaException {
         pushText();
         //maintain consecutive new lines
         if (!inParagraph) {
@@ -742,7 +740,8 @@ final class TextExtractor {
                 // we are called, we should have seen a
                 // complete sequence of characters for this
                 // charset:
-                final CoderResult result = decoder.decode((ByteBuffer)pendingByteBuffer, (CharBuffer) outputCharBuffer, true);
+                final CoderResult result = decoder.decode((ByteBuffer) pendingByteBuffer,
+                        (CharBuffer) outputCharBuffer, true);
 
                 final int pos = outputCharBuffer.position();
                 if (pos > 0) {
@@ -864,7 +863,8 @@ final class TextExtractor {
     }
 
     // Handle control word that takes a parameter:
-    private void processControlWord(int param, PushbackInputStream in) throws IOException, SAXException, TikaException {
+    private void processControlWord(int param, PushbackInputStream in)
+            throws IOException, SAXException, TikaException {
         // TODO: afN?  (associated font number)
 
         // TODO: do these alter text output...?
@@ -937,7 +937,7 @@ final class TextExtractor {
             //if you've already seen the font table,
             //you aren't in another header item (e.g. styles)
             //and you see an fX, you're out of the header
-            if (fontTableState == 2 && ! groupState.ignore && equals("f")) {
+            if (fontTableState == 2 && !groupState.ignore && equals("f")) {
                 inHeader = false;
             }
 
@@ -949,8 +949,7 @@ final class TextExtractor {
                     currentList.templateID = param;
                 } else if (equals("levelnfc") || equals("levelnfcn")) {
                     //sanity check to make sure list information isn't corrupt
-                    if (listTableLevel > -1 &&
-                            listTableLevel < currentList.numberType.length) {
+                    if (listTableLevel > -1 && listTableLevel < currentList.numberType.length) {
                         currentList.numberType[listTableLevel] = param;
                     }
                 }
@@ -1024,7 +1023,7 @@ final class TextExtractor {
                 if (groupState.pictDepth == 1) {
                     try {
                         embObjHandler.writeBytes(in, param);
-                    } catch (IOException|TikaException e) {
+                    } catch (IOException | TikaException e) {
                         EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
                         embObjHandler.reset();
                     }
@@ -1181,10 +1180,10 @@ final class TextExtractor {
                 }
             }
 
-            if (!groupState.ignore && (equals("par") ||
-                    equals("pard") || equals("sect") || equals("sectd") || equals("plain") ||
-                    equals("ltrch") || equals("rtlch")
-                    || equals("htmlrtf") || equals("line"))) {
+            if (!groupState.ignore &&
+                    (equals("par") || equals("pard") || equals("sect") || equals("sectd") ||
+                            equals("plain") || equals("ltrch") || equals("rtlch") ||
+                            equals("htmlrtf") || equals("line"))) {
                 inHeader = false;
             }
         } else {
@@ -1405,7 +1404,8 @@ final class TextExtractor {
 
         // Make new GroupState
         groupState = new GroupState(groupState);
-        assert groupStates.size() == groupState.depth : "size=" + groupStates.size() + " depth=" + groupState.depth;
+        assert groupStates.size() == groupState.depth :
+                "size=" + groupStates.size() + " depth=" + groupState.depth;
 
         if (uprState == 0) {
             uprState = 1;
@@ -1450,7 +1450,7 @@ final class TextExtractor {
         if (groupState.objdata == true) {
             try {
                 embObjHandler.handleCompletedObject();
-            } catch (TikaException|IOException e) {
+            } catch (TikaException | IOException e) {
                 EmbeddedDocumentUtil.recordException(e, metadata);
             }
             groupState.objdata = false;
@@ -1482,8 +1482,7 @@ final class TextExtractor {
             // Close italic, if outer does not have italic or
             // bold changed:
             if (groupState.italic) {
-                if (!outerGroupState.italic ||
-                        groupState.bold != outerGroupState.bold) {
+                if (!outerGroupState.italic || groupState.bold != outerGroupState.bold) {
                     end("i");
                     groupState.italic = false;
                 }

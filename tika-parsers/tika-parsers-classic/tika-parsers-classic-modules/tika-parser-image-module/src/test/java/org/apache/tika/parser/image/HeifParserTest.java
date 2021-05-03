@@ -17,17 +17,18 @@
 
 package org.apache.tika.parser.image;
 
+import static org.junit.Assert.assertEquals;
+
+import java.io.InputStream;
+
 import org.apache.commons.io.IOUtils;
+import org.junit.Test;
+import org.xml.sax.helpers.DefaultHandler;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.junit.Test;
-import org.xml.sax.helpers.DefaultHandler;
-
-import java.io.InputStream;
-
-import static org.junit.Assert.assertEquals;
 
 
 public class HeifParserTest {
@@ -42,8 +43,7 @@ public class HeifParserTest {
     @Test
     public void testSimple() throws Exception {
         Metadata metadata = new Metadata();
-        InputStream stream =
-                getClass().getResourceAsStream("/test-documents/IMG_1034.heic");
+        InputStream stream = getClass().getResourceAsStream("/test-documents/IMG_1034.heic");
 
         parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
 

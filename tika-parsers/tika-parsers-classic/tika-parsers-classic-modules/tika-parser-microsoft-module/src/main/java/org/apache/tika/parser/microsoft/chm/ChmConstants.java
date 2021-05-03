@@ -19,10 +19,6 @@ package org.apache.tika.parser.microsoft.chm;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ChmConstants {
-    /* Prevents instantiation */
-    private ChmConstants() {
-    }
-
     public static final String DEFAULT_CHARSET = UTF_8.name();
     public static final String ITSF = "ITSF";
     public static final String ITSP = "ITSP";
@@ -43,39 +39,36 @@ public class ChmConstants {
     public static final int CHM_VER_3 = 3;
     public static final int CHM_VER_1 = 1;
     public static final int CHM_WINDOW_SIZE_BLOCK = 0x8000;
-
     /* my hacking */
     public static final int START_PMGL = 0xCC;
     public static final String CONTROL_DATA = "ControlData";
     public static final String RESET_TABLE = "ResetTable";
     public static final String CONTENT = "Content";
-
     /* some constants defined by the LZX specification */
     public static final int LZX_MIN_MATCH = 2;
     public static final int LZX_MAX_MATCH = 257;
     public static final int LZX_NUM_CHARS = 256;
     public static final int LZX_BLOCKTYPE_INVALID = 0; /*
-                                                        * also blocktypes 4-7
-                                                        * invalid
-                                                        */
+     * also blocktypes 4-7
+     * invalid
+     */
     public static final int LZX_BLOCKTYPE_VERBATIM = 1;
     public static final int LZX_BLOCKTYPE_ALIGNED = 2;
     public static final int LZX_BLOCKTYPE_UNCOMPRESSED = 3;
     public static final int LZX_PRETREE_NUM_ELEMENTS_BITS = 4; /* ??? */
     public static final int LZX_PRETREE_NUM_ELEMENTS = 20;
     public static final int LZX_ALIGNED_NUM_ELEMENTS = 8; /*
-                                                           * aligned offset tree
-                                                           * #elements
-                                                           */
+     * aligned offset tree
+     * #elements
+     */
     public static final int LZX_NUM_PRIMARY_LENGTHS = 7; /*
-                                                          * this one missing
-                                                          * from spec!
-                                                          */
+     * this one missing
+     * from spec!
+     */
     public static final int LZX_NUM_SECONDARY_LENGTHS = 249; /*
-                                                              * length tree
-                                                              * #elements
-                                                              */
-
+     * length tree
+     * #elements
+     */
     /* LZX huffman defines: tweak tablebits as desired */
     public static final int LZX_PRETREE_MAXSYMBOLS = LZX_PRETREE_NUM_ELEMENTS;
     public static final int LZX_PRETREE_TABLEBITS = 6;
@@ -87,16 +80,17 @@ public class ChmConstants {
     public static final int LZX_ALIGNED_MAXSYMBOLS = LZX_ALIGNED_NUM_ELEMENTS;
     public static final int LZX_ALIGNED_TABLEBITS = 7;
     public static final int LZX_LENTABLE_SAFETY = 64;
+    public static short[] EXTRA_BITS =
+            {0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12,
+                    12, 13, 13, 14, 14, 15, 15, 16, 16, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17,
+                    17, 17, 17, 17};
+    public static int[] POSITION_BASE =
+            {0, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024,
+                    1536, 2048, 3072, 4096, 6144, 8192, 12288, 16384, 24576, 32768, 49152, 65536,
+                    98304, 131072, 196608, 262144, 393216, 524288, 655360, 786432, 917504, 1048576,
+                    1179648, 1310720, 1441792, 1572864, 1703936, 1835008, 1966080, 2097152};
 
-    public static short[] EXTRA_BITS = { 0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5,
-            5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14,
-            15, 15, 16, 16, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17,
-            17, 17 };
-
-    public static int[] POSITION_BASE = { 0, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32,
-            48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2048, 3072,
-            4096, 6144, 8192, 12288, 16384, 24576, 32768, 49152, 65536, 98304,
-            131072, 196608, 262144, 393216, 524288, 655360, 786432, 917504,
-            1048576, 1179648, 1310720, 1441792, 1572864, 1703936, 1835008,
-            1966080, 2097152 };
+    /* Prevents instantiation */
+    private ChmConstants() {
+    }
 }

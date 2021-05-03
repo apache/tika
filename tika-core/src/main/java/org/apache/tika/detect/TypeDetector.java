@@ -37,7 +37,7 @@ public class TypeDetector implements Detector {
      * If that attribute exists and contains a valid type name, then that
      * type is returned.
      *
-     * @param input ignored
+     * @param input    ignored
      * @param metadata input metadata, possibly with a CONTENT_TYPE value
      * @return detected media type, or <code>application/octet-stream</code>
      */

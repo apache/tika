@@ -55,7 +55,7 @@ public class TableInfo {
         if (prefix == null) {
             return name;
         }
-        return prefix+name;
+        return prefix + name;
     }
 
     public void setNamePrefix(String prefix) {

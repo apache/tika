@@ -39,6 +39,13 @@ public class OfficeParserConfig implements Serializable {
     private String dateOverrideFormat = null;
 
     /**
+     * @return whether or not to extract macros
+     */
+    public boolean isExtractMacros() {
+        return extractMacros;
+    }
+
+    /**
      * Sets whether or not MSOffice parsers should extract macros.
      * As of Tika 1.15, the default is <code>false</code>.
      *
@@ -48,26 +55,24 @@ public class OfficeParserConfig implements Serializable {
         this.extractMacros = extractMacros;
     }
 
-    /**
-     *
-     * @return whether or not to extract macros
-     */
-    public boolean isExtractMacros() {
-        return extractMacros;
+    public boolean isIncludeDeletedContent() {
+        return includeDeletedContent;
     }
+
     /**
      * Sets whether or not the parser should include deleted content.
      * <p/>
      * <b>This has only been implemented in the streaming docx parser
      * ({@link org.apache.tika.parser.microsoft.ooxml.SXWPFWordExtractorDecorator} so far!!!</b>
+     *
      * @param includeDeletedContent
      */
     public void setIncludeDeletedContent(boolean includeDeletedContent) {
         this.includeDeletedContent = includeDeletedContent;
     }
 
-    public boolean isIncludeDeletedContent() {
-        return includeDeletedContent;
+    public boolean isIncludeMoveFromContent() {
+        return includeMoveFromContent;
     }
 
     /**
@@ -81,14 +86,15 @@ public class OfficeParserConfig implements Serializable {
      * <p/>
      * <b>This has only been implemented in the streaming docx parser
      * ({@link org.apache.tika.parser.microsoft.ooxml.SXWPFWordExtractorDecorator} so far!!!</b>
+     *
      * @param includeMoveFromContent
      */
     public void setIncludeMoveFromContent(boolean includeMoveFromContent) {
         this.includeMoveFromContent = includeMoveFromContent;
     }
 
-    public boolean isIncludeMoveFromContent() {
-        return includeMoveFromContent;
+    public boolean isIncludeShapeBasedContent() {
+        return includeShapeBasedContent;
     }
 
     /**
@@ -96,17 +102,18 @@ public class OfficeParserConfig implements Serializable {
      * (In PowerPoint everything is in a Shape)
      * <p/>
      * If you'd like to skip processing these to look for text, set this to
-     *  <code>false</code>
+     * <code>false</code>
      * <p/>
      * Default: <code>true</code>
+     *
      * @param includeShapeBasedContent
      */
     public void setIncludeShapeBasedContent(boolean includeShapeBasedContent) {
         this.includeShapeBasedContent = includeShapeBasedContent;
     }
 
-    public boolean isIncludeShapeBasedContent() {
-        return includeShapeBasedContent;
+    public boolean isIncludeHeadersAndFooters() {
+        return includeHeadersAndFooters;
     }
 
     /**
@@ -116,15 +123,13 @@ public class OfficeParserConfig implements Serializable {
      * not master slide content in Powerpoint.
      * <p/>
      * Default: <code>true</code>
+     *
      * @param includeHeadersAndFooters
      */
     public void setIncludeHeadersAndFooters(boolean includeHeadersAndFooters) {
         this.includeHeadersAndFooters = includeHeadersAndFooters;
     }
 
-    public boolean isIncludeHeadersAndFooters() {
-        return includeHeadersAndFooters;
-    }
     public boolean isUseSAXDocxExtractor() {
         return useSAXDocxExtractor;
     }
@@ -135,10 +140,15 @@ public class OfficeParserConfig implements Serializable {
      * the new experimental parser will be used.
      * <p/>
      * Default: <code>false</code> (classic DOM parser)
+     *
      * @param useSAXDocxExtractor
      */
     public void setUseSAXDocxExtractor(boolean useSAXDocxExtractor) {
         this.useSAXDocxExtractor = useSAXDocxExtractor;
+    }
+
+    public boolean isUseSAXPptxExtractor() {
+        return useSAXPptxExtractor;
     }
 
     /**
@@ -147,16 +157,12 @@ public class OfficeParserConfig implements Serializable {
      * the new experimental parser will be used.
      * <p/>
      * Default: <code>false</code> (classic DOM parser)
+     *
      * @param useSAXPptxExtractor
      */
     public void setUseSAXPptxExtractor(boolean useSAXPptxExtractor) {
         this.useSAXPptxExtractor = useSAXPptxExtractor;
     }
-
-    public boolean isUseSAXPptxExtractor() {
-        return useSAXPptxExtractor;
-    }
-
 
     public boolean isConcatenatePhoneticRuns() {
         return concatenatePhoneticRuns;
@@ -177,6 +183,9 @@ public class OfficeParserConfig implements Serializable {
         this.concatenatePhoneticRuns = concatenatePhoneticRuns;
     }
 
+    public boolean isExtractAllAlternativesFromMSG() {
+        return extractAllAlternativesFromMSG;
+    }
 
     /**
      * Some .msg files can contain body content in html, rtf and/or text.
@@ -191,22 +200,18 @@ public class OfficeParserConfig implements Serializable {
         this.extractAllAlternativesFromMSG = extractAllAlternativesFromMSG;
     }
 
-    public boolean isExtractAllAlternativesFromMSG() {
-        return extractAllAlternativesFromMSG;
+    public boolean isIncludeMissingRows() {
+        return includeMissingRows;
     }
 
     /**
      * For table-like formats, and tables within other formats, should
-     *  missing rows in sparse tables be output where detected?
+     * missing rows in sparse tables be output where detected?
      * The default is to only output rows defined within the file, which
-     *  avoid lots of blank lines, but means layout isn't preserved.
+     * avoid lots of blank lines, but means layout isn't preserved.
      */
     public void setIncludeMissingRows(boolean includeMissingRows) {
         this.includeMissingRows = includeMissingRows;
-    }
-
-    public boolean isIncludeMissingRows() {
-        return includeMissingRows;
     }
 
     public boolean isIncludeSlideNotes() {
@@ -227,8 +232,8 @@ public class OfficeParserConfig implements Serializable {
     }
 
     /**
-     * @since 1.19.1
      * @return whether or not to process content in slide masters
+     * @since 1.19.1
      */
     public boolean isIncludeSlideMasterContent() {
         return includeSlideMasterContent;
@@ -240,8 +245,8 @@ public class OfficeParserConfig implements Serializable {
      * If set to <code>false</code>, the parser will not extract
      * text or embedded objects from any of the masters.
      *
-     * @since 1.19.1
      * @param includeSlideMasterContent
+     * @since 1.19.1
      */
     public void setIncludeSlideMasterContent(boolean includeSlideMasterContent) {
         this.includeSlideMasterContent = includeSlideMasterContent;
@@ -254,7 +259,7 @@ public class OfficeParserConfig implements Serializable {
     /**
      * A user may wish to override the date formats in xls and xlsx files.
      * For example, a user might prefer 'yyyy-mm-dd' to 'mm/dd/yy'.
-     *
+     * <p>
      * Note: these formats are "Excel formats" not Java's SimpleDateFormat
      *
      * @param format

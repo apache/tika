@@ -1,7 +1,3 @@
-package org.apache.tika.batch.mock;
-
-import org.apache.tika.batch.ConsumersManager;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -18,6 +14,10 @@ import org.apache.tika.batch.ConsumersManager;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.batch.mock;
+
+import org.apache.tika.batch.ConsumersManager;
+
 
 public class MockConsumersManager extends ConsumersManager {
 
@@ -27,8 +27,7 @@ public class MockConsumersManager extends ConsumersManager {
     private final boolean hangOnInit;
     private final boolean hangOnClose;
 
-    public MockConsumersManager(ConsumersManager wrapped, boolean hangOnInit,
-                                boolean hangOnClose) {
+    public MockConsumersManager(ConsumersManager wrapped, boolean hangOnInit, boolean hangOnClose) {
         super(wrapped.getConsumers());
         this.wrapped = wrapped;
         this.hangOnInit = hangOnInit;

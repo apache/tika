@@ -14,21 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * IPTC Metadata Descriptions taken from the IPTC Photo Metadata (July 2010) 
- * standard. These parts Copyright 2010 International Press Telecommunications 
+ * IPTC Metadata Descriptions taken from the IPTC Photo Metadata (July 2010)
+ * standard. These parts Copyright 2010 International Press Telecommunications
  * Council.
  */
 package org.apache.tika.metadata;
 
 /**
- * XMP Photoshop metadata schema. 
- * 
- * A collection of property constants for the 
+ * XMP Photoshop metadata schema.
+ * <p>
+ * A collection of property constants for the
  * Photo Metadata properties defined in the XMP Photoshop
  * standard.
- * 
- * @since Apache Tika 1.2
+ *
  * @see <a href="http://partners.adobe.com/public/developer/en/xmp/sdk/XMPspecification.pdf">XMP Photoshop</a>
+ * @since Apache Tika 1.2
  */
 public interface Photoshop {
 
@@ -39,13 +39,14 @@ public interface Photoshop {
             PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "AuthorsPosition");
 
     // TODO Replace this with proper indexed choices support
-    String[] _COLOR_MODE_CHOICES_INDEXED = { "Bitmap", "Greyscale", "Indexed Colour", 
-            "RGB Color", "CMYK Colour", "Multi-Channel", "Duotone", "LAB Colour",
-            "reserved", "reserved", "YCbCr Colour", "YCgCo Colour", "YCbCrK Colour"};
+    String[] _COLOR_MODE_CHOICES_INDEXED =
+            {"Bitmap", "Greyscale", "Indexed Colour", "RGB Color", "CMYK Colour", "Multi-Channel",
+                    "Duotone", "LAB Colour", "reserved", "reserved", "YCbCr Colour", "YCgCo Colour",
+                    "YCbCrK Colour"};
     Property COLOR_MODE = Property.internalClosedChoise(
             PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ColorMode",
             _COLOR_MODE_CHOICES_INDEXED);
-    
+
     Property CAPTION_WRITER = Property.internalText(
             PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "CaptionWriter");
 
@@ -77,10 +78,12 @@ public interface Photoshop {
             PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "State");
 
     Property SUPPLEMENTAL_CATEGORIES = Property.internalTextBag(
-            PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "SupplementalCategories");
+            PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
+                    "SupplementalCategories");
 
     Property TRANSMISSION_REFERENCE = Property.internalText(
-            PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "TransmissionReference");
+            PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
+                    "TransmissionReference");
 
     Property URGENCY = Property.internalText(
             PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Urgency");

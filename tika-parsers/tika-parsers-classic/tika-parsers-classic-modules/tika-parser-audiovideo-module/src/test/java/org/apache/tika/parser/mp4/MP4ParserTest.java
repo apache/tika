@@ -18,8 +18,8 @@ package org.apache.tika.parser.mp4;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.InputStream;
-import java.nio.file.Paths;
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
@@ -29,9 +29,6 @@ import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.sax.ContentHandlerFactory;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
 
 /**
  * Test case for parsing mp4 files.
@@ -39,7 +36,7 @@ import org.xml.sax.ContentHandler;
 public class MP4ParserTest extends TikaTest {
     /**
      * Test that we can extract information from
-     *  a M4A MP4 Audio file
+     * a M4A MP4 Audio file
      */
     @Test
     public void testMP4ParsingAudio() throws Exception {
@@ -60,7 +57,7 @@ public class MP4ParserTest extends TikaTest {
         assertContains("2008", content);
         assertContains("Test Comment", content);
         assertContains("Test Genre", content);
-        
+
         // Check XMPDM-typed audio properties
         assertEquals("Test Album", metadata.get(XMPDM.ALBUM));
         assertEquals("Test Artist", metadata.get(XMPDM.ARTIST));
@@ -72,28 +69,29 @@ public class MP4ParserTest extends TikaTest {
         assertEquals("Test Album Artist", metadata.get(XMPDM.ALBUM_ARTIST));
         assertEquals("6", metadata.get(XMPDM.DISC_NUMBER));
         assertEquals("0", metadata.get(XMPDM.COMPILATION));
-        
-        
+
+
         assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
         assertEquals("Stereo", metadata.get(XMPDM.AUDIO_CHANNEL_TYPE));
         assertEquals("M4A", metadata.get(XMPDM.AUDIO_COMPRESSOR));
         assertEquals("0.07", metadata.get(XMPDM.DURATION));
-        
+
         assertEquals("iTunes 10.5.3.3", metadata.get(XMP.CREATOR_TOOL));
-        
-        
+
+
         // Check again by file, rather than stream
-        TikaInputStream tstream = TikaInputStream.get(getResourceAsStream("/test-documents/testMP4.m4a"));
+        TikaInputStream tstream =
+                TikaInputStream.get(getResourceAsStream("/test-documents/testMP4.m4a"));
         tstream.getFile();
         ContentHandler handler = new BodyContentHandler();
         try {
-           AUTO_DETECT_PARSER.parse(tstream, handler, metadata, new ParseContext());
+            AUTO_DETECT_PARSER.parse(tstream, handler, metadata, new ParseContext());
         } finally {
-           tstream.close();
+            tstream.close();
         }
         //TODO: why don't we check the output here?
     }
-    
+
     // TODO Test a MP4 Video file
     // TODO Test an old QuickTime Video File
     @Test(timeout = 30000)

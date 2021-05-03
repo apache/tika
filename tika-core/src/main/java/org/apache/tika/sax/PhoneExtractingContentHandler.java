@@ -17,19 +17,18 @@
 
 package org.apache.tika.sax;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.CleanPhoneText;
-import org.apache.tika.sax.ContentHandlerDecorator;
+import java.util.Arrays;
+import java.util.List;
+
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import java.util.Arrays;
-import java.util.List;
+import org.apache.tika.metadata.Metadata;
 
 /**
  * Class used to extract phone numbers while parsing.
- *
+ * <p>
  * Every time a document is parsed in Tika, the content is split into SAX events.
  * Those SAX events are handled by a ContentHandler. You can think of these events
  * as marking a tag in an HTML file. Once you're finished parsing, you can call
@@ -37,7 +36,7 @@ import java.util.List;
  * hand, any of the metadata of the file will be added to the Metadata object passed
  * in during the parse() call.  So, the Parser class sends metadata to the Metadata
  * object and content to the ContentHandler.
- *
+ * <p>
  * This class is an example of how to combine a ContentHandler and a Metadata.
  * As content is passed to the handler, we first check to see if it matches a
  * textual pattern for a phone number. If the extracted content is a phone number,
@@ -45,15 +44,14 @@ import java.util.List;
  * ContentHandler when you parsed a document, then called
  * metadata.getValues("phonenumbers"), you would get an array of Strings of phone
  * numbers found in the document.
- *
+ * <p>
  * Please see the PhoneExtractingContentHandlerTest for an example of how to use
  * this class.
- *
  */
 public class PhoneExtractingContentHandler extends ContentHandlerDecorator {
-    private Metadata metadata;
     private static final String PHONE_NUMBERS = "phonenumbers";
-    private StringBuilder stringBuilder;
+    private final Metadata metadata;
+    private final StringBuilder stringBuilder;
 
     /**
      * Creates a decorator for the given SAX event handler and Metadata object.

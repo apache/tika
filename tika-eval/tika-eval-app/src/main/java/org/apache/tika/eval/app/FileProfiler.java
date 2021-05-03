@@ -16,11 +16,23 @@
  */
 package org.apache.tika.eval.app;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.sql.Types;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.Tika;
 import org.apache.tika.batch.FileResource;
 import org.apache.tika.batch.fs.FSProperties;
@@ -31,23 +43,12 @@ import org.apache.tika.eval.app.db.TableInfo;
 import org.apache.tika.eval.app.io.IDBWriter;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.sql.Types;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
 
 /**
  * This class profiles actual files as opposed to extracts e.g. {@link ExtractProfiler}.
  * This does _not_ parse files, but does run file type identification and digests the
  * raw bytes.
- *
+ * <p>
  * If the 'file' command is available on the command line, this will also run the
  * FileCommandDetector.
  */
@@ -55,22 +56,44 @@ import java.util.concurrent.ArrayBlockingQueue;
 public class FileProfiler extends AbstractProfiler {
 //TODO: we should allow users to select digest type/encoding and file detector(s).
 
+    public static final String DETECT_EXCEPTION = "detect-exception";
     private static final boolean HAS_FILE = FileCommandDetector.checkHasFile();
     private static final Logger LOG = LoggerFactory.getLogger(FileProfiler.class);
+    private static final Tika TIKA = new Tika();
+    private static final FileCommandDetector FILE_COMMAND_DETECTOR = new FileCommandDetector();
+    public static TableInfo FILE_PROFILES = HAS_FILE ? new TableInfo("file_profiles",
+            new ColInfo(Cols.FILE_PATH, Types.VARCHAR, 2048, "PRIMARY KEY"),
+            new ColInfo(Cols.FILE_NAME, Types.VARCHAR, 2048),
+            new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 24),
+            new ColInfo(Cols.LENGTH, Types.BIGINT), new ColInfo(Cols.SHA256, Types.VARCHAR, 64),
+            new ColInfo(Cols.TIKA_MIME_ID, Types.INTEGER),
+            new ColInfo(Cols.FILE_MIME_ID, Types.INTEGER)) :
+            new TableInfo("file_profiles",
+                    new ColInfo(Cols.FILE_PATH, Types.VARCHAR, 2048, "PRIMARY KEY"),
+                    new ColInfo(Cols.FILE_NAME, Types.VARCHAR, 2048),
+                    new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 24),
+                    new ColInfo(Cols.LENGTH, Types.BIGINT), new ColInfo(Cols.SHA256, Types.VARCHAR,
+                    64),
+                    new ColInfo(Cols.TIKA_MIME_ID, Types.INTEGER));
 
+
+    public static TableInfo FILE_MIME_TABLE =
+            new TableInfo("file_mimes", new ColInfo(Cols.MIME_ID, Types.INTEGER, "PRIMARY KEY"),
+                    new ColInfo(Cols.MIME_STRING, Types.VARCHAR, 256),
+                    new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 12));
     static Options OPTIONS;
+
     static {
 
         Option inputDir = new Option("inputDir", true,
-                "optional: directory for original binary input documents."+
+                "optional: directory for original binary input documents." +
                         " If not specified, -extracts is crawled as is.");
 
-        OPTIONS = new Options()
-                .addOption(inputDir)
+        OPTIONS = new Options().addOption(inputDir)
                 .addOption("bc", "optional: tika-batch config file")
                 .addOption("numConsumers", true, "optional: number of consumer threads")
-                .addOption("db", true, "db file to which to write results")
-                .addOption("jdbc", true, "EXPERT: full jdbc connection string. Must specify this or -db <h2db>")
+                .addOption("db", true, "db file to which to write results").addOption("jdbc", true,
+                        "EXPERT: full jdbc connection string. Must specify this or -db <h2db>")
                 .addOption("jdbcDriver", true, "EXPERT: jdbc driver, or specify via -Djdbc.driver")
                 .addOption("tablePrefix", true, "EXPERT: optional prefix for table names")
                 .addOption("drop", false, "drop tables if they exist")
@@ -80,54 +103,21 @@ public class FileProfiler extends AbstractProfiler {
 
     }
 
-    public static void USAGE() {
-        HelpFormatter helpFormatter = new HelpFormatter();
-        helpFormatter.printHelp(
-                80,
-                "java -jar tika-eval-x.y.jar FileProfiler -inputDir docs -db mydb [-inputDir input]",
-                "Tool: Profile",
-                FileProfiler.OPTIONS,
-                "Note: for the default h2 db, do not include the .mv.db at the end of the db name.");
-    }
-
-
-
-    public static TableInfo FILE_PROFILES = HAS_FILE ?
-            new TableInfo("file_profiles",
-                new ColInfo(Cols.FILE_PATH, Types.VARCHAR, 2048, "PRIMARY KEY"),
-                new ColInfo(Cols.FILE_NAME, Types.VARCHAR, 2048),
-                new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 24),
-                new ColInfo(Cols.LENGTH, Types.BIGINT),
-                new ColInfo(Cols.SHA256, Types.VARCHAR, 64),
-                new ColInfo(Cols.TIKA_MIME_ID, Types.INTEGER),
-                new ColInfo(Cols.FILE_MIME_ID, Types.INTEGER))
-            :
-            new TableInfo("file_profiles",
-                    new ColInfo(Cols.FILE_PATH, Types.VARCHAR, 2048, "PRIMARY KEY"),
-                    new ColInfo(Cols.FILE_NAME, Types.VARCHAR, 2048),
-                    new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 24),
-                    new ColInfo(Cols.LENGTH, Types.BIGINT),
-                    new ColInfo(Cols.SHA256, Types.VARCHAR, 64),
-                    new ColInfo(Cols.TIKA_MIME_ID, Types.INTEGER));
-
-
-    public static TableInfo FILE_MIME_TABLE = new TableInfo("file_mimes",
-            new ColInfo(Cols.MIME_ID, Types.INTEGER, "PRIMARY KEY"),
-            new ColInfo(Cols.MIME_STRING, Types.VARCHAR, 256),
-            new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 12)
-    );
-
-    public static final String DETECT_EXCEPTION = "detect-exception";
-    private static final Tika TIKA = new Tika();
-
-    private static final FileCommandDetector FILE_COMMAND_DETECTOR = new FileCommandDetector();
     private final Path inputDir;
 
-    public FileProfiler(ArrayBlockingQueue<FileResource> fileQueue, Path inputDir, IDBWriter dbWriter) {
+    public FileProfiler(ArrayBlockingQueue<FileResource> fileQueue, Path inputDir,
+                        IDBWriter dbWriter) {
         super(fileQueue, dbWriter);
         this.inputDir = inputDir;
     }
 
+    public static void USAGE() {
+        HelpFormatter helpFormatter = new HelpFormatter();
+        helpFormatter.printHelp(80,
+                "java -jar tika-eval-x.y.jar FileProfiler -inputDir docs -db mydb [-inputDir input]",
+                "Tool: Profile", FileProfiler.OPTIONS,
+                "Note: for the default h2 db, do not include the .mv.db at the end of the db name.");
+    }
 
     @Override
     public boolean processFileResource(FileResource fileResource) {
@@ -143,19 +133,19 @@ public class FileProfiler extends AbstractProfiler {
                 try {
                     fileName = FilenameUtils.getName(relPath);
                 } catch (IllegalArgumentException e) {
-                    LOG.warn("bad file name: "+relPath, e);
+                    LOG.warn("bad file name: " + relPath, e);
                 }
 
                 try {
                     extension = FilenameUtils.getExtension(relPath);
                 } catch (IllegalArgumentException e) {
-                    LOG.warn("bad extension: "+relPath, e);
+                    LOG.warn("bad extension: " + relPath, e);
                 }
 
                 try {
                     length = Files.size(path);
                 } catch (IOException e) {
-                    LOG.warn("problem getting size: "+relPath, e);
+                    LOG.warn("problem getting size: " + relPath, e);
                 }
 
                 data.put(Cols.FILE_PATH, relPath);

@@ -24,17 +24,16 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Photoshop;
 import org.apache.tika.metadata.TIFF;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * Parser for the Better Portable Graphics (BPG) File Format.
@@ -48,17 +47,17 @@ public class BPGParser extends AbstractImageParser {
     protected static final int EXTENSION_TAG_XMP = 3;
     protected static final int EXTENSION_TAG_THUMBNAIL = 4;
     private static final long serialVersionUID = -161736541253892772L;
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
-                    MediaType.image("x-bpg"), MediaType.image("bpg"))));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
+            new HashSet<MediaType>(
+                    Arrays.asList(MediaType.image("x-bpg"), MediaType.image("bpg"))));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
     @Override
-    void extractMetadata(InputStream stream, ContentHandler contentHandler,
-                         Metadata metadata, ParseContext parseContext)
+    void extractMetadata(InputStream stream, ContentHandler contentHandler, Metadata metadata,
+                         ParseContext parseContext)
             throws IOException, SAXException, TikaException {
 
         // Check for the magic header signature
@@ -128,19 +127,20 @@ public class BPGParser extends AbstractImageParser {
 
         // Extension Data Length, if extensions present
         long extensionDataLength = 0;
-        if (hasExtensions)
+        if (hasExtensions) {
             extensionDataLength = EndianUtils.readUE7(stream);
+        }
 
         // Alpha Data Length, if alpha used
         long alphaDataLength = 0;
-        if (hasAlphaPlane1 || hasAlphaPlane2)
+        if (hasAlphaPlane1 || hasAlphaPlane2) {
             alphaDataLength = EndianUtils.readUE7(stream);
+        }
 
         // Extension Data
         if (hasExtensions) {
             long extensionsDataSeen = 0;
-            ImageMetadataExtractor metadataExtractor =
-                    new ImageMetadataExtractor(metadata);
+            ImageMetadataExtractor metadataExtractor = new ImageMetadataExtractor(metadata);
 
             while (extensionsDataSeen < extensionDataLength) {
                 int extensionType = (int) EndianUtils.readUE7(stream);
@@ -163,8 +163,8 @@ public class BPGParser extends AbstractImageParser {
         // We can't do anything with these parts
     }
 
-    protected void handleXMP(InputStream stream, int xmpLength,
-                             ImageMetadataExtractor extractor) throws IOException, TikaException, SAXException {
+    protected void handleXMP(InputStream stream, int xmpLength, ImageMetadataExtractor extractor)
+            throws IOException, TikaException, SAXException {
         byte[] xmp = new byte[xmpLength];
         IOUtils.readFully(stream, xmp);
         extractor.parseRawXMP(xmp);

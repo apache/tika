@@ -16,6 +16,8 @@
  */
 package org.apache.tika.embedder;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -30,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -39,8 +42,6 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.external.ExternalParser;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 /**
  * Embedder that uses an external program (like sed or exiftool) to embed text
  * content and metadata into a given document.
@@ -49,48 +50,104 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class ExternalEmbedder implements Embedder {
 
-    private static final long serialVersionUID = -2828829275642475697L;
-
     /**
      * Token to be replaced with a String array of metadata assignment command
      * arguments
      */
     public static final String METADATA_COMMAND_ARGUMENTS_TOKEN = "${METADATA}";
-
     /**
      * Token to be replaced with a String array of metadata assignment command
      * arguments
      */
-    public static final String METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN = "${METADATA_SERIALIZED}";
-
+    public static final String METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN =
+            "${METADATA_SERIALIZED}";
+    private static final long serialVersionUID = -2828829275642475697L;
+    private final TemporaryResources tmp = new TemporaryResources();
     /**
      * Media types supported by the external program.
      */
     private Set<MediaType> supportedEmbedTypes = Collections.emptySet();
-
     /**
      * Mapping of Tika metadata to command line parameters.
      */
     private Map<Property, String[]> metadataCommandArguments = null;
-
     /**
      * The external command to invoke.
      *
      * @see Runtime#exec(String[])
      */
-    private String[] command = new String[] {
-            "sed", "-e",
-            "$a\\\n" + METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN,
-            ExternalParser.INPUT_FILE_TOKEN
-    };
-
+    private String[] command =
+            new String[]{"sed", "-e", "$a\\\n" + METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN,
+                    ExternalParser.INPUT_FILE_TOKEN};
     private String commandAssignmentOperator = "=";
     private String commandAssignmentDelimeter = ", ";
     private String commandAppendOperator = "=";
-
     private boolean quoteAssignmentValues = false;
 
-    private TemporaryResources tmp = new TemporaryResources();
+    /**
+     * Serializes a collection of metadata command line arguments into a single
+     * string.
+     *
+     * @param metadataCommandArguments
+     * @return the serialized metadata arguments string
+     */
+    protected static String serializeMetadata(List<String> metadataCommandArguments) {
+        if (metadataCommandArguments != null) {
+            return Arrays.toString(metadataCommandArguments.toArray());
+        }
+        return "";
+    }
+
+    /**
+     * Checks to see if the command can be run. Typically used with something
+     * like "myapp --version" to check to see if "myapp" is installed and on the
+     * path.
+     *
+     * @param checkCmd   the check command to run
+     * @param errorValue what is considered an error value?
+     * @return whether or not the check completed without error
+     */
+    public static boolean check(String checkCmd, int... errorValue) {
+        return check(new String[]{checkCmd}, errorValue);
+    }
+
+    /**
+     * Checks to see if the command can be run. Typically used with something
+     * like "myapp --version" to check to see if "myapp" is installed and on the
+     * path.
+     *
+     * @param checkCmd   the check command to run
+     * @param errorValue what is considered an error value?
+     * @return whether or not the check completed without error
+     */
+    public static boolean check(String[] checkCmd, int... errorValue) {
+        if (errorValue.length == 0) {
+            errorValue = new int[]{127};
+        }
+
+        try {
+            Process process;
+            if (checkCmd.length == 1) {
+                process = Runtime.getRuntime().exec(checkCmd[0]);
+            } else {
+                process = Runtime.getRuntime().exec(checkCmd);
+            }
+            int result = process.waitFor();
+
+            for (int err : errorValue) {
+                if (result == err) {
+                    return false;
+                }
+            }
+            return true;
+        } catch (IOException e) {
+            // Some problem, command is there or is broken
+            return false;
+        } catch (InterruptedException ie) {
+            // Some problem, command is there or is broken
+            return false;
+        }
+    }
 
     public Set<MediaType> getSupportedEmbedTypes(ParseContext context) {
         return getSupportedEmbedTypes();
@@ -101,13 +158,14 @@ public class ExternalEmbedder implements Embedder {
     }
 
     public void setSupportedEmbedTypes(Set<MediaType> supportedEmbedTypes) {
-        this.supportedEmbedTypes = Collections
-                .unmodifiableSet(new HashSet<MediaType>(supportedEmbedTypes));
+        this.supportedEmbedTypes =
+                Collections.unmodifiableSet(new HashSet<MediaType>(supportedEmbedTypes));
     }
 
     /**
      * Gets the command to be run. This can include either of
-     * {@link ExternalParser#INPUT_FILE_TOKEN} or {@link ExternalParser#OUTPUT_FILE_TOKEN} if the command
+     * {@link ExternalParser#INPUT_FILE_TOKEN} or
+     * {@link ExternalParser#OUTPUT_FILE_TOKEN} if the command
      * needs filenames.
      *
      * @return
@@ -118,7 +176,8 @@ public class ExternalEmbedder implements Embedder {
 
     /**
      * Sets the command to be run. This can include either of
-     * {@link ExternalParser#INPUT_FILE_TOKEN} or {@link ExternalParser#OUTPUT_FILE_TOKEN} if the command
+     * {@link ExternalParser#INPUT_FILE_TOKEN} or
+     * {@link ExternalParser#OUTPUT_FILE_TOKEN} if the command
      * needs filenames.
      *
      * @see Runtime#exec(String[])
@@ -247,18 +306,18 @@ public class ExternalEmbedder implements Embedder {
                                     if (quoteAssignmentValues) {
                                         assignmentValue = "'" + assignmentValue + "'";
                                     }
-                                    commandMetadataSegments.add(metadataCommandArgument
-                                            + commandAppendOperator
-                                            + assignmentValue);
+                                    commandMetadataSegments
+                                            .add(metadataCommandArgument + commandAppendOperator +
+                                                    assignmentValue);
                                 }
                             } else {
                                 String assignmentValue = metadata.get(metadataName);
                                 if (quoteAssignmentValues) {
                                     assignmentValue = "'" + assignmentValue + "'";
                                 }
-                                commandMetadataSegments.add(metadataCommandArgument
-                                        + commandAssignmentOperator
-                                        + assignmentValue);
+                                commandMetadataSegments
+                                        .add(metadataCommandArgument + commandAssignmentOperator +
+                                                assignmentValue);
                             }
                         }
                     }
@@ -269,28 +328,13 @@ public class ExternalEmbedder implements Embedder {
     }
 
     /**
-     * Serializes a collection of metadata command line arguments into a single
-     * string.
-     *
-     * @param metadataCommandArguments
-     * @return the serialized metadata arguments string
-     */
-    protected static String serializeMetadata(
-            List<String> metadataCommandArguments) {
-        if (metadataCommandArguments != null) {
-            return Arrays.toString(metadataCommandArguments.toArray());
-        }
-        return "";
-    }
-
-    /**
      * Executes the configured external command and passes the given document
      * stream as a simple XHTML document to the given SAX content handler.
      * Metadata is only extracted if {@link #setMetadataCommandArguments(Map)}
      * has been called to set arguments.
      */
     public void embed(final Metadata metadata, final InputStream inputStream,
-            final OutputStream outputStream, final ParseContext context)
+                      final OutputStream outputStream, final ParseContext context)
             throws IOException, TikaException {
 
         boolean inputToStdIn = true;
@@ -309,24 +353,21 @@ public class ExternalEmbedder implements Embedder {
         }
 
         // Build our command
-        List<String> origCmd = Arrays.asList(command);
+        String[] origCmd = command;
         List<String> cmd = new ArrayList<String>();
         for (String commandSegment : origCmd) {
             if (commandSegment.indexOf(ExternalParser.INPUT_FILE_TOKEN) != -1) {
-                commandSegment = commandSegment.replace(
-                        ExternalParser.INPUT_FILE_TOKEN,
+                commandSegment = commandSegment.replace(ExternalParser.INPUT_FILE_TOKEN,
                         tikaInputStream.getFile().toString());
                 inputToStdIn = false;
             }
             if (commandSegment.indexOf(ExternalParser.OUTPUT_FILE_TOKEN) != -1) {
                 tempOutputFile = tmp.createTemporaryFile();
-                commandSegment = commandSegment.replace(
-                        ExternalParser.OUTPUT_FILE_TOKEN,
-                        tempOutputFile.toString());
+                commandSegment = commandSegment
+                        .replace(ExternalParser.OUTPUT_FILE_TOKEN, tempOutputFile.toString());
                 outputFromStdOut = false;
             }
-            if (commandSegment
-                    .indexOf(METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN) != -1) {
+            if (commandSegment.indexOf(METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN) != -1) {
                 serializeMetadataCommandArgumentsToken = true;
             }
             if (commandSegment.indexOf(METADATA_COMMAND_ARGUMENTS_TOKEN) != -1) {
@@ -343,17 +384,16 @@ public class ExternalEmbedder implements Embedder {
                 // Find all metadata tokens and replace with encapsulated metadata
                 int i = 0;
                 for (String commandSegment : cmd) {
-                    if (commandSegment
-                            .indexOf(METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN) != -1) {
-                        commandSegment = commandSegment.replace(
-                                METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN,
-                                serializeMetadata(commandMetadataSegments));
+                    if (commandSegment.indexOf(METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN) != -1) {
+                        commandSegment = commandSegment
+                                .replace(METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN,
+                                        serializeMetadata(commandMetadataSegments));
                         cmd.set(i, commandSegment);
                     }
                     i++;
                 }
-            } else if (!replacedMetadataCommandArgumentsToken
-                    && !serializeMetadataCommandArgumentsToken) {
+            } else if (!replacedMetadataCommandArgumentsToken &&
+                    !serializeMetadataCommandArgumentsToken) {
                 // Tack metadata onto the end of the cmd as arguments
                 cmd.addAll(commandMetadataSegments);
             }
@@ -362,9 +402,9 @@ public class ExternalEmbedder implements Embedder {
         // Execute
         Process process;
         if (cmd.toArray().length == 1) {
-            process = Runtime.getRuntime().exec(cmd.toArray(new String[] {})[0]);
+            process = Runtime.getRuntime().exec(cmd.toArray(new String[]{})[0]);
         } else {
-            process = Runtime.getRuntime().exec(cmd.toArray(new String[] {}));
+            process = Runtime.getRuntime().exec(cmd.toArray(new String[]{}));
         }
 
         ByteArrayOutputStream stdErrOutputStream = new ByteArrayOutputStream();
@@ -402,18 +442,20 @@ public class ExternalEmbedder implements Embedder {
                     // Clean up temp output files
                     tempOutputFile.delete();
                 } catch (Exception e) {
+                    //swallow
                 }
             }
             if (!inputToStdIn) {
-                // Close input file (and delete if created by up TemporaryResources.createTemporaryFile) 
+                // Close input file (and delete if created by up
+                // TemporaryResources.createTemporaryFile)
                 IOUtils.closeQuietly(tikaInputStream);
             }
             IOUtils.closeQuietly(outputStream);
             IOUtils.closeQuietly(stdErrOutputStream);
             if (process.exitValue() != 0) {
                 throw new TikaException("There was an error executing the command line" +
-                        "\nExecutable Command:\n\n" + cmd +
-                        "\nExecutable Error:\n\n" + stdErrOutputStream.toString(UTF_8.name()));
+                        "\nExecutable Command:\n\n" + cmd + "\nExecutable Error:\n\n" +
+                        stdErrOutputStream.toString(UTF_8.name()));
             }
         }
     }
@@ -421,12 +463,11 @@ public class ExternalEmbedder implements Embedder {
     /**
      * Creates a new thread for copying a given input stream to a given output stream.
      *
-     * @param inputStream the source input stream
+     * @param inputStream  the source input stream
      * @param outputStream the target output stream
      */
-    private void multiThreadedStreamCopy(
-            final InputStream inputStream,
-            final OutputStream outputStream) {
+    private void multiThreadedStreamCopy(final InputStream inputStream,
+                                         final OutputStream outputStream) {
         new Thread(new Runnable() {
             public void run() {
                 try {
@@ -445,12 +486,10 @@ public class ExternalEmbedder implements Embedder {
      * <p>
      * Note that the given input stream is <em>not</em> closed by this method.
      *
-     * @param process the process
+     * @param process     the process
      * @param inputStream the input stream to send to standard input of the process
      */
-    private void sendInputStreamToStdIn(
-            final InputStream inputStream,
-            final Process process) {
+    private void sendInputStreamToStdIn(final InputStream inputStream, final Process process) {
         multiThreadedStreamCopy(inputStream, process.getOutputStream());
     }
 
@@ -461,12 +500,10 @@ public class ExternalEmbedder implements Embedder {
      * <p>
      * Note that the given output stream is <em>not</em> closed by this method.
      *
-     * @param process the process
+     * @param process      the process
      * @param outputStream the putput stream to send to standard input of the process
      */
-    private void sendStdOutToOutputStream(
-            final Process process,
-            final OutputStream outputStream) {
+    private void sendStdOutToOutputStream(final Process process, final OutputStream outputStream) {
         try {
             IOUtils.copy(process.getInputStream(), outputStream);
         } catch (IOException e) {
@@ -480,61 +517,9 @@ public class ExternalEmbedder implements Embedder {
      * stream is closed once fully processed.
      *
      * @param process the process
-     * param outputStream the output stream to send to standard error of the process
+     *                param outputStream the output stream to send to standard error of the process
      */
-    private void sendStdErrToOutputStream(
-            final Process process,
-            final OutputStream outputStream) {
+    private void sendStdErrToOutputStream(final Process process, final OutputStream outputStream) {
         multiThreadedStreamCopy(process.getErrorStream(), outputStream);
-    }
-
-    /**
-     * Checks to see if the command can be run. Typically used with something
-     * like "myapp --version" to check to see if "myapp" is installed and on the
-     * path.
-     *
-     * @param checkCmd the check command to run
-     * @param errorValue what is considered an error value?
-     * @return whether or not the check completed without error
-     */
-    public static boolean check(String checkCmd, int... errorValue) {
-        return check(new String[] { checkCmd }, errorValue);
-    }
-
-    /**
-     * Checks to see if the command can be run. Typically used with something
-     * like "myapp --version" to check to see if "myapp" is installed and on the
-     * path.
-     *
-     * @param checkCmd the check command to run
-     * @param errorValue what is considered an error value?
-     * @return whether or not the check completed without error
-     */
-    public static boolean check(String[] checkCmd, int... errorValue) {
-        if (errorValue.length == 0) {
-            errorValue = new int[] { 127 };
-        }
-
-        try {
-            Process process;
-            if (checkCmd.length == 1) {
-                process = Runtime.getRuntime().exec(checkCmd[0]);
-            } else {
-                process = Runtime.getRuntime().exec(checkCmd);
-            }
-            int result = process.waitFor();
-
-            for (int err : errorValue) {
-                if (result == err)
-                    return false;
-            }
-            return true;
-        } catch (IOException e) {
-            // Some problem, command is there or is broken
-            return false;
-        } catch (InterruptedException ie) {
-            // Some problem, command is there or is broken
-            return false;
-        }
     }
 }

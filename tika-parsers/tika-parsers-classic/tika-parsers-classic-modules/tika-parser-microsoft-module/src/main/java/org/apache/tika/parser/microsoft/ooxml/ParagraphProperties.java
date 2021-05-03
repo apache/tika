@@ -25,7 +25,7 @@ public class ParagraphProperties {
     private int numId = -1;
 
     public String getStyleID() {
-        return  styleId;
+        return styleId;
     }
 
     public void setStyleID(String styleId) {
@@ -38,19 +38,19 @@ public class ParagraphProperties {
         numId = -1;
     }
 
-    public void setIlvl(int ilvl) {
-        this.ilvl = ilvl;
-    }
-
-    public void setNumId(int numId) {
-        this.numId = numId;
-    }
-
     public int getIlvl() {
         return ilvl;
     }
 
+    public void setIlvl(int ilvl) {
+        this.ilvl = ilvl;
+    }
+
     public int getNumId() {
         return numId;
+    }
+
+    public void setNumId(int numId) {
+        this.numId = numId;
     }
 }

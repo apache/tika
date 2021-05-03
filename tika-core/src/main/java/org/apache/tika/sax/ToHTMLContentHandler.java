@@ -33,10 +33,9 @@ import org.xml.sax.SAXException;
  */
 public class ToHTMLContentHandler extends ToXMLContentHandler {
 
-    private static final Set<String> EMPTY_ELEMENTS =
-        new HashSet<String>(Arrays.asList(
-            "area", "base", "basefont", "br", "col", "frame", "hr",
-            "img", "input", "isindex", "link", "meta", "param"));
+    private static final Set<String> EMPTY_ELEMENTS = new HashSet<String>(
+            Arrays.asList("area", "base", "basefont", "br", "col", "frame", "hr", "img", "input",
+                    "isindex", "link", "meta", "param"));
 
     public ToHTMLContentHandler(OutputStream stream, String encoding)
             throws UnsupportedEncodingException {
@@ -52,8 +51,7 @@ public class ToHTMLContentHandler extends ToXMLContentHandler {
     }
 
     @Override
-    public void endElement(String uri, String localName, String qName)
-            throws SAXException {
+    public void endElement(String uri, String localName, String qName) throws SAXException {
         if (inStartElement) {
             write('>');
             inStartElement = false;

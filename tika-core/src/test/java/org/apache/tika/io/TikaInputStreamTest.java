@@ -19,9 +19,9 @@ package org.apache.tika.io;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,9 +31,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.apache.commons.io.IOUtils;
+import org.junit.Test;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.junit.Test;
 
 public class TikaInputStreamTest {
 
@@ -45,21 +46,16 @@ public class TikaInputStreamTest {
         assertNull(stream.getOpenContainer());
         assertNull(stream.getInputStreamFactory());
 
-        assertEquals(
-                "The file returned by the getFile() method should"
-                + " be the file used to instantiate a TikaInputStream",
-                path, TikaInputStream.get(stream).getPath());
+        assertEquals("The file returned by the getFile() method should" +
+                        " be the file used to instantiate a TikaInputStream", path,
+                TikaInputStream.get(stream).getPath());
 
-        assertEquals(
-                "The contents of the TikaInputStream should equal the"
-                + " contents of the underlying file",
-                "Hello, World!", readStream(stream));
+        assertEquals("The contents of the TikaInputStream should equal the" +
+                " contents of the underlying file", "Hello, World!", readStream(stream));
 
         stream.close();
-        assertTrue(
-                "The close() method must not remove the file used to"
-                        + " instantiate a TikaInputStream",
-                Files.exists(path));
+        assertTrue("The close() method must not remove the file used to" +
+                " instantiate a TikaInputStream", Files.exists(path));
 
         Files.delete(path);
     }
@@ -78,23 +74,18 @@ public class TikaInputStreamTest {
         assertNull(stream.getOpenContainer());
         assertNull(stream.getInputStreamFactory());
 
-        assertEquals(
-                "The contents of the file returned by the getFile method"
-                + " should equal the contents of the TikaInputStream",
-                "Hello, World!", readFile(file));
+        assertEquals("The contents of the file returned by the getFile method" +
+                        " should equal the contents of the TikaInputStream", "Hello, World!",
+                readFile(file));
 
-        assertEquals(
-                "The contents of the TikaInputStream should not get modified"
-                + " by reading the file first",
-                "Hello, World!", readStream(stream));
+        assertEquals("The contents of the TikaInputStream should not get modified" +
+                " by reading the file first", "Hello, World!", readStream(stream));
 
         stream.close();
-        assertFalse(
-                "The close() method must remove the temporary file created"
-                + " by a TikaInputStream",
-                Files.exists(file));
+        assertFalse("The close() method must remove the temporary file created" +
+                " by a TikaInputStream", Files.exists(file));
     }
-    
+
     @Test
     public void testInputStreamFactoryBased() throws IOException {
         TikaInputStream stream = TikaInputStream.get(new InputStreamFactory() {
@@ -107,10 +98,8 @@ public class TikaInputStreamTest {
         assertNull(stream.getOpenContainer());
         assertNotNull(stream.getInputStreamFactory());
 
-        assertEquals(
-                "The contents of the TikaInputStream should not get modified"
-                + " by reading the file first",
-                "Hello, World!", readStream(stream));
+        assertEquals("The contents of the TikaInputStream should not get modified" +
+                " by reading the file first", "Hello, World!", readStream(stream));
         stream.close();
     }
 
@@ -134,8 +123,7 @@ public class TikaInputStreamTest {
         Metadata metadata = new Metadata();
         TikaInputStream.get(url, metadata).close();
         assertEquals("test.txt", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        assertEquals(
-                Long.toString(Files.size(Paths.get(url.toURI()))),
+        assertEquals(Long.toString(Files.size(Paths.get(url.toURI()))),
                 metadata.get(Metadata.CONTENT_LENGTH));
     }
 

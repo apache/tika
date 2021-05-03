@@ -17,58 +17,90 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <groupId>org.apache.tika</groupId>
-        <artifactId>tika-parent</artifactId>
-        <version>2.0.0-SNAPSHOT</version>
-        <relativePath>../tika-parent/pom.xml</relativePath>
-    </parent>
-    <modelVersion>4.0.0</modelVersion>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <parent>
+    <groupId>org.apache.tika</groupId>
+    <artifactId>tika-parent</artifactId>
+    <version>2.0.0-SNAPSHOT</version>
+    <relativePath>../tika-parent/pom.xml</relativePath>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>tika-langdetect</artifactId>
-    <packaging>pom</packaging>
-    <name>Apache Tika language detection</name>
-    <url>http://tika.apache.org/</url>
+  <artifactId>tika-langdetect</artifactId>
+  <packaging>pom</packaging>
+  <name>Apache Tika language detection</name>
+  <url>https://tika.apache.org/</url>
 
-    <modules>
-        <module>tika-langdetect-commons</module>
-        <module>tika-langdetect-lingo24</module>
-        <module>tika-langdetect-optimaize</module>
-        <module>tika-langdetect-mitll-text</module>
-        <module>tika-langdetect-opennlp</module>
-    </modules>
+  <modules>
+    <module>tika-langdetect-test-commons</module>
+    <module>tika-langdetect-tika</module>
+    <module>tika-langdetect-lingo24</module>
+    <module>tika-langdetect-optimaize</module>
+    <module>tika-langdetect-mitll-text</module>
+    <module>tika-langdetect-opennlp</module>
+  </modules>
 
-    <dependencies>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>tika-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
+  <dependencies>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.rat</groupId>
-                <artifactId>apache-rat-plugin</artifactId>
-                <version>${rat.version}</version>
-                <configuration>
-                    <excludes>
-                        <exclude>**/*.test</exclude>
-                        <exclude>**/text-test.tsv</exclude>
-                        <exclude>**/language-codes.tsv</exclude>
-                        <exclude>**/udhr-known.txt</exclude>
-                        <exclude>**/udhr-unknown.txt</exclude>
-                        <exclude>**/language-codes.txt</exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <version>${rat.version}</version>
+        <configuration>
+          <excludes>
+            <exclude>**/*.test</exclude>
+            <exclude>**/text-test.tsv</exclude>
+            <exclude>**/language-codes.tsv</exclude>
+            <exclude>**/udhr-known.txt</exclude>
+            <exclude>**/udhr-unknown.txt</exclude>
+            <exclude>**/language-codes.txt</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>${checkstyle.plugin.version}</version>
+        <dependencies>
+          <dependency>
+            <groupId>com.puppycrawl.tools</groupId>
+            <artifactId>checkstyle</artifactId>
+            <version>8.41</version>
+          </dependency>
+        </dependencies>
+        <executions>
+          <execution>
+            <id>validate</id>
+            <phase>validate</phase>
+            <configuration>
+              <configLocation>checkstyle.xml</configLocation>
+              <encoding>UTF-8</encoding>
+              <consoleOutput>false</consoleOutput>
+              <includeTestSourceDirectory>true</includeTestSourceDirectory>
+              <testSourceDirectories>${project.basedir}/src/test/java</testSourceDirectories>
+              <violationSeverity>error</violationSeverity>
+              <failOnViolation>true</failOnViolation>
+            </configuration>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>

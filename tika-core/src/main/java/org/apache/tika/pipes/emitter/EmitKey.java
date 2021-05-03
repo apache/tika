@@ -16,11 +16,22 @@
  */
 package org.apache.tika.pipes.emitter;
 
-public class EmitKey {
+import java.io.Serializable;
 
-    private final String emitterName;
-    private final String emitKey;
+public class EmitKey implements Serializable {
 
+    /**
+     * Serial version UID
+     */
+    private static final long serialVersionUID = -3861669115439125268L;
+
+    private String emitterName;
+    private String emitKey;
+
+    //for serialization only...yuck.
+    public EmitKey() {
+
+    }
     public EmitKey(String emitterName, String emitKey) {
         this.emitterName = emitterName;
         this.emitKey = emitKey;
@@ -30,27 +41,31 @@ public class EmitKey {
         return emitterName;
     }
 
-    public String getKey() {
+    public String getEmitKey() {
         return emitKey;
     }
 
     @Override
     public String toString() {
-        return "EmitterKey{" +
-                "emitterName='" + emitterName + '\'' +
-                ", emitterKey='" + emitKey + '\'' +
-                '}';
+        return "EmitterKey{" + "emitterName='" + emitterName + '\'' + ", emitterKey='" + emitKey +
+                '\'' + '}';
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         EmitKey emitKey1 = (EmitKey) o;
 
-        if (emitterName != null ? !emitterName.equals(emitKey1.emitterName) : emitKey1.emitterName != null)
+        if (emitterName != null ? !emitterName.equals(emitKey1.emitterName) :
+                emitKey1.emitterName != null) {
             return false;
+        }
         return emitKey != null ? emitKey.equals(emitKey1.emitKey) : emitKey1.emitKey == null;
     }
 

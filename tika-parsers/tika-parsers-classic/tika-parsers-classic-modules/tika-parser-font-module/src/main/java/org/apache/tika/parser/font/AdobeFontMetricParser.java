@@ -25,6 +25,9 @@ import java.util.Set;
 
 import org.apache.fontbox.afm.AFMParser;
 import org.apache.fontbox.afm.FontMetrics;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -33,21 +36,11 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * Parser for AFM Font Files
  */
-public class AdobeFontMetricParser extends AbstractParser { 
-    /** Serial version UID */
-    private static final long serialVersionUID = -4820306522217196835L;
-
-    private static final MediaType AFM_TYPE =
-         MediaType.application( "x-font-adobe-metric" );
-
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(AFM_TYPE);
-
+public class AdobeFontMetricParser extends AbstractParser {
     // TIKA-1325 Replace these with properties, from a well known standard
     static final String MET_AVG_CHAR_WIDTH = "AvgCharacterWidth";
     static final String MET_DOC_VERSION = "DocVersion";
@@ -60,90 +53,96 @@ public class AdobeFontMetricParser extends AbstractParser {
     static final String MET_FONT_WEIGHT = "FontWeight";
     static final String MET_FONT_NOTICE = "FontNotice";
     static final String MET_FONT_UNDERLINE_THICKNESS = "FontUnderlineThickness";
-    
-    public Set<MediaType> getSupportedTypes( ParseContext context ) { 
-       return SUPPORTED_TYPES;
+    /**
+     * Serial version UID
+     */
+    private static final long serialVersionUID = -4820306522217196835L;
+    private static final MediaType AFM_TYPE = MediaType.application("x-font-adobe-metric");
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(AFM_TYPE);
+
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler,
-                      Metadata metadata, ParseContext context)
-                      throws IOException, SAXException, TikaException { 
-       FontMetrics fontMetrics;
-       AFMParser  parser      = new AFMParser( stream );
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
+        FontMetrics fontMetrics;
+        AFMParser parser = new AFMParser(stream);
 
-       // Have FontBox process the file
-       fontMetrics = parser.parse();
+        // Have FontBox process the file
+        fontMetrics = parser.parse();
 
-       // Get the comments in the file to display in xhtml
-       List<String> unModifiableComments = fontMetrics.getComments();
-       //have to copy because we modify list in extractCreationDate
-       List<String> comments = new ArrayList<>(unModifiableComments);
-       // Get the creation date
-       extractCreationDate( metadata, comments );
+        // Get the comments in the file to display in xhtml
+        List<String> unModifiableComments = fontMetrics.getComments();
+        //have to copy because we modify list in extractCreationDate
+        List<String> comments = new ArrayList<>(unModifiableComments);
+        // Get the creation date
+        extractCreationDate(metadata, comments);
 
-       metadata.set( Metadata.CONTENT_TYPE, AFM_TYPE.toString() );
-       metadata.set( TikaCoreProperties.TITLE, fontMetrics.getFullName() );
+        metadata.set(Metadata.CONTENT_TYPE, AFM_TYPE.toString());
+        metadata.set(TikaCoreProperties.TITLE, fontMetrics.getFullName());
 
-       // Add metadata associated with the font type
-       addMetadataByString( metadata, MET_AVG_CHAR_WIDTH, Float.toString( fontMetrics.getAverageCharacterWidth() ) );
-       addMetadataByString( metadata, MET_DOC_VERSION, Float.toString( fontMetrics.getAFMVersion() ) );
-       addMetadataByString( metadata, MET_FONT_NAME, fontMetrics.getFontName() );
-       addMetadataByString( metadata, MET_FONT_FULL_NAME, fontMetrics.getFullName() );
-       addMetadataByString( metadata, MET_FONT_FAMILY_NAME, fontMetrics.getFamilyName() );
-       addMetadataByString( metadata, MET_FONT_VERSION, fontMetrics.getFontVersion() );
-       addMetadataByString( metadata, MET_FONT_WEIGHT, fontMetrics.getWeight() );
-       addMetadataByString( metadata, MET_FONT_NOTICE, fontMetrics.getNotice() );
-       addMetadataByString( metadata, MET_FONT_UNDERLINE_THICKNESS, Float.toString( fontMetrics.getUnderlineThickness() ) );
+        // Add metadata associated with the font type
+        addMetadataByString(metadata, MET_AVG_CHAR_WIDTH,
+                Float.toString(fontMetrics.getAverageCharacterWidth()));
+        addMetadataByString(metadata, MET_DOC_VERSION, Float.toString(fontMetrics.getAFMVersion()));
+        addMetadataByString(metadata, MET_FONT_NAME, fontMetrics.getFontName());
+        addMetadataByString(metadata, MET_FONT_FULL_NAME, fontMetrics.getFullName());
+        addMetadataByString(metadata, MET_FONT_FAMILY_NAME, fontMetrics.getFamilyName());
+        addMetadataByString(metadata, MET_FONT_VERSION, fontMetrics.getFontVersion());
+        addMetadataByString(metadata, MET_FONT_WEIGHT, fontMetrics.getWeight());
+        addMetadataByString(metadata, MET_FONT_NOTICE, fontMetrics.getNotice());
+        addMetadataByString(metadata, MET_FONT_UNDERLINE_THICKNESS,
+                Float.toString(fontMetrics.getUnderlineThickness()));
 
-       // Output the remaining comments as text
-       XHTMLContentHandler xhtml = new XHTMLContentHandler( handler, metadata );
-       xhtml.startDocument();
+        // Output the remaining comments as text
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        xhtml.startDocument();
 
-       // Display the comments
-       if (comments.size() > 0) {
-          xhtml.element( "h1", "Comments" );
-          xhtml.startElement("div", "class", "comments");
-          for (String comment : comments) {
-              xhtml.element( "p", comment );
-          }
-          xhtml.endElement("div");
-       }
+        // Display the comments
+        if (comments.size() > 0) {
+            xhtml.element("h1", "Comments");
+            xhtml.startElement("div", "class", "comments");
+            for (String comment : comments) {
+                xhtml.element("p", comment);
+            }
+            xhtml.endElement("div");
+        }
 
-       xhtml.endDocument();
+        xhtml.endDocument();
     }
 
-    private void addMetadataByString( Metadata metadata, String name, String value ) { 
-       // Add metadata if an appropriate value is passed 
-       if (value != null) { 
-          metadata.add( name, value );
-       }
+    private void addMetadataByString(Metadata metadata, String name, String value) {
+        // Add metadata if an appropriate value is passed
+        if (value != null) {
+            metadata.add(name, value);
+        }
     }
 
-    private void addMetadataByProperty( Metadata metadata, Property property, String value ) { 
-       // Add metadata if an appropriate value is passed 
-       if (value != null) 
-       {
-          metadata.set( property, value );
-       }
+    private void addMetadataByProperty(Metadata metadata, Property property, String value) {
+        // Add metadata if an appropriate value is passed
+        if (value != null) {
+            metadata.set(property, value);
+        }
     }
 
 
-    private void extractCreationDate( Metadata metadata, List<String> comments ) {
-       String   date = null;
+    private void extractCreationDate(Metadata metadata, List<String> comments) {
+        String date = null;
 
-       for (String value : comments) {
-          // Look for the creation date
-          if( value.matches( ".*Creation\\sDate.*" ) ) {
-             date = value.substring( value.indexOf( ":" ) + 2 );
-             comments.remove( value );
+        for (String value : comments) {
+            // Look for the creation date
+            if (value.matches(".*Creation\\sDate.*")) {
+                date = value.substring(value.indexOf(":") + 2);
+                comments.remove(value);
 
-             break;
-          }
-       }
+                break;
+            }
+        }
 
-       // If appropriate date then store as metadata
-       if( date != null ) {
-          addMetadataByProperty( metadata, TikaCoreProperties.CREATED, date );
-       }
+        // If appropriate date then store as metadata
+        if (date != null) {
+            addMetadataByProperty(metadata, TikaCoreProperties.CREATED, date);
+        }
     }
 }

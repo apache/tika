@@ -21,14 +21,42 @@ package org.apache.tika.parser;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 public class DigestingParser extends ParserDecorator {
+
+    private final Digester digester;
+
+    /**
+     * Creates a decorator for the given parser.
+     *
+     * @param parser the parser instance to be decorated
+     */
+    public DigestingParser(Parser parser, Digester digester) {
+        super(parser);
+        this.digester = digester;
+    }
+
+    @Override
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
+        TemporaryResources tmp = new TemporaryResources();
+        TikaInputStream tis = TikaInputStream.get(stream, tmp);
+        try {
+            if (digester != null) {
+                digester.digest(tis, metadata, context);
+            }
+            super.parse(tis, handler, metadata, context);
+        } finally {
+            tmp.dispose();
+        }
+    }
 
     /**
      * Interface for digester. See
@@ -47,43 +75,18 @@ public class DigestingParser extends ParserDecorator {
          * the stream before returning. The stream must not be closed by the
          * detector.
          *
-         * @param is InputStream to digest
-         * @param m Metadata to set the values for
+         * @param is           InputStream to digest
+         * @param m            Metadata to set the values for
          * @param parseContext ParseContext
          * @throws IOException
          */
         void digest(InputStream is, Metadata m, ParseContext parseContext) throws IOException;
-    };
+    }
 
     /**
      * Encodes byte array from a MessageDigest to String
      */
     public interface Encoder {
         String encode(byte[] bytes);
-    }
-
-    private final Digester digester;
-    /**
-     * Creates a decorator for the given parser.
-     *
-     * @param parser the parser instance to be decorated
-     */
-    public DigestingParser(Parser parser, Digester digester) {
-        super(parser);
-        this.digester = digester;
-    }
-
-    @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
-        TemporaryResources tmp = new TemporaryResources();
-        TikaInputStream tis = TikaInputStream.get(stream, tmp);
-        try {
-            if (digester != null) {
-                digester.digest(tis, metadata, context);
-            }
-            super.parse(tis, handler, metadata, context);
-        } finally {
-            tmp.dispose();
-        }
     }
 }

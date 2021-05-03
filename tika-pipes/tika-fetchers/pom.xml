@@ -17,25 +17,25 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <groupId>org.apache.tika</groupId>
-        <artifactId>tika-pipes</artifactId>
-        <version>2.0.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
-    </parent>
-    <modelVersion>4.0.0</modelVersion>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <parent>
+    <groupId>org.apache.tika</groupId>
+    <artifactId>tika-pipes</artifactId>
+    <version>2.0.0-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>tika-fetchers</artifactId>
-    <packaging>pom</packaging>
-    <name>Apache Tika fetchers</name>
-    <url>http://tika.apache.org/</url>
+  <artifactId>tika-fetchers</artifactId>
+  <packaging>pom</packaging>
+  <name>Apache Tika fetchers</name>
+  <url>https://tika.apache.org/</url>
 
-    <modules>
-        <module>tika-fetcher-http</module>
-        <module>tika-fetcher-s3</module>
-    </modules>
+  <modules>
+    <module>tika-fetcher-http</module>
+    <module>tika-fetcher-s3</module>
+  </modules>
 
 </project>

@@ -34,30 +34,32 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.tika.eval.app.db.Cols;
-import org.apache.tika.eval.app.db.H2Util;
-import org.apache.tika.eval.app.db.TableInfo;
-import org.apache.tika.eval.app.io.ExtractReaderException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import org.apache.tika.eval.app.db.Cols;
+import org.apache.tika.eval.app.db.H2Util;
+import org.apache.tika.eval.app.db.TableInfo;
+import org.apache.tika.eval.app.io.ExtractReaderException;
+
 @Ignore
 public class ProfilerBatchTest {
 
-    public final static String COMPARER_PROCESS_CLASS = "org.apache.tika.batch.fs.FSBatchProcessCLI";
-
-    private static Path dbDir;
-    private static Connection conn;
-
+    public final static String COMPARER_PROCESS_CLASS =
+            "org.apache.tika.batch.fs.FSBatchProcessCLI";
     private final static String profileTable = ExtractProfiler.PROFILE_TABLE.getName();
     private final static String exTable = ExtractProfiler.EXCEPTION_TABLE.getName();
     private final static String fpCol = Cols.FILE_PATH.name();
+    private static Path dbDir;
+    private static Connection conn;
 
     @BeforeClass
     public static void setUp() throws Exception {
 
-        Path inputRoot = Paths.get(new ComparerBatchTest().getClass().getResource("/test-dirs/extractsA").toURI());
+        Path inputRoot = Paths.get(
+                new ComparerBatchTest().getClass().getResource("/test-dirs/extractsA").toURI());
         dbDir = Files.createTempDirectory(inputRoot, "tika-test-db-dir-");
         Map<String, String> args = new HashMap<>();
         Path db = dbDir.resolve("profiler_test");
@@ -74,10 +76,11 @@ public class ProfilerBatchTest {
         H2Util dbUtil = new H2Util(db);
         conn = dbUtil.getConnection();
     }
+
     @AfterClass
     public static void tearDown() throws IOException {
 
-        try{
+        try {
             conn.close();
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -98,7 +101,7 @@ public class ProfilerBatchTest {
         Statement st = null;
         List<String> fNameList = new ArrayList<>();
         try {
-            String sql = "select * from "+ ExtractProfiler.CONTAINER_TABLE.getName();
+            String sql = "select * from " + ExtractProfiler.CONTAINER_TABLE.getName();
             st = conn.createStatement();
             ResultSet rs = st.executeQuery(sql);
             while (rs.next()) {
@@ -126,11 +129,10 @@ public class ProfilerBatchTest {
     @Test
     public void testExtractErrors() throws Exception {
         String sql = "select EXTRACT_EXCEPTION_ID from extract_exceptions e" +
-                " join containers c on c.container_id = e.container_id "+
+                " join containers c on c.container_id = e.container_id " +
                 " where c.file_path='file9_noextract.txt'";
 
-        assertEquals("missing extract: file9_noextract.txt", "0",
-                getSingleResult(sql));
+        assertEquals("missing extract: file9_noextract.txt", "0", getSingleResult(sql));
         debugTable(ExtractProfiler.CONTAINER_TABLE);
         debugTable(ExtractProfiler.PROFILE_TABLE);
         debugTable(ExtractProfiler.CONTENTS_TABLE);
@@ -138,16 +140,14 @@ public class ProfilerBatchTest {
         debugTable(ExtractProfiler.EXTRACT_EXCEPTION_TABLE);
 
         sql = "select EXTRACT_EXCEPTION_ID from errors e" +
-                " join containers c on c.container_id = e.container_id "+
+                " join containers c on c.container_id = e.container_id " +
                 " where c.file_path='file5_emptyA.pdf'";
-        assertEquals("empty extract: file5_emptyA.pdf", "1",
-                getSingleResult(sql));
+        assertEquals("empty extract: file5_emptyA.pdf", "1", getSingleResult(sql));
 
         sql = "select EXTRACT_EXCEPTION_ID from errors e" +
-                " join containers c on c.container_id = e.container_id "+
+                " join containers c on c.container_id = e.container_id " +
                 " where c.file_path='file7_badJson.pdf'";
-        assertEquals("extract error:file7_badJson.pdf", "2",
-                getSingleResult(sql));
+        assertEquals("extract error:file7_badJson.pdf", "2", getSingleResult(sql));
 
     }
 
@@ -155,19 +155,15 @@ public class ProfilerBatchTest {
     public void testParseErrors() throws Exception {
         debugTable(ExtractProfiler.EXTRACT_EXCEPTION_TABLE);
         String sql = "select file_path from errors where container_id is null";
-        assertEquals("file10_permahang.txt",
-                getSingleResult(sql));
+        assertEquals("file10_permahang.txt", getSingleResult(sql));
 
         sql = "select extract_error_id from extract_exceptions " +
                 "where file_path='file11_oom.txt'";
-        assertEquals(Integer.toString(
-                        ExtractReaderException.TYPE.ZERO_BYTE_EXTRACT_FILE.ordinal()),
+        assertEquals(Integer.toString(ExtractReaderException.TYPE.ZERO_BYTE_EXTRACT_FILE.ordinal()),
                 getSingleResult(sql));
 
         sql = "select parse_error_id from extract_exceptions where file_path='file11_oom.txt'";
-        assertEquals(Integer.toString(AbstractProfiler.
-                        PARSE_ERROR_TYPE.
-                        OOM.ordinal()),
+        assertEquals(Integer.toString(AbstractProfiler.PARSE_ERROR_TYPE.OOM.ordinal()),
                 getSingleResult(sql));
 
     }
@@ -184,8 +180,8 @@ public class ProfilerBatchTest {
         int hits = 0;
         String val = "";
         while (rs.next()) {
-            assertEquals("must have only one column in result",
-                    1, rs.getMetaData().getColumnCount());
+            assertEquals("must have only one column in result", 1,
+                    rs.getMetaData().getColumnCount());
             val = rs.getString(1);
             hits++;
         }
@@ -198,11 +194,11 @@ public class ProfilerBatchTest {
     public void debugTable(TableInfo table) throws Exception {
         Statement st = null;
         try {
-            String sql = "select * from "+table.getName();
+            String sql = "select * from " + table.getName();
             st = conn.createStatement();
             ResultSet rs = st.executeQuery(sql);
             int colCount = rs.getMetaData().getColumnCount();
-            System.out.println("TABLE: "+table.getName());
+            System.out.println("TABLE: " + table.getName());
             for (int i = 1; i <= colCount; i++) {
                 if (i > 1) {
                     System.out.print(" | ");

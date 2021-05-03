@@ -47,177 +47,179 @@ import org.apache.tika.utils.CompareUtils;
 
 public abstract class LanguageDetector {
 
-	private static final ServiceLoader DEFAULT_SERVICE_LOADER = new ServiceLoader();
+    private static final ServiceLoader DEFAULT_SERVICE_LOADER = new ServiceLoader();
 
-	// True if text is expected to be a mix of languages, and thus higher-resolution
-	// detection must be done to avoid under-sampling the text.
-	protected boolean mixedLanguages = false;
-	
-	// True if the text is expected to be 'short' (typically less than 100 chars), and
-	// thus a different algorithm and/or set of profiles should be used.
-	protected boolean shortText = false;
-	
-	public static LanguageDetector getDefaultLanguageDetector() {
-		List<LanguageDetector> detectors = getLanguageDetectors();
-		if (detectors.isEmpty()) {
-			throw new IllegalStateException("No language detectors available");
-		} else {
-			return detectors.get(0);
-		}
-	}
-	
-	public static List<LanguageDetector> getLanguageDetectors() {
-		return getLanguageDetectors(DEFAULT_SERVICE_LOADER);
-	}
-	
-	public static List<LanguageDetector> getLanguageDetectors(ServiceLoader loader) {
-        List<LanguageDetector> detectors = loader.loadStaticServiceProviders(LanguageDetector.class);
+    // True if text is expected to be a mix of languages, and thus higher-resolution
+    // detection must be done to avoid under-sampling the text.
+    protected boolean mixedLanguages = false;
+
+    // True if the text is expected to be 'short' (typically less than 100 chars), and
+    // thus a different algorithm and/or set of profiles should be used.
+    protected boolean shortText = false;
+
+    public static LanguageDetector getDefaultLanguageDetector() {
+        List<LanguageDetector> detectors = getLanguageDetectors();
+        if (detectors.isEmpty()) {
+            throw new IllegalStateException("No language detectors available");
+        } else {
+            return detectors.get(0);
+        }
+    }
+
+    public static List<LanguageDetector> getLanguageDetectors() {
+        return getLanguageDetectors(DEFAULT_SERVICE_LOADER);
+    }
+
+    public static List<LanguageDetector> getLanguageDetectors(ServiceLoader loader) {
+        List<LanguageDetector> detectors =
+                loader.loadStaticServiceProviders(LanguageDetector.class);
         detectors.sort(CompareUtils::compareClassName);
         return detectors;
-	}
-	
-	public boolean isMixedLanguages() {
-		return mixedLanguages;
-	}
-	
-	public LanguageDetector setMixedLanguages(boolean mixedLanguages) {
-		this.mixedLanguages = mixedLanguages;
-		return this;
-	}
-	
-	public boolean isShortText() {
-		return shortText;
-	}
-	
-	public LanguageDetector setShortText(boolean shortText) {
-		this.shortText = shortText;
-		return this;
-	}
-	
-	/**
-	 * Load (or re-load) all available language models. This must
-	 * be called after any settings that would impact the models
-	 * being loaded (e.g. mixed language/short text), but
-	 * before any of the document processing routines (below)
-	 * are called. Note that it only needs to be called once.
-	 * 
-	 * @return this
-	 */
-	public abstract LanguageDetector loadModels() throws IOException;
-	
-	/**
-	 * Load (or re-load) the models specified in <languages>. These use the
-	 * ISO 639-1 names, with an optional "-<country code>" for more
-	 * specific specification (e.g. "zh-CN" for Chinese in China).
-	 * 
-	 * @param languages list of target languages.
-	 * @return this
-	 */
-	public abstract LanguageDetector loadModels(Set<String> languages) throws IOException;
-	
-	/**
-	 * Provide information about whether a model exists for a specific
-	 * language.
-	 * 
-	 * @param language ISO 639-1 name for language
-	 * @return true if a model for this language exists.
-	 */
-	public abstract boolean hasModel(String language);
-	
-	/**
-	 * Set the a-priori probabilities for these languages. The provided map uses the language
-	 * as the key, and the probability (0.0 > probability < 1.0) of text being in that language.
-	 * Note that if the probabilities don't sum to 1.0, these values will be normalized.
-	 * 
-	 * If hasModel() returns false for any of the languages, an IllegalArgumentException is thrown.
-	 * 
-	 * Use of these probabilities is detector-specific, and thus might not impact the results at all.
-	 * As such, these should be viewed as a hint.
-	 * 
-	 * @param languageProbabilities Map from language to probability
-	 * @return this
-	 */
-	public abstract LanguageDetector setPriors(Map<String, Float> languageProbabilities) throws IOException;
-	
-	// ============================================================
-	// The routines below are called when processing a document
-	// ============================================================
+    }
 
-	/**
-	 * Reset statistics about the current document being processed
-	 */
-	public abstract void reset();
-	
-	/**
-	 * Add statistics about this text for the current document. Note
-	 * that we assume an implicit word break exists before/after
-	 * each of these runs of text.
-	 * 
-	 * @param cbuf Character buffer
-	 * @param off Offset into cbuf to first character in the run of text
-	 * @param len Number of characters in the run of text.
-	 */
-	public abstract void addText(char[] cbuf, int off, int len);
-	
-	/**
-	 * Add <text> to the statistics being accumulated for the current
-	 * document. Note that this is a default implementation for adding
-	 * a string (not optimized)
-	 * 
-	 * @param text Characters to add to current statistics.
-	 */
-	public void addText(CharSequence text) {
-		char[] chars = text.toString().toCharArray();
-		addText(chars, 0, chars.length);
-	}
+    public boolean isMixedLanguages() {
+        return mixedLanguages;
+    }
 
-	
-	/**
-	 * Tell the caller whether more text is required for the current document
-	 * before the language can be reliably detected.
-	 * 
-	 * Implementations can override this to do early termination of stats
-	 * collection, which can improve performance with longer documents.
-	 * 
-	 * Note that detect() can be called even when this returns false
-	 * 
-	 * @return true if we have enough text for reliable detection.
-	 */
-	public boolean hasEnoughText() {
-		return false;
-	}
-	
-	/**
-	 * Detect languages based on previously submitted text (via addText calls).
-	 * 
-	 * @return	list of all possible languages with at least medium confidence,
-	 * 			sorted by confidence from highest to lowest. There will always
-	 * 			be at least one result, which might have a confidence of NONE.
-	 */
-	public abstract List<LanguageResult> detectAll();
-	
-	public LanguageResult detect() {
-		List<LanguageResult> results = detectAll();
-		return results.get(0);
-	}
+    public LanguageDetector setMixedLanguages(boolean mixedLanguages) {
+        this.mixedLanguages = mixedLanguages;
+        return this;
+    }
 
-	/**
-	 * Utility wrapper that detects the language of a given chunk of text.
-	 * 
-	 * @param text String to add to current statistics.
-	 * @return list of all possible languages with at least medium confidence,
-	 * 			sorted by confidence from highest to lowest.
-	 */
-	public List<LanguageResult> detectAll(String text) {
-		reset();
-		addText(text);
-		return detectAll();
-	}
-	
-	public LanguageResult detect(CharSequence text) {
-		reset();
-		addText(text);
-		return detect();
-	}
+    public boolean isShortText() {
+        return shortText;
+    }
+
+    public LanguageDetector setShortText(boolean shortText) {
+        this.shortText = shortText;
+        return this;
+    }
+
+    /**
+     * Load (or re-load) all available language models. This must
+     * be called after any settings that would impact the models
+     * being loaded (e.g. mixed language/short text), but
+     * before any of the document processing routines (below)
+     * are called. Note that it only needs to be called once.
+     *
+     * @return this
+     */
+    public abstract LanguageDetector loadModels() throws IOException;
+
+    /**
+     * Load (or re-load) the models specified in <languages>. These use the
+     * ISO 639-1 names, with an optional "-<country code>" for more
+     * specific specification (e.g. "zh-CN" for Chinese in China).
+     *
+     * @param languages list of target languages.
+     * @return this
+     */
+    public abstract LanguageDetector loadModels(Set<String> languages) throws IOException;
+
+    /**
+     * Provide information about whether a model exists for a specific
+     * language.
+     *
+     * @param language ISO 639-1 name for language
+     * @return true if a model for this language exists.
+     */
+    public abstract boolean hasModel(String language);
+
+    /**
+     * Set the a-priori probabilities for these languages. The provided map uses the language
+     * as the key, and the probability (0.0 > probability < 1.0) of text being in that language.
+     * Note that if the probabilities don't sum to 1.0, these values will be normalized.
+     * <p>
+     * If hasModel() returns false for any of the languages, an IllegalArgumentException is thrown.
+     * <p>
+     * Use of these probabilities is detector-specific, and thus might not impact the results  at
+     * all. As such, these should be viewed as a hint.
+     *
+     * @param languageProbabilities Map from language to probability
+     * @return this
+     */
+    public abstract LanguageDetector setPriors(Map<String, Float> languageProbabilities)
+            throws IOException;
+
+    // ============================================================
+    // The routines below are called when processing a document
+    // ============================================================
+
+    /**
+     * Reset statistics about the current document being processed
+     */
+    public abstract void reset();
+
+    /**
+     * Add statistics about this text for the current document. Note
+     * that we assume an implicit word break exists before/after
+     * each of these runs of text.
+     *
+     * @param cbuf Character buffer
+     * @param off  Offset into cbuf to first character in the run of text
+     * @param len  Number of characters in the run of text.
+     */
+    public abstract void addText(char[] cbuf, int off, int len);
+
+    /**
+     * Add <text> to the statistics being accumulated for the current
+     * document. Note that this is a default implementation for adding
+     * a string (not optimized)
+     *
+     * @param text Characters to add to current statistics.
+     */
+    public void addText(CharSequence text) {
+        char[] chars = text.toString().toCharArray();
+        addText(chars, 0, chars.length);
+    }
+
+
+    /**
+     * Tell the caller whether more text is required for the current document
+     * before the language can be reliably detected.
+     * <p>
+     * Implementations can override this to do early termination of stats
+     * collection, which can improve performance with longer documents.
+     * <p>
+     * Note that detect() can be called even when this returns false
+     *
+     * @return true if we have enough text for reliable detection.
+     */
+    public boolean hasEnoughText() {
+        return false;
+    }
+
+    /**
+     * Detect languages based on previously submitted text (via addText calls).
+     *
+     * @return list of all possible languages with at least medium confidence,
+     * sorted by confidence from highest to lowest. There will always
+     * be at least one result, which might have a confidence of NONE.
+     */
+    public abstract List<LanguageResult> detectAll();
+
+    public LanguageResult detect() {
+        List<LanguageResult> results = detectAll();
+        return results.get(0);
+    }
+
+    /**
+     * Utility wrapper that detects the language of a given chunk of text.
+     *
+     * @param text String to add to current statistics.
+     * @return list of all possible languages with at least medium confidence,
+     * sorted by confidence from highest to lowest.
+     */
+    public List<LanguageResult> detectAll(String text) {
+        reset();
+        addText(text);
+        return detectAll();
+    }
+
+    public LanguageResult detect(CharSequence text) {
+        reset();
+        addText(text);
+        return detect();
+    }
 
 }

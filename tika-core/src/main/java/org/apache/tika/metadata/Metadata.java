@@ -27,7 +27,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -41,29 +40,33 @@ import org.apache.tika.utils.DateUtils;
 /**
  * A multi-valued metadata container.
  */
-public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
-        Message, ClimateForcast, TIFF, TikaMimeKeys,
-        Serializable {
+public class Metadata
+        implements CreativeCommons, Geographic, HttpHeaders, Message, ClimateForcast, TIFF,
+        TikaMimeKeys, Serializable {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = 5623926545693153182L;
-
+    /**
+     * Some parsers will have the date as a ISO-8601 string
+     * already, and will set that into the Metadata object.
+     */
+    private static final DateUtils DATE_UTILS = new DateUtils();
     /**
      * A map of all metadata attributes.
      */
     private Map<String, String[]> metadata = null;
 
-
-
     /**
-     * Some parsers will have the date as a ISO-8601 string
-     *  already, and will set that into the Metadata object.
+     * Constructs a new, empty metadata.
      */
-    private static final DateUtils DATE_UTILS = new DateUtils();
+    public Metadata() {
+        metadata = new HashMap<String, String[]>();
+    }
 
     private static DateFormat createDateFormat(String format, TimeZone timezone) {
-        SimpleDateFormat sdf =
-            new SimpleDateFormat(format, new DateFormatSymbols(Locale.US));
+        SimpleDateFormat sdf = new SimpleDateFormat(format, new DateFormatSymbols(Locale.US));
         if (timezone != null) {
             sdf.setTimeZone(timezone);
         }
@@ -74,37 +77,29 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
      * Parses the given date string. This method is synchronized to prevent
      * concurrent access to the thread-unsafe date formats.
      *
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-495">TIKA-495</a>
      * @param date date string
      * @return parsed date, or <code>null</code> if the date can't be parsed
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-495">TIKA-495</a>
      */
     private static synchronized Date parseDate(String date) {
         return DATE_UTILS.tryToParse(date);
     }
 
     /**
-     * Constructs a new, empty metadata.
+     * Returns true if named value is multivalued.
+     *
+     * @param property metadata property
+     * @return true is named value is multivalued, false if single value or null
      */
-    public Metadata() {
-        metadata = new HashMap<String, String[]>();
+    public boolean isMultiValued(final Property property) {
+        return metadata.get(property.getName()) != null &&
+                metadata.get(property.getName()).length > 1;
     }
 
     /**
      * Returns true if named value is multivalued.
-     * 
-     * @param property
-     *          metadata property
-     * @return true is named value is multivalued, false if single value or null
-     */
-    public boolean isMultiValued(final Property property) {
-        return metadata.get(property.getName()) != null && metadata.get(property.getName()).length > 1;
-    }
-    
-    /**
-     * Returns true if named value is multivalued.
-     * 
-     * @param name
-     *          name of metadata
+     *
+     * @param name name of metadata
      * @return true is named value is multivalued, false if single value or null
      */
     public boolean isMultiValued(final String name) {
@@ -113,7 +108,7 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
 
     /**
      * Returns an array of the names contained in the metadata.
-     * 
+     *
      * @return Metadata names
      */
     public String[] names() {
@@ -123,9 +118,8 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
     /**
      * Get the value associated to a metadata name. If many values are assiociated
      * to the specified name, then the first one is returned.
-     * 
-     * @param name
-     *          of the metadata.
+     *
+     * @param name of the metadata.
      * @return the value associated to the specified metadata name.
      */
     public String get(final String name) {
@@ -140,55 +134,57 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
     /**
      * Returns the value (if any) of the identified metadata property.
      *
-     * @since Apache Tika 0.7
      * @param property property definition
      * @return property value, or <code>null</code> if the property is not set
+     * @since Apache Tika 0.7
      */
     public String get(Property property) {
         return get(property.getName());
     }
-    
+
     /**
      * Returns the value of the identified Integer based metadata property.
-     * 
-     * @since Apache Tika 0.8
+     *
      * @param property simple integer property definition
-     * @return property value as a Integer, or <code>null</code> if the property is not set, or not a valid Integer
+     * @return property value as a Integer, or <code>null</code> if the property is not set, or
+     * not a valid Integer
+     * @since Apache Tika 0.8
      */
     public Integer getInt(Property property) {
-        if(property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
+        if (property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
             return null;
         }
-        if(property.getPrimaryProperty().getValueType() != Property.ValueType.INTEGER) {
+        if (property.getPrimaryProperty().getValueType() != Property.ValueType.INTEGER) {
             return null;
         }
-        
+
         String v = get(property);
-        if(v == null) {
+        if (v == null) {
             return null;
         }
         try {
             return Integer.valueOf(v);
-        } catch(NumberFormatException e) {
+        } catch (NumberFormatException e) {
             return null;
         }
     }
 
     /**
      * Returns the value of the identified Date based metadata property.
-     * 
-     * @since Apache Tika 0.8
+     *
      * @param property simple date property definition
-     * @return property value as a Date, or <code>null</code> if the property is not set, or not a valid Date
+     * @return property value as a Date, or <code>null</code> if the property is not set, or not
+     * a valid Date
+     * @since Apache Tika 0.8
      */
     public Date getDate(Property property) {
-        if(property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
+        if (property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
             return null;
         }
-        if(property.getPrimaryProperty().getValueType() != Property.ValueType.DATE) {
+        if (property.getPrimaryProperty().getValueType() != Property.ValueType.DATE) {
             return null;
         }
-        
+
         String v = get(property);
         if (v != null) {
             return parseDate(v);
@@ -196,12 +192,11 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
             return null;
         }
     }
-    
+
     /**
      * Get the values associated to a metadata name.
-     * 
-     * @param property
-     *          of the metadata.
+     *
+     * @param property of the metadata.
      * @return the values associated to a metadata name.
      */
     public String[] getValues(final Property property) {
@@ -210,9 +205,8 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
 
     /**
      * Get the values associated to a metadata name.
-     * 
-     * @param name
-     *          of the metadata.
+     *
+     * @param name of the metadata.
      * @return the values associated to a metadata name.
      */
     public String[] getValues(final String name) {
@@ -226,7 +220,7 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
         }
         return values;
     }
-    
+
     private String[] appendedValues(String[] values, final String value) {
         String[] newValues = new String[values.length + 1];
         System.arraycopy(values, 0, newValues, 0, values.length);
@@ -237,11 +231,9 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
     /**
      * Add a metadata name/value mapping. Add the specified value to the list of
      * values associated to the specified metadata name.
-     * 
-     * @param name
-     *          the metadata name.
-     * @param value
-     *          the metadata value.
+     *
+     * @param name  the metadata name.
+     * @param value the metadata value.
      */
     public void add(final String name, final String value) {
         String[] values = metadata.get(name);
@@ -251,15 +243,13 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
             metadata.put(name, appendedValues(values, value));
         }
     }
-    
+
     /**
      * Add a metadata property/value mapping. Add the specified value to the list of
      * values associated to the specified metadata property.
-     * 
-     * @param property
-     *          the metadata property.
-     * @param value
-     *          the metadata value.
+     *
+     * @param property the metadata property.
+     * @param value    the metadata value.
      */
     public void add(final Property property, final String value) {
 
@@ -282,8 +272,8 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
                 if (property.isMultiValuePermitted()) {
                     set(property, appendedValues(values, value));
                 } else {
-                    throw new PropertyTypeException(property.getName() +
-                            " : " + property.getPropertyType());
+                    throw new PropertyTypeException(
+                            property.getName() + " : " + property.getPropertyType());
                 }
             }
         }
@@ -291,17 +281,15 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
 
     /**
      * Copy All key-value pairs from properties.
-     * 
-     * @param properties
-     *          properties to copy from
+     *
+     * @param properties properties to copy from
      */
     @SuppressWarnings("unchecked")
     public void setAll(Properties properties) {
-        Enumeration<String> names =
-            (Enumeration<String>) properties.propertyNames();
+        Enumeration<String> names = (Enumeration<String>) properties.propertyNames();
         while (names.hasMoreElements()) {
             String name = names.nextElement();
-            metadata.put(name, new String[] { properties.getProperty(name) });
+            metadata.put(name, new String[]{properties.getProperty(name)});
         }
     }
 
@@ -311,12 +299,12 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
      * they are removed. If the given value is <code>null</code>, then the
      * metadata entry is removed.
      *
-     * @param name the metadata name.
-     * @param value  the metadata value, or <code>null</code>
+     * @param name  the metadata name.
+     * @param value the metadata value, or <code>null</code>
      */
     public void set(String name, String value) {
         if (value != null) {
-            metadata.put(name, new String[] { value });
+            metadata.put(name, new String[]{value});
         } else {
             metadata.remove(name);
         }
@@ -325,9 +313,9 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
     /**
      * Sets the value of the identified metadata property.
      *
-     * @since Apache Tika 0.7
      * @param property property definition
      * @param value    property value
+     * @since Apache Tika 0.7
      */
     public void set(Property property, String value) {
         if (property == null) {
@@ -344,13 +332,13 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
             set(property.getName(), value);
         }
     }
-    
+
     /**
      * Sets the values of the identified metadata property.
      *
-     * @since Apache Tika 1.2
      * @param property property definition
-     * @param values    property values
+     * @param values   property values
+     * @since Apache Tika 1.2
      */
     public void set(Property property, String[] values) {
         if (property == null) {
@@ -371,16 +359,18 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
     /**
      * Sets the integer value of the identified metadata property.
      *
-     * @since Apache Tika 0.8
      * @param property simple integer property definition
      * @param value    property value
+     * @since Apache Tika 0.8
      */
     public void set(Property property, int value) {
-        if(property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
-            throw new PropertyTypeException(Property.PropertyType.SIMPLE, property.getPrimaryProperty().getPropertyType());
+        if (property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
+            throw new PropertyTypeException(Property.PropertyType.SIMPLE,
+                    property.getPrimaryProperty().getPropertyType());
         }
-        if(property.getPrimaryProperty().getValueType() != Property.ValueType.INTEGER) {
-            throw new PropertyTypeException(Property.ValueType.INTEGER, property.getPrimaryProperty().getValueType());
+        if (property.getPrimaryProperty().getValueType() != Property.ValueType.INTEGER) {
+            throw new PropertyTypeException(Property.ValueType.INTEGER,
+                    property.getPrimaryProperty().getValueType());
         }
         set(property, Integer.toString(value));
     }
@@ -388,16 +378,18 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
     /**
      * Adds the integer value of the identified metadata property.
      *
-     * @since Apache Tika 1.21
      * @param property seq integer property definition
      * @param value    property value
+     * @since Apache Tika 1.21
      */
     public void add(Property property, int value) {
-        if(property.getPrimaryProperty().getPropertyType() != PropertyType.SEQ) {
-            throw new PropertyTypeException(PropertyType.SEQ, property.getPrimaryProperty().getPropertyType());
+        if (property.getPrimaryProperty().getPropertyType() != PropertyType.SEQ) {
+            throw new PropertyTypeException(PropertyType.SEQ,
+                    property.getPrimaryProperty().getPropertyType());
         }
-        if(property.getPrimaryProperty().getValueType() != Property.ValueType.INTEGER) {
-            throw new PropertyTypeException(Property.ValueType.INTEGER, property.getPrimaryProperty().getValueType());
+        if (property.getPrimaryProperty().getValueType() != Property.ValueType.INTEGER) {
+            throw new PropertyTypeException(Property.ValueType.INTEGER,
+                    property.getPrimaryProperty().getValueType());
         }
         add(property, Integer.toString(value));
     }
@@ -405,16 +397,18 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
     /**
      * Gets the array of ints of the identified "seq" integer metadata property.
      *
-     * @since Apache Tika 1.21
      * @param property seq integer property definition
      * @return array of ints
+     * @since Apache Tika 1.21
      */
     public int[] getIntValues(Property property) {
-        if(property.getPrimaryProperty().getPropertyType() != PropertyType.SEQ) {
-            throw new PropertyTypeException(PropertyType.SEQ, property.getPrimaryProperty().getPropertyType());
+        if (property.getPrimaryProperty().getPropertyType() != PropertyType.SEQ) {
+            throw new PropertyTypeException(PropertyType.SEQ,
+                    property.getPrimaryProperty().getPropertyType());
         }
-        if(property.getPrimaryProperty().getValueType() != Property.ValueType.INTEGER) {
-            throw new PropertyTypeException(Property.ValueType.INTEGER, property.getPrimaryProperty().getValueType());
+        if (property.getPrimaryProperty().getValueType() != Property.ValueType.INTEGER) {
+            throw new PropertyTypeException(Property.ValueType.INTEGER,
+                    property.getPrimaryProperty().getValueType());
         }
         String[] vals = getValues(property);
         int[] ret = new int[vals.length];
@@ -427,17 +421,19 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
     /**
      * Sets the real or rational value of the identified metadata property.
      *
-     * @since Apache Tika 0.8
      * @param property simple real or simple rational property definition
      * @param value    property value
+     * @since Apache Tika 0.8
      */
     public void set(Property property, double value) {
-        if(property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
-            throw new PropertyTypeException(Property.PropertyType.SIMPLE, property.getPrimaryProperty().getPropertyType());
+        if (property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
+            throw new PropertyTypeException(Property.PropertyType.SIMPLE,
+                    property.getPrimaryProperty().getPropertyType());
         }
-        if(property.getPrimaryProperty().getValueType() != Property.ValueType.REAL &&
-              property.getPrimaryProperty().getValueType() != Property.ValueType.RATIONAL) {
-            throw new PropertyTypeException(Property.ValueType.REAL, property.getPrimaryProperty().getValueType());
+        if (property.getPrimaryProperty().getValueType() != Property.ValueType.REAL &&
+                property.getPrimaryProperty().getValueType() != Property.ValueType.RATIONAL) {
+            throw new PropertyTypeException(Property.ValueType.REAL,
+                    property.getPrimaryProperty().getValueType());
         }
         set(property, Double.toString(value));
     }
@@ -445,16 +441,18 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
     /**
      * Sets the date value of the identified metadata property.
      *
-     * @since Apache Tika 0.8
      * @param property simple integer property definition
      * @param date     property value
+     * @since Apache Tika 0.8
      */
     public void set(Property property, Date date) {
-        if(property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
-            throw new PropertyTypeException(Property.PropertyType.SIMPLE, property.getPrimaryProperty().getPropertyType());
+        if (property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
+            throw new PropertyTypeException(Property.PropertyType.SIMPLE,
+                    property.getPrimaryProperty().getPropertyType());
         }
-        if(property.getPrimaryProperty().getValueType() != Property.ValueType.DATE) {
-            throw new PropertyTypeException(Property.ValueType.DATE, property.getPrimaryProperty().getValueType());
+        if (property.getPrimaryProperty().getValueType() != Property.ValueType.DATE) {
+            throw new PropertyTypeException(Property.ValueType.DATE,
+                    property.getPrimaryProperty().getValueType());
         }
         String dateString = null;
         if (date != null) {
@@ -466,16 +464,18 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
     /**
      * Sets the date value of the identified metadata property.
      *
-     * @since Apache Tika 0.8
      * @param property simple integer property definition
      * @param date     property value
+     * @since Apache Tika 0.8
      */
     public void set(Property property, Calendar date) {
-        if(property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
-            throw new PropertyTypeException(Property.PropertyType.SIMPLE, property.getPrimaryProperty().getPropertyType());
+        if (property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
+            throw new PropertyTypeException(Property.PropertyType.SIMPLE,
+                    property.getPrimaryProperty().getPropertyType());
         }
-        if(property.getPrimaryProperty().getValueType() != Property.ValueType.DATE) {
-            throw new PropertyTypeException(Property.ValueType.DATE, property.getPrimaryProperty().getValueType());
+        if (property.getPrimaryProperty().getValueType() != Property.ValueType.DATE) {
+            throw new PropertyTypeException(Property.ValueType.DATE,
+                    property.getPrimaryProperty().getValueType());
         }
         String dateString = null;
         if (date != null) {
@@ -486,9 +486,8 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
 
     /**
      * Remove a metadata and all its associated values.
-     * 
-     * @param name
-     *          metadata name to remove
+     *
+     * @param name metadata name to remove
      */
     public void remove(String name) {
         metadata.remove(name);
@@ -496,7 +495,7 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
 
     /**
      * Returns the number of metadata names in this metadata.
-     * 
+     *
      * @return number of metadata names
      */
     public int size() {
@@ -512,10 +511,10 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
     }
 
     private int getMetadataEntryHashCode(Entry<String, String[]> e) {
-    	return Objects.hashCode(e.getKey()) ^ Arrays.hashCode(e.getValue());
-	}
+        return Objects.hashCode(e.getKey()) ^ Arrays.hashCode(e.getValue());
+    }
 
-	public boolean equals(Object o) {
+    public boolean equals(Object o) {
 
         if (o == null) {
             return false;

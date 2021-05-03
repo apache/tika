@@ -41,14 +41,13 @@ public class LuceneTokenCounter {
     private final LeafReader leafReader;
     private final MemoryIndex memoryIndex;
     private final Analyzer generalAnalyzer;
-    private int topN = 10;
-
     Map<String, TokenStatistics> fieldStats = new HashMap<>();
+    private int topN = 10;
 
     public LuceneTokenCounter(Analyzer generalAnalyzer) throws IOException {
         memoryIndex = new MemoryIndex();
         IndexSearcher searcher = memoryIndex.createSearcher();
-        leafReader = (LeafReader)searcher.getIndexReader();
+        leafReader = (LeafReader) searcher.getIndexReader();
         this.generalAnalyzer = generalAnalyzer;
     }
 
@@ -67,7 +66,7 @@ public class LuceneTokenCounter {
         if (tokenCount > Integer.MAX_VALUE) {
             throw new IllegalArgumentException("can't handle longs");
         }
-        int tokenCountInt = (int)tokenCount;
+        int tokenCountInt = (int) tokenCount;
         int uniqueTokenCount = 0;
         SummaryStatistics summStats = new SummaryStatistics();
         double ent = 0.0d;
@@ -77,14 +76,15 @@ public class LuceneTokenCounter {
         Terms terms = leafReader.terms(field);
         if (terms == null) {
             //if there were no terms
-            fieldStats.put(field, new TokenStatistics(uniqueTokenCount, tokenCountInt,
-                    new TokenIntPair[0], ent, summStats));
+            fieldStats.put(field,
+                    new TokenStatistics(uniqueTokenCount, tokenCountInt, new TokenIntPair[0], ent,
+                            summStats));
             return;
 
         }
         TermsEnum termsEnum = terms.iterator();
         BytesRef bytesRef = termsEnum.next();
-        TokenCountPriorityQueue queue= new TokenCountPriorityQueue(topN);
+        TokenCountPriorityQueue queue = new TokenCountPriorityQueue(topN);
 
         while (bytesRef != null) {
 
@@ -92,7 +92,7 @@ public class LuceneTokenCounter {
             if (termFreq > Integer.MAX_VALUE) {
                 throw new IllegalArgumentException("Sorry can't handle longs yet");
             }
-            int tf = (int)termFreq;
+            int tf = (int) termFreq;
             //TODO: figure out how to avoid Stringifying this
             //to get codepoint count
             String t = bytesRef.utf8ToString();
@@ -103,8 +103,7 @@ public class LuceneTokenCounter {
             p = (double) tf / (double) tokenCount;
             ent += p * FastMath.log(base, p);
 
-            if (queue.top() == null || queue.size() < topN ||
-                    tf >= queue.top().getValue()) {
+            if (queue.top() == null || queue.size() < topN || tf >= queue.top().getValue()) {
                 queue.insertWithOverflow(new TokenIntPair(t, tf));
             }
 
@@ -112,11 +111,12 @@ public class LuceneTokenCounter {
             bytesRef = termsEnum.next();
         }
         if (tokenCountInt > 0) {
-            ent = (-1.0d / (double)tokenCountInt) * ent;
+            ent = (-1.0d / (double) tokenCountInt) * ent;
         }
 
-        fieldStats.put(field, new TokenStatistics(uniqueTokenCount, tokenCountInt,
-                queue.getArray(), ent, summStats));
+        fieldStats.put(field,
+                new TokenStatistics(uniqueTokenCount, tokenCountInt, queue.getArray(), ent,
+                        summStats));
     }
 
     public void setTopN(int topN) {

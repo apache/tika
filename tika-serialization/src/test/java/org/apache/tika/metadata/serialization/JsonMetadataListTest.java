@@ -1,21 +1,20 @@
-package org.apache.tika.metadata.serialization;
-
 /*
-* Licensed to the Apache Software Foundation (ASF) under one or more
-* contributor license agreements.  See the NOTICE file distributed with
-* this work for additional information regarding copyright ownership.
-* The ASF licenses this file to You under the Apache License, Version 2.0
-* (the "License"); you may not use this file except in compliance with
-* the License.  You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.tika.metadata.serialization;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -28,9 +27,10 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.junit.Test;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.junit.Test;
 
 public class JsonMetadataListTest {
 
@@ -58,12 +58,13 @@ public class JsonMetadataListTest {
         metadataList.add(m2);
         StringWriter writer = new StringWriter();
         JsonMetadataList.toJson(metadataList, writer);
-        List<Metadata> deserialized = JsonMetadataList.fromJson(new StringReader(writer.toString()));
+        List<Metadata> deserialized =
+                JsonMetadataList.fromJson(new StringReader(writer.toString()));
         assertEquals(metadataList, deserialized);
 
         //now test streaming serializer
         writer = new StringWriter();
-        try(JsonStreamingSerializer streamingSerializer = new JsonStreamingSerializer(writer)) {
+        try (JsonStreamingSerializer streamingSerializer = new JsonStreamingSerializer(writer)) {
             streamingSerializer.add(m1);
             streamingSerializer.add(m2);
         }
@@ -118,11 +119,10 @@ public class JsonMetadataListTest {
         writer = new StringWriter();
         JsonMetadataList.setPrettyPrinting(true);
         JsonMetadataList.toJson(metadataList, writer);
-        assertTrue(writer.toString().startsWith("[ {\n" +
-                "  \"zk1\" : [ \"v1\", \"v2\", \"v3\", \"v4\", \"v4\" ],\n" +
-                "  \"zk2\" : \"v1\",\n" +
-                "  \"X-TIKA:content\" : \"this is the content\"\n" +
-                "},"));
+        assertTrue(writer.toString().replaceAll("\r\n", "\n").startsWith(
+                "[ {\n" + "  \"zk1\" : [ \"v1\", \"v2\", \"v3\", \"v4\", \"v4\" ],\n" +
+                        "  \"zk2\" : \"v1\",\n" +
+                        "  \"X-TIKA:content\" : \"this is the content\"\n" + "},"));
 
 
         //now set it back to false
@@ -155,7 +155,7 @@ public class JsonMetadataListTest {
         truth.add(m2);
         truth.add(m1);
         StringWriter stringWriter = new StringWriter();
-        try(JsonStreamingSerializer serializer = new JsonStreamingSerializer(stringWriter)) {
+        try (JsonStreamingSerializer serializer = new JsonStreamingSerializer(stringWriter)) {
             serializer.add(m1);
             serializer.add(m2);
         }

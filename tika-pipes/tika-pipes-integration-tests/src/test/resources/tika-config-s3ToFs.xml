@@ -21,19 +21,19 @@
     <fetchers>
         <fetcher class="org.apache.tika.pipes.fetcher.s3.S3Fetcher">
             <params>
-                <param name="name" type="string">s3</param>
-                <param name="region" type="string">us-east-1</param>
-                <param name="profile" type="string"><!-- fill in here --></param>
+                <name>s3</name>
+                <region>us-east-1</region>
+                <profile><!-- fill in here --></profile>
             </params>
         </fetcher>
     </fetchers>
     <fetchIterators>
         <fetchIterator class="org.apache.tika.pipes.fetchiterator.s3.S3FetchIterator">
             <params>
-                <param name="fetcherName" type="string">s3</param>
-                <param name="bucket" type="string"><!-- fill in here --></param>
-                <param name="region" type="string">us-east-1</param>
-                <param name="profile" type="string"><!-- fill in here --></param>
+                <fetcherName>s3</fetcherName>
+                <bucket><!-- fill in here --></bucket>
+                <region>us-east-1</region>
+                <profile><!-- fill in here --></profile>
             </params>
         </fetchIterator>
     </fetchIterators>

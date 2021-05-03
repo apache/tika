@@ -36,22 +36,22 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.tika.batch.fs.FSBatchTestBase;
-import org.apache.tika.eval.app.db.Cols;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import org.apache.tika.batch.fs.FSBatchTestBase;
+import org.apache.tika.eval.app.db.Cols;
+
 @Ignore("move these tests to TikaEvalCLITest")
 public class ComparerBatchTest extends FSBatchTestBase {
 
-    public final static String COMPARER_PROCESS_CLASS = "org.apache.tika.batch.fs.FSBatchProcessCLI";
-
+    public final static String COMPARER_PROCESS_CLASS =
+            "org.apache.tika.batch.fs.FSBatchProcessCLI";
+    private final static String compJoinCont = "";
     private static Path dbDir;
     private static Connection conn;
-
-    private final static String compJoinCont = "";
     /*ExtractComparer.COMPARISONS_TABLE+" cmp " +
             "join "+ExtractComparer.CONTAINERS_TABLE + " cnt "+
             "on cmp."+AbstractProfiler.CONTAINER_HEADERS.CONTAINER_ID+
@@ -91,16 +91,17 @@ public class ComparerBatchTest extends FSBatchTestBase {
     public void testSimpleDBWriteAndRead() throws Exception {
         Set<String> set = new HashSet<>();
         //filenames
-        List<String> list = getColStrings(Cols.FILE_NAME.name(),
-                ExtractComparer.PROFILES_A.getName(), "");
+        List<String> list =
+                getColStrings(Cols.FILE_NAME.name(), ExtractComparer.PROFILES_A.getName(), "");
         assertEquals(7, list.size());
         assertTrue(list.contains("file1.pdf"));
 
         //container ids in comparisons table
         list = getColStrings(Cols.CONTAINER_ID.name(),
-                ExtractComparer.COMPARISON_CONTAINERS.getName(),"");
+                ExtractComparer.COMPARISON_CONTAINERS.getName(), "");
         assertEquals(10, list.size());
-        set.clear(); set.addAll(list);
+        set.clear();
+        set.addAll(list);
         assertEquals(10, set.size());
 /*
         //ids in comparisons table
@@ -110,7 +111,6 @@ public class ComparerBatchTest extends FSBatchTestBase {
         set.clear(); set.addAll(list);
         assertEquals(9, set.size());*/
     }
-
 
 
     /*
@@ -249,7 +249,8 @@ public class ComparerBatchTest extends FSBatchTestBase {
                         AbstractProfiler.EXCEPTION_HEADERS.ACCESS_PERMISSION_EXCEPTION.name() +
                         " from " + AbstractProfiler.EXCEPTIONS_TABLE+"_A exA "+
                         " join " + ExtractComparer.COMPARISONS_TABLE + " cmp on cmp.ID=exA.ID "+
-                        " join " + ExtractComparer.CONTAINERS_TABLE + " cont on cmp.CONTAINER_ID=cont.CONTAINER_ID "+
+                        " join " + ExtractComparer.CONTAINERS_TABLE +
+                         " cont on cmp.CONTAINER_ID=cont.CONTAINER_ID "+
                         " where "+fp+"='file6_accessEx.pdf'";
                 Statement st = conn.createStatement();
                 ResultSet rs = st.executeQuery(sql);
@@ -264,7 +265,8 @@ public class ComparerBatchTest extends FSBatchTestBase {
                         AbstractProfiler.EXCEPTION_HEADERS.ACCESS_PERMISSION_EXCEPTION.name() +
                         " from " + AbstractProfiler.EXCEPTIONS_TABLE+"_B exB "+
                         " join " + ExtractComparer.COMPARISONS_TABLE + " cmp on cmp.ID=exB.ID "+
-                        " join " + ExtractComparer.CONTAINERS_TABLE + " cont on cmp.CONTAINER_ID=cont.CONTAINER_ID "+
+                        " join " + ExtractComparer.CONTAINERS_TABLE +
+                        " cont on cmp.CONTAINER_ID=cont.CONTAINER_ID "+
                         " where "+fp+"='file6_accessEx.pdf'";
                 st = conn.createStatement();
                 rs = st.executeQuery(sql);
@@ -282,7 +284,8 @@ public class ComparerBatchTest extends FSBatchTestBase {
                 String sql = "select * "+
                         " from " + AbstractProfiler.EXCEPTIONS_TABLE+"_A exA "+
                         " join " + ExtractComparer.COMPARISONS_TABLE + " cmp on cmp.ID=exA.ID "+
-                        " join " + ExtractComparer.CONTAINERS_TABLE + " cont on cmp.CONTAINER_ID=cont.CONTAINER_ID "+
+                        " join " + ExtractComparer.CONTAINERS_TABLE +
+                        " cont on cmp.CONTAINER_ID=cont.CONTAINER_ID "+
                         "where "+fp+"='file8_IOEx.pdf'";
                 Statement st = conn.createStatement();
                 ResultSet rs = st.executeQuery(sql);
@@ -294,13 +297,15 @@ public class ComparerBatchTest extends FSBatchTestBase {
                     data.put(rsM.getColumnName(i), rs.getString(i));
                 }
 
-                String sortStack = data.get(AbstractProfiler.EXCEPTION_HEADERS.SORT_STACK_TRACE.name());
+                String sortStack = data.get(
+                AbstractProfiler.EXCEPTION_HEADERS.SORT_STACK_TRACE.name());
                 sortStack = sortStack.replaceAll("[\r\n]", "<N>");
                 assertTrue(sortStack.startsWith("java.lang.RuntimeException<N>"));
 
                 String fullStack = data.get(AbstractProfiler.EXCEPTION_HEADERS.ORIG_STACK_TRACE.name());
                 assertTrue(
-                        fullStack.startsWith("java.lang.RuntimeException: java.io.IOException: Value is not an integer"));
+                        fullStack.startsWith("java.lang.RuntimeException:
+                         java.io.IOException: Value is not an integer"));
             }
 
         private void debugDumpAll(String table) throws Exception {
@@ -324,11 +329,11 @@ public class ComparerBatchTest extends FSBatchTestBase {
         */
     private void debugShowColumns(String table) throws Exception {
         Statement st = conn.createStatement();
-        String sql = "select * from "+table;
+        String sql = "select * from " + table;
         ResultSet rs = st.executeQuery(sql);
         ResultSetMetaData m = rs.getMetaData();
         for (int i = 1; i <= m.getColumnCount(); i++) {
-            System.out.println(i+" : "+m.getColumnName(i));
+            System.out.println(i + " : " + m.getColumnName(i));
         }
         st.close();
     }
@@ -374,7 +379,8 @@ public class ComparerBatchTest extends FSBatchTestBase {
         return getColStrings(colName, ExtractComparer.CONTENT_COMPARISONS.getName(), null);
     }
 
-    private List<String> getColStrings(String colName, String table, String where) throws Exception {
+    private List<String> getColStrings(String colName, String table, String where)
+            throws Exception {
         String sql = getSql(colName, table, where);
         List<String> results = new ArrayList<>();
         try (Statement st = conn.createStatement()) {
@@ -390,7 +396,7 @@ public class ComparerBatchTest extends FSBatchTestBase {
     private String getSql(String colName, String table, String where) {
         StringBuilder sb = new StringBuilder();
         sb.append("select ").append(colName).append(" from ").append(table);
-        if (where != null && ! where.equals("")) {
+        if (where != null && !where.equals("")) {
             sb.append(" where ").append(where);
         }
         return sb.toString();

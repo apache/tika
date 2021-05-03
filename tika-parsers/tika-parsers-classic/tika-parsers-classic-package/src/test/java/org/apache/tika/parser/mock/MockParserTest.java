@@ -1,5 +1,3 @@
-package org.apache.tika.parser.mock;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,7 @@ package org.apache.tika.parser.mock;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.parser.mock;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
@@ -28,11 +27,12 @@ import java.io.InputStream;
 import java.io.PrintStream;
 
 import org.apache.commons.io.IOUtils;
+import org.junit.Test;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.junit.Test;
 
 public class MockParserTest extends TikaTest {
     private final static String M = "/test-documents/mock/";
@@ -40,7 +40,7 @@ public class MockParserTest extends TikaTest {
     @Override
     public XMLResult getXML(String path, Metadata m) throws Exception {
         //note that this is specific to MockParserTest with addition of M to the path!
-        InputStream is = getResourceAsStream(M+path);
+        InputStream is = getResourceAsStream(M + path);
         try {
             return super.getXML(is, AUTO_DETECT_PARSER, m);
         } finally {
@@ -86,7 +86,8 @@ public class MockParserTest extends TikaTest {
     @Test
     public void testNullPointer() throws Exception {
         Metadata m = new Metadata();
-        assertThrowable("null_pointer.xml", m, NullPointerException.class, "another null pointer exception");
+        assertThrowable("null_pointer.xml", m, NullPointerException.class,
+                "another null pointer exception");
         assertMockParser(m);
     }
 
@@ -104,10 +105,10 @@ public class MockParserTest extends TikaTest {
         Metadata m = new Metadata();
         String content = getXML("sleep.xml", m).xml;
         assertMockParser(m);
-        long elapsed = System.currentTimeMillis()-start;
+        long elapsed = System.currentTimeMillis() - start;
         //should sleep for at least 3000
         boolean enoughTimeHasElapsed = elapsed > 2000;
-        assertTrue("not enough time has not elapsed: "+elapsed, enoughTimeHasElapsed);
+        assertTrue("not enough time has not elapsed: " + elapsed, enoughTimeHasElapsed);
         assertMockParser(m);
     }
 
@@ -118,10 +119,10 @@ public class MockParserTest extends TikaTest {
 
         String content = getXML("heavy_hang.xml", m).xml;
         assertMockParser(m);
-        long elapsed = System.currentTimeMillis()-start;
+        long elapsed = System.currentTimeMillis() - start;
         //should sleep for at least 3000
         boolean enoughTimeHasElapsed = elapsed > 2000;
-        assertTrue("not enough time has elapsed: "+elapsed, enoughTimeHasElapsed);
+        assertTrue("not enough time has elapsed: " + elapsed, enoughTimeHasElapsed);
         assertMockParser(m);
     }
 
@@ -165,7 +166,7 @@ public class MockParserTest extends TikaTest {
         } catch (InterruptedException e) {
             //swallow
         }
-        long elapsed = System.currentTimeMillis()-start;
+        long elapsed = System.currentTimeMillis() - start;
         boolean shortEnough = elapsed < 2000;//the xml file specifies 3000
         assertTrue("elapsed (" + elapsed + " millis) was not short enough", shortEnough);
     }
@@ -188,30 +189,13 @@ public class MockParserTest extends TikaTest {
         } catch (InterruptedException e) {
             //swallow
         }
-        long elapsed = System.currentTimeMillis()-start;
+        long elapsed = System.currentTimeMillis() - start;
         boolean longEnough = elapsed >= 3000;//the xml file specifies 3000, this sleeps 1000
-        assertTrue("elapsed ("+elapsed+" millis) was not long enough", longEnough);
+        assertTrue("elapsed (" + elapsed + " millis) was not long enough", longEnough);
     }
 
-    private class ParserRunnable implements Runnable {
-        private final String path;
-        ParserRunnable(String path) {
-            this.path = path;
-        }
-        @Override
-        public void run() {
-            Metadata m = new Metadata();
-            try {
-                getXML(path, m);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            } finally {
-                assertMockParser(m);
-            }
-        }
-    }
-
-    private void assertThrowable(String path, Metadata m, Class<? extends Throwable> expected, String message) {
+    private void assertThrowable(String path, Metadata m, Class<? extends Throwable> expected,
+                                 String message) {
 
         try {
             getXML(path, m);
@@ -220,8 +204,8 @@ public class MockParserTest extends TikaTest {
             if (t instanceof TikaException && t.getCause() != null) {
                 t = t.getCause();
             }
-            if (! (t.getClass().isAssignableFrom(expected))){
-                fail(t.getClass() +" is not assignable from "+expected);
+            if (!(t.getClass().isAssignableFrom(expected))) {
+                fail(t.getClass() + " is not assignable from " + expected);
             }
             if (message != null) {
                 assertEquals(message, t.getMessage());
@@ -240,5 +224,25 @@ public class MockParserTest extends TikaTest {
             }
         }
         assertTrue("mock parser should have been called", parsedByMock);
+    }
+
+    private class ParserRunnable implements Runnable {
+        private final String path;
+
+        ParserRunnable(String path) {
+            this.path = path;
+        }
+
+        @Override
+        public void run() {
+            Metadata m = new Metadata();
+            try {
+                getXML(path, m);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            } finally {
+                assertMockParser(m);
+            }
+        }
     }
 }

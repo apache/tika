@@ -16,22 +16,22 @@
  */
 package org.apache.tika.detect.zip;
 
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
-import org.apache.commons.compress.archivers.zip.ZipFile;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.mime.MediaType;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipFile;
+
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.mime.MediaType;
 
 /**
  * Classes that implement this must be able to detect on a ZipFile and in streaming mode.
  * In streaming mode, each ziparchiventry is "updated" and then
  * {@link #streamingDetectFinal(StreamingDetectContext)} is
  * called for a final decision.
- *
+ * <p>
  * During streaming detection, state is stored in the StreamingDetectContext
  */
 public interface ZipContainerDetector extends Serializable {
@@ -39,6 +39,7 @@ public interface ZipContainerDetector extends Serializable {
     /**
      * If detection is successful, the ZipDetector should set the zip
      * file or OPCPackage in TikaInputStream.setOpenContainer()
+     *
      * @param zipFile
      * @param tis
      * @return
@@ -53,7 +54,8 @@ public interface ZipContainerDetector extends Serializable {
      * @param zae
      * @return
      */
-    MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis, StreamingDetectContext detectContext) throws IOException;
+    MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis,
+                                    StreamingDetectContext detectContext) throws IOException;
 
     /**
      * After we've finished streaming the zip archive entries,

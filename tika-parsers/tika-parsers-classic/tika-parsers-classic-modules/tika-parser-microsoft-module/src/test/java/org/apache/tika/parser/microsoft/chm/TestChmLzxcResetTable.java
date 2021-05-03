@@ -34,35 +34,32 @@ public class TestChmLzxcResetTable {
         ChmItsfHeader chmItsfHeader = new ChmItsfHeader();
         // chmItsfHeader.parse(Arrays.copyOfRange(data, 0,
         // ChmConstants.CHM_ITSF_V3_LEN - 1), chmItsfHeader);
-        chmItsfHeader.parse(ChmCommons.copyOfRange(data, 0,
-                ChmConstants.CHM_ITSF_V3_LEN - 1), chmItsfHeader);
+        chmItsfHeader.parse(ChmCommons.copyOfRange(data, 0, ChmConstants.CHM_ITSF_V3_LEN - 1),
+                chmItsfHeader);
         /* Creates and parses itsp block */
         ChmItspHeader chmItspHeader = new ChmItspHeader();
         // chmItspHeader.parse(Arrays.copyOfRange( data, (int)
         // chmItsfHeader.getDirOffset(),
         // (int) chmItsfHeader.getDirOffset()
         // + ChmConstants.CHM_ITSP_V1_LEN), chmItspHeader);
-        chmItspHeader.parse(ChmCommons.copyOfRange(data,
-                (int) chmItsfHeader.getDirOffset(),
-                (int) chmItsfHeader.getDirOffset()
-                        + ChmConstants.CHM_ITSP_V1_LEN), chmItspHeader);
+        chmItspHeader.parse(ChmCommons.copyOfRange(data, (int) chmItsfHeader.getDirOffset(),
+                (int) chmItsfHeader.getDirOffset() + ChmConstants.CHM_ITSP_V1_LEN), chmItspHeader);
         /* Creating instance of ChmDirListingContainer */
-        ChmDirectoryListingSet chmDirListCont = new ChmDirectoryListingSet(
-                data, chmItsfHeader, chmItspHeader);
+        ChmDirectoryListingSet chmDirListCont =
+                new ChmDirectoryListingSet(data, chmItsfHeader, chmItspHeader);
         int indexOfControlData = chmDirListCont.getControlDataIndex();
 
-        int indexOfResetTable = ChmCommons.indexOfResetTableBlock(data,
-                ChmConstants.LZXC.getBytes(UTF_8));
+        int indexOfResetTable =
+                ChmCommons.indexOfResetTableBlock(data, ChmConstants.LZXC.getBytes(UTF_8));
         byte[] dir_chunk = null;
         if (indexOfResetTable > 0) {
             // dir_chunk = Arrays.copyOfRange( data, indexOfResetTable,
             // indexOfResetTable
             // +
             // chmDirListCont.getDirectoryListingEntryList().get(indexOfControlData).getLength());
-            dir_chunk = ChmCommons.copyOfRange(data, indexOfResetTable,
-                    indexOfResetTable
-                            + chmDirListCont.getDirectoryListingEntryList()
-                                    .get(indexOfControlData).getLength());
+            dir_chunk = ChmCommons.copyOfRange(data, indexOfResetTable, indexOfResetTable +
+                    chmDirListCont.getDirectoryListingEntryList().get(indexOfControlData)
+                            .getLength());
         }
 
         /* Creates and parses control block */
@@ -72,53 +69,43 @@ public class TestChmLzxcResetTable {
         indexOfResetTable = chmDirListCont.getResetTableIndex();
         chmLzxcResetTable = new ChmLzxcResetTable();
 
-        int startIndex = (int) chmDirListCont.getDataOffset()
-                + chmDirListCont.getDirectoryListingEntryList()
-                        .get(indexOfResetTable).getOffset();
+        int startIndex = (int) chmDirListCont.getDataOffset() +
+                chmDirListCont.getDirectoryListingEntryList().get(indexOfResetTable).getOffset();
 
         ChmAssert.assertCopyingDataIndex(startIndex, data.length);
 
         // dir_chunk = Arrays.copyOfRange(data, startIndex, startIndex
         // +
         // chmDirListCont.getDirectoryListingEntryList().get(indexOfResetTable).getLength());
-        dir_chunk = ChmCommons.copyOfRange(
-                data,
-                startIndex,
-                startIndex
-                        + chmDirListCont.getDirectoryListingEntryList()
-                                .get(indexOfResetTable).getLength());
+        dir_chunk = ChmCommons.copyOfRange(data, startIndex, startIndex +
+                chmDirListCont.getDirectoryListingEntryList().get(indexOfResetTable).getLength());
 
         chmLzxcResetTable.parse(dir_chunk, chmLzxcResetTable);
     }
 
     @Test
     public void testGetBlockAddress() {
-        assertEquals(TestParameters.VP_RESET_TABLE_BA,
-                chmLzxcResetTable.getBlockAddress().length);
+        assertEquals(TestParameters.VP_RESET_TABLE_BA, chmLzxcResetTable.getBlockAddress().length);
     }
 
     @Test
     public void testGetBlockCount() {
-        assertEquals(TestParameters.VP_RESET_TABLE_BA,
-                chmLzxcResetTable.getBlockCount());
+        assertEquals(TestParameters.VP_RESET_TABLE_BA, chmLzxcResetTable.getBlockCount());
     }
 
     @Test
     public void testGetBlockLen() {
-        assertEquals(TestParameters.VP_RES_TBL_BLOCK_LENGTH,
-                chmLzxcResetTable.getBlockLen());
+        assertEquals(TestParameters.VP_RES_TBL_BLOCK_LENGTH, chmLzxcResetTable.getBlockLen());
     }
 
     @Test
     public void testGetCompressedLen() {
-        assertEquals(TestParameters.VP_RES_TBL_COMPR_LENGTH,
-                chmLzxcResetTable.getCompressedLen());
+        assertEquals(TestParameters.VP_RES_TBL_COMPR_LENGTH, chmLzxcResetTable.getCompressedLen());
     }
 
     @Test
     public void testGetTableOffset() {
-        assertEquals(TestParameters.VP_TBL_OFFSET,
-                chmLzxcResetTable.getTableOffset());
+        assertEquals(TestParameters.VP_TBL_OFFSET, chmLzxcResetTable.getTableOffset());
     }
 
     @Test
@@ -129,14 +116,12 @@ public class TestChmLzxcResetTable {
 
     @Test
     public void testGetUnknown() {
-        assertEquals(TestParameters.VP_RES_TBL_UNKNOWN,
-                chmLzxcResetTable.getUnknown());
+        assertEquals(TestParameters.VP_RES_TBL_UNKNOWN, chmLzxcResetTable.getUnknown());
     }
 
     @Test
     public void testGetVersion() {
-        assertEquals(TestParameters.VP_RES_TBL_VERSION,
-                chmLzxcResetTable.getVersion());
+        assertEquals(TestParameters.VP_RES_TBL_VERSION, chmLzxcResetTable.getVersion());
     }
 
     @Test

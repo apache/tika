@@ -17,12 +17,12 @@
 
 package org.apache.tika.example;
 
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Locale;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Before;
+import org.junit.Test;
 
 public class TranslatorExampleTest {
     TranslatorExample translatorExample;
@@ -39,6 +39,8 @@ public class TranslatorExampleTest {
         String translated = translatorExample.microsoftTranslateToFrench(text);
         // The user may not have set the id and secret. So, we have to check if we just
         // got the same text back.
-        if (!translated.equals(text)) assertEquals(expected, translated.toLowerCase(Locale.ROOT));
+        if (!translated.equals(text)) {
+            assertEquals(expected, translated.toLowerCase(Locale.ROOT));
+        }
     }
 }

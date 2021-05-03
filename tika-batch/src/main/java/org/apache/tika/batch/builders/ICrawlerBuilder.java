@@ -16,16 +16,17 @@
  */
 package org.apache.tika.batch.builders;
 
-import org.apache.tika.batch.FileResource;
-import org.apache.tika.batch.FileResourceCrawler;
-import org.w3c.dom.Node;
-
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 
-public interface ICrawlerBuilder extends ObjectFromDOMAndQueueBuilder<FileResourceCrawler>{
-  
-  public FileResourceCrawler build(Node node, Map<String, String> attributes,
-                                   ArrayBlockingQueue<FileResource> queue);
-  
+import org.w3c.dom.Node;
+
+import org.apache.tika.batch.FileResource;
+import org.apache.tika.batch.FileResourceCrawler;
+
+public interface ICrawlerBuilder extends ObjectFromDOMAndQueueBuilder<FileResourceCrawler> {
+
+    public FileResourceCrawler build(Node node, Map<String, String> attributes,
+                                     ArrayBlockingQueue<FileResource> queue);
+
 }

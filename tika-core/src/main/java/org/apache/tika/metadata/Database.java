@@ -1,5 +1,3 @@
-package org.apache.tika.metadata;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,11 +14,13 @@ package org.apache.tika.metadata;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-public interface Database {
-    final static String PREFIX = "database"+TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+package org.apache.tika.metadata;
 
-    Property TABLE_NAME = Property.externalTextBag(PREFIX+"table_name");
-    Property ROW_COUNT = Property.externalInteger(PREFIX+"row_count");
-    Property COLUMN_COUNT = Property.externalInteger(PREFIX+"column_count");
-    Property COLUMN_NAME = Property.externalTextBag(PREFIX+"column_name");
+public interface Database {
+    String PREFIX = "database" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+
+    Property TABLE_NAME = Property.externalTextBag(PREFIX + "table_name");
+    Property ROW_COUNT = Property.externalInteger(PREFIX + "row_count");
+    Property COLUMN_COUNT = Property.externalInteger(PREFIX + "column_count");
+    Property COLUMN_NAME = Property.externalTextBag(PREFIX + "column_name");
 }

@@ -1,5 +1,3 @@
-package org.apache.tika.batch.fs;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,7 @@ package org.apache.tika.batch.fs;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.batch.fs;
 
 import java.io.IOException;
 import java.net.URL;
@@ -34,21 +33,20 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MarkerFactory;
+
 import org.apache.tika.batch.BatchProcess;
 import org.apache.tika.batch.BatchProcessDriverCLI;
 import org.apache.tika.batch.ParallelFileProcessingResult;
 import org.apache.tika.batch.builders.BatchProcessBuilder;
 import org.apache.tika.batch.builders.CommandLineParserBuilder;
 import org.apache.tika.io.TikaInputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MarkerFactory;
 
 public class FSBatchProcessCLI {
-    public static String FINISHED_STRING = "Main thread in TikaFSBatchCLI has finished processing.";
-
     private static final Logger LOG = LoggerFactory.getLogger(FSBatchProcessCLI.class);
-
+    public static String FINISHED_STRING = "Main thread in TikaFSBatchCLI has finished processing.";
     private final Options options;
 
     public FSBatchProcessCLI(String[] args) throws IOException {
@@ -62,12 +60,25 @@ public class FSBatchProcessCLI {
         }
     }
 
+    public static void main(String[] args) throws Exception {
+        try {
+            FSBatchProcessCLI cli = new FSBatchProcessCLI(args);
+            cli.execute(args);
+        } catch (Throwable t) {
+            t.printStackTrace();
+            LOG.error(MarkerFactory.getMarker("FATAL"),
+                    "Fatal exception from FSBatchProcessCLI: {}", t.getMessage(), t);
+            System.exit(BatchProcessDriverCLI.PROCESS_NO_RESTART_EXIT_CODE);
+        }
+    }
+
     public void usage() {
         HelpFormatter helpFormatter = new HelpFormatter();
         helpFormatter.printHelp("tika filesystem batch", options);
     }
 
-    private TikaInputStream getConfigInputStream(String[] args, boolean logDefault) throws IOException {
+    private TikaInputStream getConfigInputStream(String[] args, boolean logDefault)
+            throws IOException {
         TikaInputStream is = null;
         Path batchConfigFile = getConfigFile(args);
         if (batchConfigFile != null) {
@@ -76,16 +87,17 @@ public class FSBatchProcessCLI {
             is = TikaInputStream.get(batchConfigFile);
         } else {
             if (logDefault) {
-                LOG.info("No config file set via -bc, relying on tika-app-batch-config.xml or default-tika-batch-config.xml");
+                LOG.info("No config file set via -bc, relying on tika-app-batch-config.xml " +
+                        "or default-tika-batch-config.xml");
             }
             //test to see if there's a tika-app-batch-config.xml on the path
             URL config = FSBatchProcessCLI.class.getResource("/tika-app-batch-config.xml");
             if (config != null) {
-                is = TikaInputStream.get(
-                        FSBatchProcessCLI.class.getResourceAsStream("/tika-app-batch-config.xml"));
+                is = TikaInputStream.get(FSBatchProcessCLI.class
+                        .getResourceAsStream("/tika-app-batch-config.xml"));
             } else {
-                is = TikaInputStream.get(
-                        FSBatchProcessCLI.class.getResourceAsStream("default-tika-batch-config.xml"));
+                is = TikaInputStream.get(FSBatchProcessCLI.class
+                        .getResourceAsStream("default-tika-batch-config.xml"));
             }
         }
         return is;
@@ -136,24 +148,12 @@ public class FSBatchProcessCLI {
         Path configFile = null;
         for (int i = 0; i < args.length; i++) {
             if (args[i].equals("-bc") || args[i].equals("-batch-config")) {
-                if (i < args.length-1) {
-                    configFile = Paths.get(args[i+1]);
+                if (i < args.length - 1) {
+                    configFile = Paths.get(args[i + 1]);
                 }
             }
         }
         return configFile;
-    }
-
-    public static void main(String[] args) throws Exception {
-        try {
-            FSBatchProcessCLI cli = new FSBatchProcessCLI(args);
-            cli.execute(args);
-        } catch (Throwable t) {
-            t.printStackTrace();
-            LOG.error(MarkerFactory.getMarker("FATAL"),
-                    "Fatal exception from FSBatchProcessCLI: {}", t.getMessage(), t);
-            System.exit(BatchProcessDriverCLI.PROCESS_NO_RESTART_EXIT_CODE);
-        }
     }
 
 }

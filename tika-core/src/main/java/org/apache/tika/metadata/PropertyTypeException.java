@@ -42,9 +42,9 @@ public final class PropertyTypeException extends IllegalArgumentException {
     }
 
     public PropertyTypeException(PropertyType unsupportedPropertyType) {
-        super((unsupportedPropertyType != PropertyType.COMPOSITE)
-                ? unsupportedPropertyType + " is not supported"
-                : "Composite Properties must not include other Composite"
-                   + " Properties as either Primary or Secondary");
+        super((unsupportedPropertyType != PropertyType.COMPOSITE) ?
+                unsupportedPropertyType + " is not supported" :
+                "Composite Properties must not include other Composite" +
+                        " Properties as either Primary or Secondary");
     }
 }

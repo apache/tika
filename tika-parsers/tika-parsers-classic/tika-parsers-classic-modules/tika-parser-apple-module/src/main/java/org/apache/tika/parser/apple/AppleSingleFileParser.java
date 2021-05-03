@@ -16,8 +16,20 @@
  */
 package org.apache.tika.parser.apple;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -29,17 +41,6 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
 
 /**
  * Parser that strips the header off of AppleSingle and AppleDouble
@@ -77,30 +78,29 @@ public class AppleSingleFileParser extends AbstractParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler,
-                      Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
 
         EmbeddedDocumentExtractor ex = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
         short numEntries = readThroughNumEntries(stream);
         long bytesRead = 26;
         List<FieldInfo> fieldInfoList = getSortedFieldInfoList(stream, numEntries);
-        bytesRead += 12*numEntries;
+        bytesRead += 12 * numEntries;
         Metadata embeddedMetadata = new Metadata();
         bytesRead = processFieldEntries(stream, fieldInfoList, embeddedMetadata, bytesRead);
         FieldInfo contentFieldInfo = getContentFieldInfo(fieldInfoList);
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         if (contentFieldInfo != null) {
-            long diff = contentFieldInfo.offset-bytesRead;
+            long diff = contentFieldInfo.offset - bytesRead;
             IOUtils.skipFully(stream, diff);
             if (ex.shouldParseEmbedded(embeddedMetadata)) {
                 // TODO: we should probably add a readlimiting wrapper around this
                 // stream to ensure that not more than contentFieldInfo.length bytes
                 // are read
-                ex.parseEmbedded(new CloseShieldInputStream(stream),
-                        xhtml, embeddedMetadata, false);
+                ex.parseEmbedded(new CloseShieldInputStream(stream), xhtml, embeddedMetadata,
+                        false);
             }
         }
         xhtml.endDocument();
@@ -117,7 +117,8 @@ public class AppleSingleFileParser extends AbstractParser {
     }
 
     private long processFieldEntries(InputStream stream, List<FieldInfo> fieldInfoList,
-                                     Metadata embeddedMetadata, long bytesRead) throws IOException, TikaException {
+                                     Metadata embeddedMetadata, long bytesRead)
+            throws IOException, TikaException {
         byte[] buffer = null;
         for (FieldInfo f : fieldInfoList) {
             long diff = f.offset - bytesRead;
@@ -128,10 +129,11 @@ public class AppleSingleFileParser extends AbstractParser {
                 if (f.length > MAX_FIELD_LENGTH) {
                     throw new TikaMemoryLimitException(f.length, MAX_FIELD_LENGTH);
                 }
-                buffer = new byte[(int)f.length];
+                buffer = new byte[(int) f.length];
                 IOUtils.readFully(stream, buffer);
                 bytesRead += f.length;
-                String originalFileName = new String(buffer, 0, buffer.length, StandardCharsets.US_ASCII);
+                String originalFileName =
+                        new String(buffer, 0, buffer.length, StandardCharsets.US_ASCII);
                 embeddedMetadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, originalFileName);
             } else if (f.entryId != DATA_FORK) {
                 IOUtils.skipFully(stream, f.length);
@@ -142,19 +144,17 @@ public class AppleSingleFileParser extends AbstractParser {
     }
 
 
-    private List<FieldInfo> getSortedFieldInfoList(InputStream stream, short numEntries) throws IOException, TikaException {
+    private List<FieldInfo> getSortedFieldInfoList(InputStream stream, short numEntries)
+            throws IOException, TikaException {
         //this is probably overkill.  I'd hope that these were already
         //in order.  This ensures it.
         List<FieldInfo> fieldInfoList = new ArrayList<>(numEntries);
         for (int i = 0; i < numEntries; i++) {
             //convert 32-bit unsigned ints to longs
-            fieldInfoList.add(
-                    new FieldInfo(
-                            EndianUtils.readUIntBE(stream), //entry id
-                            EndianUtils.readUIntBE(stream), //offset
-                            EndianUtils.readUIntBE(stream) //length
-                    )
-            );
+            fieldInfoList.add(new FieldInfo(EndianUtils.readUIntBE(stream), //entry id
+                    EndianUtils.readUIntBE(stream), //offset
+                    EndianUtils.readUIntBE(stream) //length
+            ));
         }
         if (fieldInfoList.size() == 0) {
             throw new TikaException("AppleSingleFile missing field info");
@@ -171,7 +171,7 @@ public class AppleSingleFileParser extends AbstractParser {
         //version
         long version = EndianUtils.readIntBE(stream);
         if (version != 0x00020000) {
-            throw new TikaException("Version should have been 0x00020000, but was:"+version);
+            throw new TikaException("Version should have been 0x00020000, but was:" + version);
         }
         IOUtils.skipFully(stream, 16);//filler
         return EndianUtils.readShortBE(stream);//number of entries

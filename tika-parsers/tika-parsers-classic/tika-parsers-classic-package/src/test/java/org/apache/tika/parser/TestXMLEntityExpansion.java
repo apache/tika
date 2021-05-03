@@ -16,19 +16,20 @@
  */
 package org.apache.tika.parser;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.utils.XMLReaderUtils;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
+import javax.xml.XMLConstants;
+import javax.xml.parsers.SAXParserFactory;
+
 import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.SAXParseException;
 
-import javax.xml.XMLConstants;
-import javax.xml.parsers.SAXParserFactory;
-import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
-
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * Tests to confirm defenses against entity expansion attacks.
@@ -37,8 +38,7 @@ import static org.junit.Assert.fail;
 public class TestXMLEntityExpansion extends XMLTestBase {
 
     private static final byte[] ENTITY_EXPANSION_BOMB = new String(
-            "<!DOCTYPE kaboom [ " +
-                    "<!ENTITY a \"1234567890\" > " +
+            "<!DOCTYPE kaboom [ " + "<!ENTITY a \"1234567890\" > " +
                     "<!ENTITY b \"&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;\" >" +
                     "<!ENTITY c \"&b;&b;&b;&b;&b;&b;&b;&b;&b;&b;\" > " +
                     "<!ENTITY d \"&c;&c;&c;&c;&c;&c;&c;&c;&c;&c;\" > " +
@@ -56,23 +56,45 @@ public class TestXMLEntityExpansion extends XMLTestBase {
                     "<!ENTITY p \"&o;&o;&o;&o;&o;&o;&o;&o;&o;&o;\" > " +
                     "<!ENTITY q \"&p;&p;&p;&p;&p;&p;&p;&p;&p;&p;\" > " +
                     "<!ENTITY r \"&q;&q;&q;&q;&q;&q;&q;&q;&q;&q;\" > " +
-                    "<!ENTITY s \"&r;&r;&r;&r;&r;&r;&r;&r;&r;&r;\" > " +
-                    "]> " +
+                    "<!ENTITY s \"&r;&r;&r;&r;&r;&r;&r;&r;&r;&r;\" > " + "]> " +
                     "<kaboom>&s;</kaboom>").getBytes(StandardCharsets.UTF_8);
+
+    private static void test(String testFileName, byte[] bytes, Parser parser, ParseContext context)
+            throws Exception {
+        boolean ex = false;
+        try {
+            parse(testFileName, new ByteArrayInputStream(bytes), parser, context);
+        } catch (SAXParseException e) {
+            if (e.getMessage() == null || !e.getMessage().contains("entity expansions")) {
+                throw new RuntimeException("Should have seen 'entity expansions' in the msg", e);
+            }
+            ex = true;
+        } catch (TikaException e) {
+            Throwable cause = e.getCause();
+            if (cause == null || cause.getMessage() == null ||
+                    !cause.getMessage().contains("entity expansions")) {
+                throw new RuntimeException("Cause should have mentioned 'entity expansions'", e);
+            }
+            ex = true;
+        }
+        assertTrue("should have had an exception", ex);
+    }
 
     //Set a reasonable amount of time as the timeout
     //Make sure that the test apparatus actually works.
     @Ignore
     @Test(timeout = 20000)
     public void testVulnerableParser() throws Exception {
-        byte[] bytes = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><document>blah</document>".getBytes(StandardCharsets.UTF_8);
+        byte[] bytes = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><document>blah</document>"
+                .getBytes(StandardCharsets.UTF_8);
         byte[] injected = injectXML(bytes, ENTITY_EXPANSION_BOMB);
 
         Thread thread = new Thread() {
             @Override
             public void run() {
                 try {
-                    parse("injected", new ByteArrayInputStream(injected), new XMLTestBase.VulnerableSAXParser(), new ParseContext());
+                    parse("injected", new ByteArrayInputStream(injected),
+                            new XMLTestBase.VulnerableSAXParser(), new ParseContext());
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -87,19 +109,19 @@ public class TestXMLEntityExpansion extends XMLTestBase {
 
     @Test(timeout = 30000)//
     public void testProtectedXML() throws Exception {
-        byte[] bytes = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><document>blah</document>".getBytes(StandardCharsets.UTF_8);
+        byte[] bytes = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><document>blah</document>"
+                .getBytes(StandardCharsets.UTF_8);
         byte[] injected = injectXML(bytes, ENTITY_EXPANSION_BOMB);
 
         ParseContext context = new ParseContext();
-        for (int i = 0; i < XMLReaderUtils.getPoolSize()*2; i++) {
+        for (int i = 0; i < XMLReaderUtils.getPoolSize() * 2; i++) {
             test("default", injected, AUTO_DETECT_PARSER, context);
         }
         context.set(SAXParserFactory.class, XMLReaderUtils.getSAXParserFactory());
-        for (int i = 0; i < XMLReaderUtils.getPoolSize()*2; i++) {
+        for (int i = 0; i < XMLReaderUtils.getPoolSize() * 2; i++) {
             test("default sax", injected, AUTO_DETECT_PARSER, context);
         }
-        String provider =
-                "com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl";
+        String provider = "com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl";
         // create a new SAXParserFactory
         SAXParserFactory factory = null;
         try {
@@ -109,16 +131,17 @@ public class TestXMLEntityExpansion extends XMLTestBase {
         }
         factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
         context.set(SAXParserFactory.class, factory);
-        for (int i = 0; i < XMLReaderUtils.getPoolSize()*2; i++) {
+        for (int i = 0; i < XMLReaderUtils.getPoolSize() * 2; i++) {
             test("built-in SAX", injected, AUTO_DETECT_PARSER, context);
         }
     }
 
     @Test
     public void testDOM() throws Exception {
-        byte[] bytes = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><document>blah</document>".getBytes(StandardCharsets.UTF_8);
+        byte[] bytes = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><document>blah</document>"
+                .getBytes(StandardCharsets.UTF_8);
         byte[] injected = injectXML(bytes, ENTITY_EXPANSION_BOMB);
-        for (int i = 0; i < XMLReaderUtils.getPoolSize()*6; i++) {
+        for (int i = 0; i < XMLReaderUtils.getPoolSize() * 6; i++) {
             try {
                 XMLReaderUtils.buildDOM(new ByteArrayInputStream(injected));
                 fail("should never parse!");
@@ -126,26 +149,5 @@ public class TestXMLEntityExpansion extends XMLTestBase {
                 assertTrue(e.getMessage() != null && e.getMessage().contains("entity expansions"));
             }
         }
-    }
-
-    private static void test(String testFileName, byte[] bytes, Parser parser, ParseContext context) throws Exception {
-        boolean ex = false;
-        try {
-            parse(testFileName, new ByteArrayInputStream(bytes), parser, context);
-        } catch (SAXParseException e) {
-            if (e.getMessage() == null ||
-                    ! e.getMessage().contains("entity expansions")) {
-                throw new RuntimeException("Should have seen 'entity expansions' in the msg", e);
-            }
-            ex = true;
-        } catch (TikaException e) {
-            Throwable cause = e.getCause();
-            if (cause == null || cause.getMessage() == null ||
-                    ! cause.getMessage().contains("entity expansions")) {
-                throw new RuntimeException("Cause should have mentioned 'entity expansions'", e);
-            }
-            ex = true;
-        }
-        assertTrue("should have had an exception", ex);
     }
 }

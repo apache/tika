@@ -23,8 +23,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.tika.concurrent.ConfigurableThreadPoolExecutor;
 
 public class DummyExecutor extends ThreadPoolExecutor implements ConfigurableThreadPoolExecutor {
-    public DummyExecutor() 
-    {
-        super(1,1, 0L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+    public DummyExecutor() {
+        super(1, 1, 0L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
     }
 }

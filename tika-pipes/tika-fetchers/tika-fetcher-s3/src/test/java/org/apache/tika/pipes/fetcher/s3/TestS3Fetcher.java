@@ -15,11 +15,6 @@
  * limitations under the License.
  */
 package org.apache.tika.pipes.fetcher.s3;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.pipes.fetcher.Fetcher;
-import org.apache.tika.metadata.Metadata;
-import org.junit.Ignore;
-import org.junit.Test;
 
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -28,12 +23,19 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 
+import org.junit.Ignore;
+import org.junit.Test;
+
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.pipes.fetcher.Fetcher;
+import org.apache.tika.pipes.fetcher.FetcherManager;
+
 @Ignore("write actual unit tests")
 public class TestS3Fetcher {
     private static final String FETCH_STRING = "";
-    private Path outputFile = Paths.get("");
-    private String region = "us-east-1";
-    private String profile = "";
+    private final Path outputFile = Paths.get("");
+    private final String region = "us-east-1";
+    private final String profile = "";
 
     @Test
     public void testBasic() throws Exception {
@@ -50,10 +52,9 @@ public class TestS3Fetcher {
 
     @Test
     public void testConfig() throws Exception {
-        TikaConfig config = new TikaConfig(
-                this.getClass().getResourceAsStream("/tika-config-s3.xml")
-        );
-        Fetcher fetcher = config.getFetcherManager().getFetcher("s3");
+        FetcherManager fetcherManager = FetcherManager.load(
+                Paths.get(this.getClass().getResource("/tika-config-s3.xml").toURI()));
+        Fetcher fetcher = fetcherManager.getFetcher("s3");
         Metadata metadata = new Metadata();
         try (InputStream is = fetcher.fetch(FETCH_STRING, metadata)) {
             Files.copy(is, outputFile, StandardCopyOption.REPLACE_EXISTING);

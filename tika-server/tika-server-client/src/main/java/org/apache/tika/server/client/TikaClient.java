@@ -16,25 +16,31 @@
  */
 package org.apache.tika.server.client;
 
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.serialization.JsonFetchEmitTuple;
-import org.apache.tika.metadata.serialization.JsonFetchEmitTupleList;
-import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
-
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.serialization.JsonFetchEmitTuple;
+import org.apache.tika.metadata.serialization.JsonFetchEmitTupleList;
+import org.apache.tika.pipes.FetchEmitTuple;
+
 public class TikaClient {
 
     private final Random random = new Random();
-    private List<TikaHttpClient> clients;
+    private final List<TikaHttpClient> clients;
 
 
-    public static TikaClient get(TikaConfig tikaConfig, List<String> tikaServers) throws TikaClientConfigException {
+    private TikaClient(List<TikaHttpClient> clients) {
+
+        this.clients = clients;
+    }
+
+    public static TikaClient get(TikaConfig tikaConfig, List<String> tikaServers)
+            throws TikaClientConfigException {
         List clients = new ArrayList<>();
         for (String url : tikaServers) {
             clients.add(TikaHttpClient.get(url));
@@ -42,17 +48,12 @@ public class TikaClient {
         return new TikaClient(clients);
     }
 
-    private TikaClient(List<TikaHttpClient> clients) {
-
-        this.clients = clients;
-    }
-
-    /*public List<Metadata> parse(InputStream is, Metadata metadata) throws IOException, TikaException {
+    /*public List<Metadata> parse(InputStream is, Metadata metadata)
+    throws IOException, TikaException {
 
     }*/
 
-    public TikaEmitterResult parse(FetchEmitTuple fetchEmit)
-            throws IOException, TikaException {
+    public TikaEmitterResult parse(FetchEmitTuple fetchEmit) throws IOException, TikaException {
         TikaHttpClient client = getHttpClient();
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(fetchEmit, writer);

@@ -23,11 +23,12 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
+import org.junit.Before;
+import org.junit.Test;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.junit.Before;
-import org.junit.Test;
 
 public class ExtractReaderTest extends TikaTest {
 
@@ -36,7 +37,8 @@ public class ExtractReaderTest extends TikaTest {
 
     @Before
     public void setUp() throws Exception {
-        testJsonFile = getResourceAsFile("/test-dirs/extractsA/file2_attachANotB.doc.json").toPath();
+        testJsonFile =
+                getResourceAsFile("/test-dirs/extractsA/file2_attachANotB.doc.json").toPath();
         testTxtFile = getResourceAsFile("/test-dirs/extractsB/file13_attachANotB.doc.txt").toPath();
     }
 
@@ -59,7 +61,8 @@ public class ExtractReaderTest extends TikaTest {
         assertContains("fox", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
         assertNotContained("attachment", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
 
-        extractReader = new ExtractReader(ExtractReader.ALTER_METADATA_LIST.CONCATENATE_CONTENT_INTO_FIRST);
+        extractReader =
+                new ExtractReader(ExtractReader.ALTER_METADATA_LIST.CONCATENATE_CONTENT_INTO_FIRST);
         metadataList = extractReader.loadExtract(testJsonFile);
         assertEquals(1, metadataList.size());
         assertEquals(1, metadataList.get(0).getValues(TikaCoreProperties.TIKA_CONTENT).length);
@@ -80,7 +83,6 @@ public class ExtractReaderTest extends TikaTest {
         //test that the mime is inferred from the file extension
         assertEquals("application/msword", m.get(Metadata.CONTENT_TYPE));
     }
-
 
 
 }

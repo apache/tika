@@ -16,14 +16,15 @@
  */
 package org.apache.tika.parser.apple;
 
-import org.apache.tika.TikaTest;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+
+import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 
 public class PListParserTest extends TikaTest {

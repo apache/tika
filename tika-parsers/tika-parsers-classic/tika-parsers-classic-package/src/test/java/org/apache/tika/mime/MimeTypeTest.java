@@ -34,7 +34,9 @@ public class MimeTypeTest {
         text = types.forName("text/plain");
     }
 
-    /** Test MimeType constructor */
+    /**
+     * Test MimeType constructor
+     */
     @Test
     public void testConstrctor() {
         // Missing name
@@ -70,7 +72,9 @@ public class MimeTypeTest {
         }
     }
 
-    /** Test MimeType setDescription() */
+    /**
+     * Test MimeType setDescription()
+     */
     @Test
     public void testSetEmptyValues() {
         try {
@@ -79,14 +83,14 @@ public class MimeTypeTest {
         } catch (IllegalArgumentException e) {
             // expected result
         }
-        
+
         try {
             text.setAcronym(null);
             fail("Expected IllegalArgumentException");
         } catch (IllegalArgumentException e) {
             // expected result
         }
-        
+
         try {
             text.addLink(null);
             fail("Expected IllegalArgumentException");

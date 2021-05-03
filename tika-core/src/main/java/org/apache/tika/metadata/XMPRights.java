@@ -14,28 +14,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * IPTC Metadata Descriptions taken from the IPTC Photo Metadata (July 2010) 
- * standard. These parts Copyright 2010 International Press Telecommunications 
+ * IPTC Metadata Descriptions taken from the IPTC Photo Metadata (July 2010)
+ * standard. These parts Copyright 2010 International Press Telecommunications
  * Council.
  */
 package org.apache.tika.metadata;
 
 /**
- * XMP Rights management schema. 
- * 
- * A collection of property constants for the 
- * rights management properties defined in the XMP 
+ * XMP Rights management schema.
+ * <p>
+ * A collection of property constants for the
+ * rights management properties defined in the XMP
  * standard.
- * 
- * @since Apache Tika 1.2
+ *
  * @see <a href="http://partners.adobe.com/public/developer/en/xmp/sdk/XMPspecification.pdf">XMP Photoshop</a>
+ * @since Apache Tika 1.2
  */
 public interface XMPRights {
 
     String NAMESPACE_URI_XMP_RIGHTS = "http://ns.adobe.com/xap/1.0/rights/";
     String PREFIX_XMP_RIGHTS = "xmpRights";
 
-    /** The xmpRights prefix followed by the colon delimiter */
+    /**
+     * The xmpRights prefix followed by the colon delimiter
+     */
     String PREFIX_ = PREFIX_XMP_RIGHTS + ":";
 
     /**

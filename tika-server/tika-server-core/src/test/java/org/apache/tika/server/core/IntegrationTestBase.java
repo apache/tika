@@ -16,11 +16,21 @@
  */
 package org.apache.tika.server.core;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeoutException;
+import javax.ws.rs.core.Response;
+
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.jaxrs.client.WebClient;
-import org.apache.tika.TikaTest;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -28,18 +38,7 @@ import org.junit.BeforeClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.core.Response;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.security.Permission;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.TimeoutException;
+import org.apache.tika.TikaTest;
 
 public class IntegrationTestBase extends TikaTest {
 
@@ -54,27 +53,29 @@ public class IntegrationTestBase extends TikaTest {
     static final String STATUS_PATH = "/status";
 
     static final long MAX_WAIT_MS = 60000;
-    private static final Logger LOG = LoggerFactory.getLogger(IntegrationTestBase.class);
-
     //running into conflicts on 9998 with the CXFTestBase tests
     //TODO: figure out why?!
     static final String INTEGRATION_TEST_PORT = "9999";
-
-    protected static final String endPoint =
-            "http://localhost:" + INTEGRATION_TEST_PORT;
-
-    private SecurityManager existingSecurityManager = null;
+    protected static final String endPoint = "http://localhost:" + INTEGRATION_TEST_PORT;
+    private static final Logger LOG = LoggerFactory.getLogger(IntegrationTestBase.class);
     static Path LOG_FILE;
     static Path STREAMS_DIR;
-
+    private SecurityManager existingSecurityManager = null;
 
     @BeforeClass
     public static void staticSetup() throws Exception {
         LogUtils.setLoggerClass(NullWebClientLogger.class);
         LOG_FILE = Files.createTempFile("tika-server-integration", ".xml");
-        Files.copy(TikaServerIntegrationTest.class.getResourceAsStream("/logging/log4j_forked.xml"),
+        Files.copy(
+                TikaServerIntegrationTest.class.getResourceAsStream("/logging/log4j2_forked.xml"),
                 LOG_FILE, StandardCopyOption.REPLACE_EXISTING);
         STREAMS_DIR = Files.createTempDirectory("tika-server-integration");
+    }
+
+    @AfterClass
+    public static void staticTearDown() throws Exception {
+        Files.delete(LOG_FILE);
+        FileUtils.deleteDirectory(STREAMS_DIR.toFile());
     }
 
     @Before
@@ -97,39 +98,21 @@ public class IntegrationTestBase extends TikaTest {
         });*/
     }
 
-    @AfterClass
-    public static void staticTearDown() throws Exception {
-        Files.delete(LOG_FILE);
-        FileUtils.deleteDirectory(STREAMS_DIR.toFile());
-    }
-
     @After
     public void tearDown() throws Exception {
         System.setSecurityManager(existingSecurityManager);
     }
 
-    static class MyExitException extends RuntimeException {
-        private final int status;
-        MyExitException(int status) {
-            this.status = status;
-        }
-
-        public int getStatus() {
-            return status;
-        }
-    }
-
     public Process startProcess(String[] extraArgs) throws IOException {
-        String[] base = new String[] {
-                "java", "-cp", System.getProperty("java.class.path"),
-                "org.apache.tika.server.core.TikaServerCli",
-        };
+        String[] base = new String[]{"java", "-cp", System.getProperty("java.class.path"),
+                "org.apache.tika.server.core.TikaServerCli",};
         List<String> args = new ArrayList<>(Arrays.asList(base));
         args.addAll(Arrays.asList(extraArgs));
         ProcessBuilder pb = new ProcessBuilder(args);
         pb.inheritIO();
 //        pb.redirectInput(Files.createTempFile(STREAMS_DIR, "tika-stream-out", ".log").toFile());
-  //      pb.redirectError(Files.createTempFile(STREAMS_DIR, "tika-stream-err", ".log").toFile());
+        //      pb.redirectError(Files.createTempFile(STREAMS_DIR,
+        //      "tika-stream-err", ".log").toFile());
         return pb.start();
     }
 
@@ -142,11 +125,12 @@ public class IntegrationTestBase extends TikaTest {
                 Response response = client.get();
                 if (response.getStatus() == 200) {
                     elapsed = Duration.between(started, Instant.now()).toMillis();
-                    LOG.info("client observes server successfully started after " +
-                            elapsed + " ms");
+                    LOG.info(
+                            "client observes server successfully started after " + elapsed + " ms");
                     return;
                 }
-                LOG.debug("tika test client failed to connect to server with status: {}", response.getStatus());
+                LOG.debug("tika test client failed to connect to server with status: {}",
+                        response.getStatus());
 
             } catch (javax.ws.rs.ProcessingException e) {
                 LOG.debug("tika test client failed to connect to server", e);
@@ -155,8 +139,19 @@ public class IntegrationTestBase extends TikaTest {
             Thread.sleep(1000);
             elapsed = Duration.between(started, Instant.now()).toMillis();
         }
-        throw new TimeoutException("couldn't connect to server after " +
-                elapsed + " ms");
+        throw new TimeoutException("couldn't connect to server after " + elapsed + " ms");
+    }
+
+    static class MyExitException extends RuntimeException {
+        private final int status;
+
+        MyExitException(int status) {
+            this.status = status;
+        }
+
+        public int getStatus() {
+            return status;
+        }
     }
 
 }

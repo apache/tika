@@ -16,82 +16,84 @@
   limitations under the License.
 -->
 <properties>
-    <server>
-        <!-- which port to start the server on. If you specify a range,
-            e.g. 9995-9998, TikaServerCli will start four forked servers,
-            one at each port.  You can also specify multiple forked servers
-            via a comma-delimited value: 9995,9997.
+  <server>
+    <params>
+      <!-- which port to start the server on. If you specify a range,
+          e.g. 9995-9998, TikaServerCli will start four forked servers,
+          one at each port.  You can also specify multiple forked servers
+          via a comma-delimited value: 9995,9997.
 
-        -->
-        <port>9998</port>
-        <host>localhost</host>
-        <!-- if specified, this will be the id that is used in the
-            /status endpoint and elsewhere.  If an id is specified
-            and more than one forked processes are invoked, each process
-            will have an id followed by the port, e.g my_id-9998. If a
-            forked server has to restart, it will maintain its original id.
-            If not specified, a UUID will be generated.
-            -->
-        <id></id>
-        <!-- whether or not to allow CORS requests. Set to 'all' if you
-            want to allow all CORS requests. Set to NONE or leave blank
-             if you do not want to enable CORS. -->
-        <cors>NONE</cors>
-        <!-- which digests to calculate, comma delimited (e.g. md5,sha256);
-            optionally specify encoding followed by a colon (e.g. "sha1:32").
-            Can be empty if you don't want to calculate a digest -->
-        <digest>sha256</digest>
-        <!-- how much to read to memory during the digest phase before
-            spooling to disc...only if digest is selected -->
-        <digestMarkLimit>1000000</digestMarkLimit>
-        <!-- request URI log level 'debug' or 'info' -->
-        <log>info</log>
-        <!-- whether or not to include the stacktrace when a parse exception happens
-            in the data returned to the user -->
-        <includeStack>false</includeStack>
-        <!-- whether or not to enable the status endpoint -->
-        <status>false</status>
-        <!-- If set to 'true', this runs tika server "in process"
-            in the legacy 1.x mode.
-            This means that the server will be susceptible to infinite loops
-            and crashes.
-            If set to 'false', the server will spawn a forked
-            process and restart the forked process on catastrophic failures
-            (this was called -spawnChild mode in 1.x).
-            nofork=false is the default in 2.x
-        -->
-        <nofork>false</nofork>
-        <!-- maximum time to allow per parse before shutting down and restarting
-            the forked parser. Not allowed if nofork=true. -->
-        <taskTimeoutMillis>300000</taskTimeoutMillis>
-        <!-- how often to check whether a parse has timed out.
-            Not allowed if nofork=true. -->
-        <taskPulseMillis>10000</taskPulseMillis>
-        <!-- maximum time to allow for a response from the forked process
-            before shutting it down and restarting it.
-            Not allowed if nofork=true. -->
-        <pingTimeoutMillis>60000</pingTimeoutMillis>
-        <!-- how often to check whether the fork process needs to be restarted
-            Not allowed if nofork=true. -->
-        <pingPulseMillis>10000</pingPulseMillis>
-        <!-- maximum amount of time to wait for a forked process to
-            start up.
-            Not allowed if nofork=true. -->
-        <maxForkedStartupMillis>120000</maxForkedStartupMillis>
-        <!-- maximum number of times to allow a specific forked process
-            to be restarted.
-            Not allowed if nofork=true. -->
-        <maxRestarts>-1</maxRestarts>
-        <!-- maximum files to parse per forked process before
-            restarting the forked process to clear potential
-            memory leaks.
-            Not allowed if nofork=true. -->
-        <maxFiles>100000</maxFiles>
-        <!-- if you want to specify a specific javaHome for
-            the forked process.
-            Not allowed if nofork=true. -->
-        <javaHome></javaHome>
-        <!-- this is for debugging only -->
-        <tmpFilePrefix></tmpFilePrefix>
-    </server>
+      -->
+      <port>9998</port>
+      <host>localhost</host>
+      <!-- if specified, this will be the id that is used in the
+          /status endpoint and elsewhere.  If an id is specified
+          and more than one forked processes are invoked, each process
+          will have an id followed by the port, e.g my_id-9998. If a
+          forked server has to restart, it will maintain its original id.
+          If not specified, a UUID will be generated.
+          -->
+      <id></id>
+      <!-- whether or not to allow CORS requests. Set to 'all' if you
+          want to allow all CORS requests. Set to NONE or leave blank
+           if you do not want to enable CORS. -->
+      <cors>NONE</cors>
+      <!-- which digests to calculate, comma delimited (e.g. md5,sha256);
+          optionally specify encoding followed by a colon (e.g. "sha1:32").
+          Can be empty if you don't want to calculate a digest -->
+      <digest>sha256</digest>
+      <!-- how much to read to memory during the digest phase before
+          spooling to disc...only if digest is selected -->
+      <digestMarkLimit>1000000</digestMarkLimit>
+      <!-- request URI log level 'debug' or 'info' -->
+      <log>info</log>
+      <!-- whether or not to include the stacktrace when a parse exception happens
+          in the data returned to the user -->
+      <includeStack>false</includeStack>
+      <!-- whether or not to enable the status endpoint -->
+      <status>false</status>
+      <!-- If set to 'true', this runs tika server "in process"
+          in the legacy 1.x mode.
+          This means that the server will be susceptible to infinite loops
+          and crashes.
+          If set to 'false', the server will spawn a forked
+          process and restart the forked process on catastrophic failures
+          (this was called -spawnChild mode in 1.x).
+          nofork=false is the default in 2.x
+      -->
+      <nofork>false</nofork>
+      <!-- maximum time to allow per parse before shutting down and restarting
+          the forked parser. Not allowed if nofork=true. -->
+      <taskTimeoutMillis>300000</taskTimeoutMillis>
+      <!-- how often to check whether a parse has timed out.
+          Not allowed if nofork=true. -->
+      <taskPulseMillis>10000</taskPulseMillis>
+      <!-- maximum time to allow for a response from the forked process
+          before shutting it down and restarting it.
+          Not allowed if nofork=true. -->
+      <pingTimeoutMillis>60000</pingTimeoutMillis>
+      <!-- how often to check whether the fork process needs to be restarted
+          Not allowed if nofork=true. -->
+      <pingPulseMillis>10000</pingPulseMillis>
+      <!-- maximum amount of time to wait for a forked process to
+          start up.
+          Not allowed if nofork=true. -->
+      <maxForkedStartupMillis>120000</maxForkedStartupMillis>
+      <!-- maximum number of times to allow a specific forked process
+          to be restarted.
+          Not allowed if nofork=true. -->
+      <maxRestarts>-1</maxRestarts>
+      <!-- maximum files to parse per forked process before
+          restarting the forked process to clear potential
+          memory leaks.
+          Not allowed if nofork=true. -->
+      <maxFiles>100000</maxFiles>
+      <!-- if you want to specify a specific javaHome for
+          the forked process.
+          Not allowed if nofork=true. -->
+      <javaHome></javaHome>
+      <!-- this is for debugging only -->
+      <tmpFilePrefix></tmpFilePrefix>
+    </params>
+  </server>
 </properties>

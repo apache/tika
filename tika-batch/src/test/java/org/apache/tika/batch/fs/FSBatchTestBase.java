@@ -1,5 +1,3 @@
-package org.apache.tika.batch.fs;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,8 @@ package org.apache.tika.batch.fs;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package org.apache.tika.batch.fs;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -39,14 +39,15 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.batch.BatchProcess;
 import org.apache.tika.batch.BatchProcessDriverCLI;
 import org.apache.tika.batch.ParallelFileProcessingResult;
 import org.apache.tika.batch.builders.BatchProcessBuilder;
 import org.apache.tika.utils.ProcessUtils;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 
 /**
  * This is the base class for file-system batch tests.
@@ -92,145 +93,9 @@ public abstract class FSBatchTestBase extends TikaTest {
         }
     }
 
-    protected void destroyProcess(Process p) {
-        if (p == null)
-            return;
-
-        try {
-            p.exitValue();
-        } catch (IllegalThreadStateException e) {
-            p.destroy();
-        }
-    }
-
-    Path getNewOutputDir(String subdirPrefix) throws IOException {
-        Path outputDir = Files.createTempDirectory(outputRoot, subdirPrefix);
-        assert(countChildren(outputDir) == 0);
-        return outputDir;
-    }
-
-    Map<String, String> getDefaultArgs(String inputSubDir, Path outputDir) throws Exception {
-        Map<String, String> args = new HashMap<>();
-
-        args.put("inputDir", "\""+getInputRoot(inputSubDir).toString()+"\"");
-        if (outputDir != null) {
-            args.put("outputDir", "\""+outputDir.toString()+"\"");
-        }
-        return args;
-    }
-
-    public String[] getDefaultCommandLineArgsArr(String inputSubDir,
-                                                 Path outputDir, Map<String, String> commandLine) throws Exception {
-        List<String> args = new ArrayList<>();
-        //need to include "-" because these are going to the commandline!
-        if (inputSubDir != null) {
-            args.add("-inputDir");
-            args.add(getInputRoot(inputSubDir).toAbsolutePath().toString());
-        }
-        if (outputDir != null) {
-            args.add("-outputDir");
-            args.add(outputDir.toAbsolutePath().toString());
-        }
-        if (commandLine != null) {
-            for (Map.Entry<String, String> e : commandLine.entrySet()) {
-                args.add(e.getKey());
-                args.add(e.getValue());
-            }
-        }
-        return args.toArray(new String[0]);
-    }
-
-
-    public Path getInputRoot(String subdir) throws Exception {
-        String path = (subdir == null || subdir.length() == 0) ? "/test-input" : "/test-input/"+subdir;
-        return Paths.get(getResourceAsUri(path));
-    }
-
-    BatchProcess getNewBatchRunner(String testConfig,
-                                  Map<String, String> args) throws IOException {
-        InputStream is = getResourceAsStream(testConfig);
-        BatchProcessBuilder b = new BatchProcessBuilder();
-        BatchProcess runner = b.build(is, args);
-
-        IOUtils.closeQuietly(is);
-        return runner;
-    }
-
-    public ProcessBuilder getNewBatchRunnerProcess(String testConfig, String loggerProps,
-                                                   Map<String, String> args) {
-        List<String> argList = new ArrayList<>();
-
-        for (Map.Entry<String, String> e : args.entrySet()) {
-            argList.add("-"+e.getKey());
-            argList.add(e.getValue());
-        }
-
-        String[] fullCommandLine = commandLine(testConfig, loggerProps, argList.toArray(new String[0]));
-        return new ProcessBuilder(fullCommandLine);
-    }
-
-    private String[] commandLine(String testConfig, String loggerProps, String[] args) {
-        List<String> commandLine = new ArrayList<>();
-        commandLine.add("java");
-        commandLine.add("-Djava.awt.headless=true");
-        commandLine.add("-Dlog4j.configuration=file:" + getResourceAsUrl(loggerProps).getFile());
-        commandLine.add("-Xmx128m");
-        commandLine.add("-cp");
-        String cp = System.getProperty("java.class.path");
-        cp = ProcessUtils.escapeCommandLine(cp);
-
-        commandLine.add(cp);
-        commandLine.add("org.apache.tika.batch.fs.FSBatchProcessCLI");
-
-        String configFile = null;
-        try {
-            configFile = Paths.get(getResourceAsUri(testConfig)).toAbsolutePath().toString();
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-        }
-
-        commandLine.add("-bc");
-        commandLine.add(configFile);
-        commandLine.addAll(Arrays.asList(args));
-
-        return commandLine.toArray(new String[0]);
-    }
-
-    public BatchProcessDriverCLI getNewDriver(String testConfig,
-                                              String[] args) throws Exception {
-        List<String> commandLine = new ArrayList<>();
-        commandLine.add("java");
-        commandLine.add("-Djava.awt.headless=true");
-        commandLine.add("-Xmx128m");
-        commandLine.add("-cp");
-        String cp = System.getProperty("java.class.path");
-        //need to test for " " on *nix, can't just add double quotes
-        //across platforms.
-        cp = ProcessUtils.escapeCommandLine(cp);
-
-        commandLine.add(cp);
-        commandLine.add("org.apache.tika.batch.fs.FSBatchProcessCLI");
-
-        String configFile = Paths.get(getResourceAsUri(testConfig)).toAbsolutePath().toString();
-        commandLine.add("-bc");
-
-        commandLine.add(configFile);
-
-        commandLine.addAll(Arrays.asList(args));
-
-        BatchProcessDriverCLI driver = new BatchProcessDriverCLI(commandLine.toArray(new String[0]));
-        driver.setRedirectForkedProcessToStdOut(false);
-        return driver;
-    }
-
-    protected ParallelFileProcessingResult run(BatchProcess process) throws Exception {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        Future<ParallelFileProcessingResult> futureResult = executor.submit(process);
-        return futureResult.get(10, TimeUnit.SECONDS);
-    }
-
     /**
      * Counts immediate children only, does not work recursively
+     *
      * @param p
      * @return
      * @throws IOException
@@ -261,6 +126,7 @@ public abstract class FSBatchTestBase extends TikaTest {
     /**
      * helper method equivalent to File#listFiles()
      * grabs children only, does not walk recursively
+     *
      * @param p
      * @return
      */
@@ -272,5 +138,143 @@ public abstract class FSBatchTestBase extends TikaTest {
             }
         }
         return list;
+    }
+
+    protected void destroyProcess(Process p) {
+        if (p == null) {
+            return;
+        }
+
+        try {
+            p.exitValue();
+        } catch (IllegalThreadStateException e) {
+            p.destroy();
+        }
+    }
+
+    Path getNewOutputDir(String subdirPrefix) throws IOException {
+        Path outputDir = Files.createTempDirectory(outputRoot, subdirPrefix);
+        assert (countChildren(outputDir) == 0);
+        return outputDir;
+    }
+
+    Map<String, String> getDefaultArgs(String inputSubDir, Path outputDir) throws Exception {
+        Map<String, String> args = new HashMap<>();
+
+        args.put("inputDir", "\"" + getInputRoot(inputSubDir).toString() + "\"");
+        if (outputDir != null) {
+            args.put("outputDir", "\"" + outputDir.toString() + "\"");
+        }
+        return args;
+    }
+
+    public String[] getDefaultCommandLineArgsArr(String inputSubDir, Path outputDir,
+                                                 Map<String, String> commandLine) throws Exception {
+        List<String> args = new ArrayList<>();
+        //need to include "-" because these are going to the commandline!
+        if (inputSubDir != null) {
+            args.add("-inputDir");
+            args.add(getInputRoot(inputSubDir).toAbsolutePath().toString());
+        }
+        if (outputDir != null) {
+            args.add("-outputDir");
+            args.add(outputDir.toAbsolutePath().toString());
+        }
+        if (commandLine != null) {
+            for (Map.Entry<String, String> e : commandLine.entrySet()) {
+                args.add(e.getKey());
+                args.add(e.getValue());
+            }
+        }
+        return args.toArray(new String[0]);
+    }
+
+    public Path getInputRoot(String subdir) throws Exception {
+        String path =
+                (subdir == null || subdir.length() == 0) ? "/test-input" : "/test-input/" + subdir;
+        return Paths.get(getResourceAsUri(path));
+    }
+
+    BatchProcess getNewBatchRunner(String testConfig, Map<String, String> args) throws IOException {
+        InputStream is = getResourceAsStream(testConfig);
+        BatchProcessBuilder b = new BatchProcessBuilder();
+        BatchProcess runner = b.build(is, args);
+
+        IOUtils.closeQuietly(is);
+        return runner;
+    }
+
+    public ProcessBuilder getNewBatchRunnerProcess(String testConfig, String loggerProps,
+                                                   Map<String, String> args) {
+        List<String> argList = new ArrayList<>();
+
+        for (Map.Entry<String, String> e : args.entrySet()) {
+            argList.add("-" + e.getKey());
+            argList.add(e.getValue());
+        }
+
+        String[] fullCommandLine =
+                commandLine(testConfig, loggerProps, argList.toArray(new String[0]));
+        return new ProcessBuilder(fullCommandLine);
+    }
+
+    private String[] commandLine(String testConfig, String loggerProps, String[] args) {
+        List<String> commandLine = new ArrayList<>();
+        commandLine.add("java");
+        commandLine.add("-Djava.awt.headless=true");
+        commandLine.add("-Dlog4j.configuration=file:" + getResourceAsUrl(loggerProps).getFile());
+        commandLine.add("-Xmx128m");
+        commandLine.add("-cp");
+        String cp = System.getProperty("java.class.path");
+        cp = ProcessUtils.escapeCommandLine(cp);
+
+        commandLine.add(cp);
+        commandLine.add("org.apache.tika.batch.fs.FSBatchProcessCLI");
+
+        String configFile = null;
+        try {
+            configFile = Paths.get(getResourceAsUri(testConfig)).toAbsolutePath().toString();
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+
+        commandLine.add("-bc");
+        commandLine.add(configFile);
+        commandLine.addAll(Arrays.asList(args));
+
+        return commandLine.toArray(new String[0]);
+    }
+
+    public BatchProcessDriverCLI getNewDriver(String testConfig, String[] args) throws Exception {
+        List<String> commandLine = new ArrayList<>();
+        commandLine.add("java");
+        commandLine.add("-Djava.awt.headless=true");
+        commandLine.add("-Xmx128m");
+        commandLine.add("-cp");
+        String cp = System.getProperty("java.class.path");
+        //need to test for " " on *nix, can't just add double quotes
+        //across platforms.
+        cp = ProcessUtils.escapeCommandLine(cp);
+
+        commandLine.add(cp);
+        commandLine.add("org.apache.tika.batch.fs.FSBatchProcessCLI");
+
+        String configFile = Paths.get(getResourceAsUri(testConfig)).toAbsolutePath().toString();
+        commandLine.add("-bc");
+
+        commandLine.add(configFile);
+
+        commandLine.addAll(Arrays.asList(args));
+
+        BatchProcessDriverCLI driver =
+                new BatchProcessDriverCLI(commandLine.toArray(new String[0]));
+        driver.setRedirectForkedProcessToStdOut(false);
+        return driver;
+    }
+
+    protected ParallelFileProcessingResult run(BatchProcess process) throws Exception {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<ParallelFileProcessingResult> futureResult = executor.submit(process);
+        return futureResult.get(10, TimeUnit.SECONDS);
     }
 }

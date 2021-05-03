@@ -24,6 +24,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import ucar.nc2.Attribute;
+import ucar.nc2.Dimension;
+import ucar.nc2.NetcdfFile;
+import ucar.nc2.Variable;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -35,12 +42,6 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import ucar.nc2.Attribute;
-import ucar.nc2.Dimension;
-import ucar.nc2.NetcdfFile;
-import ucar.nc2.Variable;
 
 /**
  * A {@link Parser} for <a
@@ -61,7 +62,7 @@ public class NetCDFParser extends AbstractParser {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * org.apache.tika.parser.Parser#getSupportedTypes(org.apache.tika.parser
      * .ParseContext)
@@ -72,17 +73,16 @@ public class NetCDFParser extends AbstractParser {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.apache.tika.parser.Parser#parse(java.io.InputStream,
      * org.xml.sax.ContentHandler, org.apache.tika.metadata.Metadata,
      * org.apache.tika.parser.ParseContext)
      */
-    public void parse(InputStream stream, ContentHandler handler,
-                      Metadata metadata, ParseContext context) throws IOException,
-            SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
 
-        TemporaryResources tmp = TikaInputStream.isTikaInputStream(stream) ?
-                null : new TemporaryResources();
+        TemporaryResources tmp =
+                TikaInputStream.isTikaInputStream(stream) ? null : new TemporaryResources();
         TikaInputStream tis = TikaInputStream.get(stream, tmp);
         try (NetcdfFile ncFile = NetcdfFile.open(tis.getFile().getAbsolutePath())) {
             metadata.set("File-Type-Description", ncFile.getFileTypeDescription());

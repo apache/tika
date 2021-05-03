@@ -49,10 +49,16 @@ public class DateUtils {
      * default mapping would result in "2012-02-16" for UTC-8).
      */
     public static final TimeZone MIDDAY = TimeZone.getTimeZone("GMT-12:00");
+    /**
+     * So we can return Date objects for these, this is the
+     * list (in preference order) of the various ISO-8601
+     * variants that we try when processing a date based
+     * property.
+     */
+    private final List<DateFormat> iso8601InputFormats = loadDateFormats();
 
     private static DateFormat createDateFormat(String format, TimeZone timezone) {
-        final SimpleDateFormat sdf =
-                new SimpleDateFormat(format, new DateFormatSymbols(Locale.US));
+        final SimpleDateFormat sdf = new SimpleDateFormat(format, new DateFormatSymbols(Locale.US));
         if (timezone != null) {
             sdf.setTimeZone(timezone);
         }
@@ -60,12 +66,58 @@ public class DateUtils {
     }
 
     /**
-     * So we can return Date objects for these, this is the
-     *  list (in preference order) of the various ISO-8601
-     *  variants that we try when processing a date based
-     *  property.
+     * Returns a ISO 8601 representation of the given date. This method
+     * is thread safe and non-blocking.
+     *
+     * @param date given date
+     * @return ISO 8601 date string, including timezone details
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-495">TIKA-495</a>
      */
-    private final List<DateFormat> iso8601InputFormats = loadDateFormats();
+    public static String formatDate(Date date) {
+        Calendar calendar = GregorianCalendar.getInstance(UTC, Locale.US);
+        calendar.setTime(date);
+        return doFormatDate(calendar);
+    }
+
+    /**
+     * Returns a ISO 8601 representation of the given date. This method
+     * is thread safe and non-blocking.
+     *
+     * @param date given date
+     * @return ISO 8601 date string, including timezone details
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-495">TIKA-495</a>
+     */
+    public static String formatDate(Calendar date) {
+        // Explicitly switch it into UTC before formatting
+        date.setTimeZone(UTC);
+        return doFormatDate(date);
+    }
+
+    /**
+     * Returns a ISO 8601 representation of the given date, which is
+     * in an unknown timezone. This method is thread safe and non-blocking.
+     *
+     * @param date given date
+     * @return ISO 8601 date string, without timezone details
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-495">TIKA-495</a>
+     */
+    public static String formatDateUnknownTimezone(Date date) {
+        // Create the Calendar object in the system timezone
+        Calendar calendar = GregorianCalendar.getInstance(TimeZone.getDefault(), Locale.US);
+        calendar.setTime(date);
+        // Have it formatted
+        String formatted = formatDate(calendar);
+        // Strip the timezone details before returning
+        return formatted.substring(0, formatted.length() - 1);
+    }
+
+    private static String doFormatDate(Calendar calendar) {
+        return String
+                .format(Locale.ROOT, "%04d-%02d-%02dT%02d:%02d:%02dZ", calendar.get(Calendar.YEAR),
+                        calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DAY_OF_MONTH),
+                        calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE),
+                        calendar.get(Calendar.SECOND));
+    }
 
     private List<DateFormat> loadDateFormats() {
         List<DateFormat> dateFormats = new ArrayList<>();
@@ -79,69 +131,15 @@ public class DateUtils {
         dateFormats.add(createDateFormat("yyyy-MM-dd' 'HH:mm:ss", null));     // Without timezone
         // Date without time, set to Midday UTC
         dateFormats.add(createDateFormat("yyyy-MM-dd", MIDDAY));       // Normal date format
-        dateFormats.add(createDateFormat("yyyy:MM:dd", MIDDAY));              // Image (IPTC/EXIF) format
+        dateFormats.add(createDateFormat("yyyy:MM:dd",
+                MIDDAY));              // Image (IPTC/EXIF) format
 
         return dateFormats;
     }
 
     /**
-     * Returns a ISO 8601 representation of the given date. This method
-     * is thread safe and non-blocking.
-     *
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-495">TIKA-495</a>
-     * @param date given date
-     * @return ISO 8601 date string, including timezone details
-     */
-    public static String formatDate(Date date) {
-        Calendar calendar = GregorianCalendar.getInstance(UTC, Locale.US);
-        calendar.setTime(date);
-        return doFormatDate(calendar);
-    }
-    /**
-     * Returns a ISO 8601 representation of the given date. This method
-     * is thread safe and non-blocking.
-     *
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-495">TIKA-495</a>
-     * @param date given date
-     * @return ISO 8601 date string, including timezone details
-     */
-    public static String formatDate(Calendar date) {
-        // Explicitly switch it into UTC before formatting
-        date.setTimeZone(UTC);
-        return doFormatDate(date);
-    }
-    /**
-     * Returns a ISO 8601 representation of the given date, which is
-     *  in an unknown timezone. This method is thread safe and non-blocking.
-     *
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-495">TIKA-495</a>
-     * @param date given date
-     * @return ISO 8601 date string, without timezone details
-     */
-    public static String formatDateUnknownTimezone(Date date) {
-        // Create the Calendar object in the system timezone
-        Calendar calendar = GregorianCalendar.getInstance(TimeZone.getDefault(), Locale.US);
-        calendar.setTime(date);
-        // Have it formatted
-        String formatted = formatDate(calendar);
-        // Strip the timezone details before returning
-        return formatted.substring(0, formatted.length()-1);
-    }
-    private static String doFormatDate(Calendar calendar) {
-        return String.format(
-                Locale.ROOT,
-                "%04d-%02d-%02dT%02d:%02d:%02dZ",
-                calendar.get(Calendar.YEAR),
-                calendar.get(Calendar.MONTH) + 1,
-                calendar.get(Calendar.DAY_OF_MONTH),
-                calendar.get(Calendar.HOUR_OF_DAY),
-                calendar.get(Calendar.MINUTE),
-                calendar.get(Calendar.SECOND));
-    }
-
-    /**
      * Tries to parse the date string; returns null if no parse was possible.
-     *
+     * <p>
      * This is not thread safe!  Wrap in synchronized or create new {@link DateUtils}
      * for each class.
      *
@@ -152,16 +150,16 @@ public class DateUtils {
         // Java doesn't like timezones in the form ss+hh:mm
         // It only likes the hhmm form, without the colon
         int n = dateString.length();
-        if (dateString.charAt(n - 3) == ':'
-                && (dateString.charAt(n - 6) == '+' || dateString.charAt(n - 6) == '-')) {
+        if (dateString.charAt(n - 3) == ':' &&
+                (dateString.charAt(n - 6) == '+' || dateString.charAt(n - 6) == '-')) {
             dateString = dateString.substring(0, n - 3) + dateString.substring(n - 2);
         }
 
         for (DateFormat df : iso8601InputFormats) {
             try {
                 return df.parse(dateString);
-            } catch (java.text.ParseException e){
-
+            } catch (java.text.ParseException e) {
+                //swallow
             }
         }
         return null;

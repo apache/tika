@@ -30,7 +30,8 @@ public class LeipzigHelper {
 
     static Map<String, List<Path>> getFiles(Path leipzigDir) throws IOException {
         Matcher tableMatcher = Pattern.compile("([a-z]+)_table(\\.txt)?(\\.gz)?$").matcher("");
-        Matcher leipzigMatcher = Pattern.compile("([a-z]{3,3})[-_].*$").matcher("");
+        Matcher leipzigMatcher =
+                Pattern.compile("([a-z]{3,3}(-(simp|trad|rom|zaw))?)[-_].*$").matcher("");
 
         Map<String, List<Path>> m = new TreeMap<>();
         for (File f : leipzigDir.toFile().listFiles()) {

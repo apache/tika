@@ -17,20 +17,21 @@
 
 package org.apache.tika.parser.recognition.tf;
 
-import org.apache.tika.config.Param;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.recognition.RecognisedObject;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.xml.sax.helpers.DefaultHandler;
-
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.xml.sax.helpers.DefaultHandler;
+
+import org.apache.tika.config.Param;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.recognition.RecognisedObject;
 
 
 @Ignore
@@ -40,8 +41,10 @@ public class TensorflowImageRecParserTest {
     public void recognise() throws Exception {
         TensorflowImageRecParser recogniser = new TensorflowImageRecParser();
         recogniser.initialize(new HashMap<String, Param>());
-        try (InputStream stream = getClass().getClassLoader().getResourceAsStream("test-documents/testJPEG.jpg")) {
-            List<RecognisedObject> objects = recogniser.recognise(stream, new DefaultHandler(), new Metadata(), new ParseContext());
+        try (InputStream stream = getClass().getClassLoader()
+                .getResourceAsStream("test-documents/testJPEG.jpg")) {
+            List<RecognisedObject> objects = recogniser
+                    .recognise(stream, new DefaultHandler(), new Metadata(), new ParseContext());
             Assert.assertTrue(5 == objects.size());
             Set<String> objectLabels = new HashSet<>();
             for (RecognisedObject object : objects) {
@@ -54,5 +57,4 @@ public class TensorflowImageRecParserTest {
             }
         }
     }
-
 }

@@ -19,7 +19,8 @@ package org.apache.tika.eval.app.io;
 import java.io.IOException;
 import java.sql.SQLException;
 
-import org.apache.log4j.Level;
+import org.slf4j.event.Level;
+
 
 public interface XMLLogMsgHandler {
     public void handleMsg(Level level, String xml) throws IOException, SQLException;

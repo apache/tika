@@ -16,19 +16,20 @@
  */
 package org.apache.tika.parser.pdf;
 
+import static junit.framework.TestCase.assertEquals;
+
+import java.io.InputStream;
+import java.util.List;
+
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import java.io.InputStream;
-import java.util.List;
-
-import static junit.framework.TestCase.assertEquals;
 
 public class PDFPreflightParserTest extends TikaTest {
 
@@ -36,7 +37,8 @@ public class PDFPreflightParserTest extends TikaTest {
 
     @BeforeClass
     public static void setUp() throws Exception {
-        try (InputStream is = PDFPreflightParser.class.getResourceAsStream("tika-preflight-config.xml")) {
+        try (InputStream is = PDFPreflightParser.class
+                .getResourceAsStream("tika-preflight-config.xml")) {
             PREFLIGHT_AUTO_DETECT_PARSER = new AutoDetectParser(new TikaConfig(is).getParser());
         }
     }

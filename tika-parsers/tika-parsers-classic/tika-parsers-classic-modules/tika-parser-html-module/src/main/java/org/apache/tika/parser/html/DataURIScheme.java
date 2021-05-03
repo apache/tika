@@ -17,12 +17,12 @@
 
 package org.apache.tika.parser.html;
 
-import org.apache.tika.mime.MediaType;
-
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Objects;
+
+import org.apache.tika.mime.MediaType;
 
 public class DataURIScheme {
 
@@ -42,7 +42,6 @@ public class DataURIScheme {
     }
 
     /**
-     *
      * @return parsed media type or <code>null</code> if parse fails or if media type string was
      * not specified
      */
@@ -59,8 +58,12 @@ public class DataURIScheme {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof DataURIScheme)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof DataURIScheme)) {
+            return false;
+        }
         DataURIScheme that = (DataURIScheme) o;
         return isBase64() == that.isBase64() &&
                 Objects.equals(rawMediaTypeString, that.rawMediaTypeString) &&

@@ -17,41 +17,27 @@
 
 package org.apache.tika.parser.recognition.tf;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
+import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.Collections;
-import java.util.HashSet;
-
 import javax.ws.rs.core.UriBuilder;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.tika.Tika;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Param;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.recognition.RecognisedObject;
-import com.github.openjson.JSONArray;
-import com.github.openjson.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * Tensor Flow video recogniser which has high performance.
@@ -65,7 +51,8 @@ public class TensorflowRESTVideoRecogniser extends TensorflowRESTRecogniser {
 
     private static final Logger LOG = LoggerFactory.getLogger(TensorflowRESTVideoRecogniser.class);
 
-    private static final Set<MediaType> SUPPORTED_MIMES = Collections.singleton(MediaType.video("mp4"));
+    private static final Set<MediaType> SUPPORTED_MIMES =
+            Collections.singleton(MediaType.video("mp4"));
 
     @Field
     private String mode = "fixed";
@@ -89,8 +76,9 @@ public class TensorflowRESTVideoRecogniser extends TensorflowRESTRecogniser {
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         try {
             healthUri = URI.create(apiBaseUri + "/ping");
-            apiUri = URI.create(apiBaseUri + String.format(Locale.getDefault(), "/classify/video?topn=%1$d&min_confidence=%2$f&mode=%3$s",
-                    topN, minConfidence, mode));
+            apiUri = URI.create(apiBaseUri + String.format(Locale.getDefault(),
+                    "/classify/video?topn=%1$d&min_confidence=%2$f&mode=%3$s", topN, minConfidence,
+                    mode));
 
             DefaultHttpClient client = new DefaultHttpClient();
             HttpResponse response = client.execute(new HttpGet(healthUri));

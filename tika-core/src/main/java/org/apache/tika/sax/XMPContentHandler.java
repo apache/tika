@@ -16,12 +16,13 @@
  */
 package org.apache.tika.sax;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
+
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 
 /**
  * Content handler decorator that simplifies the task of producing XMP output.
@@ -33,20 +34,22 @@ public class XMPContentHandler extends SafeContentHandler {
     /**
      * The RDF namespace URI
      */
-    public static final String RDF =
-            "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
+    public static final String RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
 
     /**
      * The XMP namespace URI
      */
-    public static final String XMP =
-            "http://ns.adobe.com/xap/1.0/";
+    public static final String XMP = "http://ns.adobe.com/xap/1.0/";
 
     private static final Attributes EMPTY_ATTRIBUTES = new AttributesImpl();
+    private String prefix = null;
+    private String uri = null;
 
     public XMPContentHandler(ContentHandler handler) {
         super(handler);
     }
+
+    //------------------------------------------< public convenience methods >
 
     /**
      * Starts an XMP document by setting up the namespace mappings and
@@ -82,14 +85,7 @@ public class XMPContentHandler extends SafeContentHandler {
         super.endDocument();
     }
 
-    //------------------------------------------< public convenience methods >
-
-    private String prefix = null;
-
-    private String uri = null;
-
-    public void startDescription(String about, String prefix, String uri)
-            throws SAXException {
+    public void startDescription(String about, String prefix, String uri) throws SAXException {
         this.prefix = prefix;
         this.uri = uri;
 
@@ -131,8 +127,7 @@ public class XMPContentHandler extends SafeContentHandler {
         description(metadata, "aux", "http://ns.adobe.com/exif/1.0/aux/");
     }
 
-    private void description(Metadata metadata, String prefix, String uri)
-            throws SAXException {
+    private void description(Metadata metadata, String prefix, String uri) throws SAXException {
         int count = 0;
         for (Property property : Property.getProperties(prefix)) {
             String value = metadata.get(property);

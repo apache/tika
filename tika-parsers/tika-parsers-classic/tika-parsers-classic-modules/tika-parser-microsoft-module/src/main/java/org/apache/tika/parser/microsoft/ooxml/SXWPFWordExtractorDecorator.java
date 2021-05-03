@@ -33,6 +33,9 @@ import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.xssf.usermodel.XSSFRelation;
 import org.apache.poi.xwpf.usermodel.XWPFNumbering;
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
+import org.apache.xmlbeans.XmlException;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -45,8 +48,6 @@ import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.XMLReaderUtils;
-import org.apache.xmlbeans.XmlException;
-import org.xml.sax.SAXException;
 
 /**
  * This is an experimental, alternative extractor for docx files.
@@ -63,22 +64,20 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
 
     //include all parts that might have embedded objects
-    private final static String[] MAIN_PART_RELATIONS = new String[]{
-            XWPFRelation.HEADER.getRelation(),
-            XWPFRelation.FOOTER.getRelation(),
-            XWPFRelation.FOOTNOTE.getRelation(),
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes",
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments"
-    };
+    private final static String[] MAIN_PART_RELATIONS =
+            new String[]{XWPFRelation.HEADER.getRelation(), XWPFRelation.FOOTER.getRelation(),
+                    XWPFRelation.FOOTNOTE.getRelation(),
+                    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes",
+                    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments"};
 
     //a docx file should have one of these "main story" parts
-    private final static String[] MAIN_STORY_PART_RELATIONS = new String[]{
-            XWPFRelation.DOCUMENT.getContentType(),
-            XWPFRelation.MACRO_DOCUMENT.getContentType(),
-            XWPFRelation.TEMPLATE.getContentType(),
-            XWPFRelation.MACRO_TEMPLATE_DOCUMENT.getContentType()
+    private final static String[] MAIN_STORY_PART_RELATIONS =
+            new String[]{XWPFRelation.DOCUMENT.getContentType(),
+                    XWPFRelation.MACRO_DOCUMENT.getContentType(),
+                    XWPFRelation.TEMPLATE.getContentType(),
+                    XWPFRelation.MACRO_TEMPLATE_DOCUMENT.getContentType()
 
-    };
+            };
 
     private final OPCPackage opcPackage;
     private final ParseContext context;
@@ -120,7 +119,8 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         }
     }
 
-    private void handleDocumentPart(PackagePart documentPart, XHTMLContentHandler xhtml) throws IOException, SAXException {
+    private void handleDocumentPart(PackagePart documentPart, XHTMLContentHandler xhtml)
+            throws IOException, SAXException {
         //load the numbering/list manager and styles from the main document part
         XWPFNumbering numbering = loadNumbering(documentPart);
         XWPFListManager listManager = new XWPFListManager(numbering);
@@ -137,10 +137,12 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         if (config.isIncludeHeadersAndFooters()) {
             //headers
             try {
-                PackageRelationshipCollection headersPRC = documentPart.getRelationshipsByType(XWPFRelation.HEADER.getRelation());
+                PackageRelationshipCollection headersPRC =
+                        documentPart.getRelationshipsByType(XWPFRelation.HEADER.getRelation());
                 if (headersPRC != null) {
                     for (int i = 0; i < headersPRC.size(); i++) {
-                        PackagePart header = documentPart.getRelatedPart(headersPRC.getRelationship(i));
+                        PackagePart header =
+                                documentPart.getRelatedPart(headersPRC.getRelationship(i));
                         handlePart(header, styles, listManager, xhtml);
                     }
                 }
@@ -158,16 +160,12 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     ExceptionUtils.getStackTrace(e));
         }
         //for now, just dump other components at end
-        for (String rel : new String[]{
-                AbstractOOXMLExtractor.RELATION_DIAGRAM_DATA,
-                XSSFRelation.CHART.getRelation(),
-                XWPFRelation.FOOTNOTE.getRelation(),
-                XWPFRelation.COMMENT.getRelation(),
-                XWPFRelation.FOOTER.getRelation(),
-                XWPFRelation.ENDNOTE.getRelation(),
-        }) {
+        for (String rel : new String[]{AbstractOOXMLExtractor.RELATION_DIAGRAM_DATA,
+                XSSFRelation.CHART.getRelation(), XWPFRelation.FOOTNOTE.getRelation(),
+                XWPFRelation.COMMENT.getRelation(), XWPFRelation.FOOTER.getRelation(),
+                XWPFRelation.ENDNOTE.getRelation(),}) {
             //skip footers if we shouldn't extract them
-            if (! config.isIncludeHeadersAndFooters() &&
+            if (!config.isIncludeHeadersAndFooters() &&
                     rel.equals(XWPFRelation.FOOTER.getRelation())) {
                 continue;
             }
@@ -175,11 +173,12 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                 PackageRelationshipCollection prc = documentPart.getRelationshipsByType(rel);
                 if (prc != null) {
                     for (int i = 0; i < prc.size(); i++) {
-                        PackagePart packagePart = documentPart.getRelatedPart(prc.getRelationship(i));
+                        PackagePart packagePart =
+                                documentPart.getRelatedPart(prc.getRelationship(i));
                         handlePart(packagePart, styles, listManager, xhtml);
                     }
                 }
-            } catch (InvalidFormatException|ZipException e) {
+            } catch (InvalidFormatException | ZipException e) {
                 metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                         ExceptionUtils.getStackTrace(e));
             }
@@ -187,18 +186,18 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     }
 
     private void handlePart(PackagePart packagePart, XWPFStylesShim styles,
-                            XWPFListManager listManager, XHTMLContentHandler xhtml) throws IOException, SAXException {
+                            XWPFListManager listManager, XHTMLContentHandler xhtml)
+            throws IOException, SAXException {
 
-        Map<String, String> linkedRelationships = loadLinkedRelationships(packagePart, true, metadata);
+        Map<String, String> linkedRelationships =
+                loadLinkedRelationships(packagePart, true, metadata);
         try (InputStream stream = packagePart.getInputStream()) {
-            XMLReaderUtils.parseSAX(
-                    new CloseShieldInputStream(stream),
-                    new OfflineContentHandler(new EmbeddedContentHandler(
-                            new OOXMLWordAndPowerPointTextHandler(
-                                    new OOXMLTikaBodyPartHandler(xhtml, styles, listManager,
-                                            config), linkedRelationships, config.isIncludeShapeBasedContent(), config.isConcatenatePhoneticRuns()))),
-                    context);
-        } catch (TikaException|IOException e) {
+            XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream), new OfflineContentHandler(
+                    new EmbeddedContentHandler(new OOXMLWordAndPowerPointTextHandler(
+                            new OOXMLTikaBodyPartHandler(xhtml, styles, listManager, config),
+                            linkedRelationships, config.isIncludeShapeBasedContent(),
+                            config.isConcatenatePhoneticRuns()))), context);
+        } catch (TikaException | IOException e) {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                     ExceptionUtils.getStackTrace(e));
         }
@@ -206,7 +205,8 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     }
 
 
-    private XWPFStylesShim loadStyles(PackagePart packagePart) throws InvalidFormatException, TikaException, IOException, SAXException {
+    private XWPFStylesShim loadStyles(PackagePart packagePart)
+            throws InvalidFormatException, TikaException, IOException, SAXException {
         PackageRelationshipCollection stylesParts =
                 packagePart.getRelationshipsByType(XWPFRelation.STYLES.getRelation());
         if (stylesParts.size() > 0) {
@@ -227,7 +227,8 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
     private XWPFNumbering loadNumbering(PackagePart packagePart) {
         try {
-            PackageRelationshipCollection numberingParts = packagePart.getRelationshipsByType(XWPFRelation.NUMBERING.getRelation());
+            PackageRelationshipCollection numberingParts =
+                    packagePart.getRelationshipsByType(XWPFRelation.NUMBERING.getRelation());
             if (numberingParts.size() > 0) {
                 PackageRelationship numberingRelationShip = numberingParts.getRelationship(0);
                 if (numberingRelationShip == null) {
@@ -255,9 +256,8 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         List<PackagePart> mainStoryDocs = getStoryDocumentParts();
         List<PackagePart> relatedParts = new ArrayList<>();
 
-        mainStoryDocs.addAll(
-                opcPackage.getPartsByContentType(
-                        XWPFRelation.GLOSSARY_DOCUMENT.getContentType()));
+        mainStoryDocs.addAll(opcPackage
+                .getPartsByContentType(XWPFRelation.GLOSSARY_DOCUMENT.getContentType()));
 
 
         for (PackagePart pp : mainStoryDocs) {
@@ -274,18 +274,19 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                 prc = documentPart.getRelationshipsByType(relation);
                 if (prc != null) {
                     for (int i = 0; i < prc.size(); i++) {
-                        PackagePart packagePart = documentPart.getRelatedPart(prc.getRelationship(i));
+                        PackagePart packagePart =
+                                documentPart.getRelatedPart(prc.getRelationship(i));
                         relatedParts.add(packagePart);
                     }
                 }
             } catch (InvalidFormatException e) {
+                //swallow
             }
         }
 
     }
 
     /**
-     *
      * @return the first non-empty main story document part; empty list if no
      * main story is found.
      */

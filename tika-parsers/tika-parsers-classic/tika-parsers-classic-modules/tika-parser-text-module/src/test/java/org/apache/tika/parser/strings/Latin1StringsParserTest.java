@@ -1,10 +1,13 @@
 /*
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,27 +17,30 @@
 package org.apache.tika.parser.strings;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.charset.StandardCharsets.UTF_16;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
 
 public class Latin1StringsParserTest {
 
     @Test
     public void testParse() throws Exception {
 
-        String testStr = "These are Latin1 accented scripts: \u00C2 \u00C3 \u00C9 \u00DC \u00E2 \u00E3 \u00E9 \u00FC";
+        String testStr =
+                "These are Latin1 accented scripts: \u00C2 \u00C3 \u00C9 \u00DC \u00E2 " +
+                        "\u00E3 \u00E9 \u00FC";
         String smallStr = "ab";
 
         byte[] iso8859Bytes = testStr.getBytes(ISO_8859_1);
@@ -42,7 +48,7 @@ public class Latin1StringsParserTest {
         byte[] utf16Bytes = testStr.getBytes(UTF_16);
         byte[] zeros = new byte[10];
         byte[] smallString = smallStr.getBytes(ISO_8859_1);
-        byte[] trashBytes = { 0x00, 0x01, 0x02, 0x03, 0x1E, 0x1F, (byte) 0xFF };
+        byte[] trashBytes = {0x00, 0x01, 0x02, 0x03, 0x1E, 0x1F, (byte) 0xFF};
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         baos.write(iso8859Bytes);

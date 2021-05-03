@@ -35,7 +35,6 @@ public class CommonTokenResult {
     }
 
     /**
-     *
      * @return the language used to select the common_tokens list
      */
     public String getLangCode() {
@@ -43,7 +42,6 @@ public class CommonTokenResult {
     }
 
     /**
-     *
      * @return total number of "common tokens"
      */
     public int getCommonTokens() {
@@ -51,7 +49,6 @@ public class CommonTokenResult {
     }
 
     /**
-     *
      * @return number of unique "common tokens" (types)
      */
     public int getUniqueCommonTokens() {
@@ -59,7 +56,6 @@ public class CommonTokenResult {
     }
 
     /**
-     *
      * @return number of unique alphabetic tokens (types)
      */
     public int getUniqueAlphabeticTokens() {
@@ -67,7 +63,6 @@ public class CommonTokenResult {
     }
 
     /**
-     *
      * @return number of tokens that had at least one alphabetic/ideographic character
      * whether or not a common token
      */
@@ -76,6 +71,6 @@ public class CommonTokenResult {
     }
 
     public double getOOV() {
-        return 1.0 - (double)commonTokens/(double)alphabeticTokens;
+        return 1.0 - (double) commonTokens / (double) alphabeticTokens;
     }
 }

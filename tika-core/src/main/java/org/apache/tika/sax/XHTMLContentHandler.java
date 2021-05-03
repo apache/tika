@@ -21,12 +21,13 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
+
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 /**
  * Content handler decorator that simplifies the task of producing XHTML
@@ -38,88 +39,74 @@ public class XHTMLContentHandler extends SafeContentHandler {
      * The XHTML namespace URI
      */
     public static final String XHTML = "http://www.w3.org/1999/xhtml";
-
+    /**
+     * The elements that get appended with the {@link #NL} character.
+     */
+    public static final Set<String> ENDLINE =
+            unmodifiableSet("p", "h1", "h2", "h3", "h4", "h5", "h6", "div", "ul", "ol", "dl", "pre",
+                    "hr", "blockquote", "address", "fieldset", "table", "form", "noscript", "li",
+                    "dt", "dd", "noframes", "br", "tr", "select", "option", "link", "script");
     /**
      * The newline character that gets inserted after block elements.
      */
-    private static final char[] NL = new char[] { '\n' };
-
+    private static final char[] NL = new char[]{'\n'};
     /**
      * The tab character gets inserted before table cells and list items.
      */
-    private static final char[] TAB = new char[] { '\t' };
-
+    private static final char[] TAB = new char[]{'\t'};
     /**
      * The elements that are in the <head> section.
      */
     private static final Set<String> HEAD =
-        unmodifiableSet("title", "link", "base", "meta", "script");
-
+            unmodifiableSet("title", "link", "base", "meta", "script");
     /**
      * The elements that are automatically emitted by lazyStartHead, so
      * skip them if they get sent to startElement/endElement by mistake.
      */
-    private static final Set<String> AUTO =
-        unmodifiableSet("head", "frameset");
-
+    private static final Set<String> AUTO = unmodifiableSet("head", "frameset");
     /**
      * The elements that get prepended with the {@link #TAB} character.
      */
     private static final Set<String> INDENT =
-        unmodifiableSet("li", "dd", "dt", "td", "th", "frame");
-
-    /**
-     * The elements that get appended with the {@link #NL} character.
-     */
-    public static final Set<String> ENDLINE = unmodifiableSet(
-            "p", "h1", "h2", "h3", "h4", "h5", "h6", "div", "ul", "ol", "dl",
-            "pre", "hr", "blockquote", "address", "fieldset", "table", "form",
-            "noscript", "li", "dt", "dd", "noframes", "br", "tr", "select",
-            "option", "link", "script");
-
+            unmodifiableSet("li", "dd", "dt", "td", "th", "frame");
     private static final Attributes EMPTY_ATTRIBUTES = new AttributesImpl();
-
-    private static Set<String> unmodifiableSet(String... elements) {
-        return Collections.unmodifiableSet(
-                new HashSet<String>(Arrays.asList(elements)));
-    }
-
     /**
      * Metadata associated with the document. Used to fill in the
      * &lt;head/&gt; section.
      */
     private final Metadata metadata;
-
     /**
      * Flag to indicate whether the document has been started.
      */
     private boolean documentStarted = false;
-    
     /**
      * Flags to indicate whether the document head element has been started/ended.
      */
     private boolean headStarted = false;
     private boolean headEnded = false;
     private boolean useFrameset = false;
-    
     public XHTMLContentHandler(ContentHandler handler, Metadata metadata) {
         super(handler);
         this.metadata = metadata;
     }
 
+    private static Set<String> unmodifiableSet(String... elements) {
+        return Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(elements)));
+    }
+
     /**
-     * Starts an XHTML document by setting up the namespace mappings 
+     * Starts an XHTML document by setting up the namespace mappings
      * when called for the first time.
      * The standard XHTML prefix is generated lazily when the first
      * element is started.
      */
     @Override
     public void startDocument() throws SAXException {
-    	if(!documentStarted){
-    		documentStarted = true;
+        if (!documentStarted) {
+            documentStarted = true;
             super.startDocument();
             startPrefixMapping("", XHTML);
-    	}
+        }
     }
 
     /**
@@ -135,7 +122,7 @@ public class XHTMLContentHandler extends SafeContentHandler {
     private void lazyStartHead() throws SAXException {
         if (!headStarted) {
             headStarted = true;
-            
+
             // Call directly, so we don't go through our startElement(), which will
             // ignore these elements.
             AttributesImpl htmlAttrs = new AttributesImpl();
@@ -162,18 +149,18 @@ public class XHTMLContentHandler extends SafeContentHandler {
      */
     private void lazyEndHead(boolean isFrameset) throws SAXException {
         lazyStartHead();
-        
+
         if (!headEnded) {
             headEnded = true;
             useFrameset = isFrameset;
-            
+
             // TIKA-478: Emit all metadata values (other than title). We have to call
             // startElement() and characters() directly to avoid recursive problems.
             for (String name : metadata.names()) {
                 if (name.equals("title")) {
                     continue;
                 }
-                
+
                 for (String value : metadata.getValues(name)) {
                     // Putting null values into attributes causes problems, but is
                     // allowed by Metadata, so guard against that.
@@ -187,7 +174,7 @@ public class XHTMLContentHandler extends SafeContentHandler {
                     }
                 }
             }
-            
+
             super.startElement(XHTML, "title", "title", EMPTY_ATTRIBUTES);
             String title = metadata.get(TikaCoreProperties.TITLE);
             if (title != null && title.length() > 0) {
@@ -199,10 +186,10 @@ public class XHTMLContentHandler extends SafeContentHandler {
             }
             super.endElement(XHTML, "title", "title");
             newline();
-            
+
             super.endElement(XHTML, "head", "head");
             newline();
-            
+
             if (useFrameset) {
                 super.startElement(XHTML, "frameset", "frameset", EMPTY_ATTRIBUTES);
             } else {
@@ -222,15 +209,15 @@ public class XHTMLContentHandler extends SafeContentHandler {
     @Override
     public void endDocument() throws SAXException {
         lazyEndHead(useFrameset);
-        
+
         if (useFrameset) {
             super.endElement(XHTML, "frameset", "frameset");
         } else {
             super.endElement(XHTML, "body", "body");
         }
-        
+
         super.endElement(XHTML, "html", "html");
-        
+
         endPrefixMapping("");
         super.endDocument();
     }
@@ -240,10 +227,9 @@ public class XHTMLContentHandler extends SafeContentHandler {
      * indented by emitting a tab character as ignorable whitespace.
      */
     @Override
-    public void startElement(
-            String uri, String local, String name, Attributes attributes)
+    public void startElement(String uri, String local, String name, Attributes attributes)
             throws SAXException {
-        
+
         if (name.equals("frameset")) {
             lazyEndHead(true);
         } else if (!AUTO.contains(name)) {
@@ -256,7 +242,7 @@ public class XHTMLContentHandler extends SafeContentHandler {
             if (XHTML.equals(uri) && INDENT.contains(name)) {
                 ignorableWhitespace(TAB, 0, TAB.length);
             }
-            
+
             super.startElement(uri, local, name, attributes);
         }
     }
@@ -290,15 +276,13 @@ public class XHTMLContentHandler extends SafeContentHandler {
         startElement(XHTML, name, name, EMPTY_ATTRIBUTES);
     }
 
-    public void startElement(String name, String attribute, String value)
-            throws SAXException {
+    public void startElement(String name, String attribute, String value) throws SAXException {
         AttributesImpl attributes = new AttributesImpl();
         attributes.addAttribute("", attribute, attribute, "CDATA", value);
         startElement(XHTML, name, name, attributes);
     }
 
-    public void startElement(String name, AttributesImpl attributes)
-            throws SAXException {
+    public void startElement(String name, AttributesImpl attributes) throws SAXException {
         startElement(XHTML, name, name, attributes);
     }
 
@@ -320,7 +304,7 @@ public class XHTMLContentHandler extends SafeContentHandler {
      * Emits an XHTML element with the given text content. If the given
      * text value is null or empty, then the element is not written.
      *
-     * @param name XHTML element name
+     * @param name  XHTML element name
      * @param value element value, possibly <code>null</code>
      * @throws SAXException if the content element could not be written
      */
@@ -331,15 +315,14 @@ public class XHTMLContentHandler extends SafeContentHandler {
             endElement(name);
         }
     }
-    
+
     @Override
     protected boolean isInvalid(int ch) {
-        if(super.isInvalid(ch)) return true;
-        // These control chars are  invalid in XHTML.
-        if(0x7F <= ch && ch <=0x9F) {
+        if (super.isInvalid(ch)) {
             return true;
         }
-        return false;
+        // These control chars are  invalid in XHTML.
+        return 0x7F <= ch && ch <= 0x9F;
     }
 
 }

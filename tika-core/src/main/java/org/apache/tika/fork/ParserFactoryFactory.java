@@ -18,13 +18,12 @@
 package org.apache.tika.fork;
 
 
-
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.parser.ParserFactory;
-
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.util.Map;
+
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.parser.ParserFactory;
 
 /**
  * Lightweight, easily serializable class that contains enough information
@@ -32,7 +31,9 @@ import java.util.Map;
  */
 public class ParserFactoryFactory implements Serializable {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = 4710974869988895410L;
 
     private final String className;
@@ -48,7 +49,7 @@ public class ParserFactoryFactory implements Serializable {
             Class<?> clazz = Class.forName(className);
             Constructor<?> con = clazz.getConstructor(Map.class);
             return (ParserFactory) con.newInstance(args);
-        } catch (ReflectiveOperationException|IllegalStateException e) {
+        } catch (ReflectiveOperationException | IllegalStateException e) {
             throw new TikaException("Couldn't create factory", e);
         }
     }

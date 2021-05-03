@@ -18,6 +18,7 @@ package org.apache.tika.eval.core.textstats;
 
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.math3.util.FastMath;
+
 import org.apache.tika.eval.core.tokens.TokenCounts;
 
 public class TokenEntropy implements TokenCountStatsCalculator<Double> {
@@ -27,13 +28,13 @@ public class TokenEntropy implements TokenCountStatsCalculator<Double> {
         double ent = 0.0d;
         double p = 0.0d;
         double base = 2.0;
-        double totalTokens = (double)tokenCounts.getTotalTokens();
+        double totalTokens = (double) tokenCounts.getTotalTokens();
         for (MutableInt i : tokenCounts.getTokens().values()) {
             int termFreq = i.intValue();
 
             p = (double) termFreq / totalTokens;
             ent += p * FastMath.log(base, p);
         }
-        return -1.0*ent;
+        return -1.0 * ent;
     }
 }

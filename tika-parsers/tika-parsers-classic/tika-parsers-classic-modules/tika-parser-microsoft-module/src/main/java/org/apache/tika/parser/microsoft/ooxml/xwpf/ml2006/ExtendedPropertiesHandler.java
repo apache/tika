@@ -28,7 +28,8 @@ import org.apache.tika.metadata.Property;
 
 class ExtendedPropertiesHandler extends CorePropertiesHandler {
 
-    final static String EP_NS = "http://schemas.openxmlformats.org/officeDocument/2006/extended-properties";
+    final static String EP_NS =
+            "http://schemas.openxmlformats.org/officeDocument/2006/extended-properties";
 
     public ExtendedPropertiesHandler(Metadata metadata) {
         super(metadata);

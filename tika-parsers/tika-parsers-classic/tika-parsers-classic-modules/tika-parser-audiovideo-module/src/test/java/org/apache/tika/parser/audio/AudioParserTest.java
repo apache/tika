@@ -18,9 +18,10 @@ package org.apache.tika.parser.audio;
 
 import static org.junit.Assert.assertEquals;
 
+import org.junit.Test;
+
 import org.apache.tika.Tika;
 import org.apache.tika.metadata.Metadata;
-import org.junit.Test;
 
 public class AudioParserTest {
 
@@ -28,8 +29,8 @@ public class AudioParserTest {
     public void testWAV() throws Exception {
         String path = "/test-documents/testWAV.wav";
         Metadata metadata = new Metadata();
-        String content = new Tika().parseToString(
-                AudioParserTest.class.getResourceAsStream(path), metadata);
+        String content =
+                new Tika().parseToString(AudioParserTest.class.getResourceAsStream(path), metadata);
 
         assertEquals("audio/vnd.wave", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("44100.0", metadata.get("samplerate"));
@@ -44,8 +45,8 @@ public class AudioParserTest {
     public void testAIFF() throws Exception {
         String path = "/test-documents/testAIFF.aif";
         Metadata metadata = new Metadata();
-        String content = new Tika().parseToString(
-                AudioParserTest.class.getResourceAsStream(path), metadata);
+        String content =
+                new Tika().parseToString(AudioParserTest.class.getResourceAsStream(path), metadata);
 
         assertEquals("audio/x-aiff", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("44100.0", metadata.get("samplerate"));
@@ -60,8 +61,8 @@ public class AudioParserTest {
     public void testAU() throws Exception {
         String path = "/test-documents/testAU.au";
         Metadata metadata = new Metadata();
-        String content = new Tika().parseToString(
-                AudioParserTest.class.getResourceAsStream(path), metadata);
+        String content =
+                new Tika().parseToString(AudioParserTest.class.getResourceAsStream(path), metadata);
 
         assertEquals("audio/basic", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("44100.0", metadata.get("samplerate"));

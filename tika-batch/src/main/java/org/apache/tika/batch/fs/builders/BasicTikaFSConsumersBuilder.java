@@ -26,6 +26,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 import org.apache.tika.batch.ConsumersManager;
 import org.apache.tika.batch.FileResource;
 import org.apache.tika.batch.FileResourceConsumer;
@@ -43,8 +46,6 @@ import org.apache.tika.batch.fs.RecursiveParserWrapperFSConsumer;
 import org.apache.tika.batch.fs.StreamOutRPWFSConsumer;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.filter.MetadataFilter;
-import org.apache.tika.metadata.filter.NoOpFilter;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BasicContentHandlerFactory;
@@ -52,30 +53,32 @@ import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.util.ClassLoaderUtil;
 import org.apache.tika.util.PropsUtil;
 import org.apache.tika.util.XMLDOMUtil;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 public class BasicTikaFSConsumersBuilder extends AbstractConsumersBuilder {
 
     @Override
     public ConsumersManager build(Node node, Map<String, String> runtimeAttributes,
-                                            ArrayBlockingQueue<FileResource> queue) {
+                                  ArrayBlockingQueue<FileResource> queue) {
 
         //figure out if we're building a recursiveParserWrapper
         boolean recursiveParserWrapper = false;
         String recursiveParserWrapperString = runtimeAttributes.get("recursiveParserWrapper");
-        if (recursiveParserWrapperString != null){
-            recursiveParserWrapper = PropsUtil.getBoolean(recursiveParserWrapperString, recursiveParserWrapper);
+        if (recursiveParserWrapperString != null) {
+            recursiveParserWrapper =
+                    PropsUtil.getBoolean(recursiveParserWrapperString, recursiveParserWrapper);
         } else {
-            Node recursiveParserWrapperNode = node.getAttributes().getNamedItem("recursiveParserWrapper");
+            Node recursiveParserWrapperNode =
+                    node.getAttributes().getNamedItem("recursiveParserWrapper");
             if (recursiveParserWrapperNode != null) {
-                recursiveParserWrapper = PropsUtil.getBoolean(recursiveParserWrapperNode.getNodeValue(), recursiveParserWrapper);
+                recursiveParserWrapper = PropsUtil
+                        .getBoolean(recursiveParserWrapperNode.getNodeValue(),
+                                recursiveParserWrapper);
             }
         }
 
         boolean streamOut = false;
         String streamOutString = runtimeAttributes.get("streamOut");
-        if (streamOutString != null){
+        if (streamOutString != null) {
             streamOut = PropsUtil.getBoolean(streamOutString, streamOut);
         } else {
             Node streamOutNode = node.getAttributes().getNamedItem("streamout");
@@ -87,20 +90,21 @@ public class BasicTikaFSConsumersBuilder extends AbstractConsumersBuilder {
         //how long to let the consumersManager run on init() and shutdown()
         Long consumersManagerMaxMillis = null;
         String consumersManagerMaxMillisString = runtimeAttributes.get("consumersManagerMaxMillis");
-        if (consumersManagerMaxMillisString != null){
+        if (consumersManagerMaxMillisString != null) {
             consumersManagerMaxMillis = PropsUtil.getLong(consumersManagerMaxMillisString, null);
         } else {
-            Node consumersManagerMaxMillisNode = node.getAttributes().getNamedItem("consumersManagerMaxMillis");
+            Node consumersManagerMaxMillisNode =
+                    node.getAttributes().getNamedItem("consumersManagerMaxMillis");
             if (consumersManagerMaxMillis == null && consumersManagerMaxMillisNode != null) {
-                consumersManagerMaxMillis = PropsUtil.getLong(consumersManagerMaxMillisNode.getNodeValue(),
-                        null);
+                consumersManagerMaxMillis =
+                        PropsUtil.getLong(consumersManagerMaxMillisNode.getNodeValue(), null);
             }
         }
 
         TikaConfig config = null;
         String tikaConfigPath = runtimeAttributes.get("c");
 
-        if( tikaConfigPath == null) {
+        if (tikaConfigPath == null) {
             Node tikaConfigNode = node.getAttributes().getNamedItem("tikaConfig");
             if (tikaConfigNode != null) {
                 tikaConfigPath = PropsUtil.getString(tikaConfigNode.getNodeValue(), null);
@@ -124,10 +128,10 @@ public class BasicTikaFSConsumersBuilder extends AbstractConsumersBuilder {
         Node parserFactoryNode = null;
         Node outputStreamFactoryNode = null;
 
-        for (int i = 0; i < nodeList.getLength(); i++){
+        for (int i = 0; i < nodeList.getLength(); i++) {
             Node child = nodeList.item(i);
             String cn = child.getNodeName();
-            if (cn.equals("parser")){
+            if (cn.equals("parser")) {
                 parserFactoryNode = child;
             } else if (cn.equals("contenthandler")) {
                 contentHandlerFactoryNode = child;
@@ -136,16 +140,17 @@ public class BasicTikaFSConsumersBuilder extends AbstractConsumersBuilder {
             }
         }
 
-        if (contentHandlerFactoryNode == null || parserFactoryNode == null
-                || outputStreamFactoryNode == null) {
-            throw new RuntimeException("You must specify a ContentHandlerFactory, "+
+        if (contentHandlerFactoryNode == null || parserFactoryNode == null ||
+                outputStreamFactoryNode == null) {
+            throw new RuntimeException("You must specify a ContentHandlerFactory, " +
                     "a ParserFactory and an OutputStreamFactory");
         }
-        ContentHandlerFactory contentHandlerFactory = getContentHandlerFactory(contentHandlerFactoryNode, runtimeAttributes);
+        ContentHandlerFactory contentHandlerFactory =
+                getContentHandlerFactory(contentHandlerFactoryNode, runtimeAttributes);
         ParserFactory parserFactory = getParserFactory(parserFactoryNode, runtimeAttributes);
-        OutputStreamFactory outputStreamFactory = getOutputStreamFactory(
-                outputStreamFactoryNode, runtimeAttributes,
-                contentHandlerFactory, recursiveParserWrapper);
+        OutputStreamFactory outputStreamFactory =
+                getOutputStreamFactory(outputStreamFactoryNode, runtimeAttributes,
+                        contentHandlerFactory, recursiveParserWrapper);
         Parser parser = parserFactory.getParser(config);
         if (recursiveParserWrapper) {
             MetadataFilter metadataFilter = config.getMetadataFilter();
@@ -153,21 +158,20 @@ public class BasicTikaFSConsumersBuilder extends AbstractConsumersBuilder {
 
             for (int i = 0; i < numConsumers; i++) {
                 FileResourceConsumer c = null;
-                if (streamOut){
-                    c = new StreamOutRPWFSConsumer(queue,
-                            parser, contentHandlerFactory,
+                if (streamOut) {
+                    c = new StreamOutRPWFSConsumer(queue, parser, contentHandlerFactory,
                             outputStreamFactory, metadataFilter);
                 } else {
-                    c = new RecursiveParserWrapperFSConsumer(queue,
-                            parser, contentHandlerFactory,
+                    c = new RecursiveParserWrapperFSConsumer(queue, parser, contentHandlerFactory,
                             outputStreamFactory, metadataFilter);
                 }
                 consumers.add(c);
             }
         } else {
             for (int i = 0; i < numConsumers; i++) {
-                FileResourceConsumer c = new BasicTikaFSConsumer(queue,
-                        parser, contentHandlerFactory, outputStreamFactory);
+                FileResourceConsumer c =
+                        new BasicTikaFSConsumer(queue, parser, contentHandlerFactory,
+                                outputStreamFactory);
                 consumers.add(c);
             }
         }
@@ -178,21 +182,24 @@ public class BasicTikaFSConsumersBuilder extends AbstractConsumersBuilder {
         return manager;
     }
 
-    private ContentHandlerFactory getContentHandlerFactory(Node node, Map<String, String> runtimeAttributes) {
+    private ContentHandlerFactory getContentHandlerFactory(Node node,
+                                                           Map<String, String> runtimeAttributes) {
 
         Map<String, String> localAttrs = XMLDOMUtil.mapifyAttrs(node, runtimeAttributes);
         String className = localAttrs.get("builderClass");
         if (className == null) {
             throw new RuntimeException("Must specify builderClass for contentHandler");
         }
-        IContentHandlerFactoryBuilder builder = ClassLoaderUtil.buildClass(IContentHandlerFactoryBuilder.class, className);
+        IContentHandlerFactoryBuilder builder =
+                ClassLoaderUtil.buildClass(IContentHandlerFactoryBuilder.class, className);
         return builder.build(node, runtimeAttributes);
     }
 
     private ParserFactory getParserFactory(Node node, Map<String, String> runtimeAttributes) {
         Map<String, String> localAttrs = XMLDOMUtil.mapifyAttrs(node, runtimeAttributes);
         String className = localAttrs.get("builderClass");
-        IParserFactoryBuilder builder = ClassLoaderUtil.buildClass(IParserFactoryBuilder.class, className);
+        IParserFactoryBuilder builder =
+                ClassLoaderUtil.buildClass(IParserFactoryBuilder.class, className);
         return builder.build(node, runtimeAttributes);
     }
 
@@ -244,11 +251,12 @@ public class BasicTikaFSConsumersBuilder extends AbstractConsumersBuilder {
         //TODO: possibly open up the different handle-existings in the future
         //but for now, lock it down to require skip.  Too dangerous otherwise
         //if the driver restarts and this is set to overwrite...
-        return new FSOutputStreamFactory(outputDir, FSUtil.HANDLE_EXISTING.SKIP,
-                compression, suffix);
+        return new FSOutputStreamFactory(outputDir, FSUtil.HANDLE_EXISTING.SKIP, compression,
+                suffix);
     }
 
-    private void appendCompression(FSOutputStreamFactory.COMPRESSION compression, StringBuilder sb) {
+    private void appendCompression(FSOutputStreamFactory.COMPRESSION compression,
+                                   StringBuilder sb) {
         switch (compression) {
             case NONE:
                 break;
@@ -272,7 +280,7 @@ public class BasicTikaFSConsumersBuilder extends AbstractConsumersBuilder {
             case HTML:
                 sb.append("html");
                 break;
-            default :
+            default:
                 sb.append("txt");
         }
     }

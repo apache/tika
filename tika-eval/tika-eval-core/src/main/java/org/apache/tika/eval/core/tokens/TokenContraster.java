@@ -24,7 +24,7 @@ import org.apache.lucene.util.PriorityQueue;
 
 /**
  * Computes some corpus contrast statistics.
- *
+ * <p>
  * Not thread safe.
  */
 public class TokenContraster {
@@ -48,7 +48,8 @@ public class TokenContraster {
     private double overlap = 0.0;
 
 
-    public ContrastStatistics calculateContrastStatistics(TokenCounts tokensA, TokenCounts tokensB) {
+    public ContrastStatistics calculateContrastStatistics(TokenCounts tokensA,
+                                                          TokenCounts tokensB) {
         reset();
         this.tokensA = tokensA;
         this.tokensB = tokensB;
@@ -88,6 +89,7 @@ public class TokenContraster {
         overlap = 0.0;
 
     }
+
     private void add(String token, int tokenCountA, int tokenCountB) {
         if (tokenCountA > 0 && tokenCountB > 0) {
             diceCoefficientNum += 2;
@@ -103,9 +105,9 @@ public class TokenContraster {
         }
 
         if (tokenCountA > tokenCountB) {
-            addTokenDiff(token, tokenCountA, tokenCountA-tokenCountB, moreA);
+            addTokenDiff(token, tokenCountA, tokenCountA - tokenCountB, moreA);
         } else if (tokenCountB > tokenCountA) {
-            addTokenDiff(token, tokenCountB, tokenCountB-tokenCountA, moreB);
+            addTokenDiff(token, tokenCountB, tokenCountB - tokenCountA, moreB);
 
         }
 
@@ -113,26 +115,23 @@ public class TokenContraster {
 
     private void finishComputing() {
 
-        long sumUniqTokens = tokensA.getTotalUniqueTokens()
-                +tokensB.getTotalUniqueTokens();
+        long sumUniqTokens = tokensA.getTotalUniqueTokens() + tokensB.getTotalUniqueTokens();
 
         diceCoefficient = (double) diceCoefficientNum / (double) sumUniqTokens;
-        overlap = (float) overlapNum / (double) (tokensA.getTotalTokens() +
-                tokensB.getTotalTokens());
+        overlap =
+                (float) overlapNum / (double) (tokensA.getTotalTokens() + tokensB.getTotalTokens());
 
     }
 
     private void addTokenDiff(String token, int tokenCount, int diff, TokenCountDiffQueue queue) {
-        if (queue.top() == null || queue.size() < topN ||
-                diff >= queue.top().diff) {
+        if (queue.top() == null || queue.size() < topN || diff >= queue.top().diff) {
             queue.insertWithOverflow(new TokenCountDiff(token, diff, tokenCount));
         }
 
     }
 
     private void addToken(String token, int tokenCount, TokenCountPriorityQueue queue) {
-        if (queue.top() == null || queue.size() < topN ||
-                tokenCount >= queue.top().getValue()) {
+        if (queue.top() == null || queue.size() < topN || tokenCount >= queue.top().getValue()) {
             queue.insertWithOverflow(new TokenIntPair(token, tokenCount));
         }
 
@@ -158,7 +157,7 @@ public class TokenContraster {
             TokenIntPair[] topN = new TokenIntPair[size()];
             //now we reverse the queue
             TokenCountDiff token = pop();
-            int i = topN.length-1;
+            int i = topN.length - 1;
             while (token != null && i > -1) {
                 topN[i--] = new TokenIntPair(token.token, token.diff);
                 token = pop();

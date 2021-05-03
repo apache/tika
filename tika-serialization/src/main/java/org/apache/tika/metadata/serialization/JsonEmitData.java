@@ -16,14 +16,15 @@
  */
 package org.apache.tika.metadata.serialization;
 
+import java.io.IOException;
+import java.io.Writer;
+
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.EmitKey;
-
-import java.io.IOException;
-import java.io.Writer;
 
 public class JsonEmitData {
 
@@ -32,7 +33,7 @@ public class JsonEmitData {
             jsonGenerator.writeStartObject();
             EmitKey key = emitData.getEmitKey();
             jsonGenerator.writeStringField(JsonFetchEmitTuple.EMITTER, key.getEmitterName());
-            jsonGenerator.writeStringField(JsonFetchEmitTuple.EMITKEY, key.getKey());
+            jsonGenerator.writeStringField(JsonFetchEmitTuple.EMITKEY, key.getEmitKey());
             jsonGenerator.writeFieldName("data");
             jsonGenerator.writeStartArray();
             for (Metadata m : emitData.getMetadataList()) {

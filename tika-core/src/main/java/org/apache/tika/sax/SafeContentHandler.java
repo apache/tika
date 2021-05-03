@@ -49,49 +49,23 @@ public class SafeContentHandler extends ContentHandlerDecorator {
     /**
      * Replacement for invalid characters.
      */
-    private static final char[] REPLACEMENT = new char[] { '\ufffd' };
-
-    /**
-     * Internal interface that allows both character and
-     * ignorable whitespace content to be filtered the same way.
-     */
-    protected interface Output {
-        void write(char[] ch, int start, int length) throws SAXException;
-    }
-
-    private static class StringOutput implements Output {
-
-        private final StringBuilder builder = new StringBuilder();
-
-        public void write(char[] ch, int start, int length) {
-            builder.append(ch, start, length);
-        }
-
-        public String toString() {
-            return builder.toString();
-        }
-
-    }
-
+    private static final char[] REPLACEMENT = new char[]{'\ufffd'};
     /**
      * Output through the {@link ContentHandler#characters(char[], int, int)}
      * method of the decorated content handler.
      */
     private final Output charactersOutput = new Output() {
-        public void write(char[] ch, int start, int length)
-                throws SAXException {
+        public void write(char[] ch, int start, int length) throws SAXException {
             SafeContentHandler.super.characters(ch, start, length);
         }
     };
-
     /**
      * Output through the
      * {@link ContentHandler#ignorableWhitespace(char[], int, int)}
      * method of the decorated content handler.
      */
     private final Output ignorableWhitespaceOutput = new Output() {
-        public void write(char[] ch, int start, int length)
-                throws SAXException {
+        public void write(char[] ch, int start, int length) throws SAXException {
             SafeContentHandler.super.ignorableWhitespace(ch, start, length);
         }
     };
@@ -104,16 +78,15 @@ public class SafeContentHandler extends ContentHandlerDecorator {
      * Filters and outputs the contents of the given input buffer. Any
      * invalid characters in the input buffer area handled by sending a
      * replacement (a space character) to the given output. Any sequences
-     * of valid characters are passed as-is to the given output. 
-     * 
-     * @param ch input buffer
-     * @param start start offset within the buffer
+     * of valid characters are passed as-is to the given output.
+     *
+     * @param ch     input buffer
+     * @param start  start offset within the buffer
      * @param length number of characters to read from the buffer
      * @param output output channel
      * @throws SAXException if the filtered characters could not be written out
      */
-    private void filter(char[] ch, int start, int length, Output output)
-            throws SAXException {
+    private void filter(char[] ch, int start, int length, Output output) throws SAXException {
         int end = start + length;
 
         int i = start;
@@ -146,7 +119,7 @@ public class SafeContentHandler extends ContentHandlerDecorator {
      *
      * @param value string to be checked
      * @return <code>true</code> if the string contains invalid XML characters,
-     *         <code>false</code> otherwise
+     * <code>false</code> otherwise
      */
     private boolean isInvalid(String value) {
         char[] ch = value.toCharArray();
@@ -174,7 +147,7 @@ public class SafeContentHandler extends ContentHandlerDecorator {
      *
      * @param ch character
      * @return <code>true</code> if the character should be replaced,
-     *         <code>false</code> otherwise
+     * <code>false</code> otherwise
      */
     protected boolean isInvalid(int ch) {
         if (ch < 0x20) {
@@ -199,6 +172,43 @@ public class SafeContentHandler extends ContentHandlerDecorator {
         output.write(REPLACEMENT, 0, REPLACEMENT.length);
     }
 
+    @Override
+    public void startElement(String uri, String localName, String name, Attributes atts)
+            throws SAXException {
+        // TODO: enable this, but some parsers currently
+        // trip it
+        //assert verifyStartElement(name);
+        // Look for any invalid characters in attribute values.
+        for (int i = 0; i < atts.getLength(); i++) {
+            if (isInvalid(atts.getValue(i))) {
+                // Found an invalid character, so need to filter the attributes
+                AttributesImpl filtered = new AttributesImpl();
+                for (int j = 0; j < atts.getLength(); j++) {
+                    String value = atts.getValue(j);
+                    if (j >= i && isInvalid(value)) {
+                        // Filter the attribute value when needed
+                        Output buffer = new StringOutput();
+                        filter(value.toCharArray(), 0, value.length(), buffer);
+                        value = buffer.toString();
+                    }
+                    filtered.addAttribute(atts.getURI(j), atts.getLocalName(j), atts.getQName(j),
+                            atts.getType(j), value);
+                }
+                atts = filtered;
+                break;
+            }
+        }
+        super.startElement(uri, localName, name, atts);
+    }
+
+    @Override
+    public void endElement(String uri, String localName, String name) throws SAXException {
+        // TODO: enable this, but some parsers currently
+        // trip it
+        //assert verifyEndElement(name);
+        super.endElement(uri, localName, name);
+    }
+
 
     /*
     private final List<String> elements = new ArrayList<String>();
@@ -220,7 +230,8 @@ public class SafeContentHandler extends ContentHandlerDecorator {
     private boolean verifyEndElement(String name) {
         assert elements.size() > 0: "end tag=" + name + " with no startElement";
         final String currentElement = elements.get(elements.size()-1);
-        assert currentElement.equals(name): "mismatched elements open=" + currentElement + " close=" + name;
+        assert currentElement.equals(name): "mismatched elements open=" +
+        currentElement + " close=" + name;
         elements.remove(elements.size()-1);
         return true;
     }
@@ -235,46 +246,6 @@ public class SafeContentHandler extends ContentHandlerDecorator {
     //------------------------------------------------------< ContentHandler >
 
     @Override
-    public void startElement(
-            String uri, String localName, String name, Attributes atts)
-            throws SAXException {
-        // TODO: enable this, but some parsers currently
-        // trip it
-        //assert verifyStartElement(name);
-        // Look for any invalid characters in attribute values.
-        for (int i = 0; i < atts.getLength(); i++) {
-            if (isInvalid(atts.getValue(i))) {
-                // Found an invalid character, so need to filter the attributes
-                AttributesImpl filtered = new AttributesImpl();
-                for (int j = 0; j < atts.getLength(); j++) {
-                    String value = atts.getValue(j);
-                    if (j >= i && isInvalid(value)) {
-                        // Filter the attribute value when needed
-                        Output buffer = new StringOutput();
-                        filter(value.toCharArray(), 0, value.length(), buffer);
-                        value = buffer.toString();
-                    }
-                    filtered.addAttribute(
-                            atts.getURI(j), atts.getLocalName(j),
-                            atts.getQName(j), atts.getType(j), value);
-                }
-                atts = filtered;
-                break;
-            }
-        }
-        super.startElement(uri, localName, name, atts);
-    }
-
-    @Override
-    public void endElement(String uri, String localName, String name)
-            throws SAXException {
-        // TODO: enable this, but some parsers currently
-        // trip it
-        //assert verifyEndElement(name);
-        super.endElement(uri, localName, name);
-    }
-
-    @Override
     public void endDocument() throws SAXException {
         // TODO: enable this, but some parsers currently
         // trip it
@@ -283,15 +254,35 @@ public class SafeContentHandler extends ContentHandlerDecorator {
     }
 
     @Override
-    public void characters(char[] ch, int start, int length)
-            throws SAXException {
+    public void characters(char[] ch, int start, int length) throws SAXException {
         filter(ch, start, length, charactersOutput);
     }
 
     @Override
-    public void ignorableWhitespace(char[] ch, int start, int length)
-            throws SAXException {
+    public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
         filter(ch, start, length, ignorableWhitespaceOutput);
+    }
+
+    /**
+     * Internal interface that allows both character and
+     * ignorable whitespace content to be filtered the same way.
+     */
+    protected interface Output {
+        void write(char[] ch, int start, int length) throws SAXException;
+    }
+
+    private static class StringOutput implements Output {
+
+        private final StringBuilder builder = new StringBuilder();
+
+        public void write(char[] ch, int start, int length) {
+            builder.append(ch, start, length);
+        }
+
+        public String toString() {
+            return builder.toString();
+        }
+
     }
 
 }

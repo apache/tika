@@ -35,21 +35,11 @@ import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.tika.config.Field;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
-import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.recognition.ObjectRecogniser;
-import org.apache.tika.parser.recognition.RecognisedObject;
 import org.datavec.image.loader.NativeImageLoader;
 import org.deeplearning4j.nn.graph.ComputationGraph;
+import org.deeplearning4j.nn.modelimport.keras.KerasModel;
 import org.deeplearning4j.nn.modelimport.keras.exceptions.InvalidKerasConfigurationException;
 import org.deeplearning4j.nn.modelimport.keras.exceptions.UnsupportedKerasConfigurationException;
-import org.deeplearning4j.nn.modelimport.keras.KerasModel;
 import org.deeplearning4j.nn.modelimport.keras.utils.KerasModelBuilder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -61,14 +51,28 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.Field;
+import org.apache.tika.config.InitializableProblemHandler;
+import org.apache.tika.config.Param;
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.recognition.ObjectRecogniser;
+import org.apache.tika.parser.recognition.RecognisedObject;
+
 /**
  * {@link DL4JInceptionV3Net} is an implementation of {@link ObjectRecogniser}.
  * This object recogniser is powered by <a href="http://deeplearning4j.org">Deeplearning4j</a>.
- * This implementation is pre configured to use <a href="https://arxiv.org/abs/1512.00567"> Google's InceptionV3 model </a> pre trained on
- * ImageNet corpus. The models references in default settings are originally trained and exported from <a href="http://keras.io">Keras </a> and imported using DL4J's importer tools.
+ * This implementation is pre configured to use <a href="https://arxiv.org/abs/1512.00567">
+ *     Google's InceptionV3 model </a> pre trained on
+ * ImageNet corpus. The models references in default settings are originally trained and exported
+ * from <a href="http://keras.io">Keras </a> and imported using DL4J's importer tools.
  * <p>
  * Although this implementation is made to work out of the box without user attention,
- * for advances users who are interested in tweaking the settings, the following fields are configurable:
+ * for advances users who are interested in tweaking the settings, the following fields are
+ * configurable:
  * <ul>
  * <li>{@link #modelWeightsPath}</li>
  * <li>{@link #labelFile}</li>
@@ -89,13 +93,16 @@ import org.xml.sax.SAXException;
  */
 public class DL4JInceptionV3Net implements ObjectRecogniser {
 
-    private static final Set<MediaType> MEDIA_TYPES
-            = Collections.singleton(MediaType.image("jpeg"));
+    private static final Set<MediaType> MEDIA_TYPES =
+            Collections.singleton(MediaType.image("jpeg"));
     private static final Logger LOG = LoggerFactory.getLogger(DL4JInceptionV3Net.class);
-    private static final String DEF_WEIGHTS_URL = "https://github.com/USCDataScience/tika-dockers/releases/download/v0.2/inception_v3_keras_2.h5";
-    private static final String DEF_LABEL_MAPPING_URL = "https://github.com/USCDataScience/tika-dockers/releases/download/v0.2/imagenet_class_index.json";
-    private static final String BASE_DIR = System.getProperty("user.home") + File.separator + ".tika-dl" +
-            File.separator + "models" + File.separator + "keras";
+    private static final String DEF_WEIGHTS_URL =
+            "https://github.com/USCDataScience/tika-dockers/releases/download/v0.2/inception_v3_keras_2.h5";
+    private static final String DEF_LABEL_MAPPING_URL =
+            "https://github.com/USCDataScience/tika-dockers/releases/download/v0.2/imagenet_class_index.json";
+    private static final String BASE_DIR =
+            System.getProperty("user.home") + File.separator + ".tika-dl" + File.separator +
+                    "models" + File.separator + "keras";
     private static final String MODEL_DIR = BASE_DIR + File.separator + "inception-v3";
 
     /**
@@ -149,6 +156,34 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
     private NativeImageLoader imageLoader;
     private Map<Integer, String> labelMap;
 
+    private static synchronized File cachedDownload(File cacheDir, URI uri) throws IOException {
+
+        if ("file".equals(uri.getScheme()) || uri.getScheme() == null) {
+            return new File(uri);
+        }
+        if (!cacheDir.exists()) {
+            cacheDir.mkdirs();
+        }
+        String[] parts = uri.toASCIIString().split("/");
+        File cacheFile = new File(cacheDir, parts[parts.length - 1]);
+        File successFlag = new File(cacheFile.getAbsolutePath() + ".success");
+
+        if (cacheFile.exists() && successFlag.exists()) {
+            LOG.info("Cache exist at {}. Not downloading it", cacheFile.getAbsolutePath());
+        } else {
+            if (successFlag.exists()) {
+                successFlag.delete();
+            }
+            LOG.info("Cache doesn't exist. Going to make a copy");
+            LOG.info("This might take a while! GET {}", uri);
+            FileUtils.copyURLToFile(uri.toURL(), cacheFile, 5000, 60000);
+            //restore the success flag again
+            FileUtils.write(successFlag, "CopiedAt:" + System.currentTimeMillis(),
+                    Charset.defaultCharset());
+        }
+        return cacheFile;
+    }
+
     @Override
     public Set<MediaType> getSupportedMimes() {
         return MEDIA_TYPES;
@@ -162,8 +197,7 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
     private File retrieveFile(String path) {
         File file = new File(path);
         if (!file.exists()) {
-            LOG.warn("File {} not found in local file system." +
-                    " Asking the classloader", path);
+            LOG.warn("File {} not found in local file system." + " Asking the classloader", path);
             URL url = getClass().getClassLoader().getResource(path);
             if (url == null) {
                 LOG.debug("Classloader does not know the file {}", path);
@@ -189,37 +223,7 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
         return getClass().getClassLoader().getResourceAsStream(path);
     }
 
-    private static synchronized File cachedDownload(File cacheDir, URI uri)
-            throws IOException {
-
-        if ("file".equals(uri.getScheme()) || uri.getScheme() == null) {
-            return new File(uri);
-        }
-        if (!cacheDir.exists()) {
-            cacheDir.mkdirs();
-        }
-        String[] parts = uri.toASCIIString().split("/");
-        File cacheFile = new File(cacheDir, parts[parts.length - 1]);
-        File successFlag = new File(cacheFile.getAbsolutePath() + ".success");
-
-        if (cacheFile.exists() && successFlag.exists()) {
-            LOG.info("Cache exist at {}. Not downloading it", cacheFile.getAbsolutePath());
-        } else {
-            if (successFlag.exists()) {
-                successFlag.delete();
-            }
-            LOG.info("Cache doesn't exist. Going to make a copy");
-            LOG.info("This might take a while! GET {}", uri);
-            FileUtils.copyURLToFile(uri.toURL(), cacheFile, 5000, 60000);
-            //restore the success flag again
-            FileUtils.write(successFlag,
-                    "CopiedAt:" + System.currentTimeMillis(),
-                    Charset.defaultCharset());
-        }
-        return cacheFile;
-    }
-
-    private String mayBeDownloadFile(String path) throws TikaConfigException{
+    private String mayBeDownloadFile(String path) throws TikaConfigException {
         String resolvedFilePath;
         if (path.startsWith("http://") || path.startsWith("https://")) {
             LOG.debug("Config instructed to download the file, doing so.");
@@ -239,8 +243,7 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
     }
 
     @Override
-    public void initialize(Map<String, Param> params)
-            throws TikaConfigException {
+    public void initialize(Map<String, Param> params) throws TikaConfigException {
 
         //STEP 1: resolve weights file, download if necessary
         modelWeightsPath = mayBeDownloadFile(modelWeightsPath);
@@ -259,22 +262,24 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
             LOG.info("Going to load Inception network...");
             long st = System.currentTimeMillis();
 
-            KerasModelBuilder builder = new KerasModel().modelBuilder().modelHdf5Filename(modelWeightsPath)
-                    .enforceTrainingConfig(false);
+            KerasModelBuilder builder =
+                    new KerasModel().modelBuilder().modelHdf5Filename(modelWeightsPath)
+                            .enforceTrainingConfig(false);
             builder.inputShape(new int[]{imgHeight, imgWidth, 3});
             KerasModel model = builder.buildModel();
             this.graph = model.getComputationGraph();
 
             long time = System.currentTimeMillis() - st;
             LOG.info("Loaded the Inception model. Time taken={}ms", time);
-        } catch (IOException | InvalidKerasConfigurationException
-                | UnsupportedKerasConfigurationException e) {
+        } catch (IOException | InvalidKerasConfigurationException |
+                UnsupportedKerasConfigurationException e) {
             throw new TikaConfigException(e.getMessage(), e);
         }
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler)
+            throws TikaConfigException {
         //TODO: what do we want to check here?
     }
 
@@ -309,17 +314,15 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
         Map<Integer, String> classMap = new HashMap<>();
         for (Object key : jIndex.keySet()) {
             JSONArray names = (JSONArray) jIndex.get(key);
-            classMap.put(Integer.parseInt(key.toString()),
-                    names.get(names.size() - 1).toString());
+            classMap.put(Integer.parseInt(key.toString()), names.get(names.size() - 1).toString());
         }
         return classMap;
     }
 
     @Override
-    public List<RecognisedObject> recognise(
-            InputStream stream, ContentHandler handler, Metadata metadata,
-            ParseContext context) throws IOException, SAXException,
-            TikaException {
+    public List<RecognisedObject> recognise(InputStream stream, ContentHandler handler,
+                                            Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         INDArray image = preProcessImage(imageLoader.asMatrix(stream));
         INDArray scores = graph.outputSingle(image);
         List<RecognisedObject> result = new ArrayList<>();
@@ -327,8 +330,7 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
             if (scores.getDouble(i) > minConfidence) {
                 String label = labelMap.get(i);
                 String id = i + "";
-                result.add(new RecognisedObject(label, labelLang, id,
-                        scores.getDouble(i)));
+                result.add(new RecognisedObject(label, labelLang, id, scores.getDouble(i)));
                 LOG.debug("Found Object {}", label);
             }
         }

@@ -19,11 +19,16 @@ package org.apache.tika.parser.txt;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
 import java.nio.file.Files;
 
-import org.apache.tika.TikaTest;
 import org.junit.Test;
+
+import org.apache.tika.TikaTest;
 
 public class CharsetDetectorTest extends TikaTest {
 
@@ -44,11 +49,11 @@ public class CharsetDetectorTest extends TikaTest {
             assertEquals("UTF-8", mm.getName());
         }
     }
-  
-  /* https://issues.apache.org/jira/browse/TIKA-1248
-   * Verify empty or null declaredEncoding doesn't cause an exception
-   * 
-   */
+
+    /* https://issues.apache.org/jira/browse/TIKA-1248
+     * Verify empty or null declaredEncoding doesn't cause an exception
+     *
+     */
 
     @Test
     public void testEmptyOrNullDeclaredCharset() throws IOException {
@@ -69,7 +74,7 @@ public class CharsetDetectorTest extends TikaTest {
         try (InputStream is = getResourceAsStream("/test-documents/testTXT_win-1252.txt")) {
             detector.setText(is);
         }
-        CharsetMatch charset =  detector.detect();
+        CharsetMatch charset = detector.detect();
         assertEquals("windows-1252", charset.getName());
     }
 

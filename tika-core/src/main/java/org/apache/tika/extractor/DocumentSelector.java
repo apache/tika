@@ -35,7 +35,7 @@ public interface DocumentSelector {
      *
      * @param metadata document metadata
      * @return <code>true</code> if the document matches the selection criteria,
-     *         <code>false</code> otherwise
+     * <code>false</code> otherwise
      */
     boolean select(Metadata metadata);
 

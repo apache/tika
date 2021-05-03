@@ -37,12 +37,13 @@ class XLSXNumFormatter implements XSLXCellFormatter {
     @Override
     public void reset(XSSFWorkbook workbook) {
         style = workbook.createCellStyle();
-        style.setDataFormat(workbook.getCreationHelper()
-                .createDataFormat().getFormat(formatString));
+        style.setDataFormat(
+                workbook.getCreationHelper().createDataFormat().getFormat(formatString));
     }
 
     @Override
-    public void applyStyleAndValue(int dbColNum, ResultSet resultSet, Cell cell) throws SQLException {
+    public void applyStyleAndValue(int dbColNum, ResultSet resultSet, Cell cell)
+            throws SQLException {
         double d = resultSet.getDouble(dbColNum);
         if (resultSet.wasNull()) {
 

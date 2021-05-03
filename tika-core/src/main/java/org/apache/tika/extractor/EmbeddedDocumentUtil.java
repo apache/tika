@@ -20,7 +20,9 @@ package org.apache.tika.extractor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
-import java.util.Map;
+
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
@@ -39,8 +41,6 @@ import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.StatefulParser;
 import org.apache.tika.utils.ExceptionUtils;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * Utility class to handle common issues with embedded documents.
@@ -99,8 +99,9 @@ public class EmbeddedDocumentUtil implements Serializable {
      * Utility function to get the Parser that was sent in to the
      * ParseContext to handle embedded documents.  If it is stateful,
      * unwrap it to get its stateless delegating parser.
-     *
+     * <p>
      * If there is no Parser in the parser context, this will return null.
+     *
      * @param context
      * @return
      */
@@ -110,7 +111,7 @@ public class EmbeddedDocumentUtil implements Serializable {
             return null;
         }
         if (p instanceof StatefulParser) {
-            return ((StatefulParser)p).getWrappedParser();
+            return ((StatefulParser) p).getWrappedParser();
         }
         return p;
     }
@@ -205,7 +206,6 @@ public class EmbeddedDocumentUtil implements Serializable {
      * that was included in the initialization, and then creating a new one from
      * via {@link TikaConfig#getDefaultConfig()} if it can't find one in the
      * ParseContext.
-     *
      * @deprecated as of 1.17, use {@link #getTikaConfig()} instead
      */
     @Deprecated
@@ -235,8 +235,8 @@ public class EmbeddedDocumentUtil implements Serializable {
         return embeddedDocumentExtractor;
     }
 
-    public void parseEmbedded(InputStream inputStream, ContentHandler handler,
-                              Metadata metadata, boolean outputHtml) throws IOException, SAXException {
+    public void parseEmbedded(InputStream inputStream, ContentHandler handler, Metadata metadata,
+                              boolean outputHtml) throws IOException, SAXException {
         embeddedDocumentExtractor.parseEmbedded(inputStream, handler, metadata, outputHtml);
     }
 
@@ -249,7 +249,7 @@ public class EmbeddedDocumentUtil implements Serializable {
      * Can return <code>null</code> if the context contains no parser or
      * the correct parser can't be found.
      *
-     * @param clazz parser class to search for
+     * @param clazz   parser class to search for
      * @param context
      * @return
      */
@@ -261,7 +261,7 @@ public class EmbeddedDocumentUtil implements Serializable {
         Parser returnParser = null;
         if (p != null) {
             if (p instanceof ParserDecorator) {
-                p = findInDecorated((ParserDecorator)p, clazz);
+                p = findInDecorated((ParserDecorator) p, clazz);
             }
             if (equals(p, clazz)) {
                 return p;
@@ -283,7 +283,7 @@ public class EmbeddedDocumentUtil implements Serializable {
             return candidate;
         }
         if (candidate instanceof ParserDecorator) {
-            candidate = findInDecorated((ParserDecorator)candidate, clazz);
+            candidate = findInDecorated((ParserDecorator) candidate, clazz);
         }
         return candidate;
     }
@@ -294,7 +294,7 @@ public class EmbeddedDocumentUtil implements Serializable {
                 return candidate;
             }
             if (candidate instanceof ParserDecorator) {
-                candidate = findInDecorated((ParserDecorator)candidate, clazz);
+                candidate = findInDecorated((ParserDecorator) candidate, clazz);
             }
             if (equals(candidate, clazz)) {
                 return candidate;

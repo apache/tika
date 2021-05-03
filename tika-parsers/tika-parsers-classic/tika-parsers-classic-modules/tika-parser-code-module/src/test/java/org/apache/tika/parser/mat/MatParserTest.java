@@ -20,12 +20,13 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
 
+import org.junit.Test;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.ToXMLContentHandler;
-import org.junit.Test;
 
 /**
  * Test cases to exercise the {@link MatParser}.

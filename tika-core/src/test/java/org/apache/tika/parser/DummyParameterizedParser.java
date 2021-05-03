@@ -16,13 +16,6 @@
  */
 package org.apache.tika.parser;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,15 +27,23 @@ import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.osgi.util.measurement.Unit.s;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
+import org.apache.tika.config.Field;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 
 /**
  * A test Parsers to test {@link Field}
+ *
  * @since Apache Tika 1.14
  */
 public class DummyParameterizedParser extends AbstractParser {
 
-    private static Set<MediaType> MIMES = new HashSet<>();
+    private static final Set<MediaType> MIMES = new HashSet<>();
+
     static {
         MIMES.add(MediaType.TEXT_PLAIN);
         MIMES.add(MediaType.TEXT_HTML);
@@ -50,21 +51,41 @@ public class DummyParameterizedParser extends AbstractParser {
         MIMES.add(MediaType.OCTET_STREAM);
     }
 
-    @Field(name = "testparam") private String testParam = "init_string";
-    @Field private short xshort = -2;
-    @Field private int xint = -3;
-    @Field private long xlong = -4;
-    @Field(name = "xbigint") private BigInteger xbigInt;
-    @Field private float xfloat = -5.0f;
-    @Field private double xdouble = -6.0d;
-    @Field private boolean xbool = true;
-    @Field private URL xurl;
-    @Field private URI xuri;
+    @Field(name = "testparam")
+    private String testParam = "init_string";
 
-    @Field private String missing = "default";
+    @Field
+    private short xshort = -2;
+
+    @Field
+    private int xint = -3;
+
+    @Field
+    private long xlong = -4;
+
+    @Field(name = "xbigint")
+    private BigInteger xbigInt;
+
+    @Field
+    private float xfloat = -5.0f;
+
+    @Field
+    private double xdouble = -6.0d;
+
+    @Field
+    private boolean xbool = true;
+
+    @Field
+    private URL xurl;
+
+    @Field
+    private URI xuri;
+
+    @Field
+    private String missing = "default";
 
 
-    private String inner = "inner";
+    private final String inner = "inner";
     private File xfile;
 
     public DummyParameterizedParser() {
@@ -79,8 +100,9 @@ public class DummyParameterizedParser extends AbstractParser {
             throw new IllegalArgumentException(e);
         }
     }
+
     @Field
-    public void setXfile(File xfile){
+    public void setXfile(File xfile) {
         this.xfile = xfile;
     }
 
@@ -91,9 +113,8 @@ public class DummyParameterizedParser extends AbstractParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler,
-                      Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
 
         metadata.add("testparam", testParam);
         metadata.add("xshort", xshort + "");

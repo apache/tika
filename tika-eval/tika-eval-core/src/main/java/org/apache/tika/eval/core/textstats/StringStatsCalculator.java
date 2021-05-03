@@ -18,6 +18,7 @@ package org.apache.tika.eval.core.textstats;
 
 /**
  * Interface for calculators that require a string
+ *
  * @param <T>
  */
 public interface StringStatsCalculator<T> extends TextStatsCalculator {

@@ -16,20 +16,19 @@
  */
 package org.apache.tika.client;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.util.EntityUtils;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 public class HttpClientUtil {
 
-    public static boolean postJson(HttpClient client, String url, String json) throws IOException,
-            TikaClientException {
+    public static boolean postJson(HttpClient client, String url, String json)
+            throws IOException, TikaClientException {
         HttpPost post = new HttpPost(url);
         post.setHeader("Content-Encoding", "gzip");
         ByteArrayEntity entity = new ByteArrayEntity(json.getBytes(StandardCharsets.UTF_8));
@@ -41,9 +40,8 @@ public class HttpClientUtil {
 
         if (response.getStatusLine().getStatusCode() != 200) {
             String msg = EntityUtils.toString(response.getEntity());
-            throw new TikaClientException("Bad status: " +
-                    response.getStatusLine().getStatusCode() + " : "+
-                    msg);
+            throw new TikaClientException(
+                    "Bad status: " + response.getStatusLine().getStatusCode() + " : " + msg);
         } else {
             String msg = EntityUtils.toString(response.getEntity());
             System.out.println("httputil: " + msg);
@@ -51,9 +49,8 @@ public class HttpClientUtil {
         return true;
     }
 
-    public static boolean postJson(HttpClient client, String url,
-                                   byte[] bytes, boolean gzipped) throws IOException,
-            TikaClientException {
+    public static boolean postJson(HttpClient client, String url, byte[] bytes, boolean gzipped)
+            throws IOException, TikaClientException {
         HttpPost post = new HttpPost(url);
         if (gzipped) {
             post.setHeader("Content-Encoding", "gzip");
@@ -67,9 +64,8 @@ public class HttpClientUtil {
 
         if (response.getStatusLine().getStatusCode() != 200) {
             String msg = EntityUtils.toString(response.getEntity());
-            throw new TikaClientException("Bad status: " +
-                    response.getStatusLine().getStatusCode() + " : "+
-                    msg);
+            throw new TikaClientException(
+                    "Bad status: " + response.getStatusLine().getStatusCode() + " : " + msg);
         } else {
             String msg = EntityUtils.toString(response.getEntity());
             System.out.println("httputil: " + msg);

@@ -17,20 +17,17 @@
 package org.apache.tika.mime;
 
 /**
- * 
  * A set of Hex encoding and decoding utility methods.
- * 
  */
 public class HexCoDec {
 
-    private static final char[] HEX_CHARS = { '0', '1', '2', '3', '4', '5',
-            '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+    private static final char[] HEX_CHARS =
+            {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
     /**
      * Decode a hex string
-     * 
-     * @param hexValue
-     *            the string of hex characters
+     *
+     * @param hexValue the string of hex characters
      * @return the decode hex string as bytes.
      */
     public static byte[] decode(String hexValue) {
@@ -39,9 +36,8 @@ public class HexCoDec {
 
     /**
      * Decode an array of hex chars
-     * 
-     * @param hexChars
-     *            an array of hex characters.
+     *
+     * @param hexChars an array of hex characters.
      * @return the decode hex chars as bytes.
      */
     public static byte[] decode(char[] hexChars) {
@@ -50,31 +46,29 @@ public class HexCoDec {
 
     /**
      * Decode an array of hex chars.
-     * 
-     * @param hexChars
-     *            an array of hex characters.
-     * @param startIndex
-     *            the index of the first character to decode
-     * @param length
-     *            the number of characters to decode.
+     *
+     * @param hexChars   an array of hex characters.
+     * @param startIndex the index of the first character to decode
+     * @param length     the number of characters to decode.
      * @return the decode hex chars as bytes.
      */
     public static byte[] decode(char[] hexChars, int startIndex, int length) {
-        if ((length & 1) != 0)
+        if ((length & 1) != 0) {
             throw new IllegalArgumentException("Length must be even");
+        }
 
         byte[] result = new byte[length / 2];
         for (int j = 0; j < result.length; j++) {
-            result[j] = (byte) (hexCharToNibble(hexChars[startIndex++]) * 16 + hexCharToNibble(hexChars[startIndex++]));
+            result[j] = (byte) (hexCharToNibble(hexChars[startIndex++]) * 16 +
+                    hexCharToNibble(hexChars[startIndex++]));
         }
         return result;
     }
 
     /**
      * Hex encode an array of bytes
-     * 
-     * @param bites
-     *            the array of bytes to encode.
+     *
+     * @param bites the array of bytes to encode.
      * @return the array of hex characters.
      */
     public static char[] encode(byte[] bites) {
@@ -83,13 +77,10 @@ public class HexCoDec {
 
     /**
      * Hex encode an array of bytes
-     * 
-     * @param bites
-     *            the array of bytes to encode.
-     * @param startIndex
-     *            the index of the first character to encode.
-     * @param length
-     *            the number of characters to encode.
+     *
+     * @param bites      the array of bytes to encode.
+     * @param startIndex the index of the first character to encode.
+     * @param length     the number of characters to encode.
      * @return the array of hex characters.
      */
     public static char[] encode(byte[] bites, int startIndex, int length) {

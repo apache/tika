@@ -17,39 +17,36 @@
 
 package org.apache.tika.parser.journal;
 
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.cxf.jaxrs.ext.multipart.ContentDisposition;
 import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
+
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 
 public class GrobidRESTParser {
 
     private static final Logger LOG = LoggerFactory.getLogger(GrobidRESTParser.class);
 
     private static final String GROBID_REST_HOST = "http://localhost:8080";
-
-    private Boolean legacyMode = null;
-
     private static final String GROBID_ISALIVE_PATH = "/api/isalive";
     private static final String GROBID_PROCESSHEADER_PATH = "/api/processHeaderDocument";
-
     private static final String GROBID_LEGACY_ISALIVE_PATH = "/grobid";
     private static final String GROBID_LEGACY_PROCESSHEADER_PATH = "/processHeaderDocument";
-
+    private Boolean legacyMode = null;
     private String restHostUrlStr;
 
     public GrobidRESTParser() {
@@ -67,6 +64,26 @@ public class GrobidRESTParser {
         }
     }
 
+    private static String readRestUrl() throws IOException {
+        Properties grobidProperties = new Properties();
+        grobidProperties
+                .load(GrobidRESTParser.class.getResourceAsStream("GrobidExtractor.properties"));
+
+        return grobidProperties.getProperty("grobid.server.url");
+    }
+
+    protected static boolean canRun() {
+        Response response = null;
+        try {
+            response = WebClient.create(readRestUrl() + GROBID_ISALIVE_PATH).get();
+            String resp = response.readEntity(String.class);
+            return resp != null && !resp.equals("") && resp.startsWith("true");
+        } catch (Exception e) {
+            //swallow...can't run
+            return false;
+        }
+    }
+
     public void parse(String filePath, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws FileNotFoundException {
 
@@ -78,9 +95,8 @@ public class GrobidRESTParser {
 
         try {
             checkMode();
-            Response response = WebClient
-                    .create(restHostUrlStr
-                            + (legacyMode ? GROBID_LEGACY_PROCESSHEADER_PATH : GROBID_PROCESSHEADER_PATH))
+            Response response = WebClient.create(restHostUrlStr +
+                    (legacyMode ? GROBID_LEGACY_PROCESSHEADER_PATH : GROBID_PROCESSHEADER_PATH))
                     .accept(MediaType.APPLICATION_XML).type(MediaType.MULTIPART_FORM_DATA)
                     .post(body);
 
@@ -93,14 +109,6 @@ public class GrobidRESTParser {
         } catch (Exception e) {
             LOG.warn("Couldn't read response", e);
         }
-    }
-
-    private static String readRestUrl() throws IOException {
-        Properties grobidProperties = new Properties();
-        grobidProperties.load(GrobidRESTParser.class
-                .getResourceAsStream("GrobidExtractor.properties"));
-
-        return grobidProperties.getProperty("grobid.server.url");
     }
 
     private void checkMode() throws TikaException {
@@ -118,18 +126,6 @@ public class GrobidRESTParser {
             return;
         }
         throw new TikaException("Cannot connect to Grobid Service");
-    }
-
-    protected static boolean canRun() {
-        Response response = null;
-        try {
-            response = WebClient.create(readRestUrl() + GROBID_ISALIVE_PATH).get();
-            String resp = response.readEntity(String.class);
-            return resp != null && !resp.equals("") && resp.startsWith("true");
-        } catch (Exception e) {
-            //swallow...can't run
-            return false;
-        }
     }
 
 }

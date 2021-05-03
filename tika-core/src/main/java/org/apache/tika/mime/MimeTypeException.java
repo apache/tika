@@ -25,7 +25,7 @@ public class MimeTypeException extends TikaException {
 
     /**
      * Constructs a MimeTypeException with the specified detail message.
-     * 
+     *
      * @param message the detail message.
      */
     public MimeTypeException(String message) {
@@ -35,9 +35,9 @@ public class MimeTypeException extends TikaException {
     /**
      * Constructs a MimeTypeException with the specified detail message
      * and root cause.
-     * 
+     *
      * @param message the detail message.
-     * @param cause root cause
+     * @param cause   root cause
      */
     public MimeTypeException(String message, Throwable cause) {
         super(message, cause);

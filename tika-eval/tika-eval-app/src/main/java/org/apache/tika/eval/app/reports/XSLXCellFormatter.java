@@ -26,5 +26,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 interface XSLXCellFormatter {
 
     public void reset(XSSFWorkbook workbook);
-    public void applyStyleAndValue(int dbColNum, ResultSet resultSet, Cell cell) throws SQLException;
+
+    public void applyStyleAndValue(int dbColNum, ResultSet resultSet, Cell cell)
+            throws SQLException;
 }

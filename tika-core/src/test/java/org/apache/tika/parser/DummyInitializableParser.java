@@ -23,6 +23,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -31,8 +34,6 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * This tests that initialize() is called after adding the parameters
@@ -41,13 +42,16 @@ import org.xml.sax.SAXException;
 public class DummyInitializableParser extends AbstractParser implements Initializable {
 
     public static String SUM_FIELD = "SUM";
-    private static Set<MediaType> MIMES = new HashSet<>();
+    private static final Set<MediaType> MIMES = new HashSet<>();
+
     static {
         MIMES.add(MediaType.TEXT_PLAIN);
     }
 
-    @Field private short shortA = -2;
-    @Field private short shortB = -3;
+    @Field
+    private short shortA = -2;
+    @Field
+    private short shortB = -3;
     private int sum = 0;
 
     @Override
@@ -56,24 +60,25 @@ public class DummyInitializableParser extends AbstractParser implements Initiali
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
         metadata.set(SUM_FIELD, Integer.toString(sum));
     }
 
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
-        shortA = (Short)params.get("shortA").getValue();
-        shortB = (Short)params.get("shortB").getValue();
-        sum = shortA+shortB;
+        shortA = (Short) params.get("shortA").getValue();
+        shortB = (Short) params.get("shortB").getValue();
+        sum = shortA + shortB;
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler
-                                                handler) throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler handler)
+            throws TikaConfigException {
         //completely arbitrary
         if (sum > 1000) {
             handler.handleInitializableProblem("DummyInitializableParser",
-                "sum cannot be > 1000: "+sum);
+                    "sum cannot be > 1000: " + sum);
         }
     }
 }

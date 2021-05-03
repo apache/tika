@@ -77,10 +77,7 @@ class OneNotePropertyId {
 
     @Override
     public String toString() {
-        return "{" + propertyEnum +
-          ", pid=0x" + Long.toHexString(pid) +
-          ", type=0x" + Long.toHexString(type) +
-          ", inlineBool=" + inlineBool +
-          '}';
+        return "{" + propertyEnum + ", pid=0x" + Long.toHexString(pid) + ", type=0x" +
+                Long.toHexString(type) + ", inlineBool=" + inlineBool + '}';
     }
 }

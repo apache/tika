@@ -20,11 +20,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
 
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * Base class for parser implementations that want to delegate parts of the
@@ -43,9 +44,9 @@ public class DelegatingParser extends AbstractParser {
      * Subclasses can override this method to implement alternative delegation
      * strategies.
      *
-     * @since Apache Tika 0.7
      * @param context parse context
      * @return delegate parser
+     * @since Apache Tika 0.7
      */
     protected Parser getDelegateParser(ParseContext context) {
         return context.get(Parser.class, EmptyParser.INSTANCE);
@@ -65,10 +66,8 @@ public class DelegatingParser extends AbstractParser {
      * be passed to this base class method to be parsed by the configured
      * delegate parser.
      */
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
-            throws SAXException, IOException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws SAXException, IOException, TikaException {
         getDelegateParser(context).parse(stream, handler, metadata, context);
     }
 

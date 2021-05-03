@@ -20,25 +20,23 @@ package org.apache.tika.server.classic;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import javax.ws.rs.core.Response;
-
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import javax.ws.rs.core.Response;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.gagravarr.tika.OggDetector;
+import org.junit.Test;
+
 import org.apache.tika.detect.microsoft.POIFSContainerDetector;
 import org.apache.tika.detect.zip.DefaultZipContainerDetector;
 import org.apache.tika.mime.MimeTypes;
-
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.resource.TikaDetectors;
-import org.gagravarr.tika.OggDetector;
-import org.junit.Test;
 
 public class TikaDetectorsTest extends CXFTestBase {
 
@@ -47,10 +45,8 @@ public class TikaDetectorsTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(TikaDetectors.class);
-        sf.setResourceProvider(
-                TikaDetectors.class,
-                new SingletonResourceProvider(new TikaDetectors())
-        );
+        sf.setResourceProvider(TikaDetectors.class,
+                new SingletonResourceProvider(new TikaDetectors()));
     }
 
     @Override
@@ -59,11 +55,9 @@ public class TikaDetectorsTest extends CXFTestBase {
 
     @Test
     public void testGetPlainText() throws Exception {
-        Response response = WebClient
-                .create(endPoint + DETECTORS_PATH)
-                .type("text/plain")
-                .accept("text/plain")
-                .get();
+        Response response =
+                WebClient.create(endPoint + DETECTORS_PATH).type("text/plain").accept("text/plain")
+                        .get();
 
         String text = getStringFromInputStream((InputStream) response.getEntity());
         assertContains("org.apache.tika.detect.DefaultDetector (Composite Detector)", text);
@@ -75,11 +69,9 @@ public class TikaDetectorsTest extends CXFTestBase {
 
     @Test
     public void testGetHTML() throws Exception {
-        Response response = WebClient
-                .create(endPoint + DETECTORS_PATH)
-                .type("text/html")
-                .accept("text/html")
-                .get();
+        Response response =
+                WebClient.create(endPoint + DETECTORS_PATH).type("text/html").accept("text/html")
+                        .get();
 
         String text = getStringFromInputStream((InputStream) response.getEntity());
         assertContains("<h2>DefaultDetector</h2>", text);
@@ -98,15 +90,12 @@ public class TikaDetectorsTest extends CXFTestBase {
     @Test
     @SuppressWarnings("unchecked")
     public void testGetJSON() throws Exception {
-        Response response = WebClient
-                .create(endPoint + DETECTORS_PATH)
+        Response response = WebClient.create(endPoint + DETECTORS_PATH)
                 .type(javax.ws.rs.core.MediaType.APPLICATION_JSON)
-                .accept(javax.ws.rs.core.MediaType.APPLICATION_JSON)
-                .get();
+                .accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).get();
 
         String jsonStr = getStringFromInputStream((InputStream) response.getEntity());
-        Map<String, Object> json =
-                new ObjectMapper().readerFor(Map.class).readValue(jsonStr);
+        Map<String, Object> json = new ObjectMapper().readerFor(Map.class).readValue(jsonStr);
 
         // Should have a nested structure
         assertTrue(json.containsKey("name"));

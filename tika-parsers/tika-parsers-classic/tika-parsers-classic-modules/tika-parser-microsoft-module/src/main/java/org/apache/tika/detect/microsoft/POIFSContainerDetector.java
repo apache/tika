@@ -35,6 +35,7 @@ import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.DocumentNode;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+
 import org.apache.tika.config.Field;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
@@ -69,8 +70,7 @@ public class POIFSContainerDetector implements Detector {
     /**
      * Some other kind of embedded document, in a CompObj container within another OLE2 document
      */
-    public static final MediaType COMP_OBJ =
-            new MediaType(GENERAL_EMBEDDED, "format", "comp_obj");
+    public static final MediaType COMP_OBJ = new MediaType(GENERAL_EMBEDDED, "format", "comp_obj");
     /**
      * Graph/Charts embedded in PowerPoint and Excel
      */
@@ -146,12 +146,12 @@ public class POIFSContainerDetector implements Detector {
      * An ASCII String "StarImpress"
      */
     private static final byte[] STAR_IMPRESS = "StarImpress".getBytes(StandardCharsets.US_ASCII);
-    
+
     /**
      * An ASCII String "StarDraw"
      */
     private static final byte[] STAR_DRAW = "StarDraw".getBytes(StandardCharsets.US_ASCII);
-    
+
     /**
      * An ASCII String "Quill96" for Works Files
      */
@@ -161,7 +161,8 @@ public class POIFSContainerDetector implements Detector {
      * An ASCII String "MSGraph.Chart" for embedded MSGraph files
      * The full designator includes a version, e.g. MSGraph.Chart.8
      */
-    private static final byte[] MS_GRAPH_CHART_BYTES = "MSGraph.Chart".getBytes(StandardCharsets.US_ASCII);
+    private static final byte[] MS_GRAPH_CHART_BYTES =
+            "MSGraph.Chart".getBytes(StandardCharsets.US_ASCII);
 
     /**
      * Regexp for matching the MPP Project Data stream
@@ -170,23 +171,6 @@ public class POIFSContainerDetector implements Detector {
 
     @Field
     private int markLimit = 16 * 1024 * 1024;
-
-    /**
-     * If a TikaInputStream is passed in to {@link #detect(InputStream, Metadata)},
-     * and there is not an underlying file, this detector will spool up to {@link #markLimit}
-     * to disk.  If the stream was read in entirety (e.g. the spooled file is not truncated),
-     * this detector will open the file with POI and perform detection.
-     * If the spooled file is truncated, the detector will return {@link #OLE} (or
-     * {@link MediaType#OCTET_STREAM} if there's no OLE header).
-     *
-     * As of Tika 1.21, this detector respects the legacy behavior of not performing detection
-     * on a non-TikaInputStream.
-     *
-     * @param markLimit
-     */
-    public void setMarkLimit(int markLimit) {
-        this.markLimit = markLimit;
-    }
 
     /**
      * Internal detection of the specific kind of OLE2 document, based on the
@@ -252,8 +236,7 @@ public class POIFSContainerDetector implements Detector {
         } else if (names.contains("Book")) {
             // Excel 95 or older, we won't be able to parse this....
             return XLS;
-        } else if (names.contains("EncryptedPackage") &&
-                names.contains("EncryptionInfo")) {
+        } else if (names.contains("EncryptedPackage") && names.contains("EncryptionInfo")) {
             // This is a protected OOXML document, which is an OLE2 file
             //  with an Encrypted Stream which holds the OOXML data
             // Without decrypting the stream, we can't tell what kind of
@@ -304,7 +287,8 @@ public class POIFSContainerDetector implements Detector {
             // This is most commonly triggered on nested directories
             return OLE;
         } else if (names.contains("\u0001CompObj") &&
-                (names.contains("Props") || names.contains("Props9") || names.contains("Props12"))) {
+                (names.contains("Props") || names.contains("Props9") ||
+                        names.contains("Props12"))) {
             // Could be Project, look for common name patterns
             for (String name : names) {
                 if (mppDataMatch.matcher(name).matches()) {
@@ -335,7 +319,7 @@ public class POIFSContainerDetector implements Detector {
     private static MediaType processCompObjFormatType(DirectoryEntry root) {
         try {
 
-            if (! root.hasEntry("\u0001CompObj")) {
+            if (!root.hasEntry("\u0001CompObj")) {
                 return OLE;
             }
             Entry e = root.getEntry("\u0001CompObj");
@@ -394,8 +378,32 @@ public class POIFSContainerDetector implements Detector {
         return false;
     }
 
-    private Set<String> getTopLevelNames(TikaInputStream stream)
-            throws IOException {
+    private static Set<String> getTopLevelNames(DirectoryNode root) {
+        Set<String> names = new HashSet<String>();
+        for (Entry entry : root) {
+            names.add(entry.getName());
+        }
+        return names;
+    }
+
+    /**
+     * If a TikaInputStream is passed in to {@link #detect(InputStream, Metadata)},
+     * and there is not an underlying file, this detector will spool up to {@link #markLimit}
+     * to disk.  If the stream was read in entirety (e.g. the spooled file is not truncated),
+     * this detector will open the file with POI and perform detection.
+     * If the spooled file is truncated, the detector will return {@link #OLE} (or
+     * {@link MediaType#OCTET_STREAM} if there's no OLE header).
+     * <p>
+     * As of Tika 1.21, this detector respects the legacy behavior of not performing detection
+     * on a non-TikaInputStream.
+     *
+     * @param markLimit
+     */
+    public void setMarkLimit(int markLimit) {
+        this.markLimit = markLimit;
+    }
+
+    private Set<String> getTopLevelNames(TikaInputStream stream) throws IOException {
         // Force the document stream to a (possibly temporary) file
         // so we don't modify the current position of the stream.
         //If the markLimit is < 0, this will spool the entire file
@@ -424,16 +432,7 @@ public class POIFSContainerDetector implements Detector {
         }
     }
 
-    private static Set<String> getTopLevelNames(DirectoryNode root) {
-        Set<String> names = new HashSet<String>();
-        for (Entry entry : root) {
-            names.add(entry.getName());
-        }
-        return names;
-    }
-
-    public MediaType detect(InputStream input, Metadata metadata)
-            throws IOException {
+    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
         // Check if we have access to the document
         if (input == null) {
             return MediaType.OCTET_STREAM;
@@ -457,15 +456,14 @@ public class POIFSContainerDetector implements Detector {
             // Check if the document starts with the OLE header
             input.mark(8);
             try {
-                if (input.read() != 0xd0 || input.read() != 0xcf
-                        || input.read() != 0x11 || input.read() != 0xe0
-                        || input.read() != 0xa1 || input.read() != 0xb1
-                        || input.read() != 0x1a || input.read() != 0xe1) {
+                if (input.read() != 0xd0 || input.read() != 0xcf || input.read() != 0x11 ||
+                        input.read() != 0xe0 || input.read() != 0xa1 || input.read() != 0xb1 ||
+                        input.read() != 0x1a || input.read() != 0xe1) {
                     return MediaType.OCTET_STREAM;
                 }
             } catch (IOException e) {
                 return MediaType.OCTET_STREAM;
-            } finally  {
+            } finally {
                 input.reset();
             }
         }
@@ -477,8 +475,7 @@ public class POIFSContainerDetector implements Detector {
         }
 
         // Detect based on the names (as available)
-        if (tis != null &&
-                tis.getOpenContainer() != null &&
+        if (tis != null && tis.getOpenContainer() != null &&
                 tis.getOpenContainer() instanceof POIFSFileSystem) {
             return detect(names, ((POIFSFileSystem) tis.getOpenContainer()).getRoot());
         } else {

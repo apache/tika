@@ -17,6 +17,8 @@
 
 package org.apache.tika.detect;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -26,11 +28,10 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.Objects;
 
-import org.apache.tika.mime.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import org.apache.tika.mime.MediaType;
 
 public class NNExampleModelDetector extends TrainedModelDetector {
     private static final String EXAMPLE_NNMODEL_FILE = "tika-example.nnmodel";
@@ -85,13 +86,13 @@ public class NNExampleModelDetector extends TrainedModelDetector {
 
         // This allows us to replicate class.getResource() when using
         // the classloader directly
-        String classPrefix = TrainedModelDetector.class.getPackage().getName()
-                .replace('.', '/')
-                + "/";
+        String classPrefix =
+                TrainedModelDetector.class.getPackage().getName().replace('.', '/') + "/";
 
         // Get the core URL, and all the extensions URLs
         URL modelURL = classLoader.getResource(classPrefix + EXAMPLE_NNMODEL_FILE);
-        Objects.requireNonNull(modelURL, "required resource " + classPrefix + EXAMPLE_NNMODEL_FILE + " not found");
+        Objects.requireNonNull(modelURL,
+                "required resource " + classPrefix + EXAMPLE_NNMODEL_FILE + " not found");
         try (InputStream stream = modelURL.openStream()) {
             loadDefaultModels(stream);
         } catch (IOException e) {
@@ -107,8 +108,7 @@ public class NNExampleModelDetector extends TrainedModelDetector {
      * type 2) number of input units 3) number of hidden units. 4) number of
      * output units.
      */
-    private void readDescription(final NNTrainedModelBuilder builder,
-                                 final String line) {
+    private void readDescription(final NNTrainedModelBuilder builder, final String line) {
         int numInputs;
         int numHidden;
         int numOutputs;
@@ -136,8 +136,7 @@ public class NNExampleModelDetector extends TrainedModelDetector {
      * @param builder
      * @param line
      */
-    private void readNNParams(final NNTrainedModelBuilder builder,
-                              final String line) {
+    private void readNNParams(final NNTrainedModelBuilder builder, final String line) {
         String[] sarr = line.split("\t");
         int n = sarr.length;
         float[] params = new float[n];

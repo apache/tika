@@ -16,14 +16,6 @@
  */
 package org.apache.tika.server.client;
 
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
-import org.apache.tika.pipes.fetchiterator.FetchIterator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.SAXException;
-
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -41,11 +33,22 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
+
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.pipes.FetchEmitTuple;
+import org.apache.tika.pipes.fetchiterator.FetchIterator;
+import org.apache.tika.pipes.fetchiterator.FetchIteratorManager;
+
 public class TikaClientCLI {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TikaClientCLI.class);
+    private static final int QUEUE_SIZE = 10000;
 
-    private long maxWaitMs = 300000;
+    private final long maxWaitMs = 300000;
 
     public static void main(String[] args) throws Exception {
         //TODO -- add an actual commandline,
@@ -60,17 +63,20 @@ public class TikaClientCLI {
             throws TikaException, IOException, SAXException {
         TikaConfig config = new TikaConfig(tikaConfigPath);
 
-        ExecutorService executorService = Executors.newFixedThreadPool(numThreads+1);
-        ExecutorCompletionService<Integer> completionService = new ExecutorCompletionService<>(executorService);
-        final FetchIterator fetchIterator = config.getFetchIterator();
-        final ArrayBlockingQueue<FetchEmitTuple> queue = fetchIterator.init(numThreads);
+        ExecutorService executorService = Executors.newFixedThreadPool(numThreads + 1);
+        ExecutorCompletionService<Integer> completionService =
+                new ExecutorCompletionService<>(executorService);
+        final FetchIterator fetchIterator =
+                FetchIteratorManager.build(tikaConfigPath).getFetchIterator();
+        final ArrayBlockingQueue<FetchEmitTuple> queue =
+                new ArrayBlockingQueue<>(QUEUE_SIZE);
 
-        completionService.submit(fetchIterator);
+        completionService.submit(new FetchIteratorWrapper(fetchIterator, queue, numThreads));
         if (tikaServerUrls.size() == numThreads) {
             logDiffSizes(tikaServerUrls.size(), numThreads);
             for (int i = 0; i < numThreads; i++) {
-                TikaClient client = TikaClient.get(config,
-                        Collections.singletonList(tikaServerUrls.get(i)));
+                TikaClient client =
+                        TikaClient.get(config, Collections.singletonList(tikaServerUrls.get(i)));
                 completionService.submit(new FetchWorker(queue, client));
             }
         } else {
@@ -81,7 +87,7 @@ public class TikaClientCLI {
         }
 
         int finished = 0;
-        while (finished < numThreads+1) {
+        while (finished < numThreads + 1) {
             Future<Integer> future = null;
             try {
                 future = completionService.poll(maxWaitMs, TimeUnit.MILLISECONDS);
@@ -94,7 +100,7 @@ public class TikaClientCLI {
                 finished++;
                 try {
                     future.get();
-                } catch (InterruptedException|ExecutionException e) {
+                } catch (InterruptedException | ExecutionException e) {
                     //stop the world
                     LOGGER.error("", e);
                     throw new RuntimeException(e);
@@ -105,13 +111,13 @@ public class TikaClientCLI {
 
     private void logDiffSizes(int servers, int numThreads) {
         LOGGER.info("tika server count ({}) != numThreads ({}). " +
-                        "Each client will randomly select a server from this list",
-                servers, numThreads);
+                "Each client will randomly select a server from this list", servers, numThreads);
     }
 
     private class AsyncFetchWorker implements Callable<Integer> {
         private final ArrayBlockingQueue<FetchEmitTuple> queue;
         private final TikaClient client;
+
         public AsyncFetchWorker(ArrayBlockingQueue<FetchEmitTuple> queue, TikaClient client) {
             this.queue = queue;
             this.client = client;
@@ -148,6 +154,7 @@ public class TikaClientCLI {
     private class FetchWorker implements Callable<Integer> {
         private final ArrayBlockingQueue<FetchEmitTuple> queue;
         private final TikaClient client;
+
         public FetchWorker(ArrayBlockingQueue<FetchEmitTuple> queue, TikaClient client) {
             this.queue = queue;
             this.client = client;
@@ -174,6 +181,33 @@ public class TikaClientCLI {
                     LOGGER.warn(t.getFetchKey().toString(), e);
                 }
             }
+        }
+    }
+
+    private class FetchIteratorWrapper implements Callable<Integer> {
+        private final FetchIterator fetchIterator;
+        private final ArrayBlockingQueue<FetchEmitTuple> queue;
+        private final int numThreads;
+
+        public FetchIteratorWrapper(FetchIterator fetchIterator,
+                                    ArrayBlockingQueue<FetchEmitTuple> queue,
+                                    int numThreads) {
+            this.fetchIterator = fetchIterator;
+            this.queue = queue;
+            this.numThreads = numThreads;
+
+        }
+
+        @Override
+        public Integer call() throws Exception {
+            for (FetchEmitTuple t : fetchIterator) {
+                //potentially blocks forever
+                queue.put(t);
+            }
+            for (int i = 0; i < numThreads; i ++) {
+                queue.put(FetchIterator.COMPLETED_SEMAPHORE);
+            }
+            return 1;
         }
     }
 }

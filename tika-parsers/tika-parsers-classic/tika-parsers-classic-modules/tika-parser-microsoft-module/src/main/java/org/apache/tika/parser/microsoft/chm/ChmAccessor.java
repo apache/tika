@@ -21,19 +21,17 @@ import java.io.Serializable;
 import org.apache.tika.exception.TikaException;
 
 /**
- * 
  * Defines an accessor interface
- * 
+ *
  * @param <T>
  */
 public interface ChmAccessor<T> extends Serializable {
     /**
      * Parses chm accessor
-     * 
-     * @param data
-     *            chm file
+     *
+     * @param data        chm file
      * @param chmAccessor
-     * @throws TikaException 
+     * @throws TikaException
      */
     void parse(byte[] data, T chmAccessor) throws TikaException;
 }

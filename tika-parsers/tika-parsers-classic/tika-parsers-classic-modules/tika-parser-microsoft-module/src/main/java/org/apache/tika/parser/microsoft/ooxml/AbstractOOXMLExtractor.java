@@ -46,6 +46,11 @@ import org.apache.poi.poifs.filesystem.Ole10NativeException;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.xssf.usermodel.XSSFRelation;
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
+import org.apache.xmlbeans.XmlException;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -61,10 +66,6 @@ import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.XMLReaderUtils;
-import org.apache.xmlbeans.XmlException;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
 
 /**
  * Base class for all Tika OOXML extractors.
@@ -77,26 +78,24 @@ import org.xml.sax.helpers.AttributesImpl;
 public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
 
-    static {
-        ExtractorFactory.setAllThreadsPreferEventExtractors(true);
-    }
-
-    static final String RELATION_AUDIO = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/audio";
-    static final String RELATION_MEDIA = "http://schemas.microsoft.com/office/2007/relationships/media";
-    static final String RELATION_VIDEO = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/video";
-    static final String RELATION_DIAGRAM_DATA = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramData";
-
+    static final String RELATION_AUDIO =
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/audio";
+    static final String RELATION_MEDIA =
+            "http://schemas.microsoft.com/office/2007/relationships/media";
+    static final String RELATION_VIDEO =
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/video";
+    static final String RELATION_DIAGRAM_DATA =
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramData";
+    protected static final String[] EMBEDDED_RELATIONSHIPS =
+            new String[]{RELATION_AUDIO, PackageRelationshipTypes.IMAGE_PART,
+                    POIXMLDocument.PACK_OBJECT_REL_TYPE, PackageRelationshipTypes.CORE_DOCUMENT,
+                    RELATION_DIAGRAM_DATA};
     private static final String TYPE_OLE_OBJECT =
             "application/vnd.openxmlformats-officedocument.oleObject";
 
-    protected static final String[] EMBEDDED_RELATIONSHIPS = new String[]{
-            RELATION_AUDIO,
-            PackageRelationshipTypes.IMAGE_PART,
-            POIXMLDocument.PACK_OBJECT_REL_TYPE,
-            PackageRelationshipTypes.CORE_DOCUMENT,
-            RELATION_DIAGRAM_DATA
-    };
-
+    static {
+        ExtractorFactory.setAllThreadsPreferEventExtractors(true);
+    }
 
     private final EmbeddedDocumentExtractor embeddedExtractor;
     private final ParseContext context;
@@ -117,7 +116,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
      * @see org.apache.tika.parser.microsoft.ooxml.OOXMLExtractor#getDocument()
      */
     public POIXMLDocument getDocument() {
-        return (POIXMLDocument)extractor.getDocument();
+        return (POIXMLDocument) extractor.getDocument();
     }
 
     /**
@@ -128,10 +127,11 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
     }
 
     /**
-     * @see org.apache.tika.parser.microsoft.ooxml.OOXMLExtractor#getXHTML(ContentHandler, Metadata, ParseContext)
+     * @see
+     * org.apache.tika.parser.microsoft.ooxml.OOXMLExtractor#getXHTML(ContentHandler, Metadata,
+     * ParseContext)
      */
-    public void getXHTML(
-            ContentHandler handler, Metadata metadata, ParseContext context)
+    public void getXHTML(ContentHandler handler, Metadata metadata, ParseContext context)
             throws SAXException, XmlException, IOException, TikaException {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
@@ -163,7 +163,8 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
     private void handleThumbnail(ContentHandler handler) {
         try {
             OPCPackage opcPackage = extractor.getPackage();
-            for (PackageRelationship rel : opcPackage.getRelationshipsByType(PackageRelationshipTypes.THUMBNAIL)) {
+            for (PackageRelationship rel : opcPackage
+                    .getRelationshipsByType(PackageRelationshipTypes.THUMBNAIL)) {
                 PackagePart tPart = opcPackage.getPart(rel);
                 InputStream tStream = tPart.getInputStream();
                 Metadata thumbnailMetadata = new Metadata();
@@ -183,7 +184,8 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                         TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name());
 
                 if (embeddedExtractor.shouldParseEmbedded(thumbnailMetadata)) {
-                    embeddedExtractor.parseEmbedded(TikaInputStream.get(tStream), new EmbeddedContentHandler(handler), thumbnailMetadata, false);
+                    embeddedExtractor.parseEmbedded(TikaInputStream.get(tStream),
+                            new EmbeddedContentHandler(handler), thumbnailMetadata, false);
                 }
 
                 tStream.close();
@@ -211,7 +213,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                 for (PackageRelationship rel : source.getRelationships()) {
                     try {
                         handleEmbeddedPart(source, rel, handler, metadata, handledTarget);
-                    } catch (SAXException|SecurityException e) {
+                    } catch (SAXException | SecurityException e) {
                         throw e;
                     } catch (Exception e) {
                         EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
@@ -224,7 +226,8 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
     }
 
     private void handleEmbeddedPart(PackagePart source, PackageRelationship rel,
-                                    ContentHandler handler, Metadata parentMetadata, Set<String> handledTarget)
+                                    ContentHandler handler, Metadata parentMetadata,
+                                    Set<String> handledTarget)
             throws IOException, SAXException, TikaException, InvalidFormatException {
         URI targetURI = rel.getTargetURI();
         if (targetURI != null) {
@@ -256,17 +259,14 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         }
 
         String type = rel.getRelationshipType();
-        if (POIXMLDocument.OLE_OBJECT_REL_TYPE.equals(type)
-                && TYPE_OLE_OBJECT.equals(target.getContentType())) {
+        if (POIXMLDocument.OLE_OBJECT_REL_TYPE.equals(type) &&
+                TYPE_OLE_OBJECT.equals(target.getContentType())) {
             handleEmbeddedOLE(target, handler, sourceDesc + rel.getId(), parentMetadata);
             handledTarget.add(targetURI.toString());
-        } else if (
-                RELATION_MEDIA.equals(type)
-                        || RELATION_VIDEO.equals(type)
-                        || RELATION_AUDIO.equals(type)
-                        || PackageRelationshipTypes.IMAGE_PART.equals(type)
-                        || POIXMLDocument.PACK_OBJECT_REL_TYPE.equals(type)
-                        || POIXMLDocument.OLE_OBJECT_REL_TYPE.equals(type)) {
+        } else if (RELATION_MEDIA.equals(type) || RELATION_VIDEO.equals(type) ||
+                RELATION_AUDIO.equals(type) || PackageRelationshipTypes.IMAGE_PART.equals(type) ||
+                POIXMLDocument.PACK_OBJECT_REL_TYPE.equals(type) ||
+                POIXMLDocument.OLE_OBJECT_REL_TYPE.equals(type)) {
             handleEmbeddedFile(target, handler, sourceDesc + rel.getId());
             handledTarget.add(targetURI.toString());
         } else if (XSSFRelation.VBA_MACROS.getRelation().equals(type)) {
@@ -276,13 +276,11 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
     }
 
 
-
-
     /**
      * Handles an embedded OLE object in the document
      */
-    private void handleEmbeddedOLE(PackagePart part, ContentHandler handler, String rel, Metadata parentMetadata)
-            throws IOException, SAXException {
+    private void handleEmbeddedOLE(PackagePart part, ContentHandler handler, String rel,
+                                   Metadata parentMetadata) throws IOException, SAXException {
         // A POIFSFileSystem needs to be at least 3 blocks big to be valid
         if (part.getSize() >= 0 && part.getSize() < 512 * 3) {
             // Too small, skip
@@ -306,34 +304,29 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             DirectoryNode root = fs.getRoot();
             POIFSDocumentType type = POIFSDocumentType.detectType(root);
 
-            if (root.hasEntry("\u0001Ole")
-                    && root.hasEntry("\u0001CompObj")
-                    && (
-                            root.hasEntry("CONTENTS") || root.hasEntry("Package")
-                    )) {
+            if (root.hasEntry("\u0001Ole") && root.hasEntry("\u0001CompObj") &&
+                    (root.hasEntry("CONTENTS") || root.hasEntry("Package"))) {
                 // TIKA-704: OLE 2.0 embedded non-Office document?
                 //TODO: figure out if the equivalent of OLE 1.0's
                 //getCommand() and getFileName() exist for OLE 2.0 to populate
                 //TikaCoreProperties.ORIGINAL_RESOURCE_NAME
                 if (root.hasEntry("CONTENTS")) {
-                    stream = TikaInputStream.get(
-                            fs.createDocumentInputStream("CONTENTS"));
+                    stream = TikaInputStream.get(fs.createDocumentInputStream("CONTENTS"));
                 } else if (root.hasEntry("Package")) {
                     //TIKA-2588
-                    stream = TikaInputStream.get(
-                            fs.createDocumentInputStream("Package"));
+                    stream = TikaInputStream.get(fs.createDocumentInputStream("Package"));
                 } else {
-                    throw new IllegalStateException("Shouldn't ever arrive here; please open a ticket on our jira");
+                    throw new IllegalStateException(
+                            "Shouldn't ever arrive here; please open a ticket on our jira");
                 }
                 if (embeddedExtractor.shouldParseEmbedded(metadata)) {
-                    embeddedExtractor.parseEmbedded(
-                            stream, new EmbeddedContentHandler(handler),
-                            metadata, false);
+                    embeddedExtractor
+                            .parseEmbedded(stream, new EmbeddedContentHandler(handler), metadata,
+                                    false);
                 }
             } else if (POIFSDocumentType.OLE10_NATIVE == type) {
                 // TIKA-704: OLE 1.0 embedded document
-                Ole10Native ole =
-                        Ole10Native.createFromEmbeddedOleObject(fs);
+                Ole10Native ole = Ole10Native.createFromEmbeddedOleObject(fs);
                 if (ole.getLabel() != null) {
                     metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, ole.getLabel());
                 }
@@ -348,11 +341,10 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                     stream = TikaInputStream.get(data);
                 }
 
-                if (stream != null
-                        && embeddedExtractor.shouldParseEmbedded(metadata)) {
-                    embeddedExtractor.parseEmbedded(
-                            stream, new EmbeddedContentHandler(handler),
-                            metadata, false);
+                if (stream != null && embeddedExtractor.shouldParseEmbedded(metadata)) {
+                    embeddedExtractor
+                            .parseEmbedded(stream, new EmbeddedContentHandler(handler), metadata,
+                                    false);
                 }
             } else {
                 handleEmbeddedFile(part, handler, rel);
@@ -361,7 +353,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             // There was no CONTENTS entry, so skip this part
         } catch (Ole10NativeException e) {
             // Could not process an OLE 1.0 entry, so skip this part
-        } catch (IOException e ) {
+        } catch (IOException e) {
             EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
         } finally {
             if (fs != null) {
@@ -383,21 +375,17 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
         // Get the name
         String name = part.getPartName().getName();
-        metadata.set(
-                TikaCoreProperties.RESOURCE_NAME_KEY,
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
                 name.substring(name.lastIndexOf('/') + 1));
 
         // Get the content type
-        metadata.set(
-                Metadata.CONTENT_TYPE, part.getContentType());
+        metadata.set(Metadata.CONTENT_TYPE, part.getContentType());
 
         // Call the recursing handler
         if (embeddedExtractor.shouldParseEmbedded(metadata)) {
-            try(TikaInputStream tis = TikaInputStream.get(part.getInputStream())) {
-                embeddedExtractor.parseEmbedded(
-                        tis,
-                        new EmbeddedContentHandler(handler),
-                        metadata, false);
+            try (TikaInputStream tis = TikaInputStream.get(part.getInputStream())) {
+                embeddedExtractor
+                        .parseEmbedded(tis, new EmbeddedContentHandler(handler), metadata, false);
             }
         }
     }
@@ -414,11 +402,11 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
      * This should be all the parts of the document that end
      * up with things embedded into them.
      */
-    protected abstract List<PackagePart> getMainDocumentParts()
-            throws TikaException;
+    protected abstract List<PackagePart> getMainDocumentParts() throws TikaException;
 
 
-    void handleMacros(PackagePart macroPart, ContentHandler handler) throws TikaException, SAXException {
+    void handleMacros(PackagePart macroPart, ContentHandler handler)
+            throws TikaException, SAXException {
         OfficeParserConfig officeParserConfig = context.get(OfficeParserConfig.class);
 
         if (officeParserConfig.isExtractMacros()) {
@@ -440,16 +428,19 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
      * @param bodyPart
      * @return
      */
-    protected Map<String, String> loadLinkedRelationships(PackagePart bodyPart, boolean includeInternal, Metadata metadata) {
+    protected Map<String, String> loadLinkedRelationships(PackagePart bodyPart,
+                                                          boolean includeInternal,
+                                                          Metadata metadata) {
         Map<String, String> linkedRelationships = new HashMap<>();
         try {
-            PackageRelationshipCollection prc = bodyPart.getRelationshipsByType(XWPFRelation.HYPERLINK.getRelation());
+            PackageRelationshipCollection prc =
+                    bodyPart.getRelationshipsByType(XWPFRelation.HYPERLINK.getRelation());
             for (int i = 0; i < prc.size(); i++) {
                 PackageRelationship pr = prc.getRelationship(i);
                 if (pr == null) {
                     continue;
                 }
-                if (! includeInternal && TargetMode.INTERNAL.equals(pr.getTargetMode())) {
+                if (!includeInternal && TargetMode.INTERNAL.equals(pr.getTargetMode())) {
                     continue;
                 }
                 String id = pr.getId();
@@ -468,7 +459,8 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                         continue;
                     }
                     String id = pr.getId();
-                    String uriString = (pr.getTargetURI() == null) ? null : pr.getTargetURI().toString();
+                    String uriString =
+                            (pr.getTargetURI() == null) ? null : pr.getTargetURI().toString();
                     String fileName = uriString;
                     if (pr.getTargetURI() != null) {
                         try {
@@ -491,7 +483,8 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
     }
 
     /**
-     * This should handle the comments, master, notes, with the streaming "general docx/pptx handler"
+     * This should handle the comments, master, notes, with the streaming "general docx/pptx
+     * handler"
      *
      * @param contentType
      * @param xhtmlClassLabel
@@ -513,17 +506,20 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         if (relatedPartPRC != null && relatedPartPRC.size() > 0) {
             AttributesImpl attributes = new AttributesImpl();
 
-            attributes.addAttribute("", "class", "class", "CDATA", xhtmlClassLabel);
+            attributes.addAttribute("", "class", "class",
+                    "CDATA", xhtmlClassLabel);
             contentHandler.startElement("", "div", "div", attributes);
             for (int i = 0; i < relatedPartPRC.size(); i++) {
-                PackageRelationship relatedPartPackageRelationship = relatedPartPRC.getRelationship(i);
+                PackageRelationship relatedPartPackageRelationship =
+                        relatedPartPRC.getRelationship(i);
                 try {
-                    PackagePart relatedPartPart = parentPart.getRelatedPart(relatedPartPackageRelationship);
+                    PackagePart relatedPartPart =
+                            parentPart.getRelatedPart(relatedPartPackageRelationship);
                     try (InputStream stream = relatedPartPart.getInputStream()) {
-                        XMLReaderUtils.parseSAX(stream,
-                                new OfflineContentHandler(new EmbeddedContentHandler(contentHandler)), context);
+                        XMLReaderUtils.parseSAX(stream, new OfflineContentHandler(
+                                new EmbeddedContentHandler(contentHandler)), context);
 
-                    } catch (IOException|TikaException e) {
+                    } catch (IOException | TikaException e) {
                         parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                                 ExceptionUtils.getStackTrace(e));
                     }

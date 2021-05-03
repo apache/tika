@@ -16,16 +16,17 @@
  */
 package org.apache.tika.utils;
 
-import aQute.bnd.annotation.metatype.Configurable;
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Param;
-import org.apache.tika.exception.TikaConfigException;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+
+import aQute.bnd.annotation.metatype.Configurable;
+import org.junit.Assert;
+import org.junit.Test;
+
+import org.apache.tika.config.Field;
+import org.apache.tika.config.Param;
+import org.apache.tika.exception.TikaConfigException;
 
 
 /**
@@ -37,7 +38,8 @@ public class AnnotationUtilsTest {
     public void testMisMatchType() {
 
         class MyParser extends Configurable {
-            @Field(required = true) int config;
+            @Field(required = true)
+            int config;
         }
 
         Map<String, Param> params = new HashMap<>();
@@ -66,8 +68,10 @@ public class AnnotationUtilsTest {
     public void testPrimitiveAndBoxedTypes() {
 
         class MyParser extends Configurable {
-            @Field(required = true) int config;
-            @Field(required = true, name = "config") Integer config2;
+            @Field(required = true)
+            int config;
+            @Field(required = true, name = "config")
+            Integer config2;
         }
 
         Map<String, Param> params = new HashMap<>();
@@ -89,7 +93,8 @@ public class AnnotationUtilsTest {
     public void testRequiredParam() {
 
         class MyParser extends Configurable {
-            @Field(required = true) String config;
+            @Field(required = true)
+            String config;
         }
 
         Map<String, Param> params = new HashMap<>();
@@ -118,14 +123,18 @@ public class AnnotationUtilsTest {
     public void testParserInheritance() {
 
         class Parent {
-            @Field(required = true) int overridden;
-            @Field(required = true) int parentField;
+            @Field(required = true)
+            int overridden;
+            @Field(required = true)
+            int parentField;
 
         }
 
         class Child extends Parent {
-            @Field(required = true) int overridden;
-            @Field(required = true) int childField;
+            @Field(required = true)
+            int overridden;
+            @Field(required = true)
+            int childField;
         }
 
         int val = 1;
@@ -155,12 +164,12 @@ public class AnnotationUtilsTest {
     }
 
 
-
     @Test
     public void testParamValueInheritance() {
 
         class Bean {
-            @Field(required = true) CharSequence field;
+            @Field(required = true)
+            CharSequence field;
         }
 
         Bean parser = new Bean();
@@ -170,7 +179,7 @@ public class AnnotationUtilsTest {
             params.put("field", new Param<String>("field", String.class, val));
             AnnotationUtils.assignFieldParams(parser, params);
             Assert.assertEquals(val, parser.field);
-        } catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             Assert.fail("Exception not expected, string is assignable to CharSequence");
         }
@@ -180,7 +189,7 @@ public class AnnotationUtilsTest {
             params.put("field", new Param<Date>("field", Date.class, val));
             AnnotationUtils.assignFieldParams(parser, params);
             Assert.fail("Exception expected, Date is not assignable to CharSequence.");
-        } catch (TikaConfigException e){
+        } catch (TikaConfigException e) {
             //expected
 
         }

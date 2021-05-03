@@ -16,35 +16,37 @@
  */
 package org.apache.tika.parser.dbf;
 
+import static junit.framework.TestCase.assertEquals;
+import static org.junit.Assert.fail;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
 import org.apache.commons.io.IOUtils;
+import org.junit.Test;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.Parser;
-import org.junit.Test;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-
-import static junit.framework.TestCase.assertEquals;
-import static org.junit.Assert.fail;
 
 public class DBFParserTest extends TikaTest {
 
     @Test
     public void testBasic() throws Exception {
         XMLResult r = getXML("testDBF.dbf");
-        assertEquals(DBFReader.Version.FOXBASE_PLUS.getFullMimeString(), r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(DBFReader.Version.FOXBASE_PLUS.getFullMimeString(),
+                r.metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("2016-05-24T00:00:00Z", r.metadata.get(TikaCoreProperties.MODIFIED));
         assertEquals("UTF-8", r.metadata.get(Metadata.CONTENT_ENCODING));
 
         String xml = r.xml.replaceAll("[\\t\\r\\n]", " ");
         //header
-        assertContains("<thead> <th>TEXT_FIELD</th> <th>NUMERIC_FI</th> <th>DATE_FIELD</th></thead>",
-                xml);
+        assertContains(
+                "<thead> <th>TEXT_FIELD</th> <th>NUMERIC_FI</th> <th>DATE_FIELD</th></thead>", xml);
         //look for contents
         assertContains("普林斯顿大学", xml);
         assertContains("\u0627\u0645\u0639\u0629", xml);
@@ -62,7 +64,8 @@ public class DBFParserTest extends TikaTest {
     @Test
     public void testGB18030Encoded() throws Exception {
         XMLResult r = getXML("testDBF_gb18030.dbf");
-        assertEquals(DBFReader.Version.FOXBASE_PLUS.getFullMimeString(), r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(DBFReader.Version.FOXBASE_PLUS.getFullMimeString(),
+                r.metadata.get(Metadata.CONTENT_TYPE));
         assertContains("虽然该", r.xml);
     }
 
@@ -97,6 +100,7 @@ public class DBFParserTest extends TikaTest {
                     XMLResult r = getXML(truncate("testDBF.dbf", i), p, new Metadata());
                     fail("Should have thrown exception for truncation while reading cells: " + i);
                 } catch (IOException | TikaException e) {
+                    //swallow
                 }
             }
         } finally {
@@ -107,8 +111,7 @@ public class DBFParserTest extends TikaTest {
 
     @Test
     public void testSpecificTruncated() throws Exception {
-        XMLResult r = getXML(truncate("testDBF.dbf", 781),
-                AUTO_DETECT_PARSER, new Metadata());
+        XMLResult r = getXML(truncate("testDBF.dbf", 781), AUTO_DETECT_PARSER, new Metadata());
         String xml = r.xml.replaceAll("[\\t\\r\\n]", " ");
 
         //if you don't keep track of bytes read, you could get content from prev row
@@ -140,11 +143,12 @@ commented out until we get permission to add the test file
     public void testEncodingInHeaderAndDateTime() throws Exception {
         XMLResult r = getXML("prem2007_2.dbf");
         String xml = r.xml.replaceAll("[\\r\\n\\t]", " ");
-        assertEquals("application/x-dbf; dbf_version=Visual_FoxPro", r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-dbf; dbf_version=Visual_FoxPro",
+        r.metadata.get(Metadata.CONTENT_TYPE));
         assertContains("<th>莉こ晤鎢</th>", xml);//header
         assertContains("<td>齠褕</td>", xml);//content
         assertContains("<td>2010-04-20T00:00:00Z</td>", xml);
     }
-    */
+*/
 
 }

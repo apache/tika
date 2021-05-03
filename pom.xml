@@ -19,7 +19,8 @@
   under the License.
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -37,11 +38,11 @@
   <modules>
     <module>tika-parent</module>
     <module>tika-core</module>
+    <module>tika-serialization</module>
     <module>tika-pipes</module>
     <module>tika-parsers</module>
     <module>tika-bundles</module>
     <module>tika-xmp</module>
-    <module>tika-serialization</module>
     <module>tika-batch</module>
     <module>tika-langdetect</module>
     <module>tika-app</module>
@@ -96,54 +97,60 @@
                 <phase>deploy</phase>
                 <configuration>
                   <tasks>
-                    <mkdir dir="${basedir}/target/${project.version}" />
+                    <mkdir dir="${basedir}/target/${project.version}"/>
                     <copy todir="${basedir}/target/${project.version}" flatten="true">
                       <fileset dir="${basedir}">
-                        <include name="CHANGES.txt" />
-                        <include name="target/*-src.zip*" />
-                        <include name="tika-parsers/tika-parsers-extended/tika-parser-scientific-module/target/tika-parser-scientific-module-${project.version}.jar*" />
-                        <include name="tika-parsers/tika-parsers-extended/tika-parser-sqlite3-module/target/tika-parser-sqlite3-module-${project.version}.jar*" />
-                        <include name="tika-app/target/tika-app-${project.version}.jar*" />
-                        <include name="tika-server/tika-server-classic/target/tika-server-classic-${project.version}.jar*" />
-                        <include name="tika-server/tika-server-classic/target/tika-server-classic-${project.version}-bin.tgz*" />
-                        <include name="tika-server/tika-server-classic/target/tika-server-classic-${project.version}-bin.zip*" />
-                        <include name="tika-eval/tika-eval-app/target/tika-eval-app-${project.version}.jar*" />
+                        <include name="CHANGES.txt"/>
+                        <include name="target/*-src.zip*"/>
+                        <include
+                            name="tika-parsers/tika-parsers-extended/tika-parser-scientific-module/target/tika-parser-scientific-module-${project.version}.jar*"/>
+                        <include
+                            name="tika-parsers/tika-parsers-extended/tika-parser-sqlite3-module/target/tika-parser-sqlite3-module-${project.version}.jar*"/>
+                        <include name="tika-app/target/tika-app-${project.version}.jar*"/>
+                        <include
+                            name="tika-server/tika-server-classic/target/tika-server-classic-${project.version}.jar*"/>
+                        <include
+                            name="tika-server/tika-server-classic/target/tika-server-classic-${project.version}-bin.tgz*"/>
+                        <include
+                            name="tika-server/tika-server-classic/target/tika-server-classic-${project.version}-bin.zip*"/>
+                        <include name="tika-eval/tika-eval-app/target/tika-eval-app-${project.version}.jar*"/>
                       </fileset>
                     </copy>
                     <checksum algorithm="SHA-512" fileext=".sha512">
                       <fileset dir="${basedir}/target/${project.version}">
-                        <include name="*.tgz" />
-                        <include name="*.zip" />
-                        <include name="*.?ar" />
+                        <include name="*.tgz"/>
+                        <include name="*.zip"/>
+                        <include name="*.?ar"/>
                       </fileset>
                     </checksum>
-                    <checksum file="${basedir}/target/${project.version}/tika-${project.version}-src.zip" algorithm="SHA-512" property="checksum" />
+                    <checksum file="${basedir}/target/${project.version}/tika-${project.version}-src.zip"
+                              algorithm="SHA-512" property="checksum"/>
                     <echo file="${basedir}/target/vote.txt">
-From: ${username}@apache.org
-To: dev@tika.apache.org
-    user@tika.apache.org
-Subject: [VOTE] Release Apache Tika ${project.version} Candidate #N
+                      From: ${username}@apache.org
+                      To: dev@tika.apache.org
+                      user@tika.apache.org
+                      Subject: [VOTE] Release Apache Tika ${project.version} Candidate #N
 
-A candidate for the Tika ${project.version} release is available at:
-  https://dist.apache.org/repos/dist/dev/tika/
+                      A candidate for the Tika ${project.version} release is available at:
+                      https://dist.apache.org/repos/dist/dev/tika/
 
-The release candidate is a zip archive of the sources in:
-  https://github.com/apache/tika/tree/{project.version}-rcN/
+                      The release candidate is a zip archive of the sources in:
+                      https://github.com/apache/tika/tree/{project.version}-rcN/
 
-The SHA-512 checksum of the archive is
-  ${checksum}.
+                      The SHA-512 checksum of the archive is
+                      ${checksum}.
 
-In addition, a staged maven repository is available here:
-  https://repository.apache.org/content/repositories/orgapachetika-.../org/apache/tika
+                      In addition, a staged maven repository is available here:
+                      https://repository.apache.org/content/repositories/orgapachetika-.../org/apache/tika
 
-Please vote on releasing this package as Apache Tika ${project.version}.
-The vote is open for the next 72 hours and passes if a majority of at
-least three +1 Tika PMC votes are cast.
+                      Please vote on releasing this package as Apache Tika ${project.version}.
+                      The vote is open for the next 72 hours and passes if a majority of at
+                      least three +1 Tika PMC votes are cast.
 
-[ ] +1 Release this package as Apache Tika ${project.version}
-[ ] -1 Do not release this package because...${line.separator}
+                      [ ] +1 Release this package as Apache Tika ${project.version}
+                      [ ] -1 Do not release this package because...${line.separator}
                     </echo>
-                    <echo />
+                    <echo/>
                     <echo>
                       The release candidate has been prepared in:
 
@@ -157,7 +164,7 @@ least three +1 Tika PMC votes are cast.
 
                       file://${basedir}/target/vote.txt
                     </echo>
-                    <echo />
+                    <echo/>
                   </tasks>
                 </configuration>
               </execution>

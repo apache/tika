@@ -18,10 +18,12 @@ package org.apache.tika.parser.asm;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
+import org.junit.Test;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.junit.Test;
 
 /**
  * Test case for parsing Java class files.
@@ -33,24 +35,18 @@ public class ClassParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         String content = getText("AutoDetectParser.class", metadata);
         assertEquals("AutoDetectParser", metadata.get(TikaCoreProperties.TITLE));
-        assertEquals(
-                "AutoDetectParser.class",
-                metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("AutoDetectParser.class", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
 
         assertTrue(content.contains("package org.apache.tika.parser;"));
+        assertTrue(content.contains("class AutoDetectParser extends CompositeParser"));
+        assertTrue(content.contains("private org.apache.tika.mime.MimeTypes types"));
         assertTrue(content.contains(
-                "class AutoDetectParser extends CompositeParser"));
-        assertTrue(content.contains(
-                "private org.apache.tika.mime.MimeTypes types"));
-        assertTrue(content.contains(
-                "public void parse("
-                + "java.io.InputStream, org.xml.sax.ContentHandler,"
-                + " org.apache.tika.metadata.Metadata) throws"
-                + " java.io.IOException, org.xml.sax.SAXException,"
-                + " org.apache.tika.exception.TikaException;"));
-        assertTrue(content.contains(
-                "private byte[] getPrefix(java.io.InputStream, int)"
-                + " throws java.io.IOException;"));
+                "public void parse(" + "java.io.InputStream, org.xml.sax.ContentHandler," +
+                        " org.apache.tika.metadata.Metadata) throws" +
+                        " java.io.IOException, org.xml.sax.SAXException," +
+                        " org.apache.tika.exception.TikaException;"));
+        assertTrue(content.contains("private byte[] getPrefix(java.io.InputStream, int)" +
+                " throws java.io.IOException;"));
     }
 
     @Test

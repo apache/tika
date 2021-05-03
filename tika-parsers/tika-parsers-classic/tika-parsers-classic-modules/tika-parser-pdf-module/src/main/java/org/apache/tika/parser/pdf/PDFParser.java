@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.pdf;
 
-import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,6 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.xml.stream.XMLStreamException;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.pdfbox.cos.COSArray;
@@ -43,6 +43,9 @@ import org.apache.pdfbox.pdmodel.fixup.AbstractFixup;
 import org.apache.pdfbox.pdmodel.fixup.PDDocumentFixup;
 import org.apache.pdfbox.pdmodel.fixup.processor.AcroFormDefaultsProcessor;
 import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -64,8 +67,6 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * PDF parser.
@@ -95,9 +96,6 @@ import org.xml.sax.SAXException;
  */
 public class PDFParser extends AbstractParser implements Initializable {
 
-    private static volatile boolean HAS_WARNED = false;
-    private static final Object[] LOCK = new Object[0];
-
     /**
      * Metadata key for giving the document password to the parser.
      *
@@ -105,13 +103,14 @@ public class PDFParser extends AbstractParser implements Initializable {
      * @deprecated Supply a {@link PasswordProvider} on the {@link ParseContext} instead
      */
     public static final String PASSWORD = "org.apache.tika.parser.pdf.password";
+    private static final Object[] LOCK = new Object[0];
     private static final MediaType MEDIA_TYPE = MediaType.application("pdf");
     /**
      * Serial version UID
      */
     private static final long serialVersionUID = -752276948656079347L;
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MEDIA_TYPE);
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MEDIA_TYPE);
+    private static volatile boolean HAS_WARNED = false;
     private PDFParserConfig defaultConfig = new PDFParserConfig();
     private InitializableProblemHandler initializableProblemHandler = null;
 
@@ -119,10 +118,8 @@ public class PDFParser extends AbstractParser implements Initializable {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
 
         PDFParserConfig localConfig = defaultConfig;
         PDFParserConfig userConfig = context.get(PDFParserConfig.class);
@@ -141,12 +138,14 @@ public class PDFParser extends AbstractParser implements Initializable {
             password = getPassword(metadata, context);
             MemoryUsageSetting memoryUsageSetting = MemoryUsageSetting.setupMainMemoryOnly();
             if (localConfig.getMaxMainMemoryBytes() >= 0) {
-                memoryUsageSetting = MemoryUsageSetting.setupMixed(localConfig.getMaxMainMemoryBytes());
+                memoryUsageSetting =
+                        MemoryUsageSetting.setupMixed(localConfig.getMaxMainMemoryBytes());
             }
             if (tstream != null && tstream.hasFile()) {
                 // File based -- send file directly to PDFBox
-                pdfDocument = getPDDocument(tstream, password, memoryUsageSetting, metadata,
-                        context);
+                pdfDocument =
+                        getPDDocument(tstream.getPath(), password,
+                                memoryUsageSetting, metadata, context);
             } else {
                 pdfDocument = getPDDocument(new CloseShieldInputStream(stream), password,
                         memoryUsageSetting, metadata, context);
@@ -164,10 +163,12 @@ public class PDFParser extends AbstractParser implements Initializable {
                 metadata.set(PDF.HAS_MARKED_CONTENT, Boolean.toString(hasMarkedContent));
                 if (shouldHandleXFAOnly(hasXFA, localConfig)) {
                     handleXFAOnly(pdfDocument, handler, metadata, context);
-                } else if (localConfig.getOcrStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY)) {
+                } else if (localConfig.getOcrStrategy()
+                        .equals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY)) {
                     OCR2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
                 } else if (hasMarkedContent && localConfig.isExtractMarkedContent()) {
-                    PDFMarkedContent2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
+                    PDFMarkedContent2XHTML
+                            .process(pdfDocument, handler, context, metadata, localConfig);
                 } else {
                     PDF2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
                 }
@@ -183,14 +184,14 @@ public class PDFParser extends AbstractParser implements Initializable {
     }
 
     protected PDDocument getPDDocument(InputStream inputStream, String password,
-                                     MemoryUsageSetting memoryUsageSetting,
-                                       Metadata metadata, ParseContext parseContext) throws IOException {
+                                       MemoryUsageSetting memoryUsageSetting, Metadata metadata,
+                                       ParseContext parseContext) throws IOException {
         return PDDocument.load(inputStream, password, memoryUsageSetting);
     }
 
     protected PDDocument getPDDocument(Path path, String password,
-                                       MemoryUsageSetting memoryUsageSetting,
-                                       Metadata metadata, ParseContext parseContext) throws IOException {
+                                       MemoryUsageSetting memoryUsageSetting, Metadata metadata,
+                                       ParseContext parseContext) throws IOException {
         return PDDocument.load(path.toFile(), password, memoryUsageSetting);
     }
 
@@ -205,7 +206,7 @@ public class PDFParser extends AbstractParser implements Initializable {
         }
         //TODO: are there other checks we need to perform?
         if (base instanceof COSDictionary) {
-            if (((COSDictionary)base).keySet().size() > 0) {
+            if (((COSDictionary) base).keySet().size() > 0) {
                 return true;
             }
         } else if (base instanceof COSArray) {
@@ -245,20 +246,15 @@ public class PDFParser extends AbstractParser implements Initializable {
         AccessPermission ap = document.getCurrentAccessPermission();
         metadata.set(AccessPermissions.EXTRACT_FOR_ACCESSIBILITY,
                 Boolean.toString(ap.canExtractForAccessibility()));
-        metadata.set(AccessPermissions.EXTRACT_CONTENT,
-                Boolean.toString(ap.canExtractContent()));
+        metadata.set(AccessPermissions.EXTRACT_CONTENT, Boolean.toString(ap.canExtractContent()));
         metadata.set(AccessPermissions.ASSEMBLE_DOCUMENT,
                 Boolean.toString(ap.canAssembleDocument()));
-        metadata.set(AccessPermissions.FILL_IN_FORM,
-                Boolean.toString(ap.canFillInForm()));
-        metadata.set(AccessPermissions.CAN_MODIFY,
-                Boolean.toString(ap.canModify()));
+        metadata.set(AccessPermissions.FILL_IN_FORM, Boolean.toString(ap.canFillInForm()));
+        metadata.set(AccessPermissions.CAN_MODIFY, Boolean.toString(ap.canModify()));
         metadata.set(AccessPermissions.CAN_MODIFY_ANNOTATIONS,
                 Boolean.toString(ap.canModifyAnnotations()));
-        metadata.set(AccessPermissions.CAN_PRINT,
-                Boolean.toString(ap.canPrint()));
-        metadata.set(AccessPermissions.CAN_PRINT_DEGRADED,
-                Boolean.toString(ap.canPrintDegraded()));
+        metadata.set(AccessPermissions.CAN_PRINT, Boolean.toString(ap.canPrint()));
+        metadata.set(AccessPermissions.CAN_PRINT_DEGRADED, Boolean.toString(ap.canPrintDegraded()));
 
         if (document.getDocumentCatalog().getLanguage() != null) {
             metadata.set(TikaCoreProperties.LANGUAGE, document.getDocumentCatalog().getLanguage());
@@ -286,7 +282,8 @@ public class PDFParser extends AbstractParser implements Initializable {
             PDMetadataExtractor.addMetadata(metadata, TikaCoreProperties.TITLE, info.getTitle());
         }
         PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_CREATOR_TOOL, info.getCreator());
-        PDMetadataExtractor.addMetadata(metadata, TikaCoreProperties.CREATOR_TOOL, info.getCreator());
+        PDMetadataExtractor
+                .addMetadata(metadata, TikaCoreProperties.CREATOR_TOOL, info.getCreator());
         PDMetadataExtractor.addMetadata(metadata, Office.KEYWORDS, info.getKeywords());
         PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_KEY_WORDS, info.getKeywords());
         PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_PRODUCER, info.getProducer());
@@ -308,12 +305,14 @@ public class PDFParser extends AbstractParser implements Initializable {
 
         // All remaining metadata is custom
         // Copy this over as-is
-        List<String> handledMetadata = Arrays.asList("Author", "Creator", "CreationDate", "ModDate",
-                "Keywords", "Producer", "Subject", "Title", "Trapped");
+        List<String> handledMetadata =
+                Arrays.asList("Author", "Creator", "CreationDate", "ModDate", "Keywords",
+                        "Producer", "Subject", "Title", "Trapped");
         for (COSName key : info.getCOSObject().keySet()) {
             String name = key.getName();
             if (!handledMetadata.contains(name)) {
-                PDMetadataExtractor.addMetadata(metadata, name, info.getCOSObject().getDictionaryObject(key));
+                PDMetadataExtractor
+                        .addMetadata(metadata, name, info.getCOSObject().getDictionaryObject(key));
                 PDMetadataExtractor.addMetadata(metadata, PDF.PDF_DOC_INFO_CUSTOM_PREFIX + name,
                         info.getCOSObject().getDictionaryObject(key));
             }
@@ -323,34 +322,40 @@ public class PDFParser extends AbstractParser implements Initializable {
         //Caveats:
         //    there is currently a fair amount of redundancy
         //    TikaCoreProperties.FORMAT can be multivalued
-        //    There are also three potential pdf specific version keys: pdf:PDFVersion, pdfa:PDFVersion, pdf:PDFExtensionVersion
+        //    There are also three potential pdf specific version keys:
+        //    pdf:PDFVersion, pdfa:PDFVersion, pdf:PDFExtensionVersion
         metadata.set(PDF.PDF_VERSION, Float.toString(document.getDocument().getVersion()));
-        metadata.add(TikaCoreProperties.FORMAT.getName(),
-                MEDIA_TYPE.toString() + "; version=" +
-                        Float.toString(document.getDocument().getVersion()));
+        metadata.add(TikaCoreProperties.FORMAT.getName(), MEDIA_TYPE.toString() + "; version=" +
+                Float.toString(document.getDocument().getVersion()));
 
 
         //TODO: Let's try to move this into PDFBox.
         //Attempt to determine Adobe extension level, if present:
         COSDictionary root = document.getDocumentCatalog().getCOSObject();
-        COSDictionary extensions = (COSDictionary) root.getDictionaryObject(COSName.getPDFName("Extensions"));
+        COSDictionary extensions =
+                (COSDictionary) root.getDictionaryObject(COSName.getPDFName("Extensions"));
         if (extensions != null) {
             for (COSName extName : extensions.keySet()) {
                 // If it's an Adobe one, interpret it to determine the extension level:
                 if (extName.equals(COSName.getPDFName("ADBE"))) {
-                    COSDictionary adobeExt = (COSDictionary) extensions.getDictionaryObject(extName);
+                    COSDictionary adobeExt =
+                            (COSDictionary) extensions.getDictionaryObject(extName);
                     if (adobeExt != null) {
-                        String baseVersion = adobeExt.getNameAsString(COSName.getPDFName("BaseVersion"));
+                        String baseVersion =
+                                adobeExt.getNameAsString(COSName.getPDFName("BaseVersion"));
                         int el = adobeExt.getInt(COSName.getPDFName("ExtensionLevel"));
                         //-1 is sentinel value that something went wrong in getInt
                         if (el != -1) {
-                            metadata.set(PDF.PDF_EXTENSION_VERSION, baseVersion + " Adobe Extension Level " + el);
+                            metadata.set(PDF.PDF_EXTENSION_VERSION,
+                                    baseVersion + " Adobe Extension Level " + el);
                             metadata.add(TikaCoreProperties.FORMAT.getName(),
-                                    MEDIA_TYPE.toString() + "; version=\"" + baseVersion + " Adobe Extension Level " + el + "\"");
+                                    MEDIA_TYPE.toString() + "; version=\"" + baseVersion +
+                                            " Adobe Extension Level " + el + "\"");
                         }
                     }
                 } else {
-                    // WARN that there is an Extension, but it's not Adobe's, and so is a 'new' format'.
+                    // WARN that there is an Extension, but it's not Adobe's, and so is a 'new'
+                    // format'.
                     metadata.set("pdf:foundNonAdobeExtensionName", extName.getName());
                 }
             }
@@ -368,9 +373,9 @@ public class PDFParser extends AbstractParser implements Initializable {
         return config.isIfXFAExtractOnlyXFA() && hasXFA;
     }
 
-    private void handleXFAOnly(PDDocument pdDocument, ContentHandler handler,
-                               Metadata metadata, ParseContext context)
-        throws SAXException, IOException, TikaException {
+    private void handleXFAOnly(PDDocument pdDocument, ContentHandler handler, Metadata metadata,
+                               ParseContext context)
+            throws SAXException, IOException, TikaException {
         XFAExtractor ex = new XFAExtractor();
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
@@ -494,10 +499,10 @@ public class PDFParser extends AbstractParser implements Initializable {
         defaultConfig.setOcrImageFormatName(formatName);
     }
 
-	@Field
-	void setExtractBookmarksText(boolean extractBookmarksText) {
-		defaultConfig.setExtractBookmarksText(extractBookmarksText);
-	}
+    @Field
+    void setExtractBookmarksText(boolean extractBookmarksText) {
+        defaultConfig.setExtractBookmarksText(extractBookmarksText);
+    }
 
     @Field
     void setExtractInlineImages(boolean extractInlineImages) {
@@ -576,14 +581,15 @@ public class PDFParser extends AbstractParser implements Initializable {
             setInitializableProblemHandler(InitializableProblemHandler.IGNORE);
         } else if ("info".equalsIgnoreCase(name)) {
             setInitializableProblemHandler(InitializableProblemHandler.INFO);
-        }   else if ("warn".equalsIgnoreCase(name)) {
+        } else if ("warn".equalsIgnoreCase(name)) {
             setInitializableProblemHandler(InitializableProblemHandler.WARN);
-        }   else if ("throw".equalsIgnoreCase(name)) {
+        } else if ("throw".equalsIgnoreCase(name)) {
             setInitializableProblemHandler(InitializableProblemHandler.THROW);
         }
     }
 
-    public void setInitializableProblemHandler(InitializableProblemHandler initializableProblemHandler) {
+    public void setInitializableProblemHandler(
+            InitializableProblemHandler initializableProblemHandler) {
         this.initializableProblemHandler = initializableProblemHandler;
     }
 
@@ -596,6 +602,7 @@ public class PDFParser extends AbstractParser implements Initializable {
     public void setMaxMainMemoryBytes(long maxMainMemoryBytes) {
         defaultConfig.setMaxMainMemoryBytes(maxMainMemoryBytes);
     }
+
     /**
      * This is a no-op.  There is no need to initialize multiple fields.
      * The regular field loading should happen without this.
@@ -609,7 +616,8 @@ public class PDFParser extends AbstractParser implements Initializable {
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler handler) throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler handler)
+            throws TikaConfigException {
         //only check for these libraries once!
         if (HAS_WARNED) {
             return;
@@ -638,10 +646,11 @@ public class PDFParser extends AbstractParser implements Initializable {
 
             if (sb.length() > 0) {
                 InitializableProblemHandler localInitializableProblemHandler =
-                        (initializableProblemHandler == null) ?
-                                handler : initializableProblemHandler;
-                localInitializableProblemHandler.handleInitializableProblem("org.apache.tika.parsers.PDFParser",
-                        sb.toString());
+                        (initializableProblemHandler == null) ? handler :
+                                initializableProblemHandler;
+                localInitializableProblemHandler
+                        .handleInitializableProblem("org.apache.tika.parsers.PDFParser",
+                                sb.toString());
             }
             HAS_WARNED = true;
         }
@@ -651,8 +660,7 @@ public class PDFParser extends AbstractParser implements Initializable {
      * Copied from AcroformDefaultFixup minus generation of appearances and handling of orphan
      * widgets, which we don't need.
      */
-    class TikaAcroFormFixup extends AbstractFixup
-    {
+    class TikaAcroFormFixup extends AbstractFixup {
         TikaAcroFormFixup(PDDocument document) {
             super(document);
         }

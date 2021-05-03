@@ -22,9 +22,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
 import java.util.Collections;
 import java.util.List;
+
+import org.xml.sax.InputSource;
 
 import org.apache.tika.config.LoadErrorHandler;
 import org.apache.tika.config.ServiceLoader;
@@ -32,7 +33,6 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.utils.CharsetUtils;
-import org.xml.sax.InputSource;
 
 /**
  * An input stream reader that automatically detects the character encoding
@@ -45,16 +45,63 @@ public class AutoDetectReader extends BufferedReader {
     private static final ServiceLoader DEFAULT_LOADER =
             new ServiceLoader(AutoDetectReader.class.getClassLoader());
 
-    private static EncodingDetector DEFAULT_DETECTOR;
+    private static final EncodingDetector DEFAULT_DETECTOR;
 
     static {
         DEFAULT_DETECTOR = new CompositeEncodingDetector(
                 DEFAULT_LOADER.loadServiceProviders(EncodingDetector.class));
     }
 
-    private static Charset detect(
-            InputStream input, Metadata metadata,
-            List<EncodingDetector> detectors, LoadErrorHandler handler)
+    private final Charset charset;
+
+    private AutoDetectReader(InputStream stream, Charset charset) throws IOException {
+        super(new InputStreamReader(stream, charset));
+        this.charset = charset;
+
+        // TIKA-240: Drop the BOM if present
+        mark(1);
+        if (read() != '\ufeff') { // zero-width no-break space
+            reset();
+        }
+    }
+
+    /**
+     * @param stream    stream from which to read -- make sure that it supports mark!
+     * @param metadata
+     * @param detectors
+     * @param handler
+     * @throws IOException
+     * @throws TikaException
+     */
+    private AutoDetectReader(InputStream stream, Metadata metadata,
+                             List<EncodingDetector> detectors, LoadErrorHandler handler)
+            throws IOException, TikaException {
+        this(stream, detect(stream, metadata, detectors, handler));
+    }
+
+    public AutoDetectReader(InputStream stream, Metadata metadata,
+                            EncodingDetector encodingDetector) throws IOException, TikaException {
+        this(getBuffered(stream), metadata, Collections.singletonList(encodingDetector),
+                DEFAULT_LOADER.getLoadErrorHandler());
+    }
+
+    public AutoDetectReader(InputStream stream, Metadata metadata, ServiceLoader loader)
+            throws IOException, TikaException {
+        this(getBuffered(stream), metadata, loader.loadServiceProviders(EncodingDetector.class),
+                loader.getLoadErrorHandler());
+    }
+
+    public AutoDetectReader(InputStream stream, Metadata metadata)
+            throws IOException, TikaException {
+        this(stream, metadata, DEFAULT_DETECTOR);
+    }
+
+    public AutoDetectReader(InputStream stream) throws IOException, TikaException {
+        this(stream, new Metadata());
+    }
+
+    private static Charset detect(InputStream input, Metadata metadata,
+                                  List<EncodingDetector> detectors, LoadErrorHandler handler)
             throws IOException, TikaException {
         // Ask all given detectors for the character encoding
         for (EncodingDetector detector : detectors) {
@@ -82,64 +129,9 @@ public class AutoDetectReader extends BufferedReader {
             }
         }
 
-        throw new TikaException(
-                "Failed to detect the character encoding of a document");
+        throw new TikaException("Failed to detect the character encoding of a document");
     }
 
-    private final Charset charset;
-
-    private AutoDetectReader(InputStream stream, Charset charset)
-            throws IOException {
-        super(new InputStreamReader(stream, charset));
-        this.charset = charset;
-
-        // TIKA-240: Drop the BOM if present
-        mark(1);
-        if (read() != '\ufeff') { // zero-width no-break space
-            reset();
-        }
-    }
-
-    /**
-     *
-     * @param stream stream from which to read -- make sure that it supports mark!
-     * @param metadata
-     * @param detectors
-     * @param handler
-     * @throws IOException
-     * @throws TikaException
-     */
-    private AutoDetectReader(
-            InputStream stream, Metadata metadata,
-            List<EncodingDetector> detectors, LoadErrorHandler handler)
-            throws IOException, TikaException {
-        this(stream, detect(stream, metadata, detectors, handler));
-    }
-
-    public AutoDetectReader(
-            InputStream stream, Metadata metadata,
-            EncodingDetector encodingDetector) throws IOException, TikaException {
-        this(getBuffered(stream), metadata, Collections.singletonList(encodingDetector),
-                DEFAULT_LOADER.getLoadErrorHandler());
-    }
-
-    public AutoDetectReader(
-            InputStream stream, Metadata metadata,
-            ServiceLoader loader) throws IOException, TikaException {
-        this(getBuffered(stream), metadata,
-                loader.loadServiceProviders(EncodingDetector.class),
-                loader.getLoadErrorHandler());
-    }
-
-    public AutoDetectReader(InputStream stream, Metadata metadata)
-            throws IOException, TikaException {
-        this(stream, metadata, DEFAULT_DETECTOR);
-    }
-
-    public AutoDetectReader(InputStream stream)
-            throws IOException, TikaException {
-        this(stream, new Metadata());
-    }
     private static InputStream getBuffered(InputStream stream) {
         if (stream.markSupported()) {
             return stream;

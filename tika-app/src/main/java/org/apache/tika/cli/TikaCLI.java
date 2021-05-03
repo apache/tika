@@ -46,7 +46,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -60,13 +59,8 @@ import java.util.UUID;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.apache.log4j.Level;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.PropertyConfigurator;
-import org.apache.poi.poifs.filesystem.DirectoryEntry;
-import org.apache.poi.poifs.filesystem.DocumentEntry;
-import org.apache.poi.poifs.filesystem.DocumentInputStream;
-import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+
+
 import org.apache.tika.Tika;
 import org.apache.tika.batch.BatchProcessDriverCLI;
 import org.apache.tika.config.TikaConfig;
@@ -109,6 +103,8 @@ import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.sax.WriteOutContentHandler;
 import org.apache.tika.sax.boilerpipe.BoilerpipeContentHandler;
 import org.apache.tika.xmp.XMPMetadata;
+
+import org.apache.logging.log4j.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
@@ -130,12 +126,6 @@ public class TikaCLI {
     }
     public static void main(String[] args) throws Exception {
         TikaCLI cli = new TikaCLI();
-
-        if (!isConfigured()) {
-            try (InputStream is = cli.getClass().getResourceAsStream("/log4j.properties")) {
-                PropertyConfigurator.configure(is);
-            }
-        }
 
         if (cli.testForHelp(args)) {
             cli.usage();
@@ -167,23 +157,6 @@ public class TikaCLI {
                 cli.process("--gui");
             }
         }
-    }
-
-    private static boolean isConfigured() {
-        //Borrowed from: http://wiki.apache.org/logging-log4j/UsefulCode
-        Enumeration appenders = LogManager.getRootLogger().getAllAppenders();
-        if (appenders.hasMoreElements()) {
-            return true;
-        }
-        else {
-            Enumeration loggers = LogManager.getCurrentLoggers() ;
-            while (loggers.hasMoreElements()) {
-                org.apache.log4j.Logger c = (org.apache.log4j.Logger) loggers.nextElement();
-                if (c.getAllAppenders().hasMoreElements())
-                    return true;
-            }
-        }
-        return false;
     }
 
     private void extractInlineImagesFromPDFs() {
@@ -376,7 +349,7 @@ public class TikaCLI {
             pipeMode = false;
             version();
         } else if (arg.equals("-v") || arg.equals("--verbose")) {
-            org.apache.log4j.Logger.getRootLogger().setLevel(Level.DEBUG);
+            org.apache.logging.log4j.core.config.Configurator.setRootLevel(Level.DEBUG);
         } else if (arg.equals("-g") || arg.equals("--gui")) {
             pipeMode = false;
             if (configFilePath != null){
@@ -530,8 +503,9 @@ public class TikaCLI {
             wrapper.parse(input, handler, metadata, context);
         }
         JsonMetadataList.setPrettyPrinting(prettyPrint);
-        Writer writer = getOutputWriter(output, encoding);
-        JsonMetadataList.toJson(handler.getMetadataList(), writer);
+        try(Writer writer = getOutputWriter(output, encoding)) {
+            JsonMetadataList.toJson(handler.getMetadataList(), writer);
+        }
     }
 
     private ContentHandlerFactory getContentHandlerFactory(OutputType type) {

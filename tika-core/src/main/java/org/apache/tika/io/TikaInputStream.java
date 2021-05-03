@@ -38,6 +38,7 @@ import java.sql.Blob;
 import java.sql.SQLException;
 
 import org.apache.commons.io.input.TaggedInputStream;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.Parser;
@@ -73,416 +74,21 @@ import org.apache.tika.parser.Parser;
 public class TikaInputStream extends TaggedInputStream {
 
     private static final int MAX_CONSECUTIVE_EOFS = 1000;
-
-    /**
-     * Checks whether the given stream is a TikaInputStream instance.
-     * The given stream can be <code>null</code>, in which case the return
-     * value is <code>false</code>.
-     * 
-     * @param stream input stream, possibly <code>null</code>
-     * @return <code>true</code> if the stream is a TikaInputStream instance,
-     *         <code>false</code> otherwise
-     */
-    public static boolean isTikaInputStream(InputStream stream) {
-        return stream instanceof TikaInputStream;
-    }
-
-    /**
-     * Casts or wraps the given stream to a TikaInputStream instance.
-     * This method can be used to access the functionality of this class
-     * even when given just a normal input stream instance.
-     * <p>
-     * The given temporary file provider is used for any temporary files,
-     * and should be disposed when the returned stream is no longer used.
-     * <p>
-     * Use this method instead of the {@link #get(InputStream)} alternative
-     * when you <em>don't</em> explicitly close the returned stream. The
-     * recommended access pattern is:
-     * <pre>
-     * try (TemporaryResources tmp = new TemporaryResources()) {
-     *     TikaInputStream stream = TikaInputStream.get(..., tmp);
-     *     // process stream but don't close it
-     * }
-     * </pre>
-     * <p>
-     * The given stream instance will <em>not</em> be closed when the
-     * {@link TemporaryResources#close()} method is called by the
-     * try-with-resources statement. The caller is expected to explicitly
-     * close the original stream when it's no longer used.
-     *
-     * @since Apache Tika 0.10
-     * @param stream normal input stream
-     * @return a TikaInputStream instance
-     */
-    public static TikaInputStream get(
-            InputStream stream, TemporaryResources tmp) {
-        if (stream == null) {
-            throw new NullPointerException("The Stream must not be null");
-        }
-        if (stream instanceof TikaInputStream) {
-            return (TikaInputStream) stream;
-        } else {
-            // Make sure that the stream is buffered and that it
-            // (properly) supports the mark feature
-            if (!(stream.markSupported())) {
-                stream = new BufferedInputStream(stream);
-            }
-            return new TikaInputStream(stream, tmp, -1);
-        }
-    }
-
-    /**
-     * Casts or wraps the given stream to a TikaInputStream instance.
-     * This method can be used to access the functionality of this class
-     * even when given just a normal input stream instance.
-     * <p>
-     * Use this method instead of the
-     * {@link #get(InputStream, TemporaryResources)} alternative when you
-     * <em>do</em> explicitly close the returned stream. The recommended
-     * access pattern is:
-     * <pre>
-     * try (TikaInputStream stream = TikaInputStream.get(...)) {
-     *     // process stream
-     * }
-     * </pre>
-     * <p>
-     * The given stream instance will be closed along with any other resources
-     * associated with the returned TikaInputStream instance when the
-     * {@link #close()} method is called by the try-with-resources statement.
-     *
-     * @param stream normal input stream
-     * @return a TikaInputStream instance
-     */
-    public static TikaInputStream get(InputStream stream) {
-        return get(stream, new TemporaryResources());
-    }
-
-    /**
-     * Returns the given stream casts to a TikaInputStream, or
-     * <code>null</code> if the stream is not a TikaInputStream.
-     *
-     * @since Apache Tika 0.10
-     * @param stream normal input stream
-     * @return a TikaInputStream instance
-     */
-    public static TikaInputStream cast(InputStream stream) {
-        if (stream instanceof TikaInputStream) {
-            return (TikaInputStream) stream;
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * Creates a TikaInputStream from the given array of bytes.
-     * <p>
-     * Note that you must always explicitly close the returned stream as in
-     * some cases it may end up writing the given data to a temporary file.
-     *
-     * @param data input data
-     * @return a TikaInputStream instance
-     */
-    public static TikaInputStream get(byte[] data) {
-        return get(data, new Metadata());
-    }
-
-    /**
-     * Creates a TikaInputStream from the given array of bytes. The length of
-     * the array is stored as input metadata in the given metadata instance.
-     * <p>
-     * Note that you must always explicitly close the returned stream as in
-     * some cases it may end up writing the given data to a temporary file.
-     *
-     * @param data input data
-     * @param metadata metadata instance
-     * @return a TikaInputStream instance
-     * @throws IOException
-     */
-    public static TikaInputStream get(byte[] data, Metadata metadata) {
-        metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(data.length));
-        return new TikaInputStream(
-                new ByteArrayInputStream(data),
-                new TemporaryResources(), data.length);
-    }
-
-    /**
-     * Creates a TikaInputStream from the file at the given path.
-     * <p>
-     * Note that you must always explicitly close the returned stream to
-     * prevent leaking open file handles.
-     *
-     * @param path input file
-     * @return a TikaInputStream instance
-     * @throws IOException if an I/O error occurs
-     */
-    public static TikaInputStream get(Path path) throws IOException {
-        return get(path, new Metadata());
-    }
-
-    /**
-     * Creates a TikaInputStream from the file at the given path. The file name
-     * and length are stored as input metadata in the given metadata instance.
-     * <p>
-     * Note that you must always explicitly close the returned stream to
-     * prevent leaking open file handles.
-     *
-     * @param path input file
-     * @param metadata metadata instance
-     * @return a TikaInputStream instance
-     * @throws IOException if an I/O error occurs
-     */
-    public static TikaInputStream get(Path path, Metadata metadata)
-            throws IOException {
-        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, path.getFileName().toString());
-        metadata.set(Metadata.CONTENT_LENGTH, Long.toString(Files.size(path)));
-        return new TikaInputStream(path);
-    }
-
-    public static TikaInputStream get(Path path, Metadata metadata, TemporaryResources tmp)
-            throws IOException {
-        long length = Files.size(path);
-        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, path.getFileName().toString());
-        metadata.set(Metadata.CONTENT_LENGTH, Long.toString(length));
-        return new TikaInputStream(path, tmp, length);
-    }
-
-    /**
-     * Creates a TikaInputStream from the given file.
-     * <p>
-     * Note that you must always explicitly close the returned stream to
-     * prevent leaking open file handles.
-     *
-     * @param file input file
-     * @return a TikaInputStream instance
-     * @throws FileNotFoundException if the file does not exist
-     * @deprecated use {@link #get(Path)}. In Tika 2.0, this will be removed
-     * or modified to throw an IOException.
-     */
-    @Deprecated
-    public static TikaInputStream get(File file) throws FileNotFoundException {
-        return get(file, new Metadata());
-    }
-
-    /**
-     * Creates a TikaInputStream from the given file. The file name and
-     * length are stored as input metadata in the given metadata instance.
-     * <p>
-     * Note that you must always explicitly close the returned stream to
-     * prevent leaking open file handles.
-     *
-     * @param file input file
-     * @param metadata metadata instance
-     * @return a TikaInputStream instance
-     * @throws FileNotFoundException if the file does not exist
-     * or cannot be opened for reading
-     * @deprecated use {@link #get(Path, Metadata)}. In Tika 2.0,
-     * this will be removed or modified to throw an IOException.
-     */
-    @Deprecated
-    public static TikaInputStream get(File file, Metadata metadata)
-            throws FileNotFoundException {
-        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, file.getName());
-        metadata.set(Metadata.CONTENT_LENGTH, Long.toString(file.length()));
-        return new TikaInputStream(file);
-    }
-    
-    /**
-     * Creates a TikaInputStream from a Factory which can create
-     *  fresh {@link InputStream}s for the same resource multiple times.
-     * <p>This is typically desired when working with {@link Parser}s that
-     *  need to re-read the stream multiple times, where other forms
-     *  of buffering (eg File) are slower than just getting a fresh
-     *  new stream each time.
-     */
-    public static TikaInputStream get(InputStreamFactory factory) throws IOException {
-        return get(factory, new TemporaryResources());
-    }
-    /**
-     * Creates a TikaInputStream from a Factory which can create
-     *  fresh {@link InputStream}s for the same resource multiple times.
-     * <p>This is typically desired when working with {@link Parser}s that
-     *  need to re-read the stream multiple times, where other forms
-     *  of buffering (eg File) are slower than just getting a fresh
-     *  new stream each time.
-     */
-    public static TikaInputStream get(InputStreamFactory factory, TemporaryResources tmp) throws IOException {
-        TikaInputStream stream = get(factory.getInputStream(), tmp);
-        stream.streamFactory = factory;
-        return stream;
-    }
-
-    /**
-     * Creates a TikaInputStream from the given database BLOB.
-     * <p>
-     * Note that the result set containing the BLOB may need to be kept open
-     * until the returned TikaInputStream has been processed and closed.
-     * You must also always explicitly close the returned stream as in
-     * some cases it may end up writing the blob data to a temporary file.
-     *
-     * @param blob database BLOB
-     * @return a TikaInputStream instance
-     * @throws SQLException if BLOB data can not be accessed
-     */
-    public static TikaInputStream get(Blob blob) throws SQLException {
-        return get(blob, new Metadata());
-    }
-
     /**
      * Blob size threshold that limits the largest BLOB size to be
      * buffered fully in memory by the {@link #get(Blob, Metadata)}
      * method.
      */
     private static final int BLOB_SIZE_THRESHOLD = 1024 * 1024;
-
     /**
-     * Creates a TikaInputStream from the given database BLOB. The BLOB
-     * length (if available) is stored as input metadata in the given
-     * metadata instance.
-     * <p>
-     * Note that the result set containing the BLOB may need to be kept open
-     * until the returned TikaInputStream has been processed and closed.
-     * You must also always explicitly close the returned stream as in
-     * some cases it may end up writing the blob data to a temporary file.
-     *
-     * @param blob database BLOB
-     * @param metadata metadata instance
-     * @return a TikaInputStream instance
-     * @throws SQLException if BLOB data can not be accessed
+     * Tracker of temporary resources.
      */
-    public static TikaInputStream get(Blob blob, Metadata metadata)
-            throws SQLException {
-        long length = -1;
-        try {
-            length = blob.length();
-            metadata.set(Metadata.CONTENT_LENGTH, Long.toString(length));
-        } catch (SQLException ignore) {
-        }
-
-        // Prefer an in-memory buffer for reasonably sized blobs to reduce
-        // the likelihood of problems caused by long-lived database accesses
-        if (0 <= length && length <= BLOB_SIZE_THRESHOLD) {
-            // the offset in Blob.getBytes() starts at 1
-            return get(blob.getBytes(1, (int) length), metadata);
-        } else {
-            return new TikaInputStream(
-                    new BufferedInputStream(blob.getBinaryStream()),
-                    new TemporaryResources(), length);
-        }
-    }
-
-    /**
-     * Creates a TikaInputStream from the resource at the given URI.
-     * <p>
-     * Note that you must always explicitly close the returned stream as in
-     * some cases it may end up writing the resource to a temporary file.
-     *
-     * @param uri resource URI
-     * @return a TikaInputStream instance
-     * @throws IOException if the resource can not be accessed
-     */
-    public static TikaInputStream get(URI uri) throws IOException {
-        return get(uri, new Metadata());
-    }
-
-    /**
-     * Creates a TikaInputStream from the resource at the given URI. The
-     * available input metadata is stored in the given metadata instance.
-     * <p>
-     * Note that you must always explicitly close the returned stream as in
-     * some cases it may end up writing the resource to a temporary file.
-     *
-     * @param uri resource URI
-     * @param metadata metadata instance
-     * @return a TikaInputStream instance
-     * @throws IOException if the resource can not be accessed
-     */
-    public static TikaInputStream get(URI uri, Metadata metadata)
-            throws IOException {
-        // Special handling for file:// URIs
-        if ("file".equalsIgnoreCase(uri.getScheme())) {
-            Path path = Paths.get(uri);
-            if (Files.isRegularFile(path)) {
-                return get(path, metadata);
-            }
-        }
-
-        return get(uri.toURL(), metadata);
-    }
-
-    /**
-     * Creates a TikaInputStream from the resource at the given URL.
-     * <p>
-     * Note that you must always explicitly close the returned stream as in
-     * some cases it may end up writing the resource to a temporary file.
-     *
-     * @param url resource URL
-     * @return a TikaInputStream instance
-     * @throws IOException if the resource can not be accessed
-     */
-    public static TikaInputStream get(URL url) throws IOException {
-        return get(url, new Metadata());
-    }
-
-    /**
-     * Creates a TikaInputStream from the resource at the given URL. The
-     * available input metadata is stored in the given metadata instance.
-     * <p>
-     * Note that you must always explicitly close the returned stream as in
-     * some cases it may end up writing the resource to a temporary file.
-     *
-     * @param url resource URL
-     * @param metadata metadata instance
-     * @return a TikaInputStream instance
-     * @throws IOException if the resource can not be accessed
-     */
-    public static TikaInputStream get(URL url, Metadata metadata)
-            throws IOException {
-        // Special handling for file:// URLs
-        if ("file".equalsIgnoreCase(url.getProtocol())) {
-            try {
-                Path path = Paths.get(url.toURI());
-                if (Files.isRegularFile(path)) {
-                    return get(path, metadata);
-                }
-            } catch (URISyntaxException e) {
-                // fall through
-            }
-        }
-
-        URLConnection connection = url.openConnection();
-
-        String path = url.getPath();
-        int slash = path.lastIndexOf('/');
-        if (slash + 1 < path.length()) { // works even with -1!
-            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, path.substring(slash + 1));
-        }
-
-        String type = connection.getContentType();
-        if (type != null) {
-            metadata.set(Metadata.CONTENT_TYPE, type);
-        }
-
-        String encoding = connection.getContentEncoding();
-        if (encoding != null) {
-            metadata.set(Metadata.CONTENT_ENCODING, encoding);
-        }
-
-        int length = connection.getContentLength();
-        if (length >= 0) {
-            metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(length));
-        }
-
-        return new TikaInputStream(
-                new BufferedInputStream(connection.getInputStream()),
-                new TemporaryResources(), length);
-    }
-    
+    private final TemporaryResources tmp;
     /**
      * The Factory that can create fresh {@link InputStream}s for
-     *  the resource this reads for, eg when needing to re-read.
+     * the resource this reads for, eg when needing to re-read.
      */
     private InputStreamFactory streamFactory;
-
     /**
      * The path to the file that contains the contents of this stream.
      * This is either the original file passed to the
@@ -491,37 +97,27 @@ public class TikaInputStream extends TaggedInputStream {
      * then the value is <code>null</code>.
      */
     private Path path;
-
-    /**
-     * Tracker of temporary resources.
-     */
-    private final TemporaryResources tmp;
-
     /**
      * Total length of the stream, or -1 if unknown.
      */
     private long length;
-
     /**
      * Current read position within this stream.
      */
     private long position = 0;
-
     /**
      * Marked position, or -1 if there is no current mark.
      */
     private long mark = -1;
-
     /**
      * A opened container, such as a POIFS FileSystem
-     *  for an OLE2 document, or a Zip file for a
-     *  zip based (eg ooxml, odf) document.
+     * for an OLE2 document, or a Zip file for a
+     * zip based (eg ooxml, odf) document.
      */
     private Object openContainer;
-
     private int consecutiveEOFs = 0;
-
     private byte[] skipBuffer;
+
     /**
      * Creates a TikaInputStream instance. This private constructor is used
      * by the static factory methods based on the available information.
@@ -568,15 +164,403 @@ public class TikaInputStream extends TaggedInputStream {
      * {@link #close()} method is invoked.
      *
      * @param stream <em>buffered</em> stream (must support the mark feature)
-     * @param tmp tracker for temporary resources associated with this stream
+     * @param tmp    tracker for temporary resources associated with this stream
      * @param length total length of the stream, or -1 if unknown
      */
-    private TikaInputStream(
-            InputStream stream, TemporaryResources tmp, long length) {
+    private TikaInputStream(InputStream stream, TemporaryResources tmp, long length) {
         super(stream);
         this.path = null;
         this.tmp = tmp;
         this.length = length;
+    }
+
+    /**
+     * Checks whether the given stream is a TikaInputStream instance.
+     * The given stream can be <code>null</code>, in which case the return
+     * value is <code>false</code>.
+     *
+     * @param stream input stream, possibly <code>null</code>
+     * @return <code>true</code> if the stream is a TikaInputStream instance,
+     * <code>false</code> otherwise
+     */
+    public static boolean isTikaInputStream(InputStream stream) {
+        return stream instanceof TikaInputStream;
+    }
+
+    /**
+     * Casts or wraps the given stream to a TikaInputStream instance.
+     * This method can be used to access the functionality of this class
+     * even when given just a normal input stream instance.
+     * <p>
+     * The given temporary file provider is used for any temporary files,
+     * and should be disposed when the returned stream is no longer used.
+     * <p>
+     * Use this method instead of the {@link #get(InputStream)} alternative
+     * when you <em>don't</em> explicitly close the returned stream. The
+     * recommended access pattern is:
+     * <pre>
+     * try (TemporaryResources tmp = new TemporaryResources()) {
+     *     TikaInputStream stream = TikaInputStream.get(..., tmp);
+     *     // process stream but don't close it
+     * }
+     * </pre>
+     * <p>
+     * The given stream instance will <em>not</em> be closed when the
+     * {@link TemporaryResources#close()} method is called by the
+     * try-with-resources statement. The caller is expected to explicitly
+     * close the original stream when it's no longer used.
+     *
+     * @param stream normal input stream
+     * @return a TikaInputStream instance
+     * @since Apache Tika 0.10
+     */
+    public static TikaInputStream get(InputStream stream, TemporaryResources tmp) {
+        if (stream == null) {
+            throw new NullPointerException("The Stream must not be null");
+        }
+        if (stream instanceof TikaInputStream) {
+            return (TikaInputStream) stream;
+        } else {
+            // Make sure that the stream is buffered and that it
+            // (properly) supports the mark feature
+            if (!(stream.markSupported())) {
+                stream = new BufferedInputStream(stream);
+            }
+            return new TikaInputStream(stream, tmp, -1);
+        }
+    }
+
+    /**
+     * Casts or wraps the given stream to a TikaInputStream instance.
+     * This method can be used to access the functionality of this class
+     * even when given just a normal input stream instance.
+     * <p>
+     * Use this method instead of the
+     * {@link #get(InputStream, TemporaryResources)} alternative when you
+     * <em>do</em> explicitly close the returned stream. The recommended
+     * access pattern is:
+     * <pre>
+     * try (TikaInputStream stream = TikaInputStream.get(...)) {
+     *     // process stream
+     * }
+     * </pre>
+     * <p>
+     * The given stream instance will be closed along with any other resources
+     * associated with the returned TikaInputStream instance when the
+     * {@link #close()} method is called by the try-with-resources statement.
+     *
+     * @param stream normal input stream
+     * @return a TikaInputStream instance
+     */
+    public static TikaInputStream get(InputStream stream) {
+        return get(stream, new TemporaryResources());
+    }
+
+    /**
+     * Returns the given stream casts to a TikaInputStream, or
+     * <code>null</code> if the stream is not a TikaInputStream.
+     *
+     * @param stream normal input stream
+     * @return a TikaInputStream instance
+     * @since Apache Tika 0.10
+     */
+    public static TikaInputStream cast(InputStream stream) {
+        if (stream instanceof TikaInputStream) {
+            return (TikaInputStream) stream;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Creates a TikaInputStream from the given array of bytes.
+     * <p>
+     * Note that you must always explicitly close the returned stream as in
+     * some cases it may end up writing the given data to a temporary file.
+     *
+     * @param data input data
+     * @return a TikaInputStream instance
+     */
+    public static TikaInputStream get(byte[] data) {
+        return get(data, new Metadata());
+    }
+
+    /**
+     * Creates a TikaInputStream from the given array of bytes. The length of
+     * the array is stored as input metadata in the given metadata instance.
+     * <p>
+     * Note that you must always explicitly close the returned stream as in
+     * some cases it may end up writing the given data to a temporary file.
+     *
+     * @param data     input data
+     * @param metadata metadata instance
+     * @return a TikaInputStream instance
+     * @throws IOException
+     */
+    public static TikaInputStream get(byte[] data, Metadata metadata) {
+        metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(data.length));
+        return new TikaInputStream(new ByteArrayInputStream(data), new TemporaryResources(),
+                data.length);
+    }
+
+    /**
+     * Creates a TikaInputStream from the file at the given path.
+     * <p>
+     * Note that you must always explicitly close the returned stream to
+     * prevent leaking open file handles.
+     *
+     * @param path input file
+     * @return a TikaInputStream instance
+     * @throws IOException if an I/O error occurs
+     */
+    public static TikaInputStream get(Path path) throws IOException {
+        return get(path, new Metadata());
+    }
+
+    /**
+     * Creates a TikaInputStream from the file at the given path. The file name
+     * and length are stored as input metadata in the given metadata instance.
+     * <p>
+     * Note that you must always explicitly close the returned stream to
+     * prevent leaking open file handles.
+     *
+     * @param path     input file
+     * @param metadata metadata instance
+     * @return a TikaInputStream instance
+     * @throws IOException if an I/O error occurs
+     */
+    public static TikaInputStream get(Path path, Metadata metadata) throws IOException {
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, path.getFileName().toString());
+        metadata.set(Metadata.CONTENT_LENGTH, Long.toString(Files.size(path)));
+        return new TikaInputStream(path);
+    }
+
+    public static TikaInputStream get(Path path, Metadata metadata, TemporaryResources tmp)
+            throws IOException {
+        long length = Files.size(path);
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, path.getFileName().toString());
+        metadata.set(Metadata.CONTENT_LENGTH, Long.toString(length));
+        return new TikaInputStream(path, tmp, length);
+    }
+
+    /**
+     * Creates a TikaInputStream from the given file.
+     * <p>
+     * Note that you must always explicitly close the returned stream to
+     * prevent leaking open file handles.
+     *
+     * @param file input file
+     * @return a TikaInputStream instance
+     * @throws FileNotFoundException if the file does not exist
+     * @deprecated use {@link #get(Path)}. In Tika 2.0, this will be removed
+     * or modified to throw an IOException.
+     */
+    @Deprecated
+    public static TikaInputStream get(File file) throws FileNotFoundException {
+        return get(file, new Metadata());
+    }
+
+    /**
+     * Creates a TikaInputStream from the given file. The file name and
+     * length are stored as input metadata in the given metadata instance.
+     * <p>
+     * Note that you must always explicitly close the returned stream to
+     * prevent leaking open file handles.
+     *
+     * @param file     input file
+     * @param metadata metadata instance
+     * @return a TikaInputStream instance
+     * @throws FileNotFoundException if the file does not exist
+     *                               or cannot be opened for reading
+     * @deprecated use {@link #get(Path, Metadata)}. In Tika 2.0,
+     * this will be removed or modified to throw an IOException.
+     */
+    @Deprecated
+    public static TikaInputStream get(File file, Metadata metadata) throws FileNotFoundException {
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, file.getName());
+        metadata.set(Metadata.CONTENT_LENGTH, Long.toString(file.length()));
+        return new TikaInputStream(file);
+    }
+
+    /**
+     * Creates a TikaInputStream from a Factory which can create
+     * fresh {@link InputStream}s for the same resource multiple times.
+     * <p>This is typically desired when working with {@link Parser}s that
+     * need to re-read the stream multiple times, where other forms
+     * of buffering (eg File) are slower than just getting a fresh
+     * new stream each time.
+     */
+    public static TikaInputStream get(InputStreamFactory factory) throws IOException {
+        return get(factory, new TemporaryResources());
+    }
+
+    /**
+     * Creates a TikaInputStream from a Factory which can create
+     * fresh {@link InputStream}s for the same resource multiple times.
+     * <p>This is typically desired when working with {@link Parser}s that
+     * need to re-read the stream multiple times, where other forms
+     * of buffering (eg File) are slower than just getting a fresh
+     * new stream each time.
+     */
+    public static TikaInputStream get(InputStreamFactory factory, TemporaryResources tmp)
+            throws IOException {
+        TikaInputStream stream = get(factory.getInputStream(), tmp);
+        stream.streamFactory = factory;
+        return stream;
+    }
+
+    /**
+     * Creates a TikaInputStream from the given database BLOB.
+     * <p>
+     * Note that the result set containing the BLOB may need to be kept open
+     * until the returned TikaInputStream has been processed and closed.
+     * You must also always explicitly close the returned stream as in
+     * some cases it may end up writing the blob data to a temporary file.
+     *
+     * @param blob database BLOB
+     * @return a TikaInputStream instance
+     * @throws SQLException if BLOB data can not be accessed
+     */
+    public static TikaInputStream get(Blob blob) throws SQLException {
+        return get(blob, new Metadata());
+    }
+
+    /**
+     * Creates a TikaInputStream from the given database BLOB. The BLOB
+     * length (if available) is stored as input metadata in the given
+     * metadata instance.
+     * <p>
+     * Note that the result set containing the BLOB may need to be kept open
+     * until the returned TikaInputStream has been processed and closed.
+     * You must also always explicitly close the returned stream as in
+     * some cases it may end up writing the blob data to a temporary file.
+     *
+     * @param blob     database BLOB
+     * @param metadata metadata instance
+     * @return a TikaInputStream instance
+     * @throws SQLException if BLOB data can not be accessed
+     */
+    public static TikaInputStream get(Blob blob, Metadata metadata) throws SQLException {
+        long length = -1;
+        try {
+            length = blob.length();
+            metadata.set(Metadata.CONTENT_LENGTH, Long.toString(length));
+        } catch (SQLException ignore) {
+        }
+
+        // Prefer an in-memory buffer for reasonably sized blobs to reduce
+        // the likelihood of problems caused by long-lived database accesses
+        if (0 <= length && length <= BLOB_SIZE_THRESHOLD) {
+            // the offset in Blob.getBytes() starts at 1
+            return get(blob.getBytes(1, (int) length), metadata);
+        } else {
+            return new TikaInputStream(new BufferedInputStream(blob.getBinaryStream()),
+                    new TemporaryResources(), length);
+        }
+    }
+
+    /**
+     * Creates a TikaInputStream from the resource at the given URI.
+     * <p>
+     * Note that you must always explicitly close the returned stream as in
+     * some cases it may end up writing the resource to a temporary file.
+     *
+     * @param uri resource URI
+     * @return a TikaInputStream instance
+     * @throws IOException if the resource can not be accessed
+     */
+    public static TikaInputStream get(URI uri) throws IOException {
+        return get(uri, new Metadata());
+    }
+
+    /**
+     * Creates a TikaInputStream from the resource at the given URI. The
+     * available input metadata is stored in the given metadata instance.
+     * <p>
+     * Note that you must always explicitly close the returned stream as in
+     * some cases it may end up writing the resource to a temporary file.
+     *
+     * @param uri      resource URI
+     * @param metadata metadata instance
+     * @return a TikaInputStream instance
+     * @throws IOException if the resource can not be accessed
+     */
+    public static TikaInputStream get(URI uri, Metadata metadata) throws IOException {
+        // Special handling for file:// URIs
+        if ("file".equalsIgnoreCase(uri.getScheme())) {
+            Path path = Paths.get(uri);
+            if (Files.isRegularFile(path)) {
+                return get(path, metadata);
+            }
+        }
+
+        return get(uri.toURL(), metadata);
+    }
+
+    /**
+     * Creates a TikaInputStream from the resource at the given URL.
+     * <p>
+     * Note that you must always explicitly close the returned stream as in
+     * some cases it may end up writing the resource to a temporary file.
+     *
+     * @param url resource URL
+     * @return a TikaInputStream instance
+     * @throws IOException if the resource can not be accessed
+     */
+    public static TikaInputStream get(URL url) throws IOException {
+        return get(url, new Metadata());
+    }
+
+    /**
+     * Creates a TikaInputStream from the resource at the given URL. The
+     * available input metadata is stored in the given metadata instance.
+     * <p>
+     * Note that you must always explicitly close the returned stream as in
+     * some cases it may end up writing the resource to a temporary file.
+     *
+     * @param url      resource URL
+     * @param metadata metadata instance
+     * @return a TikaInputStream instance
+     * @throws IOException if the resource can not be accessed
+     */
+    public static TikaInputStream get(URL url, Metadata metadata) throws IOException {
+        // Special handling for file:// URLs
+        if ("file".equalsIgnoreCase(url.getProtocol())) {
+            try {
+                Path path = Paths.get(url.toURI());
+                if (Files.isRegularFile(path)) {
+                    return get(path, metadata);
+                }
+            } catch (URISyntaxException e) {
+                // fall through
+            }
+        }
+
+        URLConnection connection = url.openConnection();
+
+        String path = url.getPath();
+        int slash = path.lastIndexOf('/');
+        if (slash + 1 < path.length()) { // works even with -1!
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, path.substring(slash + 1));
+        }
+
+        String type = connection.getContentType();
+        if (type != null) {
+            metadata.set(Metadata.CONTENT_TYPE, type);
+        }
+
+        String encoding = connection.getContentEncoding();
+        if (encoding != null) {
+            metadata.set(Metadata.CONTENT_ENCODING, encoding);
+        }
+
+        int length = connection.getContentLength();
+        if (length >= 0) {
+            metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(length));
+        }
+
+        return new TikaInputStream(new BufferedInputStream(connection.getInputStream()),
+                new TemporaryResources(), length);
     }
 
     /**
@@ -608,22 +592,23 @@ public class TikaInputStream extends TaggedInputStream {
 
         return n;
     }
-    
+
     /**
      * Returns the open container object if any, such as a
-     *  POIFS FileSystem in the event of an OLE2 document 
-     *  being detected and processed by the OLE2 detector.
-     * @return Open Container for this stream, or <code>null</code> if none 
+     * POIFS FileSystem in the event of an OLE2 document
+     * being detected and processed by the OLE2 detector.
+     *
+     * @return Open Container for this stream, or <code>null</code> if none
      */
     public Object getOpenContainer() {
         return openContainer;
     }
-    
+
     /**
      * Stores the open container object against
-     *  the stream, eg after a Zip contents 
-     *  detector has loaded the file to decide
-     *  what it contains.
+     * the stream, eg after a Zip contents
+     * detector has loaded the file to decide
+     * what it contains.
      */
     public void setOpenContainer(Object container) {
         openContainer = container;
@@ -631,14 +616,14 @@ public class TikaInputStream extends TaggedInputStream {
             tmp.addResource((Closeable) container);
         }
     }
-    
+
     public boolean hasInputStreamFactory() {
         return streamFactory != null;
     }
-    
+
     /**
      * If the Stream was created from an {@link InputStreamFactory},
-     *  return that, otherwise <code>null</code>.
+     * return that, otherwise <code>null</code>.
      */
     public InputStreamFactory getInputStreamFactory() {
         return streamFactory;
@@ -654,6 +639,7 @@ public class TikaInputStream extends TaggedInputStream {
      * the original file will be returned.  If not, the entire stream
      * will be spooled to a temporary file which will be deleted
      * upon the close of this TikaInputStream
+     *
      * @return
      * @throws IOException
      */
@@ -662,7 +648,6 @@ public class TikaInputStream extends TaggedInputStream {
     }
 
     /**
-     *
      * @param maxBytes if this is less than 0 and if an underlying file doesn't already exist,
      *                 the full file will be spooled to disk
      * @return the original path used in the initialization of this TikaInputStream,
@@ -765,8 +750,8 @@ public class TikaInputStream extends TaggedInputStream {
      *
      * @param ln the number of bytes to skip
      * @return the number of bytes skipped
-     * @throws IOException if the number of bytes requested to be skipped does not match the number of bytes skipped
-     *      or if there's an IOException during the read.
+     * @throws IOException if the number of bytes requested to be skipped does not match the
+     * number of bytes skipped or if there's an IOException during the read.
      */
     @Override
     public long skip(long ln) throws IOException {
@@ -822,7 +807,8 @@ public class TikaInputStream extends TaggedInputStream {
             consecutiveEOFs++;
             if (consecutiveEOFs > MAX_CONSECUTIVE_EOFS) {
                 throw new IOException("Read too many -1 (EOFs); there could be an infinite loop." +
-                        "If you think your file is not corrupt, please open an issue on Tika's JIRA");
+                        "If you think your file is not corrupt, please open an issue on Tika's " +
+                        "JIRA");
             }
         }
     }

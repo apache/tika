@@ -70,6 +70,6 @@ public interface MimeTypesReaderMetKeys {
     String LOCAL_NAME_ATTR = "localName";
 
     String TIKA_LINK_TAG = "tika:link";
-    
+
     String TIKA_UTI_TAG = "tika:uti";
 }

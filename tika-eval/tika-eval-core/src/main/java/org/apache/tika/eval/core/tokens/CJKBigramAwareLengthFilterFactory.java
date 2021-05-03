@@ -19,26 +19,26 @@ package org.apache.tika.eval.core.tokens;
 import java.io.IOException;
 import java.util.Map;
 
+import org.apache.lucene.analysis.FilteringTokenFilter;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.cjk.CJKBigramFilter;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
-import org.apache.lucene.analysis.FilteringTokenFilter;
 import org.apache.lucene.analysis.util.TokenFilterFactory;
 
 /**
  * Creates a very narrowly focused TokenFilter that limits tokens based on length
  * _unless_ they've been identified as &lt;DOUBLE&gt; or &lt;SINGLE&gt;
  * by the CJKBigramFilter.
- *
+ * <p>
  * This class is intended to be used when generating "common tokens" files.
  */
 public class CJKBigramAwareLengthFilterFactory extends TokenFilterFactory {
 
 
-
     private final int min;
     private final int max;
+
     public CJKBigramAwareLengthFilterFactory(Map<String, String> args) {
         super(args);
         min = Integer.parseInt(args.get("min"));
@@ -60,7 +60,7 @@ public class CJKBigramAwareLengthFilterFactory extends TokenFilterFactory {
 
         @Override
         protected boolean accept() throws IOException {
-            if ( termAtt.length() < min) {
+            if (termAtt.length() < min) {
                 String type = typeAtt.type();
                 if (type == CJKBigramFilter.DOUBLE_TYPE || type == CJKBigramFilter.SINGLE_TYPE) {
                     return true;

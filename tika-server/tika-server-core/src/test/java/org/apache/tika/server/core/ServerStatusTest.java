@@ -16,9 +16,8 @@
  */
 package org.apache.tika.server.core;
 
-import org.apache.tika.server.core.ServerStatus;
-import org.apache.tika.server.core.TaskStatus;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.util.Map;
 import java.util.Random;
@@ -28,8 +27,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import org.junit.Test;
 
 public class ServerStatusTest {
 
@@ -45,7 +43,8 @@ public class ServerStatusTest {
         int numThreads = 10;
         int filesToProcess = 20;
         ExecutorService service = Executors.newFixedThreadPool(numThreads);
-        ExecutorCompletionService<Integer> completionService = new ExecutorCompletionService<>(service);
+        ExecutorCompletionService<Integer> completionService =
+                new ExecutorCompletionService<>(service);
         ServerStatus serverStatus = new ServerStatus("", 0);
         for (int i = 0; i < numThreads; i++) {
             completionService.submit(new MockTask(serverStatus, filesToProcess));
@@ -60,16 +59,17 @@ public class ServerStatusTest {
                 totalProcessed += completed;
             }
         }
-        assertEquals(numThreads*filesToProcess, totalProcessed);
+        assertEquals(numThreads * filesToProcess, totalProcessed);
         assertEquals(0, serverStatus.getTasks().size());
         assertEquals(totalProcessed, serverStatus.getFilesProcessed());
 
     }
 
     private class MockTask implements Callable<Integer> {
-        Random r = new Random();
         private final ServerStatus serverStatus;
         private final int filesToProcess;
+        Random r = new Random();
+
         public MockTask(ServerStatus serverStatus, int filesToProcess) {
             this.serverStatus = serverStatus;
             this.filesToProcess = filesToProcess;

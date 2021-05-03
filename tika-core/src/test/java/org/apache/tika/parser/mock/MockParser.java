@@ -1,5 +1,3 @@
-package org.apache.tika.parser.mock;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,11 +14,11 @@ package org.apache.tika.parser.mock;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.parser.mock;
 
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import javax.xml.parsers.DocumentBuilder;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,7 +31,26 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.xml.parsers.DocumentBuilder;
+
+import com.martensigwart.fakeload.FakeLoad;
+import com.martensigwart.fakeload.FakeLoadBuilder;
+import com.martensigwart.fakeload.FakeLoadExecutor;
+import com.martensigwart.fakeload.FakeLoadExecutors;
+import com.martensigwart.fakeload.MemoryUnit;
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -46,12 +63,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.w3c.dom.Document;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * This class enables mocking of parser behavior for use in testing
@@ -69,14 +80,17 @@ public class MockParser extends AbstractParser {
 
 
     private static final long serialVersionUID = 1L;
-    private static PrintStream ORIG_STDERR;
-    private static PrintStream ORIG_STDOUT;
-    private static AtomicInteger TIMES_INITIATED = new AtomicInteger(0);
+    private static final PrintStream ORIG_STDERR;
+    private static final PrintStream ORIG_STDOUT;
+    private static final AtomicInteger TIMES_INITIATED = new AtomicInteger(0);
+
     static {
         ORIG_STDERR = System.err;
         ORIG_STDOUT = System.out;
     }
+
     private final Random random = new Random();
+
     public MockParser() {
         TIMES_INITIATED.incrementAndGet();
     }
@@ -98,9 +112,8 @@ public class MockParser extends AbstractParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler,
-                      Metadata metadata, ParseContext context) throws IOException,
-            SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
         if (Thread.currentThread().isInterrupted()) {
             throw new TikaException("interrupted", new InterruptedException());
         }
@@ -123,8 +136,8 @@ public class MockParser extends AbstractParser {
     }
 
     private void executeAction(Node action, Metadata metadata, ParseContext context,
-                               XHTMLContentHandler xhtml) throws SAXException,
-            IOException, TikaException {
+                               XHTMLContentHandler xhtml)
+            throws SAXException, IOException, TikaException {
 
         if (action.getNodeType() != 1) {
             return;
@@ -133,15 +146,17 @@ public class MockParser extends AbstractParser {
         String name = action.getNodeName();
         if ("metadata".equals(name)) {
             metadata(action, metadata);
-        } else if("write".equals(name)) {
+        } else if ("write".equals(name)) {
             write(action, xhtml);
         } else if ("throw".equals(name)) {
             throwIt(action);
         } else if ("hang".equals(name)) {
             hang(action);
+        } else if ("fakeload".equals(name)) {
+            fakeload(action);
         } else if ("oom".equals(name)) {
             kabOOM();
-        } else if ("print_out".equals(name) || "print_err".equals(name)){
+        } else if ("print_out".equals(name) || "print_err".equals(name)) {
             print(action, name);
         } else if ("embedded".equals(name)) {
             handleEmbedded(action, xhtml, context);
@@ -152,8 +167,70 @@ public class MockParser extends AbstractParser {
         } else if ("thread_interrupt".equals(name)) {
             Thread.currentThread().interrupt();
         } else {
-            throw new IllegalArgumentException("Didn't recognize mock action: "+name);
+            throw new IllegalArgumentException("Didn't recognize mock action: " + name);
         }
+    }
+
+    private void fakeload(Node action) {
+        //https://github.com/msigwart/fakeload
+        //with this version of fakeload, you should only need one thread to hit
+        //the cpu targets; on Linux with Java 8 at least, two or more threads did
+        //not increase the overall CPU over a single thread
+        int numThreads = 1;
+        NamedNodeMap attrs = action.getAttributes();
+        if (attrs == null) {
+            throw new IllegalArgumentException("Must specify details...no attributes for " +
+                    "fakeload?!");
+        }
+        if (attrs.getNamedItem("millis") == null || attrs.getNamedItem("cpu") == null ||
+                attrs.getNamedItem("mb") == null) {
+            throw new IllegalArgumentException("must specify 'millis' (time to process), " +
+                    "'cpu' (% cpu as an integer, e.g. 50% would be '50'), " +
+                    "and 'mb' (megabytes as an integer)");
+        }
+        Node n = attrs.getNamedItem("numThreads");
+        if (n != null) {
+            numThreads = Integer.parseInt(n.getNodeValue());
+        }
+        final long millis = Long.parseLong(attrs.getNamedItem("millis").getNodeValue());
+        final int cpu = Integer.parseInt(attrs.getNamedItem("cpu").getNodeValue());
+        final int mb = Integer.parseInt(attrs.getNamedItem("mb").getNodeValue());
+
+        ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
+        ExecutorCompletionService<Integer> executorCompletionService =
+                new ExecutorCompletionService<>(executorService);
+
+        for (int i = 0; i < numThreads; i++) {
+            executorCompletionService.submit(new Runnable() {
+                @Override
+                public void run() {
+                    FakeLoad fakeload =
+                            new FakeLoadBuilder().lasting(millis, TimeUnit.MILLISECONDS)
+                                    .withCpu(cpu).withMemory(mb, MemoryUnit.MB).build();
+                    FakeLoadExecutor executor = FakeLoadExecutors.newDefaultExecutor();
+                    executor.execute(fakeload);
+                }
+            }, 1);
+
+            int finished = 0;
+            try {
+                while (finished < numThreads) {
+                    Future<Integer> future = executorCompletionService.take();
+                    if (future != null) {
+                        future.get();
+                        finished++;
+                    }
+                }
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                executorService.shutdownNow();
+            }
+
+        }
+
     }
 
     private void throwIllegalChars() throws IOException {
@@ -180,22 +257,18 @@ public class MockParser extends AbstractParser {
         EmbeddedDocumentExtractor extractor = getEmbeddedDocumentExtractor(context);
         Metadata m = new Metadata();
         m.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileName);
-        if (! "".equals(contentType)) {
+        if (!"".equals(contentType)) {
             m.set(Metadata.CONTENT_TYPE, contentType);
         }
         InputStream is = new ByteArrayInputStream(embeddedText.getBytes(UTF_8));
 
-        extractor.parseEmbedded(
-                is,
-                new EmbeddedContentHandler(handler),
-                m, true);
+        extractor.parseEmbedded(is, new EmbeddedContentHandler(handler), m, true);
 
 
     }
 
     protected EmbeddedDocumentExtractor getEmbeddedDocumentExtractor(ParseContext context) {
-        EmbeddedDocumentExtractor extractor =
-                context.get(EmbeddedDocumentExtractor.class);
+        EmbeddedDocumentExtractor extractor = context.get(EmbeddedDocumentExtractor.class);
         if (extractor == null) {
             Parser p = context.get(Parser.class);
             if (p == null) {
@@ -272,7 +345,8 @@ public class MockParser extends AbstractParser {
         if (heavy) {
             Node pNode = attrs.getNamedItem("pulse_millis");
             if (pNode == null) {
-                throw new RuntimeException("Must specify attribute \"pulse_millis\" if the hang is \"heavy\"");
+                throw new RuntimeException(
+                        "Must specify attribute \"pulse_millis\" if the hang is \"heavy\"");
             }
             String pulseMillisString = mNode.getNodeValue();
             try {
@@ -288,8 +362,7 @@ public class MockParser extends AbstractParser {
         }
     }
 
-    private void throwIt(Node action) throws IOException,
-            SAXException, TikaException {
+    private void throwIt(Node action) throws IOException, SAXException, TikaException {
         NamedNodeMap attrs = action.getAttributes();
         String className = attrs.getNamedItem("class").getNodeValue();
         String msg = action.getTextContent();
@@ -327,14 +400,14 @@ public class MockParser extends AbstractParser {
     }
 
 
-    private void throwIt(String className, String msg) throws IOException,
-            SAXException, TikaException {
+    private void throwIt(String className, String msg)
+            throws IOException, SAXException, TikaException {
         Throwable t = null;
         if (msg == null || msg.equals("")) {
             try {
                 t = (Throwable) Class.forName(className).newInstance();
             } catch (Exception e) {
-                throw new RuntimeException("couldn't create throwable class:"+className, e);
+                throw new RuntimeException("couldn't create throwable class:" + className, e);
             }
         } else {
             try {
@@ -346,7 +419,7 @@ public class MockParser extends AbstractParser {
             }
         }
         if (t instanceof SAXException) {
-            throw (SAXException)t;
+            throw (SAXException) t;
         } else if (t instanceof IOException) {
             throw (IOException) t;
         } else if (t instanceof TikaException) {
@@ -383,13 +456,13 @@ public class MockParser extends AbstractParser {
                 for (int j = 1; j < Integer.MAX_VALUE; j++) {
                     double div = (double) i / (double) j;
 
-                    long elapsedSinceLastCheck = new Date().getTime()-lastChecked;
+                    long elapsedSinceLastCheck = new Date().getTime() - lastChecked;
                     if (elapsedSinceLastCheck > pulseCheckMillis) {
                         lastChecked = new Date().getTime();
                         if (interruptible && Thread.currentThread().isInterrupted()) {
                             return;
                         }
-                        long elapsed = new Date().getTime()-start;
+                        long elapsed = new Date().getTime() - start;
                         if (elapsed > maxMillis) {
                             return;
                         }
@@ -410,7 +483,7 @@ public class MockParser extends AbstractParser {
                     return;
                 }
             }
-            long elapsed = System.currentTimeMillis()-start;
+            long elapsed = System.currentTimeMillis() - start;
             millisRemaining = maxMillis - elapsed;
             if (millisRemaining <= 0) {
                 break;

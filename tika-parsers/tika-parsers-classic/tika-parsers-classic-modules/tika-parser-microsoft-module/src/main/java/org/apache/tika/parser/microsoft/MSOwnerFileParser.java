@@ -16,7 +16,16 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.Set;
+
 import org.apache.commons.io.IOUtils;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -24,14 +33,6 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.Set;
 
 /**
  * Parser for temporary MSOFfice files.
@@ -45,8 +46,7 @@ public class MSOwnerFileParser extends AbstractParser {
      * Serial version UID
      */
     private static final long serialVersionUID = -752276948656079347L;
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MEDIA_TYPE);
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MEDIA_TYPE);
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -55,24 +55,25 @@ public class MSOwnerFileParser extends AbstractParser {
     /**
      * Extracts owner from MS temp file
      */
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         byte[] asciiNameBytes = new byte[ASCII_CHUNK_LENGTH];
         IOUtils.readFully(stream, asciiNameBytes);
-        int asciiNameLength = (int)asciiNameBytes[0];//don't need to convert to unsigned int because it can't be that long
-        //sanity check name length
+        int asciiNameLength =
+                (int) asciiNameBytes[0];//don't need to convert to unsigned int because it can't
+        // be that long
+        //bounds check name length
         if (asciiNameLength < 0) {
             throw new TikaException("ascii name length must be >= 0");
         } else if (asciiNameLength > ASCII_CHUNK_LENGTH) {
             throw new TikaException("ascii name length must be < 55");
         }
 
-        String asciiName = new String(asciiNameBytes, 1, asciiNameLength, StandardCharsets.US_ASCII);
+        String asciiName =
+                new String(asciiNameBytes, 1, asciiNameLength, StandardCharsets.US_ASCII);
         metadata.set(TikaCoreProperties.MODIFIER, asciiName);
 
         int unicodeCharLength = stream.read();

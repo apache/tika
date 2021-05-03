@@ -24,6 +24,9 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.metadata.Metadata;
@@ -35,19 +38,17 @@ import org.apache.tika.parser.html.HtmlParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 public class ChmParser extends AbstractParser {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = 5938777307516469802L;
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
-                    MediaType.application("vnd.ms-htmlhelp"),
-                    MediaType.application("chm"),
-                    MediaType.application("x-chm"))));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
+            new HashSet<MediaType>(Arrays.asList(MediaType.application("vnd.ms-htmlhelp"),
+                    MediaType.application("chm"), MediaType.application("x-chm"))));
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -55,9 +56,8 @@ public class ChmParser extends AbstractParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context) throws IOException,
-            SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
         ChmExtractor chmExtractor = new ChmExtractor(stream);
 
         // metadata
@@ -73,19 +73,18 @@ public class ChmParser extends AbstractParser {
             htmlParser = new HtmlParser();
         }
 
-        for (DirectoryListingEntry entry : chmExtractor.getChmDirList().getDirectoryListingEntryList()) {
+        for (DirectoryListingEntry entry : chmExtractor.getChmDirList()
+                .getDirectoryListingEntryList()) {
             final String entryName = entry.getName();
-            if (entryName.endsWith(".html") 
-                    || entryName.endsWith(".htm")
-            ) {
+            if (entryName.endsWith(".html") || entryName.endsWith(".htm")) {
 //                AttributesImpl attrs = new AttributesImpl();
 //                attrs.addAttribute("", "name", "name", "String", entryName);
 //                xhtml.startElement("", "document", "document", attrs);
-                
+
                 byte[] data = chmExtractor.extractChmEntry(entry);
 
                 parsePage(data, htmlParser, xhtml, context);
-                
+
 //                xhtml.endElement("", "", "document");
             }
         }
@@ -94,8 +93,8 @@ public class ChmParser extends AbstractParser {
     }
 
 
-    private void parsePage(byte[] byteObject, Parser htmlParser,
-                           ContentHandler xhtml, ParseContext context) throws TikaException {// throws IOException
+    private void parsePage(byte[] byteObject, Parser htmlParser, ContentHandler xhtml,
+                           ParseContext context) throws TikaException { // throws IOException
         InputStream stream = null;
         Metadata metadata = new Metadata();
         ContentHandler handler = new EmbeddedContentHandler(new BodyContentHandler(xhtml));// -1
@@ -108,5 +107,5 @@ public class ChmParser extends AbstractParser {
             // Pushback overflow from tagsoup
         }
     }
-    
+
 }

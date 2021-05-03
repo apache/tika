@@ -66,7 +66,8 @@ class ObjectDeclarationWithRefCountBody {
         return file_data_store_reference;
     }
 
-    public ObjectDeclarationWithRefCountBody setFile_data_store_reference(boolean file_data_store_reference) {
+    public ObjectDeclarationWithRefCountBody setFile_data_store_reference(
+            boolean file_data_store_reference) {
         this.file_data_store_reference = file_data_store_reference;
         return this;
     }

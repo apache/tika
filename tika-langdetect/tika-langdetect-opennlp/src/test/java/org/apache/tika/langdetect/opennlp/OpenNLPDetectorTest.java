@@ -1,4 +1,3 @@
-package org.apache.tika.langdetect.opennlp;
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -15,27 +14,24 @@ package org.apache.tika.langdetect.opennlp;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.langdetect.opennlp;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.tika.langdetect.LanguageDetectorTest;
-import org.apache.tika.language.detect.LanguageResult;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import org.apache.commons.io.IOUtils;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import org.apache.tika.langdetect.LanguageDetectorTest;
+import org.apache.tika.language.detect.LanguageResult;
 
 public class OpenNLPDetectorTest {
 
@@ -58,7 +54,7 @@ public class OpenNLPDetectorTest {
         OPTIMAIZE_TO_OPENNLP.put("pt", "por");
         OPTIMAIZE_TO_OPENNLP.put("sv", "swe");
         OPTIMAIZE_TO_OPENNLP.put("th", "tha");
-        OPTIMAIZE_TO_OPENNLP.put("zh", "cmn");
+        OPTIMAIZE_TO_OPENNLP.put("zh", "zho-simp");
     }
 
     @Test
@@ -75,8 +71,8 @@ public class OpenNLPDetectorTest {
 
     private CharSequence getLangText(String lang) throws IOException {
         try (Reader reader = new InputStreamReader(
-                LanguageDetectorTest.class.getResourceAsStream("language-tests/"+lang+".test")
-                , StandardCharsets.UTF_8)) {
+                LanguageDetectorTest.class.getResourceAsStream("language-tests/" + lang + ".test"),
+                StandardCharsets.UTF_8)) {
             return IOUtils.toString(reader);
         }
     }

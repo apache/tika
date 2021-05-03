@@ -16,9 +16,9 @@
  */
 package org.apache.tika.sax;
 
-import javax.xml.namespace.QName;
 import java.util.Collections;
 import java.util.Map;
+import javax.xml.namespace.QName;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -37,37 +37,10 @@ public class ElementMappingContentHandler extends ContentHandlerDecorator {
 
     private final Map<QName, TargetElement> mappings;
 
-    public ElementMappingContentHandler(
-            ContentHandler handler, Map<QName, TargetElement> mappings) {
+    public ElementMappingContentHandler(ContentHandler handler,
+                                        Map<QName, TargetElement> mappings) {
         super(handler);
         this.mappings = mappings;
-    }
-
-    @Override
-    public void startElement(
-            String namespaceURI, String localName, String qName,
-            Attributes atts) throws SAXException {
-        TargetElement mapping =
-            mappings.get(new QName(namespaceURI, localName));
-        if (mapping != null) {
-            QName tag = mapping.getMappedTagName();
-            super.startElement(
-                    tag.getNamespaceURI(), tag.getLocalPart(),
-                    getQNameAsString(tag), mapping.mapAttributes(atts));
-        }
-    }
-
-    @Override
-    public void endElement(String namespaceURI, String localName, String qName)
-            throws SAXException {
-        TargetElement mapping =
-            mappings.get(new QName(namespaceURI, localName));
-        if (mapping != null) {
-            QName tag=mapping.getMappedTagName();
-            super.endElement(
-                    tag.getNamespaceURI(), tag.getLocalPart(),
-                    getQNameAsString(tag));
-        }
     }
 
     protected static final String getQNameAsString(QName qname) {
@@ -75,18 +48,41 @@ public class ElementMappingContentHandler extends ContentHandlerDecorator {
         if (prefix.length() > 0) {
             return prefix + ":" + qname.getLocalPart();
         } else {
-            return qname.getLocalPart(); 
+            return qname.getLocalPart();
+        }
+    }
+
+    @Override
+    public void startElement(String namespaceURI, String localName, String qName, Attributes atts)
+            throws SAXException {
+        TargetElement mapping = mappings.get(new QName(namespaceURI, localName));
+        if (mapping != null) {
+            QName tag = mapping.getMappedTagName();
+            super.startElement(tag.getNamespaceURI(), tag.getLocalPart(), getQNameAsString(tag),
+                    mapping.mapAttributes(atts));
+        }
+    }
+
+    @Override
+    public void endElement(String namespaceURI, String localName, String qName)
+            throws SAXException {
+        TargetElement mapping = mappings.get(new QName(namespaceURI, localName));
+        if (mapping != null) {
+            QName tag = mapping.getMappedTagName();
+            super.endElement(tag.getNamespaceURI(), tag.getLocalPart(), getQNameAsString(tag));
         }
     }
 
     public static class TargetElement {
 
+        private final QName mappedTagName;
+        private final Map<QName, QName> attributesMapping;
+
         /**
          * Creates an TargetElement, attributes of this element will
          * be mapped as specified
          */
-        public TargetElement(
-                QName mappedTagName, Map<QName, QName> attributesMapping) {
+        public TargetElement(QName mappedTagName, Map<QName, QName> attributesMapping) {
             this.mappedTagName = mappedTagName;
             this.attributesMapping = attributesMapping;
         }
@@ -94,9 +90,8 @@ public class ElementMappingContentHandler extends ContentHandlerDecorator {
         /**
          * A shortcut that automatically creates the QName object
          */
-        public TargetElement(
-                String mappedTagURI, String mappedTagLocalName,
-                Map<QName, QName> attributesMapping) {
+        public TargetElement(String mappedTagURI, String mappedTagLocalName,
+                             Map<QName, QName> attributesMapping) {
             this(new QName(mappedTagURI, mappedTagLocalName), attributesMapping);
         }
 
@@ -105,13 +100,14 @@ public class ElementMappingContentHandler extends ContentHandlerDecorator {
          * will be deleted from SAX stream
          */
         public TargetElement(QName mappedTagName) {
-            this(mappedTagName, Collections.<QName,QName>emptyMap());
+            this(mappedTagName, Collections.emptyMap());
         }
 
-        /** A shortcut that automatically creates the QName object */
+        /**
+         * A shortcut that automatically creates the QName object
+         */
         public TargetElement(String mappedTagURI, String mappedTagLocalName) {
-            this(mappedTagURI, mappedTagLocalName,
-                    Collections.<QName,QName>emptyMap());
+            this(mappedTagURI, mappedTagLocalName, Collections.emptyMap());
         }
 
         public QName getMappedTagName() {
@@ -125,21 +121,14 @@ public class ElementMappingContentHandler extends ContentHandlerDecorator {
         public Attributes mapAttributes(final Attributes atts) {
             AttributesImpl natts = new AttributesImpl();
             for (int i = 0; i < atts.getLength(); i++) {
-                QName name = attributesMapping.get(
-                        new QName(atts.getURI(i), atts.getLocalName(i)));
-                if (name!=null) {
-                    natts.addAttribute(
-                            name.getNamespaceURI(), name.getLocalPart(),
-                            getQNameAsString(name),
-                            atts.getType(i), atts.getValue(i));
+                QName name = attributesMapping.get(new QName(atts.getURI(i), atts.getLocalName(i)));
+                if (name != null) {
+                    natts.addAttribute(name.getNamespaceURI(), name.getLocalPart(),
+                            getQNameAsString(name), atts.getType(i), atts.getValue(i));
                 }
             }
             return natts;
         }
-
-        private final QName mappedTagName;
-
-        private final Map<QName, QName> attributesMapping;
 
     }
 

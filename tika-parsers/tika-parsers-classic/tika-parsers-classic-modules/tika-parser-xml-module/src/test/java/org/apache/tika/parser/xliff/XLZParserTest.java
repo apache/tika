@@ -16,22 +16,24 @@
  */
 package org.apache.tika.parser.xliff;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
+import static org.apache.tika.TikaTest.assertContains;
+import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
 
-import static org.apache.tika.TikaTest.assertContains;
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.BodyContentHandler;
 
 public class XLZParserTest {
 
     @Test
     public void testXLZ() throws Exception {
-        try (InputStream input = XLZParserTest.class.getResourceAsStream("/test-documents/testXLIFF12.xlz")) {
+        try (InputStream input = XLZParserTest.class
+                .getResourceAsStream("/test-documents/testXLIFF12.xlz")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             new XLZParser().parse(input, handler, metadata, new ParseContext());

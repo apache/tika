@@ -16,30 +16,10 @@
  */
 package org.apache.tika.pipes.emitter.solr;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import org.apache.http.client.HttpClient;
-import org.apache.tika.client.HttpClientFactory;
-import org.apache.tika.client.HttpClientUtil;
-import org.apache.tika.client.TikaClientException;
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
-import org.apache.tika.pipes.emitter.AbstractEmitter;
-import org.apache.tika.pipes.emitter.EmitData;
-import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.pipes.emitter.TikaEmitterException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -47,20 +27,32 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.zip.GZIPOutputStream;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import org.apache.http.client.HttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.tika.client.HttpClientFactory;
+import org.apache.tika.client.HttpClientUtil;
+import org.apache.tika.client.TikaClientException;
+import org.apache.tika.config.Field;
+import org.apache.tika.config.Initializable;
+import org.apache.tika.config.InitializableProblemHandler;
+import org.apache.tika.config.Param;
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.pipes.emitter.AbstractEmitter;
+import org.apache.tika.pipes.emitter.EmitData;
+import org.apache.tika.pipes.emitter.TikaEmitterException;
+
 public class SolrEmitter extends AbstractEmitter implements Initializable {
 
-    enum AttachmentStrategy {
-        SKIP,
-        CONCATENATE_CONTENT,
-        PARENT_CHILD,
-        //anything else?
-    }
     private static final String ATTACHMENTS = "attachments";
     private static final String UPDATE_PATH = "/update";
     private static final Logger LOG = LoggerFactory.getLogger(SolrEmitter.class);
     //one day this will be allowed or can be configured?
     private final boolean gzipJson = false;
-
     private AttachmentStrategy attachmentStrategy = AttachmentStrategy.PARENT_CHILD;
     private String url;
     private String contentField = "content";
@@ -68,77 +60,71 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
     private int commitWithin = 100;
     private HttpClientFactory httpClientFactory;
     private HttpClient httpClient;
-
     public SolrEmitter() throws TikaConfigException {
         httpClientFactory = new HttpClientFactory();
     }
+
     @Override
-    public void emit(String emitKey, List<Metadata> metadataList) throws IOException,
-            TikaEmitterException {
+    public void emit(String emitKey, List<Metadata> metadataList)
+            throws IOException, TikaEmitterException {
 
         if (metadataList == null || metadataList.size() == 0) {
             LOG.warn("metadataList is null or empty");
             return;
         }
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        Writer writer = gzipJson ?
-                new BufferedWriter(
-                        new OutputStreamWriter(
-                                new GZIPOutputStream(bos), StandardCharsets.UTF_8)) :
-                new BufferedWriter(
-                        new OutputStreamWriter(bos, StandardCharsets.UTF_8));
-        try (
-            JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
+        Writer writer = gzipJson ? new BufferedWriter(
+                new OutputStreamWriter(new GZIPOutputStream(bos), StandardCharsets.UTF_8)) :
+                new BufferedWriter(new OutputStreamWriter(bos, StandardCharsets.UTF_8));
+        try (JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
             jsonGenerator.writeStartArray();
             jsonify(jsonGenerator, emitKey, metadataList);
             jsonGenerator.writeEndArray();
         }
-        LOG.debug("emitting json ({})",
-                new String(bos.toByteArray(), StandardCharsets.UTF_8));
+        LOG.debug("emitting json ({})", new String(bos.toByteArray(), StandardCharsets.UTF_8));
         try {
-            HttpClientUtil.postJson(httpClient,
-                    url+UPDATE_PATH+"?commitWithin="+getCommitWithin(), bos.toByteArray(), gzipJson);
+            HttpClientUtil
+                    .postJson(httpClient, url + UPDATE_PATH +
+                                    "?commitWithin=" + getCommitWithin(),
+                            bos.toByteArray(), gzipJson);
         } catch (TikaClientException e) {
             throw new TikaEmitterException("can't post", e);
         }
     }
 
     @Override
-    public void emit(List<EmitData> batch) throws IOException,
-            TikaEmitterException {
+    public void emit(List<? extends EmitData> batch) throws IOException, TikaEmitterException {
         if (batch == null || batch.size() == 0) {
             LOG.warn("batch is null or empty");
             return;
         }
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        Writer writer = gzipJson ?
-                new BufferedWriter(
-                        new OutputStreamWriter(
-                                new GZIPOutputStream(bos), StandardCharsets.UTF_8)) :
-            new BufferedWriter(
-                new OutputStreamWriter(bos, StandardCharsets.UTF_8));
+        Writer writer = gzipJson ? new BufferedWriter(
+                new OutputStreamWriter(new GZIPOutputStream(bos), StandardCharsets.UTF_8)) :
+                new BufferedWriter(new OutputStreamWriter(bos, StandardCharsets.UTF_8));
         try (JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
             jsonGenerator.writeStartArray();
             for (EmitData d : batch) {
-                jsonify(jsonGenerator, d.getEmitKey().getKey(), d.getMetadataList());
+                jsonify(jsonGenerator, d.getEmitKey().getEmitKey(), d.getMetadataList());
             }
             jsonGenerator.writeEndArray();
         }
-        LOG.debug("emitting json ({})",
-                new String(bos.toByteArray(), StandardCharsets.UTF_8));
+        LOG.debug("emitting json ({})", new String(bos.toByteArray(), StandardCharsets.UTF_8));
         try {
-            HttpClientUtil.postJson(httpClient,
-                    url+UPDATE_PATH+"?commitWithin="+getCommitWithin(),
-                    bos.toByteArray(), gzipJson);
+            HttpClientUtil
+                    .postJson(httpClient, url + UPDATE_PATH +
+                                    "?commitWithin=" + getCommitWithin(),
+                            bos.toByteArray(), gzipJson);
         } catch (TikaClientException e) {
             throw new TikaEmitterException("can't post", e);
         }
     }
 
-    private void jsonify(JsonGenerator jsonGenerator, String emitKey, List<Metadata> metadataList) throws IOException {
+    private void jsonify(JsonGenerator jsonGenerator, String emitKey,
+                         List<Metadata> metadataList)
+            throws IOException {
         metadataList.get(0).set(idField, emitKey);
-        if (attachmentStrategy == AttachmentStrategy.SKIP ||
-            metadataList.size() == 1) {
+        if (attachmentStrategy == AttachmentStrategy.SKIP || metadataList.size() == 1) {
             jsonify(metadataList.get(0), jsonGenerator);
         } else if (attachmentStrategy == AttachmentStrategy.CONCATENATE_CONTENT) {
             //this only handles text for now, not xhtml
@@ -164,12 +150,13 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
             jsonGenerator.writeEndArray();
             jsonGenerator.writeEndObject();
         } else {
-            throw new IllegalArgumentException("I don't yet support this attachment strategy: "
-                    + attachmentStrategy);
+            throw new IllegalArgumentException(
+                    "I don't yet support this attachment strategy: " + attachmentStrategy);
         }
     }
 
-    private void jsonify(Metadata metadata, JsonGenerator jsonGenerator, boolean writeEndObject) throws IOException {
+    private void jsonify(Metadata metadata, JsonGenerator jsonGenerator, boolean writeEndObject)
+            throws IOException {
         jsonGenerator.writeStartObject();
         for (String n : metadata.names()) {
             String[] vals = metadata.getValues(n);
@@ -215,29 +202,35 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
         } else if (attachmentStrategy.equals("parent-child")) {
             this.attachmentStrategy = AttachmentStrategy.PARENT_CHILD;
         } else {
-            throw new IllegalArgumentException("Expected 'skip', 'concatenate-content' or "+
+            throw new IllegalArgumentException("Expected 'skip', 'concatenate-content' or " +
                     "'parent-child'. I regret I do not recognize: " + attachmentStrategy);
         }
     }
 
     /**
      * Specify the url for Solr
+     *
      * @param url
      */
     @Field
     public void setUrl(String url) {
         if (url.endsWith("/")) {
-            url = url.substring(0, url.length()-1);
+            url = url.substring(0, url.length() - 1);
         }
         this.url = url;
+    }
+
+    public String getContentField() {
+        return contentField;
     }
 
     /**
      * This is the field _after_ metadata mappings have been applied
      * that contains the "content" for each metadata object.
-     *
+     * <p>
      * This is the field that is used if {@link #attachmentStrategy}
      * is {@link AttachmentStrategy#CONCATENATE_CONTENT}.
+     *
      * @param contentField
      */
     @Field
@@ -245,17 +238,13 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
         this.contentField = contentField;
     }
 
-    public String getContentField() {
-        return contentField;
+    public int getCommitWithin() {
+        return commitWithin;
     }
 
     @Field
     public void setCommitWithin(int commitWithin) {
         this.commitWithin = commitWithin;
-    }
-
-    public int getCommitWithin() {
-        return commitWithin;
     }
 
     /**
@@ -302,8 +291,14 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler)
+            throws TikaConfigException {
 
+    }
+
+    enum AttachmentStrategy {
+        SKIP, CONCATENATE_CONTENT, PARENT_CHILD,
+        //anything else?
     }
 
 }

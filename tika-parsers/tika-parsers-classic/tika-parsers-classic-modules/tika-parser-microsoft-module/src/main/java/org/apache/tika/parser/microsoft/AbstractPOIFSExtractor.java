@@ -27,10 +27,11 @@ import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.zip.DefaultZipContainerDetector;
-import org.apache.tika.detect.zip.ZipContainerDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
@@ -44,14 +45,13 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.microsoft.OfficeParser.POIFSDocumentType;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.SAXException;
 
 abstract class AbstractPOIFSExtractor {
-    private final EmbeddedDocumentUtil embeddedDocumentUtil;
-    private PasswordProvider passwordProvider;
     protected final Metadata parentMetadata;//metadata of the parent/container document
     protected final OfficeParserConfig officeParserConfig;
     protected final ParseContext context;
+    private final EmbeddedDocumentUtil embeddedDocumentUtil;
+    private PasswordProvider passwordProvider;
 
     protected AbstractPOIFSExtractor(ParseContext context) {
         this(context, null);
@@ -76,8 +76,8 @@ abstract class AbstractPOIFSExtractor {
     }
 
     /**
-     * @deprecated use {@link #embeddedDocumentUtil}
      * @return mimetypes
+     * @deprecated use {@link #embeddedDocumentUtil}
      */
     protected MimeTypes getMimeTypes() {
         return embeddedDocumentUtil.getMimeTypes();
@@ -95,23 +95,26 @@ abstract class AbstractPOIFSExtractor {
     }
 
     protected void handleEmbeddedResource(TikaInputStream resource, String filename,
-                                          String relationshipID, String mediaType, XHTMLContentHandler xhtml,
-                                          boolean outputHtml)
+                                          String relationshipID, String mediaType,
+                                          XHTMLContentHandler xhtml, boolean outputHtml)
             throws IOException, SAXException, TikaException {
-        handleEmbeddedResource(resource, filename, relationshipID, null, mediaType, xhtml, outputHtml);
+        handleEmbeddedResource(resource, filename, relationshipID, null, mediaType, xhtml,
+                outputHtml);
     }
 
     protected void handleEmbeddedResource(TikaInputStream resource, String filename,
-                                          String relationshipID, ClassID storageClassID, String mediaType, XHTMLContentHandler xhtml,
+                                          String relationshipID, ClassID storageClassID,
+                                          String mediaType, XHTMLContentHandler xhtml,
                                           boolean outputHtml)
             throws IOException, SAXException, TikaException {
-        handleEmbeddedResource(resource, new Metadata(), filename,
-                relationshipID, storageClassID, mediaType, xhtml, outputHtml);
+        handleEmbeddedResource(resource, new Metadata(), filename, relationshipID, storageClassID,
+                mediaType, xhtml, outputHtml);
     }
 
-    protected void handleEmbeddedResource(TikaInputStream resource, Metadata embeddedMetadata, String filename,
-                String relationshipID, ClassID storageClassID, String mediaType, XHTMLContentHandler xhtml,
-        boolean outputHtml)
+    protected void handleEmbeddedResource(TikaInputStream resource, Metadata embeddedMetadata,
+                                          String filename, String relationshipID,
+                                          ClassID storageClassID, String mediaType,
+                                          XHTMLContentHandler xhtml, boolean outputHtml)
             throws IOException, SAXException, TikaException {
 
         try {
@@ -124,7 +127,8 @@ abstract class AbstractPOIFSExtractor {
                 embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, relationshipID);
             }
             if (storageClassID != null) {
-                embeddedMetadata.set(TikaCoreProperties.EMBEDDED_STORAGE_CLASS_ID, storageClassID.toString());
+                embeddedMetadata.set(TikaCoreProperties.EMBEDDED_STORAGE_CLASS_ID,
+                        storageClassID.toString());
             }
             if (mediaType != null) {
                 embeddedMetadata.set(Metadata.CONTENT_TYPE, mediaType);
@@ -141,8 +145,7 @@ abstract class AbstractPOIFSExtractor {
     /**
      * Handle an office document that's embedded at the POIFS level
      */
-    protected void handleEmbeddedOfficeDoc(
-            DirectoryEntry dir, XHTMLContentHandler xhtml)
+    protected void handleEmbeddedOfficeDoc(DirectoryEntry dir, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
         handleEmbeddedOfficeDoc(dir, null, xhtml);
     }
@@ -150,8 +153,8 @@ abstract class AbstractPOIFSExtractor {
     /**
      * Handle an office document that's embedded at the POIFS level
      */
-    protected void handleEmbeddedOfficeDoc(
-            DirectoryEntry dir, String resourceName, XHTMLContentHandler xhtml)
+    protected void handleEmbeddedOfficeDoc(DirectoryEntry dir, String resourceName,
+                                           XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
 
         // Is it an embedded OLE2 document, or an embedded OOXML document?
@@ -160,8 +163,8 @@ abstract class AbstractPOIFSExtractor {
             // It's OOXML (has a ZipFile):
             Entry ooxml = dir.getEntry("Package");
 
-            try (TikaInputStream stream = TikaInputStream.get(
-                    new DocumentInputStream((DocumentEntry) ooxml))) {
+            try (TikaInputStream stream = TikaInputStream
+                    .get(new DocumentInputStream((DocumentEntry) ooxml))) {
                 Detector detector = new DefaultZipContainerDetector();
                 MediaType type = null;
                 try {
@@ -171,7 +174,8 @@ abstract class AbstractPOIFSExtractor {
                     EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
                     return;
                 }
-                handleEmbeddedResource(stream, null, dir.getName(), dir.getStorageClsid(), type.toString(), xhtml, true);
+                handleEmbeddedResource(stream, null, dir.getName(), dir.getStorageClsid(),
+                        type.toString(), xhtml, true);
                 return;
             }
         }
@@ -182,7 +186,8 @@ abstract class AbstractPOIFSExtractor {
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, dir.getName());
         if (dir.getStorageClsid() != null) {
-            metadata.set(TikaCoreProperties.EMBEDDED_STORAGE_CLASS_ID, dir.getStorageClsid().toString());
+            metadata.set(TikaCoreProperties.EMBEDDED_STORAGE_CLASS_ID,
+                    dir.getStorageClsid().toString());
         }
         POIFSDocumentType type = POIFSDocumentType.detectType(dir);
         TikaInputStream embedded = null;
@@ -193,7 +198,8 @@ abstract class AbstractPOIFSExtractor {
                     // Try to un-wrap the OLE10Native record:
                     Ole10Native ole = Ole10Native.createFromEmbeddedOleObject((DirectoryNode) dir);
                     if (ole.getLabel() != null) {
-                        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, rName + '/' + ole.getLabel());
+                        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
+                                rName + '/' + ole.getLabel());
                     }
                     if (ole.getCommand() != null) {
                         metadata.add(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, ole.getCommand());
@@ -246,7 +252,8 @@ abstract class AbstractPOIFSExtractor {
                 }
             } else {
                 metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
-                metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, rName + '.' + type.getExtension());
+                metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
+                        rName + '.' + type.getExtension());
             }
 
             // Should we parse it?

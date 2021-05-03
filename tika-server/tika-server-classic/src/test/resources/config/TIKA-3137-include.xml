@@ -16,23 +16,23 @@
   limitations under the License.
 -->
 <properties>
-  <metadataFilters>
-    <metadataFilter class="org.apache.tika.metadata.filter.IncludeFieldMetadataFilter">
-      <params>
-        <param name="include" type="list">
-          <string>X-TIKA:content</string>
-          <string>extended-properties:Application</string>
-          <string>Content-Type</string>
-        </param>
-      </params>
-    </metadataFilter>
-    <metadataFilter class="org.apache.tika.metadata.filter.ClearByMimeMetadataFilter">
-      <params>
-        <param name="mimes" type="list">
-          <string>image/emf</string>
-          <string>text/plain</string>
-        </param>
-      </params>
-    </metadataFilter>
-  </metadataFilters>
+    <metadataFilters>
+        <metadataFilter class="org.apache.tika.metadata.filter.IncludeFieldMetadataFilter">
+            <params>
+                <param name="include" type="list">
+                    <string>X-TIKA:content</string>
+                    <string>extended-properties:Application</string>
+                    <string>Content-Type</string>
+                </param>
+            </params>
+        </metadataFilter>
+        <metadataFilter class="org.apache.tika.metadata.filter.ClearByMimeMetadataFilter">
+            <params>
+                <param name="mimes" type="list">
+                    <string>image/emf</string>
+                    <string>text/plain</string>
+                </param>
+            </params>
+        </metadataFilter>
+    </metadataFilters>
 </properties>

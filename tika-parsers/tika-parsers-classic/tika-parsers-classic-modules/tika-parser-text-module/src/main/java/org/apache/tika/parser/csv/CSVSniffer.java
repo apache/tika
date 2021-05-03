@@ -29,16 +29,17 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.input.ProxyReader;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
 class CSVSniffer {
-    private static final int DEFAULT_MARK_LIMIT = 10000;
-    private static final double DEFAULT_MIN_CONFIDENCE = 0.50;
-    private static final int PUSH_BACK = 2;
     static final int EOF = -1;
     static final int NEW_LINE = '\n';
     static final int CARRIAGE_RETURN = '\r';
+    private static final int DEFAULT_MARK_LIMIT = 10000;
+    private static final double DEFAULT_MIN_CONFIDENCE = 0.50;
+    private static final int PUSH_BACK = 2;
     private static final int SPACE = ' ';
 
     private final char[] delimiters;
@@ -56,7 +57,7 @@ class CSVSniffer {
     }
 
     List<CSVResult> sniff(Reader reader) throws IOException {
-        if (! reader.markSupported()) {
+        if (!reader.markSupported()) {
             reader = new BufferedReader(reader);
         }
         List<CSVResult> ret = new ArrayList<>();
@@ -77,7 +78,7 @@ class CSVSniffer {
      * @param reader
      * @param metadata
      * @return the best result given the detection results or {@link CSVResult#TEXT}
-     *         if the confidence is not above a threshold.
+     * if the confidence is not above a threshold.
      * @throws IOException
      */
     CSVResult getBest(Reader reader, Metadata metadata) throws IOException {
@@ -94,6 +95,29 @@ class CSVSniffer {
         return bestResult;
     }
 
+    private static class UnsurprisingEOF extends EOFException {
+
+    }
+
+    private static class HitMarkLimitException extends EOFException {
+
+    }
+
+    private static class MutableInt {
+        int i;
+
+        MutableInt(int i) {
+            this.i = i;
+        }
+
+        void increment() {
+            i++;
+        }
+
+        int intValue() {
+            return i;
+        }
+    }
 
     //inner class that tests a single hypothesis/combination
     //of parameters for delimiter and quote character
@@ -126,14 +150,17 @@ class CSVSniffer {
                 while (c != EOF) {
                     if (c == quoteCharacter) {
                         handleUnquoted(unquoted);
-                        //test to make sure there isn't an unencapsulated quote character in the middle of a cell
-                        if (lastC > -1 && lastC != delimiter && lastC != NEW_LINE && lastC != CARRIAGE_RETURN) {
+                        //test to make sure there isn't an unencapsulated quote character
+                        // in the middle of a cell
+                        if (lastC > -1 && lastC != delimiter && lastC != NEW_LINE &&
+                                lastC != CARRIAGE_RETURN) {
                             parseException = true;
                             return calcResult();
                         }
-                        //TODO: test to make sure cell doesn't start with escaped ""the quick brown cat"
+                        //TODO: test to make sure cell doesn't start with escaped
+                        // ""the quick brown cat"
                         boolean correctlyEncapsulated = consumeQuoted(reader, quoteCharacter);
-                        if (! correctlyEncapsulated) {
+                        if (!correctlyEncapsulated) {
                             parseException = true;
                             return calcResult();
                         }
@@ -208,13 +235,12 @@ class CSVSniffer {
 
 
         /**
-         *
          * @param reader
          * @param quoteCharacter
          * @return whether or not this was a correctly encapsulated cell
          * @throws UnsurprisingEOF if the file ended immediately after the close quote
-         * @throws EOFException if the file ended in the middle of the encapsulated section
-         * @throws IOException on other IOExceptions
+         * @throws EOFException    if the file ended in the middle of the encapsulated section
+         * @throws IOException     on other IOExceptions
          */
         boolean consumeQuoted(PushbackReader reader, int quoteCharacter) throws IOException {
             //this currently assumes excel "escaping" of double quotes:
@@ -256,7 +282,7 @@ class CSVSniffer {
         }
 
         private int read(PushbackReader reader) throws IOException {
-            if (charsRead >= markLimit -1) {
+            if (charsRead >= markLimit - 1) {
                 throw new HitMarkLimitException();
             }
             int c = reader.read();
@@ -273,6 +299,7 @@ class CSVSniffer {
                 charsRead--;
             }
         }
+
         //consume all consecutive '\r\n' in any order
         void consumeNewLines(PushbackReader reader) throws IOException {
             int c = read(reader);
@@ -326,9 +353,9 @@ class CSVSniffer {
             //that eventually approaches 1.0
             double encapsulatedBonus = 0;
             if (encapsulated > 0) {
-                encapsulatedBonus = 1.0-(1.0d/Math.pow(encapsulated, 0.2));
+                encapsulatedBonus = 1.0 - (1.0d / Math.pow(encapsulated, 0.2));
             }
-            return Math.min(confidence+encapsulatedBonus, 1.0);
+            return Math.min(confidence + encapsulatedBonus, 1.0);
         }
 
         private double calculateColumnCountConsistency() {
@@ -351,17 +378,9 @@ class CSVSniffer {
             }
 
             //TODO: convert this to continuous vs vague heuristic step function
-            double consistency = (double)max/(double)totalRows;
-            return ((1d-(1d/Math.pow(totalRows,0.3)))*consistency);
+            double consistency = (double) max / (double) totalRows;
+            return ((1d - (1d / Math.pow(totalRows, 0.3))) * consistency);
         }
-
-    }
-
-    private static class UnsurprisingEOF extends EOFException {
-
-    }
-
-    private static class HitMarkLimitException extends EOFException {
 
     }
 
@@ -373,21 +392,6 @@ class CSVSniffer {
         @Override
         public void close() throws IOException {
             //do nothing
-        }
-    }
-
-    private static class MutableInt {
-        int i;
-
-        MutableInt(int i) {
-            this.i = i;
-        }
-        void increment() {
-            i++;
-        }
-
-        int intValue() {
-            return i;
         }
     }
 }

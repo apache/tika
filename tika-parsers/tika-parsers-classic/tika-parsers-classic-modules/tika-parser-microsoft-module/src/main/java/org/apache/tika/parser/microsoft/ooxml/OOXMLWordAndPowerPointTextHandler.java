@@ -22,42 +22,36 @@ import java.util.Date;
 import java.util.Map;
 
 import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
-import org.apache.tika.utils.DateUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.utils.DateUtils;
+
 /**
  * This class is intended to handle anything that might contain IBodyElements:
  * main document, headers, footers, notes, slides, etc.
- *
+ * <p>
  * <p/>
- *
+ * <p>
  * This class does not generally check for namespaces, and it can be applied
  * to PPTX and DOCX for text extraction.
- *
+ * <p>
  * <p/>
  * This can be used to scrape content from charts.  It currently ignores
  * formula (&lt;c:f/&gt;) elements
- *
+ * <p>
  * <p/>
  * This does not work with .xlsx or .vsdx.
- *
+ * <p>
  * TODO: move this into POI?
- *
  */
 
 public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
 
 
-    public enum EditType {
-        NONE,
-        INSERT,
-        DELETE,
-        MOVE_TO,
-        MOVE_FROM
-    }
-
+    public final static String W_NS =
+            "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
     private final static String R = "r";
     private final static String FLD = "fld";
     private final static String RPR = "rPr";
@@ -91,21 +85,18 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private final static String RUBY = "ruby"; //phonetic section
     private final static String RT = "rt"; //phonetic run
     private static final String VAL = "val";
-
-
-    public final static String W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
-    private final static String MC_NS = "http://schemas.openxmlformats.org/markup-compatibility/2006";
+    private final static String MC_NS =
+            "http://schemas.openxmlformats.org/markup-compatibility/2006";
     private final static String O_NS = "urn:schemas-microsoft-com:office:office";
     private final static String PIC_NS = "http://schemas.openxmlformats.org/drawingml/2006/picture";
-    private final static String DRAWING_MAIN_NS = "http://schemas.openxmlformats.org/drawingml/2006/main";
+    private final static String DRAWING_MAIN_NS =
+            "http://schemas.openxmlformats.org/drawingml/2006/main";
     private final static String V_NS = "urn:schemas-microsoft-com:vml";
     private final static String C_NS = "http://schemas.openxmlformats.org/drawingml/2006/chart";
-
-    private final static String OFFICE_DOC_RELATIONSHIP_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
-
+    private final static String OFFICE_DOC_RELATIONSHIP_NS =
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
     private final static char[] TAB_CHAR = new char[]{'\t'};
     private final static char NEWLINE = '\n';
-    
     private final static String BOOKMARK_START = "bookmarkStart";
     private final static String BOOKMARK_END = "bookmarkEnd";
     private final static String FOOTNOTE_REFERENCE = "footnoteReference";
@@ -116,24 +107,25 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private final static String MOVE_TO = "moveTo";
     private final static String ENDNOTE_REFERENCE = "endnoteReference";
     private static final String TEXTBOX = "textbox";
-
-
     private final XWPFBodyContentsHandler bodyContentsHandler;
-
     private final Map<String, String> linkedRelationships;
-
-    private boolean inR = false;//in run or in field. TODO: convert this to an integer because you can have a run within a run
+    private final RunProperties currRunProperties = new RunProperties();
+    private final ParagraphProperties currPProperties = new ParagraphProperties();
+    private final boolean includeTextBox;
+    private final boolean concatenatePhoneticRuns;
+    private final StringBuilder runBuffer = new StringBuilder();
+    private final StringBuilder rubyBuffer = new StringBuilder();
+    private boolean inR = false;
+    //in run or in field. TODO: convert this to an integer because you can have a run within a run
     private boolean inT = false;
     private boolean inRPr = false;
     private boolean inNumPr = false;
     private boolean inRt = false;
-
     private boolean inPic = false;
     private boolean inPict = false;
     private String picDescription = null;
     private String picRId = null;
     private String picFilename = null;
-
     //mechanism used to determine when to
     //signal the start of the p, and still
     //handle p with pPr and those without
@@ -142,28 +134,18 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     //pPr can happen multiple times within a p
     //<p><pPr/><r><t>text</t></r><pPr></p>
     private boolean pStarted = false;
-
     //alternate content can be embedded in itself.
     //need to track depth.
     //if in alternate, choose fallback, maybe make this configurable?
     private int inACChoiceDepth = 0;
     private int inACFallbackDepth = 0;
-
-    private final RunProperties currRunProperties = new RunProperties();
-    private final ParagraphProperties currPProperties = new ParagraphProperties();
-    private final boolean includeTextBox;
-    private final boolean concatenatePhoneticRuns;
-    private final StringBuilder runBuffer = new StringBuilder();
-    private final StringBuilder rubyBuffer = new StringBuilder();//buffers rt in ruby sections (see 17.3.3.25)
-
-
     private boolean inDelText = false;
+    //buffers rt in ruby sections (see 17.3.3.25)
     private boolean inHlinkClick = false;
     private boolean inTextBox = false;
     private boolean inV = false; //in c:v in chart file
-
-    private OOXMLWordAndPowerPointTextHandler.EditType editType = OOXMLWordAndPowerPointTextHandler.EditType.NONE;
-
+    private OOXMLWordAndPowerPointTextHandler.EditType editType =
+            OOXMLWordAndPowerPointTextHandler.EditType.NONE;
     private DateUtils dateUtils = new DateUtils();
 
     public OOXMLWordAndPowerPointTextHandler(XWPFBodyContentsHandler bodyContentsHandler,
@@ -171,15 +153,14 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         this(bodyContentsHandler, hyperlinks, true, true);
     }
 
-
     public OOXMLWordAndPowerPointTextHandler(XWPFBodyContentsHandler bodyContentsHandler,
-                                             Map<String, String> hyperlinks, boolean includeTextBox, boolean concatenatePhoneticRuns) {
+                                             Map<String, String> hyperlinks, boolean includeTextBox,
+                                             boolean concatenatePhoneticRuns) {
         this.bodyContentsHandler = bodyContentsHandler;
         this.linkedRelationships = hyperlinks;
         this.includeTextBox = includeTextBox;
         this.concatenatePhoneticRuns = concatenatePhoneticRuns;
     }
-
 
     @Override
     public void startDocument() throws SAXException {
@@ -198,10 +179,11 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     }
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes atts)
+            throws SAXException {
         //TODO: checkBox, textBox, sym, headerReference, footerReference, commentRangeEnd
 
-        if (lastStartElementWasP && ! PPR.equals(localName)) {
+        if (lastStartElementWasP && !PPR.equals(localName)) {
             bodyContentsHandler.startParagraph(currPProperties);
         }
 
@@ -219,7 +201,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             return;
         }
 
-        if (! includeTextBox && localName.equals(TEXTBOX)) {
+        if (!includeTextBox && localName.equals(TEXTBOX)) {
             inTextBox = true;
             return;
         }
@@ -237,7 +219,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         } else if (P.equals(localName)) {
             lastStartElementWasP = true;
         } else if (B.equals(localName)) { //TODO: add bCs
-            if(inR && inRPr) {
+            if (inR && inRPr) {
                 currRunProperties.setBold(true);
             }
         } else if (TC.equals(localName)) {
@@ -270,7 +252,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             if (inNumPr) {
                 currPProperties.setNumId(getIntVal(atts));
             }
-        } else if(BR.equals(localName)) {
+        } else if (BR.equals(localName)) {
             runBuffer.append(NEWLINE);
         } else if (BOOKMARK_START.equals(localName)) {
             String name = atts.getValue(W_NS, "name");
@@ -300,7 +282,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
                 bodyContentsHandler.hyperlinkStart(hyperlink);
                 inHlinkClick = true;
             }
-        } else if(TBL.equals(localName)) {
+        } else if (TBL.equals(localName)) {
             bodyContentsHandler.startTable();
         } else if (BLIP.equals(localName)) { //check for DRAWING_NS
             picRId = atts.getValue(OFFICE_DOC_RELATIONSHIP_NS, "embed");
@@ -325,7 +307,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             startEditedSection(EditType.MOVE_TO, atts);
         } else if (MOVE_FROM.equals(localName)) {
             startEditedSection(editType.MOVE_FROM, atts);
-        } else if (OLE_OBJECT.equals(localName)){ //check for O_NS?
+        } else if (OLE_OBJECT.equals(localName)) { //check for O_NS?
             String type = null;
             String refId = null;
             //TODO: clean this up and ...want to get ProgID?
@@ -334,14 +316,15 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
                 String attValue = atts.getValue(i);
                 if (attLocalName.equals("Type")) {
                     type = attValue;
-                } else if (OFFICE_DOC_RELATIONSHIP_NS.equals(atts.getURI(i)) && attLocalName.equals("id")) {
+                } else if (OFFICE_DOC_RELATIONSHIP_NS.equals(atts.getURI(i)) &&
+                        attLocalName.equals("id")) {
                     refId = attValue;
                 }
             }
             if ("Embed".equals(type)) {
                 bodyContentsHandler.embeddedOLERef(refId);
             }
-        } else if(CR.equals(localName)) {
+        } else if (CR.equals(localName)) {
             runBuffer.append(NEWLINE);
         } else if (ENDNOTE_REFERENCE.equals(localName)) {
             String id = atts.getValue(W_NS, "id");
@@ -385,7 +368,6 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         return -1;
     }
 
-
     @Override
     public void endElement(String uri, String localName, String qName) throws SAXException {
 
@@ -398,7 +380,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             return;
         }
 
-        if (! includeTextBox && localName.equals(TEXTBOX)) {
+        if (!includeTextBox && localName.equals(TEXTBOX)) {
             inTextBox = false;
             return;
         }
@@ -437,8 +419,8 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             handleEndOfRun();
         } else if (DEL_TEXT.equals(localName)) {
             inDelText = false;
-        } else if (INS.equals(localName) || DEL.equals(localName) ||
-                MOVE_TO.equals(localName) || MOVE_FROM.equals(localName)) {
+        } else if (INS.equals(localName) || DEL.equals(localName) || MOVE_TO.equals(localName) ||
+                MOVE_FROM.equals(localName)) {
             editType = EditType.NONE;
         } else if (HYPERLINK.equals(localName)) {
             bodyContentsHandler.hyperlinkEnd();
@@ -493,7 +475,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
 
         if (inACChoiceDepth > 0) {
             return;
-        } else if (! includeTextBox && inTextBox) {
+        } else if (!includeTextBox && inTextBox) {
             return;
         }
 
@@ -515,7 +497,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
         if (inACChoiceDepth > 0) {
             return;
-        } else if (! includeTextBox && inTextBox) {
+        } else if (!includeTextBox && inTextBox) {
             return;
         }
 
@@ -532,6 +514,10 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         } else {
             runBuffer.append(ch, start, length);
         }
+    }
+
+    public enum EditType {
+        NONE, INSERT, DELETE, MOVE_TO, MOVE_FROM
     }
 
     public interface XWPFBodyContentsHandler {

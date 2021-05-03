@@ -38,12 +38,18 @@ public class TokenIntPair implements Comparable<TokenIntPair> {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         TokenIntPair that = (TokenIntPair) o;
 
-        if (value != that.value) return false;
+        if (value != that.value) {
+            return false;
+        }
         return token.equals(that.token);
     }
 
@@ -72,9 +78,6 @@ public class TokenIntPair implements Comparable<TokenIntPair> {
 
     @Override
     public String toString() {
-        return "TokenIntPair{" +
-                "token='" + token + '\'' +
-                ", value=" + value +
-                '}';
+        return "TokenIntPair{" + "token='" + token + '\'' + ", value=" + value + '}';
     }
 }

@@ -17,8 +17,6 @@
 
 package org.apache.tika.parser.ner.opennlp;
 
-import org.apache.tika.parser.ner.NERecogniser;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,13 +25,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.tika.parser.ner.NERecogniser;
+
 
 /**
- *
  * This implementation of {@link NERecogniser} chains an array of
  * {@link OpenNLPNameFinder}s for which NER models are
  * available in classpath.
- *
+ * <p>
  * The following models are scanned during initialization via class loader.:
  *
  * <table>
@@ -67,8 +66,8 @@ import java.util.Set;
  */
 public class OpenNLPNERecogniser implements NERecogniser {
 
-    public static final String MODELS_DIR = OpenNLPNERecogniser.class
-            .getPackage().getName().replace(".", "/");
+    public static final String MODELS_DIR =
+            OpenNLPNERecogniser.class.getPackage().getName().replace(".", "/");
     public static final String PERSON_FILE = "ner-person.bin";
     public static final String LOCATION_FILE = "ner-location.bin";
     public static final String ORGANIZATION_FILE = "ner-organization.bin";
@@ -87,16 +86,17 @@ public class OpenNLPNERecogniser implements NERecogniser {
     public static final String NER_PERCENT_MODEL = MODELS_DIR + "/" + PERCENT_FILE;
     public static final String NER_MONEY_MODEL = MODELS_DIR + "/" + MONEY_FILE;
 
-    public static final Map<String, String> DEFAULT_MODELS =
-            new HashMap<String, String>(){{
-                put(PERSON, NER_PERSON_MODEL);
-                put(LOCATION, NER_LOCATION_MODEL);
-                put(ORGANIZATION, NER_ORGANIZATION_MODEL);
-                put(TIME, NER_TIME_MODEL);
-                put(DATE, NER_DATE_MODEL);
-                put(PERCENT, NER_PERCENT_MODEL);
-                put(MONEY, NER_MONEY_MODEL);
-            }};
+    public static final Map<String, String> DEFAULT_MODELS = new HashMap<String, String>() {
+        {
+            put(PERSON, NER_PERSON_MODEL);
+            put(LOCATION, NER_LOCATION_MODEL);
+            put(ORGANIZATION, NER_ORGANIZATION_MODEL);
+            put(TIME, NER_TIME_MODEL);
+            put(DATE, NER_DATE_MODEL);
+            put(PERCENT, NER_PERCENT_MODEL);
+            put(MONEY, NER_MONEY_MODEL);
+        }
+        };
 
     private Set<String> entityTypes;
     private List<OpenNLPNameFinder> nameFinders;
@@ -105,21 +105,21 @@ public class OpenNLPNERecogniser implements NERecogniser {
     /**
      * Creates a default chain of Name finders using default OpenNLP recognizers
      */
-    public OpenNLPNERecogniser(){
+    public OpenNLPNERecogniser() {
         this(DEFAULT_MODELS);
     }
 
     /**
      * Creates a chain of Named Entity recognisers
+     *
      * @param models map of entityType -&gt; model path
-     * NOTE: the model path should be known to class loader.
+     *               NOTE: the model path should be known to class loader.
      */
-    public OpenNLPNERecogniser(Map<String, String> models){
+    public OpenNLPNERecogniser(Map<String, String> models) {
         this.nameFinders = new ArrayList<>();
         this.entityTypes = new HashSet<>();
         for (Map.Entry<String, String> entry : models.entrySet()) {
-            OpenNLPNameFinder finder =
-                    new OpenNLPNameFinder(entry.getKey(), entry.getValue());
+            OpenNLPNameFinder finder = new OpenNLPNameFinder(entry.getKey(), entry.getValue());
             if (finder.isAvailable()) {
                 this.nameFinders.add(finder);
                 this.entityTypes.add(entry.getKey());

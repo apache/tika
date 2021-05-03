@@ -17,10 +17,6 @@
 package org.apache.tika.eval.app;
 
 
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
@@ -31,8 +27,15 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 
-import org.apache.log4j.Level;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.event.Level;
+
 import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.H2Util;
 import org.apache.tika.eval.app.db.JDBCUtil;
@@ -40,8 +43,6 @@ import org.apache.tika.eval.app.db.TableInfo;
 import org.apache.tika.eval.app.io.XMLLogMsgHandler;
 import org.apache.tika.eval.app.io.XMLLogReader;
 import org.apache.tika.eval.app.reports.ResultsReporter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This is a very task specific class that reads a log file and updates
@@ -64,13 +65,15 @@ public class XMLErrorLogUpdater {
         connection.commit();
     }
 
-    public void update(Connection connection, TableInfo tableInfo, Path xmlLogFile) throws Exception {
+    public void update(Connection connection, TableInfo tableInfo, Path xmlLogFile)
+            throws Exception {
         statement = connection.createStatement();
         XMLLogReader reader = new XMLLogReader();
         try (InputStream is = Files.newInputStream(xmlLogFile)) {
             reader.read(is, new ErrorMsgUpdater(tableInfo.getName()));
         } catch (IOException e) {
-            throw new RuntimeException("Problem reading: "+xmlLogFile.toAbsolutePath().toString());
+            throw new RuntimeException(
+                    "Problem reading: " + xmlLogFile.toAbsolutePath().toString());
         } finally {
             try {
                 connection.commit();
@@ -90,7 +93,7 @@ public class XMLErrorLogUpdater {
 
         @Override
         public void handleMsg(Level level, String xml) throws SQLException, IOException {
-            if (! level.equals(Level.ERROR)) {
+            if (!level.equals(Level.ERROR)) {
                 return;
             }
             XMLStreamReader reader = null;
@@ -113,7 +116,8 @@ public class XMLErrorLogUpdater {
 
                             } else if ("oom".equals(reader.getLocalName())) {
                                 resourceId = reader.getAttributeValue("", "resourceId");
-                                update(errorTablename, resourceId, AbstractProfiler.PARSE_ERROR_TYPE.OOM);
+                                update(errorTablename, resourceId,
+                                        AbstractProfiler.PARSE_ERROR_TYPE.OOM);
                             }
                             break;
                     }
@@ -124,13 +128,11 @@ public class XMLErrorLogUpdater {
             }
         }
 
-        private void update(String errorTableName,
-                            String filePath, AbstractProfiler.PARSE_ERROR_TYPE type) throws SQLException {
+        private void update(String errorTableName, String filePath,
+                            AbstractProfiler.PARSE_ERROR_TYPE type) throws SQLException {
             int containerId = getContainerId(filePath);
-            String sql = "SELECT count(1) from "+errorTableName +
-                    " where "+ Cols.CONTAINER_ID +
-                    " = "+containerId + " or "+
-                    Cols.FILE_PATH + "='"+filePath+"'";
+            String sql = "SELECT count(1) from " + errorTableName + " where " + Cols.CONTAINER_ID +
+                    " = " + containerId + " or " + Cols.FILE_PATH + "='" + filePath + "'";
             ResultSet rs = statement.executeQuery(sql);
 
             //now try to figure out if that file already exists
@@ -142,27 +144,23 @@ public class XMLErrorLogUpdater {
 
             //if it does, update all records matching that path or container id
             if (hitCount > 0) {
-                sql = "UPDATE " + errorTableName +
-                        " SET " + Cols.PARSE_ERROR_ID +
-                        " = " + type.ordinal() + ","+
-                        Cols.FILE_PATH + "='" +filePath+"'"+
-                        " where "+Cols.CONTAINER_ID +
-                        "="+containerId + " or "+
-                        Cols.FILE_PATH + "='"+filePath+"'";;
+                sql = "UPDATE " + errorTableName + " SET " + Cols.PARSE_ERROR_ID + " = " +
+                        type.ordinal() + "," + Cols.FILE_PATH + "='" + filePath + "'" + " where " +
+                        Cols.CONTAINER_ID + "=" + containerId + " or " + Cols.FILE_PATH + "='" +
+                        filePath + "'";
+                ;
 
             } else {
                 //if not and container id > -1
                 //insert full record
                 if (containerId > -1) {
-                    sql = "INSERT INTO " + errorTableName +
-                            " ("+Cols.CONTAINER_ID+","+Cols.FILE_PATH +","+Cols.PARSE_ERROR_ID +")"+
-                            " values (" + containerId + ", '" + filePath + "'," +
-                            type.ordinal() + ");";
+                    sql = "INSERT INTO " + errorTableName + " (" + Cols.CONTAINER_ID + "," +
+                            Cols.FILE_PATH + "," + Cols.PARSE_ERROR_ID + ")" + " values (" +
+                            containerId + ", '" + filePath + "'," + type.ordinal() + ");";
                 } else {
                     //if container id == -1, insert only file path and parse error type id
-                    sql = "INSERT INTO " + errorTableName +
-                            " ("+Cols.FILE_PATH.name()+","+Cols.PARSE_ERROR_ID +")"+
-                            "values ('" + filePath + "'," +
+                    sql = "INSERT INTO " + errorTableName + " (" + Cols.FILE_PATH.name() + "," +
+                            Cols.PARSE_ERROR_ID + ")" + "values ('" + filePath + "'," +
                             type.ordinal() + ");";
                 }
 
@@ -178,10 +176,9 @@ public class XMLErrorLogUpdater {
 
         private int getContainerId(String resourceId) throws SQLException {
             int containerId = -1;
-            String sql = "SELECT " + Cols.CONTAINER_ID.name() +
-                    " from " + ExtractProfiler.CONTAINER_TABLE.getName()+
-                    " where " + Cols.FILE_PATH +
-                    " ='"+resourceId+"'";
+            String sql = "SELECT " + Cols.CONTAINER_ID.name() + " from " +
+                    ExtractProfiler.CONTAINER_TABLE.getName() + " where " + Cols.FILE_PATH + " ='" +
+                    resourceId + "'";
             ResultSet rs = statement.executeQuery(sql);
             int resultCount = 0;
             while (rs.next()) {

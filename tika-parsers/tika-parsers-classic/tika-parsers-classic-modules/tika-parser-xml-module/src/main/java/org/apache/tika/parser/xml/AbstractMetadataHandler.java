@@ -19,9 +19,10 @@ package org.apache.tika.parser.xml;
 import java.util.Arrays;
 import java.util.List;
 
+import org.xml.sax.helpers.DefaultHandler;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
-import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Base class for SAX handlers that map SAX events into document metadata.
@@ -39,11 +40,12 @@ class AbstractMetadataHandler extends DefaultHandler {
         this.property = null;
         this.name = name;
     }
+
     protected AbstractMetadataHandler(Metadata metadata, Property property) {
-       this.metadata = metadata;
-       this.property = property;
-       this.name = property.getName();
-   }
+        this.metadata = metadata;
+        this.property = property;
+        this.name = property.getName();
+    }
 
     /**
      * Adds the given metadata value. The value is ignored if it is
@@ -59,9 +61,9 @@ class AbstractMetadataHandler extends DefaultHandler {
                 List<String> previous = Arrays.asList(metadata.getValues(name));
                 if (!previous.contains(value)) {
                     if (property != null) {
-                       metadata.add(property, value);
+                        metadata.add(property, value);
                     } else {
-                       metadata.add(name, value);
+                        metadata.add(name, value);
                     }
                 }
             } else {
@@ -69,23 +71,23 @@ class AbstractMetadataHandler extends DefaultHandler {
                 String previous = metadata.get(name);
                 if (previous != null && previous.length() > 0) {
                     if (!previous.equals(value)) {
-                       if (property != null) {
-                          if (property.isMultiValuePermitted()) {
-                              metadata.add(property, value);
-                          } else {
-                              // Replace the existing value if isMultiValuePermitted is false
-                              metadata.set(property, value);
-                          }
-                       } else {
-                          metadata.add(name, value);
-                       }
+                        if (property != null) {
+                            if (property.isMultiValuePermitted()) {
+                                metadata.add(property, value);
+                            } else {
+                                // Replace the existing value if isMultiValuePermitted is false
+                                metadata.set(property, value);
+                            }
+                        } else {
+                            metadata.add(name, value);
+                        }
                     }
                 } else {
-                   if (property != null) {
-                      metadata.set(property, value);
-                   } else {
-                      metadata.set(name, value);
-                   }
+                    if (property != null) {
+                        metadata.set(property, value);
+                    } else {
+                        metadata.set(name, value);
+                    }
                 }
             }
         }

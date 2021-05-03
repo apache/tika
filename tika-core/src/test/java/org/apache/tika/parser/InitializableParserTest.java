@@ -16,17 +16,17 @@
  */
 package org.apache.tika.parser;
 
-import org.apache.tika.Tika;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.junit.Assert;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+
+import org.apache.tika.Tika;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
 
 public class InitializableParserTest {
 

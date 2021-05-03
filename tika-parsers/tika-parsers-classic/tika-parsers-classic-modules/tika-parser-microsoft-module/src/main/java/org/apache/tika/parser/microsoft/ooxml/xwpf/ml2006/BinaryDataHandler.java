@@ -23,6 +23,9 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.commons.codec.binary.Base64;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -30,19 +33,15 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
 
 class BinaryDataHandler extends AbstractPartHandler {
 
+    final Base64 base64 = new Base64();
     private final XHTMLContentHandler handler;
     private final Metadata metadata;
     private final ParseContext parseContext;
-
     private boolean inBinaryData = false;
     private StringBuilder buffer = new StringBuilder();
-
-    final Base64 base64 = new Base64();
 
 
     public BinaryDataHandler(XHTMLContentHandler handler, Metadata metadata, ParseContext context) {
@@ -78,7 +77,8 @@ class BinaryDataHandler extends AbstractPartHandler {
     }
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes atts)
+            throws SAXException {
 
         if (uri.equals(Word2006MLDocHandler.PKG_NS) && localName.equals("binaryData")) {
             inBinaryData = true;

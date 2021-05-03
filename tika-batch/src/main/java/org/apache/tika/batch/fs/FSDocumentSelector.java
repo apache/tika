@@ -1,5 +1,3 @@
-package org.apache.tika.batch.fs;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,7 @@ package org.apache.tika.batch.fs;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.batch.fs;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -43,8 +42,8 @@ public class FSDocumentSelector implements DocumentSelector {
     private final long maxFileSizeBytes;
     private final long minFileSizeBytes;
 
-    public FSDocumentSelector(Pattern includeFileName, Pattern excludeFileName, long minFileSizeBytes,
-                              long maxFileSizeBytes) {
+    public FSDocumentSelector(Pattern includeFileName, Pattern excludeFileName,
+                              long minFileSizeBytes, long maxFileSizeBytes) {
         this.includeFileName = includeFileName;
         this.excludeFileName = excludeFileName;
         this.minFileSizeBytes = minFileSizeBytes;

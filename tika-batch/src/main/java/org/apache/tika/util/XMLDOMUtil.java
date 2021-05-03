@@ -1,5 +1,3 @@
-package org.apache.tika.util;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,7 @@ package org.apache.tika.util;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.util;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,7 +28,7 @@ public class XMLDOMUtil {
      * This grabs the attributes from a dom node and overwrites those values with those
      * specified by the overwrite map.
      *
-     * @param node node for building
+     * @param node      node for building
      * @param overwrite map of attributes to overwrite
      * @return map of attributes
      */
@@ -54,12 +53,13 @@ public class XMLDOMUtil {
      * the document element.  Throw a RuntimeException if the attribute is not
      * found or if the value is not parseable as an int.
      *
-     * @param attrName attribute name to find
+     * @param attrName          attribute name to find
      * @param runtimeAttributes runtime attributes
-     * @param docElement correct element that should have specified attribute
+     * @param docElement        correct element that should have specified attribute
      * @return specified int value
      */
-    public static int getInt(String attrName, Map<String, String> runtimeAttributes, Node docElement) {
+    public static int getInt(String attrName, Map<String, String> runtimeAttributes,
+                             Node docElement) {
         String stringValue = getStringValue(attrName, runtimeAttributes, docElement);
         if (stringValue != null) {
             try {
@@ -68,8 +68,8 @@ public class XMLDOMUtil {
                 //swallow
             }
         }
-        throw new RuntimeException("Need to specify a parseable int value in -- "
-                +attrName+" -- in commandline or in config file!");
+        throw new RuntimeException("Need to specify a parseable int value in -- " + attrName +
+                " -- in commandline or in config file!");
     }
 
 
@@ -78,12 +78,13 @@ public class XMLDOMUtil {
      * the document element.  Throw a RuntimeException if the attribute is not
      * found or if the value is not parseable as a long.
      *
-     * @param attrName attribute name to find
+     * @param attrName          attribute name to find
      * @param runtimeAttributes runtime attributes
-     * @param docElement correct element that should have specified attribute
+     * @param docElement        correct element that should have specified attribute
      * @return specified long value
      */
-    public static long getLong(String attrName, Map<String, String> runtimeAttributes, Node docElement) {
+    public static long getLong(String attrName, Map<String, String> runtimeAttributes,
+                               Node docElement) {
         String stringValue = getStringValue(attrName, runtimeAttributes, docElement);
         if (stringValue != null) {
             try {
@@ -92,11 +93,12 @@ public class XMLDOMUtil {
                 //swallow
             }
         }
-        throw new RuntimeException("Need to specify a \"long\" value in -- "
-                +attrName+" -- in commandline or in config file!");
+        throw new RuntimeException("Need to specify a \"long\" value in -- " + attrName +
+                " -- in commandline or in config file!");
     }
 
-    private static String getStringValue(String attrName, Map<String, String> runtimeAttributes, Node docElement) {
+    private static String getStringValue(String attrName, Map<String, String> runtimeAttributes,
+                                         Node docElement) {
         String stringValue = runtimeAttributes.get(attrName);
         if (stringValue == null) {
             Node staleNode = docElement.getAttributes().getNamedItem(attrName);

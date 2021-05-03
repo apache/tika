@@ -21,10 +21,11 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
+
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.sax.BodyContentHandler;
 
 /**
  * Test case for parsing gzip files.
@@ -33,27 +34,27 @@ public class GzipParserTest extends AbstractPkgTest {
 
     /**
      * Tests that the ParseContext parser is correctly
-     *  fired for all the embedded entries.
+     * fired for all the embedded entries.
      */
     @Test
     public void testEmbedded() throws Exception {
-       ContentHandler handler = new BodyContentHandler();
-       Metadata metadata = new Metadata();
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
 
         try (InputStream stream = getResourceAsStream("/test-documents/test-documents.tgz")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
         }
 
-       // Should find a single entry, for the (compressed) tar file
-       assertEquals(1, tracker.filenames.size());
-       assertEquals(1, tracker.mediatypes.size());
-       assertEquals(1, tracker.modifiedAts.size());
+        // Should find a single entry, for the (compressed) tar file
+        assertEquals(1, tracker.filenames.size());
+        assertEquals(1, tracker.mediatypes.size());
+        assertEquals(1, tracker.modifiedAts.size());
 
-       assertEquals(null, tracker.filenames.get(0));
-       assertEquals(null, tracker.mediatypes.get(0));
-       assertEquals(null, tracker.modifiedAts.get(0));
+        assertEquals(null, tracker.filenames.get(0));
+        assertEquals(null, tracker.mediatypes.get(0));
+        assertEquals(null, tracker.modifiedAts.get(0));
 
-       // Tar file starts with the directory name
-       assertEquals("test-documents/", new String(tracker.lastSeenStart, 0, 15, US_ASCII));
+        // Tar file starts with the directory name
+        assertEquals("test-documents/", new String(tracker.lastSeenStart, 0, 15, US_ASCII));
     }
 }

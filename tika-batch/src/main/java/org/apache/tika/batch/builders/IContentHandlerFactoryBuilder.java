@@ -18,11 +18,12 @@ package org.apache.tika.batch.builders;
 
 import java.util.Map;
 
-import org.apache.tika.sax.ContentHandlerFactory;
 import org.w3c.dom.Node;
+
+import org.apache.tika.sax.ContentHandlerFactory;
 
 public interface IContentHandlerFactoryBuilder extends ObjectFromDOMBuilder<ContentHandlerFactory> {
 
-  public ContentHandlerFactory build(Node node, Map<String, String> attributes);
+    public ContentHandlerFactory build(Node node, Map<String, String> attributes);
 
 }

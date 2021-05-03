@@ -67,8 +67,7 @@ public class ContentHandlerDecorator extends DefaultHandler {
     }
 
     @Override
-    public void startPrefixMapping(String prefix, String uri)
-            throws SAXException {
+    public void startPrefixMapping(String prefix, String uri) throws SAXException {
         try {
             handler.startPrefixMapping(prefix, uri);
         } catch (SAXException e) {
@@ -86,8 +85,7 @@ public class ContentHandlerDecorator extends DefaultHandler {
     }
 
     @Override
-    public void processingInstruction(String target, String data)
-            throws SAXException {
+    public void processingInstruction(String target, String data) throws SAXException {
         try {
             handler.processingInstruction(target, data);
         } catch (SAXException e) {
@@ -119,8 +117,7 @@ public class ContentHandlerDecorator extends DefaultHandler {
     }
 
     @Override
-    public void startElement(
-            String uri, String localName, String name, Attributes atts)
+    public void startElement(String uri, String localName, String name, Attributes atts)
             throws SAXException {
         try {
             handler.startElement(uri, localName, name, atts);
@@ -130,8 +127,7 @@ public class ContentHandlerDecorator extends DefaultHandler {
     }
 
     @Override
-    public void endElement(String uri, String localName, String name)
-            throws SAXException {
+    public void endElement(String uri, String localName, String name) throws SAXException {
         try {
             handler.endElement(uri, localName, name);
         } catch (SAXException e) {
@@ -140,8 +136,7 @@ public class ContentHandlerDecorator extends DefaultHandler {
     }
 
     @Override
-    public void characters(char[] ch, int start, int length)
-            throws SAXException {
+    public void characters(char[] ch, int start, int length) throws SAXException {
         try {
             handler.characters(ch, start, length);
         } catch (SAXException e) {
@@ -150,8 +145,7 @@ public class ContentHandlerDecorator extends DefaultHandler {
     }
 
     @Override
-    public void ignorableWhitespace(char[] ch, int start, int length)
-            throws SAXException {
+    public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
         try {
             handler.ignorableWhitespace(ch, start, length);
         } catch (SAXException e) {

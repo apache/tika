@@ -26,50 +26,51 @@
     <metadata action="add" name="dc:creator">Nikolai Lobachevsky</metadata>
     <!-- element is the name of the sax event to write, p=paragraph
         if the element is not specified, the default is <p> -->
-    <hang millis="100" heavy="false"  />
-    <write element="p">hello world! </write>
+    <hang millis="100" heavy="false"/>
+    <write element="p">hello world!</write>
     <!-- write something to System.out -->
     <print_out>writing to System.out</print_out>
-    <hang millis="10" heavy="false"  />
+    <hang millis="10" heavy="false"/>
     <print_out static="true" random="200000"/>
-    <hang millis="10" heavy="false"  />
+    <hang millis="10" heavy="false"/>
     <print_out static="true" random="200000"/>
-    <hang millis="10" heavy="false"  />
+    <hang millis="10" heavy="false"/>
     <print_out static="true" random="200000"/>
-    <hang millis="10" heavy="false"  />
+    <hang millis="10" heavy="false"/>
     <print_err static="true" random="200000"/>
-    <hang millis="10" heavy="false"  />
+    <hang millis="10" heavy="false"/>
     <print_err static="true" random="200000"/>
-    <hang millis="10" heavy="false"  />
+    <hang millis="10" heavy="false"/>
     <print_out>writing to System.out</print_out>
-    <hang millis="80" heavy="false"  />
+    <hang millis="80" heavy="false"/>
     <print_out>writing to System.out</print_out>
-    <hang millis="70" heavy="false"  />
+    <hang millis="70" heavy="false"/>
     <print_out>writing to System.out</print_out>
-    <hang millis="60" heavy="false"  />
+    <hang millis="60" heavy="false"/>
     <print_out>writing to System.out</print_out>
-    <hang millis="20" heavy="false"  />
+    <hang millis="20" heavy="false"/>
     <print_out>writing to System.out</print_out>
-    <hang millis="10" heavy="false"  />
+    <hang millis="10" heavy="false"/>
     <print_out>writing to System.out</print_out>
-    <hang millis="30" heavy="false"  />
+    <hang millis="30" heavy="false"/>
     <print_out>writing to System.out</print_out>
-    <hang millis="10" heavy="false"  />
+    <hang millis="10" heavy="false"/>
     <print_out>writing to System.out</print_out>
-    <hang millis="10" heavy="false"  />
+    <hang millis="10" heavy="false"/>
     <print_out>writing to System.out</print_out>
-    <hang millis="20" heavy="false"  />
+    <hang millis="20" heavy="false"/>
     <print_out>writing to System.out</print_out>
-    <hang millis="20" heavy="false"  />
+    <hang millis="20" heavy="false"/>
     <print_out>writing to System.out</print_out>
-    <hang millis="30" heavy="false"  />
+    <hang millis="30" heavy="false"/>
     <print_out>writing to System.out</print_out>
-    <hang millis="10" heavy="false"  />
+    <hang millis="10" heavy="false"/>
     <print_out>writing to System.out</print_out>
-    <hang millis="50" heavy="false"  />
+    <hang millis="50" heavy="false"/>
     <!-- write something to System.err -->
     <print_err>writing to System.err</print_err>
 
-    <write element="p">Even after the calls to Sys.out/err...hello world! the quick brown fox jumped over the lazy dog</write>
+    <write element="p">Even after the calls to Sys.out/err...hello world! the quick brown fox jumped over the lazy dog
+    </write>
 
 </mock>

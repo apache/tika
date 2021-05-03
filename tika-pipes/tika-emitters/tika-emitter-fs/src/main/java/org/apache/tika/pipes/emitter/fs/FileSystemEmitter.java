@@ -16,16 +16,6 @@
  */
 package org.apache.tika.pipes.emitter.fs;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.pipes.emitter.AbstractEmitter;
-import org.apache.tika.pipes.emitter.Emitter;
-import org.apache.tika.pipes.emitter.StreamEmitter;
-import org.apache.tika.pipes.emitter.TikaEmitterException;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.serialization.JsonMetadataList;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
@@ -35,9 +25,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.Collections;
 import java.util.List;
-import java.util.Set;
+
+import org.apache.tika.config.Field;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.pipes.emitter.AbstractEmitter;
+import org.apache.tika.pipes.emitter.StreamEmitter;
+import org.apache.tika.pipes.emitter.TikaEmitterException;
 
 /**
  * Emitter to write to a file system.
@@ -56,7 +52,8 @@ import java.util.Set;
  *                  &lt;param name="basePath" type="string"&gt;/path/to/output&lt;/param&gt;
  *                  &lt;!-- optional; default is 'json' --&gt;
  *                  &lt;param name="fileExtension" type="string"&gt;json&lt;/param&gt;
- *                  &lt;!-- optional; if the file already exists, options ('skip', 'replace', 'exception')
+ *                  &lt;!-- optional; if the file already exists,
+ *                       options ('skip', 'replace', 'exception')
  *                  default is 'exception' --&gt;
  *                  &lt;param name="onExists" type="string"&gt;skip&lt;/param&gt;
  *              &lt;/params&gt;
@@ -66,17 +63,13 @@ import java.util.Set;
  */
 public class FileSystemEmitter extends AbstractEmitter implements StreamEmitter {
 
-    enum ON_EXISTS {
-        SKIP, EXCEPTION, REPLACE
-    }
-
     private Path basePath = null;
     private String fileExtension = "json";
     private ON_EXISTS onExists = ON_EXISTS.EXCEPTION;
 
-
     @Override
-    public void emit(String emitKey, List<Metadata> metadataList) throws IOException, TikaEmitterException {
+    public void emit(String emitKey, List<Metadata> metadataList)
+            throws IOException, TikaEmitterException {
         Path output;
         if (metadataList == null || metadataList.size() == 0) {
             throw new TikaEmitterException("metadata list must not be null or of size 0");
@@ -124,15 +117,14 @@ public class FileSystemEmitter extends AbstractEmitter implements StreamEmitter 
         } else if (onExists.equals("exception")) {
             this.onExists = ON_EXISTS.EXCEPTION;
         } else {
-            throw new IllegalArgumentException(
-                    "Don't understand '" + onExists +
-                            "'; must be one of: 'skip', 'replace', 'exception'");
+            throw new IllegalArgumentException("Don't understand '" + onExists +
+                    "'; must be one of: 'skip', 'replace', 'exception'");
         }
     }
 
     @Override
-    public void emit(String path, InputStream inputStream, Metadata userMetadata) throws IOException,
-            TikaEmitterException {
+    public void emit(String path, InputStream inputStream, Metadata userMetadata)
+            throws IOException, TikaEmitterException {
         Path target = basePath.resolve(path);
 
         if (!Files.isDirectory(target.getParent())) {
@@ -151,5 +143,9 @@ public class FileSystemEmitter extends AbstractEmitter implements StreamEmitter 
                 }
             }
         }
+    }
+
+    enum ON_EXISTS {
+        SKIP, EXCEPTION, REPLACE
     }
 }

@@ -17,7 +17,8 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.apache.tika</groupId>
@@ -75,10 +76,10 @@
       <artifactId>deeplearning4j-modelimport</artifactId>
       <version>${dl4j.version}</version>
       <exclusions>
-         <exclusion>
-            <groupId>org.deeplearning4j</groupId>
-            <artifactId>deeplearning4j-keras</artifactId>
-         </exclusion>
+        <exclusion>
+          <groupId>org.deeplearning4j</groupId>
+          <artifactId>deeplearning4j-keras</artifactId>
+        </exclusion>
         <exclusion>
           <groupId>org.nd4j</groupId>
           <artifactId>nd4j-api</artifactId>
@@ -213,7 +214,7 @@
     </dependency>
 
     <dependency>
-    <groupId>org.datavec</groupId>
+      <groupId>org.datavec</groupId>
       <artifactId>datavec-api</artifactId>
       <version>${dl4j.version}</version>
       <exclusions>
@@ -306,9 +307,9 @@
       </exclusions>
     </dependency>
     <dependency>
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-compress</artifactId>
-        <version>${commons.compress.version}</version>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-compress</artifactId>
+      <version>${commons.compress.version}</version>
     </dependency>
     <dependency>
       <groupId>org.projectlombok</groupId>
@@ -331,8 +332,8 @@
       <version>${commons.lang3.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-log4j12</artifactId>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j-impl</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

@@ -16,7 +16,16 @@
  */
 package org.apache.tika.parser.odf;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collections;
+import java.util.Set;
+
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -25,14 +34,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collections;
-import java.util.Set;
 
 /**
  * Parser for ODF <code>content.xml</code> files.
@@ -43,28 +44,19 @@ public class OpenDocumentContentParser extends AbstractParser {
         return Collections.emptySet(); // not a top-level parser
     }
 
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
-        parseInternal(stream,
-                new XHTMLContentHandler(handler, metadata),
-                metadata, context);
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
+        parseInternal(stream, new XHTMLContentHandler(handler, metadata), metadata, context);
     }
 
-    void parseInternal(
-            InputStream stream, final ContentHandler handler,
-            Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    void parseInternal(InputStream stream, final ContentHandler handler, Metadata metadata,
+                       ParseContext context) throws IOException, SAXException, TikaException {
 
         DefaultHandler dh = new OpenDocumentBodyHandler(handler, context);
 
 
-        XMLReaderUtils.parseSAX(
-                new CloseShieldInputStream(stream),
-                new OfflineContentHandler(
-                        new NSNormalizerContentHandler(dh)),
-                context);
+        XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream),
+                new OfflineContentHandler(new NSNormalizerContentHandler(dh)), context);
     }
 
 }

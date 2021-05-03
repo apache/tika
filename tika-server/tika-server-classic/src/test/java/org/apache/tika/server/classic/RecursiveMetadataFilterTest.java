@@ -17,18 +17,11 @@
 
 package org.apache.tika.server.classic;
 
-import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
-import org.apache.cxf.jaxrs.client.WebClient;
-import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.serialization.JsonMetadataList;
-import org.apache.tika.server.core.CXFTestBase;
-import org.apache.tika.server.core.resource.RecursiveMetadataResource;
-import org.apache.tika.server.core.writer.MetadataListMessageBodyWriter;
-import org.junit.Test;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -36,11 +29,19 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import javax.ws.rs.core.Response;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
+import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.junit.Test;
+
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.server.core.CXFTestBase;
+import org.apache.tika.server.core.resource.RecursiveMetadataResource;
+import org.apache.tika.server.core.writer.MetadataListMessageBodyWriter;
 
 public class RecursiveMetadataFilterTest extends CXFTestBase {
 
@@ -69,13 +70,12 @@ public class RecursiveMetadataFilterTest extends CXFTestBase {
 
     @Test
     public void testBasicFilter() throws Exception {
-        Response response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
+        Response response = WebClient.create(endPoint + META_PATH).accept("application/json")
                 .acceptEncoding("gzip")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
 
-        Reader reader = new InputStreamReader(new GzipCompressorInputStream((InputStream) response.getEntity()), UTF_8);
+        Reader reader = new InputStreamReader(
+                new GzipCompressorInputStream((InputStream) response.getEntity()), UTF_8);
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
         assertEquals(5, metadataList.size());
 
@@ -92,8 +92,8 @@ public class RecursiveMetadataFilterTest extends CXFTestBase {
             }
             assertTrue(m.names().length >= 2);
             for (String n : m.names()) {
-                if (! expectedKeys.contains(n)) {
-                    fail("didn't expect "+n);
+                if (!expectedKeys.contains(n)) {
+                    fail("didn't expect " + n);
                 }
             }
         }

@@ -22,7 +22,7 @@ import org.apache.tika.exception.TikaException;
 public class DataURISchemeParseException extends TikaException {
 
     public DataURISchemeParseException(String msg) {
-            super(msg);
-        }
+        super(msg);
+    }
 
 }

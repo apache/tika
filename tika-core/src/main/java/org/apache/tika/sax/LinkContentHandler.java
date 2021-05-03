@@ -37,31 +37,34 @@ public class LinkContentHandler extends DefaultHandler {
      * but it's possible (though unlikely) for also other kinds of nesting
      * to occur.
      */
-    private final LinkedList<LinkBuilder> builderStack =
-        new LinkedList<LinkBuilder>();
+    private final LinkedList<LinkBuilder> builderStack = new LinkedList<LinkBuilder>();
 
-    /** Collected links */
+    /**
+     * Collected links
+     */
     private final List<Link> links = new ArrayList<Link>();
-    
-    /** Whether to collapse whitespace in anchor text */
-    private boolean collapseWhitespaceInAnchor;
-    
+
+    /**
+     * Whether to collapse whitespace in anchor text
+     */
+    private final boolean collapseWhitespaceInAnchor;
+
     /**
      * Default constructor
      */
-    public LinkContentHandler() { 
+    public LinkContentHandler() {
         this(false);
     }
-    
+
     /**
      * Default constructor
      *
      * @param collapseWhitespaceInAnchor
      */
     public LinkContentHandler(boolean collapseWhitespaceInAnchor) {
-      super();
-      
-      this.collapseWhitespaceInAnchor = collapseWhitespaceInAnchor;
+        super();
+
+        this.collapseWhitespaceInAnchor = collapseWhitespaceInAnchor;
     }
 
     /**
@@ -76,8 +79,7 @@ public class LinkContentHandler extends DefaultHandler {
     //-------------------------------------------------------< ContentHandler>
 
     @Override
-    public void startElement(
-            String uri, String local, String name, Attributes attributes) {
+    public void startElement(String uri, String local, String name, Attributes attributes) {
         if (XHTML.equals(uri)) {
             if ("a".equals(local)) {
                 LinkBuilder builder = new LinkBuilder("a");

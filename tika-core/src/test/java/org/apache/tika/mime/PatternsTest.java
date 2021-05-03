@@ -16,17 +16,17 @@
  */
 package org.apache.tika.mime;
 
-import java.util.List;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
 
 public class PatternsTest {
-    private MimeTypes fullTypes = MimeTypes.getDefaultMimeTypes();
+    private final MimeTypes fullTypes = MimeTypes.getDefaultMimeTypes();
 
     private Patterns patterns;
     private MimeTypes types;
@@ -39,7 +39,9 @@ public class PatternsTest {
         text = types.forName("text/plain");
     }
 
-    /** Test add() */
+    /**
+     * Test add()
+     */
     @Test
     public void testAdd() throws MimeTypeException {
         try {
@@ -62,7 +64,9 @@ public class PatternsTest {
         }
     }
 
-    /** Test matches() */
+    /**
+     * Test matches()
+     */
     @Test
     public void testMatches() {
         try {
@@ -82,7 +86,7 @@ public class PatternsTest {
     }
 
     @Test
-    public void testExtensions() throws Exception{
+    public void testExtensions() throws Exception {
         MimeType jpeg = fullTypes.forName("image/jpeg");
 
         assertEquals(".jpg", jpeg.getExtension());

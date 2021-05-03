@@ -1,33 +1,32 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.tika.metadata.serialization;
 
-/*
-* Licensed to the Apache Software Foundation (ASF) under one or more
-* contributor license agreements.  See the NOTICE file distributed with
-* this work for additional information regarding copyright ownership.
-* The ASF licenses this file to You under the Apache License, Version 2.0
-* (the "License"); you may not use this file except in compliance with
-* the License.  You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import org.apache.tika.metadata.Metadata;
 
 public class JsonMetadataTest {
 
@@ -49,7 +48,7 @@ public class JsonMetadataTest {
         metadata.add("html", "<html><body>&amp;&nbsp;</body></html>");
         //simple json escape chars
         metadata.add("json_escapes", "the: \"quick\" brown, fox");
-        
+
         StringWriter writer = new StringWriter();
         JsonMetadata.toJson(metadata, writer);
         Metadata deserialized = JsonMetadata.fromJson(new StringReader(writer.toString()));
@@ -63,15 +62,13 @@ public class JsonMetadataTest {
         writer = new StringWriter();
         JsonMetadata.setPrettyPrinting(true);
         JsonMetadata.toJson(metadata, writer);
-        assertTrue(writer.toString().contains(
+        assertTrue(writer.toString().replaceAll("\r\n", "\n").contains(
                 "\"json_escapes\" : \"the: \\\"quick\\\" brown, fox\",\n" +
-                        "  \"k1\" : [ \"v1\", \"v2\" ],\n" +
-                        "  \"k3\" : [ \"v3\", \"v3\" ],\n" +
+                        "  \"k1\" : [ \"v1\", \"v2\" ],\n" + "  \"k3\" : [ \"v3\", \"v3\" ],\n" +
                         "  \"k4\" : \"500,000\",\n" +
-                        "  \"url\" : \"/myApp/myAction.html?method=router&cmd=1\"\n" +
-                        "}"));
+                        "  \"url\" : \"/myApp/myAction.html?method=router&cmd=1\"\n" + "}"));
     }
-    
+
     @Test
     public void testDeserializationException() {
         //malformed json; 500,000 should be in quotes
@@ -84,7 +81,7 @@ public class JsonMetadataTest {
         }
         assertTrue(ex);
     }
-    
+
     @Test
     public void testNull() {
         StringWriter writer = new StringWriter();
@@ -95,25 +92,25 @@ public class JsonMetadataTest {
             ex = true;
         }
         assertFalse(ex);
-        assertEquals("null", writer.toString());        
+        assertEquals("null", writer.toString());
     }
 
     @Test
     public void testLargeNumberOfKeys() throws Exception {
         Metadata m = new Metadata();
         for (int i = 0; i < 100000; i++) {
-            m.set(Integer.toString(i), "val_"+i);
+            m.set(Integer.toString(i), "val_" + i);
         }
         StringWriter writer = new StringWriter();
         JsonMetadata.toJson(m, writer);
         Metadata deserialized = JsonMetadata.fromJson(new StringReader(writer.toString()));
-        assertEquals(m, deserialized);        
+        assertEquals(m, deserialized);
     }
-    
+
     @Test
     public void testLargeValues() throws Exception {
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 1000000; i++){
+        for (int i = 0; i < 1000000; i++) {
             sb.append("v");
         }
         Metadata m = new Metadata();
@@ -122,6 +119,6 @@ public class JsonMetadataTest {
         StringWriter writer = new StringWriter();
         JsonMetadata.toJson(m, writer);
         Metadata deserialized = JsonMetadata.fromJson(new StringReader(writer.toString()));
-        assertEquals(m, deserialized);        
+        assertEquals(m, deserialized);
     }
 }

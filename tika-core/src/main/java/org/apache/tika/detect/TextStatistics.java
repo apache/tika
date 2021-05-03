@@ -38,26 +38,24 @@ public class TextStatistics {
      * Checks whether at least one byte was seen and that the bytes that
      * were seen were mostly plain text (i.e. < 2% control, > 90% ASCII range).
      *
+     * @return <code>true</code> if the seen bytes were mostly safe ASCII,
+     * <code>false</code> otherwise
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-483">TIKA-483</a>
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-688">TIKA-688</a>
-     * @return <code>true</code> if the seen bytes were mostly safe ASCII,
-     *         <code>false</code> otherwise
      */
     public boolean isMostlyAscii() {
         int control = count(0, 0x20);
         int ascii = count(0x20, 128);
         int safe = countSafeControl();
-        return total > 0
-                && (control - safe) * 100 < total * 2
-                && (ascii + safe) * 100 > total * 90;
+        return total > 0 && (control - safe) * 100 < total * 2 && (ascii + safe) * 100 > total * 90;
     }
 
     /**
      * Checks whether the observed byte stream looks like UTF-8 encoded text.
      *
-     * @since Apache Tika 1.3
      * @return <code>true</code> if the seen bytes look like UTF-8,
-     *         <code>false</code> otherwise
+     * <code>false</code> otherwise
+     * @since Apache Tika 1.3
      */
     public boolean looksLikeUTF8() {
         int control = count(0, 0x20);
@@ -65,19 +63,16 @@ public class TextStatistics {
         int safe = countSafeControl();
 
         int expectedContinuation = 0;
-        int[] leading = new int[] {
-                count(0xc0, 0xe0), count(0xe0, 0xf0), count(0xf0, 0xf8) };
+        int[] leading = new int[]{count(0xc0, 0xe0), count(0xe0, 0xf0), count(0xf0, 0xf8)};
         for (int i = 0; i < leading.length; i++) {
             utf8 += leading[i];
             expectedContinuation += (i + 1) * leading[i];
         }
 
         int continuation = count(0x80, 0xc0);
-        return utf8 > 0
-                && continuation <= expectedContinuation
-                && continuation >= expectedContinuation - 3
-                && count(0xf80, 0x100) == 0
-                && (control - safe) * 100 < utf8 * 2;
+        return utf8 > 0 && continuation <= expectedContinuation &&
+                continuation >= expectedContinuation - 3 && count(0xf80, 0x100) == 0 &&
+                (control - safe) * 100 < utf8 * 2;
     }
 
     /**
@@ -118,8 +113,8 @@ public class TextStatistics {
      * +-------------------------+
      * </pre>
      *
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-154">TIKA-154</a>
      * @return count of control characters
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-154">TIKA-154</a>
      */
     public int countControl() {
         return count(0, 0x20) - countSafeControl();
@@ -128,8 +123,8 @@ public class TextStatistics {
     /**
      * Counts "safe" (i.e. seven-bit non-control) ASCII characters.
      *
-     * @see #countControl()
      * @return count of safe ASCII characters
+     * @see #countControl()
      */
     public int countSafeAscii() {
         return count(0x20, 128) + countSafeControl();

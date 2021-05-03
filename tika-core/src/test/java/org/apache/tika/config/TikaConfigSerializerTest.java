@@ -28,36 +28,34 @@ public class TikaConfigSerializerTest extends TikaConfigTest {
 
     /**
      * TIKA-1445 It should be possible to exclude DefaultParser from
-     *  certain types, so another parser explicitly listed will take them
+     * certain types, so another parser explicitly listed will take them
      */
     @Test
     public void defaultParserWithExcludes() throws Exception {
-        String xml = loadAndSerialize("TIKA-1445-default-except.xml",
-                TikaConfigSerializer.Mode.STATIC);
+        String xml =
+                loadAndSerialize("TIKA-1445-default-except.xml", TikaConfigSerializer.Mode.STATIC);
         assertContains(
-                "<parser class=\"org.apache.tika.parser.ErrorParser\">" +
-                " <mime>fail/world</mime> " +
+                "<parser class=\"org.apache.tika.parser.ErrorParser\">" + " <mime>fail/world" +
+                    "</mime> " +
                 "</parser>", xml);
     }
 
     @Test
     public void testEncodingDetectors() throws Exception {
-        String xml = loadAndSerialize("TIKA-1762-executors.xml",
-                TikaConfigSerializer.Mode.STATIC);
+        String xml = loadAndSerialize("TIKA-1762-executors.xml", TikaConfigSerializer.Mode.STATIC);
         assertContains("<encodingDetectors> " +
-                "<encodingDetector class=\"org.apache.tika.detect.NonDetectingEncodingDetector\"/> " +
+                "<encodingDetector class=\"org.apache.tika.detect" +
+                ".NonDetectingEncodingDetector\"/> " +
                 "</encodingDetectors>", xml);
     }
 
     @Test
     @Ignore("TODO: executor-service info needs to be stored in TikaConfig for serialization")
     public void testExecutors() throws Exception {
-        String xml = loadAndSerialize("TIKA-1762-executors.xml",
-                TikaConfigSerializer.Mode.STATIC);
+        String xml = loadAndSerialize("TIKA-1762-executors.xml", TikaConfigSerializer.Mode.STATIC);
         assertContains("<executor-service class=\"org.apache.tika.config.DummyExecutor\">" +
-                " <core-threads>3</core-threads>" +
-                " <max-threads>10</max-threads>" +
-                "</executor-service>", xml);
+                    " <core-threads>3</core-threads>" + " <max-threads>10</max-threads>" +
+                    "</executor-service>", xml);
     }
 
     String loadAndSerialize(String configFile, TikaConfigSerializer.Mode mode) throws Exception {

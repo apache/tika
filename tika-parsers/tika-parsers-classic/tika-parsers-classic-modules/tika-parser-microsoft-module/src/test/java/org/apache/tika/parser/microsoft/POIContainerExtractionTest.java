@@ -22,14 +22,14 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
+import org.junit.Test;
+
 import org.apache.tika.detect.microsoft.POIFSContainerDetector;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.utils.ParserUtils;
-import org.junit.Test;
 
 /**
  * Tests that the various POI powered parsers are
@@ -44,10 +44,9 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
     public void testWithoutEmbedded() throws Exception {
         ContainerExtractor extractor = new ParserContainerExtractor();
 
-        String[] files = new String[]{
-                "testEXCEL.xls", "testWORD.doc", "testPPT.ppt",
-                "testVISIO.vsd", "test-outlook.msg"
-        };
+        String[] files =
+                new String[]{"testEXCEL.xls", "testWORD.doc", "testPPT.ppt", "testVISIO.vsd",
+                        "test-outlook.msg"};
         for (String file : files) {
             // Process it without recursing
             TrackingHandler handler = process(file, extractor, false);
@@ -108,7 +107,6 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
     }
 
 
-
     @Test
     public void testEmbeddedOfficeFilesXML() throws Exception {
         ContainerExtractor extractor = new ParserContainerExtractor();
@@ -150,15 +148,16 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         //doc converts a chart to a actual xls file
         //so we only need to look in ppt and xls
         for (String suffix : new String[]{"ppt", "xls"}) {
-            List<Metadata> list = getRecursiveMetadata("testMSChart-govdocs-428996."+suffix);
+            List<Metadata> list = getRecursiveMetadata("testMSChart-govdocs-428996." + suffix);
             boolean found = false;
             for (Metadata m : list) {
-                if (m.get(Metadata.CONTENT_TYPE).equals(POIFSContainerDetector.MS_GRAPH_CHART.toString())) {
+                if (m.get(Metadata.CONTENT_TYPE)
+                        .equals(POIFSContainerDetector.MS_GRAPH_CHART.toString())) {
                     found = true;
                 }
                 assertNull(m.get(TikaCoreProperties.EMBEDDED_EXCEPTION));
             }
-            assertTrue("didn't find chart in "+suffix, found);
+            assertTrue("didn't find chart in " + suffix, found);
         }
     }
 

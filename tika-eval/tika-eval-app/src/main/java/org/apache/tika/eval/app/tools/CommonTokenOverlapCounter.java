@@ -16,8 +16,6 @@
  */
 package org.apache.tika.eval.app.tools;
 
-import org.apache.tika.eval.core.tokens.CommonTokenCountManager;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -26,6 +24,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+
+import org.apache.tika.eval.core.tokens.CommonTokenCountManager;
 
 public class CommonTokenOverlapCounter {
 
@@ -41,8 +41,8 @@ public class CommonTokenOverlapCounter {
             langs.add(f.getName());
         }
         CommonTokenCountManager mgr = new CommonTokenCountManager(commonTokensDir, "");
-        for (int i = 0; i < langs.size()-1; i++) {
-            for (int j = i+1; j < langs.size(); j++) {
+        for (int i = 0; i < langs.size() - 1; i++) {
+            for (int j = i + 1; j < langs.size(); j++) {
                 compare(langs.get(i), langs.get(j), mgr);
             }
         }
@@ -58,8 +58,8 @@ public class CommonTokenOverlapCounter {
                 overlap += 2;
             }
         }
-        denom = setA.size()+setB.size();
-        double percent = (double)overlap/(double)denom;
+        denom = setA.size() + setB.size();
+        double percent = (double) overlap / (double) denom;
         if (percent > 0.01) {
             System.out.println(String.format(Locale.US, "%s %s %.2f", langA, langB, percent));
         }

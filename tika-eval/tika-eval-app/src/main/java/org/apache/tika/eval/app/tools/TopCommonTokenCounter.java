@@ -49,6 +49,7 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.PriorityQueue;
+
 import org.apache.tika.eval.core.tokens.AnalyzerManager;
 import org.apache.tika.eval.core.tokens.URLEmailNormalizingFilterFactory;
 import org.apache.tika.utils.ProcessUtils;
@@ -56,82 +57,101 @@ import org.apache.tika.utils.ProcessUtils;
 /**
  * Utility class that reads in a UTF-8 input file with one document per row
  * and outputs the 20000 tokens with the highest document frequencies.
- *
+ * <p>
  * The CommmonTokensAnalyzer intentionally drops tokens shorter than 4 characters,
  * but includes bigrams for cjk.
- *
+ * <p>
  * It also has a include list for __email__ and __url__ and a skip list
  * for common html markup terms.
  */
 public class TopCommonTokenCounter {
 
-    private static String LICENSE =
-            "# Licensed to the Apache Software Foundation (ASF) under one or more\n" +
-            "# contributor license agreements.  See the NOTICE file distributed with\n" +
-            "# this work for additional information regarding copyright ownership.\n" +
-            "# The ASF licenses this file to You under the Apache License, Version 2.0\n" +
-            "# (the \"License\"); you may not use this file except in compliance with\n" +
-            "# the License.  You may obtain a copy of the License at\n" +
-            "#\n" +
-            "#     http://www.apache.org/licenses/LICENSE-2.0\n" +
-            "#\n" +
-            "# Unless required by applicable law or agreed to in writing, software\n" +
-            "# distributed under the License is distributed on an \"AS IS\" BASIS,\n" +
-            "# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n" +
-            "# See the License for the specific language governing permissions and\n" +
-            "# limitations under the License.\n"+
-            "#\n";
-
     private static final String FIELD = "f";
-    private static int TOP_N = 30000;
-    private static int MIN_DOC_FREQ = 10;
     //these should exist in every list
     static Set<String> INCLUDE_LIST = new HashSet<>(Arrays.asList(
-            new String[] {
-                    URLEmailNormalizingFilterFactory.URL,
-                    URLEmailNormalizingFilterFactory.EMAIL
-            }
-    ));
-
+            new String[]{URLEmailNormalizingFilterFactory.URL,
+                    URLEmailNormalizingFilterFactory.EMAIL}));
     //words to ignore
     //these are common 4 letter html markup words that we do
     //not want to count in case of failed markup processing.
     //see: https://issues.apache.org/jira/browse/TIKA-2267?focusedCommentId=15872055&page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-15872055
-    static Set<String> SKIP_LIST = new HashSet<>(Arrays.asList(
-            "span",
-            "table",
-            "href",
-            "head",
-            "title",
-            "body",
-            "html",
-            "tagname",
-            "lang",
-            "style",
-            "script",
-            "strong",
-            "blockquote",
-            "form",
-            "iframe",
-            "section",
-            "colspan",
-            "rowspan"
-    ));
+    static Set<String> SKIP_LIST = new HashSet<>(
+            Arrays.asList("span", "table", "href", "head", "title", "body", "html", "tagname",
+                    "lang", "style", "script", "strong", "blockquote", "form", "iframe", "section",
+                    "colspan", "rowspan"));
+    private static String LICENSE =
+            "# Licensed to the Apache Software Foundation (ASF) under one or more\n" +
+                    "# contributor license agreements.  See the NOTICE file distributed with\n" +
+                    "# this work for additional information regarding copyright ownership.\n" +
+                    "# The ASF licenses this file to You under the Apache License, Version 2.0\n" +
+                    "# (the \"License\"); you may not use this file except in compliance with\n" +
+                    "# the License.  You may obtain a copy of the License at\n" + "#\n" +
+                    "#     http://www.apache.org/licenses/LICENSE-2.0\n" + "#\n" +
+                    "# Unless required by applicable law or agreed to in writing, software\n" +
+                    "# distributed under the License is distributed on an \"AS IS\" BASIS,\n" +
+                    "# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n" +
+                    "# See the License for the specific language governing permissions and\n" +
+                    "# limitations under the License.\n" + "#\n";
+    private static int TOP_N = 30000;
+    private static int MIN_DOC_FREQ = 10;
 
     public static void main(String[] args) throws Exception {
         Path commonTokensFile = Paths.get(args[0]);
         List<Path> inputFiles = new ArrayList<>();
         for (int i = 1; i < args.length; i++) {
-            inputFiles.add(Paths.get(
-                    ProcessUtils.unescapeCommandLine(args[i])));
+            inputFiles.add(Paths.get(ProcessUtils.unescapeCommandLine(args[i])));
         }
         TopCommonTokenCounter counter = new TopCommonTokenCounter();
         if (Files.exists(commonTokensFile)) {
-            System.err.println(commonTokensFile.getFileName().toString()+
-                    " exists. I'm skipping this.");
+            System.err.println(
+                    commonTokensFile.getFileName().toString() + " exists. I'm skipping this.");
             return;
         }
         counter.execute(commonTokensFile, inputFiles);
+    }
+
+    private static void writeTopN(Path path, long totalDocs, long sumDocFreqs,
+                                  long sumTotalTermFreqs, long uniqueTerms,
+                                  AbstractTokenTFDFPriorityQueue queue) throws IOException {
+        if (Files.isRegularFile(path)) {
+            System.err.println("File " + path.getFileName() + " already exists. Skipping.");
+            return;
+        }
+        Files.createDirectories(path.getParent());
+        BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8);
+        StringBuilder sb = new StringBuilder();
+        writer.write(LICENSE);
+        writer.write("#DOC_COUNT\t" + totalDocs + "\n");
+        writer.write("#SUM_DOC_FREQS\t" + sumDocFreqs + "\n");
+        writer.write("#SUM_TERM_FREQS\t" + sumTotalTermFreqs + "\n");
+        writer.write("#UNIQUE_TERMS\t" + uniqueTerms + "\n");
+        writer.write("#TOKEN\tDOCFREQ\tTERMFREQ\n");
+        //add these tokens no matter what
+        for (String t : INCLUDE_LIST) {
+            writer.write(t);
+            writer.newLine();
+        }
+        for (TokenDFTF tp : queue.getArray()) {
+            writer.write(getRow(sb, tp) + "\n");
+
+        }
+        writer.flush();
+        writer.close();
+    }
+
+    private static String getRow(StringBuilder sb, TokenDFTF tp) {
+        sb.setLength(0);
+        sb.append(clean(tp.token));
+        sb.append("\t").append(tp.df);
+        sb.append("\t").append(tp.tf);
+        return sb.toString();
+    }
+
+    private static String clean(String s) {
+        if (s == null) {
+            return "";
+        }
+        return s.replaceAll("\\s+", " ").trim();
     }
 
     private void execute(Path commonTokensFile, List<Path> inputFiles) throws Exception {
@@ -164,7 +184,7 @@ public class TopCommonTokenCounter {
                             if (isLeipzig) {
                                 int tab = line.indexOf("\t");
                                 if (tab > -1) {
-                                    line = line.substring(tab+1);
+                                    line = line.substring(tab + 1);
                                 }
                             }
                             len += line.length();
@@ -178,9 +198,9 @@ public class TopCommonTokenCounter {
                             }
                             line = reader.readLine();
                             if (++lines % 100000 == 0) {
-                                System.out.println("processed "+lines +
-                                        " for "+inputFile.getFileName()
-                                + " :: "+ commonTokensFile.toAbsolutePath());
+                                System.out.println(
+                                        "processed " + lines + " for " + inputFile.getFileName() +
+                                                " :: " + commonTokensFile.toAbsolutePath());
                             }
                         }
                     }
@@ -211,10 +231,9 @@ public class TopCommonTokenCounter {
                         continue;
                     }
 
-                    if (queue.top() == null || queue.size() < TOP_N ||
-                            df >= queue.top().df) {
+                    if (queue.top() == null || queue.size() < TOP_N || df >= queue.top().df) {
                         String t = bytesRef.utf8ToString();
-                        if (! SKIP_LIST.contains(t)) {
+                        if (!SKIP_LIST.contains(t)) {
                             queue.insertWithOverflow(new TokenDFTF(t, df, tf));
                         }
 
@@ -226,8 +245,7 @@ public class TopCommonTokenCounter {
             FileUtils.deleteDirectory(luceneDir.toFile());
         }
 
-        writeTopN(commonTokensFile, totalDocs,
-                sumDocFreqs, sumTotalTermFreqs, uniqueTerms, queue);
+        writeTopN(commonTokensFile, totalDocs, sumDocFreqs, sumTotalTermFreqs, uniqueTerms, queue);
 
 
     }
@@ -237,55 +255,7 @@ public class TopCommonTokenCounter {
         if (inputFile.toString().endsWith(".gz")) {
             is = new GzipCompressorInputStream(is);
         }
-        return new BufferedReader(
-                new InputStreamReader(is, StandardCharsets.UTF_8)
-        );
-    }
-
-    private static void writeTopN(Path path,
-                                  long totalDocs, long sumDocFreqs,
-                                  long sumTotalTermFreqs,
-                                  long uniqueTerms, AbstractTokenTFDFPriorityQueue queue) throws IOException {
-        if (Files.isRegularFile(path)) {
-            System.err.println("File "+path.getFileName() + " already exists. Skipping.");
-            return;
-        }
-        Files.createDirectories(path.getParent());
-        BufferedWriter writer =
-                Files.newBufferedWriter(path, StandardCharsets.UTF_8);
-        StringBuilder sb = new StringBuilder();
-        writer.write(LICENSE);
-        writer.write("#DOC_COUNT\t"+totalDocs+"\n");
-        writer.write("#SUM_DOC_FREQS\t"+sumDocFreqs+"\n");
-        writer.write("#SUM_TERM_FREQS\t"+sumTotalTermFreqs+"\n");
-        writer.write("#UNIQUE_TERMS\t"+uniqueTerms+"\n");
-        writer.write("#TOKEN\tDOCFREQ\tTERMFREQ\n");
-        //add these tokens no matter what
-        for (String t : INCLUDE_LIST) {
-            writer.write(t);
-            writer.newLine();
-        }
-        for (TokenDFTF tp : queue.getArray()) {
-            writer.write(getRow(sb, tp)+"\n");
-
-        }
-        writer.flush();
-        writer.close();
-    }
-
-    private static String getRow(StringBuilder sb, TokenDFTF tp) {
-        sb.setLength(0);
-        sb.append(clean(tp.token));
-        sb.append("\t").append(tp.df);
-        sb.append("\t").append(tp.tf);
-        return sb.toString();
-    }
-
-    private static String clean(String s) {
-        if (s == null) {
-            return "";
-        }
-        return s.replaceAll("\\s+", " ").trim();
+        return new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
     }
 
     private abstract class AbstractTokenTFDFPriorityQueue extends PriorityQueue<TokenDFTF> {
@@ -298,7 +268,7 @@ public class TopCommonTokenCounter {
             TokenDFTF[] topN = new TokenDFTF[size()];
             //now we reverse the queue
             TokenDFTF term = pop();
-            int i = topN.length-1;
+            int i = topN.length - 1;
             while (term != null && i > -1) {
                 topN[i--] = term;
                 term = pop();
@@ -362,11 +332,7 @@ public class TopCommonTokenCounter {
 
         @Override
         public String toString() {
-            return "TokenDFTF{" +
-                    "token='" + token + '\'' +
-                    ", df=" + df +
-                    ", tf=" + tf +
-                    '}';
+            return "TokenDFTF{" + "token='" + token + '\'' + ", df=" + df + ", tf=" + tf + '}';
         }
     }
 
@@ -390,7 +356,7 @@ public class TopCommonTokenCounter {
             TokenDFTF[] topN = new TokenDFTF[size()];
             //now we reverse the queue
             TokenDFTF term = pop();
-            int i = topN.length-1;
+            int i = topN.length - 1;
             while (term != null && i > -1) {
                 topN[i--] = term;
                 term = pop();

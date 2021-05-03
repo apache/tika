@@ -34,19 +34,20 @@ import org.apache.poi.xssf.eventusermodel.XSSFBReader;
 import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler.SheetContentsHandler;
 import org.apache.poi.xssf.extractor.XSSFBEventBasedExcelExtractor;
 import org.apache.poi.xssf.usermodel.XSSFShape;
+import org.apache.xmlbeans.XmlException;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.xmlbeans.XmlException;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
 
-    public XSSFBExcelExtractorDecorator(
-            ParseContext context, POIXMLTextExtractor extractor, Locale locale) {
+    public XSSFBExcelExtractorDecorator(ParseContext context, POIXMLTextExtractor extractor,
+                                        Locale locale) {
         super(context, extractor, locale);
     }
 
@@ -54,13 +55,12 @@ public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
     protected void configureExtractor(POIXMLTextExtractor extractor, Locale locale) {
         //need to override this because setFormulasNotResults is not yet available
         //for xlsb
-       //((XSSFBEventBasedExcelExtractor)extractor).setFormulasNotResults(false);
-        ((XSSFBEventBasedExcelExtractor)extractor).setLocale(locale);
+        //((XSSFBEventBasedExcelExtractor)extractor).setFormulasNotResults(false);
+        ((XSSFBEventBasedExcelExtractor) extractor).setLocale(locale);
     }
 
     @Override
-    public void getXHTML(
-            ContentHandler handler, Metadata metadata, ParseContext context)
+    public void getXHTML(ContentHandler handler, Metadata metadata, ParseContext context)
             throws SAXException, XmlException, IOException, TikaException {
 
         this.metadata = metadata;
@@ -74,8 +74,8 @@ public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
      * @see org.apache.poi.xssf.extractor.XSSFBEventBasedExcelExtractor#getText()
      */
     @Override
-    protected void buildXHTML(XHTMLContentHandler xhtml) throws SAXException,
-            XmlException, IOException {
+    protected void buildXHTML(XHTMLContentHandler xhtml)
+            throws SAXException, XmlException, IOException {
         OPCPackage container = extractor.getPackage();
 
         XSSFBSharedStringsTable strings;
@@ -144,31 +144,21 @@ public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
 
 
     @Override
-    protected void extractHeaderFooter(String hf, XHTMLContentHandler xhtml)
-            throws SAXException {
+    protected void extractHeaderFooter(String hf, XHTMLContentHandler xhtml) throws SAXException {
         if (hf.length() > 0) {
             xhtml.element("p", hf);
         }
     }
 
 
-    private void processSheet(
-            SheetContentsHandler sheetContentsExtractor,
-            XSSFBCommentsTable comments,
-            XSSFBStylesTable styles,
-            XSSFBSharedStringsTable strings,
-            InputStream sheetInputStream)
+    private void processSheet(SheetContentsHandler sheetContentsExtractor,
+                              XSSFBCommentsTable comments, XSSFBStylesTable styles,
+                              XSSFBSharedStringsTable strings, InputStream sheetInputStream)
             throws IOException, SAXException {
 
-        XSSFBSheetHandler xssfbSheetHandler = new XSSFBSheetHandler(
-                sheetInputStream,
-                styles,
-                comments,
-                strings,
-                sheetContentsExtractor,
-                formatter,
-                false
-        );
+        XSSFBSheetHandler xssfbSheetHandler =
+                new XSSFBSheetHandler(sheetInputStream, styles, comments, strings,
+                        sheetContentsExtractor, formatter, false);
         xssfbSheetHandler.parse();
     }
 }

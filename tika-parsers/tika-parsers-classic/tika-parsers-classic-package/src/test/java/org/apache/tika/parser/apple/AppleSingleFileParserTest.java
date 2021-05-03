@@ -23,13 +23,12 @@ import static org.junit.Assert.assertEquals;
 import java.util.Arrays;
 import java.util.List;
 
+import org.junit.Test;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.RecursiveParserWrapper;
-import org.apache.tika.parser.apple.AppleSingleFileParser;
 import org.apache.tika.parser.pdf.PDFParser;
-import org.junit.Test;
 
 public class AppleSingleFileParserTest extends TikaTest {
 
@@ -42,6 +41,7 @@ public class AppleSingleFileParserTest extends TikaTest {
         assertContains(PDFParser.class.getName(),
                 Arrays.asList(list.get(1).getValues(TikaCoreProperties.TIKA_PARSED_BY)));
         assertContains("Hello World", list.get(1).get(TikaCoreProperties.TIKA_CONTENT));
-        assertEquals("fltsyllabussortie2rev1_2.pdf", list.get(1).get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
+        assertEquals("fltsyllabussortie2rev1_2.pdf",
+                list.get(1).get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
     }
 }

@@ -35,7 +35,7 @@ public class FSFileResourceTest {
             FSFileResource r = new FSFileResource(root, allegedChild);
             fail("should have had assertion error: alleged child not actually child of root");
         } catch (AssertionError e) {
-
+            //swallow
         }
 
         //test regular workings

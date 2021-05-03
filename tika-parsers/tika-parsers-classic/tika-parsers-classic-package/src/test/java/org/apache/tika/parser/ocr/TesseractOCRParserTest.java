@@ -22,6 +22,10 @@ import static org.junit.Assume.assumeTrue;
 
 import java.util.List;
 
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.Test;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
@@ -29,13 +33,9 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.parser.image.ImageParser;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Test;
 
 public class TesseractOCRParserTest extends TikaTest {
 
@@ -43,7 +43,6 @@ public class TesseractOCRParserTest extends TikaTest {
         TesseractOCRParser p = new TesseractOCRParser();
         return p.hasTesseract();
     }
-
 
 
     /*
@@ -81,22 +80,17 @@ public class TesseractOCRParserTest extends TikaTest {
     @Test
     public void testDOCXOCR() throws Exception {
         String resource = "testOCR.docx";
-        String[] nonOCRContains = {
-                "This is some text.",
-                "Here is an embedded image:"
-        };
+        String[] nonOCRContains = {"This is some text.", "Here is an embedded image:"};
         testBasicOCR(resource, nonOCRContains, 3);
     }
 
     @Test
     public void testPPTXOCR() throws Exception {
         String resource = "testOCR.pptx";
-        String[] nonOCRContains = {
-                "This is some text"
-        };
+        String[] nonOCRContains = {"This is some text"};
         testBasicOCR(resource, nonOCRContains, 3);
     }
-    
+
     @Test
     public void testOCROutputsHOCR() throws Exception {
         assumeTrue("can run OCR", canRun());
@@ -104,9 +98,9 @@ public class TesseractOCRParserTest extends TikaTest {
         String resource = "testOCR.pdf";
 
         String[] nonOCRContains = new String[0];
-        String contents = runOCR(resource, nonOCRContains, 2,
-                BasicContentHandlerFactory.HANDLER_TYPE.XML,
-                TesseractOCRConfig.OUTPUT_TYPE.HOCR);
+        String contents =
+                runOCR(resource, nonOCRContains, 2, BasicContentHandlerFactory.HANDLER_TYPE.XML,
+                        TesseractOCRConfig.OUTPUT_TYPE.HOCR);
 
         assertContains("<span class=\"ocrx_word\" id=\"word_1_1\"", contents);
         assertContains("Happy</span>", contents);
@@ -116,27 +110,29 @@ public class TesseractOCRParserTest extends TikaTest {
     @Test
     public void testParserContentTypeOverride() throws Exception {
         Assume.assumeTrue("can run OCR", canRun());
-        //this tests that the content-type is not overwritten by the ocr parser override content type
+        //this tests that the content-type is not overwritten by the ocr parser
+        // override content type
         List<Metadata> metadata = getRecursiveMetadata("testOCR.pdf", AUTO_DETECT_PARSER,
                 BasicContentHandlerFactory.HANDLER_TYPE.XML);
         assertContains("<meta name=\"Content-Type\" content=\"application/pdf\" />",
                 metadata.get(0).get(TikaCoreProperties.TIKA_CONTENT));
     }
 
-    private void testBasicOCR(String resource, String[] nonOCRContains, int numMetadatas) throws Exception{
+    private void testBasicOCR(String resource, String[] nonOCRContains, int numMetadatas)
+            throws Exception {
         Assume.assumeTrue("can run OCR", canRun());
 
         String contents = runOCR(resource, nonOCRContains, numMetadatas,
                 BasicContentHandlerFactory.HANDLER_TYPE.TEXT, TesseractOCRConfig.OUTPUT_TYPE.TXT);
         if (canRun()) {
-            if(resource.substring(resource.lastIndexOf('.')).equals(".jpg")) {
-        		assertContains("Apache", contents);
-        	} else {
-        		assertContains("Happy New Year 2003!", contents);
-        	}
+            if (resource.substring(resource.lastIndexOf('.')).equals(".jpg")) {
+                assertContains("Apache", contents);
+            } else {
+                assertContains("Happy New Year 2003!", contents);
+            }
         }
     }
-    
+
     private String runOCR(String resource, String[] nonOCRContains, int numMetadatas,
                           BasicContentHandlerFactory.HANDLER_TYPE handlerType,
                           TesseractOCRConfig.OUTPUT_TYPE outputType) throws Exception {
@@ -150,15 +146,15 @@ public class TesseractOCRParserTest extends TikaTest {
         parseContext.set(TesseractOCRConfig.class, config);
         parseContext.set(PDFParserConfig.class, pdfConfig);
 
-        List<Metadata> metadataList = getRecursiveMetadata(resource,
-                AUTO_DETECT_PARSER, handlerType, parseContext);
+        List<Metadata> metadataList =
+                getRecursiveMetadata(resource, AUTO_DETECT_PARSER, handlerType, parseContext);
         assertEquals(numMetadatas, metadataList.size());
 
         StringBuilder contents = new StringBuilder();
         for (Metadata m : metadataList) {
             contents.append(m.get(TikaCoreProperties.TIKA_CONTENT));
         }
- 
+
         for (String needle : nonOCRContains) {
             assertContains(needle, contents.toString());
         }
@@ -166,14 +162,13 @@ public class TesseractOCRParserTest extends TikaTest {
         assertTrue(metadataList.get(1).names().length > 10);
         //test at least one value
         assertEquals("deflate", metadataList.get(1).get("Compression CompressionTypeName"));
-        
+
         return contents.toString();
     }
 
     @Test
     public void testSingleImage() throws Exception {
         Assume.assumeTrue("can run OCR", canRun());
-
         String xml = getXML("testOCR.jpg").xml;
         assertContains("OCR Testing", xml);
         //test metadata extraction
@@ -186,9 +181,11 @@ public class TesseractOCRParserTest extends TikaTest {
         assertContainsCount("<body", xml, 1);
         assertContainsCount("</body", xml, 1);
         assertContainsCount("</html", xml, 1);
+
+        assertNotContained("<meta name=\"Content-Type\" content=\"image/ocr-jpeg\" />", xml);
     }
 
-    
+
     @Test
     public void getNormalMetadataToo() throws Exception {
         //this should be successful whether or not TesseractOCR is installed/active

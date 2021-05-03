@@ -16,11 +16,12 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import org.apache.tika.TikaTest;
-import org.apache.tika.metadata.TikaCoreProperties;
+import static org.junit.Assert.assertEquals;
+
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 public class MSOwnerFileParserTest extends TikaTest {
     @Test

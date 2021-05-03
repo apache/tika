@@ -17,51 +17,52 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <artifactId>tika-langdetect</artifactId>
-        <groupId>org.apache.tika</groupId>
-        <version>2.0.0-SNAPSHOT</version>
-    </parent>
-    <modelVersion>4.0.0</modelVersion>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <parent>
+    <artifactId>tika-langdetect</artifactId>
+    <groupId>org.apache.tika</groupId>
+    <version>2.0.0-SNAPSHOT</version>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>tika-langdetect-opennlp</artifactId>
+  <artifactId>tika-langdetect-opennlp</artifactId>
 
 
-    <dependencies>
-        <dependency>
-            <groupId>org.apache.opennlp</groupId>
-            <artifactId>opennlp-tools</artifactId>
-            <version>${opennlp.version}</version>
-        </dependency>
-        <!-- test dependencies -->
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>tika-langdetect-commons</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>tika-langdetect-commons</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-            <type>test-jar</type>
-        </dependency>
-    </dependencies>
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.opennlp</groupId>
+      <artifactId>opennlp-tools</artifactId>
+      <version>${opennlp.version}</version>
+    </dependency>
+    <!-- test dependencies -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-langdetect-test-commons</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-langdetect-commons</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+      <type>test-jar</type>
+    </dependency>
+  </dependencies>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.rat</groupId>
-                <artifactId>apache-rat-plugin</artifactId>
-                <version>${rat.version}</version>
-                <configuration>
-                    <excludes>
-                        <exclude>opennlp_langdetect_model_20190626.bin</exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <version>${rat.version}</version>
+        <configuration>
+          <excludes>
+            <exclude>opennlp_langdetect_model_20190626.bin</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>

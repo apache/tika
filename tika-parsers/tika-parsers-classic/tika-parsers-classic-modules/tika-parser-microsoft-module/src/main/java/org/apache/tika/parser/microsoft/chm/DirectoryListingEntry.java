@@ -46,21 +46,16 @@ public class DirectoryListingEntry {
 
     /**
      * Constructs directoryListingEntry
-     * 
-     * @param name_length
-     *            int
-     * @param name
-     *            String
-     * @param isCompressed
-     *            ChmCommons.EntryType
-     * @param offset
-     *            int
-     * @param length
-     *            int
-     * @throws TikaException 
+     *
+     * @param name_length  int
+     * @param name         String
+     * @param isCompressed ChmCommons.EntryType
+     * @param offset       int
+     * @param length       int
+     * @throws TikaException
      */
-    public DirectoryListingEntry(int name_length, String name,
-            ChmCommons.EntryType isCompressed, int offset, int length) throws TikaException {
+    public DirectoryListingEntry(int name_length, String name, ChmCommons.EntryType isCompressed,
+                                 int offset, int length) throws TikaException {
         ChmAssert.assertDirectoryListingEntry(name_length, name, isCompressed, offset, length);
         setNameLength(name_length);
         setName(name);
@@ -78,10 +73,10 @@ public class DirectoryListingEntry {
         sb.append("length:=" + getLength());
         return sb.toString();
     }
-    
+
     /**
      * Returns an entry name length
-     * 
+     *
      * @return int
      */
     public int getNameLength() {
@@ -90,9 +85,8 @@ public class DirectoryListingEntry {
 
     /**
      * Sets an entry name length
-     * 
-     * @param name_length
-     *            int
+     *
+     * @param name_length int
      */
     protected void setNameLength(int name_length) {
         this.name_length = name_length;
@@ -100,7 +94,7 @@ public class DirectoryListingEntry {
 
     /**
      * Returns an entry name
-     * 
+     *
      * @return String
      */
     public String getName() {
@@ -109,9 +103,8 @@ public class DirectoryListingEntry {
 
     /**
      * Sets entry name
-     * 
-     * @param name
-     *            String
+     *
+     * @param name String
      */
     protected void setName(String name) {
         this.name = name;
@@ -119,7 +112,7 @@ public class DirectoryListingEntry {
 
     /**
      * Returns ChmCommons.EntryType (COMPRESSED or UNCOMPRESSED)
-     * 
+     *
      * @return ChmCommons.EntryType
      */
     public ChmCommons.EntryType getEntryType() {

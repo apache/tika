@@ -27,7 +27,8 @@ class RelationshipsManager {
 
     Map<String, Map<String, Relationship>> map = new HashMap<>();
 
-    public void addRelationship(String relsFileName, String id, String type, String target, TargetMode targetMode) {
+    public void addRelationship(String relsFileName, String id, String type, String target,
+                                TargetMode targetMode) {
         String packageName = convertRelsFileNameToPackageName(relsFileName);
         Map<String, Relationship> thisPackageRels = map.get(packageName);
         if (thisPackageRels == null) {

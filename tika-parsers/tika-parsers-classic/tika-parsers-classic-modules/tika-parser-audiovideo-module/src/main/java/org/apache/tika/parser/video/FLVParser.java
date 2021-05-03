@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.video;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -28,16 +30,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * <p>
@@ -64,15 +65,15 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class FLVParser extends AbstractParser {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = -8718013155719197679L;
-
+    private static final Set<MediaType> SUPPORTED_TYPES =
+            Collections.singleton(MediaType.video("x-flv"));
     private static int TYPE_METADATA = 0x12;
     private static byte MASK_AUDIO = 1;
     private static byte MASK_VIDEO = 4;
-
-    private static final Set<MediaType> SUPPORTED_TYPES =
-        Collections.singleton(MediaType.video("x-flv"));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -83,38 +84,37 @@ public class FLVParser extends AbstractParser {
     }
 
     private int readUInt24(DataInputStream input) throws IOException {
-        int uint = input.read()<<16;
-        uint += input.read()<<8;
-        uint += input.read(); 
+        int uint = input.read() << 16;
+        uint += input.read() << 8;
+        uint += input.read();
         return uint;
     }
 
-    private Object readAMFData(DataInputStream input, int type)
-            throws IOException {
+    private Object readAMFData(DataInputStream input, int type) throws IOException {
         if (type == -1) {
             type = input.readUnsignedByte();
         }
         switch (type) {
-        case 0:
-            return input.readDouble();
-        case 1:
-            return input.readUnsignedByte() == 1;
-        case 2:
-            return readAMFString(input);
-        case 3:
-            return readAMFObject(input);
-        case 8:
-            return readAMFEcmaArray(input);
-        case 10:
-            return readAMFStrictArray(input);
-        case 11:
-            final Date date = new Date((long) input.readDouble());
-            input.readShort(); // time zone
-            return date;
-        case 13:
-            return "UNDEFINED";
-        default:
-            return null;
+            case 0:
+                return input.readDouble();
+            case 1:
+                return input.readUnsignedByte() == 1;
+            case 2:
+                return readAMFString(input);
+            case 3:
+                return readAMFObject(input);
+            case 8:
+                return readAMFEcmaArray(input);
+            case 10:
+                return readAMFStrictArray(input);
+            case 11:
+                final Date date = new Date((long) input.readDouble());
+                input.readShort(); // time zone
+                return date;
+            case 13:
+                return "UNDEFINED";
+            default:
+                return null;
         }
     }
 
@@ -163,10 +163,8 @@ public class FLVParser extends AbstractParser {
         return fis.read() == 'F' && fis.read() == 'L' && fis.read() == 'V';
     }
 
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
         DataInputStream datainput = new DataInputStream(stream);
         if (!checkSignature(datainput)) {
             throw new TikaException("FLV signature not detected");
@@ -190,8 +188,7 @@ public class FLVParser extends AbstractParser {
         long sizePrev = readUInt32(datainput);
         if (sizePrev != 0) {
             // should be 0, perhaps this is not flv?
-            throw new TikaException(
-                    "Unpexpected FLV first previous block size: " + sizePrev);
+            throw new TikaException("Unpexpected FLV first previous block size: " + sizePrev);
         }
 
         metadata.set(Metadata.CONTENT_TYPE, "video/x-flv");
@@ -216,9 +213,9 @@ public class FLVParser extends AbstractParser {
             if (type == TYPE_METADATA) {
                 // found metadata Tag, read content to buffer
                 byte[] metaBytes = new byte[datalen];
-                for (int readCount = 0; readCount < datalen;) {
+                for (int readCount = 0; readCount < datalen; ) {
                     int r = stream.read(metaBytes, readCount, datalen - readCount);
-                    if(r!=-1) {
+                    if (r != -1) {
                         readCount += r;
 
                     } else {

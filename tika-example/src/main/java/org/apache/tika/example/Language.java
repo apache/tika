@@ -31,13 +31,14 @@ import org.apache.tika.parser.ParseContext;
 public class Language {
     public static void languageDetection() throws IOException {
         LanguageDetector detector = new OptimaizeLangDetector().loadModels();
-        LanguageResult result = detector.detect("Alla människor är födda fria och lika i värde och rättigheter.");
-        
+        LanguageResult result =
+                detector.detect("Alla människor är födda fria och lika i värde och rättigheter.");
+
         System.out.println(result.getLanguage());
     }
 
     public static void languageDetectionWithWriter() throws IOException {
-    	// TODO support version of LanguageWriter that doesn't need a detector.
+        // TODO support version of LanguageWriter that doesn't need a detector.
         LanguageDetector detector = new OptimaizeLangDetector().loadModels();
         LanguageWriter writer = new LanguageWriter(detector);
         writer.append("Minden emberi lény");

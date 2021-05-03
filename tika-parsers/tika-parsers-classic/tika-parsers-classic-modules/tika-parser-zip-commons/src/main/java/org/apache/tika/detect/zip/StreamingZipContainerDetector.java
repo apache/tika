@@ -17,15 +17,16 @@
 package org.apache.tika.detect.zip;
 
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+
 import org.apache.commons.io.IOUtils;
+
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.io.LookaheadInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
 
 /**
  * Currently only used in tests.  Unlike {@link DefaultZipContainerDetector},
@@ -35,7 +36,9 @@ import java.util.List;
 public class StreamingZipContainerDetector extends DefaultZipContainerDetector {
 
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = 2891763938430295453L;
 
     List<ZipContainerDetector> zipDetectors;

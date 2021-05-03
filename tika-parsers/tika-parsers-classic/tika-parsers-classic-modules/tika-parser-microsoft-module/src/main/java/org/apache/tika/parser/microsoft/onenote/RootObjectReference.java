@@ -33,7 +33,8 @@ class RootObjectReference {
         return rootObjectReferenceBase;
     }
 
-    public RootObjectReference setRootObjectReferenceBase(RootObjectReferenceBase rootObjectReferenceBase) {
+    public RootObjectReference setRootObjectReferenceBase(
+            RootObjectReferenceBase rootObjectReferenceBase) {
         this.rootObjectReferenceBase = rootObjectReferenceBase;
         return this;
     }

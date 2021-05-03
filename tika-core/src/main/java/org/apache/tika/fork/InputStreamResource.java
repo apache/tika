@@ -29,8 +29,7 @@ class InputStreamResource implements ForkResource {
         this.stream = stream;
     }
 
-    public Throwable process(DataInputStream input, DataOutputStream output)
-            throws IOException {
+    public Throwable process(DataInputStream input, DataOutputStream output) throws IOException {
         int n = input.readInt();
         byte[] buffer = new byte[n];
         int m;

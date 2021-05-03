@@ -49,12 +49,7 @@ class CompactID {
     }
 
     public String getCompactIDString() {
-        return new StringBuilder()
-          .append(guid)
-          .append(", index=")
-          .append(guidIndex)
-          .append(", n=")
-          .append((int) n)
-          .toString();
+        return new StringBuilder().append(guid).append(", index=").append(guidIndex).append(", n=")
+                .append((int) n).toString();
     }
 }

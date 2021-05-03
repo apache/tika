@@ -16,20 +16,21 @@
  */
 package org.apache.tika.parser.html;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
+
+import org.junit.Test;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
-import org.junit.Test;
-
-import java.io.InputStream;
-import java.util.Arrays;
-import java.util.List;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 public class HtmlParserTest extends TikaTest {
     @Test
@@ -52,7 +53,8 @@ public class HtmlParserTest extends TikaTest {
             assertNotNull(is);
             TikaConfig tikaConfig = new TikaConfig(is);
             Parser p = new AutoDetectParser(tikaConfig);
-            List<Metadata> metadataList = getRecursiveMetadata("testHTML_embedded_img_in_js.html", p);
+            List<Metadata> metadataList =
+                    getRecursiveMetadata("testHTML_embedded_img_in_js.html", p);
             assertEquals(3, metadataList.size());
             String content = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
             assertContains("some content", content);

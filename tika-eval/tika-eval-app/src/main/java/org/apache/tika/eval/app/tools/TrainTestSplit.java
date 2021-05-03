@@ -63,9 +63,9 @@ public class TrainTestSplit {
     }
 
     private void initOutDirs(Path outputDir) throws Exception {
-        for (String which : new String[] { TRAINING, DEVTEST, TESTING}) {
+        for (String which : new String[]{TRAINING, DEVTEST, TESTING}) {
             Path target = outputDir.resolve(which);
-            if (! Files.isDirectory(target)) {
+            if (!Files.isDirectory(target)) {
                 Files.createDirectories(target);
             }
         }
@@ -74,7 +74,7 @@ public class TrainTestSplit {
 
     private void processFile(File f, Path outputDir) throws Exception {
         Map<String, BufferedWriter> writers = getWriters(outputDir, f);
-        System.err.println("working on "+f);
+        System.err.println("working on " + f);
         try (BufferedReader reader = Files.newBufferedReader(f.toPath(), StandardCharsets.UTF_8)) {
             String line = reader.readLine();
             while (line != null) {
@@ -84,7 +84,7 @@ public class TrainTestSplit {
                 } else if (r < trainingP + devTestP) {
                     writers.get(DEVTEST).write(line + "\n");
                 } else {
-                    writers.get(TESTING).write(line+"\n");
+                    writers.get(TESTING).write(line + "\n");
                 }
                 line = reader.readLine();
             }
@@ -99,16 +99,15 @@ public class TrainTestSplit {
 
     private Map<String, BufferedWriter> getWriters(Path outputDir, File f) throws IOException {
         Map<String, BufferedWriter> writers = new HashMap<>();
-        for (String which : new String[] { TRAINING, DEVTEST, TESTING}) {
+        for (String which : new String[]{TRAINING, DEVTEST, TESTING}) {
             writers.put(which, getWriter(outputDir, which, f));
         }
         return writers;
     }
 
     private BufferedWriter getWriter(Path outputDir, String which, File f) throws IOException {
-        OutputStream os = new GzipCompressorOutputStream(
-                new BufferedOutputStream(
-                Files.newOutputStream(outputDir.resolve(which).resolve(f.getName()+".gz"))));
+        OutputStream os = new GzipCompressorOutputStream(new BufferedOutputStream(
+                Files.newOutputStream(outputDir.resolve(which).resolve(f.getName() + ".gz"))));
         return new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8));
     }
 }

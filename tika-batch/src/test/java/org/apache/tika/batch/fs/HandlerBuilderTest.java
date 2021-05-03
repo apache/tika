@@ -1,5 +1,3 @@
-package org.apache.tika.batch.fs;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,7 @@ package org.apache.tika.batch.fs;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.batch.fs;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertFalse;
@@ -24,9 +23,10 @@ import static org.junit.Assert.assertTrue;
 import java.nio.file.Path;
 import java.util.Map;
 
+import org.junit.Test;
+
 import org.apache.tika.batch.BatchProcess;
 import org.apache.tika.batch.ParallelFileProcessingResult;
-import org.junit.Test;
 
 public class HandlerBuilderTest extends FSBatchTestBase {
 

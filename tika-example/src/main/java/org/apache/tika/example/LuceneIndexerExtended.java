@@ -28,6 +28,7 @@ import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.FSDirectory;
+
 import org.apache.tika.Tika;
 
 @SuppressWarnings("deprecation")
@@ -43,8 +44,7 @@ public class LuceneIndexerExtended {
 
     public static void main(String[] args) throws Exception {
         IndexWriterConfig indexWriterConfig = new IndexWriterConfig(new StandardAnalyzer());
-        try (IndexWriter writer =
-                     new IndexWriter(FSDirectory.open(Paths.get(args[0])),
+        try (IndexWriter writer = new IndexWriter(FSDirectory.open(Paths.get(args[0])),
                 indexWriterConfig)) {
             LuceneIndexer indexer = new LuceneIndexer(new Tika(), writer);
             for (int i = 1; i < args.length; i++) {

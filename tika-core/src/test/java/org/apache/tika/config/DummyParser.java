@@ -24,11 +24,11 @@ import org.apache.tika.parser.Parser;
 
 public class DummyParser extends CompositeParser implements Parser {
     private static final long serialVersionUID = 7179782154785528555L;
-    
-    private ServiceLoader loader;
+
+    private final ServiceLoader loader;
 
     public DummyParser(MediaTypeRegistry registry, ServiceLoader loader,
-            Collection<Class<? extends Parser>> excludeParsers) {
+                       Collection<Class<? extends Parser>> excludeParsers) {
         this.loader = loader;
     }
 

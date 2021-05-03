@@ -32,7 +32,7 @@ public class CompositeDigester implements DigestingParser.Digester {
 
     private final DigestingParser.Digester[] digesters;
 
-    public CompositeDigester(DigestingParser.Digester ... digesters) {
+    public CompositeDigester(DigestingParser.Digester... digesters) {
         this.digesters = digesters;
     }
 

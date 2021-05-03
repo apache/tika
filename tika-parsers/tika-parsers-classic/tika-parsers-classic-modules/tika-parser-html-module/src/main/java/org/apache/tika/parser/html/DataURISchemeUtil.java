@@ -17,9 +17,6 @@
 
 package org.apache.tika.parser.html;
 
-import org.apache.commons.codec.binary.Base64;
-import org.apache.tika.mime.MediaType;
-
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.StandardCharsets;
@@ -28,6 +25,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.commons.codec.binary.Base64;
+
+import org.apache.tika.mime.MediaType;
 
 /**
  * Not thread safe.  Create a separate util for each thread.
@@ -54,8 +55,7 @@ public class DataURISchemeUtil {
     private DataURIScheme build(String mediaTypeString, String isBase64, String dataString) {
         byte[] data = null;
         //strip out back slashes as you might have in css
-        dataString = (dataString != null) ?
-                dataString.replaceAll("\\\\", " ") : dataString;
+        dataString = (dataString != null) ? dataString.replaceAll("\\\\", " ") : dataString;
 
         if (dataString == null || dataString.length() == 0) {
             data = new byte[0];
@@ -90,8 +90,8 @@ public class DataURISchemeUtil {
         extractMatcher.reset(string);
         List<DataURIScheme> list = null;
         while (extractMatcher.find()) {
-            DataURIScheme dataURIScheme = build(extractMatcher.group(1),
-                    extractMatcher.group(2), extractMatcher.group(3));
+            DataURIScheme dataURIScheme = build(extractMatcher.group(1), extractMatcher.group(2),
+                    extractMatcher.group(3));
             if (list == null) {
                 list = new ArrayList<>();
             }

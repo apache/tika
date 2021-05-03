@@ -19,8 +19,6 @@ package org.apache.tika.mime;
 /**
  * Defines a magic for a MimeType. A magic is made of one or several
  * MagicClause.
- * 
- * 
  */
 class Magic implements Clause, Comparable<Magic> {
 

@@ -41,8 +41,7 @@ class ClassLoaderResource implements ForkResource {
      * @param name resource name
      * @throws IOException if the resource could not be sent
      */
-    public Throwable process(DataInputStream input, DataOutputStream output)
-            throws IOException {
+    public Throwable process(DataInputStream input, DataOutputStream output) throws IOException {
         byte type = input.readByte();
         String name = input.readUTF();
         if (type == 1) {
@@ -79,8 +78,8 @@ class ClassLoaderResource implements ForkResource {
      * @param stream the stream to be sent
      * @throws IOException if the stream could not be sent
      */
-    private void writeAndCloseStream(
-            DataOutputStream output, InputStream stream) throws IOException {
+    private void writeAndCloseStream(DataOutputStream output, InputStream stream)
+            throws IOException {
         try {
             byte[] buffer = new byte[0x10000 - 1];
             int n;

@@ -19,30 +19,41 @@ package org.apache.tika.config;
 import static org.junit.Assert.assertNotNull;
 
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import org.junit.After;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.parser.ParseContext;
-import org.junit.After;
 
 /**
  * Parent of Junit test classes for {@link TikaConfig}, including
- *  Tika Core based ones, and ones in Tika Parsers that do things 
- *  that {@link TikaConfigTest} can't, do due to a need for the
- *  full set of "real" classes of parsers / detectors
+ * Tika Core based ones, and ones in Tika Parsers that do things
+ * that {@link TikaConfigTest} can't, do due to a need for the
+ * full set of "real" classes of parsers / detectors
  */
 public abstract class AbstractTikaConfigTest extends TikaTest {
     protected static ParseContext context = new ParseContext();
-    
+
+    protected static Path getConfigFilePath(String config) throws Exception {
+        URL url = TikaConfig.class.getResource(config);
+        assertNotNull("Test Tika Config not found: " + config, url);
+        return Paths.get(url.toURI());
+    }
+
+
     protected static String getConfigPath(String config) throws Exception {
         URL url = TikaConfig.class.getResource(config);
         assertNotNull("Test Tika Config not found: " + config, url);
         return url.toExternalForm();
     }
+
     protected static TikaConfig getConfig(String config) throws Exception {
         System.setProperty("tika.config", getConfigPath(config));
         return new TikaConfig();
     }
-    
+
     @After
     public void resetConfig() {
         System.clearProperty("tika.config");

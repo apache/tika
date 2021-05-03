@@ -1,5 +1,3 @@
-package org.apache.tika.batch.fs.builders;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,7 +14,7 @@ package org.apache.tika.batch.fs.builders;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+package org.apache.tika.batch.fs.builders;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -29,6 +27,8 @@ import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.regex.Pattern;
 
+import org.w3c.dom.Node;
+
 import org.apache.tika.batch.FileResource;
 import org.apache.tika.batch.FileResourceCrawler;
 import org.apache.tika.batch.builders.BatchProcessBuilder;
@@ -39,7 +39,6 @@ import org.apache.tika.batch.fs.FSListCrawler;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.util.PropsUtil;
 import org.apache.tika.util.XMLDOMUtil;
-import org.w3c.dom.Node;
 
 /**
  * Builds either an FSDirectoryCrawler or an FSListCrawler.
@@ -68,8 +67,7 @@ public class FSCrawlerBuilder implements ICrawlerBuilder {
         Map<String, String> attributes = XMLDOMUtil.mapifyAttrs(node, runtimeAttributes);
 
         int numConsumers = BatchProcessBuilder.getNumConsumers(runtimeAttributes);
-        Path inputDir = PropsUtil.getPath(attributes.get(INPUT_DIR_ATTR),
-                Paths.get("input"));
+        Path inputDir = PropsUtil.getPath(attributes.get(INPUT_DIR_ATTR), Paths.get("input"));
         FileResourceCrawler crawler = null;
         if (attributes.containsKey("fileList")) {
             String randomCrawlString = attributes.get(CRAWL_ORDER);
@@ -79,18 +77,20 @@ public class FSCrawlerBuilder implements ICrawlerBuilder {
                 System.err.println("randomCrawl attribute is ignored by FSListCrawler");
             }
             Path fileList = PropsUtil.getPath(attributes.get("fileList"), null);
-            String encodingString = PropsUtil.getString(attributes.get("fileListEncoding"), "UTF-8");
+            String encodingString =
+                    PropsUtil.getString(attributes.get("fileListEncoding"), "UTF-8");
 
             try {
                 Charset encoding = Charset.forName(encodingString);
                 crawler = new FSListCrawler(queue, numConsumers, inputDir, fileList, encoding);
             } catch (FileNotFoundException e) {
-                throw new RuntimeException("fileList file not found for FSListCrawler: " +
-                        fileList.toAbsolutePath());
+                throw new RuntimeException(
+                        "fileList file not found for FSListCrawler: " + fileList.toAbsolutePath());
             } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException("fileList encoding not supported: "+encodingString);
+                throw new RuntimeException("fileList encoding not supported: " + encodingString);
             } catch (IOException e) {
-                throw new RuntimeException("IOException while trying to open fileList: " + e.getMessage(), e);
+                throw new RuntimeException(
+                        "IOException while trying to open fileList: " + e.getMessage(), e);
             }
         } else {
             FSDirectoryCrawler.CRAWL_ORDER crawlOrder = getCrawlOrder(attributes.get(CRAWL_ORDER));
@@ -98,11 +98,13 @@ public class FSCrawlerBuilder implements ICrawlerBuilder {
             if (startDir == null) {
                 crawler = new FSDirectoryCrawler(queue, numConsumers, inputDir, crawlOrder);
             } else {
-                crawler = new FSDirectoryCrawler(queue, numConsumers, inputDir, startDir, crawlOrder);
+                crawler =
+                        new FSDirectoryCrawler(queue, numConsumers, inputDir, startDir, crawlOrder);
             }
         }
 
-        crawler.setMaxFilesToConsider(PropsUtil.getInt(attributes.get(MAX_FILES_TO_CONSIDER_ATTR), -1));
+        crawler.setMaxFilesToConsider(
+                PropsUtil.getInt(attributes.get(MAX_FILES_TO_CONSIDER_ATTR), -1));
         crawler.setMaxFilesToAdd(PropsUtil.getInt(attributes.get(MAX_FILES_TO_ADD_ATTR), -1));
 
         DocumentSelector selector = buildSelector(attributes);
@@ -110,7 +112,8 @@ public class FSCrawlerBuilder implements ICrawlerBuilder {
             crawler.setDocumentSelector(selector);
         }
 
-        crawler.setMaxConsecWaitInMillis(PropsUtil.getLong(attributes.get(MAX_CONSEC_WAIT_MILLIS), 300000L));//5 minutes
+        crawler.setMaxConsecWaitInMillis(
+                PropsUtil.getLong(attributes.get(MAX_CONSEC_WAIT_MILLIS), 300000L));//5 minutes
         return crawler;
     }
 
@@ -131,8 +134,10 @@ public class FSCrawlerBuilder implements ICrawlerBuilder {
         String excludeString = attributes.get(EXCLUDE_FILE_PAT_ATTR);
         long maxFileSize = PropsUtil.getLong(attributes.get(MAX_FILE_SIZE_BYTES_ATTR), -1L);
         long minFileSize = PropsUtil.getLong(attributes.get(MIN_FILE_SIZE_BYTES_ATTR), -1L);
-        Pattern includePat = (includeString != null && includeString.length() > 0) ? Pattern.compile(includeString) : null;
-        Pattern excludePat = (excludeString != null && excludeString.length() > 0) ? Pattern.compile(excludeString) : null;
+        Pattern includePat = (includeString != null && includeString.length() > 0) ?
+                Pattern.compile(includeString) : null;
+        Pattern excludePat = (excludeString != null && excludeString.length() > 0) ?
+                Pattern.compile(excludeString) : null;
 
         return new FSDocumentSelector(includePat, excludePat, minFileSize, maxFileSize);
     }

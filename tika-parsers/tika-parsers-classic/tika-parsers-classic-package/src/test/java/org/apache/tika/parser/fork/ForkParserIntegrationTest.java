@@ -16,8 +16,6 @@
  */
 package org.apache.tika.parser.fork;
 
-import static org.apache.tika.TikaTest.assertContains;
-import static org.apache.tika.TikaTest.debug;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
@@ -31,6 +29,11 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.junit.Ignore;
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.Tika;
 import org.apache.tika.detect.Detector;
@@ -43,14 +46,10 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * Test that the ForkParser correctly behaves when
- *  wired in to the regular Parsers and their test data
+ * wired in to the regular Parsers and their test data
  */
 public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
 
@@ -61,92 +60,22 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
      */
     @Test
     public void testForkedTextParsing() throws Exception {
-        try (ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(), tika.getParser())) {
-          ContentHandler output = new BodyContentHandler();
-          InputStream stream = getResourceAsStream("/test-documents/testTXT.txt");
-          ParseContext context = new ParseContext();
-          parser.parse(stream, output, new Metadata(), context);
+        try (ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(),
+                tika.getParser())) {
+            ContentHandler output = new BodyContentHandler();
+            InputStream stream = getResourceAsStream("/test-documents/testTXT.txt");
+            ParseContext context = new ParseContext();
+            parser.parse(stream, output, new Metadata(), context);
 
-          String content = output.toString();
-          assertContains("Test d'indexation", content);
-          assertContains("http://www.apache.org", content);
-       }
-    }
-   
-    /**
-     * This error has a message and an equals() implementation as to be able 
-     * to match it against the serialized version of itself.
-     */
-    static class AnError extends Error {
-        private static final long serialVersionUID = -6197267350768803348L;
-        private String message;
-        AnError(String message) {
-            super(message);
-            this.message = message;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            AnError anError = (AnError) o;
-
-            if (!message.equals(anError.message)) return false;
-
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            return message.hashCode();
+            String content = output.toString();
+            assertContains("Test d'indexation", content);
+            assertContains("http://www.apache.org", content);
         }
     }
-    
-    /**
-     * This error isn't serializable on the server, so can't be sent back
-     *  to the Fork Client once it has occured
-     */
-    static class WontBeSerializedError extends RuntimeException {
-       private static final long serialVersionUID = 1L;
 
-       WontBeSerializedError(String message) {
-          super(message);
-       }
-
-       private void writeObject(java.io.ObjectOutputStream out) {
-          RuntimeException e = new RuntimeException("Bang!");
-          boolean found = false;
-          for (StackTraceElement ste : e.getStackTrace()) {
-             if (ste.getClassName().equals(ForkParser.class.getName())) {
-                found = true;
-                break;
-             }
-          }
-          if (!found) {
-             throw e;
-          }
-       }
-    }
-    
-    static class BrokenParser implements Parser {
-        private static final long serialVersionUID = 995871497930817839L;
-        public Error err = new AnError("Simulated fail");
-        public RuntimeException re = null;
-        
-        public Set<MediaType> getSupportedTypes(ParseContext context) {
-            return new HashSet<MediaType>(Arrays.asList(MediaType.TEXT_PLAIN));
-        }
-
-        public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
-            if (re != null) throw re;
-            throw err;
-        }
-    }
-    
     /**
      * TIKA-831 Parsers throwing errors should be caught and
-     *  properly reported
+     * properly reported
      */
     @Test
     public void testParsingErrorInForkedParserShouldBeReported() throws Exception {
@@ -166,11 +95,11 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
             parser.close();
             stream.close();
         }
-        
+
         // With a non serializable one, we'll get something else
         // TODO Fix this test
         brokenParser = new BrokenParser();
-        brokenParser.re= new WontBeSerializedError("Can't Serialize");
+        brokenParser.re = new WontBeSerializedError("Can't Serialize");
         parser = new ForkParser(ForkParser.class.getClassLoader(), brokenParser);
 //        try {
 //           ContentHandler output = new BodyContentHandler();
@@ -182,53 +111,51 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
 //           assertEquals("Bang!", e.getCause().getMessage());
 //       }
     }
-    
+
     /**
      * If we supply a non serializable object on the ParseContext,
-     *  check we get a helpful exception back
+     * check we get a helpful exception back
      */
     @Test
     public void testParserHandlingOfNonSerializable() throws Exception {
-       ForkParser parser = new ForkParser(
-             ForkParserIntegrationTest.class.getClassLoader(),
-             tika.getParser());
-       
-       ParseContext context = new ParseContext();
-       context.set(Detector.class, new Detector() {
-          public MediaType detect(InputStream input, Metadata metadata) {
-             return MediaType.OCTET_STREAM;
-          }
-       });
+        ForkParser parser =
+                new ForkParser(ForkParserIntegrationTest.class.getClassLoader(), tika.getParser());
 
-       try {
-          ContentHandler output = new BodyContentHandler();
-          InputStream stream = getResourceAsStream("/test-documents/testTXT.txt");
-          parser.parse(stream, output, new Metadata(), context);
-          fail("Should have blown up with a non serializable ParseContext");
-       } catch(TikaException e) {
-          // Check the right details
-          assertNotNull(e.getCause());
-          assertEquals(NotSerializableException.class, e.getCause().getClass());
-          assertEquals("Unable to serialize ParseContext to pass to the Forked Parser", e.getMessage());
-       } finally {
-          parser.close();
-       }
+        ParseContext context = new ParseContext();
+        context.set(Detector.class, new Detector() {
+            public MediaType detect(InputStream input, Metadata metadata) {
+                return MediaType.OCTET_STREAM;
+            }
+        });
+
+        try {
+            ContentHandler output = new BodyContentHandler();
+            InputStream stream = getResourceAsStream("/test-documents/testTXT.txt");
+            parser.parse(stream, output, new Metadata(), context);
+            fail("Should have blown up with a non serializable ParseContext");
+        } catch (TikaException e) {
+            // Check the right details
+            assertNotNull(e.getCause());
+            assertEquals(NotSerializableException.class, e.getCause().getClass());
+            assertEquals("Unable to serialize ParseContext to pass to the Forked Parser",
+                    e.getMessage());
+        } finally {
+            parser.close();
+        }
     }
 
     /**
      * TIKA-832
      */
     @Test
-    public void testAttachingADebuggerOnTheForkedParserShouldWork()
-            throws Exception {
+    public void testAttachingADebuggerOnTheForkedParserShouldWork() throws Exception {
         ParseContext context = new ParseContext();
         context.set(Parser.class, tika.getParser());
 
-        ForkParser parser = new ForkParser(
-                ForkParserIntegrationTest.class.getClassLoader(),
-                tika.getParser());
+        ForkParser parser =
+                new ForkParser(ForkParserIntegrationTest.class.getClassLoader(), tika.getParser());
         parser.setJavaCommand(Arrays.asList("java", "-Xmx32m", "-Xdebug",
-                                            "-Xrunjdwp:transport=dt_socket,address=54321,server=y,suspend=n"));
+                "-Xrunjdwp:transport=dt_socket,address=54321,server=y,suspend=n"));
         try {
             ContentHandler body = new BodyContentHandler();
             InputStream stream = getResourceAsStream("/test-documents/testTXT.txt");
@@ -247,7 +174,8 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
      */
     @Test
     public void testForkedPDFParsing() throws Exception {
-        try (ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(), tika.getParser())) {
+        try (ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(),
+                tika.getParser())) {
             ContentHandler output = new BodyContentHandler();
             InputStream stream = getResourceAsStream("/test-documents/testPDF.pdf");
             ParseContext context = new ParseContext();
@@ -264,7 +192,8 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
 
     @Test
     public void testForkedPackageParsing() throws Exception {
-        try (ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(), tika.getParser())) {
+        try (ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(),
+                tika.getParser())) {
             ContentHandler output = new BodyContentHandler();
             InputStream stream = getResourceAsStream("/test-documents/moby.zip");
             ParseContext context = new ParseContext();
@@ -274,12 +203,13 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
     }
 
     @Test
-    @Ignore("use for development/one off testing.  This is a beast and takes enormous resources and time")
+    @Ignore("use for development/one off testing.  This is a beast and takes enormous " +
+            "resources and time")
     public void smokeTest() throws Exception {
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(tika.getParser());
         int numThreads = 5;
-        ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(),
-                wrapper);
+        ForkParser parser =
+                new ForkParser(ForkParserIntegrationTest.class.getClassLoader(), wrapper);
         parser.setServerPulseMillis(500);
         parser.setServerParseTimeoutMillis(1000);
         parser.setPoolSize(numThreads);
@@ -288,25 +218,106 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
             parseContexts[i] = new ParseContext();
         }
         try {
-            super.testMultiThreaded(parser, parseContexts, numThreads, 5,
-                    new FileFilter() {
-                        @Override
-                        public boolean accept(File pathname) {
-                            if (pathname.getAbsolutePath().contains("mock")) {
-                                return true;
-                            } else {
-                                return false;
-                            }/*
+            super.testMultiThreaded(parser, parseContexts, numThreads, 5, new FileFilter() {
+                @Override
+                public boolean accept(File pathname) {
+                    if (pathname.getAbsolutePath().contains("mock")) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                    /*
                             if (pathname.getName().contains("11_hang.rar") ||
                                     pathname.getName().contains("radar_profiles_2009.mat") ||
                                     pathname.getAbsolutePath().contains("mock")) {
                                 //return false;
                             }
                             return true;*/
-                        }
-                    });
+                }
+            });
         } catch (Throwable t) {
             t.printStackTrace();
+        }
+    }
+
+    /**
+     * This error has a message and an equals() implementation as to be able
+     * to match it against the serialized version of itself.
+     */
+    static class AnError extends Error {
+        private static final long serialVersionUID = -6197267350768803348L;
+        private String message;
+
+        AnError(String message) {
+            super(message);
+            this.message = message;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            AnError anError = (AnError) o;
+
+            if (!message.equals(anError.message)) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return message.hashCode();
+        }
+    }
+
+    /**
+     * This error isn't serializable on the server, so can't be sent back
+     * to the Fork Client once it has occured
+     */
+    static class WontBeSerializedError extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+
+        WontBeSerializedError(String message) {
+            super(message);
+        }
+
+        private void writeObject(java.io.ObjectOutputStream out) {
+            RuntimeException e = new RuntimeException("Bang!");
+            boolean found = false;
+            for (StackTraceElement ste : e.getStackTrace()) {
+                if (ste.getClassName().equals(ForkParser.class.getName())) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                throw e;
+            }
+        }
+    }
+
+    static class BrokenParser implements Parser {
+        private static final long serialVersionUID = 995871497930817839L;
+        public Error err = new AnError("Simulated fail");
+        public RuntimeException re = null;
+
+        public Set<MediaType> getSupportedTypes(ParseContext context) {
+            return new HashSet<MediaType>(Arrays.asList(MediaType.TEXT_PLAIN));
+        }
+
+        public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                          ParseContext context) throws IOException, SAXException, TikaException {
+            if (re != null) {
+                throw re;
+            }
+            throw err;
         }
     }
 

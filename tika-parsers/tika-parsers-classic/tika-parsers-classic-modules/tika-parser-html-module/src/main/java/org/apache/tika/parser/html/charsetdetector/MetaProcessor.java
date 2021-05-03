@@ -16,17 +16,18 @@
  */
 package org.apache.tika.parser.html.charsetdetector;
 
+import static org.apache.tika.parser.html.charsetdetector.PreScanner.getEncodingFromMeta;
+
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import static org.apache.tika.parser.html.charsetdetector.PreScanner.getEncodingFromMeta;
 
 
 /**
  * A class to process the attributes of an HTML meta tag in order to extract a character set.
  * The user should repeatedly call {@link #processAttribute} on each attributes of the tag,
- * then update its current detection result with {@link #updateDetectedCharset(CharsetDetectionResult)}
+ * then update its current detection result with
+ * {@link #updateDetectedCharset(CharsetDetectionResult)}
  * <p>
  * The algorithm implemented is meant to match the one described by the W3C here:
  * https://html.spec.whatwg.org/multipage/parsing.html#prescan-a-byte-stream-to-determine-its-encoding
@@ -38,24 +39,25 @@ class MetaProcessor {
     private CharsetDetectionResult detectionResult = CharsetDetectionResult.notFound();
 
     void updateDetectedCharset(CharsetDetectionResult currentDetectionResult) {
-        if (detectionResult.isFound() &&
-                needPragma != null &&
-                !(needPragma && !gotPragma)) {
+        if (detectionResult.isFound() && needPragma != null && !(needPragma && !gotPragma)) {
             currentDetectionResult.setCharset(detectionResult.getCharset());
         }
     }
 
     void processAttribute(Map.Entry<String, String> attribute) {
         // Ignore duplicate attributes
-        if (attributeNames.contains(attribute.getKey())) return;
+        if (attributeNames.contains(attribute.getKey())) {
+            return;
+        }
 
         attributeNames.add(attribute.getKey());
 
         // Handle charset-related attributes
         switch (attribute.getKey()) {
             case "http-equiv":
-                if (attribute.getValue().equals("content-type"))
+                if (attribute.getValue().equals("content-type")) {
                     gotPragma = true;
+                }
                 break;
             case "content":
                 String charsetName = getEncodingFromMeta(attribute.getValue());

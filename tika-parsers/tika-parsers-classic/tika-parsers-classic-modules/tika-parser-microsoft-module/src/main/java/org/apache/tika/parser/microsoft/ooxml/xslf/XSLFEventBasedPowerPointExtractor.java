@@ -26,11 +26,12 @@ import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackageAccess;
+import org.apache.xmlbeans.XmlException;
+
 import org.apache.tika.parser.microsoft.ooxml.OOXMLWordAndPowerPointTextHandler;
 import org.apache.tika.parser.microsoft.ooxml.ParagraphProperties;
 import org.apache.tika.parser.microsoft.ooxml.RunProperties;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
-import org.apache.xmlbeans.XmlException;
 
 public class XSLFEventBasedPowerPointExtractor extends POIXMLTextExtractor {
 
@@ -38,11 +39,13 @@ public class XSLFEventBasedPowerPointExtractor extends POIXMLTextExtractor {
     private OPCPackage container;
     private POIXMLProperties properties;
 
-    public XSLFEventBasedPowerPointExtractor(String path) throws XmlException, OpenXML4JException, IOException {
+    public XSLFEventBasedPowerPointExtractor(String path)
+            throws XmlException, OpenXML4JException, IOException {
         this(OPCPackage.open(path, PackageAccess.READ));
     }
 
-    public XSLFEventBasedPowerPointExtractor(OPCPackage container) throws XmlException, OpenXML4JException, IOException {
+    public XSLFEventBasedPowerPointExtractor(OPCPackage container)
+            throws XmlException, OpenXML4JException, IOException {
         super((POIXMLDocument) null);
         this.container = container;
         this.properties = new POIXMLProperties(container);
@@ -85,8 +88,8 @@ public class XSLFEventBasedPowerPointExtractor extends POIXMLTextExtractor {
     }
 
 
-
-    private class XSLFToTextContentHandler implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
+    private class XSLFToTextContentHandler
+            implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
         private final StringBuilder buffer;
 
         public XSLFToTextContentHandler(StringBuilder buffer) {
@@ -159,7 +162,8 @@ public class XSLFEventBasedPowerPointExtractor extends POIXMLTextExtractor {
         }
 
         @Override
-        public void startEditedSection(String editor, Date date, OOXMLWordAndPowerPointTextHandler.EditType editType) {
+        public void startEditedSection(String editor, Date date,
+                                       OOXMLWordAndPowerPointTextHandler.EditType editType) {
 
         }
 

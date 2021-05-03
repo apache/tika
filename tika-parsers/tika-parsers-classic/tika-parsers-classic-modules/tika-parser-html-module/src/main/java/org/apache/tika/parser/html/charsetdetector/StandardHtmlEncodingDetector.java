@@ -16,17 +16,18 @@
  */
 package org.apache.tika.parser.html.charsetdetector;
 
-import org.apache.commons.io.input.BoundedInputStream;
-import org.apache.tika.config.Field;
-import org.apache.tika.detect.EncodingDetector;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
+import static org.apache.tika.parser.html.charsetdetector.CharsetAliases.getCharsetByLabel;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 
-import static org.apache.tika.parser.html.charsetdetector.CharsetAliases.getCharsetByLabel;
+import org.apache.commons.io.input.BoundedInputStream;
+
+import org.apache.tika.config.Field;
+import org.apache.tika.detect.EncodingDetector;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 
 /**
  * An encoding detector that tries to respect the spirit of the HTML spec
@@ -36,7 +37,8 @@ import static org.apache.tika.parser.html.charsetdetector.CharsetAliases.getChar
  * https://html.spec.whatwg.org/multipage/parsing.html#the-input-byte-stream
  * <p>
  * If a resource was fetched over HTTP, then HTTP headers should be added to tika metadata
- * when using {@link #detect}, especially {@link Metadata#CONTENT_TYPE}, as it may contain charset information.
+ * when using {@link #detect}, especially {@link Metadata#CONTENT_TYPE}, as it may contain
+ * charset information.
  * <p>
  * This encoding detector may return null if no encoding is detected.
  * It is meant to be used inside a {@link org.apache.tika.detect.CompositeDetector}.
@@ -64,7 +66,9 @@ public final class StandardHtmlEncodingDetector implements EncodingDetector {
     private static Charset charsetFromContentType(Metadata metadata) {
         String contentType = metadata.get(Metadata.CONTENT_TYPE);
         MediaType mediatype = MediaType.parse(contentType);
-        if (mediatype == null) return null;
+        if (mediatype == null) {
+            return null;
+        }
         String charsetLabel = mediatype.getParameters().get("charset");
         return getCharsetByLabel(charsetLabel);
     }
@@ -81,9 +85,13 @@ public final class StandardHtmlEncodingDetector implements EncodingDetector {
         // 1. Byte Order Mark
         Charset detectedCharset = preScanner.detectBOM();
         // 2. Transport-level information (Content-Type HTTP header)
-        if (detectedCharset == null) detectedCharset = charsetFromContentType(metadata);
+        if (detectedCharset == null) {
+            detectedCharset = charsetFromContentType(metadata);
+        }
         // 3. HTML <meta> tag
-        if (detectedCharset == null) detectedCharset = preScanner.scan();
+        if (detectedCharset == null) {
+            detectedCharset = preScanner.scan();
+        }
 
         input.reset();
         return detectedCharset;

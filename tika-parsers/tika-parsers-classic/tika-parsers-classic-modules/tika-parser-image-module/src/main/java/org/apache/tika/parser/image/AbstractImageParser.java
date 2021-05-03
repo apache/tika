@@ -16,6 +16,14 @@
  */
 package org.apache.tika.parser.image;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
@@ -29,20 +37,18 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 public abstract class AbstractImageParser extends AbstractParser {
 
     public static String OCR_MEDIATYPE_PREFIX = "ocr-";
-    abstract void extractMetadata(InputStream is,
-                                  ContentHandler contentHandler, Metadata metadata,
-                                  ParseContext parseContext) throws IOException, SAXException, TikaException;
+
+    static MediaType convertToOCRMediaType(MediaType mediaType) {
+        return new MediaType(mediaType.getType(), OCR_MEDIATYPE_PREFIX + mediaType.getSubtype());
+    }
+
+    abstract void extractMetadata(InputStream is, ContentHandler contentHandler, Metadata metadata,
+                                  ParseContext parseContext)
+            throws IOException, SAXException, TikaException;
 
     //if the parser needs to normalize the mediaType, override this.
     //this is a no-op, returning the mediaType that is sent in
@@ -51,16 +57,15 @@ public abstract class AbstractImageParser extends AbstractParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler,
-                      Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
 
         String mediaTypeString = metadata.get(Metadata.CONTENT_TYPE);
         //note: mediaType can be null
         MediaType mediaType = normalizeMediaType(MediaType.parse(mediaTypeString));
         MediaType ocrMediaType = convertToOCRMediaType(mediaType);
         Parser ocrParser = EmbeddedDocumentUtil.getStatelessParser(context);
-        if (ocrParser == null || ! ocrParser.getSupportedTypes(context).contains(ocrMediaType)) {
+        if (ocrParser == null || !ocrParser.getSupportedTypes(context).contains(ocrMediaType)) {
             extractMetadata(stream, handler, metadata, context);
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             xhtml.startDocument();
@@ -85,11 +90,13 @@ public abstract class AbstractImageParser extends AbstractParser {
 
             try (InputStream pathStream = Files.newInputStream(path)) {
                 //specify ocr content type
-                metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, ocrMediaType.toString());
+                metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
+                        ocrMediaType.toString());
                 //need to use bodycontenthandler to filter out re-dumping of metadata
                 //in xhtmlhandler
-                ocrParser.parse(pathStream, new EmbeddedContentHandler(
-                        new BodyContentHandler(xhtml)), metadata, context);
+                ocrParser.parse(pathStream,
+                        new EmbeddedContentHandler(new BodyContentHandler(xhtml)), metadata,
+                        context);
             }
             xhtml.endDocument();
         } finally {
@@ -98,10 +105,5 @@ public abstract class AbstractImageParser extends AbstractParser {
         if (metadataException != null) {
             throw new TikaException("problem extracting metadata", metadataException);
         }
-    }
-
-    static MediaType convertToOCRMediaType(MediaType mediaType) {
-        return new MediaType(mediaType.getType(),
-                OCR_MEDIATYPE_PREFIX+mediaType.getSubtype());
     }
 }

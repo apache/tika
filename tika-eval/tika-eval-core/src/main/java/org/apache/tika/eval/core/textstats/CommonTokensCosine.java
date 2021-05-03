@@ -23,6 +23,7 @@ import java.util.Map;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.math3.util.FastMath;
+
 import org.apache.tika.eval.core.tokens.CommonTokenCountManager;
 import org.apache.tika.eval.core.tokens.LangModel;
 import org.apache.tika.eval.core.tokens.TokenCounts;
@@ -38,7 +39,8 @@ public class CommonTokensCosine implements LanguageAwareTokenCountStats<Double> 
 
     @Override
     public Double calculate(List<LanguageResult> languages, TokenCounts tokenCounts) {
-        Pair<String, LangModel> pair = commonTokenCountManager.getLangTokens(languages.get(0).getLanguage());
+        Pair<String, LangModel> pair =
+                commonTokenCountManager.getLangTokens(languages.get(0).getLanguage());
         LangModel model = pair.getValue();
         double kl = 0.0;
         if (tokenCounts.getTokens().entrySet().size() == 0) {
@@ -49,14 +51,14 @@ public class CommonTokensCosine implements LanguageAwareTokenCountStats<Double> 
         for (Map.Entry<String, MutableInt> e : tokenCounts.getTokens().entrySet()) {
             long modelCount = model.getCount(e.getKey());
             if (modelCount > 0) {
-                numerator += e.getValue().intValue()*modelCount;
+                numerator += e.getValue().intValue() * modelCount;
             }
             double sq = FastMath.pow(e.getValue().intValue(), 2);
             denominator += sq;
         }
         denominator = Math.sqrt(denominator);
         denominator *= calcNorm(model.getCounts().values());
-        return numerator/denominator;
+        return numerator / denominator;
     }
 
     private double calcNorm(Collection<Long> counts) {

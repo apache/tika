@@ -16,6 +16,11 @@
  */
 package org.apache.tika.extractor.microsoft;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
@@ -24,18 +29,14 @@ import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.util.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.extractor.EmbeddedStreamTranslator;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.microsoft.OfficeParser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 
 public class MSEmbeddedStreamTranslator implements EmbeddedStreamTranslator {
 
@@ -48,7 +49,8 @@ public class MSEmbeddedStreamTranslator implements EmbeddedStreamTranslator {
             return true;
         } else if (inputStream instanceof TikaInputStream) {
             TikaInputStream tin = (TikaInputStream) inputStream;
-            if (tin.getOpenContainer() != null && tin.getOpenContainer() instanceof DirectoryEntry) {
+            if (tin.getOpenContainer() != null &&
+                    tin.getOpenContainer() instanceof DirectoryEntry) {
                 return true;
             }
         }
@@ -87,7 +89,8 @@ public class MSEmbeddedStreamTranslator implements EmbeddedStreamTranslator {
         } else if (inputStream instanceof TikaInputStream) {
             TikaInputStream tin = (TikaInputStream) inputStream;
 
-            if (tin.getOpenContainer() != null && tin.getOpenContainer() instanceof DirectoryEntry) {
+            if (tin.getOpenContainer() != null &&
+                    tin.getOpenContainer() instanceof DirectoryEntry) {
                 POIFSFileSystem fs = new POIFSFileSystem();
                 copy((DirectoryEntry) tin.getOpenContainer(), fs.getRoot());
                 ByteArrayOutputStream bos2 = new ByteArrayOutputStream();
@@ -99,8 +102,7 @@ public class MSEmbeddedStreamTranslator implements EmbeddedStreamTranslator {
         return inputStream;
     }
 
-    protected void copy(DirectoryEntry sourceDir, DirectoryEntry destDir)
-            throws IOException {
+    protected void copy(DirectoryEntry sourceDir, DirectoryEntry destDir) throws IOException {
         for (Entry entry : sourceDir) {
             if (entry instanceof DirectoryEntry) {
                 // Need to recurse

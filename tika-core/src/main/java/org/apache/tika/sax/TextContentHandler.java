@@ -30,7 +30,7 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 public class TextContentHandler extends DefaultHandler {
 
-    private static final char[] SPACE = new char[] {' '};
+    private static final char[] SPACE = new char[]{' '};
 
     private final ContentHandler delegate;
     private final boolean addSpaceBetweenElements;
@@ -46,24 +46,22 @@ public class TextContentHandler extends DefaultHandler {
 
     @Override
     public void setDocumentLocator(org.xml.sax.Locator locator) {
-	    delegate.setDocumentLocator(locator);
+        delegate.setDocumentLocator(locator);
     }
 
     @Override
-    public void characters(char[] ch, int start, int length)
-            throws SAXException {
+    public void characters(char[] ch, int start, int length) throws SAXException {
         delegate.characters(ch, start, length);
     }
 
     @Override
-    public void ignorableWhitespace(char[] ch, int start, int length)
-            throws SAXException {
+    public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
         delegate.ignorableWhitespace(ch, start, length);
     }
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes attributes)
-             throws SAXException {
+            throws SAXException {
         if (addSpaceBetweenElements) {
             delegate.characters(SPACE, 0, SPACE.length);
         }

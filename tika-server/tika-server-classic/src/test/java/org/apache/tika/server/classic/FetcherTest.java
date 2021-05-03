@@ -17,31 +17,35 @@
 
 package org.apache.tika.server.classic;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertEquals;
+
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import javax.ws.rs.core.Response;
+
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.junit.Ignore;
+import org.junit.Test;
+
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.pipes.fetcher.FetcherManager;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.FetcherStreamFactory;
 import org.apache.tika.server.core.InputStreamFactory;
 import org.apache.tika.server.core.resource.RecursiveMetadataResource;
 import org.apache.tika.server.core.writer.MetadataListMessageBodyWriter;
-import org.junit.Ignore;
-import org.junit.Test;
-
-import javax.ws.rs.core.Response;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.util.ArrayList;
-import java.util.List;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
 
 
 @Ignore("turn into actual unit tests -- this relies on network connectivity...bad")
@@ -73,19 +77,25 @@ public class FetcherTest extends CXFTestBase {
 
     @Override
     protected InputStreamFactory getInputStreamFactory(TikaConfig tikaConfig) {
-        return new FetcherStreamFactory(tikaConfig.getFetcherManager());
+        try {
+            Path configPath =
+                    Paths.get(getClass().getResource(
+                            "/config/tika-config-url-fetcher.xml").toURI());
+            FetcherManager fetcherManager = FetcherManager.load(configPath);
+            return new FetcherStreamFactory(fetcherManager);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test
     public void testBasic() throws Exception {
-        Response response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
-                .acceptEncoding("gzip")
-                .header("fetcherName", "url")
+        Response response = WebClient.create(endPoint + META_PATH).accept("application/json")
+                .acceptEncoding("gzip").header("fetcherName", "url")
                 .header("fetchKey", "https://tika.apache.org").put("");
 
-        Reader reader = new InputStreamReader(new GzipCompressorInputStream((InputStream) response.getEntity()), UTF_8);
+        Reader reader = new InputStreamReader(
+                new GzipCompressorInputStream((InputStream) response.getEntity()), UTF_8);
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
         Metadata parent = metadataList.get(0);
         String txt = parent.get(TikaCoreProperties.TIKA_CONTENT);

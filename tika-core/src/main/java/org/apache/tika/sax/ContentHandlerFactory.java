@@ -1,5 +1,3 @@
-package org.apache.tika.sax;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,24 +14,29 @@ package org.apache.tika.sax;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.sax;
 
-import org.xml.sax.ContentHandler;
 
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 
+import org.xml.sax.ContentHandler;
+
 /**
  * Interface to allow easier injection of code for getting a new ContentHandler
  */
 public interface ContentHandlerFactory extends Serializable {
-    public ContentHandler getNewContentHandler();
+    ContentHandler getNewContentHandler();
+
     /**
      * @deprecated use {@link #getNewContentHandler(OutputStream, Charset)}
      */
     @Deprecated
-    public ContentHandler getNewContentHandler(OutputStream os, String encoding) throws UnsupportedEncodingException;
-    public ContentHandler getNewContentHandler(OutputStream os, Charset charset);
+    ContentHandler getNewContentHandler(OutputStream os, String encoding)
+            throws UnsupportedEncodingException;
+
+    ContentHandler getNewContentHandler(OutputStream os, Charset charset);
 
 }

@@ -16,8 +16,6 @@
  */
 package org.apache.tika.parser.microsoft.onenote;
 
-import org.apache.tika.exception.TikaException;
-
 import java.io.Serializable;
 
 class OneNoteHeader implements Serializable {
@@ -64,6 +62,7 @@ class OneNoteHeader implements Serializable {
     /**
      * Determine if this OneNote file pre-dates the open specs published by
      * microsoft.
+     *
      * @return True if file is based on the MS-ONE and MS-ONESTORE specs. False otherwise.
      */
     public boolean isLegacy() {
@@ -119,7 +118,8 @@ class OneNoteHeader implements Serializable {
         return ffvOldestCodeThatHasWrittenToThisFile;
     }
 
-    public OneNoteHeader setFfvOldestCodeThatHasWrittenToThisFile(long ffvOldestCodeThatHasWrittenToThisFile) {
+    public OneNoteHeader setFfvOldestCodeThatHasWrittenToThisFile(
+            long ffvOldestCodeThatHasWrittenToThisFile) {
         this.ffvOldestCodeThatHasWrittenToThisFile = ffvOldestCodeThatHasWrittenToThisFile;
         return this;
     }
@@ -128,7 +128,8 @@ class OneNoteHeader implements Serializable {
         return ffvNewestCodeThatHasWrittenToThisFile;
     }
 
-    public OneNoteHeader setFfvNewestCodeThatHasWrittenToThisFile(long ffvNewestCodeThatHasWrittenToThisFile) {
+    public OneNoteHeader setFfvNewestCodeThatHasWrittenToThisFile(
+            long ffvNewestCodeThatHasWrittenToThisFile) {
         this.ffvNewestCodeThatHasWrittenToThisFile = ffvNewestCodeThatHasWrittenToThisFile;
         return this;
     }
@@ -137,7 +138,8 @@ class OneNoteHeader implements Serializable {
         return ffvOldestCodeThatMayReadThisFile;
     }
 
-    public OneNoteHeader setFfvOldestCodeThatMayReadThisFile(long ffvOldestCodeThatMayReadThisFile) {
+    public OneNoteHeader setFfvOldestCodeThatMayReadThisFile(
+            long ffvOldestCodeThatMayReadThisFile) {
         this.ffvOldestCodeThatMayReadThisFile = ffvOldestCodeThatMayReadThisFile;
         return this;
     }
@@ -191,7 +193,8 @@ class OneNoteHeader implements Serializable {
         return fcrLegacyFileNodeListRoot;
     }
 
-    public OneNoteHeader setFcrLegacyFileNodeListRoot(FileChunkReference fcrLegacyFileNodeListRoot) {
+    public OneNoteHeader setFcrLegacyFileNodeListRoot(
+            FileChunkReference fcrLegacyFileNodeListRoot) {
         this.fcrLegacyFileNodeListRoot = fcrLegacyFileNodeListRoot;
         return this;
     }
@@ -200,7 +203,8 @@ class OneNoteHeader implements Serializable {
         return cbLegacyFreeSpaceInFreeChunkList;
     }
 
-    public OneNoteHeader setCbLegacyFreeSpaceInFreeChunkList(long cbLegacyFreeSpaceInFreeChunkList) {
+    public OneNoteHeader setCbLegacyFreeSpaceInFreeChunkList(
+            long cbLegacyFreeSpaceInFreeChunkList) {
         this.cbLegacyFreeSpaceInFreeChunkList = cbLegacyFreeSpaceInFreeChunkList;
         return this;
     }

@@ -42,6 +42,11 @@ import java.util.List;
 import java.util.concurrent.Semaphore;
 
 import org.apache.commons.io.IOUtils;
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -56,16 +61,13 @@ import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
 
 public class ForkParserTest extends TikaTest {
 
     @Test
     public void testHelloWorld() throws Exception {
-        try (ForkParser parser = new ForkParser(ForkParserTest.class.getClassLoader(), new ForkTestParser())) {
+        try (ForkParser parser = new ForkParser(ForkParserTest.class.getClassLoader(),
+                new ForkTestParser())) {
             Metadata metadata = new Metadata();
             ContentHandler output = new BodyContentHandler();
             InputStream stream = new ByteArrayInputStream(new byte[0]);
@@ -78,7 +80,8 @@ public class ForkParserTest extends TikaTest {
 
     @Test
     public void testSerialParsing() throws Exception {
-        try (ForkParser parser = new ForkParser(ForkParserTest.class.getClassLoader(), new ForkTestParser())) {
+        try (ForkParser parser = new ForkParser(ForkParserTest.class.getClassLoader(),
+                new ForkTestParser())) {
             ParseContext context = new ParseContext();
             for (int i = 0; i < 10; i++) {
                 ContentHandler output = new BodyContentHandler();
@@ -91,7 +94,8 @@ public class ForkParserTest extends TikaTest {
 
     @Test
     public void testParallelParsing() throws Exception {
-        try (ForkParser parser = new ForkParser(ForkParserTest.class.getClassLoader(), new ForkTestParser())) {
+        try (ForkParser parser = new ForkParser(ForkParserTest.class.getClassLoader(),
+                new ForkTestParser())) {
             final ParseContext context = new ParseContext();
 
             Thread[] threads = new Thread[10];
@@ -102,8 +106,7 @@ public class ForkParserTest extends TikaTest {
                 threads[i] = new Thread() {
                     public void run() {
                         try {
-                            InputStream stream =
-                                new ByteArrayInputStream(new byte[0]);
+                            InputStream stream = new ByteArrayInputStream(new byte[0]);
                             parser.parse(stream, o, new Metadata(), context);
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -122,7 +125,8 @@ public class ForkParserTest extends TikaTest {
 
     @Test
     public void testPoolSizeReached() throws Exception {
-        try (ForkParser parser = new ForkParser(ForkParserTest.class.getClassLoader(), new ForkTestParser())) {
+        try (ForkParser parser = new ForkParser(ForkParserTest.class.getClassLoader(),
+                new ForkTestParser())) {
             final Semaphore barrier = new Semaphore(0);
 
             Thread[] threads = new Thread[parser.getPoolSize()];
@@ -158,8 +162,7 @@ public class ForkParserTest extends TikaTest {
                 public void run() {
                     try {
                         barrier.release();
-                        InputStream stream =
-                            new ByteArrayInputStream(new byte[0]);
+                        InputStream stream = new ByteArrayInputStream(new byte[0]);
                         parser.parse(stream, o, new Metadata(), context);
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -189,19 +192,21 @@ public class ForkParserTest extends TikaTest {
     @Test
     public void testPulseAndTimeouts() throws Exception {
 
-        ForkParser forkParser = new ForkParser(ForkParserTest.class.getClassLoader(), new MockParser());
+        ForkParser forkParser =
+                new ForkParser(ForkParserTest.class.getClassLoader(), new MockParser());
         forkParser.setServerPulseMillis(500);
         forkParser.setServerParseTimeoutMillis(5000);
         forkParser.setServerWaitTimeoutMillis(60000);
-        String sleepCommand = "<mock>\n" +
-                "    <write element=\"p\">Hello, World!</write>\n" +
+        String sleepCommand = "<mock>\n" + "    <write element=\"p\">Hello, World!</write>\n" +
                 "    <hang millis=\"11000\" heavy=\"false\" interruptible=\"false\" />\n" +
                 "</mock>";
         ContentHandler o = new BodyContentHandler(-1);
         Metadata m = new Metadata();
         ParseContext c = new ParseContext();
         try {
-            forkParser.parse(new ByteArrayInputStream(sleepCommand.getBytes(StandardCharsets.UTF_8)), o, m, c);
+            forkParser
+                    .parse(new ByteArrayInputStream(sleepCommand.getBytes(StandardCharsets.UTF_8)),
+                            o, m, c);
             fail("should have thrown IOException");
         } catch (TikaException e) {
             assertTrue("failed to communicate with forked parser process", true);
@@ -211,17 +216,18 @@ public class ForkParserTest extends TikaTest {
         forkParser = new ForkParser(ForkParserTest.class.getClassLoader(), new MockParser());
         forkParser.setServerPulseMillis(10);
         forkParser.setServerParseTimeoutMillis(100);
-        sleepCommand = "<mock>\n" +
-                "    <write element=\"p\">Hello, World!</write>\n" +
+        sleepCommand = "<mock>\n" + "    <write element=\"p\">Hello, World!</write>\n" +
                 "    <hang millis=\"1000\" heavy=\"false\" interruptible=\"false\" />\n" +
                 "</mock>";
         o = new BodyContentHandler(-1);
         m = new Metadata();
         c = new ParseContext();
         try {
-            forkParser.parse(new ByteArrayInputStream(sleepCommand.getBytes(StandardCharsets.UTF_8)), o, m, c);
+            forkParser
+                    .parse(new ByteArrayInputStream(sleepCommand.getBytes(StandardCharsets.UTF_8)),
+                            o, m, c);
             fail("Should have thrown exception");
-        } catch (IOException|TikaException e) {
+        } catch (IOException | TikaException e) {
             assertTrue("should have thrown IOException lost connection", true);
         }
     }
@@ -245,10 +251,10 @@ public class ForkParserTest extends TikaTest {
         Parser parser = new AutoDetectParser();
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new BasicContentHandlerFactory(
-                BasicContentHandlerFactory.HANDLER_TYPE.TEXT, 20000));
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
+                        20000));
         try (ForkParser fork = new ForkParser(ForkParserTest.class.getClassLoader(), wrapper);
-             InputStream is = getResourceAsStream("/test-documents/basic_embedded.xml")) {
+                InputStream is = getResourceAsStream("/test-documents/basic_embedded.xml")) {
             Metadata metadata = new Metadata();
             ParseContext context = new ParseContext();
             fork.parse(is, handler, metadata, context);
@@ -270,10 +276,10 @@ public class ForkParserTest extends TikaTest {
         Parser parser = new AutoDetectParser();
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new BasicContentHandlerFactory(
-                        BasicContentHandlerFactory.HANDLER_TYPE.TEXT, 20000));
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
+                        20000));
         try (ForkParser fork = new ForkParser(ForkParserTest.class.getClassLoader(), wrapper);
-             InputStream is = getResourceAsStream("/test-documents/embedded_with_npe.xml")) {
+                InputStream is = getResourceAsStream("/test-documents/embedded_with_npe.xml")) {
             Metadata metadata = new Metadata();
             ParseContext context = new ParseContext();
             fork.parse(is, handler, metadata, context);
@@ -288,7 +294,8 @@ public class ForkParserTest extends TikaTest {
         assertEquals("embeddedAuthor", m1.get(TikaCoreProperties.CREATOR));
         assertContains("some_embedded_content", m1.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("/embed1.xml", m1.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
-        assertContains("another null pointer exception", m1.get(TikaCoreProperties.EMBEDDED_EXCEPTION));
+        assertContains("another null pointer exception",
+                m1.get(TikaCoreProperties.EMBEDDED_EXCEPTION));
     }
 
     @Test
@@ -296,10 +303,10 @@ public class ForkParserTest extends TikaTest {
         Parser parser = new AutoDetectParser();
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new BasicContentHandlerFactory(
-                        BasicContentHandlerFactory.HANDLER_TYPE.TEXT, 20000));
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
+                        20000));
         try (ForkParser fork = new ForkParser(ForkParserTest.class.getClassLoader(), wrapper);
-             InputStream is = getResourceAsStream("/test-documents/embedded_then_npe.xml")) {
+                InputStream is = getResourceAsStream("/test-documents/embedded_then_npe.xml")) {
             Metadata metadata = new Metadata();
             ParseContext context = new ParseContext();
             fork.parse(is, handler, metadata, context);
@@ -329,7 +336,8 @@ public class ForkParserTest extends TikaTest {
             ForkParser forkParser = null;
             try (InputStream is = getResourceAsStream("/test-documents/basic_embedded.xml")) {
                 RecursiveParserWrapper wrapper = new RecursiveParserWrapper(new AutoDetectParser());
-                ToFileHandler toFileHandler = new ToFileHandler(new SBContentHandlerFactory(), target.toFile());
+                ToFileHandler toFileHandler =
+                        new ToFileHandler(new SBContentHandlerFactory(), target.toFile());
                 forkParser = new ForkParser(ForkParserTest.class.getClassLoader(), wrapper);
                 Metadata m = new Metadata();
                 ParseContext context = new ParseContext();
@@ -345,9 +353,9 @@ public class ForkParserTest extends TikaTest {
                 contents = IOUtils.toString(reader);
             }
             assertContainsCount(TikaCoreProperties.TIKA_PARSED_BY.getName() +
-                    " : org.apache.tika.parser.DefaultParser", contents,2);
+                    " : org.apache.tika.parser.DefaultParser", contents, 2);
             assertContainsCount(TikaCoreProperties.TIKA_PARSED_BY.getName() +
-                    " : org.apache.tika.parser.mock.MockParser", contents,2);
+                    " : org.apache.tika.parser.mock.MockParser", contents, 2);
             assertContains("Nikolai Lobachevsky", contents);
             assertContains("embeddedAuthor", contents);
             assertContains("main_content", contents);
@@ -359,13 +367,13 @@ public class ForkParserTest extends TikaTest {
     }
 
     @Test
-    public void testRecursiveParserWrapperWithProxyingContentHandlersAndMetadata() throws Exception {
+    public void testRecursiveParserWrapperWithProxyingContentHandlersAndMetadata()
+            throws Exception {
         Parser parser = new AutoDetectParser();
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
-        BufferingHandler handler =
-                new BufferingHandler(new SBContentHandlerFactory());
+        BufferingHandler handler = new BufferingHandler(new SBContentHandlerFactory());
         try (ForkParser fork = new ForkParser(ForkParserTest.class.getClassLoader(), wrapper);
-             InputStream is = getResourceAsStream("/test-documents/basic_embedded.xml")) {
+                InputStream is = getResourceAsStream("/test-documents/basic_embedded.xml")) {
             Metadata metadata = new Metadata();
             ParseContext context = new ParseContext();
             fork.parse(is, handler, metadata, context);
@@ -390,10 +398,10 @@ public class ForkParserTest extends TikaTest {
     public void testRPWWithNonSerializableContentHandler() throws Exception {
         Parser parser = new AutoDetectParser();
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
-        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new NonSerializableHandlerFactory());
+        RecursiveParserWrapperHandler handler =
+                new RecursiveParserWrapperHandler(new NonSerializableHandlerFactory());
         try (ForkParser fork = new ForkParser(ForkParserTest.class.getClassLoader(), wrapper);
-             InputStream is = getResourceAsStream("/test-documents/embedded_then_npe.xml")) {
+                InputStream is = getResourceAsStream("/test-documents/embedded_then_npe.xml")) {
             Metadata metadata = new Metadata();
             ParseContext context = new ParseContext();
             fork.parse(is, handler, metadata, context);
@@ -459,7 +467,8 @@ public class ForkParserTest extends TikaTest {
         }
 
         @Override
-        public void endEmbeddedDocument(ContentHandler contentHandler, Metadata metadata) throws SAXException {
+        public void endEmbeddedDocument(ContentHandler contentHandler, Metadata metadata)
+                throws SAXException {
             try {
                 byte[] bytes = toString(contentHandler, metadata);
                 os.write(bytes, 0, bytes.length);
@@ -467,8 +476,10 @@ public class ForkParserTest extends TikaTest {
                 throw new SAXException(e);
             }
         }
+
         @Override
-        public void endDocument(ContentHandler contentHandler, Metadata metadata) throws SAXException {
+        public void endDocument(ContentHandler contentHandler, Metadata metadata)
+                throws SAXException {
             try {
                 byte[] bytes = toString(contentHandler, metadata);
                 os.write(bytes, 0, bytes.length);
@@ -481,12 +492,12 @@ public class ForkParserTest extends TikaTest {
             StringBuilder sb = new StringBuilder();
             for (String n : metadata.names()) {
                 for (String v : metadata.getValues(n)) {
-                    sb.append(n).append(" : ").append(v).append("\n");;
+                    sb.append(n).append(" : ").append(v).append("\n");
                 }
             }
-            if (! contentHandler.getClass().equals(DefaultHandler.class)) {
+            if (!contentHandler.getClass().equals(DefaultHandler.class)) {
                 sb.append("\n");
-                sb.append("CONTENT: "+ contentHandler.toString());
+                sb.append("CONTENT: " + contentHandler.toString());
                 sb.append("\n\n");
             }
             return sb.toString().getBytes(StandardCharsets.UTF_8);
@@ -497,8 +508,7 @@ public class ForkParserTest extends TikaTest {
         StringBuilder sb = new StringBuilder();
 
         @Override
-        public void characters(char ch[], int start, int length)
-                throws SAXException {
+        public void characters(char[] ch, int start, int length) throws SAXException {
             sb.append(ch, start, length);
             sb.append(" ");
         }
@@ -517,7 +527,8 @@ public class ForkParserTest extends TikaTest {
         }
 
         @Override
-        public ContentHandler getNewContentHandler(OutputStream os, String encoding) throws UnsupportedEncodingException {
+        public ContentHandler getNewContentHandler(OutputStream os, String encoding)
+                throws UnsupportedEncodingException {
             throw new IllegalArgumentException("can't use this option in this test class");
         }
 
@@ -534,7 +545,8 @@ public class ForkParserTest extends TikaTest {
         }
 
         @Override
-        public ContentHandler getNewContentHandler(OutputStream os, String encoding) throws UnsupportedEncodingException {
+        public ContentHandler getNewContentHandler(OutputStream os, String encoding)
+                throws UnsupportedEncodingException {
             throw new IllegalArgumentException("can't use this option in this test class");
         }
 
@@ -544,15 +556,14 @@ public class ForkParserTest extends TikaTest {
         }
     }
 
-    private static class LyingNonSerializableContentHandler
-            extends DefaultHandler implements Serializable {
+    private static class LyingNonSerializableContentHandler extends DefaultHandler
+            implements Serializable {
         //StringWriter makes this class not actually Serializable
         //as is.
         StringWriter writer = new StringWriter();
 
         @Override
-        public void characters(char ch[], int start, int length)
-                throws SAXException {
+        public void characters(char[] ch, int start, int length) throws SAXException {
             writer.write(ch, start, length);
         }
 
@@ -574,13 +585,15 @@ public class ForkParserTest extends TikaTest {
 
 
         @Override
-        public void endEmbeddedDocument(ContentHandler contentHandler, Metadata metadata) throws SAXException {
+        public void endEmbeddedDocument(ContentHandler contentHandler, Metadata metadata)
+                throws SAXException {
             contentHandlers.add(contentHandler);
             metadataList.add(metadata);
         }
 
         @Override
-        public void endDocument(ContentHandler contentHandler, Metadata metadata) throws SAXException {
+        public void endDocument(ContentHandler contentHandler, Metadata metadata)
+                throws SAXException {
             contentHandlers.add(0, contentHandler);
             metadataList.add(0, metadata);
         }

@@ -21,9 +21,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -31,25 +28,30 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
-import au.com.bytecode.opencsv.CSVReader;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.apache.cxf.helpers.IOUtils;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Test;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadata;
 import org.apache.tika.server.classic.resource.XMPMetadataResource;
+import org.apache.tika.server.classic.writer.XMPMessageBodyWriter;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.resource.MetadataResource;
 import org.apache.tika.server.core.writer.CSVMessageBodyWriter;
 import org.apache.tika.server.core.writer.JSONMessageBodyWriter;
 import org.apache.tika.server.core.writer.TextMessageBodyWriter;
-import org.apache.tika.server.classic.writer.XMPMessageBodyWriter;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
 
 public class MetadataResourceTest extends CXFTestBase {
     private static final String META_PATH = "/meta";
@@ -75,22 +77,18 @@ public class MetadataResourceTest extends CXFTestBase {
 
     @Test
     public void testSimpleWord() throws Exception {
-        Response response = WebClient
-                .create(endPoint + META_PATH)
-                .type("application/msword")
-                .accept("text/csv")
-                .put(ClassLoader
-                        .getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
+        Response response =
+                WebClient.create(endPoint + META_PATH).type("application/msword").accept("text/csv")
+                        .put(ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
 
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
 
-        CSVReader csvReader = new CSVReader(reader);
+        CSVParser csvReader = new CSVParser(reader, CSVFormat.EXCEL);
 
         Map<String, String> metadata = new HashMap<String, String>();
 
-        String[] nextLine;
-        while ((nextLine = csvReader.readNext()) != null) {
-            metadata.put(nextLine[0], nextLine[1]);
+        for (CSVRecord r : csvReader) {
+            metadata.put(r.get(0), r.get(1));
         }
         csvReader.close();
 
@@ -102,46 +100,36 @@ public class MetadataResourceTest extends CXFTestBase {
 
     @Test
     public void testPasswordProtected() throws Exception {
-        Response response = WebClient
-                .create(endPoint + META_PATH)
-                .type("application/vnd.ms-excel")
-                .accept("text/csv")
-                .put(ClassLoader
+        Response response = WebClient.create(endPoint + META_PATH).type("application/vnd.ms-excel")
+                .accept("text/csv").put(ClassLoader
                         .getSystemResourceAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED));
 
         // Won't work, no password given
         assertEquals(500, response.getStatus());
 
         // Try again, this time with the wrong password
-        response = WebClient
-                .create(endPoint + META_PATH)
-                .type("application/vnd.ms-excel")
-                .accept("text/csv")
-                .header("Password", "wrong password")
-                .put(ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED));
+        response = WebClient.create(endPoint + META_PATH).type("application/vnd.ms-excel")
+                .accept("text/csv").header("Password", "wrong password").put(ClassLoader
+                        .getSystemResourceAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED));
 
         assertEquals(500, response.getStatus());
 
         // Try again, this time with the password
-        response = WebClient
-                .create(endPoint + META_PATH)
-                .type("application/vnd.ms-excel")
-                .accept("text/csv")
-                .header("Password", "password")
-                .put(ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED));
+        response = WebClient.create(endPoint + META_PATH).type("application/vnd.ms-excel")
+                .accept("text/csv").header("Password", "password").put(ClassLoader
+                        .getSystemResourceAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED));
 
         // Will work
         assertEquals(200, response.getStatus());
 
         // Check results
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        CSVReader csvReader = new CSVReader(reader);
+        CSVParser csvReader = new CSVParser(reader, CSVFormat.EXCEL);
 
         Map<String, String> metadata = new HashMap<String, String>();
 
-        String[] nextLine;
-        while ((nextLine = csvReader.readNext()) != null) {
-            metadata.put(nextLine[0], nextLine[1]);
+        for (CSVRecord r : csvReader) {
+            metadata.put(r.get(0), r.get(1));
         }
         csvReader.close();
 
@@ -151,12 +139,9 @@ public class MetadataResourceTest extends CXFTestBase {
 
     @Test
     public void testJSON() throws Exception {
-        Response response = WebClient
-                .create(endPoint + META_PATH)
-                .type("application/msword")
+        Response response = WebClient.create(endPoint + META_PATH).type("application/msword")
                 .accept("application/json")
-                .put(ClassLoader
-                        .getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
+                .put(ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
 
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
 
@@ -167,12 +152,9 @@ public class MetadataResourceTest extends CXFTestBase {
 
     @Test
     public void testXMP() throws Exception {
-        Response response = WebClient
-                .create(endPoint + META_PATH)
-                .type("application/msword")
+        Response response = WebClient.create(endPoint + META_PATH).type("application/msword")
                 .accept("application/rdf+xml")
-                .put(ClassLoader
-                        .getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
+                .put(ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
 
         String result = IOUtils.readStringFromStream((InputStream) response.getEntity());
         assertContains("<rdf:li>Maxim Valyanskiy</rdf:li>", result);
@@ -181,8 +163,10 @@ public class MetadataResourceTest extends CXFTestBase {
     //Now test requesting one field
     @Test
     public void testGetField_XXX_NotFound() throws Exception {
-        Response response = WebClient.create(endPoint + META_PATH + "/xxx").type("application/msword")
-                .accept(MediaType.APPLICATION_JSON).put(ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
+        Response response =
+                WebClient.create(endPoint + META_PATH + "/xxx").type("application/msword")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .put(ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
         Assert.assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
     }
 
@@ -191,8 +175,9 @@ public class MetadataResourceTest extends CXFTestBase {
 
         InputStream stream = ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC);
 
-        Response response = WebClient.create(endPoint + META_PATH + "/Author").type("application/msword")
-                .accept(MediaType.TEXT_PLAIN).put(copy(stream, 8000));
+        Response response =
+                WebClient.create(endPoint + META_PATH + "/Author").type("application/msword")
+                        .accept(MediaType.TEXT_PLAIN).put(copy(stream, 8000));
         Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
     }
 
@@ -202,9 +187,10 @@ public class MetadataResourceTest extends CXFTestBase {
 
         InputStream stream = ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC);
 
-        Response response = WebClient.create(endPoint + META_PATH + "/"+TikaCoreProperties.CREATOR.getName())
-                .type("application/msword")
-                .accept(MediaType.TEXT_PLAIN).put(copy(stream, 12000));
+        Response response =
+                WebClient.create(endPoint + META_PATH + "/" + TikaCoreProperties.CREATOR.getName())
+                        .type("application/msword").accept(MediaType.TEXT_PLAIN)
+                        .put(copy(stream, 12000));
         Assert.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         String s = IOUtils.readStringFromStream((InputStream) response.getEntity());
         assertEquals("Maxim Valyanskiy", s);
@@ -215,12 +201,13 @@ public class MetadataResourceTest extends CXFTestBase {
 
         InputStream stream = ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC);
 
-        Response response = WebClient.create(endPoint + META_PATH + "/"+TikaCoreProperties.CREATOR.getName())
-                .type("application/msword")
-                .accept(MediaType.APPLICATION_JSON).put(copy(stream, 12000));
+        Response response =
+                WebClient.create(endPoint + META_PATH + "/" + TikaCoreProperties.CREATOR.getName())
+                        .type("application/msword").accept(MediaType.APPLICATION_JSON)
+                        .put(copy(stream, 12000));
         Assert.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        Metadata metadata = JsonMetadata.fromJson(new InputStreamReader(
-                (InputStream) response.getEntity(), UTF_8));
+        Metadata metadata = JsonMetadata
+                .fromJson(new InputStreamReader((InputStream) response.getEntity(), UTF_8));
         assertEquals("Maxim Valyanskiy", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals(1, metadata.names().length);
     }
@@ -231,8 +218,9 @@ public class MetadataResourceTest extends CXFTestBase {
 
         InputStream stream = ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC);
 
-        Response response = WebClient.create(endPoint + META_PATH + "/dc:creator").type("application/msword")
-                .accept("application/rdf+xml").put(copy(stream, 12000));
+        Response response =
+                WebClient.create(endPoint + META_PATH + "/dc:creator").type("application/msword")
+                        .accept("application/rdf+xml").put(copy(stream, 12000));
         Assert.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         String s = IOUtils.readStringFromStream((InputStream) response.getEntity());
         assertContains("<rdf:li>Maxim Valyanskiy</rdf:li>", s);

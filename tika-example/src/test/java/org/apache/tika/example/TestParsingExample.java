@@ -25,15 +25,26 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.List;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.junit.Before;
 import org.junit.Test;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.serialization.JsonMetadataList;
+
 public class TestParsingExample {
     ParsingExample parsingExample;
+
+    public static void assertContains(String needle, String haystack) {
+        assertTrue("Should have found " + needle + " in: " + haystack, haystack.contains(needle));
+    }
+
+    public static void assertNotContains(String needle, String haystack) {
+        assertFalse("Should not have found " + needle + " in: " + haystack,
+                haystack.contains(needle));
+    }
+
     @Before
     public void setUp() {
         parsingExample = new ParsingExample();
@@ -60,7 +71,6 @@ public class TestParsingExample {
         assertNotContains("When in the Course", result);
     }
 
-
     @Test
     public void testRecursiveParseExample() throws IOException, SAXException, TikaException {
         String result = parsingExample.parseEmbeddedExample();
@@ -71,9 +81,11 @@ public class TestParsingExample {
     }
 
     @Test
-    public void testRecursiveParserWrapperExample() throws IOException, SAXException, TikaException {
+    public void testRecursiveParserWrapperExample()
+            throws IOException, SAXException, TikaException {
         List<Metadata> metadataList = parsingExample.recursiveParserWrapperExample();
-        assertEquals("Number of embedded documents + 1 for the container document", 12, metadataList.size());
+        assertEquals("Number of embedded documents + 1 for the container document", 12,
+                metadataList.size());
         Metadata m = metadataList.get(6);
         //this is the location the embed3.txt text file within the outer .docx
         assertEquals("/embed1.zip/embed2.zip/embed3.zip/embed3.txt",
@@ -83,20 +95,13 @@ public class TestParsingExample {
     }
 
     @Test
-    public void testSerializedRecursiveParserWrapperExample() throws IOException, SAXException, TikaException {
+    public void testSerializedRecursiveParserWrapperExample()
+            throws IOException, SAXException, TikaException {
         String json = parsingExample.serializedRecursiveParserWrapperExample();
         assertTrue(json.indexOf("When in the Course") > -1);
         //now try deserializing the JSON
         List<Metadata> metadataList = JsonMetadataList.fromJson(new StringReader(json));
         assertEquals(12, metadataList.size());
-    }
-
-    public static void assertContains(String needle, String haystack) {
-        assertTrue("Should have found " + needle + " in: " + haystack, haystack.contains(needle));
-    }
-
-    public static void assertNotContains(String needle, String haystack) {
-        assertFalse("Should not have found " + needle + " in: " + haystack, haystack.contains(needle));
     }
 
 }

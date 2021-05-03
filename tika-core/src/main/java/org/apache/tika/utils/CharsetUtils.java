@@ -30,23 +30,55 @@ import java.util.regex.Pattern;
 
 public class CharsetUtils {
 
-    private static final Pattern CHARSET_NAME_PATTERN =
-            Pattern.compile("[ \\\"]*([^ >,;\\\"]+).*");
+    private static final Pattern CHARSET_NAME_PATTERN = Pattern.compile("[ \\\"]*([^ >,;\\\"]+).*");
 
-    private static final Pattern ISO_NAME_PATTERN =
-            Pattern.compile(".*8859-(\\d+)");
+    private static final Pattern ISO_NAME_PATTERN = Pattern.compile(".*8859-(\\d+)");
 
-    private static final Pattern CP_NAME_PATTERN =
-            Pattern.compile("cp-(\\d+)");
+    private static final Pattern CP_NAME_PATTERN = Pattern.compile("cp-(\\d+)");
 
-    private static final Pattern WIN_NAME_PATTERN =
-            Pattern.compile("win-?(\\d+)");
+    private static final Pattern WIN_NAME_PATTERN = Pattern.compile("win-?(\\d+)");
 
-    private static final Map<String, Charset> COMMON_CHARSETS =
-            new HashMap<String, Charset>();
+    private static final Map<String, Charset> COMMON_CHARSETS = new HashMap<String, Charset>();
 
     private static Method getCharsetICU = null;
     private static Method isSupportedICU = null;
+
+    static {
+        initCommonCharsets("Big5", "EUC-JP", "EUC-KR", "x-EUC-TW", "GB18030", "IBM855", "IBM866",
+                "ISO-2022-CN", "ISO-2022-JP", "ISO-2022-KR", "ISO-8859-1", "ISO-8859-2",
+                "ISO-8859-3", "ISO-8859-4", "ISO-8859-5", "ISO-8859-6", "ISO-8859-7", "ISO-8859-8",
+                "ISO-8859-9", "ISO-8859-11", "ISO-8859-13", "ISO-8859-15", "KOI8-R",
+                "x-MacCyrillic", "SHIFT_JIS", "UTF-8", "UTF-16BE", "UTF-16LE", "windows-1251",
+                "windows-1252", "windows-1253", "windows-1255");
+
+        // Common aliases/typos not included in standard charset definitions
+        COMMON_CHARSETS.put("iso-8851-1", COMMON_CHARSETS.get("iso-8859-1"));
+        COMMON_CHARSETS.put("windows", COMMON_CHARSETS.get("windows-1252"));
+        COMMON_CHARSETS.put("koi8r", COMMON_CHARSETS.get("koi8-r"));
+
+        // See if we can load the icu4j CharsetICU class
+        Class<?> icuCharset = null;
+        try {
+            icuCharset =
+                    CharsetUtils.class.getClassLoader().loadClass("com.ibm.icu.charset.CharsetICU");
+        } catch (ClassNotFoundException e) {
+            //swallow
+        }
+        if (icuCharset != null) {
+            try {
+                getCharsetICU = icuCharset.getMethod("forNameICU", String.class);
+            } catch (Throwable t) {
+                throw new RuntimeException(t);
+            }
+            try {
+                isSupportedICU = icuCharset.getMethod("isSupported", String.class);
+            } catch (Throwable t) {
+                //swallow
+            }
+            // TODO: would be nice to somehow log that we
+            // successfully found ICU
+        }
+    }
 
     private static Map<String, Charset> initCommonCharsets(String... names) {
         Map<String, Charset> charsets = new HashMap<String, Charset>();
@@ -64,58 +96,16 @@ public class CharsetUtils {
         return charsets;
     }
 
-    static {
-        initCommonCharsets(
-                "Big5",
-                "EUC-JP", "EUC-KR", "x-EUC-TW",
-                "GB18030",
-                "IBM855", "IBM866",
-                "ISO-2022-CN", "ISO-2022-JP", "ISO-2022-KR",
-                "ISO-8859-1", "ISO-8859-2", "ISO-8859-3", "ISO-8859-4",
-                "ISO-8859-5", "ISO-8859-6", "ISO-8859-7", "ISO-8859-8",
-                "ISO-8859-9", "ISO-8859-11", "ISO-8859-13", "ISO-8859-15",
-                "KOI8-R",
-                "x-MacCyrillic",
-                "SHIFT_JIS",
-                "UTF-8", "UTF-16BE", "UTF-16LE",
-                "windows-1251", "windows-1252", "windows-1253", "windows-1255");
-
-        // Common aliases/typos not included in standard charset definitions
-        COMMON_CHARSETS.put("iso-8851-1", COMMON_CHARSETS.get("iso-8859-1"));
-        COMMON_CHARSETS.put("windows", COMMON_CHARSETS.get("windows-1252"));
-        COMMON_CHARSETS.put("koi8r", COMMON_CHARSETS.get("koi8-r"));
-
-        // See if we can load the icu4j CharsetICU class
-        Class<?> icuCharset = null;
-        try  {
-            icuCharset = CharsetUtils.class.getClassLoader().loadClass(
-                    "com.ibm.icu.charset.CharsetICU");
-        }  catch (ClassNotFoundException e) {
-        }
-        if (icuCharset != null) {
-            try {
-                getCharsetICU = icuCharset.getMethod("forNameICU", String.class);
-            } catch (Throwable t) {
-                throw new RuntimeException(t);
-            }
-            try {
-                isSupportedICU = icuCharset.getMethod("isSupported", String.class);
-            } catch (Throwable t) {
-            }
-            // TODO: would be nice to somehow log that we
-            // successfully found ICU
-        }
-    }
-
     /**
      * Safely return whether <charsetName> is supported, without throwing exceptions
-     * 
+     *
      * @param charsetName Name of charset (can be null)
      * @return true if the character set is supported
      */
     public static boolean isSupported(String charsetName) {
         try {
-            if (isSupportedICU != null && ((Boolean) isSupportedICU.invoke(null, charsetName)).booleanValue()) {
+            if (isSupportedICU != null &&
+                    ((Boolean) isSupportedICU.invoke(null, charsetName)).booleanValue()) {
                 return true;
             }
             return Charset.isSupported(charsetName);
@@ -133,7 +123,7 @@ public class CharsetUtils {
     /**
      * Handle various common charset name errors, and return something
      * that will be considered valid (and is normalized)
-     * 
+     *
      * @param charsetName name of charset to process
      * @return potentially remapped/cleaned up version of charset name
      */
@@ -145,10 +135,12 @@ public class CharsetUtils {
         }
     }
 
-    /** Returns Charset impl, if one exists.  This method
-     *  optionally uses ICU4J's CharsetICU.forNameICU,
-     *  if it is found on the classpath, else only uses
-     *  JDK's builtin Charset.forName. */
+    /**
+     * Returns Charset impl, if one exists.  This method
+     * optionally uses ICU4J's CharsetICU.forNameICU,
+     * if it is found on the classpath, else only uses
+     * JDK's builtin Charset.forName.
+     */
     public static Charset forName(String name) {
         if (name == null) {
             throw new IllegalArgumentException();
@@ -195,7 +187,8 @@ public class CharsetUtils {
                 if (cs != null) {
                     return cs;
                 }
-            } catch (IllegalArgumentException|IllegalAccessException|InvocationTargetException e) {
+            } catch (IllegalArgumentException | IllegalAccessException |
+                    InvocationTargetException e) {
                 //ignore
             }
         }

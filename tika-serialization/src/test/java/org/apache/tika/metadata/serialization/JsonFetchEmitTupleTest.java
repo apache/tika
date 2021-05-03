@@ -16,17 +16,20 @@
  */
 package org.apache.tika.metadata.serialization;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.pipes.emitter.EmitKey;
-import org.apache.tika.pipes.fetcher.FetchKey;
-import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.pipes.FetchEmitTuple;
+import org.apache.tika.pipes.HandlerConfig;
+import org.apache.tika.pipes.emitter.EmitKey;
+import org.apache.tika.pipes.fetcher.FetchKey;
+import org.apache.tika.sax.BasicContentHandlerFactory;
 
 public class JsonFetchEmitTupleTest {
 
@@ -39,13 +42,12 @@ public class JsonFetchEmitTupleTest {
         m.add("m2", "v3");
         m.add("m3", "v4");
 
-        FetchEmitTuple t = new FetchEmitTuple(
-                new FetchKey("fetcher1", "fetchkey1"),
-                        new EmitKey("emitter1", "emitKey1"),
-                        m);
+        FetchEmitTuple t = new FetchEmitTuple("my_id", new FetchKey("my_fetcher", "fetchKey1"),
+                new EmitKey("my_emitter", "emitKey1"), m,
+                new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.XML, 10000, 10),
+                FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
-
         Reader reader = new StringReader(writer.toString());
         FetchEmitTuple deserialized = JsonFetchEmitTuple.fromJson(reader);
         assertEquals(t, deserialized);

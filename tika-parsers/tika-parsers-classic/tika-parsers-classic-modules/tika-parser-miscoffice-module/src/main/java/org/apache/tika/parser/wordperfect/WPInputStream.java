@@ -28,26 +28,29 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * {@link InputStream} wrapper adding WordPerfect-specific byte-reading methods.
  * Applies to both 5.x and 6+ documents.
+ *
  * @author Pascal Essiembre
  */
 class WPInputStream extends InputStream {
 
     private final DataInputStream in;
-    
+
     /**
      * Constructor.
+     *
      * @param in input stream
      */
     public WPInputStream(InputStream in) {
-        if (! in.markSupported()) {
+        if (!in.markSupported()) {
             in = new BufferedInputStream(in);
         }
         this.in = new DataInputStream(in);
     }
 
     /**
-     * Reads a WordPerfect "short": a 2 bytes (16-bit) unsigned value in 
+     * Reads a WordPerfect "short": a 2 bytes (16-bit) unsigned value in
      * reverse order.
+     *
      * @return an integer value
      * @throws IOException if not enough bytes remain
      */
@@ -61,8 +64,9 @@ class WPInputStream extends InputStream {
     }
 
     /**
-     * Reads a WordPerfect "long": a 4 bytes (32-bit) unsigned value in 
+     * Reads a WordPerfect "long": a 4 bytes (32-bit) unsigned value in
      * reverse order.
+     *
      * @return a long value
      * @throws IOException if not enough bytes remain
      */
@@ -74,11 +78,12 @@ class WPInputStream extends InputStream {
         if ((ch1 | ch2 | ch3 | ch4) < 0) {
             throw new EOFException();
         }
-        return ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0)); 
+        return ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
     }
 
     /**
      * Reads a WordPerfect byte (8-bit).
+     *
      * @return byte value
      * @throws IOException if not enough bytes remain
      */
@@ -88,6 +93,7 @@ class WPInputStream extends InputStream {
 
     /**
      * Skips the specified number of WordPerfect byte (8-bit).
+     *
      * @param numOfBytes number of bytes to skip
      * @throws IOException if not enough bytes remain
      */
@@ -99,6 +105,7 @@ class WPInputStream extends InputStream {
 
     /**
      * Reads a WordPerfect character (8-bit).
+     *
      * @return character
      * @throws IOException if not enough bytes remain
      */
@@ -107,13 +114,14 @@ class WPInputStream extends InputStream {
         if (c == -1) {
             throw new EOFException();
         }
-        return (char)c;
+        return (char) c;
     }
 
     /**
      * Reads a WordPerfect string of specified length (1 byte per character).
+     *
      * @param length how many characters to read
-     * @return a string 
+     * @return a string
      * @throws IOException if not enough bytes remain
      */
     public String readWPString(int length) throws IOException {
@@ -132,6 +140,7 @@ class WPInputStream extends InputStream {
      * Reads a series of bytes of the specified length, converting
      * each byte to its hexadecimal representation.
      * converting each characters to .
+     *
      * @param numOfBytes how many byte to read
      * @return an hexadecimal string
      * @throws IOException if not enough bytes remain
@@ -146,6 +155,7 @@ class WPInputStream extends InputStream {
 
     /**
      * Reads the next byte and returns it as an hexadecimal value.
+     *
      * @return hexadecimal string for a single byte
      * @throws IOException if not enough bytes remain
      */
@@ -155,6 +165,7 @@ class WPInputStream extends InputStream {
 
     /**
      * Reads a byte
+     *
      * @return byte read
      * @throws IOException if not enough bytes remain
      */

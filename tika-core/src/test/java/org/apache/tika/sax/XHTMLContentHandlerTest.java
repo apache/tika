@@ -22,15 +22,13 @@ import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.tika.config.TikaConfigTest;
-import org.apache.tika.metadata.Metadata;
-
 import org.junit.Before;
 import org.junit.Test;
-
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
+
+import org.apache.tika.metadata.Metadata;
 
 /**
  * Unit tests for the {@link XHTMLContentHandler} class.
@@ -40,6 +38,25 @@ public class XHTMLContentHandlerTest {
     private ContentHandler output;
 
     private XHTMLContentHandler xhtml;
+
+    /**
+     * Return array of non-zerolength words. Splitting on whitespace will get us
+     * empty words for emptylines.
+     *
+     * @param string some mix of newlines and real words
+     * @return array of real words.
+     */
+    private static String[] getRealWords(String string) {
+        String[] possibleWords = string.split("\\s+");
+        List<String> words = new ArrayList<String>(possibleWords.length);
+        for (String word : possibleWords) {
+            if (word.length() > 0) {
+                words.add(word);
+            }
+        }
+
+        return words.toArray(new String[0]);
+    }
 
     @Before
     public void setUp() {
@@ -85,7 +102,7 @@ public class XHTMLContentHandlerTest {
         assertEquals("a", words[4]);
         assertEquals("b", words[5]);
     }
-    
+
     /**
      * Test that content in option elements are properly separated in text
      * output.
@@ -108,7 +125,7 @@ public class XHTMLContentHandlerTest {
         assertEquals("opt1", words[0]);
         assertEquals("opt2", words[1]);
     }
-    
+
     @Test
     public void testWhitespaceWithMenus() throws Exception {
         xhtml.startDocument();
@@ -117,7 +134,7 @@ public class XHTMLContentHandlerTest {
         xhtml.element("li", "two");
         xhtml.endElement("menu");
         xhtml.endDocument();
-        
+
         String[] words = getRealWords(output.toString());
         assertEquals(2, words.length);
         assertEquals("one", words[0]);
@@ -127,11 +144,13 @@ public class XHTMLContentHandlerTest {
     @Test
     public void testAttributesOnBody() throws Exception {
         ToHTMLContentHandler toHTMLContentHandler = new ToHTMLContentHandler();
-        XHTMLContentHandler xhtmlContentHandler = new XHTMLContentHandler(toHTMLContentHandler, new Metadata());
+        XHTMLContentHandler xhtmlContentHandler =
+                new XHTMLContentHandler(toHTMLContentHandler, new Metadata());
         AttributesImpl attributes = new AttributesImpl();
 
         attributes.addAttribute(XHTMLContentHandler.XHTML, "itemscope", "itemscope", "", "");
-        attributes.addAttribute(XHTMLContentHandler.XHTML, "itemtype", "itemtype", "", "http://schema.org/Event");
+        attributes.addAttribute(XHTMLContentHandler.XHTML, "itemtype", "itemtype", "",
+                "http://schema.org/Event");
 
         xhtmlContentHandler.startDocument();
         xhtmlContentHandler.startElement(XHTMLContentHandler.XHTML, "body", "body", attributes);
@@ -140,15 +159,17 @@ public class XHTMLContentHandlerTest {
 
         assertTrue(toHTMLContentHandler.toString().contains("itemscope"));
     }
-    
+
     @Test
     public void testAttributesOnHtml() throws Exception {
         ToHTMLContentHandler toHTMLContentHandler = new ToHTMLContentHandler();
-        XHTMLContentHandler xhtmlContentHandler = new XHTMLContentHandler(toHTMLContentHandler, new Metadata());
+        XHTMLContentHandler xhtmlContentHandler =
+                new XHTMLContentHandler(toHTMLContentHandler, new Metadata());
         AttributesImpl attributes = new AttributesImpl();
 
         attributes.addAttribute(XHTMLContentHandler.XHTML, "itemscope", "itemscope", "", "");
-        attributes.addAttribute(XHTMLContentHandler.XHTML, "itemtype", "itemtype", "", "http://schema.org/Event");
+        attributes.addAttribute(XHTMLContentHandler.XHTML, "itemtype", "itemtype", "",
+                "http://schema.org/Event");
 
         xhtmlContentHandler.startDocument();
         xhtmlContentHandler.startElement(XHTMLContentHandler.XHTML, "html", "html", attributes);
@@ -157,8 +178,7 @@ public class XHTMLContentHandlerTest {
 
         assertTrue(toHTMLContentHandler.toString().contains("itemscope"));
     }
-    
-    
+
     @Test
     public void testInvalidControlCharacter0x7F() throws Exception {
         xhtml.startDocument();
@@ -166,12 +186,12 @@ public class XHTMLContentHandlerTest {
         xhtml.element("li", "a\u007Fz");
         xhtml.endElement("menu");
         xhtml.endDocument();
-        
+
         String[] words = getRealWords(output.toString());
         assertEquals(1, words.length);
         assertEquals("a\ufffdz", words[0]);
     }
-    
+
     @Test
     public void testInvalidControlCharacter0x9F() throws Exception {
         xhtml.startDocument();
@@ -179,12 +199,12 @@ public class XHTMLContentHandlerTest {
         xhtml.element("li", "a\u009Fz");
         xhtml.endElement("menu");
         xhtml.endDocument();
-        
+
         String[] words = getRealWords(output.toString());
         assertEquals(1, words.length);
         assertEquals("a\ufffdz", words[0]);
     }
-    
+
     @Test
     public void testInvalidControlCharacter0x93() throws Exception {
         xhtml.startDocument();
@@ -192,29 +212,10 @@ public class XHTMLContentHandlerTest {
         xhtml.element("li", "a\u0093z");
         xhtml.endElement("menu");
         xhtml.endDocument();
-        
+
         String[] words = getRealWords(output.toString());
         assertEquals(1, words.length);
         assertEquals("a\ufffdz", words[0]);
-    }
-
-    /**
-     * Return array of non-zerolength words. Splitting on whitespace will get us
-     * empty words for emptylines.
-     * 
-     * @param string some mix of newlines and real words
-     * @return array of real words.
-     */
-    private static String[] getRealWords(String string) {
-        String[] possibleWords = string.split("\\s+");
-        List<String> words = new ArrayList<String>(possibleWords.length);
-        for (String word : possibleWords) {
-            if (word.length() > 0) {
-                words.add(word);
-            }
-        }
-        
-        return words.toArray(new String[0]);
     }
 
 }

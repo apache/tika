@@ -17,21 +17,26 @@
 
 package org.apache.tika.metadata.filter;
 
-import org.apache.tika.config.AbstractTikaConfigTest;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.junit.Test;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import org.junit.Test;
+
+import org.apache.tika.config.AbstractTikaConfigTest;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 
 public class TestMetadataFilter extends AbstractTikaConfigTest {
+
+    private static Set<String> set(String... items) {
+        return new HashSet<>(Arrays.asList(items));
+    }
 
     @Test
     public void testDefault() throws Exception {
@@ -105,9 +110,7 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
     @Test
     public void testConfigIncludeAndUCFilter() throws Exception {
         TikaConfig config = getConfig("TIKA-3137-include-uc.xml");
-        String[] expectedTitles = new String[]{
-                "TITLE1", "TITLE2", "TITLE3"
-        };
+        String[] expectedTitles = new String[]{"TITLE1", "TITLE2", "TITLE3"};
         Metadata metadata = new Metadata();
         metadata.add("title", "title1");
         metadata.add("title", "title2");
@@ -128,7 +131,7 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
         metadata.set(Metadata.CONTENT_TYPE, MediaType.image("jpeg").toString());
         metadata.set("author", "author");
 
-        MetadataFilter filter = new ClearByMimeMetadataFilter(set("image/jpeg","application/pdf"));
+        MetadataFilter filter = new ClearByMimeMetadataFilter(set("image/jpeg", "application/pdf"));
         filter.filter(metadata);
         assertEquals(0, metadata.size());
 
@@ -159,9 +162,5 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
         assertEquals(2, metadata.size());
         assertEquals("AUTHOR", metadata.get("author"));
 
-    }
-
-    private static Set<String> set(String ... items) {
-        return new HashSet<>(Arrays.asList(items));
     }
 }

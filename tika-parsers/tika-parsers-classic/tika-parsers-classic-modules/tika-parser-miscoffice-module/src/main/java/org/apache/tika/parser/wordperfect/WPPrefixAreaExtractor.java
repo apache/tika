@@ -21,6 +21,7 @@ import java.io.IOException;
 /**
  * Extracts WordPerfect Prefix Area data from a WordPerfect document.
  * Applies to both 5.x and 6+ documents.
+ *
  * @author Pascal Essiembre
  */
 final class WPPrefixAreaExtractor {
@@ -31,12 +32,11 @@ final class WPPrefixAreaExtractor {
 
     //WP5.x:
     //  Prefix Area:            16 bytes (standard header)
-    
+
     //WP6.x:
     //  Prefix Area:            30 bytes (16 standard header + 14 index header)
-    
-    public static WPPrefixArea extract(WPInputStream in) 
-            throws IOException {
+
+    public static WPPrefixArea extract(WPInputStream in) throws IOException {
         WPPrefixArea prefixArea = new WPPrefixArea();
 
         in.mark(30);
@@ -59,7 +59,7 @@ final class WPPrefixAreaExtractor {
                 // May fail if no index header, which is fine.
             }
         }
-        
+
         in.reset();
 
         return prefixArea;

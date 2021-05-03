@@ -16,47 +16,55 @@
  */
 package org.apache.tika.pipes.fetcher;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.tika.config.ConfigBase;
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.exception.TikaException;
+
 /**
  * Utility class to hold multiple fetchers.
  * <p>
- * This forbids multiple fetchers supporting the same prefix.
+ * This forbids multiple fetchers supporting the same name.
  */
-public class FetcherManager {
+public class FetcherManager extends ConfigBase {
 
+    public static FetcherManager load(Path p) throws IOException, TikaConfigException {
+        try (InputStream is =
+                     Files.newInputStream(p)) {
+            return FetcherManager.buildComposite("fetchers", FetcherManager.class,
+                    "fetcher", Fetcher.class, is);
+        }
+    }
     private final Map<String, Fetcher> fetcherMap = new ConcurrentHashMap<>();
 
-    public FetcherManager(List<Fetcher> fetchers) {
+    public FetcherManager(List<Fetcher> fetchers) throws TikaConfigException {
         for (Fetcher fetcher : fetchers) {
             String name = fetcher.getName();
             if (name == null || name.trim().length() == 0) {
-                throw new IllegalArgumentException("fetcher name must not be blank");
+                throw new TikaConfigException("fetcher name must not be blank");
             }
             if (fetcherMap.containsKey(fetcher.getName())) {
-                throw new IllegalArgumentException(
-                        "Multiple fetchers cannot support the same prefix: "
-                                + fetcher.getName());
+                throw new TikaConfigException(
+                        "Multiple fetchers cannot support the same prefix: " + fetcher.getName());
             }
             fetcherMap.put(fetcher.getName(), fetcher);
         }
     }
 
-    public Fetcher getFetcher(String fetcherName)
-            throws IOException, TikaException {
+    public Fetcher getFetcher(String fetcherName) throws IOException, TikaException {
         Fetcher fetcher = fetcherMap.get(fetcherName);
         if (fetcher == null) {
-            throw new IllegalArgumentException("Can't find fetcher for fetcherName: " +
-                    fetcherName +
-                    ". I've loaded: "+fetcherMap.keySet());
+            throw new IllegalArgumentException(
+                    "Can't find fetcher for fetcherName: " + fetcherName + ". I've loaded: " +
+                            fetcherMap.keySet());
         }
         return fetcher;
     }

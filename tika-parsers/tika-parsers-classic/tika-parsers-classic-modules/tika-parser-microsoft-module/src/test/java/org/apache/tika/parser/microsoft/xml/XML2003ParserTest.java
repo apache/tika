@@ -20,21 +20,17 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.util.Arrays;
-import java.util.List;
+
+import org.junit.AfterClass;
+import org.junit.Test;
 
 import org.apache.tika.MultiThreadedTikaTest;
-import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.utils.XMLReaderUtils;
-import org.junit.AfterClass;
-import org.junit.Test;
 
 public class XML2003ParserTest extends MultiThreadedTikaTest {
 
@@ -42,7 +38,6 @@ public class XML2003ParserTest extends MultiThreadedTikaTest {
     public static void tearDown() throws TikaException {
         XMLReaderUtils.setPoolSize(XMLReaderUtils.DEFAULT_POOL_SIZE);
     }
-
 
 
     @Test
@@ -63,7 +58,8 @@ public class XML2003ParserTest extends MultiThreadedTikaTest {
         assertContains("<td>5.5</td>", xml);
 
         //check that text is extracted with breaks between elements
-        String txt = getText(getResourceAsStream("/test-documents/testEXCEL2003.xml"), AUTO_DETECT_PARSER);
+        String txt = getText(getResourceAsStream("/test-documents/testEXCEL2003.xml"),
+                AUTO_DETECT_PARSER);
         txt = txt.replaceAll("\\s+", " ");
         assertContains("Col1 Col2 Col3 Col4 string 1 1.10", txt);
 
@@ -72,22 +68,21 @@ public class XML2003ParserTest extends MultiThreadedTikaTest {
     @Test(timeout = 60000)
     public void testMultiThreaded() throws Exception {
         XMLReaderUtils.setPoolSize(4);
-        int numThreads = XMLReaderUtils.getPoolSize()*2;
+        int numThreads = XMLReaderUtils.getPoolSize() * 2;
         ParseContext[] contexts = new ParseContext[numThreads];
         for (int i = 0; i < contexts.length; i++) {
             contexts[i] = new ParseContext();
         }
 
-        testMultiThreaded(AUTO_DETECT_PARSER, contexts, numThreads, 2,
-                new FileFilter() {
-                    @Override
-                    public boolean accept(File pathname) {
-                        if (pathname.getName().equals("testWORD2003.xml")) {
-                            return true;
-                        }
-                        return false;
-                    }
-                });
+        testMultiThreaded(AUTO_DETECT_PARSER, contexts, numThreads, 2, new FileFilter() {
+            @Override
+            public boolean accept(File pathname) {
+                if (pathname.getName().equals("testWORD2003.xml")) {
+                    return true;
+                }
+                return false;
+            }
+        });
 
     }
 }

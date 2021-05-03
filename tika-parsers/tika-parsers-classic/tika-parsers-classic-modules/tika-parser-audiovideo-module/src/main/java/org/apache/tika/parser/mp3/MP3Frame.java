@@ -19,7 +19,7 @@ package org.apache.tika.parser.mp3;
 
 /**
  * A frame in an MP3 file, such as ID3v2 Tags or some
- *  audio.
+ * audio.
  */
 public interface MP3Frame {
 }

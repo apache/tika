@@ -47,27 +47,27 @@ import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.transport.common.gzip.GZIPInInterceptor;
 import org.apache.cxf.transport.common.gzip.GZIPOutInterceptor;
+import org.junit.After;
+import org.junit.Before;
+
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.parser.digestutils.CommonsDigester;
 import org.apache.tika.server.core.resource.TikaResource;
 import org.apache.tika.server.core.resource.UnpackerResource;
-import org.junit.After;
-import org.junit.Before;
 
 public abstract class CXFTestBase {
-    private final static int DIGESTER_READ_LIMIT = 20*1024*1024;
-
-    protected static final String endPoint =
-            "http://localhost:" + TikaServerConfig.DEFAULT_PORT;
+    protected static final String endPoint = "http://localhost:" + TikaServerConfig.DEFAULT_PORT;
+    protected final static int DIGESTER_READ_LIMIT = 20 * 1024 * 1024;
     protected Server server;
-    private TikaConfig tika;
+    protected TikaConfig tika;
 
     public static void assertContains(String needle, String haystack) {
         assertTrue(needle + " not found in:\n" + haystack, haystack.contains(needle));
     }
 
     public static void assertNotFound(String needle, String haystack) {
-        assertFalse(needle + " unexpectedly found in:\n" + haystack, haystack.contains(needle));
+        assertFalse(needle + " unexpectedly found in:\n"
+                + haystack, haystack.contains(needle));
     }
 
     protected static InputStream copy(InputStream in, int remaining) throws IOException {
@@ -84,37 +84,50 @@ public abstract class CXFTestBase {
         return new ByteArrayInputStream(out.toByteArray());
     }
 
+    protected static String getStringFromInputStream(InputStream in) throws Exception {
+        return IOUtils.toString(in, UTF_8);
+    }
+
+    public static InputStream gzip(InputStream is) throws IOException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        OutputStream gz = new GzipCompressorOutputStream(bos);
+        IOUtils.copy(is, gz);
+        gz.flush();
+        gz.close();
+        return new ByteArrayInputStream(bos.toByteArray());
+    }
+
     @Before
     public void setUp() throws Exception {
 
         this.tika = new TikaConfig(getTikaConfigInputStream());
-        TikaResource.init(tika,
-                new CommonsDigester(DIGESTER_READ_LIMIT, "md5,sha1:32"),
-                getInputStreamFactory(tika), new ServerStatus("", 0,true));
+        TikaServerConfig tikaServerConfig = getTikaServerConfig();
+        TikaResource.init(tika, tikaServerConfig,
+                new CommonsDigester(DIGESTER_READ_LIMIT, "md5," +
+                        "sha1:32"),
+                getInputStreamFactory(tika), new ServerStatus("", 0, true));
         JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
         //set compression interceptors
-        sf.setOutInterceptors(
-                Collections.singletonList(new GZIPOutInterceptor())
-        );
-        sf.setInInterceptors(
-                Collections.singletonList(new GZIPInInterceptor()));
+        sf.setOutInterceptors(Collections.singletonList(new GZIPOutInterceptor()));
+        sf.setInInterceptors(Collections.singletonList(new GZIPInInterceptor()));
 
         setUpResources(sf);
         setUpProviders(sf);
         sf.setAddress(endPoint + "/");
 
-        BindingFactoryManager manager = sf.getBus().getExtension(
-                BindingFactoryManager.class
-        );
+        BindingFactoryManager manager = sf.getBus().getExtension(BindingFactoryManager.class);
 
         JAXRSBindingFactory factory = new JAXRSBindingFactory();
         factory.setBus(sf.getBus());
 
-        manager.registerBindingFactory(
-                JAXRSBindingFactory.JAXRS_BINDING_ID,
-                factory
-        );
+        manager.registerBindingFactory(JAXRSBindingFactory.JAXRS_BINDING_ID, factory);
         server = sf.create();
+    }
+
+    protected TikaServerConfig getTikaServerConfig() {
+        TikaServerConfig tikaServerConfig = new TikaServerConfig();
+        tikaServerConfig.setReturnStackTrace(true);
+        return tikaServerConfig;
     }
 
     protected InputStreamFactory getInputStreamFactory(TikaConfig tikaConfig) {
@@ -122,19 +135,17 @@ public abstract class CXFTestBase {
     }
 
     protected InputStream getTikaConfigInputStream() {
-        return new ByteArrayInputStream(
-                new String("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+
-                        "<properties>\n" +
+        return new ByteArrayInputStream(new String(
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + "<properties>\n" +
                         "    <parsers>\n" +
-                        "        <parser class=\"org.apache.tika.parser.DefaultParser\"/>\n"+
-                        "    </parsers>\n"+
-                        "</properties>").getBytes(UTF_8)
-        );
+                        "        <parser class=\"org.apache.tika.parser.DefaultParser\"/>\n" +
+                        "    </parsers>\n" + "</properties>").getBytes(UTF_8));
     }
 
     /**
      * Have the test do {@link JAXRSServerFactoryBean#setResourceClasses(Class...)}
-     * and {@link JAXRSServerFactoryBean#setResourceProvider(Class, org.apache.cxf.jaxrs.lifecycle.ResourceProvider)}
+     * and {@link JAXRSServerFactoryBean#setResourceProvider(Class,
+     * org.apache.cxf.jaxrs.lifecycle.ResourceProvider)}
      */
     protected abstract void setUpResources(JAXRSServerFactoryBean sf);
 
@@ -147,10 +158,6 @@ public abstract class CXFTestBase {
     public void tearDown() throws Exception {
         server.stop();
         server.destroy();
-    }
-
-    protected static String getStringFromInputStream(InputStream in) throws Exception {
-        return IOUtils.toString(in, UTF_8);
     }
 
     protected Map<String, String> readZipArchive(InputStream inputStream) throws IOException {
@@ -181,7 +188,8 @@ public abstract class CXFTestBase {
         return bos.toString(UTF_8.name());
     }
 
-    protected Map<String, String> readArchiveFromStream(ArchiveInputStream zip) throws IOException {
+    protected Map<String, String> readArchiveFromStream(ArchiveInputStream zip)
+            throws IOException {
         Map<String, String> data = new HashMap<String, String>();
         while (true) {
             ArchiveEntry entry = zip.getNextEntry();
@@ -197,19 +205,12 @@ public abstract class CXFTestBase {
         return data;
     }
 
-    private Path writeTemporaryArchiveFile(InputStream inputStream, String archiveType) throws IOException {
-        Path tmp = Files.createTempFile("apache-tika-server-test-tmp-", "."+archiveType);
+    private Path writeTemporaryArchiveFile(InputStream inputStream, String archiveType)
+            throws IOException {
+        Path tmp = Files.createTempFile("apache-tika-server-test-tmp-",
+                "." + archiveType);
         Files.copy(inputStream, tmp, StandardCopyOption.REPLACE_EXISTING);
         return tmp;
-    }
-
-    public static InputStream gzip(InputStream is) throws IOException {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        OutputStream gz = new GzipCompressorOutputStream(bos);
-        IOUtils.copy(is, gz);
-        gz.flush();
-        gz.close();
-        return new ByteArrayInputStream(bos.toByteArray());
     }
 
 }

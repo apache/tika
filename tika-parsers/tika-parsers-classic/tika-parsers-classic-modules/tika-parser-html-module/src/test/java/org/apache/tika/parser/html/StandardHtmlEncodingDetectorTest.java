@@ -18,18 +18,23 @@
 package org.apache.tika.parser.html;
 
 
-import org.apache.tika.parser.html.charsetdetector.StandardHtmlEncodingDetector;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.html.charsetdetector.charsets.ReplacementCharset;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.SequenceInputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import org.junit.Before;
+import org.junit.Test;
+
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.html.charsetdetector.StandardHtmlEncodingDetector;
+import org.apache.tika.parser.html.charsetdetector.charsets.ReplacementCharset;
 
 public class StandardHtmlEncodingDetectorTest {
     private Metadata metadata = new Metadata();
@@ -51,8 +56,7 @@ public class StandardHtmlEncodingDetectorTest {
 
     @Test
     public void duplicateMeta() throws IOException {
-        assertWindows1252("<meta charset='WINDOWS-1252'>" +
-                "<meta charset='UTF-8'>");
+        assertWindows1252("<meta charset='WINDOWS-1252'>" + "<meta charset='UTF-8'>");
     }
 
     @Test
@@ -62,22 +66,21 @@ public class StandardHtmlEncodingDetectorTest {
 
     @Test
     public void invalidThenValid() throws IOException {
-        assertCharset("<meta charset=blah>" +
-                "<meta charset=WINDOWS-1252>", null);
+        assertCharset("<meta charset=blah>" + "<meta charset=WINDOWS-1252>", null);
     }
 
     @Test
     public void spacesInAttributes() throws IOException {
-        assertWindows1252("<meta charset\u000C=  \t  WINDOWS-1252>");
+        assertWindows1252("<meta charset\f=  \t  WINDOWS-1252>");
     }
 
     @Test
     public void httpEquiv() throws IOException {
-        assertWindows1252("<meta " +
-                "http-equiv='content-type' " +
-                "content='text/html; charset=\"WINDOWS-1252\"'>"); // quotes around the charset are allowed
-        assertWindows1252("<meta " +
-                "content=' charset  =  WINDOWS-1252' " + // The charset may be anywhere in the content attribute
+        assertWindows1252("<meta " + "http-equiv='content-type' " +
+                "content='text/html; charset=\"WINDOWS-1252\"'>"); // quotes around the
+        // charset are allowed
+        assertWindows1252("<meta " + "content=' charset  =  WINDOWS-1252' " +
+                // The charset may be anywhere in the content attribute
                 "http-equiv='content-type' >");
     }
 
@@ -88,10 +91,10 @@ public class StandardHtmlEncodingDetectorTest {
 
     @Test
     public void httpEquivDuplicateCharset() throws IOException {
-        assertWindows1252("<meta " +
-                "http-equiv='content-type' " +
-                "content='charset=WINDOWS-1252;" + // The detection should stop after the semicolon
-                "charset=UTF-8'>");
+        assertWindows1252(
+                "<meta " + "http-equiv='content-type' " + "content='charset=WINDOWS-1252;" +
+                        // The detection should stop after the semicolon
+                        "charset=UTF-8'>");
     }
 
     @Test
@@ -102,13 +105,8 @@ public class StandardHtmlEncodingDetectorTest {
     @Test
     public void veryBadHtml() throws IOException {
         // check that the parser is not confused by garbage before the declaration
-        assertWindows1252("<< l \" == / '=x\n >" +
-                "<!--> " +
-                "< <x'/ <=> " +
-                "<meta/>" +
-                "<meta>" +
-                "<a x/>" +
-                "<meta charset='WINDOWS-1252'>");
+        assertWindows1252("<< l \" == / '=x\n >" + "<!--> " + "< <x'/ <=> " + "<meta/>" + "<meta>" +
+                "<a x/>" + "<meta charset='WINDOWS-1252'>");
     }
 
     @Test
@@ -119,10 +117,8 @@ public class StandardHtmlEncodingDetectorTest {
 
     @Test
     public void longHtml() throws IOException {
-        StringBuilder sb = new StringBuilder("<!doctype html>\n" +
-                "<html>\n" +
-                "<head>\n" +
-                "<title>Hello world</title>\n");
+        StringBuilder sb = new StringBuilder(
+                "<!doctype html>\n" + "<html>\n" + "<head>\n" + "<title>Hello world</title>\n");
         String repeated = "<meta x='y' />\n";
         String charsetMeta = "<meta charset='windows-1252'>";
 
@@ -136,8 +132,10 @@ public class StandardHtmlEncodingDetectorTest {
     @Test
     public void tooLong() throws IOException {
         // Create a string with 1Mb of '\0' followed by a meta
-        String padded = new String(new byte[1000000], StandardCharsets.ISO_8859_1) + "<meta charset='windows-1252'>";
-        // Only the first bytes should be prescanned, so the algorithm should stop before the meta tag
+        String padded = new String(new byte[1000000], StandardCharsets.ISO_8859_1) +
+                "<meta charset='windows-1252'>";
+        // Only the first bytes should be prescanned, so the algorithm should stop before
+        // the meta tag
         assertCharset(padded, null);
     }
 
@@ -158,13 +156,15 @@ public class StandardHtmlEncodingDetectorTest {
 
     @Test
     public void utf16() throws IOException {
-        // According to the specification 'If charset is a UTF-16 encoding, then set charset to UTF-8.'
+        // According to the specification 'If charset is a UTF-16 encoding, then set
+        // charset to UTF-8.'
         assertCharset("<meta charset='UTF-16BE'>", StandardCharsets.UTF_8);
     }
 
     @Test
     public void xUserDefined() throws IOException {
-        // According to the specification 'If charset is x-user-defined, then set charset to windows-1252.'
+        // According to the specification 'If charset is x-user-defined, then set charset
+        // to windows-1252.'
         assertWindows1252("<meta charset='x-user-defined'>");
     }
 
@@ -172,7 +172,8 @@ public class StandardHtmlEncodingDetectorTest {
     public void replacement() throws IOException {
         // Several dangerous charsets should are aliases of 'replacement' in the spec
         String inString = "<meta charset='iso-2022-cn'>";
-        assertCharset(new ByteArrayInputStream(inString.getBytes(StandardCharsets.ISO_8859_1)), new ReplacementCharset());
+        assertCharset(new ByteArrayInputStream(inString.getBytes(StandardCharsets.ISO_8859_1)),
+                new ReplacementCharset());
     }
 
     @Test
@@ -209,8 +210,7 @@ public class StandardHtmlEncodingDetectorTest {
 
     @Test
     public void insideTag() throws IOException {
-        assertWindows1252("<tag " +
-                "attribute=\"<meta charset='UTF-8'>\" " + // inside attribute
+        assertWindows1252("<tag " + "attribute=\"<meta charset='UTF-8'>\" " + // inside attribute
                 "<meta charset='UTF-8' " + // still inside tag
                 "/>" + // tag end
                 "<meta charset='WINDOWS-1252'>");
@@ -218,9 +218,8 @@ public class StandardHtmlEncodingDetectorTest {
 
     @Test
     public void missingAttribute() throws IOException {
-        assertWindows1252(
-                "<meta content='charset=UTF-8'>" + // missing http-equiv attribute
-                        "<meta charset='WINDOWS-1252'>" // valid declaration
+        assertWindows1252("<meta content='charset=UTF-8'>" + // missing http-equiv attribute
+                "<meta charset='WINDOWS-1252'>" // valid declaration
         );
     }
 
@@ -228,66 +227,62 @@ public class StandardHtmlEncodingDetectorTest {
     public void insideSpecialTag() throws IOException {
         // Content inside <?, <!, and </ should be ignored
         for (byte b : "?!/".getBytes(StandardCharsets.US_ASCII))
-            assertWindows1252(
-                    "<" + (char) b + // start comment
-                            "<meta charset='UTF-8'>" + // inside special tag
-                            "<meta charset='WINDOWS-1252'>" // real charset declaration
+            assertWindows1252("<" + (char) b + // start comment
+                    "<meta charset='UTF-8'>" + // inside special tag
+                    "<meta charset='WINDOWS-1252'>" // real charset declaration
             );
     }
 
     @Test
     public void spaceBeforeTag() throws IOException {
-        assertWindows1252(
-                "< meta charset='UTF-8'>" + // invalid charset declaration
-                        "<meta charset='WINDOWS-1252'>" // real charset declaration
+        assertWindows1252("< meta charset='UTF-8'>" + // invalid charset declaration
+                "<meta charset='WINDOWS-1252'>" // real charset declaration
         );
     }
 
     @Test
     public void invalidAttribute() throws IOException {
-        assertWindows1252(
-                "<meta " +
-                        "badcharset='UTF-8' " + // invalid charset declaration
-                        "charset='WINDOWS-1252'>" // real charset declaration
+        assertWindows1252("<meta " + "badcharset='UTF-8' " + // invalid charset declaration
+                "charset='WINDOWS-1252'>" // real charset declaration
         );
     }
 
     @Test
     public void unmatchedQuote() throws IOException {
-        assertWindows1252(
-                "<meta http-equiv='content-type' content='charset=\"UTF-8'>" + // invalid charset declaration
-                        "<meta charset='WINDOWS-1252'>" // real charset declaration
+        assertWindows1252("<meta http-equiv='content-type' content='charset=\"UTF-8'>" +
+                // invalid charset declaration
+                "<meta charset='WINDOWS-1252'>" // real charset declaration
         );
     }
 
     @Test
     public void realWorld() throws IOException {
-        assertWindows1252("<!DOCTYPE html>\n" +
-                "<html lang=\"fr\">\n" +
-                "<head>\n" +
+        assertWindows1252("<!DOCTYPE html>\n" + "<html lang=\"fr\">\n" + "<head>\n" +
                 "<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':\n" +
-                "\t\t\tnew Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],\n" +
+                "\t\t\tnew Date().getTime(),event:'gtm.js'});var " +
+                "f=d.getElementsByTagName(s)[0],\n" +
                 "\t\t\tj=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=\n" +
-                "\t\t\t'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);\n" +
+                "\t\t\t'https://www.googletagmanager.com/gtm.js?id='+i+dl;" +
+                "f.parentNode.insertBefore(j,f);\n" +
                 "\t\t\t})(window,document,'script','dataLayer','GTM-PNX8H8X');</script>\n" +
                 "<title>Horaires Transilien 2018 - Lignes A B C D E H J K L N P R U</title>\n" +
-                "<meta name=\"description\" content=\"Consultez les horaires du Transilien en temps réel. Lignes A et B du RER. Lignes C D E H J K L N P R U du Transilien.\">\n" +
+                "<meta name=\"description\" content=\"Consultez les horaires du Transilien en " +
+                "temps réel. Lignes A et B du RER. Lignes C " +
+                "D E H J K L N P R U du Transilien.\">\n" +
                 "<meta name=\"keywords\" content=\"horaires transilien\">\n" +
                 "<meta charset=\"windows-1252\">\n" +
                 "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
-                "<meta name=\"robots\" content=\"follow, index\">\n" +
-                "<base hr");
+                "<meta name=\"robots\" content=\"follow, index\">\n" + "<base hr");
     }
 
     @Test
     public void withCompactComment() throws IOException {
         // <!--> is a valid comment
-        assertWindows1252(
-                "<!--" + // start comment
-                        "<meta charset='UTF-8'>" + // inside comment
-                        "-->" + // end comment
-                        "<!-->" + // compact comment
-                        "<meta charset='WINDOWS-1252'>" // outside comment, charset declaration
+        assertWindows1252("<!--" + // start comment
+                "<meta charset='UTF-8'>" + // inside comment
+                "-->" + // end comment
+                "<!-->" + // compact comment
+                "<meta charset='WINDOWS-1252'>" // outside comment, charset declaration
         );
     }
 
@@ -331,7 +326,7 @@ public class StandardHtmlEncodingDetectorTest {
     @Test
     public void streamReset() throws IOException {
         // The stream should be reset after detection
-        byte[] inBytes = {0,1,2,3,4};
+        byte[] inBytes = {0, 1, 2, 3, 4};
         byte[] outBytes = new byte[5];
         InputStream inStream = new ByteArrayInputStream(inBytes);
         detectCharset(inStream);

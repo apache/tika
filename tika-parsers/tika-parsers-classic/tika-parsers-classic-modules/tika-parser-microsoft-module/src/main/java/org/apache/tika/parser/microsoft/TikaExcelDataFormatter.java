@@ -35,17 +35,20 @@ public class TikaExcelDataFormatter extends DataFormatter {
         this(LocaleUtil.getUserLocale());
     }
 
-    public TikaExcelDataFormatter (Locale locale) {
+    public TikaExcelDataFormatter(Locale locale) {
         super(locale);
         addFormat("General", new TikaExcelGeneralFormat(locale));
         addFormat("general", new TikaExcelGeneralFormat(locale));
     }
 
     @Override
-    public String formatRawCellContents(double value, int formatIndex, String formatString, boolean use1904Windowing) {
+    public String formatRawCellContents(double value, int formatIndex, String formatString,
+                                        boolean use1904Windowing) {
         if (DateUtil.isADateFormat(formatIndex, formatString)) {
-            String activeDateFormatString = (dateOverrideFormatString == null) ? formatString : dateOverrideFormatString;
-            return super.formatRawCellContents(value, formatIndex, activeDateFormatString, use1904Windowing);
+            String activeDateFormatString =
+                    (dateOverrideFormatString == null) ? formatString : dateOverrideFormatString;
+            return super.formatRawCellContents(value, formatIndex, activeDateFormatString,
+                    use1904Windowing);
         } else {
             return super.formatRawCellContents(value, formatIndex, formatString, use1904Windowing);
         }

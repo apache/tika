@@ -25,9 +25,12 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.Properties;
 
+import org.xml.sax.SAXException;
+
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.language.translate.Translator;
 import org.apache.tika.metadata.Metadata;
@@ -38,16 +41,15 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParsingReader;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.WriteOutContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * Facade class for accessing Tika functionality. This class hides much of
  * the underlying complexity of the lower level Tika classes and provides
  * simple methods for many common parsing and type detection operations.
  *
- * @since Apache Tika 0.5
  * @see Parser
  * @see Detector
+ * @since Apache Tika 0.5
  */
 public class Tika {
 
@@ -74,11 +76,12 @@ public class Tika {
     private int maxStringLength = 100 * 1000;
 
     /**
-     * Creates a Tika facade using the given detector and parser instances, but the default Translator.
+     * Creates a Tika facade using the given detector and parser instances, but the default
+     * Translator.
      *
-     * @since Apache Tika 0.8
      * @param detector type detector
-     * @param parser document parser
+     * @param parser   document parser
+     * @since Apache Tika 0.8
      */
     public Tika(Detector detector, Parser parser) {
         this.detector = detector;
@@ -89,10 +92,10 @@ public class Tika {
     /**
      * Creates a Tika facade using the given detector, parser, and translator instances.
      *
-     * @since Apache Tika 1.6
-     * @param detector type detector
-     * @param parser document parser
+     * @param detector   type detector
+     * @param parser     document parser
      * @param translator text translator
+     * @since Apache Tika 1.6
      */
     public Tika(Detector detector, Parser parser, Translator translator) {
         this.detector = detector;
@@ -120,14 +123,14 @@ public class Tika {
      * Creates a Tika facade using the given detector instance, the
      * default parser configuration, and the default Translator.
      *
-     * @since Apache Tika 0.8
      * @param detector type detector
+     * @since Apache Tika 0.8
      */
     public Tika(Detector detector) {
         this(detector, new AutoDetectParser(detector));
     }
 
-    
+
     /**
      * Detects the media type of the given document. The type detection is
      * based on the content of the given document stream and any given
@@ -145,18 +148,16 @@ public class Tika {
      * Unlike in the {@link #parse(InputStream, Metadata)} method, the
      * given document metadata is <em>not</em> modified by this method.
      *
-     * @param stream the document stream, or <code>null</code>
+     * @param stream   the document stream, or <code>null</code>
      * @param metadata document metadata
      * @return detected media type
      * @throws IOException if the stream can not be read
      */
-    public String detect(InputStream stream, Metadata metadata)
-            throws IOException {
+    public String detect(InputStream stream, Metadata metadata) throws IOException {
         if (stream == null || stream.markSupported()) {
             return detector.detect(stream, metadata).toString();
         } else {
-            return detector.detect(
-                    new BufferedInputStream(stream), metadata).toString();
+            return detector.detect(new BufferedInputStream(stream), metadata).toString();
         }
     }
 
@@ -172,11 +173,11 @@ public class Tika {
      * <p>
      * The given document stream is <em>not</em> closed by this method.
      *
-     * @since Apache Tika 0.9
      * @param stream the document stream
-     * @param name document name
+     * @param name   document name
      * @return detected media type
      * @throws IOException if the stream can not be read
+     * @since Apache Tika 0.9
      */
     public String detect(InputStream stream, String name) throws IOException {
         Metadata metadata = new Metadata();
@@ -212,10 +213,10 @@ public class Tika {
      * alternatives when you have more than just the document prefix
      * available for type detection.
      *
-     * @since Apache Tika 0.9
      * @param prefix first few bytes of the document
-     * @param name document name
+     * @param name   document name
      * @return detected media type
+     * @since Apache Tika 0.9
      */
     public String detect(byte[] prefix, String name) {
         try {
@@ -236,9 +237,9 @@ public class Tika {
      * alternatives when you have more than just the document prefix
      * available for type detection.
      *
-     * @since Apache Tika 0.9
      * @param prefix first few bytes of the document
      * @return detected media type
+     * @since Apache Tika 0.9
      */
     public String detect(byte[] prefix) {
         try {
@@ -283,8 +284,8 @@ public class Tika {
      */
     public String detect(File file) throws IOException {
         Metadata metadata = new Metadata();
-        try (@SuppressWarnings("deprecation")
-        InputStream stream = TikaInputStream.get(file, metadata)) {
+        try (@SuppressWarnings("deprecation") InputStream stream = TikaInputStream
+                .get(file, metadata)) {
             return detect(stream, metadata);
         }
     }
@@ -313,7 +314,7 @@ public class Tika {
      * The type detection is based on known file name extensions.
      * <p>
      * The given name can also be a URL or a full file path. In such cases
-     * only the file name part of the string is used for type detection. 
+     * only the file name part of the string is used for type detection.
      *
      * @param name the file name of the document
      * @return detected media type
@@ -328,31 +329,36 @@ public class Tika {
 
     /**
      * Translate the given text String to and from the given languages.
-     * @see org.apache.tika.language.translate.Translator
-     * @param text The text to translate.
+     *
+     * @param text           The text to translate.
      * @param sourceLanguage The input text language (for example, "hi").
      * @param targetLanguage The desired output language (for example, "fr").
-     * @return The translated text. If translation is unavailable (client keys not set), returns the same text back.
+     * @return The translated text. If translation is unavailable (client keys not set),  returns
+     * the same text back.
+     * @see org.apache.tika.language.translate.Translator
      */
-    public String translate(String text, String sourceLanguage, String targetLanguage){
+    public String translate(String text, String sourceLanguage, String targetLanguage) {
         try {
             return translator.translate(text, sourceLanguage, targetLanguage);
-        } catch (Exception e){
+        } catch (Exception e) {
             throw new IllegalStateException("Error translating data.", e);
         }
     }
 
     /**
-     * Translate the given text String to the given language, attempting to auto-detect the source language.
-     * @see org.apache.tika.language.translate.Translator
-     * @param text The text to translate.
+     * Translate the given text String to the given language, attempting to auto-detect the
+     * source language.
+     *
+     * @param text           The text to translate.
      * @param targetLanguage The desired output language (for example, "en").
-     * @return The translated text. If translation is unavailable (client keys not set), returns the same text back.
+     * @return The translated text. If translation is unavailable (client keys not set), returns
+     * the same text back.
+     * @see org.apache.tika.language.translate.Translator
      */
-    public String translate(String text, String targetLanguage){
+    public String translate(String text, String targetLanguage) {
         try {
             return translator.translate(text, targetLanguage);
-        } catch (Exception e){
+        } catch (Exception e) {
             throw new IllegalStateException("Error translating data.", e);
         }
     }
@@ -368,13 +374,12 @@ public class Tika {
      * The stream and any associated resources will be closed at or before
      * the time when the {@link Reader#close()} method is called.
      *
-     * @param stream the document to be parsed
+     * @param stream   the document to be parsed
      * @param metadata where document's metadata will be populated
      * @return extracted text content
      * @throws IOException if the document can not be read or parsed
      */
-    public Reader parse(InputStream stream, Metadata metadata)
-            throws IOException {
+    public Reader parse(InputStream stream, Metadata metadata) throws IOException {
         ParseContext context = new ParseContext();
         context.set(Parser.class, parser);
         return new ParsingReader(parser, stream, metadata, context);
@@ -398,10 +403,10 @@ public class Tika {
     /**
      * Parses the file at the given path and returns the extracted text content.
      * <p>
-     * Metadata information extracted from the document is returned in 
-     *  the supplied metadata instance.
+     * Metadata information extracted from the document is returned in
+     * the supplied metadata instance.
      *
-     * @param path the path of the file to be parsed
+     * @param path     the path of the file to be parsed
      * @param metadata where document's metadata will be populated
      * @return extracted text content
      * @throws IOException if the file can not be read or parsed
@@ -410,7 +415,7 @@ public class Tika {
         InputStream stream = TikaInputStream.get(path, metadata);
         return parse(stream, metadata);
     }
-    
+
     /**
      * Parses the file at the given path and returns the extracted text content.
      *
@@ -425,18 +430,17 @@ public class Tika {
     /**
      * Parses the given file and returns the extracted text content.
      * <p>
-     * Metadata information extracted from the document is returned in 
-     *  the supplied metadata instance.
+     * Metadata information extracted from the document is returned in
+     * the supplied metadata instance.
      *
-     * @param file the file to be parsed
+     * @param file     the file to be parsed
      * @param metadata where document's metadata will be populated
      * @return extracted text content
      * @throws IOException if the file can not be read or parsed
      * @see #parse(Path)
      */
     public Reader parse(File file, Metadata metadata) throws IOException {
-        @SuppressWarnings("deprecation")
-        InputStream stream = TikaInputStream.get(file, metadata);
+        @SuppressWarnings("deprecation") InputStream stream = TikaInputStream.get(file, metadata);
         return parse(stream, metadata);
     }
 
@@ -451,7 +455,7 @@ public class Tika {
     public Reader parse(File file) throws IOException {
         return parse(file, new Metadata());
     }
-    
+
     /**
      * Parses the resource at the given URL and returns the extracted
      * text content.
@@ -480,10 +484,10 @@ public class Tika {
      * you as a convenience. With other methods you are still responsible
      * for closing the stream or a wrapper instance returned by Tika.
      *
-     * @param stream the document to be parsed
+     * @param stream   the document to be parsed
      * @param metadata document metadata
      * @return extracted text content
-     * @throws IOException if the document can not be read
+     * @throws IOException   if the document can not be read
      * @throws TikaException if the document can not be parsed
      */
     public String parseToString(InputStream stream, Metadata metadata)
@@ -505,24 +509,22 @@ public class Tika {
      * you as a convenience. With other methods you are still responsible
      * for closing the stream or a wrapper instance returned by Tika.
      *
-     * @param stream the document to be parsed
-     * @param metadata document metadata
+     * @param stream    the document to be parsed
+     * @param metadata  document metadata
      * @param maxLength maximum length of the returned string
      * @return extracted text content
-     * @throws IOException if the document can not be read
+     * @throws IOException   if the document can not be read
      * @throws TikaException if the document can not be parsed
      */
     public String parseToString(InputStream stream, Metadata metadata, int maxLength)
-        throws IOException, TikaException {
-        WriteOutContentHandler handler =
-            new WriteOutContentHandler(maxLength);
+            throws IOException, TikaException {
+        WriteOutContentHandler handler = new WriteOutContentHandler(maxLength);
         try {
             ParseContext context = new ParseContext();
             context.set(Parser.class, parser);
-            parser.parse(
-                         stream, new BodyContentHandler(handler), metadata, context);
+            parser.parse(stream, new BodyContentHandler(handler), metadata, context);
         } catch (SAXException e) {
-            if (!handler.isWriteLimitReached(e)) {
+            if (!WriteLimitReachedException.isWriteLimitReached(e)) {
                 // This should never happen with BodyContentHandler...
                 throw new TikaException("Unexpected SAX processing failure", e);
             }
@@ -548,11 +550,10 @@ public class Tika {
      *
      * @param stream the document to be parsed
      * @return extracted text content
-     * @throws IOException if the document can not be read
+     * @throws IOException   if the document can not be read
      * @throws TikaException if the document can not be parsed
      */
-    public String parseToString(InputStream stream)
-            throws IOException, TikaException {
+    public String parseToString(InputStream stream) throws IOException, TikaException {
         return parseToString(stream, new Metadata());
     }
 
@@ -566,7 +567,7 @@ public class Tika {
      *
      * @param path the path of the file to be parsed
      * @return extracted text content
-     * @throws IOException if the file can not be read
+     * @throws IOException   if the file can not be read
      * @throws TikaException if the file can not be parsed
      */
     public String parseToString(Path path) throws IOException, TikaException {
@@ -585,14 +586,13 @@ public class Tika {
      *
      * @param file the file to be parsed
      * @return extracted text content
-     * @throws IOException if the file can not be read
+     * @throws IOException   if the file can not be read
      * @throws TikaException if the file can not be parsed
      * @see #parseToString(Path)
      */
     public String parseToString(File file) throws IOException, TikaException {
         Metadata metadata = new Metadata();
-        @SuppressWarnings("deprecation")
-        InputStream stream = TikaInputStream.get(file, metadata);
+        @SuppressWarnings("deprecation") InputStream stream = TikaInputStream.get(file, metadata);
         return parseToString(stream, metadata);
     }
 
@@ -607,7 +607,7 @@ public class Tika {
      *
      * @param url the URL of the resource to be parsed
      * @return extracted text content
-     * @throws IOException if the resource can not be read
+     * @throws IOException   if the resource can not be read
      * @throws TikaException if the resource can not be parsed
      */
     public String parseToString(URL url) throws IOException, TikaException {
@@ -620,8 +620,8 @@ public class Tika {
      * Returns the maximum length of strings returned by the
      * parseToString methods.
      *
-     * @since Apache Tika 0.7
      * @return maximum string length, or -1 if the limit has been disabled
+     * @since Apache Tika 0.7
      */
     public int getMaxStringLength() {
         return maxStringLength;
@@ -631,9 +631,9 @@ public class Tika {
      * Sets the maximum length of strings returned by the parseToString
      * methods.
      *
-     * @since Apache Tika 0.7
      * @param maxStringLength maximum string length,
      *                        or -1 to disable this limit
+     * @since Apache Tika 0.7
      */
     public void setMaxStringLength(int maxStringLength) {
         this.maxStringLength = maxStringLength;
@@ -642,8 +642,8 @@ public class Tika {
     /**
      * Returns the parser instance used by this facade.
      *
-     * @since Apache Tika 0.10
      * @return parser instance
+     * @since Apache Tika 0.10
      */
     public Parser getParser() {
         return parser;
@@ -652,8 +652,8 @@ public class Tika {
     /**
      * Returns the detector instance used by this facade.
      *
-     * @since Apache Tika 0.10
      * @return detector instance
+     * @since Apache Tika 0.10
      */
     public Detector getDetector() {
         return detector;
@@ -662,8 +662,8 @@ public class Tika {
     /**
      * Returns the translator instance used by this facade.
      *
-     * @since Tika 1.6
      * @return translator instance
+     * @since Tika 1.6
      */
     public Translator getTranslator() {
         return translator;
@@ -674,8 +674,8 @@ public class Tika {
     public String toString() {
         String version = null;
 
-        try (InputStream stream = Tika.class.getResourceAsStream(
-                "/META-INF/maven/org.apache.tika/tika-core/pom.properties")) {
+        try (InputStream stream = Tika.class
+                .getResourceAsStream("/META-INF/maven/org.apache.tika/tika-core/pom.properties")) {
             if (stream != null) {
                 Properties properties = new Properties();
                 properties.load(stream);

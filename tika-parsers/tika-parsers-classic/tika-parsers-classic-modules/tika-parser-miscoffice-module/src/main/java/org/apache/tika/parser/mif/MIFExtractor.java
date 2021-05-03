@@ -16,14 +16,6 @@
  */
 package org.apache.tika.parser.mif;
 
-import org.apache.commons.lang3.StringEscapeUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.tika.detect.AutoDetectReader;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.EmptyStackException;
@@ -31,6 +23,15 @@ import java.util.List;
 import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+
+import org.apache.tika.detect.AutoDetectReader;
 
 /**
  * Helper Class to Parse and Extract Adobe MIF Files.
@@ -45,14 +46,16 @@ public class MIFExtractor {
     private static final String END_TAG_VALUE = "'";
 
     /**
-     * Parsers the file supplied through the reader and emits events to the supplied content handler.
+     * Parsers the file supplied through the reader and emits events to the supplied content
+     * handler.
      *
-     * @param reader the reader to use.
+     * @param reader  the reader to use.
      * @param handler the content handler to use.
-     * @throws IOException on any IO error.
+     * @throws IOException  on any IO error.
      * @throws SAXException on any SAX error.
      */
-    static void parse(AutoDetectReader reader, ContentHandler handler) throws IOException, SAXException {
+    static void parse(AutoDetectReader reader, ContentHandler handler)
+            throws IOException, SAXException {
         handler.startDocument();
         String line;
         Tag currentTag = new Tag();
@@ -68,7 +71,8 @@ public class MIFExtractor {
                     currentTag.setName(matcher.group(1));
                     parents.push(currentTag);
                     Attributes attrs = new AttributesImpl();
-                    handler.startElement(StringUtils.EMPTY, matcher.group(1), matcher.group(1), attrs);
+                    handler.startElement(StringUtils.EMPTY, matcher.group(1), matcher.group(1),
+                            attrs);
                 }
             } else if (line.trim().startsWith(CLOSE_TAG_MARKER)) {
                 try {
@@ -82,7 +86,7 @@ public class MIFExtractor {
                         parents.peek().addChild(parent);
                     }
                     handler.endElement(StringUtils.EMPTY, parent.getName(), parent.getName());
-                } catch (EmptyStackException ex ) {
+                } catch (EmptyStackException ex) {
                     // Shouldn't happen, swallow to keep parsing
                 }
             } else {
@@ -111,7 +115,7 @@ public class MIFExtractor {
      * Process a tag and emit events to Content Handler.
      *
      * @param handler the content handler.
-     * @param tag the tag to process.
+     * @param tag     the tag to process.
      * @throws SAXException on any SAX error.
      */
     private static void processTag(ContentHandler handler, Tag tag) throws SAXException {

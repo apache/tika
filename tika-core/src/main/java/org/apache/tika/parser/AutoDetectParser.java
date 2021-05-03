@@ -19,6 +19,9 @@ package org.apache.tika.parser;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
@@ -33,12 +36,12 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.sax.SecureContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 public class AutoDetectParser extends CompositeParser {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = 6110455808615143122L;
     //private final TikaConfig config;
 
@@ -66,14 +69,14 @@ public class AutoDetectParser extends CompositeParser {
      * This allows one to create a Tika configuration where only a subset of the
      * available parsers have their 3rd party jars included, as otherwise the
      * use of the default TikaConfig will throw various "ClassNotFound" exceptions.
-     * 
+     *
      * @param parsers
      */
-    public AutoDetectParser(Parser...parsers) {
+    public AutoDetectParser(Parser... parsers) {
         this(new DefaultDetector(), parsers);
     }
 
-    public AutoDetectParser(Detector detector, Parser...parsers) {
+    public AutoDetectParser(Detector detector, Parser... parsers) {
         super(MediaTypeRegistry.getDefaultRegistry(), parsers);
         setDetector(detector);
     }
@@ -105,10 +108,8 @@ public class AutoDetectParser extends CompositeParser {
         this.detector = detector;
     }
 
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
         TemporaryResources tmp = new TemporaryResources();
         try {
             TikaInputStream tis = TikaInputStream.get(stream, tmp);
@@ -116,8 +117,9 @@ public class AutoDetectParser extends CompositeParser {
             // Automatically detect the MIME type of the document
             MediaType type = detector.detect(tis, metadata);
             //update CONTENT_TYPE as long as it wasn't set by parser override
-            if (metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE) == null
-                || ! metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE).equals(type.toString())) {
+            if (metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE) == null ||
+                    !metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE)
+                            .equals(type.toString())) {
                 metadata.set(Metadata.CONTENT_TYPE, type.toString());
             }
             //check for zero-byte inputstream
@@ -129,8 +131,8 @@ public class AutoDetectParser extends CompositeParser {
                 tis.reset();
             }
             // TIKA-216: Zip bomb prevention
-            SecureContentHandler sch = 
-                handler != null ? new SecureContentHandler(handler, tis) : null;
+            SecureContentHandler sch =
+                    handler != null ? new SecureContentHandler(handler, tis) : null;
 
             //pass self to handle embedded documents if
             //the caller hasn't specified one.
@@ -156,8 +158,7 @@ public class AutoDetectParser extends CompositeParser {
         }
     }
 
-    public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
         ParseContext context = new ParseContext();
         context.set(Parser.class, this);

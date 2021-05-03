@@ -16,23 +16,24 @@
  */
 package org.apache.tika.parser.dif;
 
+import static org.junit.Assert.assertEquals;
+
+import java.io.InputStream;
+
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
-
-import java.io.InputStream;
-
-import static org.junit.Assert.assertEquals;
 
 public class DIFParserTest extends TikaTest {
 
-	@Test
-	public void testDifMetadata() throws Exception {
-		Parser parser = new DIFParser();
+    @Test
+    public void testDifMetadata() throws Exception {
+        Parser parser = new DIFParser();
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
@@ -40,8 +41,8 @@ public class DIFParserTest extends TikaTest {
             parser.parse(stream, handler, metadata, new ParseContext());
         }
 
-        assertEquals(metadata.get("DIF-Entry_ID"),"00794186-48f9-11e3-9dcb-00c0f03d5b7c");
-        assertEquals(metadata.get("DIF-Metadata_Name"),"ACADIS IDN DIF");        
+        assertEquals(metadata.get("DIF-Entry_ID"), "00794186-48f9-11e3-9dcb-00c0f03d5b7c");
+        assertEquals(metadata.get("DIF-Metadata_Name"), "ACADIS IDN DIF");
 
         String content = handler.toString();
         assertContains("Title: Zamora 2010 Using Sediment Geochemistry", content);
@@ -49,5 +50,5 @@ public class DIFParserTest extends TikaTest {
         assertContains("Northernmost_Latitude : 79.016", content);
         assertContains("Westernmost_Longitude : 11.64", content);
         assertContains("Easternmost_Longitude : 13.34", content);
-	}
+    }
 }

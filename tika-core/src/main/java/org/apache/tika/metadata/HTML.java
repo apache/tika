@@ -16,14 +16,14 @@ package org.apache.tika.metadata; /*
  */
 
 public interface HTML {
-    public static final String PREFIX_HTML_META = "html_meta";
+    String PREFIX_HTML_META = "html_meta";
 
 
     /**
      * If a script element contains a src value, this value
      * is set in the embedded document's metadata
      */
-    Property SCRIPT_SOURCE = Property.internalText(PREFIX_HTML_META +
-            TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "scriptSrc");
+    Property SCRIPT_SOURCE = Property.internalText(
+            PREFIX_HTML_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "scriptSrc");
 
 }

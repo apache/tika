@@ -16,6 +16,23 @@
  */
 package org.apache.tika.parser.ocr;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
+
+import java.io.File;
+import java.io.InputStream;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.junit.Assert;
+import org.junit.Test;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaConfigException;
@@ -34,22 +51,6 @@ import org.apache.tika.parser.image.JpegParser;
 import org.apache.tika.parser.image.PSDParser;
 import org.apache.tika.parser.image.TiffParser;
 import org.apache.tika.parser.image.WebPParser;
-import org.junit.Assert;
-import org.junit.Test;
-
-import java.io.File;
-import java.io.InputStream;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeTrue;
 
 public class TesseractOCRParserTest extends TikaTest {
 
@@ -76,9 +77,7 @@ public class TesseractOCRParserTest extends TikaTest {
         //with preserve interwordspacing "on"
         //allow some flexibility in case Tesseract is computing spaces
         //somewhat differently in different versions/OS's, etc.
-        xml = getXML("testOCR_spacing.png",
-                getMetadata(MediaType.image("png")),
-                parseContext).xml;
+        xml = getXML("testOCR_spacing.png", getMetadata(MediaType.image("png")), parseContext).xml;
         Matcher m = Pattern.compile("The\\s{5,20}quick").matcher(xml);
         assertTrue(m.find());
     }
@@ -86,10 +85,9 @@ public class TesseractOCRParserTest extends TikaTest {
 
     private Metadata getMetadata(MediaType mediaType) {
         Metadata metadata = new Metadata();
-        MediaType ocrMediaType = new MediaType(mediaType.getType(),
-                "OCR-" + mediaType.getSubtype());
-        metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
-                ocrMediaType.toString());
+        MediaType ocrMediaType =
+                new MediaType(mediaType.getType(), "OCR-" + mediaType.getSubtype());
+        metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, ocrMediaType.toString());
         return metadata;
     }
 
@@ -106,8 +104,7 @@ public class TesseractOCRParserTest extends TikaTest {
         assumeTrue("can run OCR", canRun());
         //tesseract should handle multipage tiffs by itself
         //let's confirm that
-        String xml = getXML("testTIFF_multipage.tif",
-                getMetadata(MediaType.image("tiff"))).xml;
+        String xml = getXML("testTIFF_multipage.tif", getMetadata(MediaType.image("tiff"))).xml;
         assertContains("Page 2", xml);
     }
 
@@ -118,8 +115,8 @@ public class TesseractOCRParserTest extends TikaTest {
         config.setSkipOcr(true);
         ParseContext context = new ParseContext();
         context.set(TesseractOCRConfig.class, config);
-        String xml = getXML("testTIFF_multipage.tif",
-                getMetadata(MediaType.image("tiff")), context).xml;
+        String xml =
+                getXML("testTIFF_multipage.tif", getMetadata(MediaType.image("tiff")), context).xml;
         assertNotContained("Page 2", xml);
     }
 
@@ -136,8 +133,8 @@ public class TesseractOCRParserTest extends TikaTest {
         Metadata metadata = getMetadata(MediaType.image("png"));
         String ocr = getText("testRotated+10.png", metadata, parseContext);
         assertEquals("true", metadata.get(TesseractOCRParser.IMAGE_MAGICK));
-        assertEquals(10.0,
-                Double.parseDouble(metadata.get(TesseractOCRParser.IMAGE_ROTATION)), 0.01);
+        assertEquals(10.0, Double.parseDouble(metadata.get(TesseractOCRParser.IMAGE_ROTATION)),
+                0.01);
         assertContains("Its had resolving otherwise she contented therefore", ocr);
     }
 
@@ -154,8 +151,8 @@ public class TesseractOCRParserTest extends TikaTest {
         Metadata metadata = getMetadata(MediaType.image("png"));
         String ocr = getText("testRotated-10.png", metadata, parseContext);
         assertEquals("true", metadata.get(TesseractOCRParser.IMAGE_MAGICK));
-        assertEquals(-10.0,
-                Double.parseDouble(metadata.get(TesseractOCRParser.IMAGE_ROTATION)), 0.01);
+        assertEquals(-10.0, Double.parseDouble(metadata.get(TesseractOCRParser.IMAGE_ROTATION)),
+                0.01);
         assertContains("Its had resolving otherwise she contented therefore", ocr);
     }
 
@@ -164,12 +161,15 @@ public class TesseractOCRParserTest extends TikaTest {
         try (InputStream is = getResourceAsStream("/test-configs/TIKA-2705-tesseract.xml")) {
             TikaConfig config = new TikaConfig(is);
             Parser p = config.getParser();
-            Parser tesseractOCRParser = findParser(p, org.apache.tika.parser.ocr.TesseractOCRParser.class);
+            Parser tesseractOCRParser =
+                    findParser(p, org.apache.tika.parser.ocr.TesseractOCRParser.class);
             assertNotNull(tesseractOCRParser);
 
-            TesseractOCRConfig tesseractOCRConfig = ((TesseractOCRParser) tesseractOCRParser).getDefaultConfig();
+            TesseractOCRConfig tesseractOCRConfig =
+                    ((TesseractOCRParser) tesseractOCRParser).getDefaultConfig();
             Assert.assertEquals(241, tesseractOCRConfig.getTimeoutSeconds());
-            Assert.assertEquals(TesseractOCRConfig.OUTPUT_TYPE.HOCR, tesseractOCRConfig.getOutputType());
+            Assert.assertEquals(TesseractOCRConfig.OUTPUT_TYPE.HOCR,
+                    tesseractOCRConfig.getOutputType());
             Assert.assertEquals("ceb", tesseractOCRConfig.getLanguage());
             Assert.assertEquals(false, tesseractOCRConfig.isApplyRotation());
 //            assertContains("myspecial", tesseractOCRConfig.getTesseractPath());
@@ -180,11 +180,13 @@ public class TesseractOCRParserTest extends TikaTest {
     public void testPreloadLangs() throws Exception {
         assumeTrue(canRun());
         TikaConfig config;
-        try (InputStream is = getResourceAsStream("/test-configs/tika-config-tesseract-load-langs.xml")) {
+        try (InputStream is = getResourceAsStream(
+                "/test-configs/tika-config-tesseract-load-langs.xml")) {
             config = new TikaConfig(is);
         }
         Parser p = config.getParser();
-        Parser tesseractOCRParser = findParser(p, org.apache.tika.parser.ocr.TesseractOCRParser.class);
+        Parser tesseractOCRParser =
+                findParser(p, org.apache.tika.parser.ocr.TesseractOCRParser.class);
         assertNotNull(tesseractOCRParser);
         Set<String> langs = ((TesseractOCRParser) tesseractOCRParser).getLangs();
         assertTrue(langs.size() > 0);
@@ -194,9 +196,8 @@ public class TesseractOCRParserTest extends TikaTest {
         ParseContext parseContext = new ParseContext();
         parseContext.set(TesseractOCRConfig.class, tesseractOCRConfig);
         try {
-            getRecursiveMetadata("testOCR_spacing.png",
-                    new AutoDetectParser(config), getMetadata(MediaType.image("png")), parseContext,
-                    false);
+            getRecursiveMetadata("testOCR_spacing.png", new AutoDetectParser(config),
+                    getMetadata(MediaType.image("png")), parseContext, false);
             fail("should have thrown exception");
         } catch (TikaException e) {
             //expected
@@ -206,12 +207,15 @@ public class TesseractOCRParserTest extends TikaTest {
 
     @Test
     public void testArbitraryParams() throws Exception {
-        try (InputStream is = getResourceAsStream("/test-configs/tika-config-tesseract-arbitrary.xml")) {
+        try (InputStream is = getResourceAsStream(
+                "/test-configs/tika-config-tesseract-arbitrary.xml")) {
             TikaConfig config = new TikaConfig(is);
             Parser p = config.getParser();
-            Parser tesseractOCRParser = findParser(p, org.apache.tika.parser.ocr.TesseractOCRParser.class);
+            Parser tesseractOCRParser =
+                    findParser(p, org.apache.tika.parser.ocr.TesseractOCRParser.class);
             assertNotNull(tesseractOCRParser);
-            TesseractOCRConfig tesseractOCRConfig = ((TesseractOCRParser) tesseractOCRParser).getDefaultConfig();
+            TesseractOCRConfig tesseractOCRConfig =
+                    ((TesseractOCRParser) tesseractOCRParser).getDefaultConfig();
             Assert.assertEquals("0.75",
                     tesseractOCRConfig.getOtherTesseractConfig().get("textord_initialx_ile"));
 
@@ -228,16 +232,9 @@ public class TesseractOCRParserTest extends TikaTest {
     //@Test
     public void showCoverage() throws Exception {
         Set<MediaType> imageParserMimes = new HashSet<>();
-        for (Parser p : new Parser[]{
-                new BPGParser(),
-                new HeifParser(),
-                new ICNSParser(),
-                new ImageParser(),
-                new JpegParser(),
-                new PSDParser(),
-                new TiffParser(),
-                new WebPParser(),
-        }) {
+        for (Parser p : new Parser[]{new BPGParser(), new HeifParser(), new ICNSParser(),
+                new ImageParser(), new JpegParser(), new PSDParser(), new TiffParser(),
+                new WebPParser(),}) {
             for (MediaType mt : p.getSupportedTypes(new ParseContext())) {
                 imageParserMimes.add(mt);
             }

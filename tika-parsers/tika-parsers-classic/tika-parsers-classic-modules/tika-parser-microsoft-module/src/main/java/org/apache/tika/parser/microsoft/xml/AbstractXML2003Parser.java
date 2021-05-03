@@ -20,6 +20,11 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -36,10 +41,6 @@ import org.apache.tika.sax.TaggedContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
 
 
 public abstract class AbstractXML2003Parser extends AbstractParser {
@@ -72,26 +73,20 @@ public abstract class AbstractXML2003Parser extends AbstractParser {
     final static String HLINK_DEST = "dest";
     final static String NAME_ATTR = "name";
 
-    final static char[] NEWLINE = new char[] {'\n'};
+    final static char[] NEWLINE = new char[]{'\n'};
 
 
-
-    private static ContentHandler getMSPropertiesHandler(
-            Metadata metadata, Property property, String element) {
-        return new ElementMetadataHandler(
-                MS_DOC_PROPERTIES_URN, element,
-                metadata, property);
+    private static ContentHandler getMSPropertiesHandler(Metadata metadata, Property property,
+                                                         String element) {
+        return new ElementMetadataHandler(MS_DOC_PROPERTIES_URN, element, metadata, property);
     }
 
     @Override
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
         setContentType(metadata);
 
-        final XHTMLContentHandler xhtml =
-                new XHTMLContentHandler(handler, metadata);
+        final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
         TaggedContentHandler tagged = new TaggedContentHandler(xhtml);
@@ -99,8 +94,7 @@ public abstract class AbstractXML2003Parser extends AbstractParser {
             //need to get new SAXParser because
             //an attachment might require another SAXParser
             //mid-parse
-            XMLReaderUtils.getSAXParser().parse(
-                    new CloseShieldInputStream(stream),
+            XMLReaderUtils.getSAXParser().parse(new CloseShieldInputStream(stream),
                     new OfflineContentHandler(new EmbeddedContentHandler(
                             getContentHandler(tagged, metadata, context))));
         } catch (SAXException e) {
@@ -111,11 +105,11 @@ public abstract class AbstractXML2003Parser extends AbstractParser {
         }
     }
 
-    protected ContentHandler getContentHandler(ContentHandler ch, Metadata md, ParseContext context) {
+    protected ContentHandler getContentHandler(ContentHandler ch, Metadata md,
+                                               ParseContext context) {
         //ContentHandler is not currently used, but leave that as an option for
         //potential future additions
-        return new TeeContentHandler(
-                getMSPropertiesHandler(md, TikaCoreProperties.TITLE, "Title"),
+        return new TeeContentHandler(getMSPropertiesHandler(md, TikaCoreProperties.TITLE, "Title"),
                 getMSPropertiesHandler(md, TikaCoreProperties.CREATOR, "Author"),
                 getMSPropertiesHandler(md, Office.LAST_AUTHOR, "LastAuthor"),
                 getMSPropertiesHandler(md, OfficeOpenXMLCore.REVISION, "Revision"),
@@ -125,7 +119,8 @@ public abstract class AbstractXML2003Parser extends AbstractParser {
                 getMSPropertiesHandler(md, Office.PAGE_COUNT, "Pages"),
                 getMSPropertiesHandler(md, Office.WORD_COUNT, "Words"),
                 getMSPropertiesHandler(md, Office.CHARACTER_COUNT, "Characters"),
-                getMSPropertiesHandler(md, Office.CHARACTER_COUNT_WITH_SPACES, "CharactersWithSpaces"),
+                getMSPropertiesHandler(md, Office.CHARACTER_COUNT_WITH_SPACES,
+                        "CharactersWithSpaces"),
                 getMSPropertiesHandler(md, OfficeOpenXMLExtended.COMPANY, "Company"),
                 getMSPropertiesHandler(md, Office.LINE_COUNT, "Lines"),
                 getMSPropertiesHandler(md, Office.PARAGRAPH_COUNT, "Paragraphs"),

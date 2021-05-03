@@ -16,9 +16,6 @@
  */
 package org.apache.tika.server.core.resource;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,8 +25,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
@@ -74,7 +75,8 @@ public class TikaParsers {
         return h.toString();
     }
 
-    private void parserAsHTML(ParserDetails p, boolean withMimeTypes, StringBuffer html, int level) {
+    private void parserAsHTML(ParserDetails p, boolean withMimeTypes, StringBuffer html,
+                              int level) {
         html.append("<h");
         html.append(level);
         html.append(">");
@@ -87,8 +89,9 @@ public class TikaParsers {
         html.append("</p>");
         if (p.isDecorated) {
             html.append("<p>Decorated Parser");
-            if (p.decoratedBy != null)
-                html.append( " - ").append(p.decoratedBy);
+            if (p.decoratedBy != null) {
+                html.append(" - ").append(p.decoratedBy);
+            }
             html.append("</p>");
         }
         if (p.isComposite) {
@@ -125,13 +128,12 @@ public class TikaParsers {
         return getParsersJSON(false);
     }
 
-    protected String getParsersJSON(boolean withMimeTypes) throws IOException  {
+    protected String getParsersJSON(boolean withMimeTypes) throws IOException {
         Map<String, Object> details = new HashMap<String, Object>();
-        parserAsMap(new ParserDetails(TikaResource.getConfig().getParser()), withMimeTypes, details);
+        parserAsMap(new ParserDetails(TikaResource.getConfig().getParser()), withMimeTypes,
+                details);
         ObjectMapper objectMapper = new ObjectMapper();
-        return objectMapper
-                .writerWithDefaultPrettyPrinter()
-                .writeValueAsString(details);
+        return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(details);
     }
 
     private void parserAsMap(ParserDetails p, boolean withMimeTypes, Map<String, Object> details) {
@@ -171,10 +173,13 @@ public class TikaParsers {
 
     protected String getParsersPlain(boolean withMimeTypes) {
         StringBuffer text = new StringBuffer();
-        renderParser(new ParserDetails(TikaResource.getConfig().getParser()), withMimeTypes, text, "");
+        renderParser(new ParserDetails(TikaResource.getConfig().getParser()), withMimeTypes, text,
+                "");
         return text.toString();
     }
-    private void renderParser(ParserDetails p, boolean withMimeTypes, StringBuffer text, String indent) {
+
+    private void renderParser(ParserDetails p, boolean withMimeTypes, StringBuffer text,
+                              String indent) {
         String nextIndent = indent + "  ";
 
         text.append(indent);
@@ -210,15 +215,15 @@ public class TikaParsers {
         private String shortName;
         private boolean isComposite;
         private boolean isDecorated;
-        private String  decoratedBy;
+        private String decoratedBy;
         private Set<MediaType> supportedTypes;
         private List<Parser> childParsers;
 
         private ParserDetails(Parser p) {
             if (p instanceof ParserDecorator) {
                 isDecorated = true;
-                decoratedBy = ((ParserDecorator)p).getDecorationName();
-                p = ((ParserDecorator)p).getWrappedParser();
+                decoratedBy = ((ParserDecorator) p).getDecorationName();
+                p = ((ParserDecorator) p).getWrappedParser();
             }
 
             className = p.getClass().getName();
@@ -229,8 +234,8 @@ public class TikaParsers {
                 supportedTypes = Collections.emptySet();
 
                 // Get the unique set of child parsers
-                Set<Parser> children = new HashSet<Parser>(
-                        ((CompositeParser) p).getParsers(EMPTY_PC).values());
+                Set<Parser> children =
+                        new HashSet<Parser>(((CompositeParser) p).getParsers(EMPTY_PC).values());
                 // Sort it by class name
                 childParsers = new ArrayList<Parser>(children);
                 childParsers.sort(Comparator.comparing(parser -> parser.getClass().getName()));

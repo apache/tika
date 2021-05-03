@@ -24,14 +24,15 @@ import static org.junit.Assert.fail;
 
 import java.io.InputStream;
 
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
 
 /**
  * Test case for parsing rar files.
@@ -40,58 +41,58 @@ public class RarParserTest extends AbstractPkgTest {
 
     /**
      * Tests that the ParseContext parser is correctly
-     *  fired for all the embedded entries.
+     * fired for all the embedded entries.
      */
     @Test
     public void testEmbedded() throws Exception {
-       ContentHandler handler = new BodyContentHandler();
-       Metadata metadata = new Metadata();
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
 
         try (InputStream stream = getResourceAsStream("/test-documents/test-documents.rar")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
         }
-       
-       // Should have found all 9 documents, but not the directory
-       assertEquals(9, tracker.filenames.size());
-       assertEquals(9, tracker.mediatypes.size());
-       assertEquals(9, tracker.modifiedAts.size());
-       
-       // Should have names but not content types, as rar doesn't
-       //  store the content types
-       assertEquals("test-documents/testEXCEL.xls", tracker.filenames.get(0));
-       assertEquals("test-documents/testHTML.html", tracker.filenames.get(1));
-       assertEquals("test-documents/testOpenOffice2.odt", tracker.filenames.get(2));
-       assertEquals("test-documents/testPDF.pdf", tracker.filenames.get(3));
-       assertEquals("test-documents/testPPT.ppt", tracker.filenames.get(4));
-       assertEquals("test-documents/testRTF.rtf", tracker.filenames.get(5));
-       assertEquals("test-documents/testTXT.txt", tracker.filenames.get(6));
-       assertEquals("test-documents/testWORD.doc", tracker.filenames.get(7));
-       assertEquals("test-documents/testXML.xml", tracker.filenames.get(8));
-       
-       for(String type : tracker.mediatypes) {
-          assertNull(type);
-       }
-       for(String crt : tracker.createdAts) {
-           assertNull(crt);
-       }
-       for(String mod : tracker.modifiedAts) {
-           assertNotNull(mod);
-           assertTrue("Modified at " + mod, mod.startsWith("20"));
-       }
-       
-       // Should have filenames in the content string
-       String content = handler.toString();
-       assertContains("test-documents/testHTML.html", content);
-       assertContains("test-documents/testEXCEL.xls", content);
-       assertContains("test-documents/testOpenOffice2.odt", content);
-       assertContains("test-documents/testPDF.pdf", content);
-       assertContains("test-documents/testPPT.ppt", content);
-       assertContains("test-documents/testRTF.rtf", content);
-       assertContains("test-documents/testTXT.txt", content);
-       assertContains("test-documents/testWORD.doc", content);
-       assertContains("test-documents/testXML.xml", content);
+
+        // Should have found all 9 documents, but not the directory
+        assertEquals(9, tracker.filenames.size());
+        assertEquals(9, tracker.mediatypes.size());
+        assertEquals(9, tracker.modifiedAts.size());
+
+        // Should have names but not content types, as rar doesn't
+        //  store the content types
+        assertEquals("test-documents/testEXCEL.xls", tracker.filenames.get(0));
+        assertEquals("test-documents/testHTML.html", tracker.filenames.get(1));
+        assertEquals("test-documents/testOpenOffice2.odt", tracker.filenames.get(2));
+        assertEquals("test-documents/testPDF.pdf", tracker.filenames.get(3));
+        assertEquals("test-documents/testPPT.ppt", tracker.filenames.get(4));
+        assertEquals("test-documents/testRTF.rtf", tracker.filenames.get(5));
+        assertEquals("test-documents/testTXT.txt", tracker.filenames.get(6));
+        assertEquals("test-documents/testWORD.doc", tracker.filenames.get(7));
+        assertEquals("test-documents/testXML.xml", tracker.filenames.get(8));
+
+        for (String type : tracker.mediatypes) {
+            assertNull(type);
+        }
+        for (String crt : tracker.createdAts) {
+            assertNull(crt);
+        }
+        for (String mod : tracker.modifiedAts) {
+            assertNotNull(mod);
+            assertTrue("Modified at " + mod, mod.startsWith("20"));
+        }
+
+        // Should have filenames in the content string
+        String content = handler.toString();
+        assertContains("test-documents/testHTML.html", content);
+        assertContains("test-documents/testEXCEL.xls", content);
+        assertContains("test-documents/testOpenOffice2.odt", content);
+        assertContains("test-documents/testPDF.pdf", content);
+        assertContains("test-documents/testPPT.ppt", content);
+        assertContains("test-documents/testRTF.rtf", content);
+        assertContains("test-documents/testTXT.txt", content);
+        assertContains("test-documents/testWORD.doc", content);
+        assertContains("test-documents/testXML.xml", content);
     }
-    
+
     /**
      * Note - we don't currently support Encrypted RAR files,
      * so all we can do is throw a helpful exception
@@ -99,7 +100,7 @@ public class RarParserTest extends AbstractPkgTest {
     @Test
     public void testEncryptedRar() throws Exception {
         Parser parser = new RarParser();
-        
+
         try (InputStream input = getResourceAsStream("/test-documents/test-documents-enc.rar")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
@@ -110,7 +111,7 @@ public class RarParserTest extends AbstractPkgTest {
                     return "ApacheTika";
                 }
             });
-        
+
             // Note - we don't currently support encrypted RAR
             // files so we can't check the contents
             parser.parse(input, handler, metadata, trackingContext);

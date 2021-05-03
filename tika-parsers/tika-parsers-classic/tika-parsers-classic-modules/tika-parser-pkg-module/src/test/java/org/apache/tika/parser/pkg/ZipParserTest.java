@@ -25,15 +25,16 @@ import java.io.InputStream;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+import org.junit.Assume;
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.helpers.DefaultHandler;
+
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Assume;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Test case for parsing zip files.
@@ -42,44 +43,44 @@ public class ZipParserTest extends AbstractPkgTest {
 
     /**
      * Tests that the ParseContext parser is correctly
-     *  fired for all the embedded entries.
+     * fired for all the embedded entries.
      */
     @Test
     public void testEmbedded() throws Exception {
-       ContentHandler handler = new BodyContentHandler();
-       Metadata metadata = new Metadata();
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
 
         try (InputStream stream = getResourceAsStream("/test-documents/test-documents.zip")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
         }
-       
-       // Should have found all 9 documents
-       assertEquals(9, tracker.filenames.size());
-       assertEquals(9, tracker.mediatypes.size());
-       assertEquals(9, tracker.modifiedAts.size());
-       
-       // Should have names and modified dates, but not content types, 
-       //  as zip doesn't store the content types
-       assertEquals("testEXCEL.xls", tracker.filenames.get(0));
-       assertEquals("testHTML.html", tracker.filenames.get(1));
-       assertEquals("testOpenOffice2.odt", tracker.filenames.get(2));
-       assertEquals("testPDF.pdf", tracker.filenames.get(3));
-       assertEquals("testPPT.ppt", tracker.filenames.get(4));
-       assertEquals("testRTF.rtf", tracker.filenames.get(5));
-       assertEquals("testTXT.txt", tracker.filenames.get(6));
-       assertEquals("testWORD.doc", tracker.filenames.get(7));
-       assertEquals("testXML.xml", tracker.filenames.get(8));
-       
-       for(String type : tracker.mediatypes) {
-          assertNull(type);
-       }
-       for(String crt : tracker.createdAts) {
-           assertNull(crt);
-       }
-       for(String mod : tracker.modifiedAts) {
-           assertNotNull(mod);
-           assertTrue("Modified at " + mod, mod.startsWith("20"));
-       }
+
+        // Should have found all 9 documents
+        assertEquals(9, tracker.filenames.size());
+        assertEquals(9, tracker.mediatypes.size());
+        assertEquals(9, tracker.modifiedAts.size());
+
+        // Should have names and modified dates, but not content types,
+        //  as zip doesn't store the content types
+        assertEquals("testEXCEL.xls", tracker.filenames.get(0));
+        assertEquals("testHTML.html", tracker.filenames.get(1));
+        assertEquals("testOpenOffice2.odt", tracker.filenames.get(2));
+        assertEquals("testPDF.pdf", tracker.filenames.get(3));
+        assertEquals("testPPT.ppt", tracker.filenames.get(4));
+        assertEquals("testRTF.rtf", tracker.filenames.get(5));
+        assertEquals("testTXT.txt", tracker.filenames.get(6));
+        assertEquals("testWORD.doc", tracker.filenames.get(7));
+        assertEquals("testXML.xml", tracker.filenames.get(8));
+
+        for (String type : tracker.mediatypes) {
+            assertNull(type);
+        }
+        for (String crt : tracker.createdAts) {
+            assertNull(crt);
+        }
+        for (String mod : tracker.modifiedAts) {
+            assertNotNull(mod);
+            assertTrue("Modified at " + mod, mod.startsWith("20"));
+        }
     }
 
     /**
@@ -103,26 +104,22 @@ public class ZipParserTest extends AbstractPkgTest {
         trackingContext.set(ArchiveStreamFactory.class, factory);
 
         try (InputStream stream = TikaInputStream.get(Base64.decodeBase64(
-                "UEsDBBQAAAAIAI+CvUCDo3+zIgAAACgAAAAOAAAAk/qWe4zqg4GDgi50"
-                        + "eHRr2tj0qulsc2pzRHN609Gm7Y1OvFxNYLHJv6ZV97yCiQEAUEsBAh"
-                        + "QLFAAAAAgAj4K9QIOjf7MiAAAAKAAAAA4AAAAAAAAAAAAgAAAAAAAA"
-                        + "AJP6lnuM6oOBg4IudHh0UEsFBgAAAAABAAEAPAAAAE4AAAAAAA=="))) {
-            AUTO_DETECT_PARSER.parse(
-                    stream, new DefaultHandler(),
-                    new Metadata(), trackingContext);
+                "UEsDBBQAAAAIAI+CvUCDo3+zIgAAACgAAAAOAAAAk/qWe4zqg4GDgi50" +
+                        "eHRr2tj0qulsc2pzRHN609Gm7Y1OvFxNYLHJv6ZV97yCiQEAUEsBAh" +
+                        "QLFAAAAAgAj4K9QIOjf7MiAAAAKAAAAA4AAAAAAAAAAAAgAAAAAAAA" +
+                        "AJP6lnuM6oOBg4IudHh0UEsFBgAAAAABAAEAPAAAAE4AAAAAAA=="))) {
+            AUTO_DETECT_PARSER.parse(stream, new DefaultHandler(), new Metadata(), trackingContext);
         }
 
         assertEquals(1, tracker.filenames.size());
-        assertEquals(
-                "\u65E5\u672C\u8A9E\u30E1\u30E2.txt",
-                tracker.filenames.get(0));
+        assertEquals("\u65E5\u672C\u8A9E\u30E1\u30E2.txt", tracker.filenames.get(0));
     }
 
     @Test
     public void testQuineRecursiveParserWrapper() throws Exception {
         //Anti-virus can surreptitiously remove this file
-        Assume.assumeTrue(ZipParserTest.class
-                .getResourceAsStream("/test-documents/droste.zip") != null);
+        Assume.assumeTrue(
+                ZipParserTest.class.getResourceAsStream("/test-documents/droste.zip") != null);
         //received permission from author via dm
         //2019-07-25 to include
         //http://alf.nu/s/droste.zip in unit tests
@@ -134,8 +131,8 @@ public class ZipParserTest extends AbstractPkgTest {
     @Test(expected = TikaException.class)
     public void testQuine() throws Exception {
         //Anti-virus can surreptitiously remove this file
-        Assume.assumeTrue(ZipParserTest.class
-                .getResourceAsStream("/test-documents/droste.zip") != null);
+        Assume.assumeTrue(
+                ZipParserTest.class.getResourceAsStream("/test-documents/droste.zip") != null);
         getXML("droste.zip");
     }
 
@@ -144,7 +141,8 @@ public class ZipParserTest extends AbstractPkgTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = getResourceAsStream("/test-documents/testZip_with_DataDescriptor.zip")) {
+        try (InputStream stream = getResourceAsStream(
+                "/test-documents/testZip_with_DataDescriptor.zip")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
 
             assertEquals(5, tracker.filenames.size());

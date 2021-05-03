@@ -16,9 +16,9 @@
  */
 package org.apache.tika.parser.microsoft.chm;
 
-import org.apache.tika.exception.TikaException;
-
 import static java.nio.charset.StandardCharsets.UTF_8;
+
+import org.apache.tika.exception.TikaException;
 
 /**
  * Description There are two types of directory chunks -- index chunks, and
@@ -58,11 +58,11 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
     private int currentPlace = 0;
 
     public ChmPmglHeader() {
-            signature = ChmConstants.PMGL.getBytes(UTF_8); /*
-                                                            * 0
-                                                            * (PMGL
-                                                            * )
-                                                            */
+        signature = ChmConstants.PMGL.getBytes(UTF_8); /*
+         * 0
+         * (PMGL
+         * )
+         */
     }
 
     private int getDataRemained() {
@@ -87,7 +87,7 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
 
     public void setFreeSpace(long free_space) throws TikaException {
         if (free_space < 0) {
-            throw new TikaException("Bad PMGLheader.FreeSpace="+free_space);
+            throw new TikaException("Bad PMGLheader.FreeSpace=" + free_space);
         }
         this.free_space = free_space;
     }
@@ -98,13 +98,12 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
         sb.append("free space:=" + getFreeSpace() + ", ");
         sb.append("unknown0008:=" + getUnknown0008() + ", ");
         sb.append("prev block:=" + getBlockPrev() + ", ");
-        sb.append("next block:=" + getBlockNext()
-                + System.getProperty("line.separator"));
+        sb.append("next block:=" + getBlockNext() + System.getProperty("line.separator"));
         return sb.toString();
     }
 
-    protected void unmarshalCharArray(byte[] data, ChmPmglHeader chmPmglHeader,
-            int count) throws TikaException {
+    protected void unmarshalCharArray(byte[] data, ChmPmglHeader chmPmglHeader, int count)
+            throws TikaException {
         ChmAssert.assertByteArrayNotNull(data);
         this.setDataRemained(data.length);
         System.arraycopy(data, 0, chmPmglHeader.signature, 0, count);
@@ -115,12 +114,13 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
     private int unmarshalInt32(byte[] data) throws TikaException {
         ChmAssert.assertByteArrayNotNull(data);
         int dest;
-        if (4 > this.getDataRemained())
+        if (4 > this.getDataRemained()) {
             throw new TikaException("4 > dataLenght");
-        dest = (data[this.getCurrentPlace()] & 0xff)
-                | (data[this.getCurrentPlace() + 1] & 0xff) << 8
-                | (data[this.getCurrentPlace() + 2] & 0xff) << 16
-                | (data[this.getCurrentPlace() + 3] & 0xff) << 24;
+        }
+        dest = (data[this.getCurrentPlace()] & 0xff) |
+                (data[this.getCurrentPlace() + 1] & 0xff) << 8 |
+                (data[this.getCurrentPlace() + 2] & 0xff) << 16 |
+                (data[this.getCurrentPlace() + 3] & 0xff) << 24;
 
         this.setCurrentPlace(this.getCurrentPlace() + 4);
         this.setDataRemained(this.getDataRemained() - 4);
@@ -130,12 +130,13 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
     private long unmarshalUInt32(byte[] data) throws ChmParsingException {
         ChmAssert.assertByteArrayNotNull(data);
         long dest;
-        if (4 > getDataRemained())
+        if (4 > getDataRemained()) {
             throw new ChmParsingException("4 > dataLenght");
-        dest = (data[this.getCurrentPlace()] & 0xff)
-                | (data[this.getCurrentPlace() + 1] & 0xff) << 8
-                | (data[this.getCurrentPlace() + 2] & 0xff) << 16
-                | (data[this.getCurrentPlace() + 3] & 0xff) << 24;
+        }
+        dest = (data[this.getCurrentPlace()] & 0xff) |
+                (data[this.getCurrentPlace() + 1] & 0xff) << 8 |
+                (data[this.getCurrentPlace() + 2] & 0xff) << 16 |
+                (data[this.getCurrentPlace() + 3] & 0xff) << 24;
 
         setDataRemained(this.getDataRemained() - 4);
         this.setCurrentPlace(this.getCurrentPlace() + 4);
@@ -144,22 +145,23 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
 
     // @Override
     public void parse(byte[] data, ChmPmglHeader chmPmglHeader) throws TikaException {
-        if (data.length < ChmConstants.CHM_PMGL_LEN)
-            throw new TikaException(ChmPmglHeader.class.getName()
-                    + " we only know how to deal with a 0x14 byte structures");
+        if (data.length < ChmConstants.CHM_PMGL_LEN) {
+            throw new TikaException(ChmPmglHeader.class.getName() +
+                    " we only know how to deal with a 0x14 byte structures");
+        }
 
         /* unmarshal fields */
-        chmPmglHeader.unmarshalCharArray(data, chmPmglHeader,
-                ChmConstants.CHM_SIGNATURE_LEN);
+        chmPmglHeader.unmarshalCharArray(data, chmPmglHeader, ChmConstants.CHM_SIGNATURE_LEN);
         chmPmglHeader.setFreeSpace(chmPmglHeader.unmarshalUInt32(data));
         chmPmglHeader.setUnknown0008(chmPmglHeader.unmarshalUInt32(data));
         chmPmglHeader.setBlockPrev(chmPmglHeader.unmarshalInt32(data));
         chmPmglHeader.setBlockNext(chmPmglHeader.unmarshalInt32(data));
 
         /* check structure */
-        if (!new String(chmPmglHeader.getSignature(), UTF_8).equals(ChmConstants.PMGL))
-            throw new ChmParsingException(ChmPmglHeader.class.getName()
-                    + " pmgl != pmgl.signature");
+        if (!new String(chmPmglHeader.getSignature(), UTF_8).equals(ChmConstants.PMGL)) {
+            throw new ChmParsingException(
+                    ChmPmglHeader.class.getName() + " pmgl != pmgl.signature");
+        }
     }
 
     public byte[] getSignature() {

@@ -15,10 +15,8 @@
  * limitations under the License.
  */
 package org.apache.tika.pipes.fetchiterator.s3;
-import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
-import org.apache.tika.pipes.fetchiterator.FetchIterator;
-import org.junit.Ignore;
-import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,7 +29,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import org.apache.tika.pipes.FetchEmitTuple;
+import org.apache.tika.pipes.fetchiterator.FetchIterator;
 
 @Ignore("turn into an actual unit test")
 public class TestS3FetchIterator {
@@ -46,21 +48,26 @@ public class TestS3FetchIterator {
         it.setRegion("");//select one
         it.initialize(Collections.EMPTY_MAP);
         int numConsumers = 6;
-        ArrayBlockingQueue<FetchEmitTuple> queue = it.init(numConsumers);
+        ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(10);
 
-        ExecutorService es = Executors.newFixedThreadPool(numConsumers+1);
+        ExecutorService es = Executors.newFixedThreadPool(numConsumers + 1);
         ExecutorCompletionService c = new ExecutorCompletionService(es);
-        c.submit(it);
         List<MockFetcher> fetchers = new ArrayList<>();
         for (int i = 0; i < numConsumers; i++) {
             MockFetcher fetcher = new MockFetcher(queue);
             fetchers.add(fetcher);
             c.submit(fetcher);
         }
+        for (FetchEmitTuple t : it) {
+            queue.offer(t);
+        }
+        for (int i = 0; i < numConsumers; i++) {
+            queue.offer(FetchIterator.COMPLETED_SEMAPHORE);
+        }
         int finished = 0;
         int completed = 0;
         try {
-            while (finished++ < numConsumers+1) {
+            while (finished++ < numConsumers + 1) {
                 Future<Integer> f = c.take();
                 completed += f.get();
             }
@@ -74,6 +81,7 @@ public class TestS3FetchIterator {
     private static class MockFetcher implements Callable<Integer> {
         private final ArrayBlockingQueue<FetchEmitTuple> queue;
         private final List<FetchEmitTuple> pairs = new ArrayList<>();
+
         private MockFetcher(ArrayBlockingQueue<FetchEmitTuple> queue) {
             this.queue = queue;
         }

@@ -1,5 +1,3 @@
-package org.apache.tika.parser.mock;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,14 +14,14 @@ package org.apache.tika.parser.mock;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.parser.mock;
 
+import java.io.IOException;
+import java.util.Map;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserFactory;
-
-import java.io.IOException;
-import java.util.Map;
 
 
 public class MockParserFactory extends ParserFactory {

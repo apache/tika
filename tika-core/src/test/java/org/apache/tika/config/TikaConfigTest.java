@@ -16,6 +16,11 @@
  */
 package org.apache.tika.config;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
@@ -24,6 +29,8 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
+
+import org.junit.Test;
 
 import org.apache.tika.ResourceLoggingClassLoader;
 import org.apache.tika.exception.TikaConfigException;
@@ -40,26 +47,14 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.mock.MockParser;
 import org.apache.tika.parser.multiple.FallbackParser;
-import org.apache.tika.pipes.emitter.Emitter;
-import org.apache.tika.pipes.emitter.EmitterManager;
-import org.apache.tika.pipes.fetcher.Fetcher;
-import org.apache.tika.pipes.fetcher.FetcherManager;
-import org.apache.tika.pipes.fetcher.FileSystemFetcher;
-import org.apache.tika.pipes.fetchiterator.FetchIterator;
 import org.apache.tika.utils.XMLReaderUtils;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Tests for the Tika Config, which don't require real parsers /
- *  detectors / etc.
+ * detectors / etc.
  * There's also {@link TikaParserConfigTest} and {@link TikaDetectorConfigTest}
- *  over in the Tika Parsers project, which do further Tika Config
- *  testing using real parsers and detectors.
+ * over in the Tika Parsers project, which do further Tika Config
+ * testing using real parsers and detectors.
  */
 public class TikaConfigTest extends AbstractTikaConfigTest {
     /**
@@ -73,9 +68,10 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
         try {
             getConfig("TIKA-866-invalid.xml");
             fail("AutoDetectParser allowed in a <parser> element");
-        } catch (TikaException expected) {}
+        } catch (TikaException expected) {
+        }
     }
-    
+
     /**
      * Make sure that with a service loader given, we can
      * get different configurable behaviour on parser classes
@@ -83,28 +79,29 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
      */
     @Test
     public void testUnknownParser() throws Exception {
-        ServiceLoader ignoreLoader = new ServiceLoader(
-                getClass().getClassLoader(), LoadErrorHandler.IGNORE);
-        ServiceLoader warnLoader = new ServiceLoader(
-                getClass().getClassLoader(), LoadErrorHandler.WARN);
-        ServiceLoader throwLoader = new ServiceLoader(
-                getClass().getClassLoader(), LoadErrorHandler.THROW);
+        ServiceLoader ignoreLoader =
+                new ServiceLoader(getClass().getClassLoader(), LoadErrorHandler.IGNORE);
+        ServiceLoader warnLoader =
+                new ServiceLoader(getClass().getClassLoader(), LoadErrorHandler.WARN);
+        ServiceLoader throwLoader =
+                new ServiceLoader(getClass().getClassLoader(), LoadErrorHandler.THROW);
         Path configPath = Paths.get(new URI(getConfigPath("TIKA-1700-unknown-parser.xml")));
-        
+
         TikaConfig ignore = new TikaConfig(configPath, ignoreLoader);
         assertNotNull(ignore);
         assertNotNull(ignore.getParser());
-        assertEquals(1, ((CompositeParser)ignore.getParser()).getAllComponentParsers().size());
-        
+        assertEquals(1, ((CompositeParser) ignore.getParser()).getAllComponentParsers().size());
+
         TikaConfig warn = new TikaConfig(configPath, warnLoader);
         assertNotNull(warn);
         assertNotNull(warn.getParser());
-        assertEquals(1, ((CompositeParser)warn.getParser()).getAllComponentParsers().size());
-        
+        assertEquals(1, ((CompositeParser) warn.getParser()).getAllComponentParsers().size());
+
         try {
             new TikaConfig(configPath, throwLoader);
             fail("Shouldn't get here, invalid parser class");
-        } catch (TikaException expected) {}
+        } catch (TikaException expected) {
+        }
     }
 
     /**
@@ -145,28 +142,26 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
      */
     @Test
     public void ensureClassLoaderUsedEverywhere() throws Exception {
-        ResourceLoggingClassLoader customLoader = 
+        ResourceLoggingClassLoader customLoader =
                 new ResourceLoggingClassLoader(getClass().getClassLoader());
         TikaConfig config;
-        
+
         // Without a classloader set, normal one will be used
         config = new TikaConfig();
         config.getMediaTypeRegistry();
         config.getParser();
         assertEquals(0, customLoader.getLoadedResources().size());
-        
+
         // With a classloader set, resources will come through it
         config = new TikaConfig(customLoader);
         config.getMediaTypeRegistry();
         config.getParser();
-        
-        Map<String,List<URL>> resources = customLoader.getLoadedResources();
+
+        Map<String, List<URL>> resources = customLoader.getLoadedResources();
         int resourcesCount = resources.size();
-        assertTrue(
-                "Not enough things used the classloader, found only " + resourcesCount,
-                resourcesCount > 3
-        );
-        
+        assertTrue("Not enough things used the classloader, found only " + resourcesCount,
+                resourcesCount > 3);
+
         // Ensure everything that should do, did use it
         // - Parsers
         assertNotNull(resources.get("META-INF/services/org.apache.tika.parser.Parser"));
@@ -177,100 +172,101 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
         // - Custom Mimetypes
         assertNotNull(resources.get("org/apache/tika/mime/custom-mimetypes.xml"));
     }
-    
+
     /**
      * TIKA-1445 It should be possible to exclude DefaultParser from
-     *  certain types, so another parser explicitly listed will take them
+     * certain types, so another parser explicitly listed will take them
      */
     @Test
     public void defaultParserWithExcludes() throws Exception {
         try {
             TikaConfig config = getConfig("TIKA-1445-default-except.xml");
-            
-            CompositeParser cp = (CompositeParser)config.getParser();
+
+            CompositeParser cp = (CompositeParser) config.getParser();
             List<Parser> parsers = cp.getAllComponentParsers();
             Parser p;
-            
+
             // Will be the three parsers defined in the xml
             assertEquals(3, parsers.size());
-            
+
             // Should have a wrapped DefaultParser, not the main DefaultParser,
             //  as it is excluded from handling certain classes
             p = parsers.get(0);
             assertTrue(p.toString(), p instanceof ParserDecorator);
-            assertEquals(DefaultParser.class, ((ParserDecorator)p).getWrappedParser().getClass());
-            
+            assertEquals(DefaultParser.class, ((ParserDecorator) p).getWrappedParser().getClass());
+
             // Should have two others which claim things, which they wouldn't
             //  otherwise handle
             p = parsers.get(1);
             assertTrue(p.toString(), p instanceof ParserDecorator);
-            assertEquals(EmptyParser.class, ((ParserDecorator)p).getWrappedParser().getClass());
+            assertEquals(EmptyParser.class, ((ParserDecorator) p).getWrappedParser().getClass());
             assertEquals("hello/world", p.getSupportedTypes(null).iterator().next().toString());
-            
+
             p = parsers.get(2);
             assertTrue(p.toString(), p instanceof ParserDecorator);
-            assertEquals(ErrorParser.class, ((ParserDecorator)p).getWrappedParser().getClass());
+            assertEquals(ErrorParser.class, ((ParserDecorator) p).getWrappedParser().getClass());
             assertEquals("fail/world", p.getSupportedTypes(null).iterator().next().toString());
         } catch (TikaException e) {
             fail("Unexpected TikaException: " + e);
         }
     }
-    
+
     /**
      * TIKA-1653 If one parser has child parsers, those child parsers shouldn't
-     *  show up at the top level as well
+     * show up at the top level as well
      */
     @Test
     public void parserWithChildParsers() throws Exception {
         try {
             TikaConfig config = getConfig("TIKA-1653-norepeat.xml");
-            
-            CompositeParser cp = (CompositeParser)config.getParser();
+
+            CompositeParser cp = (CompositeParser) config.getParser();
             List<Parser> parsers = cp.getAllComponentParsers();
             Parser p;
-            
+
             // Just 2 top level parsers
             assertEquals(2, parsers.size());
-            
+
             // Should have a CompositeParser with 2 child ones, and
             //  and a wrapped empty parser
             p = parsers.get(0);
             assertTrue(p.toString(), p instanceof CompositeParser);
-            assertEquals(2, ((CompositeParser)p).getAllComponentParsers().size());
-            
+            assertEquals(2, ((CompositeParser) p).getAllComponentParsers().size());
+
             p = parsers.get(1);
             assertTrue(p.toString(), p instanceof ParserDecorator);
-            assertEquals(EmptyParser.class, ((ParserDecorator)p).getWrappedParser().getClass());
+            assertEquals(EmptyParser.class, ((ParserDecorator) p).getWrappedParser().getClass());
             assertEquals("hello/world", p.getSupportedTypes(null).iterator().next().toString());
         } catch (TikaException e) {
             fail("Unexpected TikaException: " + e);
         }
     }
-    
+
     @Test
     public void testDynamicServiceLoaderFromConfig() throws Exception {
         URL url = getResourceAsUrl("TIKA-1700-dynamic.xml");
         TikaConfig config = new TikaConfig(url);
-        
-        DummyParser parser = (DummyParser)config.getParser();
+
+        DummyParser parser = (DummyParser) config.getParser();
 
         ServiceLoader loader = parser.getLoader();
         boolean dynamicValue = loader.isDynamic();
-        
+
         assertTrue("Dynamic Service Loading Should be true", dynamicValue);
     }
-    
+
     @Test
     public void testTikaExecutorServiceFromConfig() throws Exception {
         URL url = getResourceAsUrl("TIKA-1762-executors.xml");
-        
+
         TikaConfig config = new TikaConfig(url);
-        
-        ThreadPoolExecutor executorService = (ThreadPoolExecutor)config.getExecutorService();
-        
+
+        ThreadPoolExecutor executorService = (ThreadPoolExecutor) config.getExecutorService();
+
         assertTrue("Should use Dummy Executor", (executorService instanceof DummyExecutor));
         assertEquals("Should have configured Core Threads", 3, executorService.getCorePoolSize());
-        assertEquals("Should have configured Max Threads", 10, executorService.getMaximumPoolSize());
+        assertEquals("Should have configured Max Threads", 10,
+                executorService.getMaximumPoolSize());
     }
 
     @Test(expected = TikaConfigException.class)
@@ -304,19 +300,19 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
     @Test
     public void testMultipleWithFallback() throws Exception {
         TikaConfig config = getConfig("TIKA-1509-multiple-fallback.xml");
-        CompositeParser parser = (CompositeParser)config.getParser();
+        CompositeParser parser = (CompositeParser) config.getParser();
         assertEquals(2, parser.getAllComponentParsers().size());
         Parser p;
 
         p = parser.getAllComponentParsers().get(0);
         assertTrue(p.toString(), p instanceof ParserDecorator);
-        assertEquals(DefaultParser.class, ((ParserDecorator)p).getWrappedParser().getClass());
+        assertEquals(DefaultParser.class, ((ParserDecorator) p).getWrappedParser().getClass());
 
         p = parser.getAllComponentParsers().get(1);
         assertTrue(p.toString(), p instanceof ParserDecorator);
-        assertEquals(FallbackParser.class, ((ParserDecorator)p).getWrappedParser().getClass());
-        
-        FallbackParser fbp = (FallbackParser)((ParserDecorator)p).getWrappedParser();
+        assertEquals(FallbackParser.class, ((ParserDecorator) p).getWrappedParser().getClass());
+
+        FallbackParser fbp = (FallbackParser) ((ParserDecorator) p).getWrappedParser();
         assertEquals("DISCARD_ALL", fbp.getMetadataPolicy().toString());
     }
 
@@ -324,10 +320,12 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
     public void testXMLReaderUtils() throws Exception {
         //pool size may have been reset already by an
         //earlier test.  Can't test for default here.
-        assertEquals(XMLReaderUtils.DEFAULT_MAX_ENTITY_EXPANSIONS, XMLReaderUtils.getMaxEntityExpansions());
+        assertEquals(XMLReaderUtils.DEFAULT_MAX_ENTITY_EXPANSIONS,
+                XMLReaderUtils.getMaxEntityExpansions());
         //make sure that detection on this file actually works with
         //default expansions
-        assertEquals("application/rdf+xml", detect("test-difficult-rdf1.xml", TikaConfig.getDefaultConfig()).toString());
+        assertEquals("application/rdf+xml",
+                detect("test-difficult-rdf1.xml", TikaConfig.getDefaultConfig()).toString());
 
         TikaConfig tikaConfig = getConfig("TIKA-2732-xmlreaderutils.xml");
         try {
@@ -357,67 +355,6 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
         getConfig("TIKA-3268-bad-parser-exclude.xml");
     }
 
-
-    @Test
-    public void testFetchers() throws Exception {
-        TikaConfig config = getConfig("fetchers-config.xml");
-        FetcherManager m = config.getFetcherManager();
-        Fetcher f1 = m.getFetcher("fs1");
-        assertEquals(Paths.get("/my/base/path1"),
-                ((FileSystemFetcher)f1).getBasePath()
-                );
-
-        Fetcher f2 = m.getFetcher("fs2");
-        assertEquals(Paths.get("/my/base/path2"),
-                ((FileSystemFetcher)f2).getBasePath()
-        );
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testDuplicateFetchers() throws Exception {
-        //can't have two fetchers with the same name
-        TikaConfig config = getConfig("fetchers-duplicate-config.xml");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testNoNameFetchers() throws Exception {
-        //can't have two fetchers with the same name
-        TikaConfig config = getConfig("fetchers-noname-config.xml");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testNoBasePathFetchers() throws Exception {
-        //can't have an fs fetcher with no basepath specified
-        TikaConfig config = getConfig("fetchers-nobasepath-config.xml");
-    }
-
-    @Test
-    public void testEmitters() throws Exception {
-        EmitterManager emitterManager = getConfig("emitters-config.xml").getEmitterManager();
-        Emitter em1 = emitterManager.getEmitter("em1");
-        assertNotNull(em1);
-        Emitter em2 = emitterManager.getEmitter("em2");
-        assertNotNull(em2);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testDuplicateEmitters() throws Exception {
-        getConfig("emitters-duplicate-config.xml").getEmitterManager();
-    }
-
-    @Test
-    public void testFetchIterator() throws Exception {
-        FetchIterator f = getConfig("fetch-iterator-config.xml")
-                .getFetchIterator();
-        assertEquals("fs1", f.getFetcherName());
-    }
-
-    @Test(expected = TikaConfigException.class)
-    public void testMultipleFetchIterators() throws Exception {
-        FetchIterator f = getConfig("fetch-iterator-multiple-config.xml")
-                .getFetchIterator();
-        assertEquals("fs1", f.getFetcherName());
-    }
 
     @Test
     public void testTimesInitiated() throws Exception {

@@ -24,16 +24,16 @@ import java.security.Key;
 import java.security.Provider;
 import java.security.SecureRandom;
 import java.util.Set;
-
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
+
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * Decrypts the incoming document stream and delegates further parsing to
@@ -44,7 +44,9 @@ import org.xml.sax.SAXException;
  */
 public abstract class CryptoParser extends DelegatingParser {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = -3507995752666557731L;
 
     private final String transformation;
@@ -53,15 +55,13 @@ public abstract class CryptoParser extends DelegatingParser {
 
     private final Set<MediaType> types;
 
-    public CryptoParser(
-            String transformation, Provider provider, Set<MediaType> types) {
+    public CryptoParser(String transformation, Provider provider, Set<MediaType> types) {
         this.transformation = transformation;
         this.provider = provider;
         this.types = types;
     }
 
-    public CryptoParser(
-            String transformation, Set<MediaType> types) {
+    public CryptoParser(String transformation, Set<MediaType> types) {
         this(transformation, null, types);
     }
 
@@ -69,10 +69,8 @@ public abstract class CryptoParser extends DelegatingParser {
         return types;
     }
 
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
         try {
             Cipher cipher;
             if (provider != null) {
@@ -98,9 +96,7 @@ public abstract class CryptoParser extends DelegatingParser {
                 cipher.init(Cipher.DECRYPT_MODE, key);
             }
 
-            super.parse(
-                    new CipherInputStream(stream, cipher),
-                    handler, metadata, context);
+            super.parse(new CipherInputStream(stream, cipher), handler, metadata, context);
         } catch (GeneralSecurityException e) {
             throw new TikaException("Unable to decrypt document stream", e);
         }

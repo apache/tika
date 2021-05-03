@@ -29,6 +29,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 
+import org.junit.Test;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.batch.fs.RecursiveParserWrapperFSConsumer;
 import org.apache.tika.config.TikaConfig;
@@ -39,7 +41,6 @@ import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BasicContentHandlerFactory;
-import org.junit.Test;
 
 public class RecursiveParserWrapperFSConsumerTest extends TikaTest {
 
@@ -71,15 +72,17 @@ public class RecursiveParserWrapperFSConsumerTest extends TikaTest {
         queue.add(new PoisonFileResource());
 
         MockOSFactory mockOSFactory = new MockOSFactory();
-        Parser p = new RecursiveParserWrapper(new AutoDetectParserFactory().getParser(new TikaConfig()));
-        RecursiveParserWrapperFSConsumer consumer = new RecursiveParserWrapperFSConsumer(
-                queue, p, new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
+        Parser p = new RecursiveParserWrapper(
+                new AutoDetectParserFactory().getParser(new TikaConfig()));
+        RecursiveParserWrapperFSConsumer consumer = new RecursiveParserWrapperFSConsumer(queue, p,
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
                 mockOSFactory, NoOpFilter.NOOP_FILTER);
 
         IFileProcessorFutureResult result = consumer.call();
         mockOSFactory.getStreams().get(0).flush();
         byte[] bytes = mockOSFactory.getStreams().get(0).toByteArray();
-        List<Metadata> results = JsonMetadataList.fromJson(new InputStreamReader(new ByteArrayInputStream(bytes), UTF_8));
+        List<Metadata> results = JsonMetadataList
+                .fromJson(new InputStreamReader(new ByteArrayInputStream(bytes), UTF_8));
 
         assertEquals(4, results.size());
         assertContains("another null pointer",
@@ -87,8 +90,9 @@ public class RecursiveParserWrapperFSConsumerTest extends TikaTest {
 
         assertEquals("Nikolai Lobachevsky", results.get(0).get("author"));
         for (int i = 1; i < 4; i++) {
-            assertEquals("embeddedAuthor"+i, results.get(i).get("author"));
-            assertContains("some_embedded_content"+i, results.get(i).get(TikaCoreProperties.TIKA_CONTENT));
+            assertEquals("embeddedAuthor" + i, results.get(i).get("author"));
+            assertContains("some_embedded_content" + i,
+                    results.get(i).get(TikaCoreProperties.TIKA_CONTENT));
         }
     }
 
@@ -119,33 +123,37 @@ public class RecursiveParserWrapperFSConsumerTest extends TikaTest {
         queue.add(new PoisonFileResource());
 
         MockOSFactory mockOSFactory = new MockOSFactory();
-        Parser p = new RecursiveParserWrapper(new AutoDetectParserFactory().getParser(new TikaConfig()));
-        RecursiveParserWrapperFSConsumer consumer = new RecursiveParserWrapperFSConsumer(
-                queue, p, new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
+        Parser p = new RecursiveParserWrapper(
+                new AutoDetectParserFactory().getParser(new TikaConfig()));
+        RecursiveParserWrapperFSConsumer consumer = new RecursiveParserWrapperFSConsumer(queue, p,
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
                 mockOSFactory, NoOpFilter.NOOP_FILTER);
 
         IFileProcessorFutureResult result = consumer.call();
         mockOSFactory.getStreams().get(0).flush();
         byte[] bytes = mockOSFactory.getStreams().get(0).toByteArray();
-        List<Metadata> results = JsonMetadataList.fromJson(new InputStreamReader(new ByteArrayInputStream(bytes), UTF_8));
+        List<Metadata> results = JsonMetadataList
+                .fromJson(new InputStreamReader(new ByteArrayInputStream(bytes), UTF_8));
         assertEquals(2, results.size());
         assertContains("another null pointer",
                 results.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION));
         assertEquals("Nikolai Lobachevsky", results.get(0).get("author"));
         assertEquals("embeddedAuthor", results.get(1).get("author"));
-        assertContains("some_embedded_content", results.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("some_embedded_content",
+                results.get(1).get(TikaCoreProperties.TIKA_CONTENT));
     }
-
 
 
     private class MockOSFactory implements OutputStreamFactory {
         List<ByteArrayOutputStream> streams = new ArrayList<ByteArrayOutputStream>();
+
         @Override
         public OutputStream getOutputStream(Metadata metadata) throws IOException {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             streams.add(bos);
             return bos;
         }
+
         public List<ByteArrayOutputStream> getStreams() {
             return streams;
         }

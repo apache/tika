@@ -17,20 +17,22 @@
 package org.apache.tika.metadata.serialization;
 
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import org.apache.tika.metadata.Metadata;
-
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+
+import org.apache.tika.metadata.Metadata;
 
 
 public class JsonStreamingSerializer implements AutoCloseable {
 
     private final Writer writer;
-    private JsonGenerator jsonGenerator;
     boolean hasStartedArray = false;
+    private JsonGenerator jsonGenerator;
+
     public JsonStreamingSerializer(Writer writer) {
         this.writer = writer;
     }

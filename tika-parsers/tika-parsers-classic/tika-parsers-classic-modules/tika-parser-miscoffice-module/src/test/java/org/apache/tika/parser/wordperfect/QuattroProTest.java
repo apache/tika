@@ -18,24 +18,25 @@ package org.apache.tika.parser.wordperfect;
 
 import static org.junit.Assert.assertEquals;
 
+import org.junit.Test;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.junit.Test;
 
 /**
  * Junit test class for the {@link WordPerfectParser}.
+ *
  * @author Pascal Essiembre
  */
 public class QuattroProTest extends TikaTest {
     //TODO add testWB/testQUATTRO.wb3 if .wb? files get supported
-    
+
     @Test
     public void testQPW() throws Exception {
 
         XMLResult r = getXML("testQUATTRO.qpw");
-        assertEquals(QuattroProParser.QP_9.toString(),
-                r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(QuattroProParser.QP_9.toString(), r.metadata.get(Metadata.CONTENT_TYPE));
         assertEquals(1, r.metadata.getValues(Metadata.CONTENT_TYPE).length);
         assertContains("This is an example spreadsheet", r.xml);
     }
@@ -43,7 +44,8 @@ public class QuattroProTest extends TikaTest {
     @Test
     public void testWB3() throws Exception {
         XMLResult r = getXML("testQUATTRO.wb3");
-        assertEquals("org.apache.tika.parser.EmptyParser", r.metadata.get(TikaCoreProperties.TIKA_PARSED_BY));
+        assertEquals("org.apache.tika.parser.EmptyParser",
+                r.metadata.get(TikaCoreProperties.TIKA_PARSED_BY));
         assertEquals(QuattroProParser.QP_7_8.toString(), r.metadata.get(Metadata.CONTENT_TYPE));
     }
 }

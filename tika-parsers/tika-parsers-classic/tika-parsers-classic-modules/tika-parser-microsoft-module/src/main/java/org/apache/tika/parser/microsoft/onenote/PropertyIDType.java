@@ -17,10 +17,5 @@
 package org.apache.tika.parser.microsoft.onenote;
 
 enum PropertyIDType {
-    ObjectID,
-    ArrayOfObjectIDs,
-    ObjectSpaceID,
-    ArrayOfObjectSpaceIDs,
-    ContextID,
-    ArrayofContextIDs;
+    ObjectID, ArrayOfObjectIDs, ObjectSpaceID, ArrayOfObjectSpaceIDs, ContextID, ArrayofContextIDs;
 }

@@ -27,17 +27,17 @@ import java.util.Map;
 
 /**
  * A wrapper around a {@link ClassLoader} that logs all
- *  the Resources loaded through it.
+ * the Resources loaded through it.
  * Used to check that a specific ClassLoader was used
- *  when unit testing
+ * when unit testing
  */
 public class ResourceLoggingClassLoader extends ClassLoader {
-    private Map<String,List<URL>> loadedResources = new HashMap<String, List<URL>>();
-    
+    private final Map<String, List<URL>> loadedResources = new HashMap<String, List<URL>>();
+
     public ResourceLoggingClassLoader(ClassLoader realClassloader) {
         super(realClassloader);
     }
-    
+
     private List<URL> fetchRecord(String name) {
         List<URL> alreadyLoaded = loadedResources.get(name);
         if (alreadyLoaded == null) {
@@ -46,7 +46,7 @@ public class ResourceLoggingClassLoader extends ClassLoader {
         }
         return alreadyLoaded;
     }
-    
+
     @Override
     public URL getResource(String name) {
         URL resource = super.getResource(name);
@@ -59,23 +59,27 @@ public class ResourceLoggingClassLoader extends ClassLoader {
     public Enumeration<URL> getResources(String name) throws IOException {
         Enumeration<URL> resources = super.getResources(name);
         List<URL> alreadyLoaded = fetchRecord(name);
-        
+
         // Need to copy as we record
         List<URL> these = Collections.list(resources);
         alreadyLoaded.addAll(these);
-        
+
         // Return our copy
         return Collections.enumeration(these);
     }
 
     public List<URL> getLoadedResources(String resourceName) {
         List<URL> resources = loadedResources.get(resourceName);
-        if (resources == null) return Collections.emptyList();
+        if (resources == null) {
+            return Collections.emptyList();
+        }
         return Collections.unmodifiableList(resources);
     }
-    public Map<String,List<URL>> getLoadedResources() {
+
+    public Map<String, List<URL>> getLoadedResources() {
         return Collections.unmodifiableMap(loadedResources);
     }
+
     public void resetLoadedResources() {
         loadedResources.clear();
     }

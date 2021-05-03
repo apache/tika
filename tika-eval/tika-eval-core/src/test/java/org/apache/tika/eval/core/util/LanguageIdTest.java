@@ -18,11 +18,11 @@ package org.apache.tika.eval.core.util;
 
 import java.util.List;
 
+import org.junit.Assert;
+import org.junit.Test;
 
 import org.apache.tika.eval.core.langid.LanguageIDWrapper;
 import org.apache.tika.language.detect.LanguageResult;
-import org.junit.Assert;
-import org.junit.Test;
 
 public class LanguageIdTest {
     @Test(timeout = 10000)

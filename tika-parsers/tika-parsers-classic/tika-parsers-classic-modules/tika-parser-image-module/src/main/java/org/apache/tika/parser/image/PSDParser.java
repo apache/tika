@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.image;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
+
 import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
@@ -26,6 +28,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
@@ -38,17 +43,13 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.xmp.JempboxExtractor;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
-import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
  * Parser for the Adobe Photoshop PSD File Format.
  * <p/>
  * Documentation on the file format is available from
  * http://www.adobe.com/devnet-apps/photoshop/fileformatashtml/PhotoshopFileFormats.htm
- *
+ * <p>
  * An MIT-licensed python parser with test files is:
  * https://github.com/psd-tools/psd-tools
  */
@@ -59,9 +60,8 @@ public class PSDParser extends AbstractParser {
      */
     private static final long serialVersionUID = 883387734607994914L;
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
-                    MediaType.image("vnd.adobe.photoshop"))));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
+            new HashSet<MediaType>(Arrays.asList(MediaType.image("vnd.adobe.photoshop"))));
 
     private static final int MAX_DATA_LENGTH_BYTES = 10_000_000;
     private static final int MAX_BLOCKS = 10000;
@@ -72,10 +72,8 @@ public class PSDParser extends AbstractParser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
         // Check for the magic header signature
         byte[] signature = new byte[4];
         IOUtils.readFully(stream, signature);
@@ -177,22 +175,23 @@ public class PSDParser extends AbstractParser {
         private static final int ID_URL = 0x040B;
         private static final int ID_AUTO_SAVE_FILE_PATH = 0x043E;
         private static final int ID_THUMBNAIL_RESOURCE = 0x040C;
-
+        static int counter = 0;
         private final int maxDataLengthBytes;
         private int id;
         private String name;
         private byte[] data;
         private int totalLength;
-        static int counter = 0;
 
-        private ResourceBlock(InputStream stream, int maxDataLengthBytes) throws IOException, TikaException {
+        private ResourceBlock(InputStream stream, int maxDataLengthBytes)
+                throws IOException, TikaException {
             this.maxDataLengthBytes = maxDataLengthBytes;
             counter++;
             // Verify the signature
             long sig = EndianUtils.readIntBE(stream);
             if (sig != SIGNATURE) {
-                throw new TikaException("Invalid Image Resource Block Signature Found, got " +
-                        sig + " 0x" + Long.toHexString(sig) + " but the spec defines " + SIGNATURE);
+                throw new TikaException(
+                        "Invalid Image Resource Block Signature Found, got " + sig + " 0x" +
+                                Long.toHexString(sig) + " but the spec defines " + SIGNATURE);
             }
 
             // Read the block
@@ -222,22 +221,22 @@ public class PSDParser extends AbstractParser {
 
             int dataLen = EndianUtils.readIntBE(stream);
             if (dataLen < 0) {
-                throw new TikaException("data length must be >= 0: "+dataLen);
+                throw new TikaException("data length must be >= 0: " + dataLen);
             }
             if (dataLen % 2 == 1) {
                 // Data Length is even padded
                 dataLen = dataLen + 1;
             }
             //protect against overflow
-            if (Integer.MAX_VALUE-dataLen < nameLen+10) {
-                throw new TikaException("data length is too long:"+dataLen);
+            if (Integer.MAX_VALUE - dataLen < nameLen + 10) {
+                throw new TikaException("data length is too long:" + dataLen);
             }
             totalLength = 4 + 2 + nameLen + 4 + dataLen;
             // Do we have use for the data segment?
             if (captureData(id)) {
                 if (dataLen > maxDataLengthBytes) {
-                    throw new TikaException("data length must be < " +
-                            maxDataLengthBytes + ": " + dataLen);
+                    throw new TikaException(
+                            "data length must be < " + maxDataLengthBytes + ": " + dataLen);
                 }
                 data = new byte[dataLen];
                 IOUtils.readFully(stream, data);

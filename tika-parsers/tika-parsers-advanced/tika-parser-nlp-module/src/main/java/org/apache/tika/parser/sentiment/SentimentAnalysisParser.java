@@ -28,6 +28,11 @@ import java.util.Set;
 import opennlp.tools.sentiment.SentimentME;
 import opennlp.tools.sentiment.SentimentModel;
 import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -38,10 +43,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * This parser classifies documents based on the sentiment of document.
@@ -49,12 +50,11 @@ import org.xml.sax.SAXException;
  */
 public class SentimentAnalysisParser extends AbstractParser implements Initializable {
 
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections
-            .singleton(MediaType.application("sentiment"));
+    public static final String DEF_MODEL =
+            "https://raw.githubusercontent.com/USCDataScience/SentimentAnalysisParser/master/sentiment-models/src/main/resources/edu/usc/irds/sentiment/en-netflix-sentiment.bin";
+    private static final Set<MediaType> SUPPORTED_TYPES =
+            Collections.singleton(MediaType.application("sentiment"));
     private static final Logger LOG = LoggerFactory.getLogger(SentimentAnalysisParser.class);
-
-    public static final String DEF_MODEL = "https://raw.githubusercontent.com/USCDataScience/SentimentAnalysisParser/master/sentiment-models/src/main/resources/edu/usc/irds/sentiment/en-netflix-sentiment.bin";
-
     private SentimentME classifier;
 
     /**
@@ -63,8 +63,10 @@ public class SentimentAnalysisParser extends AbstractParser implements Initializ
      * <br/>
      * The path could be one of the following:
      * <ul>
-     * <li>a HTTP or HTTPS URL (Not recommended for production use since no caching is implemented) </li>
-     * <li>an absolute or relative path on local file system (recommended for production use in standalone mode)</li>
+     * <li>a HTTP or HTTPS URL (Not recommended for production use since no caching is
+     * implemented) </li>
+     * <li>an absolute or relative path on local file system (recommended for production use in
+     * standalone mode)</li>
      * <li>a relative path known to class loader (Especially useful in distributed environments,
      * recommended for advanced users</li>
      * </ul>
@@ -107,9 +109,11 @@ public class SentimentAnalysisParser extends AbstractParser implements Initializ
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler handler) throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler handler)
+            throws TikaConfigException {
         //TODO -- what do we want to check?
     }
+
     /**
      * Returns the types supported
      *
@@ -130,9 +134,8 @@ public class SentimentAnalysisParser extends AbstractParser implements Initializ
      * @param context  the context for the parser
      */
     @Override
-    public void parse(InputStream stream, ContentHandler handler,
-                      Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
         if (classifier == null) {
             LOG.warn(getClass().getSimpleName() + " is not configured properly.");
             return;

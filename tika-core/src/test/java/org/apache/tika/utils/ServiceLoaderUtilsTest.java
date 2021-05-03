@@ -16,13 +16,7 @@
  */
 package org.apache.tika.utils;
 
-import org.apache.custom.detect.MyCustomDetector;
-import org.apache.tika.detect.Detector;
-import org.apache.tika.detect.EmptyDetector;
-import org.apache.tika.detect.FileCommandDetector;
-import org.apache.tika.detect.OverrideDetector;
-import org.apache.tika.detect.ZeroSizeFileDetector;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,7 +24,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-import static org.junit.Assert.assertEquals;
+import org.apache.custom.detect.MyCustomDetector;
+import org.junit.Test;
+
+import org.apache.tika.detect.Detector;
+import org.apache.tika.detect.EmptyDetector;
+import org.apache.tika.detect.FileCommandDetector;
+import org.apache.tika.detect.OverrideDetector;
+import org.apache.tika.detect.ZeroSizeFileDetector;
 
 public class ServiceLoaderUtilsTest {
 
@@ -40,13 +41,8 @@ public class ServiceLoaderUtilsTest {
         //by the private service loading in DefaultDetector.
         //This tests that a custom detector always comes first
         //and then reverse alphabetical order
-        Detector[] detectors = new Detector[]{
-                new MyCustomDetector(),
-                new EmptyDetector(),
-                new FileCommandDetector(),
-                new OverrideDetector(),
-                new ZeroSizeFileDetector()
-        };
+        Detector[] detectors = new Detector[]{new MyCustomDetector(), new EmptyDetector(),
+                new FileCommandDetector(), new OverrideDetector(), new ZeroSizeFileDetector()};
         List<Detector> expected = Arrays.asList(detectors);
         List<Detector> shuffled = new ArrayList<>();
         shuffled.addAll(expected);
@@ -54,7 +50,7 @@ public class ServiceLoaderUtilsTest {
         for (int i = 0; i < 10; i++) {
             Collections.shuffle(shuffled, random);
             ServiceLoaderUtils.sortLoadedClasses(shuffled);
-            assertEquals("failed on iteration "+i, expected, shuffled);
+            assertEquals("failed on iteration " + i, expected, shuffled);
 
         }
     }

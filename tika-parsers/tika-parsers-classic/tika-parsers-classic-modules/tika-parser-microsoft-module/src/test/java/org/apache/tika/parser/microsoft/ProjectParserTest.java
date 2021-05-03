@@ -20,35 +20,36 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
 
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
 
 /**
  * Tests for Microsoft Project (MPP) Files.
- *
+ * <p>
  * Note - we don't currently have a dedicated Project
- *  Parser, all we have is the common office metadata
+ * Parser, all we have is the common office metadata
  */
 public class ProjectParserTest {
 
     @Test
     public void testProject2003() throws Exception {
-        try (InputStream input = ProjectParserTest.class.getResourceAsStream(
-                "/test-documents/testPROJECT2003.mpp")) {
+        try (InputStream input = ProjectParserTest.class
+                .getResourceAsStream("/test-documents/testPROJECT2003.mpp")) {
             doTestProject(input);
         }
     }
 
     @Test
     public void testProject2007() throws Exception {
-        try (InputStream input = ProjectParserTest.class.getResourceAsStream(
-                "/test-documents/testPROJECT2007.mpp")) {
+        try (InputStream input = ProjectParserTest.class
+                .getResourceAsStream("/test-documents/testPROJECT2007.mpp")) {
             doTestProject(input);
         }
     }
@@ -58,12 +59,12 @@ public class ProjectParserTest {
         ContentHandler handler = new BodyContentHandler();
         new OfficeParser().parse(input, handler, metadata, new ParseContext());
 
-        assertEquals(
-                "application/vnd.ms-project",
-                metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/vnd.ms-project", metadata.get(Metadata.CONTENT_TYPE));
 
-        assertEquals("The quick brown fox jumps over the lazy dog", metadata.get(TikaCoreProperties.TITLE));
-        assertEquals("Gym class featuring a brown fox and lazy dog", metadata.get(OfficeOpenXMLCore.SUBJECT));
+        assertEquals("The quick brown fox jumps over the lazy dog",
+                metadata.get(TikaCoreProperties.TITLE));
+        assertEquals("Gym class featuring a brown fox and lazy dog",
+                metadata.get(OfficeOpenXMLCore.SUBJECT));
         assertEquals("Nevin Nollop", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("", metadata.get(TikaCoreProperties.MODIFIER));
         assertEquals("Pangram, fox, dog", metadata.get(TikaCoreProperties.SUBJECT));

@@ -1,4 +1,3 @@
-package org.apache.tika.langdetect.opennlp;
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -15,6 +14,7 @@ package org.apache.tika.langdetect.opennlp;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.langdetect.opennlp;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -45,7 +45,6 @@ import opennlp.tools.util.normalizer.CharSequenceNormalizer;
  * for the inspiration for many of the design
  * components of this detector.
  * </p>
- *
  */
 class ProbingLanguageDetector implements LanguageDetector {
 
@@ -103,7 +102,8 @@ class ProbingLanguageDetector implements LanguageDetector {
      *
      * @param model the language detector model
      */
-    public ProbingLanguageDetector(LanguageDetectorModel model, CharSequenceNormalizer ... normalizers) {
+    public ProbingLanguageDetector(LanguageDetectorModel model,
+                                   CharSequenceNormalizer... normalizers) {
         this.model = model;
         this.normalizer = new AggregateCharSequenceNormalizer(normalizers);
     }
@@ -113,7 +113,7 @@ class ProbingLanguageDetector implements LanguageDetector {
         return predictLanguages(content)[0];
     }
 
-        @Override
+    @Override
     public opennlp.tools.langdetect.Language[] predictLanguages(CharSequence content) {
         //list of the languages that received the highest
         //confidence over the last n chunk detections
@@ -172,14 +172,17 @@ class ProbingLanguageDetector implements LanguageDetector {
             i++;
         }
         double[] eval = model.getMaxentModel().eval(allGrams, counts);
-        opennlp.tools.langdetect.Language[] arr = new opennlp.tools.langdetect.Language[eval.length];
+        opennlp.tools.langdetect.Language[] arr =
+                new opennlp.tools.langdetect.Language[eval.length];
         for (int j = 0; j < eval.length; j++) {
-            arr[j] = new opennlp.tools.langdetect.Language(model.getMaxentModel().getOutcome(j), eval[j]);
+            arr[j] = new opennlp.tools.langdetect.Language(model.getMaxentModel().getOutcome(j),
+                    eval[j]);
         }
 
         Arrays.sort(arr, (o1, o2) -> Double.compare(o2.getConfidence(), o1.getConfidence()));
         return arr;
     }
+
     /**
      * Size in codepoints at which to chunk the
      * text for detection.
@@ -210,6 +213,7 @@ class ProbingLanguageDetector implements LanguageDetector {
     public int getMinConsecImprovements() {
         return minConsecImprovements;
     }
+
     /**
      * Number of consecutive improvements in the
      * confidence of the most likely language required
@@ -224,6 +228,7 @@ class ProbingLanguageDetector implements LanguageDetector {
     /**
      * The minimum difference between the highest confidence and the
      * second highest confidence required to stop.
+     *
      * @return the minimum difference required
      */
     public double getMinDiff() {
@@ -233,8 +238,9 @@ class ProbingLanguageDetector implements LanguageDetector {
     /**
      * The minimum difference between the highest confidence and the
      * second highest confidence required to stop.
-     *
+     * <p>
      * Throws {@link IllegalArgumentException} if &lt; 0.0
+     *
      * @param minDiff
      */
     public void setMinDiff(double minDiff) {
@@ -283,6 +289,7 @@ class ProbingLanguageDetector implements LanguageDetector {
         }
         return languages;
     }
+
     /**
      * Override this for different behavior to determine if there is enough
      * confidence in the predictions to stop.
@@ -304,8 +311,7 @@ class ProbingLanguageDetector implements LanguageDetector {
         }
         predictionsQueue.add(newPredictions);
         if (minDiff > 0.0 &&
-                newPredictions[0].getConfidence() -
-                        newPredictions[1].getConfidence() < minDiff) {
+                newPredictions[0].getConfidence() - newPredictions[1].getConfidence() < minDiff) {
             return false;
         }
         String lastLang = null;
@@ -352,12 +358,13 @@ class ProbingLanguageDetector implements LanguageDetector {
             this.originalLength = originalLength;
         }
     }
+
     private static class CharIntNGrammer implements Iterator<String> {
+        private final int minGram;
+        private final int maxGram;
         private String next;
         private int pos = 0;
         private int[] buffer;
-        private final int minGram;
-        private final int maxGram;
         private int currGram;
 
         CharIntNGrammer(int minGram, int maxGram) {
@@ -381,8 +388,7 @@ class ProbingLanguageDetector implements LanguageDetector {
                 if (pos + maxGram < buffer.length) {
                     //lowercase the last character; we've already
                     //lowercased all previous chars
-                    buffer[pos + maxGram] =
-                            Character.toLowerCase(buffer[pos + maxGram]);
+                    buffer[pos + maxGram] = Character.toLowerCase(buffer[pos + maxGram]);
                 }
             }
             if (pos + currGram > buffer.length) {
@@ -399,7 +405,6 @@ class ProbingLanguageDetector implements LanguageDetector {
         }
 
         /**
-         *
          * @param chunk this is the chunk that will be ngrammed.  Note:
          *              The ngrammer will lowercase the codepoints in place!
          *              If you don't want the original data transformed,
@@ -426,6 +431,7 @@ class ProbingLanguageDetector implements LanguageDetector {
 
     private static class MutableInt {
         private int i;
+
         MutableInt() {
             this(0);
         }

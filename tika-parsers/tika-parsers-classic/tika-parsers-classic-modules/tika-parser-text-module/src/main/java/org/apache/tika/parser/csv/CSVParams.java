@@ -26,7 +26,9 @@ public class CSVParams {
     private Character delimiter = null;
     private Charset charset = null;
 
-    CSVParams() {}
+    CSVParams() {
+    }
+
     CSVParams(MediaType mediaType, Charset charset) {
         this.mediaType = mediaType;
         this.charset = charset;

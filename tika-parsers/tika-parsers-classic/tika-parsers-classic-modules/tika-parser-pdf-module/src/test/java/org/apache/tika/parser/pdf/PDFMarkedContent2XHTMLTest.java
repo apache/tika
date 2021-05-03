@@ -16,16 +16,17 @@
  */
 package org.apache.tika.parser.pdf;
 
+import static org.junit.Assert.assertEquals;
+
+import java.util.List;
+
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import java.util.List;
-
-import static org.junit.Assert.assertEquals;
 
 
 public class PDFMarkedContent2XHTMLTest extends TikaTest {
@@ -64,13 +65,15 @@ public class PDFMarkedContent2XHTMLTest extends TikaTest {
 
     @Test
     public void testChildAttachments() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata("testPDF_childAttachments.pdf", MARKUP_CONTEXT);
+        List<Metadata> metadataList =
+                getRecursiveMetadata("testPDF_childAttachments.pdf", MARKUP_CONTEXT);
 
         //make sure that embedded docs are still getting extracted
         assertEquals(3, metadataList.size());
 
         String xml = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
-        //the point here is that in the annotations (that we were grabbing by the classic PDF2XHTML),
+        //the point here is that in the annotations (that we
+        // were grabbing by the classic PDF2XHTML),
         //the <a> content is identical to the href.  Here, they are not, which we only get from
         //marked up content...victory!!!
         assertContains("<a href=\"http://www.irs.gov\">IRS.gov</a>", xml);

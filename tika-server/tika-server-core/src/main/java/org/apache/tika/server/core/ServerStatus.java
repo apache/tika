@@ -16,79 +16,28 @@
  */
 package org.apache.tika.server.core;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class ServerStatus {
 
-    enum DIRECTIVES {
-        PING((byte)0),
-        PING_ACTIVE_SERVER_TASKS((byte)1),
-        SHUTDOWN((byte)2);
-
-        private final byte b;
-        DIRECTIVES(byte b) {
-            this.b = b;
-        }
-        byte getByte() { return b;}
-    }
-
-    public enum STATUS {
-        INITIALIZING(0),
-        OPERATING(1),
-        HIT_MAX_FILES(2),
-        TIMEOUT(3),
-        ERROR(4),
-        PARENT_REQUESTED_SHUTDOWN(5),
-        PARENT_EXCEPTION(6),
-        OFF(7);
-
-        private final int shutdownCode;
-
-        static STATUS lookup(int i) {
-            STATUS[] values = STATUS.values();
-            if (i < 0 || i >= values.length) {
-                throw new ArrayIndexOutOfBoundsException(i +
-                        " is not acceptable for an array of length "+values.length);
-            }
-            return STATUS.values()[i];
-        }
-
-        STATUS(int shutdownCode) {
-            this.shutdownCode = shutdownCode;
-        }
-        int getShutdownCode() {
-            return shutdownCode;
-        }
-        int getInt() { return shutdownCode;}
-
-    }
-
-    public enum TASK {
-        PARSE,
-        DETECT,
-        TRANSLATE
-    };
     private static final Logger LOG = LoggerFactory.getLogger(ServerStatus.class);
-
     private final String serverId;
     private final int numRestarts;
+
+    private final boolean isLegacy;
     private AtomicLong counter = new AtomicLong(0);
     private Map<Long, TaskStatus> tasks = new HashMap<>();
-    private final boolean isLegacy;
     private STATUS status = STATUS.OPERATING;
-
     private volatile long lastStarted = Instant.now().toEpochMilli();
-
     public ServerStatus(String serverId, int numRestarts) {
         this(serverId, numRestarts, false);
     }
-
     public ServerStatus(String serverId, int numRestarts, boolean isLegacy) {
         this.serverId = serverId;
         this.numRestarts = numRestarts;
@@ -112,16 +61,16 @@ public class ServerStatus {
     public synchronized void complete(long taskId) throws IllegalArgumentException {
         TaskStatus status = tasks.remove(taskId);
         if (status == null) {
-            throw new IllegalArgumentException("TaskId is not in map:"+taskId);
+            throw new IllegalArgumentException("TaskId is not in map:" + taskId);
         }
-    }
-
-    public synchronized void setStatus(STATUS status) {
-        this.status = status;
     }
 
     public synchronized STATUS getStatus() {
         return status;
+    }
+
+    public synchronized void setStatus(STATUS status) {
+        this.status = status;
     }
 
     public synchronized Map<Long, TaskStatus> getTasks() {
@@ -133,10 +82,10 @@ public class ServerStatus {
     }
 
     public long getMillisSinceLastParseStarted() {
-        return Instant.now().toEpochMilli()-lastStarted;
+        return Instant.now().toEpochMilli() - lastStarted;
     }
+
     /**
-     *
      * @return true if this is legacy, otherwise whether or not status == OPERATING.
      */
     public synchronized boolean isOperating() {
@@ -152,5 +101,52 @@ public class ServerStatus {
 
     public int getNumRestarts() {
         return numRestarts;
+    }
+
+    enum DIRECTIVES {
+        PING((byte) 0), PING_ACTIVE_SERVER_TASKS((byte) 1), SHUTDOWN((byte) 2);
+
+        private final byte b;
+
+        DIRECTIVES(byte b) {
+            this.b = b;
+        }
+
+        byte getByte() {
+            return b;
+        }
+    }
+
+    public enum STATUS {
+        INITIALIZING(0), OPERATING(1), HIT_MAX_FILES(2), TIMEOUT(3), ERROR(4),
+        PARENT_REQUESTED_SHUTDOWN(5), PARENT_EXCEPTION(6), OFF(7);
+
+        private final int shutdownCode;
+
+        STATUS(int shutdownCode) {
+            this.shutdownCode = shutdownCode;
+        }
+
+        static STATUS lookup(int i) {
+            STATUS[] values = STATUS.values();
+            if (i < 0 || i >= values.length) {
+                throw new ArrayIndexOutOfBoundsException(
+                        i + " is not acceptable for an array of length " + values.length);
+            }
+            return STATUS.values()[i];
+        }
+
+        int getShutdownCode() {
+            return shutdownCode;
+        }
+
+        int getInt() {
+            return shutdownCode;
+        }
+
+    }
+
+    public enum TASK {
+        PARSE, DETECT, TRANSLATE
     }
 }

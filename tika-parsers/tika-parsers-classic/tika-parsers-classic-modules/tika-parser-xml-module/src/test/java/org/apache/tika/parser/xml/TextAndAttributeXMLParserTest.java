@@ -16,21 +16,22 @@
  */
 package org.apache.tika.parser.xml;
 
-import org.apache.tika.TikaTest;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
+import org.apache.tika.TikaTest;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.BodyContentHandler;
 
 public class TextAndAttributeXMLParserTest extends TikaTest {
 

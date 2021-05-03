@@ -18,16 +18,15 @@
 package org.apache.tika.parser.mock;
 
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-
-import org.apache.tika.config.Field;
-import org.apache.tika.sax.XHTMLContentHandler;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import org.apache.tika.config.Field;
+import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * only parses vowels as specified in "vowel" field.
@@ -48,7 +47,7 @@ public class VowelParser extends MockParser {
         }
         String text = action.getTextContent();
         StringBuilder sb = new StringBuilder();
-        Matcher m = Pattern.compile("(?i)(["+vowel+"])").matcher(text);
+        Matcher m = Pattern.compile("(?i)([" + vowel + "])").matcher(text);
         while (m.find()) {
             sb.append(m.group(1));
         }

@@ -1,5 +1,3 @@
-package org.apache.tika.batch;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,14 +14,15 @@ package org.apache.tika.batch;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import org.apache.tika.metadata.Metadata;
+package org.apache.tika.batch;
 
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.apache.tika.metadata.Metadata;
+
 public interface OutputStreamFactory {
-  
-  public OutputStream getOutputStream(Metadata metadata) throws IOException;
+
+    public OutputStream getOutputStream(Metadata metadata) throws IOException;
 
 }

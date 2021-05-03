@@ -28,6 +28,9 @@ import org.apache.poi.hmef.HMEFMessage;
 import org.apache.poi.hmef.attribute.MAPIAttribute;
 import org.apache.poi.hmef.attribute.MAPIRtfAttribute;
 import org.apache.poi.hsmf.datatypes.MAPIProperty;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -39,8 +42,6 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * A POI-powered Tika Parser for TNEF (Transport Neutral
@@ -49,12 +50,9 @@ import org.xml.sax.SAXException;
 public class TNEFParser extends AbstractParser {
     private static final long serialVersionUID = 4611820730372823452L;
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
-                    MediaType.application("vnd.ms-tnef"),
-                    MediaType.application("ms-tnef"),
-                    MediaType.application("x-tnef")
-            )));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
+            new HashSet<MediaType>(Arrays.asList(MediaType.application("vnd.ms-tnef"),
+                    MediaType.application("ms-tnef"), MediaType.application("x-tnef"))));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -63,10 +61,8 @@ public class TNEFParser extends AbstractParser {
     /**
      * Extracts properties and text from an MS Document input stream
      */
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
 
         // We work by recursing, so get the appropriate bits
         EmbeddedDocumentExtractor embeddedExtractor =
@@ -87,11 +83,8 @@ public class TNEFParser extends AbstractParser {
         MAPIAttribute attr = msg.getMessageMAPIAttribute(MAPIProperty.RTF_COMPRESSED);
         if (attr != null && attr instanceof MAPIRtfAttribute) {
             MAPIRtfAttribute rtf = (MAPIRtfAttribute) attr;
-            handleEmbedded(
-                    "message.rtf", "application/rtf",
-                    rtf.getData(),
-                    embeddedExtractor, xhtml
-            );
+            handleEmbedded("message.rtf", "application/rtf", rtf.getData(), embeddedExtractor,
+                    xhtml);
         }
 
         // Recurse into each attachment in turn
@@ -106,10 +99,7 @@ public class TNEFParser extends AbstractParser {
                     name = "unknown" + ext;
                 }
             }
-            handleEmbedded(
-                    name, null, attachment.getContents(),
-                    embeddedExtractor, xhtml
-            );
+            handleEmbedded(name, null, attachment.getContents(), embeddedExtractor, xhtml);
         }
         xhtml.endDocument();
     }
@@ -118,16 +108,16 @@ public class TNEFParser extends AbstractParser {
                                 EmbeddedDocumentExtractor embeddedExtractor, ContentHandler handler)
             throws IOException, SAXException, TikaException {
         Metadata metadata = new Metadata();
-        if (name != null)
+        if (name != null) {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
-        if (type != null)
+        }
+        if (type != null) {
             metadata.set(Metadata.CONTENT_TYPE, type);
+        }
 
         if (embeddedExtractor.shouldParseEmbedded(metadata)) {
-            embeddedExtractor.parseEmbedded(
-                    TikaInputStream.get(contents),
-                    new EmbeddedContentHandler(handler),
-                    metadata, false);
+            embeddedExtractor.parseEmbedded(TikaInputStream.get(contents),
+                    new EmbeddedContentHandler(handler), metadata, false);
         }
     }
 }

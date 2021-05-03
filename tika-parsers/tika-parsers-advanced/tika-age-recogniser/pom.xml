@@ -17,7 +17,8 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.apache.tika</groupId>
@@ -30,7 +31,7 @@
 
   <name>Apache Tika age recogniser</name>
   <url>http://maven.apache.org</url>
-  
+
 
   <dependencies>
     <dependency>
@@ -39,7 +40,7 @@
       <version>${project.version}</version>
     </dependency>
     <!-- AgePredictor client for Tika -->
-    <dependency>  
+    <dependency>
       <groupId>edu.usc.ir</groupId>
       <artifactId>age-predictor-api</artifactId>
       <version>1.0</version>
@@ -136,6 +137,10 @@
           <groupId>com.google.protobuf</groupId>
           <artifactId>protobuf-java</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-log4j12</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -215,8 +220,8 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-log4j12</artifactId>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j-impl</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -267,27 +272,37 @@
         </configuration>
       </plugin>
       <!-- to get the OpenNLP models in the right place for AgeRecogniser: TODO: fix AgeRecogniser in next version to load from classpath -->
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-antrun-plugin</artifactId>
-            <executions>
-                <execution>
-                    <phase>generate-test-resources</phase>
-                    <goals>
-                        <goal>run</goal>
-                    </goals>
-                    <configuration>
-                        <target>
-                            <copy failonerror="false" file="${basedir}/../tika-parser-nlp-module/src/test/resources/org/apache/tika/parser/ner/opennlp/en-pos-maxent.bin" todir="${basedir}/model/opennlp/" />
-                            <copy failonerror="false" file="${basedir}/../tika-parser-nlp-module/src/test/resources/org/apache/tika/parser/ner/opennlp/en-sent.bin" todir="${basedir}/model/opennlp/" />
-			                <copy failonerror="false" file="${basedir}/../tika-parser-nlp-module/src/test/resources/org/apache/tika/parser/ner/opennlp/en-token.bin" todir="${basedir}/model/opennlp/" />
-			                <copy failonerror="false" file="${basedir}/../tika-age-recogniser/src/test/resources/org/apache/tika/parser/recognition/classify-bigram.bin" todir="${basedir}/model/org/apache/tika/parser/recognition/" />
-			                <copy failonerror="false" file="${basedir}/../tika-age-recogniser/src/test/resources/org/apache/tika/parser/recognition/regression-global.bin" todir="${basedir}/model/org/apache/tika/parser/recognition/" />
-                        </target>
-                    </configuration>
-                </execution>
-            </executions>
-        </plugin>      
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>generate-test-resources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <copy failonerror="false"
+                      file="${basedir}/../tika-parser-nlp-module/src/test/resources/org/apache/tika/parser/ner/opennlp/en-pos-maxent.bin"
+                      todir="${basedir}/model/opennlp/"/>
+                <copy failonerror="false"
+                      file="${basedir}/../tika-parser-nlp-module/src/test/resources/org/apache/tika/parser/ner/opennlp/en-sent.bin"
+                      todir="${basedir}/model/opennlp/"/>
+                <copy failonerror="false"
+                      file="${basedir}/../tika-parser-nlp-module/src/test/resources/org/apache/tika/parser/ner/opennlp/en-token.bin"
+                      todir="${basedir}/model/opennlp/"/>
+                <copy failonerror="false"
+                      file="${basedir}/../tika-age-recogniser/src/test/resources/org/apache/tika/parser/recognition/classify-bigram.bin"
+                      todir="${basedir}/model/org/apache/tika/parser/recognition/"/>
+                <copy failonerror="false"
+                      file="${basedir}/../tika-age-recogniser/src/test/resources/org/apache/tika/parser/recognition/regression-global.bin"
+                      todir="${basedir}/model/org/apache/tika/parser/recognition/"/>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
 
     </plugins>
   </build>

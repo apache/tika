@@ -16,12 +16,13 @@
  */
 package org.apache.tika.parser.audio;
 
-import static org.junit.Assert.assertEquals;
 import static org.apache.tika.TikaTest.assertContains;
+import static org.junit.Assert.assertEquals;
+
+import org.junit.Test;
 
 import org.apache.tika.Tika;
 import org.apache.tika.metadata.Metadata;
-import org.junit.Test;
 
 public class MidiParserTest {
 
@@ -29,8 +30,8 @@ public class MidiParserTest {
     public void testMID() throws Exception {
         String path = "/test-documents/testMID.mid";
         Metadata metadata = new Metadata();
-        String content = new Tika().parseToString(
-                MidiParserTest.class.getResourceAsStream(path), metadata);
+        String content =
+                new Tika().parseToString(MidiParserTest.class.getResourceAsStream(path), metadata);
 
         assertEquals("audio/midi", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("2", metadata.get("tracks"));

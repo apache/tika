@@ -30,7 +30,9 @@ import java.util.Set;
 
 class ClassLoaderProxy extends ClassLoader implements ForkProxy {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = -7303109260448540420L;
 
     /**
@@ -81,8 +83,7 @@ class ClassLoaderProxy extends ClassLoader implements ForkProxy {
     }
 
     @Override
-    protected synchronized Enumeration<URL> findResources(String name)
-            throws IOException {
+    protected synchronized Enumeration<URL> findResources(String name) throws IOException {
         // Send a request to load the resources
         output.write(ForkServer.RESOURCE);
         output.write(resource);
@@ -99,8 +100,7 @@ class ClassLoaderProxy extends ClassLoader implements ForkProxy {
     }
 
     @Override
-    protected synchronized Class<?> findClass(String name)
-            throws ClassNotFoundException {
+    protected synchronized Class<?> findClass(String name) throws ClassNotFoundException {
         try {
             // Send a request to load the class data
             output.write(ForkServer.RESOURCE);

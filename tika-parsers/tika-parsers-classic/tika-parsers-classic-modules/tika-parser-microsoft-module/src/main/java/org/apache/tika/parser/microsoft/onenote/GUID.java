@@ -17,38 +17,62 @@
 package org.apache.tika.parser.microsoft.onenote;
 
 
-import org.apache.tika.utils.StringUtils;
-
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Locale;
 
+import org.apache.tika.utils.StringUtils;
+
 class GUID implements Comparable<GUID> {
     int[] guid;
 
+    public GUID(int[] guid) {
+        this.guid = guid;
+    }
+
     /**
-     * Converts a GUID of format: {AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE} (in bytes) to a GUID object.
+     * Converts a GUID of format: {AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE} (in bytes) to a GUID
+     * object.
      *
-     * @param guid The bytes that contain string in UTF-16 format of {AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE}
+     * @param guid The bytes that contai  string in UTF-16 format of {AAAAAAAA-BBBB-CCCC-DDDD
+     *             -EEEEEEEEEEEE}
      * @return GUID object parsed from guid bytes.
      */
     public static GUID fromCurlyBraceUTF16Bytes(byte[] guid) {
         int[] intGuid = new int[16];
         String utf16Str = new String(guid, StandardCharsets.UTF_16LE).replaceAll("\\{", "")
-          .replaceAll("-", "").replaceAll("}", "");
+                .replaceAll("-", "").replaceAll("}", "");
         for (int i = 0; i < utf16Str.length(); i += 2) {
-            intGuid[i / 2] = Integer.parseUnsignedInt("" + utf16Str.charAt(i) + utf16Str.charAt(i + 1), 16);
+            intGuid[i / 2] =
+                    Integer.parseUnsignedInt("" + utf16Str.charAt(i) + utf16Str.charAt(i + 1), 16);
         }
         return new GUID(intGuid);
+    }
+
+    public static int memcmp(int[] b1, int[] b2, int sz) {
+        for (int i = 0; i < sz; i++) {
+            if (b1[i] != b2[i]) {
+                if ((b1[i] >= 0 && b2[i] >= 0) || (b1[i] < 0 && b2[i] < 0)) {
+                    return b1[i] - b2[i];
+                }
+                if (b1[i] < 0 && b2[i] >= 0) {
+                    return 1;
+                }
+                if (b2[i] < 0 && b1[i] >= 0) {
+                    return -1;
+                }
+            }
+        }
+        return 0;
+    }
+
+    public static GUID nil() {
+        return new GUID(new int[16]);
     }
 
     @Override
     public int compareTo(GUID o) {
         return memcmp(guid, o.guid, 16);
-    }
-
-    public GUID(int[] guid) {
-        this.guid = guid;
     }
 
     @Override
@@ -66,23 +90,6 @@ class GUID implements Comparable<GUID> {
     @Override
     public int hashCode() {
         return Arrays.hashCode(guid);
-    }
-
-    public static int memcmp(int b1[], int b2[], int sz) {
-        for (int i = 0; i < sz; i++) {
-            if (b1[i] != b2[i]) {
-                if ((b1[i] >= 0 && b2[i] >= 0) || (b1[i] < 0 && b2[i] < 0)) {
-                    return b1[i] - b2[i];
-                }
-                if (b1[i] < 0 && b2[i] >= 0) {
-                    return 1;
-                }
-                if (b2[i] < 0 && b1[i] >= 0) {
-                    return -1;
-                }
-            }
-        }
-        return 0;
     }
 
     @Override
@@ -110,10 +117,6 @@ class GUID implements Comparable<GUID> {
         }
         sb.append("}");
         return sb.toString().toUpperCase(Locale.US);
-    }
-
-    public static GUID nil() {
-        return new GUID(new int[16]);
     }
 
     public int[] getGuid() {

@@ -37,10 +37,11 @@ public class CompositeEncodingDetector implements EncodingDetector, Serializable
     private final List<EncodingDetector> detectors;
 
     public CompositeEncodingDetector(List<EncodingDetector> detectors,
-                                     Collection<Class<? extends EncodingDetector>> excludeEncodingDetectors) {
+                                     Collection<Class<? extends EncodingDetector>>
+                                             excludeEncodingDetectors) {
         this.detectors = new LinkedList<>();
         for (EncodingDetector encodingDetector : detectors) {
-            if (! isExcluded(excludeEncodingDetectors, encodingDetector.getClass())) {
+            if (!isExcluded(excludeEncodingDetectors, encodingDetector.getClass())) {
                 this.detectors.add(encodingDetector);
             }
         }
@@ -53,8 +54,7 @@ public class CompositeEncodingDetector implements EncodingDetector, Serializable
     }
 
     /**
-     *
-     * @param input text document input stream, or <code>null</code>
+     * @param input    text document input stream, or <code>null</code>
      * @param metadata input metadata for the document
      * @return the detected Charset or null if no charset could be detected
      * @throws IOException
@@ -74,16 +74,20 @@ public class CompositeEncodingDetector implements EncodingDetector, Serializable
         return Collections.unmodifiableList(detectors);
     }
 
-    private boolean isExcluded(Collection<Class<? extends EncodingDetector>> excludeEncodingDetectors,
-                               Class<? extends EncodingDetector> encodingDetector) {
+    private boolean isExcluded(
+            Collection<Class<? extends EncodingDetector>> excludeEncodingDetectors,
+            Class<? extends EncodingDetector> encodingDetector) {
         return excludeEncodingDetectors.contains(encodingDetector) ||
                 assignableFrom(excludeEncodingDetectors, encodingDetector);
     }
 
-    private boolean assignableFrom(Collection<Class<? extends EncodingDetector>> excludeEncodingDetectors,
-                                   Class<? extends EncodingDetector> encodingDetector) {
+    private boolean assignableFrom(
+            Collection<Class<? extends EncodingDetector>> excludeEncodingDetectors,
+            Class<? extends EncodingDetector> encodingDetector) {
         for (Class<? extends EncodingDetector> e : excludeEncodingDetectors) {
-            if (e.isAssignableFrom(encodingDetector)) return true;
+            if (e.isAssignableFrom(encodingDetector)) {
+                return true;
+            }
         }
         return false;
     }

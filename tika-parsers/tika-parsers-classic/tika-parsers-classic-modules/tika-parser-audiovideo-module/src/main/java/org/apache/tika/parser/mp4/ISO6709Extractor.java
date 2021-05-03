@@ -49,11 +49,13 @@ class ISO6709Extractor implements Serializable {
     private String getLng(String sign, String integer, String flot) {
         String flotNormed = (flot == null) ? "" : flot;
         if (integer.length() == 3) {
-            return sign+integer+flotNormed;
+            return sign + integer + flotNormed;
         } else if (integer.length() == 5) {
-            return calcDecimalDegrees(sign, integer.substring(0,3), integer.substring(3,5)+flotNormed);
+            return calcDecimalDegrees(sign, integer.substring(0, 3),
+                    integer.substring(3, 5) + flotNormed);
         } else if (integer.length() == 7) {
-            return calcDecimalDegrees(sign, integer.substring(0,3), integer.substring(3,5), integer.substring(5,7)+flotNormed);
+            return calcDecimalDegrees(sign, integer.substring(0, 3), integer.substring(3, 5),
+                    integer.substring(5, 7) + flotNormed);
         } else {
             //ignore problems for now?
         }
@@ -63,11 +65,13 @@ class ISO6709Extractor implements Serializable {
     private String getLat(String sign, String integer, String flot) {
         String flotNormed = (flot == null) ? "" : flot;
         if (integer.length() == 2) {
-            return sign+integer+flotNormed;
+            return sign + integer + flotNormed;
         } else if (integer.length() == 4) {
-            return calcDecimalDegrees(sign, integer.substring(0,2), integer.substring(2,4)+flotNormed);
+            return calcDecimalDegrees(sign, integer.substring(0, 2),
+                    integer.substring(2, 4) + flotNormed);
         } else if (integer.length() == 6) {
-            return calcDecimalDegrees(sign, integer.substring(0,2), integer.substring(2,4), integer.substring(4,6)+flotNormed);
+            return calcDecimalDegrees(sign, integer.substring(0, 2), integer.substring(2, 4),
+                    integer.substring(4, 6) + flotNormed);
         } else {
             //ignore problems for now?
         }
@@ -76,14 +80,14 @@ class ISO6709Extractor implements Serializable {
 
     private String calcDecimalDegrees(String sign, String degrees, String minutes) {
         double d = Integer.parseInt(degrees);
-        d += (Double.parseDouble(minutes)/60);
-        return sign+String.format(Locale.ROOT, "%.8f", d);
+        d += (Double.parseDouble(minutes) / 60);
+        return sign + String.format(Locale.ROOT, "%.8f", d);
     }
 
     private String calcDecimalDegrees(String sign, String degrees, String minutes, String seconds) {
         double d = Integer.parseInt(degrees);
-        d += (Double.parseDouble(minutes)/60);
-        d += (Double.parseDouble(seconds)/3600);
-        return sign+String.format(Locale.ROOT, "%.8f", d);
+        d += (Double.parseDouble(minutes) / 60);
+        d += (Double.parseDouble(seconds) / 3600);
+        return sign + String.format(Locale.ROOT, "%.8f", d);
     }
 }

@@ -28,8 +28,10 @@ import org.apache.poi.hwpf.usermodel.Paragraph;
 /**
  * Computes the number text which goes at the beginning of each list paragraph
  * <p/>
- * <p><em>Note:</em> This class only handles the raw number text and does not apply any further formatting as described in [MS-DOC], v20140721, 2.4.6.3, Part 3 to it.<p>
- * <p><em>Note 2:</em> The {@code tplc}, a visual override for the appearance of list levels, as defined in [MS-DOC], v20140721, 2.9.328 is not taken care of in this class.</p>
+ * <p><em>Note:</em> This class only handles the raw number text and does not apply any further
+ * formatting as described in [MS-DOC], v20140721, 2.4.6.3, Part 3 to it.<p>
+ * <p><em>Note 2:</em> The {@code tplc}, a visual override for the appearance of list levels, as
+ * defined in [MS-DOC], v20140721, 2.9.328 is not taken care of in this class.</p>
  * <p>Further, this class does not yet handle overrides</p>
  */
 public class ListManager extends AbstractListManager {
@@ -47,20 +49,28 @@ public class ListManager extends AbstractListManager {
     /**
      * Get the formatted number for a given paragraph
      * <p/>
-     * <p><em>Note:</em> This only works correctly if called subsequently for <em>all</em> paragraphs in a valid selection (main document, text field, ...) which are part of a list.</p>
+     * <p><em>Note:</em> This only works correctly if called subsequently for <em>all</em>
+     * paragraphs in a valid selection (main document, text field, ...) which are part of a list
+     * .</p>
      *
      * @param paragraph list paragraph to process
-     * @return String which represents the numbering of this list paragraph; never {@code null}, can be empty string, though, 
-     *        if something goes wrong in getList()
-     * @throws IllegalArgumentException If the given paragraph is {@code null} or is not part of a list
+     * @return String which represents the numbering of this list paragraph; never {@code null},
+     * can be empty string, though,
+     * if something goes wrong in getList()
+     * @throws IllegalArgumentException If the given paragraph is {@code null} or is not part of
+     * a list
      */
     public String getFormattedNumber(final Paragraph paragraph) {
-        if (paragraph == null) throw new IllegalArgumentException("Given paragraph cannot be null.");
-        if (!paragraph.isInList()) throw new IllegalArgumentException("Can only process list paragraphs.");
+        if (paragraph == null) {
+            throw new IllegalArgumentException("Given paragraph cannot be null.");
+        }
+        if (!paragraph.isInList()) {
+            throw new IllegalArgumentException("Can only process list paragraphs.");
+        }
         //lsid is equivalent to docx's abnum
         //ilfo is equivalent to docx's num
         int currAbNumId = -1;
-        try{
+        try {
             currAbNumId = paragraph.getList().getLsid();
         } catch (NoSuchElementException e) {
             //somewhat frequent exception when initializing HWPFList
@@ -108,7 +118,8 @@ public class ListManager extends AbstractListManager {
         restart = listLevel.getRestart();
         isLegal = listLevel.isLegalNumbering();
         numFmt = convertToNewNumFormat(listLevel.getNumberFormat());
-        lvlText = convertToNewNumberText(listLevel.getNumberText(), listLevel.getLevelNumberingPlaceholderOffsets());
+        lvlText = convertToNewNumberText(listLevel.getNumberText(),
+                listLevel.getLevelNumberingPlaceholderOffsets());
         return new LevelTuple(start, restart, lvlText, numFmt, isLegal);
     }
 
@@ -145,7 +156,7 @@ public class ListManager extends AbstractListManager {
             if (offset == 0) {
                 break;
             }
-            if (offset-1 < last || offset > numberText.length()) {
+            if (offset - 1 < last || offset > numberText.length()) {
                 //something went wrong.
                 //silently stop
                 break;

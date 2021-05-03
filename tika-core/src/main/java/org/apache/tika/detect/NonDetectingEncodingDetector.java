@@ -49,12 +49,12 @@ public class NonDetectingEncodingDetector implements EncodingDetector {
         return charset;
     }
 
+    public Charset getCharset() {
+        return charset;
+    }
+
     @Field
     private void setCharset(String charsetName) {
         this.charset = Charset.forName(charsetName);
-    }
-
-    public Charset getCharset() {
-        return charset;
     }
 }

@@ -16,44 +16,34 @@
  */
 package org.apache.tika.server.core;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.URISyntaxException;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import javax.ws.rs.ProcessingException;
+import javax.ws.rs.core.Response;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.cxf.jaxrs.client.WebClient;
-import org.apache.tika.TikaTest;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.serialization.JsonMetadataList;
-import org.apache.tika.utils.ProcessUtils;
 import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.ProcessingException;
-import javax.ws.rs.core.Response;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.net.ConnectException;
-import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.security.Permission;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.List;
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.utils.ProcessUtils;
 
 public class TikaServerIntegrationTest extends IntegrationTestBase {
 
@@ -70,8 +60,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
 
         Process p = null;
         try {
-            p = startProcess(new String[]{"-config",
-                    getConfig("tika-config-server-basic.xml")});
+            p = startProcess(new String[]{"-config", getConfig("tika-config-server-basic.xml")});
             testBaseline();
         } finally {
             if (p != null) {
@@ -85,18 +74,14 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
 
         Process p = null;
         try {
-            p = startProcess(new String[]{"-config",
-                    getConfig("tika-config-server-basic.xml")});
+            p = startProcess(new String[]{"-config", getConfig("tika-config-server-basic.xml")});
 
             awaitServerStartup();
 
             Response response = null;
             try {
-                response = WebClient
-                        .create(endPoint + META_PATH)
-                        .accept("application/json")
-                        .put(ClassLoader
-                                .getSystemResourceAsStream(TEST_OOM));
+                response = WebClient.create(endPoint + META_PATH).accept("application/json")
+                        .put(ClassLoader.getSystemResourceAsStream(TEST_OOM));
             } catch (Exception e) {
                 //oom may or may not cause an exception depending
                 //on the timing
@@ -116,17 +101,14 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
 
         Process p = null;
         try {
-            p = startProcess(new String[]{"-config",
-                    getConfig("tika-config-server-basic.xml")});
+            p = startProcess(new String[]{"-config", getConfig(
+                    "tika-config-server-basic.xml")});
             awaitServerStartup();
             String serverId = getServerId();
             Response response = null;
             try {
-                response = WebClient
-                        .create(endPoint + META_PATH)
-                        .accept("application/json")
-                        .put(ClassLoader
-                                .getSystemResourceAsStream(TEST_OOM));
+                response = WebClient.create(endPoint + META_PATH).accept("application/json")
+                        .put(ClassLoader.getSystemResourceAsStream(TEST_OOM));
             } catch (Exception e) {
                 //oom may or may not cause an exception depending
                 //on the timing
@@ -148,17 +130,14 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         String serverId = "qwertyuiop";
         Process p = null;
         try {
-            p = startProcess(new String[]{"-config",
-                    getConfig("tika-config-server-basic.xml"),
-                    "-id", serverId});
+            p = startProcess(
+                    new String[]{"-config", getConfig("tika-config-server-basic.xml"), "-id",
+                            serverId});
             awaitServerStartup();
             Response response = null;
             try {
-                response = WebClient
-                        .create(endPoint + META_PATH)
-                        .accept("application/json")
-                        .put(ClassLoader
-                                .getSystemResourceAsStream(TEST_OOM));
+                response = WebClient.create(endPoint + META_PATH).accept("application/json")
+                        .put(ClassLoader.getSystemResourceAsStream(TEST_OOM));
             } catch (Exception e) {
                 //oom may or may not cause an exception depending
                 //on the timing
@@ -175,10 +154,8 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
     }
 
     private String getServerId() throws Exception {
-        Response response = WebClient
-                .create(endPoint + STATUS_PATH)
-                .accept("application/json")
-                .get();
+        Response response =
+                WebClient.create(endPoint + STATUS_PATH).accept("application/json").get();
         String jsonString =
                 CXFTestBase.getStringFromInputStream((InputStream) response.getEntity());
         JsonNode root = new ObjectMapper().readTree(jsonString);
@@ -186,10 +163,8 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
     }
 
     private int getNumRestarts() throws Exception {
-        Response response = WebClient
-                .create(endPoint + STATUS_PATH)
-                .accept("application/json")
-                .get();
+        Response response =
+                WebClient.create(endPoint + STATUS_PATH).accept("application/json").get();
         String jsonString =
                 CXFTestBase.getStringFromInputStream((InputStream) response.getEntity());
         JsonNode root = new ObjectMapper().readTree(jsonString);
@@ -201,17 +176,13 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
 
         Process p = null;
         try {
-            p = startProcess(new String[]{"-config",
-                    getConfig("tika-config-server-basic.xml")});
+            p = startProcess(new String[]{"-config", getConfig("tika-config-server-basic.xml")});
 
             awaitServerStartup();
             Response response = null;
             try {
-                response = WebClient
-                        .create(endPoint + META_PATH)
-                        .accept("application/json")
-                        .put(ClassLoader
-                                .getSystemResourceAsStream(TEST_SYSTEM_EXIT));
+                response = WebClient.create(endPoint + META_PATH).accept("application/json")
+                        .put(ClassLoader.getSystemResourceAsStream(TEST_SYSTEM_EXIT));
             } catch (Exception e) {
                 //sys exit causes catchable problems for the client
             }
@@ -231,16 +202,13 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
     public void testTimeoutOk() throws Exception {
         Process p = null;
         try {
-            p = startProcess(new String[]{"-config",
-                    getConfig("tika-config-server-timeout-10000.xml")});
+            p = startProcess(
+                    new String[]{"-config", getConfig("tika-config-server-timeout-10000.xml")});
             awaitServerStartup();
             Response response = null;
             try {
-                response = WebClient
-                        .create(endPoint + META_PATH)
-                        .accept("application/json")
-                        .put(ClassLoader
-                                .getSystemResourceAsStream(TEST_HEAVY_HANG_SHORT));
+                response = WebClient.create(endPoint + META_PATH).accept("application/json")
+                        .put(ClassLoader.getSystemResourceAsStream(TEST_HEAVY_HANG_SHORT));
             } catch (Exception e) {
                 //potential exception depending on timing
             }
@@ -257,16 +225,13 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
 
         Process p = null;
         try {
-            p = startProcess(new String[]{"-config",
-                    getConfig("tika-config-server-timeout-10000.xml")});
+            p = startProcess(
+                    new String[]{"-config", getConfig("tika-config-server-timeout-10000.xml")});
             awaitServerStartup();
             Response response = null;
             try {
-                response = WebClient
-                        .create(endPoint + META_PATH)
-                        .accept("application/json")
-                        .put(ClassLoader
-                                .getSystemResourceAsStream(TEST_HEAVY_HANG));
+                response = WebClient.create(endPoint + META_PATH).accept("application/json")
+                        .put(ClassLoader.getSystemResourceAsStream(TEST_HEAVY_HANG));
             } catch (Exception e) {
                 //catchable exception when server shuts down.
             }
@@ -283,12 +248,11 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
 
         Process p = null;
         try {
-            p = startProcess(new String[]{"-config",
-                    getConfig("tika-config-server-badjvmargs.xml"),
-            });
+            p = startProcess(
+                    new String[]{"-config", getConfig("tika-config-server-badjvmargs.xml"),});
 
             boolean finished = p.waitFor(10000, TimeUnit.MILLISECONDS);
-            if (! finished) {
+            if (!finished) {
                 fail("should have completed by now");
             }
             assertEquals(255, p.exitValue());
@@ -312,15 +276,12 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
     public void testStdErrOutBasic() throws Exception {
         Process p = null;
         try {
-            p = startProcess(new String[]{"-config",
-                    getConfig("tika-config-server-timeout-10000.xml")});
+            p = startProcess(
+                    new String[]{"-config", getConfig("tika-config-server-timeout-10000.xml")});
             awaitServerStartup();
 
-            Response response = WebClient
-                    .create(endPoint + META_PATH)
-                    .accept("application/json")
-                    .put(ClassLoader
-                            .getSystemResourceAsStream(TEST_STDOUT_STDERR));
+            Response response = WebClient.create(endPoint + META_PATH).accept("application/json")
+                    .put(ClassLoader.getSystemResourceAsStream(TEST_STDOUT_STDERR));
             Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
             List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
             assertEquals(1, metadataList.size());
@@ -334,19 +295,17 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    @Ignore("This works, but prints too much junk to the console.  Figure out how to gobble/redirect.")
+    @Ignore("This works, but prints too much junk to the console.  " +
+            "Figure out how to gobble/redirect.")
     public void testStaticStdErrOutBasic() throws Exception {
         Process p = null;
         try {
-            p = startProcess(new String[]{"-config",
-                    getConfig("tika-config-server-timeout-10000.xml")});
+            p = startProcess(
+                    new String[]{"-config", getConfig("tika-config-server-timeout-10000.xml")});
             awaitServerStartup();
 
-            Response response = WebClient
-                    .create(endPoint + META_PATH)
-                    .accept("application/json")
-                    .put(ClassLoader
-                            .getSystemResourceAsStream(TEST_STATIC_STDOUT_STDERR));
+            Response response = WebClient.create(endPoint + META_PATH).accept("application/json")
+                    .put(ClassLoader.getSystemResourceAsStream(TEST_STATIC_STDOUT_STDERR));
             Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
             List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
             assertEquals(1, metadataList.size());
@@ -368,24 +327,18 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         Thread serverThread = new Thread() {
             @Override
             public void run() {
-                TikaServerCli.main(
-                        new String[]{
-                                "-p", INTEGRATION_TEST_PORT,
-                                "-taskTimeoutMillis", "10000", "-taskPulseMillis", "500",
-                                "-pingPulseMillis", "100", "-maxRestarts", "0",
-                                "-JDlog4j.configuration=file:" + LOG_FILE.toAbsolutePath(),
-                                "-tmpFilePrefix", "tika-server-stderrlogging"
-                        });
+                TikaServerCli.main(new String[]{"-p", INTEGRATION_TEST_PORT, "-taskTimeoutMillis",
+                        "10000", "-taskPulseMillis", "500", "-pingPulseMillis", "100",
+                        "-maxRestarts", "0",
+                        "-JDlog4j.configuration=file:" + LOG_FILE.toAbsolutePath(),
+                        "-tmpFilePrefix", "tika-server-stderrlogging"});
             }
         };
         serverThread.start();
         awaitServerStartup();
 
-        Response response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
-                .put(ClassLoader
-                        .getSystemResourceAsStream(TEST_STDOUT_STDERR));
+        Response response = WebClient.create(endPoint + META_PATH).accept("application/json")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_STDOUT_STDERR));
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
         assertEquals(1, metadataList.size());
@@ -408,8 +361,8 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
 
         Process p = null;
         try {
-            p = startProcess(new String[]{"-config",
-                    getConfig("tika-config-server-timeout-10000.xml")});
+            p = startProcess(
+                    new String[]{"-config", getConfig("tika-config-server-timeout-10000.xml")});
             awaitServerStartup();
 
 
@@ -419,19 +372,15 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
                 Response response = null;
                 String file = TEST_HELLO_WORLD;
                 try {
-                if (r.nextFloat() < 0.01) {
-                    file = TEST_SYSTEM_EXIT;
-                } else if (r.nextFloat() < 0.015) {
-                    file = TEST_OOM;
-                } else if (r.nextFloat() < 0.02) {
-                    file = TEST_HEAVY_HANG;
-                }
-                    System.out.println("writing file "+i + " : " +file);
-                    response = WebClient
-                            .create(endPoint + META_PATH)
-                            .accept("application/json")
-                            .put(ClassLoader
-                                    .getSystemResourceAsStream(file));
+                    if (r.nextFloat() < 0.01) {
+                        file = TEST_SYSTEM_EXIT;
+                    } else if (r.nextFloat() < 0.015) {
+                        file = TEST_OOM;
+                    } else if (r.nextFloat() < 0.02) {
+                        file = TEST_HEAVY_HANG;
+                    }
+                    response = WebClient.create(endPoint + META_PATH).accept("application/json")
+                            .put(ClassLoader.getSystemResourceAsStream(file));
                 } catch (Exception e) {
                     ex = true;
                 }
@@ -442,13 +391,15 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
                     continue;
                 }
                 if (file.equals(TEST_HELLO_WORLD)) {
-                    Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+                    Reader reader =
+                            new InputStreamReader((InputStream) response.getEntity(), UTF_8);
                     List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
                     assertEquals(1, metadataList.size());
                     assertEquals("Nikolai Lobachevsky", metadataList.get(0).get("author"));
                     assertContains("hello world", metadataList.get(0).get("X-TIKA:content"));
                 }
-                //assertEquals("a38e6c7b38541af87148dee9634cb811", metadataList.get(10).get("X-TIKA:digest:MD5"));
+                //assertEquals("a38e6c7b38541af87148dee9634cb811",
+                // metadataList.get(10).get("X-TIKA:digest:MD5"));
             }
         } finally {
             p.destroyForcibly();
@@ -464,11 +415,8 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
             Response response = null;
 
             try {
-                response = WebClient
-                        .create(endPoint + META_PATH)
-                        .accept("application/json")
-                        .put(ClassLoader
-                                .getSystemResourceAsStream(TEST_HELLO_WORLD));
+                response = WebClient.create(endPoint + META_PATH).accept("application/json")
+                        .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
             } catch (ProcessingException e) {
                 continue;
             }

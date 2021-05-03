@@ -48,7 +48,7 @@ public interface EncodingDetector extends Serializable {
      * <p>
      * The given input metadata is only read, not modified, by the detector.
      *
-     * @param input text document input stream, or <code>null</code>
+     * @param input    text document input stream, or <code>null</code>
      * @param metadata input metadata for the document
      * @return detected character encoding, or <code>null</code>
      * @throws IOException if the document input stream could not be read

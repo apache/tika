@@ -16,13 +16,13 @@
  */
 package org.apache.tika.metadata.filter;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.apache.tika.config.Field;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
 
 public class ExcludeFieldMetadataFilter implements MetadataFilter {
     private final Set<String> excludeSet;
@@ -30,6 +30,7 @@ public class ExcludeFieldMetadataFilter implements MetadataFilter {
     public ExcludeFieldMetadataFilter() {
         this(new HashSet<>());
     }
+
     public ExcludeFieldMetadataFilter(Set<String> exclude) {
         this.excludeSet = exclude;
     }
@@ -42,7 +43,6 @@ public class ExcludeFieldMetadataFilter implements MetadataFilter {
     }
 
     /**
-     *
      * @param exclude list of fields to exclude
      */
     @Field

@@ -1,5 +1,3 @@
-package org.apache.tika.batch.builders;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,15 +14,17 @@ package org.apache.tika.batch.builders;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.batch.builders;
 
 import java.util.Map;
+
+import org.w3c.dom.Node;
 
 import org.apache.tika.batch.ConsumersManager;
 import org.apache.tika.batch.FileResourceCrawler;
 import org.apache.tika.batch.StatusReporter;
 import org.apache.tika.util.PropsUtil;
 import org.apache.tika.util.XMLDOMUtil;
-import org.w3c.dom.Node;
 
 public class SimpleLogReporterBuilder implements StatusReporterBuilder {
 
@@ -34,7 +34,8 @@ public class SimpleLogReporterBuilder implements StatusReporterBuilder {
 
         Map<String, String> attributes = XMLDOMUtil.mapifyAttrs(n, commandlineArguments);
         long sleepMillis = PropsUtil.getLong(attributes.get("reporterSleepMillis"), 1000L);
-        long staleThresholdMillis = PropsUtil.getLong(attributes.get("reporterStaleThresholdMillis"), 500000L);
+        long staleThresholdMillis =
+                PropsUtil.getLong(attributes.get("reporterStaleThresholdMillis"), 500000L);
         StatusReporter reporter = new StatusReporter(crawler, consumersManager);
         reporter.setSleepMillis(sleepMillis);
         reporter.setStaleThresholdMillis(staleThresholdMillis);

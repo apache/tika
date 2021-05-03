@@ -1,4 +1,3 @@
-package org.apache.tika.batch;
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -15,6 +14,8 @@ package org.apache.tika.batch;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.batch;
+
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -26,7 +27,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -48,37 +48,46 @@ public class BatchProcessDriverCLI {
     public static final int PROCESS_COMPLETED_SUCCESSFULLY = 0;
 
     private static final Logger LOG = LoggerFactory.getLogger(BatchProcessDriverCLI.class);
-
+    private final InterruptWatcher interruptWatcher = new InterruptWatcher(System.in);
+    private final Thread interruptWatcherThread = new Thread(interruptWatcher);
+    private final String[] commandLine;
     private int maxProcessRestarts = -1;
     private long pulseMillis = 1000;
-
     //how many times to wait pulseMillis milliseconds if a restart
     //message has been received through stdout, but the
     //forked process has not yet exited
     private int waitNumLoopsAfterRestartMessage = 60;
     private int loopsAfterRestartMessageReceived = 0;
-
     private volatile boolean userInterrupted = false;
     private boolean receivedRestartMsg = false;
     private Process process = null;
-
     private StreamGobbler errorWatcher = null;
     private StreamGobbler outGobbler = null;
     private InterruptWriter interruptWriter = null;
-    private final InterruptWatcher interruptWatcher =
-            new InterruptWatcher(System.in);
-
     private Thread errorWatcherThread = null;
     private Thread outGobblerThread = null;
     private Thread interruptWriterThread = null;
-    private final Thread interruptWatcherThread = new Thread(interruptWatcher);
-
-    private final String[] commandLine;
     private int numRestarts = 0;
     private boolean redirectForkedProcessToStdOut = true;
 
-    public BatchProcessDriverCLI(String[] commandLine){
+    public BatchProcessDriverCLI(String[] commandLine) {
         this.commandLine = tryToReadMaxRestarts(commandLine);
+    }
+
+    public static void main(String[] args) throws Exception {
+        final BatchProcessDriverCLI runner = new BatchProcessDriverCLI(args);
+
+        //make absolutely certain that the forked process is terminated
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                runner.stop();
+            }
+        });
+
+        runner.execute();
+        System.out.println("FSBatchProcessDriver has gracefully completed");
+        System.exit(0);
     }
 
     private String[] tryToReadMaxRestarts(String[] commandLine) {
@@ -86,14 +95,16 @@ public class BatchProcessDriverCLI {
         for (int i = 0; i < commandLine.length; i++) {
             String arg = commandLine[i];
             if (arg.equals("-maxRestarts")) {
-                if (i == commandLine.length-1) {
-                    throw new IllegalArgumentException("Must specify an integer after \"-maxRestarts\"");
+                if (i == commandLine.length - 1) {
+                    throw new IllegalArgumentException(
+                            "Must specify an integer after \"-maxRestarts\"");
                 }
-                String restartNumString = commandLine[i+1];
+                String restartNumString = commandLine[i + 1];
                 try {
                     maxProcessRestarts = Integer.parseInt(restartNumString);
                 } catch (NumberFormatException e) {
-                    throw new IllegalArgumentException("Must specify an integer after \"-maxRestarts\" arg.");
+                    throw new IllegalArgumentException(
+                            "Must specify an integer after \"-maxRestarts\" arg.");
                 }
                 i++;
             } else {
@@ -138,19 +149,23 @@ public class BatchProcessDriverCLI {
             if (receivedRestartMsg && exit == null &&
                     loopsAfterRestartMessageReceived <= waitNumLoopsAfterRestartMessage) {
                 loopsAfterRestartMessageReceived++;
-                LOG.warn("Must restart, still not exited; loops after restart: {}", loopsAfterRestartMessageReceived);
+                LOG.warn("Must restart, still not exited; loops after restart: {}",
+                        loopsAfterRestartMessageReceived);
                 continue;
             }
             if (loopsAfterRestartMessageReceived > waitNumLoopsAfterRestartMessage) {
-                LOG.trace("About to try to restart because: exit={} receivedRestartMsg={}", exit, receivedRestartMsg);
-                LOG.warn("Restarting after exceeded wait loops waiting for exit: {}", loopsAfterRestartMessageReceived);
+                LOG.trace("About to try to restart because: exit={} receivedRestartMsg={}", exit,
+                        receivedRestartMsg);
+                LOG.warn("Restarting after exceeded wait loops waiting for exit: {}",
+                        loopsAfterRestartMessageReceived);
                 boolean restarted = restart(exit, receivedRestartMsg);
                 if (!restarted) {
                     break;
                 }
-            } else if (exit != null && exit != BatchProcessDriverCLI.PROCESS_NO_RESTART_EXIT_CODE
-                    && exit != BatchProcessDriverCLI.PROCESS_COMPLETED_SUCCESSFULLY) {
-                LOG.trace("About to try to restart because: exit={} receivedRestartMsg={}", exit, receivedRestartMsg);
+            } else if (exit != null && exit != BatchProcessDriverCLI.PROCESS_NO_RESTART_EXIT_CODE &&
+                    exit != BatchProcessDriverCLI.PROCESS_COMPLETED_SUCCESSFULLY) {
+                LOG.trace("About to try to restart because: exit={} receivedRestartMsg={}", exit,
+                        receivedRestartMsg);
 
                 if (exit == BatchProcessDriverCLI.PROCESS_RESTART_EXIT_CODE) {
                     LOG.info("Restarting on expected restart code");
@@ -161,8 +176,8 @@ public class BatchProcessDriverCLI {
                 if (!restarted) {
                     break;
                 }
-            } else if (exit != null && (exit == PROCESS_COMPLETED_SUCCESSFULLY
-                    || exit == BatchProcessDriverCLI.PROCESS_NO_RESTART_EXIT_CODE)) {
+            } else if (exit != null && (exit == PROCESS_COMPLETED_SUCCESSFULLY ||
+                    exit == BatchProcessDriverCLI.PROCESS_NO_RESTART_EXIT_CODE)) {
                 LOG.trace("Will not restart: {}", exit);
                 break;
             }
@@ -209,6 +224,7 @@ public class BatchProcessDriverCLI {
 
     /**
      * Tries to restart (stop and then start) the forked process
+     *
      * @return whether or not this was successful, will be false if numRestarts >= maxProcessRestarts
      * @throws Exception
      */
@@ -245,7 +261,6 @@ public class BatchProcessDriverCLI {
 
     private void start() throws Exception {
         ProcessBuilder builder = new ProcessBuilder(commandLine);
-        builder.directory(Paths.get(".").toFile());
         process = builder.start();
 
         errorWatcher = new StreamWatcher(process.getErrorStream());
@@ -265,6 +280,7 @@ public class BatchProcessDriverCLI {
     /**
      * Typically only used for testing.  This determines whether or not
      * to redirect forked process's stdOut to driver's stdout
+     *
      * @param redirectForkedProcessToStdOut should the driver redirect the child's stdout
      */
     public void setRedirectForkedProcessToStdOut(boolean redirectForkedProcessToStdOut) {
@@ -332,7 +348,8 @@ public class BatchProcessDriverCLI {
         protected boolean running = true;
 
         private StreamGobbler(InputStream is) {
-            this.reader = new BufferedReader(new InputStreamReader(new BufferedInputStream(is), UTF_8));
+            this.reader =
+                    new BufferedReader(new InputStreamReader(new BufferedInputStream(is), UTF_8));
         }
 
         @Override
@@ -362,7 +379,7 @@ public class BatchProcessDriverCLI {
     private class StreamWatcher extends StreamGobbler implements Runnable {
         //plagiarized from org.apache.oodt's StreamGobbler
 
-        private StreamWatcher(InputStream is){
+        private StreamWatcher(InputStream is) {
             super(is);
         }
 
@@ -372,7 +389,9 @@ public class BatchProcessDriverCLI {
             try {
                 LOG.trace("watcher starting to read");
                 while ((line = reader.readLine()) != null && this.running) {
-                    if (line.startsWith(BatchProcess.BATCH_CONSTANTS.BATCH_PROCESS_FATAL_MUST_RESTART.toString())) {
+                    if (line.startsWith(
+                            BatchProcess.BATCH_CONSTANTS.BATCH_PROCESS_FATAL_MUST_RESTART
+                                    .toString())) {
                         receivedRestartMsg = true;
                     }
                     LOG.info("BatchProcess: " + line);
@@ -383,23 +402,6 @@ public class BatchProcessDriverCLI {
             }
             LOG.trace("watcher done");
         }
-    }
-
-
-    public static void main(String[] args) throws Exception {
-        final BatchProcessDriverCLI runner = new BatchProcessDriverCLI(args);
-
-        //make absolutely certain that the forked process is terminated
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                runner.stop();
-            }
-        });
-
-        runner.execute();
-        System.out.println("FSBatchProcessDriver has gracefully completed");
-        System.exit(0);
     }
 
 }

@@ -40,16 +40,13 @@ public interface Initializable {
 
 
     /**
-     *
-     *
      * @param problemHandler if there is a problem and no
-     *                                           custom initializableProblemHandler has been configured
-     *                                           via Initializable parameters,
-     *                                           this is called to respond.
+     *                       custom initializableProblemHandler has been configured
+     *                       via Initializable parameters,
+     *                       this is called to respond.
      * @throws TikaConfigException
      */
-    void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException;
+    void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException;
 
 
 }

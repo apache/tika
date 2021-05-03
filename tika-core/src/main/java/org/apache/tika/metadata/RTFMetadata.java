@@ -13,34 +13,35 @@ package org.apache.tika.metadata; /*
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */ import org.apache.tika.metadata.Metadata; import org.apache.tika.metadata.Property; public interface 
-RTFMetadata {
-    public static final String PREFIX_RTF_META = "rtf_meta";
-    
-    
-    public static final String RTF_PICT_META_PREFIX = "rtf_pict:";
-    
+ */
+
+public interface RTFMetadata {
+    String PREFIX_RTF_META = "rtf_meta";
+
+
+    String RTF_PICT_META_PREFIX = "rtf_pict:";
+
     /**
      * if set to true, this means that an image file is probably a "thumbnail"
      * any time a pict/emf/wmf is in an object
      */
-    Property THUMBNAIL = Property.internalBoolean(PREFIX_RTF_META+
-            TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER+"thumbnail");
-    
+    Property THUMBNAIL = Property.internalBoolean(
+            PREFIX_RTF_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "thumbnail");
+
     /**
      * if an application and version is given as part of the
      * embedded object, this is the literal string
      */
-    Property EMB_APP_VERSION = Property.internalText(PREFIX_RTF_META+
-            TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER+"emb_app_version");
-    
-    Property EMB_CLASS = Property.internalText(PREFIX_RTF_META+
-            TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER+"emb_class");
-    
-    Property EMB_TOPIC = Property.internalText(PREFIX_RTF_META+
-            TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER+"emb_topic");
-    
-    Property EMB_ITEM = Property.internalText(PREFIX_RTF_META+
-            TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER+"emb_item");
-    
+    Property EMB_APP_VERSION = Property.internalText(
+            PREFIX_RTF_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "emb_app_version");
+
+    Property EMB_CLASS = Property.internalText(
+            PREFIX_RTF_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "emb_class");
+
+    Property EMB_TOPIC = Property.internalText(
+            PREFIX_RTF_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "emb_topic");
+
+    Property EMB_ITEM = Property.internalText(
+            PREFIX_RTF_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "emb_item");
+
 }

@@ -16,10 +16,10 @@
  */
 package org.apache.tika.pipes.emitter;
 
-import org.apache.tika.metadata.Metadata;
-
 import java.io.IOException;
 import java.io.InputStream;
+
+import org.apache.tika.metadata.Metadata;
 
 public interface StreamEmitter extends Emitter {
     void emit(String emitKey, InputStream inputStream, Metadata userMetadata)

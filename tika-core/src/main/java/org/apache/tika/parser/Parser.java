@@ -21,11 +21,12 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.util.Set;
 
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * Tika parser interface.
@@ -36,9 +37,9 @@ public interface Parser extends Serializable {
      * Returns the set of media types supported by this parser when used
      * with the given parse context.
      *
-     * @since Apache Tika 0.7
      * @param context parse context
      * @return immutable set of media types
+     * @since Apache Tika 0.7
      */
     Set<MediaType> getSupportedTypes(ParseContext context);
 
@@ -53,18 +54,16 @@ public interface Parser extends Serializable {
      * parameter. See the parser implementations for the kinds of context
      * information they expect.
      *
-     * @since Apache Tika 0.5
-     * @param stream the document stream (input)
-     * @param handler handler for the XHTML SAX events (output)
+     * @param stream   the document stream (input)
+     * @param handler  handler for the XHTML SAX events (output)
      * @param metadata document metadata (input and output)
-     * @param context parse context
-     * @throws IOException if the document stream could not be read
-     * @throws SAXException if the SAX events could not be processed
+     * @param context  parse context
+     * @throws IOException   if the document stream could not be read
+     * @throws SAXException  if the SAX events could not be processed
      * @throws TikaException if the document could not be parsed
+     * @since Apache Tika 0.5
      */
-    void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
+    void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException;
 
 }

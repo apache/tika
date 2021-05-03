@@ -1,5 +1,3 @@
-package org.apache.tika.batch.builders;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,13 +14,15 @@ package org.apache.tika.batch.builders;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import org.w3c.dom.Node;
+package org.apache.tika.batch.builders;
 
 import java.util.Map;
 
+import org.w3c.dom.Node;
+
 /**
  * Interface for things that build objects from a DOM Node and a map of runtime attributes
+ *
  * @param <T>
  */
 public interface ObjectFromDOMBuilder<T> {

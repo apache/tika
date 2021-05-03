@@ -17,25 +17,23 @@
 package org.apache.tika.eval.app;
 
 
-import org.apache.tika.eval.app.db.Cols;
-import org.apache.tika.eval.app.db.TableInfo;
-import org.apache.tika.eval.app.io.IDBWriter;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.tika.eval.app.db.Cols;
+import org.apache.tika.eval.app.db.TableInfo;
+import org.apache.tika.eval.app.io.IDBWriter;
 
 
 public class MockDBWriter implements IDBWriter {
+    public Map<String, Integer> mimes = new HashMap<>();
     //Map of tableName and tables
     //each table consists of a list of rows.
     //Each row consists of a map of columns/values
     Map<String, List<Map<Cols, String>>> db = new HashMap<>();
-
-    public Map<String, Integer> mimes = new HashMap<>();
 
     public MockDBWriter() throws Exception {
     }
@@ -69,7 +67,7 @@ public class MockDBWriter implements IDBWriter {
 
     public List<Map<Cols, String>> getTable(TableInfo tableInfo) {
         if (db.get(tableInfo.getName()) == null) {
-            System.err.println("I can't seem to find: "+ tableInfo.getName() + ", but I do see:");
+            System.err.println("I can't seem to find: " + tableInfo.getName() + ", but I do see:");
             for (String table : db.keySet()) {
                 System.err.println(table);
             }

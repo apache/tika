@@ -16,20 +16,19 @@
  */
 package org.apache.tika.detect.zip;
 
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
-import org.apache.commons.compress.archivers.zip.ZipFile;
-import org.apache.commons.io.IOUtils;
-import org.apache.tika.io.BoundedInputStream;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.mime.MediaType;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.apache.commons.io.IOUtils;
+
+import org.apache.tika.io.BoundedInputStream;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.mime.MediaType;
 
 public class OpenDocumentDetector implements ZipContainerDetector {
     private static final int MAX_MIME_TYPE = 1024;
@@ -52,7 +51,8 @@ public class OpenDocumentDetector implements ZipContainerDetector {
 
     @Override
     public MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis,
-                                           StreamingDetectContext detectContext) throws IOException {
+                                           StreamingDetectContext detectContext)
+            throws IOException {
         String name = zae.getName();
         if ("mimetype".equals(name)) {
             //can't rely on zae.getSize to determine if there is any
@@ -61,7 +61,7 @@ public class OpenDocumentDetector implements ZipContainerDetector {
             BoundedInputStream bis = new BoundedInputStream(MAX_MIME_TYPE, zis);
             IOUtils.copy(bis, bos);
             //do anything with an inputstream > MAX_MIME_TYPE?
-            if (bos.toByteArray().length > 0)  {
+            if (bos.toByteArray().length > 0) {
                 //odt -- TODO -- check that the results are valid
                 return MediaType.parse(new String(bos.toByteArray(), UTF_8));
             }

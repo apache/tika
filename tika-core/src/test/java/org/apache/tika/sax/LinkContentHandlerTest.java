@@ -32,9 +32,11 @@ public class LinkContentHandlerTest {
     @Test
     public void testWhitespaceCollapsing() throws Exception {
         LinkContentHandler linkContentHandler = new LinkContentHandler(true);
-        
+
         linkContentHandler.startElement(XHTMLContentHandler.XHTML, "a", "", new AttributesImpl());
-        char[] anchorText = {'\n', 'N', 'o', ' ', 'w', 'h', 'i', 't', 'e', '\n', '\t', '\t', 's', 'p', 'a', 'c', 'e'};
+        char[] anchorText =
+                {'\n', 'N', 'o', ' ', 'w', 'h', 'i', 't', 'e', '\n', '\t', '\t', 's', 'p', 'a', 'c',
+                        'e'};
         linkContentHandler.characters(anchorText, 1, anchorText.length - 1);
         linkContentHandler.endElement(XHTMLContentHandler.XHTML, "a", "");
 
@@ -47,7 +49,7 @@ public class LinkContentHandlerTest {
     @Test
     public void testDefaultBehavior() throws Exception {
         LinkContentHandler linkContentHandler = new LinkContentHandler();
-        
+
         linkContentHandler.startElement(XHTMLContentHandler.XHTML, "a", "", new AttributesImpl());
         char[] anchorText = {' ', 'a', 'n', 'c', 'h', 'o', 'r', ' '};
         linkContentHandler.characters(anchorText, 0, anchorText.length);
@@ -55,22 +57,23 @@ public class LinkContentHandlerTest {
 
         assertEquals(" anchor ", linkContentHandler.getLinks().get(0).getText());
     }
-    
+
     /**
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-1835">TIKA-1835</a>
      */
     @Test
     public void testLinkTag() throws Exception {
         LinkContentHandler linkContentHandler = new LinkContentHandler();
-        
+
         AttributesImpl atts = new AttributesImpl();
         atts.addAttribute("", "href", "href", "", "http://tika.apache.org/stylesheet.css");
         atts.addAttribute("", "rel", "rel", "", "stylesheet");
-        
+
         linkContentHandler.startElement(XHTMLContentHandler.XHTML, "link", "", atts);
         linkContentHandler.endElement(XHTMLContentHandler.XHTML, "link", "");
 
-        assertEquals("http://tika.apache.org/stylesheet.css", linkContentHandler.getLinks().get(0).getUri());
+        assertEquals("http://tika.apache.org/stylesheet.css",
+                linkContentHandler.getLinks().get(0).getUri());
         assertEquals("stylesheet", linkContentHandler.getLinks().get(0).getRel());
     }
 
@@ -80,14 +83,15 @@ public class LinkContentHandlerTest {
     @Test
     public void testIframeTag() throws Exception {
         LinkContentHandler linkContentHandler = new LinkContentHandler();
-        
+
         AttributesImpl atts = new AttributesImpl();
         atts.addAttribute("", "src", "src", "", "http://tika.apache.org/iframe.html");
-        
+
         linkContentHandler.startElement(XHTMLContentHandler.XHTML, "iframe", "", atts);
         linkContentHandler.endElement(XHTMLContentHandler.XHTML, "iframe", "");
 
-        assertEquals("http://tika.apache.org/iframe.html", linkContentHandler.getLinks().get(0).getUri());
+        assertEquals("http://tika.apache.org/iframe.html",
+                linkContentHandler.getLinks().get(0).getUri());
     }
 
     /**
@@ -103,7 +107,8 @@ public class LinkContentHandlerTest {
         linkContentHandler.startElement(XHTMLContentHandler.XHTML, "script", "", atts);
         linkContentHandler.endElement(XHTMLContentHandler.XHTML, "script", "");
 
-        assertEquals("http://tika.apache.org/script.js", linkContentHandler.getLinks().get(0).getUri());
+        assertEquals("http://tika.apache.org/script.js",
+                linkContentHandler.getLinks().get(0).getUri());
     }
 
     /**
@@ -119,6 +124,6 @@ public class LinkContentHandlerTest {
         linkContentHandler.startElement(XHTMLContentHandler.XHTML, "script", "", atts);
         linkContentHandler.endElement(XHTMLContentHandler.XHTML, "script", "");
 
-        assert(linkContentHandler.getLinks().isEmpty());
+        assert (linkContentHandler.getLinks().isEmpty());
     }
 }

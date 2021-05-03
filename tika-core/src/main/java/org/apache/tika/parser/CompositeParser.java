@@ -16,19 +16,6 @@
  */
 package org.apache.tika.parser;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TemporaryResources;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.HttpHeaders;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.mime.MediaTypeRegistry;
-import org.apache.tika.sax.TaggedContentHandler;
-import org.apache.tika.utils.ParserUtils;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -40,6 +27,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.sax.TaggedContentHandler;
+import org.apache.tika.utils.ParserUtils;
+
 /**
  * Composite parser that delegates parsing tasks to a component parser
  * based on the declared content type of the incoming document. A fallback
@@ -48,7 +48,9 @@ import java.util.Set;
  */
 public class CompositeParser extends AbstractParser {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = 2192845797749627824L;
 
     /**
@@ -80,6 +82,7 @@ public class CompositeParser extends AbstractParser {
         }
         this.registry = registry;
     }
+
     public CompositeParser(MediaTypeRegistry registry, List<Parser> parsers) {
         this(registry, parsers, null);
     }
@@ -102,12 +105,17 @@ public class CompositeParser extends AbstractParser {
         return map;
     }
 
-    private boolean isExcluded(Collection<Class<? extends Parser>> excludeParsers, Class<? extends Parser> p) {
+    private boolean isExcluded(Collection<Class<? extends Parser>> excludeParsers,
+                               Class<? extends Parser> p) {
         return excludeParsers.contains(p) || assignableFrom(excludeParsers, p);
     }
-    private boolean assignableFrom(Collection<Class<? extends Parser>> excludeParsers, Class<? extends Parser> p) {
+
+    private boolean assignableFrom(Collection<Class<? extends Parser>> excludeParsers,
+                                   Class<? extends Parser> p) {
         for (Class<? extends Parser> e : excludeParsers) {
-            if (e.isAssignableFrom(p)) return true;
+            if (e.isAssignableFrom(p)) {
+                return true;
+            }
         }
         return false;
     }
@@ -117,16 +125,14 @@ public class CompositeParser extends AbstractParser {
      * all media types for which more than one parser declares support. This
      * is useful in tracking down conflicting parser definitions.
      *
-     * @since Apache Tika 0.10
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-660">TIKA-660</a>
      * @param context parsing context
      * @return media types that are supported by at least two component parsers
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-660">TIKA-660</a>
+     * @since Apache Tika 0.10
      */
-    public Map<MediaType, List<Parser>> findDuplicateParsers(
-            ParseContext context) {
+    public Map<MediaType, List<Parser>> findDuplicateParsers(ParseContext context) {
         Map<MediaType, Parser> types = new HashMap<MediaType, Parser>();
-        Map<MediaType, List<Parser>> duplicates =
-            new HashMap<MediaType, List<Parser>>();
+        Map<MediaType, List<Parser>> duplicates = new HashMap<MediaType, List<Parser>>();
         for (Parser parser : parsers) {
             for (MediaType type : parser.getSupportedTypes(context)) {
                 MediaType canonicalType = registry.normalize(type);
@@ -149,8 +155,8 @@ public class CompositeParser extends AbstractParser {
     /**
      * Returns the media type registry used to infer type relationships.
      *
-     * @since Apache Tika 0.8
      * @return media type registry
+     * @since Apache Tika 0.8
      */
     public MediaTypeRegistry getMediaTypeRegistry() {
         return registry;
@@ -159,8 +165,8 @@ public class CompositeParser extends AbstractParser {
     /**
      * Sets the media type registry used to infer type relationships.
      *
-     * @since Apache Tika 0.8
      * @param registry media type registry
+     * @since Apache Tika 0.8
      */
     public void setMediaTypeRegistry(MediaTypeRegistry registry) {
         this.registry = registry;
@@ -168,13 +174,13 @@ public class CompositeParser extends AbstractParser {
 
     /**
      * Returns all parsers registered with the Composite Parser,
-     *  including ones which may not currently be active.
+     * including ones which may not currently be active.
      * This won't include the Fallback Parser, if defined
      */
     public List<Parser> getAllComponentParsers() {
         return Collections.unmodifiableList(parsers);
     }
-    
+
     /**
      * Returns the component parsers.
      *
@@ -192,8 +198,8 @@ public class CompositeParser extends AbstractParser {
     public void setParsers(Map<MediaType, Parser> parsers) {
         this.parsers = new ArrayList<Parser>(parsers.size());
         for (Map.Entry<MediaType, Parser> entry : parsers.entrySet()) {
-            this.parsers.add(ParserDecorator.withTypes(
-                    entry.getValue(), Collections.singleton(entry.getKey())));
+            this.parsers.add(ParserDecorator
+                    .withTypes(entry.getValue(), Collections.singleton(entry.getKey())));
         }
     }
 
@@ -241,8 +247,8 @@ public class CompositeParser extends AbstractParser {
         }
         MediaType type = MediaType.parse(contentTypeString);
         if (type != null) {
-           // We always work on the normalised, canonical form
-           type = registry.normalize(type);
+            // We always work on the normalised, canonical form
+            type = registry.normalize(type);
         }
         while (type != null) {
             // Try finding a parser for the type
@@ -250,7 +256,7 @@ public class CompositeParser extends AbstractParser {
             if (parser != null) {
                 return parser;
             }
-            
+
             // Failing that, try for the parent of the type
             type = registry.getSupertype(type);
         }
@@ -269,16 +275,14 @@ public class CompositeParser extends AbstractParser {
      * handler are automatically wrapped into {@link TikaException}s to better
      * honor the {@link Parser} contract.
      */
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
         Parser parser = getParser(metadata, context);
         TemporaryResources tmp = new TemporaryResources();
         try {
             TikaInputStream taggedStream = TikaInputStream.get(stream, tmp);
-            TaggedContentHandler taggedHandler = 
-                handler != null ? new TaggedContentHandler(handler) : null;
+            TaggedContentHandler taggedHandler =
+                    handler != null ? new TaggedContentHandler(handler) : null;
             ParserUtils.recordParserDetails(parser, metadata);
             try {
                 parser.parse(taggedStream, taggedHandler, metadata, context);
@@ -287,15 +291,14 @@ public class CompositeParser extends AbstractParser {
                 throw e;
             } catch (IOException e) {
                 taggedStream.throwIfCauseOf(e);
-                throw new TikaException(
-                        "TIKA-198: Illegal IOException from " + parser, e);
+                throw new TikaException("TIKA-198: Illegal IOException from " + parser, e);
             } catch (SAXException e) {
-                if (taggedHandler != null) taggedHandler.throwIfCauseOf(e);
-                throw new TikaException(
-                        "TIKA-237: Illegal SAXException from " + parser, e);
+                if (taggedHandler != null) {
+                    taggedHandler.throwIfCauseOf(e);
+                }
+                throw new TikaException("TIKA-237: Illegal SAXException from " + parser, e);
             } catch (RuntimeException e) {
-                throw new TikaException(
-                        "Unexpected RuntimeException from " + parser, e);
+                throw new TikaException("Unexpected RuntimeException from " + parser, e);
             }
         } finally {
             tmp.dispose();

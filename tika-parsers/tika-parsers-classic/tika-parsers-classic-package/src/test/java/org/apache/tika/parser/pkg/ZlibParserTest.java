@@ -16,14 +16,15 @@
  */
 package org.apache.tika.parser.pkg;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
+import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.sax.BodyContentHandler;
 
 /**
  * Test case for parsing zlib compressed

@@ -29,6 +29,10 @@ import java.util.List;
 import java.util.Random;
 
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.junit.After;
+import org.junit.Ignore;
+import org.junit.Test;
+
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
@@ -43,9 +47,6 @@ import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.iwork.iwana.IWork13PackageParser;
 import org.apache.tika.parser.iwork.iwana.IWork18PackageParser;
 import org.apache.tika.utils.XMLReaderUtils;
-import org.junit.After;
-import org.junit.Ignore;
-import org.junit.Test;
 
 /**
  * Junit test class for {@link org.apache.tika.detect.microsoft.POIFSContainerDetector}
@@ -55,7 +56,8 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
     private final MimeTypes mimeTypes = tikaConfig.getMimeRepository();
     private final MediaTypeRegistry mediaTypeRegistry = mimeTypes.getMediaTypeRegistry();
     private final Detector detector = new DefaultDetector(mimeTypes);
-    private final StreamingZipContainerDetector streamingZipDetector = new StreamingZipContainerDetector();
+    private final StreamingZipContainerDetector streamingZipDetector =
+            new StreamingZipContainerDetector();
 
     @After
     public void tearDown() throws TikaException {
@@ -64,43 +66,45 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
     }
 
     private void assertTypeByData(String file, String type) throws Exception {
-       assertTypeByNameAndData(file, null, type);
+        assertTypeByNameAndData(file, null, type);
     }
+
     private void assertTypeByNameAndData(String file, String type) throws Exception {
-       assertTypeByNameAndData(file, file, type);
+        assertTypeByNameAndData(file, file, type);
     }
+
     private void assertType(String file, String byData, String byNameAndData) throws Exception {
-       assertTypeByData(file, byData);
-       assertTypeByNameAndData(file, byNameAndData);
+        assertTypeByData(file, byData);
+        assertTypeByNameAndData(file, byNameAndData);
     }
-    private void assertTypeByNameAndData(String dataFile, String name, String type) throws Exception {
+
+    private void assertTypeByNameAndData(String dataFile, String name, String type)
+            throws Exception {
         assertTypeByNameAndData(dataFile, name, type, null);
     }
-    private void assertTypeByNameAndData(String dataFile, String name, String typeFromDetector, String typeFromMagic) throws Exception {
-        try (TikaInputStream stream = TikaInputStream.get(getResourceAsUrl("/test-documents/" + dataFile))) {
+
+    private void assertTypeByNameAndData(String dataFile, String name, String typeFromDetector,
+                                         String typeFromMagic) throws Exception {
+        try (TikaInputStream stream = TikaInputStream
+                .get(getResourceAsUrl("/test-documents/" + dataFile))) {
             Metadata m = new Metadata();
-            if (name != null)
+            if (name != null) {
                 m.add(TikaCoreProperties.RESOURCE_NAME_KEY, name);
+            }
 
             // Mime Magic version is likely to be less precise
             if (typeFromMagic != null) {
-                assertEquals(
-                        MediaType.parse(typeFromMagic),
-                        mimeTypes.detect(stream, m));
+                assertEquals(MediaType.parse(typeFromMagic), mimeTypes.detect(stream, m));
             }
 
             MediaType expected = MediaType.parse(typeFromDetector);
             // All being well, the detector should get it perfect
-            assertEquals(
-                    expected,
-                    detector.detect(stream, m));
+            assertEquals(expected, detector.detect(stream, m));
 
-            if (mediaTypeRegistry.isSpecializationOf(
-                    expected, MediaType.APPLICATION_ZIP) &&
-                ! expected.toString().contains("tika-ooxml-protected")) {
+            if (mediaTypeRegistry.isSpecializationOf(expected, MediaType.APPLICATION_ZIP) &&
+                    !expected.toString().contains("tika-ooxml-protected")) {
 
-                assertEquals("streaming zip detector failed",
-                        expected,
+                assertEquals("streaming zip detector failed", expected,
                         streamingZipDetector.detect(stream, m));
             }
         }
@@ -119,16 +123,16 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         assertTypeByData("testPUBLISHER.pub", "application/x-mspublisher");
         assertTypeByData("testWORKS.wps", "application/vnd.ms-works");
         assertTypeByData("testWORKS2000.wps", "application/vnd.ms-works");
-        
+
         // older Works Word Processor files can't be recognized
         // they were created with Works Word Processor 7.0 (hence the text inside)
         // and exported to the older formats with the "Save As" feature
-        assertTypeByData("testWORKSWordProcessor3.0.wps","application/vnd.ms-works");
-        assertTypeByData("testWORKSWordProcessor4.0.wps","application/vnd.ms-works");
+        assertTypeByData("testWORKSWordProcessor3.0.wps", "application/vnd.ms-works");
+        assertTypeByData("testWORKSWordProcessor4.0.wps", "application/vnd.ms-works");
         assertTypeByData("testWORKSSpreadsheet7.0.xlr", "application/x-tika-msworks-spreadsheet");
         assertTypeByData("testPROJECT2003.mpp", "application/vnd.ms-project");
         assertTypeByData("testPROJECT2007.mpp", "application/vnd.ms-project");
-        
+
         // Excel95 can be detected by not parsed
         assertTypeByData("testEXCEL_95.xls", "application/vnd.ms-excel");
 
@@ -136,100 +140,85 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         assertTypeByData("testCOREL.shw", "application/x-corelpresentations");
         assertTypeByData("testQUATTRO.qpw", "application/x-quattro-pro; version=9");
         assertTypeByData("testQUATTRO.wb3", "application/x-quattro-pro; version=7-8");
-        
+
         assertTypeByData("testHWP_5.0.hwp", "application/x-hwp-v5");
-        
-        
+
+
         // With the filename and data
         assertTypeByNameAndData("testEXCEL.xls", "application/vnd.ms-excel");
         assertTypeByNameAndData("testWORD.doc", "application/msword");
         assertTypeByNameAndData("testPPT.ppt", "application/vnd.ms-powerpoint");
-        
+
         // With the wrong filename supplied, data will trump filename
-        assertTypeByNameAndData("testEXCEL.xls", "notWord.doc",  "application/vnd.ms-excel");
-        assertTypeByNameAndData("testWORD.doc",  "notExcel.xls", "application/msword");
-        assertTypeByNameAndData("testPPT.ppt",   "notWord.doc",  "application/vnd.ms-powerpoint");
-        
+        assertTypeByNameAndData("testEXCEL.xls", "notWord.doc", "application/vnd.ms-excel");
+        assertTypeByNameAndData("testWORD.doc", "notExcel.xls", "application/msword");
+        assertTypeByNameAndData("testPPT.ppt", "notWord.doc", "application/vnd.ms-powerpoint");
+
         // With a filename of a totally different type, data will trump filename
-        assertTypeByNameAndData("testEXCEL.xls", "notPDF.pdf",  "application/vnd.ms-excel");
-        assertTypeByNameAndData("testEXCEL.xls", "notPNG.png",  "application/vnd.ms-excel");
+        assertTypeByNameAndData("testEXCEL.xls", "notPDF.pdf", "application/vnd.ms-excel");
+        assertTypeByNameAndData("testEXCEL.xls", "notPNG.png", "application/vnd.ms-excel");
     }
-    
+
     /**
      * There is no way to distinguish "proper" StarOffice files from templates.
      * All templates have the same extension but their actual type depends on
      * the magic. Our current MimeTypes class doesn't allow us to use the same
      * glob pattern in more than one mimetype.
-     * 
+     *
      * @throws Exception
      */
     @Test
     public void testDetectStarOfficeFiles() throws Exception {
-        assertType("testStarOffice-5.2-calc.sdc",
-                "application/vnd.stardivision.calc",
+        assertType("testStarOffice-5.2-calc.sdc", "application/vnd.stardivision.calc",
                 "application/vnd.stardivision.calc");
-        assertType("testVORCalcTemplate.vor",
-                "application/vnd.stardivision.calc",
+        assertType("testVORCalcTemplate.vor", "application/vnd.stardivision.calc",
                 "application/vnd.stardivision.calc");
-        assertType("testStarOffice-5.2-draw.sda",
-                "application/vnd.stardivision.draw",
+        assertType("testStarOffice-5.2-draw.sda", "application/vnd.stardivision.draw",
                 "application/vnd.stardivision.draw");
-        assertType("testVORDrawTemplate.vor",
-                "application/vnd.stardivision.draw",
+        assertType("testVORDrawTemplate.vor", "application/vnd.stardivision.draw",
                 "application/vnd.stardivision.draw");
-        assertType("testStarOffice-5.2-impress.sdd",
-                "application/vnd.stardivision.impress",
+        assertType("testStarOffice-5.2-impress.sdd", "application/vnd.stardivision.impress",
                 "application/vnd.stardivision.impress");
-        assertType("testVORImpressTemplate.vor",
-                "application/vnd.stardivision.impress",
+        assertType("testVORImpressTemplate.vor", "application/vnd.stardivision.impress",
                 "application/vnd.stardivision.impress");
-        assertType("testStarOffice-5.2-writer.sdw",
-                "application/vnd.stardivision.writer",
+        assertType("testStarOffice-5.2-writer.sdw", "application/vnd.stardivision.writer",
                 "application/vnd.stardivision.writer");
-        assertType("testVORWriterTemplate.vor",
-                "application/vnd.stardivision.writer",
+        assertType("testVORWriterTemplate.vor", "application/vnd.stardivision.writer",
                 "application/vnd.stardivision.writer");
         //file from open office bug tracker issue #6452
         //star office >6.0
-        assertType("testStarOffice-6.0-writer.sxw",
-                "application/vnd.sun.xml.writer",
+        assertType("testStarOffice-6.0-writer.sxw", "application/vnd.sun.xml.writer",
                 "application/vnd.sun.xml.writer");
         //ooo byg #5116
         //can't find a diff in contents btwn sxw and stw...need to rely on file extension
         assertTypeByNameAndData("testStarOffice-6.0-writer-template.stw",
-                "application/vnd.sun.xml.writer.template",
-                "application/vnd.sun.xml.writer",
+                "application/vnd.sun.xml.writer.template", "application/vnd.sun.xml.writer",
                 "application/zip");
 
         //ooo bug #1151
-        assertType("testStarOffice-6.0-calc.sxc",
-                "application/vnd.sun.xml.calc",
+        assertType("testStarOffice-6.0-calc.sxc", "application/vnd.sun.xml.calc",
                 "application/vnd.sun.xml.calc");
         //ooo bug #261
-        assertType("testStarOffice-6.0-draw.sxd",
-                "application/vnd.sun.xml.draw",
+        assertType("testStarOffice-6.0-draw.sxd", "application/vnd.sun.xml.draw",
                 "application/vnd.sun.xml.draw");
         //ooo bug #5336
-        assertType("testStarOffice-6.0-draw.sxi",
-                "application/vnd.sun.xml.impress",
+        assertType("testStarOffice-6.0-draw.sxi", "application/vnd.sun.xml.impress",
                 "application/vnd.sun.xml.impress");
 
         //ooo bug #67431 -- had to manually fix the name spacing in the manifest.xml
-        assertType("testOpenOffice-autotext.bau",
-                "application/vnd.openofficeorg.autotext",
+        assertType("testOpenOffice-autotext.bau", "application/vnd.openofficeorg.autotext",
                 "application/vnd.openofficeorg.autotext");
         //ooo bug #110760
-        assertType("testOpenOffice-extension.oxt",
-                "application/vnd.openofficeorg.extension",
+        assertType("testOpenOffice-extension.oxt", "application/vnd.openofficeorg.extension",
                 "application/vnd.openofficeorg.extension");
     }
 
     @Test
     public void testOpenContainer() throws Exception {
-        try (TikaInputStream stream = TikaInputStream.get(getResourceAsUrl("/test-documents/testPPT.ppt"))) {
+        try (TikaInputStream stream = TikaInputStream
+                .get(getResourceAsUrl("/test-documents/testPPT.ppt"))) {
             assertNull(stream.getOpenContainer());
-            assertEquals(
-                    MediaType.parse("application/vnd.ms-powerpoint"),
+            assertEquals(MediaType.parse("application/vnd.ms-powerpoint"),
                     detector.detect(stream, new Metadata()));
             assertTrue(stream.getOpenContainer() instanceof POIFSFileSystem);
         }
@@ -237,20 +226,20 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
 
     /**
      * EPub uses a similar mimetype entry to OpenDocument for storing
-     *  the mimetype within the parent zip file
+     * the mimetype within the parent zip file
      */
     @Test
     public void testDetectEPub() throws Exception {
-       assertTypeByData("testEPUB.epub", "application/epub+zip");
-       assertTypeByData("testiBooks.ibooks", "application/x-ibooks+zip");
+        assertTypeByData("testEPUB.epub", "application/epub+zip");
+        assertTypeByData("testiBooks.ibooks", "application/x-ibooks+zip");
     }
-    
+
     @Test
     public void testDetectLotusNotesEml() throws Exception {
         // Lotus .eml files aren't guaranteed to have any of the magic 
         // matches as the first line, but should have X-Notes-Item and Message-ID
         assertTypeByData("testLotusEml.eml", "message/rfc822");
-     }
+    }
 
     @Test
     public void testDetectODF() throws Exception {
@@ -260,18 +249,26 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
 
     @Test
     public void testDetectOOXML() throws Exception {
-        assertTypeByData("testEXCEL.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        assertTypeByData("testWORD.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-        assertTypeByData("testPPT.pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation");
+        assertTypeByData("testEXCEL.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        assertTypeByData("testWORD.docx",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        assertTypeByData("testPPT.pptx",
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation");
 
         // Check some of the less common OOXML types
-        assertTypeByData("testPPT.pptm", "application/vnd.ms-powerpoint.presentation.macroenabled.12");
-        assertTypeByData("testPPT.ppsx", "application/vnd.openxmlformats-officedocument.presentationml.slideshow");
+        assertTypeByData("testPPT.pptm",
+                "application/vnd.ms-powerpoint.presentation.macroenabled.12");
+        assertTypeByData("testPPT.ppsx",
+                "application/vnd.openxmlformats-officedocument.presentationml.slideshow");
         assertTypeByData("testPPT.ppsm", "application/vnd.ms-powerpoint.slideshow.macroEnabled.12");
         assertTypeByData("testDOTM.dotm", "application/vnd.ms-word.template.macroEnabled.12");
-        assertTypeByData("testEXCEL.strict.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        assertTypeByData("testEXCEL_macro_enabled_template.xltm", "application/vnd.ms-excel.template.macroenabled.12");
-        assertTypeByData("testEXCEL_template.xltx", "application/vnd.openxmlformats-officedocument.spreadsheetml.template");
+        assertTypeByData("testEXCEL.strict.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        assertTypeByData("testEXCEL_macro_enabled_template.xltm",
+                "application/vnd.ms-excel.template.macroenabled.12");
+        assertTypeByData("testEXCEL_template.xltx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.template");
 
         assertTypeByData("testPPT.xps", "application/vnd.ms-xpsdocument");
 
@@ -281,29 +278,36 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         assertTypeByData("testVISIO.vssx", "application/vnd.ms-visio.stencil");
         assertTypeByData("testVISIO.vstm", "application/vnd.ms-visio.template.macroenabled.12");
         assertTypeByData("testVISIO.vstx", "application/vnd.ms-visio.template");
-        
+
         // .xlsb is an OOXML file containing the binary parts, and not
         //  an OLE2 file as you might initially expect!
         assertTypeByData("testEXCEL.xlsb", "application/vnd.ms-excel.sheet.binary.macroEnabled.12");
 
         // With the filename and data
-        assertTypeByNameAndData("testEXCEL.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        assertTypeByNameAndData("testWORD.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-        assertTypeByNameAndData("testPPT.pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation");
-        
+        assertTypeByNameAndData("testEXCEL.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        assertTypeByNameAndData("testWORD.docx",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        assertTypeByNameAndData("testPPT.pptx",
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation");
+
         // With the wrong filename supplied, data will trump filename
-        assertTypeByNameAndData("testEXCEL.xlsx", "notWord.docx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        assertTypeByNameAndData("testWORD.docx",  "notExcel.xlsx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-        assertTypeByNameAndData("testPPT.pptx",   "notWord.docx", "application/vnd.openxmlformats-officedocument.presentationml.presentation");
-        
+        assertTypeByNameAndData("testEXCEL.xlsx", "notWord.docx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        assertTypeByNameAndData("testWORD.docx", "notExcel.xlsx",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        assertTypeByNameAndData("testPPT.pptx", "notWord.docx",
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation");
+
         // With an incorrect filename of a different container type, data trumps filename
-        assertTypeByNameAndData("testEXCEL.xlsx", "notOldExcel.xls", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        assertTypeByNameAndData("testEXCEL.xlsx", "notOldExcel.xls",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     }
-    
+
     /**
      * Password Protected OLE2 files are fairly straightforward to detect, as they
-     *  have the same structure as regular OLE2 files. (Core streams may be encrypted
-     *  however)
+     * have the same structure as regular OLE2 files. (Core streams may be encrypted
+     * however)
      */
     @Test
     public void testDetectProtectedOLE2() throws Exception {
@@ -318,28 +322,25 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
     /**
      * Password Protected OOXML files are much more tricky beasts to work with.
      * They have a very different structure to regular OOXML files, and instead
-     *  of being ZIP based they are actually an OLE2 file which contains the
-     *  OOXML structure within an encrypted stream.
+     * of being ZIP based they are actually an OLE2 file which contains the
+     * OOXML structure within an encrypted stream.
      * This makes detecting them much harder...
      */
     @Test
     public void testDetectProtectedOOXML() throws Exception {
         // Encrypted Microsoft Office OOXML files have OLE magic but
         //  special streams, so we can tell they're Protected OOXML
-        assertTypeByData("testEXCEL_protected_passtika.xlsx", 
-                "application/x-tika-ooxml-protected");
-        assertTypeByData("testWORD_protected_passtika.docx", 
-                "application/x-tika-ooxml-protected");
-        assertTypeByData("testPPT_protected_passtika.pptx", 
-                "application/x-tika-ooxml-protected");
-        
+        assertTypeByData("testEXCEL_protected_passtika.xlsx", "application/x-tika-ooxml-protected");
+        assertTypeByData("testWORD_protected_passtika.docx", "application/x-tika-ooxml-protected");
+        assertTypeByData("testPPT_protected_passtika.pptx", "application/x-tika-ooxml-protected");
+
         // At the moment, we can't use the name to specialise
         // See discussions on TIKA-790 for details
-        assertTypeByNameAndData("testEXCEL_protected_passtika.xlsx", 
+        assertTypeByNameAndData("testEXCEL_protected_passtika.xlsx",
                 "application/x-tika-ooxml-protected");
-        assertTypeByNameAndData("testWORD_protected_passtika.docx", 
+        assertTypeByNameAndData("testWORD_protected_passtika.docx",
                 "application/x-tika-ooxml-protected");
-        assertTypeByNameAndData("testPPT_protected_passtika.pptx", 
+        assertTypeByNameAndData("testPPT_protected_passtika.pptx",
                 "application/x-tika-ooxml-protected");
     }
 
@@ -354,18 +355,18 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
     }
 
     private int countTemporaryFiles() {
-        return new File(System.getProperty("java.io.tmpdir")).listFiles(
-                new FilenameFilter() {
-                    public boolean accept(File dir, String name) {
-                        return name.startsWith("apache-tika-");
-                    }
-                }).length;
+        return new File(System.getProperty("java.io.tmpdir")).listFiles(new FilenameFilter() {
+            public boolean accept(File dir, String name) {
+                return name.startsWith("apache-tika-");
+            }
+        }).length;
     }
 
     private void assertRemovalTempfiles(String fileName) throws Exception {
         int numberOfTempFiles = countTemporaryFiles();
 
-        try (TikaInputStream stream = TikaInputStream.get(getResourceAsUrl("/test-documents/" + fileName))) {
+        try (TikaInputStream stream = TikaInputStream
+                .get(getResourceAsUrl("/test-documents/" + fileName))) {
             detector.detect(stream, new Metadata());
         }
 
@@ -405,15 +406,15 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
 
     @Test
     public void testDetectKMZ() throws Exception {
-       assertTypeByData("testKMZ.kmz", "application/vnd.google-earth.kmz");
+        assertTypeByData("testKMZ.kmz", "application/vnd.google-earth.kmz");
     }
-    
+
     @Test
     public void testDetectIPA() throws Exception {
         assertTypeByNameAndData("testIPA.ipa", "application/x-itunes-ipa");
         assertTypeByData("testIPA.ipa", "application/x-itunes-ipa");
     }
-    
+
     @Test
     public void testASiC() throws Exception {
         assertTypeByData("testASiCE.asice", "application/vnd.etsi.asic-e+zip");
@@ -421,21 +422,21 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         assertTypeByNameAndData("testASiCE.asice", "application/vnd.etsi.asic-e+zip");
         assertTypeByNameAndData("testASiCS.asics", "application/vnd.etsi.asic-s+zip");
     }
-     
+
     @Test
     public void testDetectZip() throws Exception {
         assertTypeByData("test-documents.zip", "application/zip");
         assertTypeByData("test-zip-of-zip.zip", "application/zip");
-        
+
         // JAR based formats
         assertTypeByData("testJAR.jar", "application/java-archive");
         assertTypeByData("testWAR.war", "application/x-tika-java-web-archive");
         assertTypeByData("testEAR.ear", "application/x-tika-java-enterprise-archive");
         assertTypeByData("testAPK.apk", "application/vnd.android.package-archive");
-        
+
         // JAR with HTML files in it
         assertTypeByNameAndData("testJAR_with_HTML.jar", "testJAR_with_HTML.jar",
-                                "application/java-archive", "application/java-archive");
+                "application/java-archive", "application/java-archive");
     }
 
     @Test
@@ -453,8 +454,7 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         assertTypeByData("testZ_oom.Z", "application/x-compress");
     }
 
-    private TikaInputStream getTruncatedFile(String name, int n)
-            throws IOException {
+    private TikaInputStream getTruncatedFile(String name, int n) throws IOException {
         try (InputStream input = getResourceAsStream("/test-documents/" + name)) {
             byte[] bytes = new byte[n];
             int m = 0;
@@ -473,15 +473,13 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
     @Test
     public void testTruncatedFiles() throws Exception {
         // First up a truncated OOXML (zip) file
-       
+
         // With only the data supplied, the best we can do is the container
         Metadata m = new Metadata();
         try (TikaInputStream xlsx = getTruncatedFile("testEXCEL.xlsx", 300)) {
-            assertEquals(
-                    MediaType.application("x-tika-ooxml"),
-                    detector.detect(xlsx, m));
+            assertEquals(MediaType.application("x-tika-ooxml"), detector.detect(xlsx, m));
         }
-        
+
         // With truncated data + filename, we can use the filename to specialise
         m = new Metadata();
         m.add(TikaCoreProperties.RESOURCE_NAME_KEY, "testEXCEL.xlsx");
@@ -494,20 +492,16 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         // Now a truncated OLE2 file 
         m = new Metadata();
         try (TikaInputStream xls = getTruncatedFile("testEXCEL.xls", 400)) {
-            assertEquals(
-                    MediaType.application("x-tika-msoffice"),
-                    detector.detect(xls, m));
+            assertEquals(MediaType.application("x-tika-msoffice"), detector.detect(xls, m));
         }
-        
+
         // Finally a truncated OLE2 file, with a filename available
         m = new Metadata();
         m.add(TikaCoreProperties.RESOURCE_NAME_KEY, "testEXCEL.xls");
         try (TikaInputStream xls = getTruncatedFile("testEXCEL.xls", 400)) {
-            assertEquals(
-                    MediaType.application("vnd.ms-excel"),
-                    detector.detect(xls, m));
+            assertEquals(MediaType.application("vnd.ms-excel"), detector.detect(xls, m));
         }
-   }
+    }
 
     @Test
     public void testXMLMultiThreaded() throws Exception {
@@ -537,6 +531,7 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
             //for now, randomly pick 20 files.
             int toProcess = 20;
             int processed = 0;
+
             @Override
             public boolean accept(File pathname) {
                 if (processed >= toProcess) {
@@ -551,13 +546,12 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         int numThreads = 20;
         XMLReaderUtils.setPoolSize(numThreads);
 
-        testDetector(detector, numThreads, 50, filter, numThreads*3);
+        testDetector(detector, numThreads, 50, filter, numThreads * 3);
     }
 
     @Test
     public void testOpenOfficeInAZip() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata(
-                "testOpenOfficeInAZip.zip");
+        List<Metadata> metadataList = getRecursiveMetadata("testOpenOfficeInAZip.zip");
         assertEquals(3, metadataList.size());
         assertEquals("application/vnd.oasis.opendocument.presentation",
                 metadataList.get(2).get(Metadata.CONTENT_TYPE));

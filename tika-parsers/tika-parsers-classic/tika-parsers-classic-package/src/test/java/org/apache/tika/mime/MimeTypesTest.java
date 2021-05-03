@@ -72,7 +72,7 @@ public class MimeTypesTest {
         assertNotNull(types.forName(dummy));
         assertEquals(dummy, types.forName("text/xxxxx").getType().toString());
         assertEquals(dummy, types.getRegisteredMimeType("text/xxxxx").getType().toString());
-        
+
         try {
             types.forName("invalid");
             fail("MimeTypeException not thrown on invalid type name");
@@ -86,7 +86,7 @@ public class MimeTypesTest {
         assertNull(registry.getSupertype(OCTET_STREAM));
         assertEquals(OCTET_STREAM, registry.getSupertype(TEXT_PLAIN));
         assertEquals(TEXT_PLAIN, registry.getSupertype(html.getType()));
-   }
+    }
 
     @Test
     public void testIsDescendantOf() {

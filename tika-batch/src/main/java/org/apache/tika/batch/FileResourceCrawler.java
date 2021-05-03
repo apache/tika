@@ -1,5 +1,3 @@
-package org.apache.tika.batch;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,39 +14,36 @@ package org.apache.tika.batch;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.batch;
 
-import java.util.Date;
+
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.tika.extractor.DocumentSelector;
-import org.apache.tika.metadata.Metadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.extractor.DocumentSelector;
+import org.apache.tika.metadata.Metadata;
+
 public abstract class FileResourceCrawler implements Callable<IFileProcessorFutureResult> {
-    protected static final Logger LOG = LoggerFactory.getLogger(FileResourceCrawler.class.toString());
+    protected static final Logger LOG =
+            LoggerFactory.getLogger(FileResourceCrawler.class.toString());
 
     protected final static int SKIPPED = 0;
     protected final static int ADDED = 1;
     protected final static int STOP_NOW = 2;
-
+    //how long to pause if can't add to queue
+    private static final long PAUSE_INCREMENT_MILLIS = 1000;
+    private final ArrayBlockingQueue<FileResource> queue;
+    private final int numConsumers;
     private volatile boolean hasCompletedCrawling = false;
     private volatile boolean shutDownNoPoison = false;
     private volatile boolean isActive = true;
     private volatile boolean timedOut = false;
-
-    //how long to pause if can't add to queue
-    private static final long PAUSE_INCREMENT_MILLIS = 1000;
-
     private int maxFilesToAdd = -1;
     private int maxFilesToConsider = -1;
-
-    private final ArrayBlockingQueue<FileResource> queue;
-    private final int numConsumers;
-
-
     private long maxConsecWaitInMillis = 300000;//300,000ms = 5 minutes
     private DocumentSelector documentSelector = null;
 
@@ -96,7 +91,6 @@ public abstract class FileResourceCrawler implements Callable<IFileProcessorFutu
     }
 
     /**
-     *
      * @param fileResource resource to add
      * @return int status of the attempt (SKIPPED, ADDED, STOP_NOW) to add the resource to the queue.
      * @throws InterruptedException
@@ -114,15 +108,16 @@ public abstract class FileResourceCrawler implements Callable<IFileProcessorFutu
         boolean isAdded = false;
         if (select(fileResource.getMetadata())) {
             long start = System.currentTimeMillis();
-            while (queue.offer(fileResource, PAUSE_INCREMENT_MILLIS, TimeUnit.MILLISECONDS) == false) {
+            while (queue.offer(fileResource, PAUSE_INCREMENT_MILLIS, TimeUnit.MILLISECONDS) ==
+                    false) {
                 long elapsed = System.currentTimeMillis() - start;
                 LOG.info("FileResourceCrawler is pausing. Queue is full: {} after {} ms",
                         queue.size(), elapsed);
 
                 if (maxConsecWaitInMillis > -1 && elapsed > maxConsecWaitInMillis) {
                     timedOut = true;
-                    String msg = "FileResourceCrawler had to wait longer (" +
-                            elapsed + " ms) than allowed ("+maxConsecWaitInMillis+" ms)";
+                    String msg = "FileResourceCrawler had to wait longer (" + elapsed +
+                            " ms) than allowed (" + maxConsecWaitInMillis + " ms)";
                     LOG.error(msg);
                     throw new InterruptedException(msg);
                 }
@@ -137,12 +132,12 @@ public abstract class FileResourceCrawler implements Callable<IFileProcessorFutu
             LOG.debug("crawler did not select: {}", fileResource.getResourceId());
         }
         considered++;
-        return (isAdded)?ADDED:SKIPPED;
+        return (isAdded) ? ADDED : SKIPPED;
     }
 
     //Warning! Depending on the value of maxConsecWaitInMillis
     //this could try forever in vain to add poison to the queue.
-    private void shutdown() throws InterruptedException{
+    private void shutdown() throws InterruptedException {
         LOG.debug("FileResourceCrawler entering shutdown");
         if (hasCompletedCrawling || shutDownNoPoison) {
             return;
@@ -184,6 +179,7 @@ public abstract class FileResourceCrawler implements Callable<IFileProcessorFutu
     public void setMaxConsecWaitInMillis(long maxConsecWaitInMillis) {
         this.maxConsecWaitInMillis = maxConsecWaitInMillis;
     }
+
     public void setDocumentSelector(DocumentSelector documentSelector) {
         this.documentSelector = documentSelector;
     }
@@ -222,11 +218,12 @@ public abstract class FileResourceCrawler implements Callable<IFileProcessorFutu
 
     /**
      * Use sparingly.  This synchronizes on the queue!
+     *
      * @return whether this queue contains any non-poison file resources
      */
     public boolean isQueueEmpty() {
-        int size= 0;
-        synchronized(queue) {
+        int size = 0;
+        synchronized (queue) {
             for (FileResource aQueue : queue) {
                 if (!(aQueue instanceof PoisonFileResource)) {
                     size++;
@@ -250,7 +247,6 @@ public abstract class FileResourceCrawler implements Callable<IFileProcessorFutu
     }
 
     /**
-     *
      * @return number of files that this crawler added to the queue
      */
     public int getAdded() {

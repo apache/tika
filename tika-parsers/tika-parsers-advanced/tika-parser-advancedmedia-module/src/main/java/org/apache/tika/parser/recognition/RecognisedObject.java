@@ -82,10 +82,7 @@ public class RecognisedObject {
 
     @Override
     public String toString() {
-        return "RecognisedObject{" +
-                "label='" + label + "\' (" + labelLang + ')' +
-                ", id='" + id + '\'' +
-                ", confidence=" + confidence +
-                '}';
+        return "RecognisedObject{" + "label='" + label + "\' (" + labelLang + ')' + ", id='" + id +
+                '\'' + ", confidence=" + confidence + '}';
     }
 }

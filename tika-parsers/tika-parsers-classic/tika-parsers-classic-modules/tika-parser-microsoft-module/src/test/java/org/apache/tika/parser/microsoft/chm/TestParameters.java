@@ -26,32 +26,14 @@ import org.apache.commons.io.IOUtils;
  * Holds test parameters such as verification points
  */
 public class TestParameters {
-    /* Prevents initialization */
-    private TestParameters() {
-    }
-
     /* Tests values */
     static final int nameLength = 5;
     static final String entryName = TestParameters.class.getName();
-    static ChmCommons.EntryType entryType = ChmCommons.EntryType.COMPRESSED;
     static final int offset = 3;
     static final int length = 20;
     static final int NTHREADS = 2;
-
     static final int BUFFER_SIZE = 16384;
-
     static final byte[] chmData = readResource("/test-documents/testChm.chm");
-
-    private static byte[] readResource(String name) {
-        try {
-            try (InputStream stream = TestParameters.class.getResourceAsStream(name)) {
-                return IOUtils.toByteArray(stream);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     /* Verification points */
     static final String VP_CHM_MIME_TYPE = "Content-Type=application/x-chm";
     static final String VP_EXTRACTED_TEXT = "The TCard method accepts only numeric arguments";
@@ -59,7 +41,6 @@ public class TestParameters {
     static final String VP_ISTP_SIGNATURE = "ITSP";
     static final String VP_PMGL_SIGNATURE = "PMGL";
     static final String VP_CONTROL_DATA_SIGNATURE = "LZXC";
-
     static final int VP_DIRECTORY_LENGTH = 4180;
     static final int VP_DATA_OFFSET_LENGTH = 4300;
     static final int VP_DIRECTORY_OFFSET = 120;
@@ -101,4 +82,19 @@ public class TestParameters {
     static final int VP_TBL_OFFSET = 40;
     static final int VP_RES_TBL_UNKNOWN = 8;
     static final int VP_RES_TBL_VERSION = 2;
+    static ChmCommons.EntryType entryType = ChmCommons.EntryType.COMPRESSED;
+
+    /* Prevents initialization */
+    private TestParameters() {
+    }
+
+    private static byte[] readResource(String name) {
+        try {
+            try (InputStream stream = TestParameters.class.getResourceAsStream(name)) {
+                return IOUtils.toByteArray(stream);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

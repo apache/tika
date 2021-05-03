@@ -14,10 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import org.apache.tika.pipes.fetchiterator.FetchEmitTuple;
-import org.apache.tika.pipes.fetchiterator.FetchIterator;
-import org.apache.tika.pipes.fetchiterator.csv.CSVFetchIterator;
-import org.junit.Test;
+
+import static org.apache.tika.pipes.fetchiterator.FetchIterator.COMPLETED_SEMAPHORE;
+import static org.junit.Assert.assertEquals;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -25,14 +24,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+
+import org.apache.tika.pipes.FetchEmitTuple;
+import org.apache.tika.pipes.fetchiterator.csv.CSVFetchIterator;
 
 public class TestCSVFetchIterator {
 
@@ -46,69 +47,62 @@ public class TestCSVFetchIterator {
         it.setCsvPath(p);
         it.setFetchKeyColumn("fetchKey");
         int numConsumers = 2;
-        ExecutorService es = Executors.newFixedThreadPool(numConsumers+1);
-        ArrayBlockingQueue<FetchEmitTuple> queue = it.init(numConsumers);
+        ExecutorService es = Executors.newFixedThreadPool(numConsumers);
         ExecutorCompletionService c = new ExecutorCompletionService(es);
-        c.submit(it);
+        ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(100);
         List<MockFetcher> fetchers = new ArrayList<>();
         for (int i = 0; i < numConsumers; i++) {
             MockFetcher f = new MockFetcher(queue);
             fetchers.add(f);
             c.submit(f);
         }
+        for (FetchEmitTuple t : it) {
+            queue.offer(t);
+        }
+        for (int i = 0; i < numConsumers; i++) {
+            queue.offer(COMPLETED_SEMAPHORE);
+        }
         int finished = 0;
         int completed = 0;
         try {
-            while (finished++ < numConsumers+1) {
+            while (finished++ < numConsumers) {
                 Future<Integer> f = c.take();
                 completed += f.get();
             }
         } finally {
             es.shutdownNow();
         }
-        assertEquals(10, completed);
+        assertEquals(5, completed);
         for (MockFetcher f : fetchers) {
             for (FetchEmitTuple t : f.pairs) {
                 String id = t.getMetadata().get("id");
-                assertEquals("path/to/my/file"+id,
-                        t.getFetchKey().getKey());
-                assertEquals("project"+
-                                (Integer.parseInt(id) % 2 == 1 ? "a" : "b"),
+                assertEquals("path/to/my/file" + id, t.getFetchKey().getFetchKey());
+                assertEquals("project" + (Integer.parseInt(id) % 2 == 1 ? "a" : "b"),
                         t.getMetadata().get("project"));
             }
         }
     }
 
-    @Test(expected = ExecutionException.class)
+    @Test(expected = RuntimeException.class)
     public void testBadFetchKeyCol() throws Exception {
         Path p = get("test-simple.csv");
         CSVFetchIterator it = new CSVFetchIterator();
         it.setFetcherName("fs");
         it.setCsvPath(p);
         it.setFetchKeyColumn("fetchKeyDoesntExist");
-        ExecutorService es = Executors.newFixedThreadPool(2);
-        ExecutorCompletionService c = new ExecutorCompletionService(es);
-        c.submit(it);
-        c.submit(new MockFetcher(it.init(1)));
-        int finished = 0;
-        try {
-            while (finished++ < 2) {
-                Future f = c.take();
-                f.get();
-            }
-        } finally {
-            es.shutdownNow();
-        }
+        for (FetchEmitTuple t : it) {
 
+        }
     }
 
     private Path get(String testFileName) throws Exception {
-        return Paths.get(TestCSVFetchIterator.class.getResource("/"+testFileName).toURI());
+        return Paths.get(TestCSVFetchIterator.class.getResource("/" + testFileName).toURI());
     }
 
     private static class MockFetcher implements Callable<Integer> {
         private final ArrayBlockingQueue<FetchEmitTuple> queue;
         private final List<FetchEmitTuple> pairs = new ArrayList<>();
+
         private MockFetcher(ArrayBlockingQueue<FetchEmitTuple> queue) {
             this.queue = queue;
         }
@@ -117,7 +111,7 @@ public class TestCSVFetchIterator {
         public Integer call() throws Exception {
             while (true) {
                 FetchEmitTuple t = queue.poll(1, TimeUnit.HOURS);
-                if (t == FetchIterator.COMPLETED_SEMAPHORE) {
+                if (t == COMPLETED_SEMAPHORE) {
                     return pairs.size();
                 }
                 pairs.add(t);

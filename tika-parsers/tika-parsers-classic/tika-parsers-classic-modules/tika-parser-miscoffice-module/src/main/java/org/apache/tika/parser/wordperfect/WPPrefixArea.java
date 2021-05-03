@@ -18,8 +18,9 @@ package org.apache.tika.parser.wordperfect;
 
 
 /**
- * Section of a WordPerfect file called "Prefix Area" containing  
+ * Section of a WordPerfect file called "Prefix Area" containing
  * information about the specific file format/version.
+ *
  * @author Pascal Essiembre
  */
 class WPPrefixArea {
@@ -37,8 +38,8 @@ class WPPrefixArea {
     public static final int WP6_FILE_TYPE = 36;
     public static final int WP6_MAJOR_VERSION = 2;
     public static final int WP6_MINOR_VERSION = 0;
-    
-    
+
+
     // Normal header
     private String fileId;
     private long docAreaPointer;
@@ -51,7 +52,7 @@ class WPPrefixArea {
 
     // Extended header
     private long fileSize;
-    
+
     public WPPrefixArea() {
         super();
     }
@@ -87,7 +88,7 @@ class WPPrefixArea {
     public void setFileType(int fileType) {
         this.fileType = fileType;
     }
-    
+
     public int getMajorVersion() {
         return majorVersion;
     }
@@ -103,7 +104,7 @@ class WPPrefixArea {
     public void setMinorVersion(int minorVersion) {
         this.minorVersion = minorVersion;
     }
-    
+
     public boolean isEncrypted() {
         return encrypted;
     }
@@ -119,35 +120,29 @@ class WPPrefixArea {
     public void setIndexAreaPointer(int indexAreaPointer) {
         this.indexAreaPointer = indexAreaPointer;
     }
-    
+
     public long getFileSize() {
         return fileSize;
     }
+
     public void setFileSize(long fileSize) {
         this.fileSize = fileSize;
     }
 
     @Override
     public String toString() {
-        return "WP6FileHeader{" +
-                "fileId='" + fileId + '\'' +
-                ", docAreaPointer=" + docAreaPointer +
-                ", productType=" + productType +
-                ", fileType=" + fileType +
-                ", majorVersion=" + majorVersion +
-                ", minorVersion=" + minorVersion +
-                ", encrypted=" + encrypted +
-                ", indexAreaPointer=" + indexAreaPointer +
-                ", fileSize=" + fileSize +
-                '}';
+        return "WP6FileHeader{" + "fileId='" + fileId + '\'' + ", docAreaPointer=" +
+                docAreaPointer + ", productType=" + productType + ", fileType=" + fileType +
+                ", majorVersion=" + majorVersion + ", minorVersion=" + minorVersion +
+                ", encrypted=" + encrypted + ", indexAreaPointer=" + indexAreaPointer +
+                ", fileSize=" + fileSize + '}';
     }
 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result
-                + (int) (docAreaPointer ^ (docAreaPointer >>> 32));
+        result = prime * result + (int) (docAreaPointer ^ (docAreaPointer >>> 32));
         result = prime * result + (encrypted ? 1231 : 1237);
         result = prime * result + ((fileId == null) ? 0 : fileId.hashCode());
         result = prime * result + (int) (fileSize ^ (fileSize >>> 32));
@@ -205,5 +200,5 @@ class WPPrefixArea {
         return true;
     }
 
-    
+
 }

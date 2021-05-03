@@ -23,6 +23,9 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
@@ -31,8 +34,6 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * Plain text parser. The text encoding of the document stream is
@@ -57,10 +58,6 @@ public class TXTParser extends AbstractEncodingDetectorParser {
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.TEXT_PLAIN);
 
-    public Set<MediaType> getSupportedTypes(ParseContext context) {
-        return SUPPORTED_TYPES;
-    }
-
     public TXTParser() {
         super();
     }
@@ -69,14 +66,16 @@ public class TXTParser extends AbstractEncodingDetectorParser {
         super(encodingDetector);
     }
 
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return SUPPORTED_TYPES;
+    }
+
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
 
         // Automatically detect the character encoding
-        try (AutoDetectReader reader = new AutoDetectReader(
-                new CloseShieldInputStream(stream), metadata, getEncodingDetector(context))) {
+        try (AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(stream),
+                metadata, getEncodingDetector(context))) {
             //try to get detected content type; could be a subclass of text/plain
             //such as vcal, etc.
             String incomingMime = metadata.get(Metadata.CONTENT_TYPE);
@@ -93,8 +92,7 @@ public class TXTParser extends AbstractEncodingDetectorParser {
             // deprecated, see TIKA-431
             metadata.set(Metadata.CONTENT_ENCODING, charset.name());
 
-            XHTMLContentHandler xhtml =
-                    new XHTMLContentHandler(handler, metadata);
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             xhtml.startDocument();
 
             xhtml.startElement("p");

@@ -30,6 +30,48 @@ import org.slf4j.LoggerFactory;
 public interface LoadErrorHandler {
 
     /**
+     * Strategy that simply ignores all problems.
+     */
+    LoadErrorHandler IGNORE = new LoadErrorHandler() {
+        public void handleLoadError(String classname, Throwable throwable) {
+        }
+
+        @Override
+        public String toString() {
+            return "IGNORE";
+        }
+    };
+    /**
+     * Strategy that logs warnings of all problems using a {@link org.slf4j.Logger}
+     * created using the given class name.
+     */
+    LoadErrorHandler WARN = new LoadErrorHandler() {
+        public void handleLoadError(String classname, Throwable throwable) {
+            LoggerFactory.getLogger(classname).warn("Unable to load {}", classname, throwable);
+        }
+
+        @Override
+        public String toString() {
+            return "WARN";
+        }
+    };
+    /**
+     * Strategy that throws a {@link RuntimeException} with the given
+     * throwable as the root cause, thus interrupting the entire service
+     * loading operation.
+     */
+    LoadErrorHandler THROW = new LoadErrorHandler() {
+        public void handleLoadError(String classname, Throwable throwable) {
+            throw new RuntimeException("Unable to load " + classname, throwable);
+        }
+
+        @Override
+        public String toString() {
+            return "THROW";
+        }
+    };
+
+    /**
      * Handles a problem encountered when trying to load the specified
      * service class. The implementation can log or otherwise process
      * the given error information. If the method returns normally, then
@@ -40,45 +82,4 @@ public interface LoadErrorHandler {
      * @param throwable the encountered problem
      */
     void handleLoadError(String classname, Throwable throwable);
-
-    /**
-     * Strategy that simply ignores all problems.
-     */
-    LoadErrorHandler IGNORE = new LoadErrorHandler() {
-        public void handleLoadError(String classname, Throwable throwable) {
-        }
-        @Override
-        public String toString() {
-            return "IGNORE";
-        }
-    };
-
-    /**
-     * Strategy that logs warnings of all problems using a {@link org.slf4j.Logger}
-     * created using the given class name.
-     */
-    LoadErrorHandler WARN = new LoadErrorHandler() {
-        public void handleLoadError(String classname, Throwable throwable) {
-            LoggerFactory.getLogger(classname).warn("Unable to load {}", classname, throwable);
-        }
-        @Override
-        public String toString() {
-            return "WARN";
-        }
-    };
-
-    /**
-     * Strategy that throws a {@link RuntimeException} with the given
-     * throwable as the root cause, thus interrupting the entire service
-     * loading operation.
-     */
-    LoadErrorHandler THROW = new LoadErrorHandler() {
-        public void handleLoadError(String classname, Throwable throwable) {
-            throw new RuntimeException("Unable to load " + classname, throwable);
-        }
-        @Override
-        public String toString() {
-            return "THROW";
-        }
-    };
 }
