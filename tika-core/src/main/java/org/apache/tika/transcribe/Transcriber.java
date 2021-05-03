@@ -17,10 +17,10 @@
 
 package org.apache.tika.transcribe;
 
-import org.apache.tika.exception.TikaException;
-
 import java.io.IOException;
 import java.io.InputStream;
+
+import org.apache.tika.exception.TikaException;
 
 /**
  * Interface for Transcriber services.
