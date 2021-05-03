@@ -17,10 +17,9 @@
 
 package org.apache.tika.transcribe;
 
-import org.apache.tika.exception.TikaException;
-
 import java.io.IOException;
 
+import org.apache.tika.exception.TikaException;
 
 /**
  * Interface for Transcriber services.
@@ -39,7 +38,7 @@ public interface Transcriber {
      * @since 2.1
      */
 
-    public String transcribeAudio(String filePath) throws TikaException, IOException;
+    public String transcribeAudio(String filePath) throws IOException, TikaException;
 
     /**
      * Transcribe the given the audio file and the source language.
@@ -51,7 +50,7 @@ public interface Transcriber {
      * @throws IOException   If an I/O exception of some sort has occurred.
      * @since 2.1
      */
-    public String transcribeAudio(String filePath, String sourceLanguage) throws TikaException, IOException;
+    public String transcribeAudio(String filePath, String sourceLanguage) throws IOException, TikaException;
 
     /**
      * Transcribe the given the video file.
@@ -62,7 +61,7 @@ public interface Transcriber {
      * @throws IOException   If an I/O exception of some sort has occurred.
      * @since 2.1
      */
-    public String transcribeVideo(String filePath) throws TikaException, IOException;
+    public String transcribeVideo(String filePath) throws IOException, TikaException;
 
     /**
      * Transcribe the given the video file and the source language.
@@ -74,7 +73,7 @@ public interface Transcriber {
      * @throws IOException   If an I/O exception of some sort has occurred.
      * @since 2.1
      */
-    public String transcribeVideo(String filePath, String sourceLanguage) throws TikaException, IOException;
+    public String transcribeVideo(String filePath, String sourceLanguage) throws IOException, TikaException;
 
     /**
      * @return true if this Transcriber is probably able to translate right now.
