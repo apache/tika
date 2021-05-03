@@ -116,19 +116,8 @@ class PDF2XHTML extends AbstractPDF2XHTML {
             }
         }
         if (pdf2XHTML.exceptions.size() > 0) {
-            tryWriteLimitReached(pdf2XHTML.exceptions);
             //throw the first
             throw new TikaException("Unable to extract PDF content", pdf2XHTML.exceptions.get(0));
-        }
-    }
-
-    private static void tryWriteLimitReached(List<IOException> exceptions) {
-        WriteOutContentHandler tmp = new WriteOutContentHandler();
-        for (IOException e : exceptions) {
-            if (tmp.isWriteLimitReached(e)) {
-
-            }
-
         }
     }
 

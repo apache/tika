@@ -88,6 +88,7 @@ import org.apache.pdfbox.tools.imageio.ImageIOUtil;
 import org.apache.pdfbox.util.Matrix;
 import org.apache.pdfbox.util.Vector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
@@ -426,8 +427,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
     void handleCatchableIOE(IOException e) throws IOException {
         if (config.getCatchIntermediateIOExceptions()) {
-
-            if (isWriteLimitReached(e, 0)) {
+            if (WriteLimitReachedException.isWriteLimitReached(e)) {
                 throw e;
             }
 
@@ -442,22 +442,6 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
     }
 
-    boolean isWriteLimitReached(Throwable t, int depth) {
-        if (depth > MAX_RECURSION_DEPTH) {
-            return false;
-        }
-        if (t == null) {
-            return false;
-        }
-        if (t instanceof SAXException) {
-
-            String msg = t.getMessage();
-            if (msg != null && msg.contains("Your document contained more than")) {
-                return true;
-            }
-        }
-        return isWriteLimitReached(t.getCause(), depth + 1);
-    }
     void doOCROnCurrentPage() throws IOException, TikaException, SAXException {
         if (config.getOcrStrategy().equals(NO_OCR)) {
             return;
