@@ -134,10 +134,7 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
         } else {
             super.characters(ch, start, writeLimit - writeCount);
             writeCount = writeLimit;
-            throw new WriteLimitReachedException("Your document contained more than " + writeLimit +
-                    " characters, and so your requested limit has been" +
-                    " reached. To receive the full text of the document," +
-                    " increase your limit. (Text up to the limit is" + " however available).");
+            throw new WriteLimitReachedException(writeLimit);
         }
     }
 
@@ -149,11 +146,7 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
         } else {
             super.ignorableWhitespace(ch, start, writeLimit - writeCount);
             writeCount = writeLimit;
-            throw new WriteLimitReachedException("Your document contained more than "
-                    + writeLimit +
-                    " characters, and so your requested limit has been" +
-                    " reached. To receive the full text of the document," +
-                    " increase your limit. (Text up to the limit is however available).");
+            throw new WriteLimitReachedException(writeLimit);
         }
     }
 }

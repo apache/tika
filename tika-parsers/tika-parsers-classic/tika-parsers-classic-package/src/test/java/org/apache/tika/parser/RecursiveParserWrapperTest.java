@@ -107,8 +107,7 @@ public class RecursiveParserWrapperTest extends TikaTest {
                 wlr++;
             }
         }
-        assertEquals(1, wlr);
-
+        assertEquals(2, wlr);
     }
 
 

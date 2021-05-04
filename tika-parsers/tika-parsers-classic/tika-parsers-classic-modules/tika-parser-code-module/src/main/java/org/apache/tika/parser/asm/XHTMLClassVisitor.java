@@ -30,7 +30,9 @@ import org.objectweb.asm.Type;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.exception.RuntimeSAXException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -64,11 +66,8 @@ class XHTMLClassVisitor extends ClassVisitor {
             ClassReader reader = new ClassReader(stream);
             reader.accept(this, ClassReader.SKIP_FRAMES | ClassReader.SKIP_CODE);
         } catch (RuntimeException e) {
-            if (e.getCause() instanceof SAXException) {
-                throw (SAXException) e.getCause();
-            } else {
-                throw new TikaException("Failed to parse a Java class", e);
-            }
+            WriteLimitReachedException.throwIfWriteLimitReached(e);
+            throw new TikaException("Failed to parse a Java class", e);
         }
     }
 
@@ -125,7 +124,7 @@ class XHTMLClassVisitor extends ClassVisitor {
             }
             xhtml.characters("{\n");
         } catch (SAXException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeSAXException(e);
         }
     }
 
@@ -148,7 +147,7 @@ class XHTMLClassVisitor extends ClassVisitor {
             xhtml.endElement("pre");
             xhtml.endDocument();
         } catch (SAXException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeSAXException(e);
         }
     }
 
@@ -204,7 +203,7 @@ class XHTMLClassVisitor extends ClassVisitor {
                 writeSemicolon();
                 writeNewline();
             } catch (SAXException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeSAXException(e);
             }
         }
 
@@ -251,7 +250,7 @@ class XHTMLClassVisitor extends ClassVisitor {
                 writeSemicolon();
                 writeNewline();
             } catch (SAXException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeSAXException(e);
             }
         }
 

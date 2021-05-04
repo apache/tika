@@ -51,6 +51,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
@@ -109,7 +110,7 @@ public class TSDParser extends AbstractParser {
         }
     }
 
-    private List<TSDMetas> extractMetas(InputStream stream) {
+    private List<TSDMetas> extractMetas(InputStream stream) throws SAXException {
         List<TSDMetas> tsdMetasList = new ArrayList<>();
 
         try {
@@ -130,6 +131,7 @@ public class TSDParser extends AbstractParser {
         } catch (SecurityException e) {
             throw e;
         } catch (Exception ex) {
+            WriteLimitReachedException.throwIfWriteLimitReached(ex);
             LOG.error("Error in TSDParser.buildMetas {}", ex.getMessage());
             tsdMetasList.clear();
         }
@@ -160,7 +162,7 @@ public class TSDParser extends AbstractParser {
     }
 
     private void parseTSDContent(InputStream stream, ContentHandler handler, Metadata metadata,
-                                 ParseContext context) {
+                                 ParseContext context) throws SAXException {
 
         CMSTimeStampedDataParser cmsTimeStampedDataParser = null;
         EmbeddedDocumentExtractor edx = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
@@ -176,6 +178,7 @@ public class TSDParser extends AbstractParser {
             } catch (SecurityException e) {
                 throw e;
             } catch (Exception ex) {
+                WriteLimitReachedException.throwIfWriteLimitReached(ex);
                 LOG.error("Error in TSDParser.parseTSDContent {}", ex.getMessage());
             } finally {
                 this.closeCMSParser(cmsTimeStampedDataParser);

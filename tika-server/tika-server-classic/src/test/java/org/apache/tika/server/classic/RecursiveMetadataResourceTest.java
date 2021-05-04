@@ -355,7 +355,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         // Check results
         reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         metadataList = JsonMetadataList.fromJson(reader);
-        assertEquals(12, metadataList.size());
+        assertEquals(10, metadataList.size());
         assertEquals("true", metadataList.get(6).get(TikaCoreProperties.WRITE_LIMIT_REACHED));
         assertContains("When in the Course of human events it becomes necessary for one people",
                 metadataList.get(6).get(TikaCoreProperties.TIKA_CONTENT));

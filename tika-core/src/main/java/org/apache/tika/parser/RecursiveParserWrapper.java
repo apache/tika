@@ -155,18 +155,14 @@ public class RecursiveParserWrapper extends ParserDecorator {
                     new RecursivelySecureContentHandler(localHandler, tis, writeLimit);
             context.set(RecursivelySecureContentHandler.class, secureContentHandler);
             getWrappedParser().parse(tis, secureContentHandler, metadata, context);
-        } catch (SAXException e) {
-            boolean wlr = WriteLimitReachedException.isWriteLimitReached(e);
-            if (wlr == false) {
+        } catch (Throwable e) {
+            if (WriteLimitReachedException.isWriteLimitReached(e)) {
+                metadata.set(TikaCoreProperties.WRITE_LIMIT_REACHED, "true");
+            } else {
+                String stackTrace = ExceptionUtils.getFilteredStackTrace(e);
+                metadata.add(TikaCoreProperties.CONTAINER_EXCEPTION, stackTrace);
                 throw e;
             }
-            metadata.set(TikaCoreProperties.WRITE_LIMIT_REACHED, "true");
-        } catch (Throwable e) {
-            //try our best to record the problem in the metadata object
-            //then rethrow
-            String stackTrace = ExceptionUtils.getFilteredStackTrace(e);
-            metadata.add(TikaCoreProperties.CONTAINER_EXCEPTION, stackTrace);
-            throw e;
         } finally {
             tmp.dispose();
             long elapsedMillis = System.currentTimeMillis() - started;
@@ -240,9 +236,9 @@ public class RecursiveParserWrapper extends ParserDecorator {
             try {
                 super.parse(stream, secureContentHandler, metadata, context);
             } catch (SAXException e) {
-                boolean wlr = WriteLimitReachedException.isWriteLimitReached(e);
-                if (wlr == true) {
+                if (WriteLimitReachedException.isWriteLimitReached(e)) {
                     metadata.add(TikaCoreProperties.WRITE_LIMIT_REACHED, "true");
+                    throw e;
                 } else {
                     if (catchEmbeddedExceptions) {
                         ParserUtils.recordParserFailure(this, e, metadata);
@@ -339,13 +335,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
             int availableLength = Math.min(totalWriteLimit - totalChars, length);
             super.characters(ch, start, availableLength);
             if (availableLength < length) {
-                throw new WriteLimitReachedException(
-                        "Your document contained more than " + totalWriteLimit +
-                                " characters, and so your requested limit has been" +
-                                " reached. To receive the full text of the document," +
-                                " increase your limit. (Text up to the limit is" +
-                                " however available)."
-                );
+                throw new WriteLimitReachedException(totalWriteLimit);
             }
         }
 
@@ -358,12 +348,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
             int availableLength = Math.min(totalWriteLimit - totalChars, length);
             super.ignorableWhitespace(ch, start, availableLength);
             if (availableLength < length) {
-                throw new WriteLimitReachedException("Your document contained more than "
-                        + totalWriteLimit +
-                        " characters, and so your requested limit has been" +
-                        " reached. To receive the full text of the document," +
-                        " increase your limit. (Text up to the limit is" + " however available)."
-                );
+                throw new WriteLimitReachedException(totalWriteLimit);
             }
         }
     }

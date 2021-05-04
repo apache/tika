@@ -74,7 +74,7 @@ public class Pkcs7Parser extends AbstractParser {
                 }
                 try (InputStream input = content.getContentStream()) {
                     Parser delegate = context.get(Parser.class, EmptyParser.INSTANCE);
-                    delegate.parse(input, handler, metadata, context);
+                    delegate.parse(input, handler, new Metadata(), context);
                 }
             } finally {
                 parser.close();

@@ -65,6 +65,7 @@ import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.exception.RuntimeSAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -443,6 +444,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 lastSeenCol = -1;
             } catch (SAXException e) {
                 //swallow
+                throw new RuntimeSAXException(e);
             }
 
         }
@@ -451,7 +453,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             try {
                 xhtml.endElement("tr");
             } catch (SAXException e) {
-                //swallow
+                throw new RuntimeSAXException(e);
             }
         }
 
@@ -485,7 +487,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
 
                 xhtml.endElement("td");
             } catch (SAXException e) {
-                //swallow
+                throw new RuntimeSAXException(e);
             }
         }
 
