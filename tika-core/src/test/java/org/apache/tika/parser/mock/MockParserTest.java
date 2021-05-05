@@ -22,7 +22,7 @@ import org.junit.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 
 public class MockParserTest extends TikaTest {
 
@@ -36,6 +36,6 @@ public class MockParserTest extends TikaTest {
     public void testTimes() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("mock_times.xml");
         assertContainsCount("hello",
-                metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT), 30);
+                metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT), 30);
     }
 }
