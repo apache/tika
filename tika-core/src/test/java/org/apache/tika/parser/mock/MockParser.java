@@ -393,10 +393,17 @@ public class MockParser extends AbstractParser {
         if (eNode != null) {
             elementType = eNode.getTextContent();
         }
+        int times = 1;
+        Node tNode = attrs.getNamedItem("times");
+        if (tNode != null) {
+            times = Integer.parseInt(tNode.getTextContent());
+        }
         String text = action.getTextContent();
-        xhtml.startElement(elementType);
-        xhtml.characters(text);
-        xhtml.endElement(elementType);
+        for (int i = 0; i < times; i++) {
+            xhtml.startElement(elementType);
+            xhtml.characters(text);
+            xhtml.endElement(elementType);
+        }
     }
 
 
