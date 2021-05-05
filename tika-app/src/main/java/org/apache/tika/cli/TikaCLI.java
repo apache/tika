@@ -526,7 +526,7 @@ public class TikaCLI {
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
         RecursiveParserWrapperHandler handler =
                 new RecursiveParserWrapperHandler(getContentHandlerFactory(type),
-                        -1, config.getMetadataFilter());
+                        -1, -1, config.getMetadataFilter());
         try (InputStream input = TikaInputStream.get(url, metadata)) {
             wrapper.parse(input, handler, metadata, context);
         }

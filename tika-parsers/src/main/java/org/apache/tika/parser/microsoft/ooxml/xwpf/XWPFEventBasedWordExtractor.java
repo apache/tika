@@ -39,6 +39,9 @@ import org.apache.poi.openxml4j.opc.PackageRelationship;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.xwpf.usermodel.XWPFNumbering;
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
+
+import org.apache.tika.exception.RuntimeSAXException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLWordAndPowerPointTextHandler;
 import org.apache.tika.parser.microsoft.ooxml.ParagraphProperties;
 import org.apache.tika.parser.microsoft.ooxml.RunProperties;
@@ -119,6 +122,9 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
                 } catch (IOException e) {
                     LOG.warn("IOException handling document part", e);
                 } catch (SAXException e) {
+                    if (WriteLimitReachedException.isWriteLimitReached(e)) {
+                        throw new RuntimeSAXException(e);
+                    }
                     //swallow this because we don't actually call it
                     LOG.warn("SAXException handling document part", e);
                 }
@@ -135,6 +141,9 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
                 } catch (IOException e) {
                     LOG.warn("IOException handling glossary document part", e);
                 } catch (SAXException e) {
+                    if (WriteLimitReachedException.isWriteLimitReached(e)) {
+                        throw new RuntimeSAXException(e);
+                    }
                     //swallow this because we don't actually call it
                     LOG.warn("SAXException handling glossary document part", e);
                 }

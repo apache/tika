@@ -78,15 +78,24 @@ public class StackTraceTest extends CXFTestBase {
         sf.setProviders(providers);
     }
 
+    @Override
+    protected boolean isIncludeStackTrace() {
+        return true;
+    }
+
     @Test
     public void testEncrypted() throws Exception {
         for (String path : PATHS) {
             if ("/rmeta".equals(path)) {
                 continue;
             }
+            String accept = "*/*";
+            if ("/tika".equals(path)) {
+                accept = "text/plain";
+            }
             Response response = WebClient
                     .create(endPoint + path)
-                    .accept("*/*")
+                    .accept(accept)
                     .header("Content-Disposition",
                             "attachment; filename=" + TEST_PASSWORD_PROTECTED)
                     .put(ClassLoader.getSystemResourceAsStream(TEST_PASSWORD_PROTECTED));
@@ -105,9 +114,13 @@ public class StackTraceTest extends CXFTestBase {
             if ("/rmeta".equals(path)) {
                 continue;
             }
+            String accept = "*/*";
+            if ("/tika".equals(path)) {
+                accept = "text/plain";
+            }
             Response response = WebClient
                     .create(endPoint + path)
-                    .accept("*/*")
+                    .accept(accept)
                     .put(ClassLoader.getSystemResourceAsStream(TEST_NULL));
             assertNotNull("null response: " + path, response);
             assertEquals("unprocessable: " + path, UNPROCESSEABLE, response.getStatus());

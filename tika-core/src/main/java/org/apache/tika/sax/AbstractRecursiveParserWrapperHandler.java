@@ -63,16 +63,19 @@ public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandl
     private static final int MAX_DEPTH = 100;
 
     private final int maxEmbeddedResources;
+    private final int totalWriteLimit;
     private int embeddedResources = 0;
     private int embeddedDepth = 0;
 
     public AbstractRecursiveParserWrapperHandler(ContentHandlerFactory contentHandlerFactory) {
-        this(contentHandlerFactory, -1);
+        this(contentHandlerFactory, -1, -1);
     }
 
-    public AbstractRecursiveParserWrapperHandler(ContentHandlerFactory contentHandlerFactory, int maxEmbeddedResources) {
+    public AbstractRecursiveParserWrapperHandler(ContentHandlerFactory contentHandlerFactory,
+                                                 int maxEmbeddedResources, int totalWriteLimit) {
         this.contentHandlerFactory = contentHandlerFactory;
         this.maxEmbeddedResources = maxEmbeddedResources;
+        this.totalWriteLimit = totalWriteLimit;
     }
 
     public ContentHandler getNewContentHandler() {
@@ -141,5 +144,9 @@ public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandl
 
     public ContentHandlerFactory getContentHandlerFactory() {
         return contentHandlerFactory;
+    }
+
+    public int getTotalWriteLimit() {
+        return totalWriteLimit;
     }
 }

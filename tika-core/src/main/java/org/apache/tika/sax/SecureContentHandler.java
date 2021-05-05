@@ -213,7 +213,7 @@ public class SecureContentHandler extends ContentHandlerDecorator {
      * @param length number of new output characters produced
      * @throws SAXException if a zip bomb is detected
      */
-    private void advance(int length) throws SAXException {
+    protected void advance(int length) throws SAXException {
         characterCount += length;
         long byteCount = getByteCount();
         if (characterCount > threshold

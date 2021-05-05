@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.TimeZone;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
@@ -41,7 +42,9 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.RereadableInputStream;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
@@ -109,7 +112,7 @@ public class TSDParser extends AbstractParser {
         }
     }
 
-    private List<TSDMetas> extractMetas(InputStream stream) {
+    private List<TSDMetas> extractMetas(InputStream stream) throws SAXException {
         List<TSDMetas> tsdMetasList = new ArrayList<>();
 
         try {
@@ -131,6 +134,7 @@ public class TSDParser extends AbstractParser {
         } catch (SecurityException e) {
             throw e;
         } catch (Exception ex) {
+            WriteLimitReachedException.throwIfWriteLimitReached(ex);
             LOG.error("Error in TSDParser.buildMetas {}", ex.getMessage());
             tsdMetasList.clear();
         }
@@ -156,7 +160,7 @@ public class TSDParser extends AbstractParser {
     }
 
     private void parseTSDContent(InputStream stream, ContentHandler handler,
-                                 Metadata metadata, ParseContext context) {
+                                 Metadata metadata, ParseContext context) throws SAXException {
 
         CMSTimeStampedDataParser cmsTimeStampedDataParser = null;
         EmbeddedDocumentExtractor edx = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
@@ -172,6 +176,9 @@ public class TSDParser extends AbstractParser {
             } catch (SecurityException e) {
                 throw e;
             } catch (Exception ex) {
+                WriteLimitReachedException.throwIfWriteLimitReached(ex);
+                metadata.set(AbstractRecursiveParserWrapperHandler.EMBEDDED_EXCEPTION,
+                        ExceptionUtils.getStackTrace(ex));
                 LOG.error("Error in TSDParser.parseTSDContent {}", ex.getMessage());
             } finally {
                 this.closeCMSParser(cmsTimeStampedDataParser);

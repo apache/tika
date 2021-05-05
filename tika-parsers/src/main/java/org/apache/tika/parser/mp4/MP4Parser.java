@@ -70,6 +70,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -132,14 +133,25 @@ public class MP4Parser extends AbstractParser {
             // Grab the file type box
             FileTypeBox fileType = getOrNull(isoFile, FileTypeBox.class);
             if (fileType != null) {
-                // Identify the type
-                MediaType type = MediaType.application("mp4");
-                for (Map.Entry<MediaType, List<String>> e : typesMap.entrySet()) {
-                    if (e.getValue().contains(fileType.getMajorBrand())) {
-                        type = e.getKey();
-                        break;
-                    }
+                // Identify the type based on the major brand
+                Optional<MediaType> typeHolder = typesMap.entrySet()
+                        .stream()
+                        .filter(e -> e.getValue().contains(fileType.getMajorBrand()))
+                        .findFirst()
+                        .map(Map.Entry::getKey);
+
+                if (!typeHolder.isPresent()) {
+                    // If no match for major brand, see if any of the compatible brands match
+                    typeHolder = typesMap.entrySet()
+                            .stream()
+                            .filter(e -> e.getValue()
+                                    .stream()
+                                    .anyMatch(fileType.getCompatibleBrands()::contains))
+                            .findFirst()
+                            .map(Map.Entry::getKey);
                 }
+
+                MediaType type = typeHolder.orElse(MediaType.application("mp4"));
                 metadata.set(Metadata.CONTENT_TYPE, type.toString());
 
                 if (type.getType().equals("audio")) {

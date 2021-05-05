@@ -382,7 +382,7 @@ public class ExtractComparer extends AbstractProfiler {
             return null;
         }
         Set<String> digestA = new HashSet<>();
-        if (metadataListA != null) {
+        if (metadataListA != null && metadataListA.size() > 0) {
             for (String n : metadataListA.get(0).names()) {
                 if (n.startsWith(DIGEST_KEY_PREFIX)) {
                     digestA.add(n);

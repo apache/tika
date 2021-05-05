@@ -20,11 +20,11 @@
 
 <tika-batch-config
         maxAliveTimeSeconds="-1"
-        pauseOnEarlyTerminationMillis="500"
+        pauseOnEarlyTerminationMillis="60000"
         timeoutCheckPulseMillis="1000"
-        maxQueueSize="10000"
+        maxQueueSize="50000"
         numConsumers="5"
-        timeoutThresholdMillis="300000">
+        timeoutThresholdMillis="900000">
 
     <commandline>
         <option opt="bc" longOpt="batch-config" hasArg="true"
@@ -45,6 +45,8 @@
                 description="EXPERT: prefix for table names"/>
         <option opt="drop" hasArg="false" description="drop tables if they exist"/>
         <option opt="maxFilesToAdd" hasArg="true" description="maximum number of files to add to the crawler"/>
+        <option opt="timeoutThresholdMillis" hasArg="true" description="timeout per file in milliseconds"/>
+        <option opt="maxConsecWaitMillis" hasArg="true" description="max wait for crawler to add file to queue"/>
 
     </commandline>
 
@@ -56,7 +58,7 @@
     <crawler builderClass="org.apache.tika.batch.fs.builders.FSCrawlerBuilder"
 
              crawlOrder="sorted"
-             maxConsecWaitMillis="300000"
+             maxConsecWaitMillis="1800000"
              maxFilesToAdd="-1"
              maxFilesToConsider="-1"
              includeFilePat=""

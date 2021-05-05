@@ -45,8 +45,8 @@ import org.slf4j.LoggerFactory;
 @Path("/rmeta")
 public class RecursiveMetadataResource {
 
-    private static final String HANDLER_TYPE_PARAM = "handler";
-    private static final BasicContentHandlerFactory.HANDLER_TYPE DEFAULT_HANDLER_TYPE =
+    protected static final String HANDLER_TYPE_PARAM = "handler";
+    protected static final BasicContentHandlerFactory.HANDLER_TYPE DEFAULT_HANDLER_TYPE =
             BasicContentHandlerFactory.HANDLER_TYPE.XML;
     private static final Logger LOG = LoggerFactory.getLogger(RecursiveMetadataResource.class);
 
@@ -146,13 +146,13 @@ public class RecursiveMetadataResource {
 
         int maxEmbeddedResources = -1;
         if (httpHeaders.containsKey("maxEmbeddedResources")) {
-        maxEmbeddedResources = Integer.parseInt(httpHeaders.getFirst("maxEmbeddedResources"));
+            maxEmbeddedResources = Integer.parseInt(httpHeaders.getFirst("maxEmbeddedResources"));
         }
 
         BasicContentHandlerFactory.HANDLER_TYPE type =
                 BasicContentHandlerFactory.parseHandlerType(handlerTypeName, DEFAULT_HANDLER_TYPE);
 		RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-		        new BasicContentHandlerFactory(type, writeLimit), maxEmbeddedResources,
+		        new BasicContentHandlerFactory(type, writeLimit), maxEmbeddedResources, writeLimit,
                 TikaResource.getConfig().getMetadataFilter());
 		try {
             TikaResource.parse(wrapper, LOG, info.getPath(), is, handler, metadata, context);

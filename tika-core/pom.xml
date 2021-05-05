@@ -19,175 +19,232 @@
   under the License.
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>1.26-SNAPSHOT</version>
+    <version>1.27-SNAPSHOT</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
-  <artifactId>tika-core</artifactId>
-  <packaging>bundle</packaging>
-  <name>Apache Tika core</name>
-  <url>http://tika.apache.org/</url>
+    <artifactId>tika-core</artifactId>
+    <packaging>bundle</packaging>
+    <name>Apache Tika core</name>
+    <url>http://tika.apache.org/</url>
 
-  <dependencies>
-    <!-- Optional OSGi dependencies, used only when running within OSGi -->
-    <dependency>
-      <groupId>org.osgi</groupId>
-      <artifactId>org.osgi.core</artifactId>
-      <version>${osgi.core.version}</version>
-      <scope>provided</scope>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>org.osgi</groupId>
-      <artifactId>org.osgi.compendium</artifactId>
-      <version>5.0.0</version>
-      <scope>provided</scope>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>biz.aQute</groupId>
-      <artifactId>bndlib</artifactId>
-      <scope>provided</scope>
-    </dependency>
+    <dependencies>
+        <!-- See https://issues.apache.org/jira/browse/TIKA-2566 for more info -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>${commons.io.version}</version>
+        </dependency>
 
-    <!-- Test dependencies -->
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
+        <!-- Optional OSGi dependencies, used only when running within OSGi -->
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.core</artifactId>
+            <version>${osgi.core.version}</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.compendium</artifactId>
+            <version>4.0.0</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>biz.aQute</groupId>
+            <artifactId>bndlib</artifactId>
+            <scope>provided</scope>
+        </dependency>
 
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
-        <version>${maven.bundle.version}</version>
-        <extensions>true</extensions>
-        <configuration>
-          <instructions>
-            <Bundle-DocURL>${project.url}</Bundle-DocURL>
-            <Bundle-Activator>
-              org.apache.tika.config.TikaActivator
-            </Bundle-Activator>
-            <Bundle-ActivationPolicy>lazy</Bundle-ActivationPolicy>
-            <!-- modern versions of the bundle plugin figure out that we
-                 test for a class in org.apache.xerces.util even though
-                 we don't include it in core -->
-            <Import-Package>!org.apache.xerces.util,!sun.misc,*</Import-Package>
-          </instructions>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.rat</groupId>
-        <artifactId>apache-rat-plugin</artifactId>
-        <version>${rat.version}</version>
-        <configuration>
-          <excludes>
-            <exclude>src/test/resources/org/apache/tika/**</exclude>
-            <exclude>src/main/resources/org/apache/tika/language/*.ngp</exclude>
-            <exclude>src/main/resources/org/apache/tika/detect/*.nnmodel</exclude>
-            <exclude>src/test/resources/test-documents/ang20150420t182050_corr_v1e_img.hdr</exclude>
-          </excludes>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <configuration>
-          <archive>
-            <manifestEntries>
-              <Automatic-Module-Name>org.apache.tika.core</Automatic-Module-Name>
-            </manifestEntries>
-          </archive>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>test-jar</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>clirr-maven-plugin</artifactId>
-        <version>2.8</version>
-        <executions>
-          <execution>
-            <phase>verify</phase>
-            <goals>
-              <goal>check</goal>
-            </goals>
-            <configuration>
-              <excludes>
-                <exlude>org/apache/tika/config/TikaActivator</exlude>
-                <exlude>org/apache/tika/language/LanguageIdentifier</exlude>
-                <exlude>org/apache/tika/language/LanguageProfile</exlude>
-                <exlude>org/apache/tika/language/LanguageProfilerBuilder</exlude>
-                <exlude>org/apache/tika/language/ProfilingHandler</exlude>
-                <exlude>org/apache/tika/language/ProfilingWriter</exlude>
-                <exlude>org/apache/tika/metadata/Property$PropertyType</exlude>
-                <exlude>org/apache/tika/metadata/Property$ValueType</exlude>
-                <exlude>org/apache/tika/metadata/DublinCore</exlude>
-                <exlude>org/apache/tika/metadata/Metadata</exlude>
-                <exlude>org/apache/tika/metadata/MSOffice</exlude>
-                <exlude>org/apache/tika/parser/EmptyParser</exlude>
-              </excludes>
-              <comparisonArtifacts>
-                <comparisonArtifact>
-                  <groupId>org.apache.tika</groupId>
-                  <artifactId>tika-core</artifactId>
-                  <version>1.0</version>
-                  <type>jar</type>
-                </comparisonArtifact>
-              </comparisonArtifacts>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-failsafe-plugin</artifactId>
-        <version>2.22.1</version>
-        <configuration>
-          <additionalClasspathElements>
-            <additionalClasspathElement>
-              ${project.build.directory}/${project.build.finalName}.jar
-            </additionalClasspathElement>
-          </additionalClasspathElements>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- versions &gt; 0.4.0 require java > 8 -->
+        <dependency>
+            <groupId>com.martensigwart</groupId>
+            <artifactId>fakeload</artifactId>
+            <version>0.4.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.code.findbugs</groupId>
+                    <artifactId>jsr305</artifactId>
+                </exclusion>
+            </exclusions>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
-  <description>This is the core Apache Tika™ toolkit library from which all other modules inherit functionality. It also
-    includes the core facades for the Tika API.
-  </description>
-  <organization>
-    <name>The Apache Software Foundation</name>
-    <url>http://www.apache.org</url>
-  </organization>
-  <issueManagement>
-    <system>JIRA</system>
-    <url>https://issues.apache.org/jira/browse/TIKA</url>
-  </issueManagement>
-  <ciManagement>
-    <system>Jenkins</system>
-    <url>https://builds.apache.org/job/Tika-trunk/</url>
-  </ciManagement>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <version>${maven.bundle.version}</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <instructions>
+                        <Bundle-DocURL>${project.url}</Bundle-DocURL>
+                        <Bundle-Activator>
+                            org.apache.tika.config.TikaActivator
+                        </Bundle-Activator>
+                        <Bundle-ActivationPolicy>lazy</Bundle-ActivationPolicy>
+                        <Import-Package>!sun.misc,org.apache.xerces.util;resolution:=optional,*</Import-Package>
+                        <Export-Package>
+                            org.apache.tika.*
+                        </Export-Package>
+                    </instructions>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.rat</groupId>
+                <artifactId>apache-rat-plugin</artifactId>
+                <version>${rat.version}</version>
+                <configuration>
+                    <excludes>
+                        <exclude>src/test/resources/org/apache/tika/**</exclude>
+                        <exclude>src/main/resources/org/apache/tika/language/*.ngp</exclude>
+                        <exclude>src/main/resources/org/apache/tika/detect/*.nnmodel</exclude>
+                        <exclude>src/test/resources/test-documents/ang20150420t182050_corr_v1e_img.hdr</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifestEntries>
+                            <Automatic-Module-Name>org.apache.tika.core</Automatic-Module-Name>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- no harm, no foul for 2.0.0 :D TODO: turn this back on after the 2.0.0 release
+            <plugin>
+              <groupId>org.codehaus.mojo</groupId>
+              <artifactId>clirr-maven-plugin</artifactId>
+              <version>2.8</version>
+              <executions>
+                <execution>
+                  <phase>verify</phase>
+                  <goals>
+                    <goal>check</goal>
+                  </goals>
+                  <configuration>
+                    <excludes>
+                      <exlude>org/apache/tika/config/TikaActivator</exlude>
+                      <exlude>org/apache/tika/language/LanguageIdentifier</exlude>
+                      <exlude>org/apache/tika/language/LanguageProfile</exlude>
+                      <exlude>org/apache/tika/language/LanguageProfilerBuilder</exlude>
+                      <exlude>org/apache/tika/language/ProfilingHandler</exlude>
+                      <exlude>org/apache/tika/language/ProfilingWriter</exlude>
+                      <exlude>org/apache/tika/metadata/Property$PropertyType</exlude>
+                      <exlude>org/apache/tika/metadata/Property$ValueType</exlude>
+                      <exlude>org/apache/tika/metadata/DublinCore</exlude>
+                      <exlude>org/apache/tika/metadata/Metadata</exlude>
+                      <exlude>org/apache/tika/metadata/MSOffice</exlude>
+                      <exlude>org/apache/tika/parser/EmptyParser</exlude>
+                      <exclude>org/apache/tika/metadata/TikaMetadataKeys</exclude>
+                    </excludes>
+                    <comparisonArtifacts>
+                      <comparisonArtifact>
+                        <groupId>org.apache.tika</groupId>
+                        <artifactId>tika-core</artifactId>
+                        <version>2.0.0-SNAPSHOT</version>
+                        <type>jar</type>
+                      </comparisonArtifact>
+                    </comparisonArtifacts>
+                  </configuration>
+                </execution>
+              </executions>
+            </plugin> -->
+            <plugin>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>2.22.1</version>
+                <configuration>
+                    <additionalClasspathElements>
+                        <additionalClasspathElement>
+                            ${project.build.directory}/${project.build.finalName}.jar
+                        </additionalClasspathElement>
+                    </additionalClasspathElements>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <!-- consider moving the test framework to another regular package -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <descriptors>
+                        <descriptor>src/main/assembly/test-jar-with-dependencies.xml</descriptor>
+                    </descriptors>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <description>This is the core Apache Tika™ toolkit library from which all other modules inherit functionality. It
+        also
+        includes the core facades for the Tika API.
+    </description>
+    <organization>
+        <name>The Apache Software Foundation</name>
+        <url>http://www.apache.org</url>
+    </organization>
+    <issueManagement>
+        <system>JIRA</system>
+        <url>https://issues.apache.org/jira/browse/TIKA</url>
+    </issueManagement>
+    <ciManagement>
+        <system>Jenkins</system>
+        <url>https://builds.apache.org/job/Tika-trunk/</url>
+    </ciManagement>
 </project>

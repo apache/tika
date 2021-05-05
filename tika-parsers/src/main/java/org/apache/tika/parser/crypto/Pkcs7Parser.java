@@ -22,6 +22,8 @@ import java.util.Set;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
@@ -75,7 +77,7 @@ public class Pkcs7Parser extends AbstractParser {
                 try (InputStream input = content.getContentStream()) {
                     Parser delegate =
                             context.get(Parser.class, EmptyParser.INSTANCE);
-                    delegate.parse(input, handler, metadata, context);
+                    delegate.parse(input, handler, new Metadata(), context);
                 }
             } finally {
                 parser.close();

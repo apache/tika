@@ -46,7 +46,7 @@ public class ZipContainerDetectorTest extends TikaTest {
     private static MediaType ODT_TEXT = MediaType.application("vnd.oasis.opendocument.text");
     private static MediaType TIFF = MediaType.image("tiff");
     ZipContainerDetector zipContainerDetector = new ZipContainerDetector();
-    StreamingZipContainerDetector streamingZipDetector = new StreamingZipContainerDetector();
+    StreamingZipContainerDetector streamingZipDetector = new StreamingZipContainerDetector(100000);
 
     @Test
     public void testTiffWorkaround() throws Exception {

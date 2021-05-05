@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>1.26-SNAPSHOT</version>
+    <version>1.27-SNAPSHOT</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -42,16 +42,16 @@
     -->
     <codec.version>1.15</codec.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
-    <tukaani.version>1.8</tukaani.version>
+    <tukaani.version>1.9</tukaani.version>
     <!-- NOTE: sync brotli version with commons-compress in tika-parent-->
     <brotli.version>0.1.2</brotli.version>
     <mime4j.version>0.8.3</mime4j.version>
     <vorbis.version>0.8</vorbis.version>
-    <pdfbox.version>2.0.22</pdfbox.version>
+    <pdfbox.version>2.0.23</pdfbox.version>
     <jempbox.version>1.8.16</jempbox.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <sis.version>1.0</sis.version>
-    <parso.version>2.0.13</parso.version>
+    <parso.version>2.0.14</parso.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
     <bouncycastle.version>1.68</bouncycastle.version>
     <commonsexec.version>1.3</commonsexec.version>
@@ -86,12 +86,15 @@
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
-
-
     <dependency>
       <groupId>xerces</groupId>
       <artifactId>xercesImpl</artifactId>
       <version>2.12.1</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.woodstox</groupId>
+      <artifactId>woodstox-core</artifactId>
+      <version>6.2.4</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -168,7 +171,7 @@
     <dependency>
       <groupId>com.github.luben</groupId>
       <artifactId>zstd-jni</artifactId>
-      <version>1.4.8-1</version>
+      <version>1.4.9-1</version>
       <scope>provided</scope>
     </dependency>
 
@@ -277,7 +280,7 @@
     <dependency>
       <groupId>com.healthmarketscience.jackcess</groupId>
       <artifactId>jackcess</artifactId>
-      <version>3.5.1</version>
+      <version>4.0.0</version>
       <exclusions>
         <exclusion>
           <groupId>org.apache.commons</groupId>
@@ -292,7 +295,7 @@
     <dependency>
       <groupId>com.healthmarketscience.jackcess</groupId>
       <artifactId>jackcess-encrypt</artifactId>
-      <version>3.0.0</version>
+      <version>4.0.1</version>
       <exclusions>
         <exclusion>
           <groupId>org.bouncycastle</groupId>
@@ -318,7 +321,7 @@
     <dependency>
       <groupId>org.ow2.asm</groupId>
       <artifactId>asm</artifactId>
-      <version>9.0</version>
+      <version>9.1</version>
     </dependency>
     <dependency>
       <groupId>org.tallison</groupId>
@@ -412,6 +415,14 @@
         <exclusion>
           <groupId>jakarta.xml.bind</groupId>
           <artifactId>jakarta.xml.bind-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.woodstox</groupId>
+          <artifactId>woodstox-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.sun.activation</groupId>
+          <artifactId>jakarta.activation</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -578,14 +589,14 @@
     <dependency>
       <groupId>com.beust</groupId>
       <artifactId>jcommander</artifactId>
-      <version>1.78</version>
+      <version>1.81</version>
     </dependency>
     <!--TIKA 2672 include a later version of jna as a direct dependency to resolve dependency convergence with tika-dl's
     deeplearning4j-nn:1.0.0-SNAPSHOT -->
     <dependency>
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna</artifactId>
-      <version>5.6.0</version>
+      <version>5.8.0</version>
     </dependency>
 
     <!-- grib's current jsoup is vulnerable to xss
@@ -598,7 +609,7 @@
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
-      <version>3.14.0</version>
+      <version>3.15.6</version>
     </dependency>
     <dependency>
       <groupId>edu.ucar</groupId>

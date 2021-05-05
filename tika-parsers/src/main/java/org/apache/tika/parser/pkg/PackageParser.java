@@ -18,12 +18,15 @@ package org.apache.tika.parser.pkg;
 
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
 
 import org.apache.commons.compress.PasswordRequiredException;
@@ -43,6 +46,9 @@ import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException.
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
+
+import org.apache.tika.config.Field;
+import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -52,6 +58,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
@@ -71,7 +78,7 @@ import org.xml.sax.helpers.AttributesImpl;
  * are not installed, an IOException will be thrown, and potentially
  * wrapped in a TikaException.
  */
-public class PackageParser extends AbstractParser {
+public class PackageParser extends AbstractEncodingDetectorParser {
 
     /** Serial version UID */
     private static final long serialVersionUID = -5331043266963888708L;
@@ -109,8 +116,6 @@ public class PackageParser extends AbstractParser {
     // the mark limit used for stream
     private static final int MARK_LIMIT = 100 * 1024 * 1024; // 100M
 
-    // count of the entries in the archive, this is used for zip requires Data Descriptor
-    private int entryCnt = 0;
 
     static final Set<MediaType> loadPackageSpecializations() {
         Set<MediaType> zipSpecializations = new HashSet<>();
@@ -229,6 +234,16 @@ public class PackageParser extends AbstractParser {
         return type.equals(ZIP) || type.equals(JAR);
     }
 
+    private boolean detectCharsetsInEntryNames = true;
+
+
+    public PackageParser() {
+        super();
+    }
+
+    public PackageParser(EncodingDetector encodingDetector) {
+        super(encodingDetector);
+    }
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
@@ -300,9 +315,10 @@ public class PackageParser extends AbstractParser {
 
         // mark before we start parsing entries for potential reset
         stream.mark(MARK_LIMIT);
-        entryCnt = 0;
+        //require mutable int...this is not being used for thread safety.
+        AtomicInteger entryCnt = new AtomicInteger(0);
         try {
-            parseEntries(false, ais, metadata, extractor, xhtml);
+            parseEntries(false, ais, metadata, extractor, xhtml, entryCnt);
         } catch (UnsupportedZipFeatureException zfe) {
             // If this is a zip archive which requires a data descriptor, parse it again
             if (zfe.getFeature() == Feature.DATA_DESCRIPTOR) {
@@ -311,13 +327,11 @@ public class PackageParser extends AbstractParser {
                 // An exception would be thrown if MARK_LIMIT is not big enough
                 stream.reset();
                 ais = new ZipArchiveInputStream(new CloseShieldInputStream(stream), encoding, true, true);
-                parseEntries(true, ais, metadata, extractor, xhtml);
+                parseEntries(true, ais, metadata, extractor, xhtml, entryCnt);
             }
         } finally {
             ais.close();
             tmp.close();
-            // reset the entryCnt
-            entryCnt = 0;
         }
 
         xhtml.endDocument();
@@ -336,17 +350,18 @@ public class PackageParser extends AbstractParser {
      * @throws SAXException if the SAX events could not be processed
      */
     private void parseEntries(boolean shouldUseDataDescriptor, ArchiveInputStream ais, Metadata metadata,
-                              EmbeddedDocumentExtractor extractor, XHTMLContentHandler xhtml)
+                              EmbeddedDocumentExtractor extractor, XHTMLContentHandler xhtml,
+                              AtomicInteger entryCnt)
             throws TikaException, IOException, SAXException {
         try {
             ArchiveEntry entry = ais.getNextEntry();
             while (entry != null) {
-                if (shouldUseDataDescriptor && entryCnt > 0) {
+                if (shouldUseDataDescriptor && entryCnt.get() > 0) {
                     // With shouldUseDataDescriptor being true, we are reading
                     // the zip once again. The number of entryCnt entries have
                     // already been parsed in the last time, so we can just
                     // skip these entries.
-                    entryCnt--;
+                    entryCnt.decrementAndGet();
                     entry = ais.getNextEntry();
                     continue;
                 }
@@ -359,7 +374,7 @@ public class PackageParser extends AbstractParser {
                     // Record the number of entries we have read, this is used
                     // for zip archives using Data Descriptor. It's used for
                     // skipping the entries we have already read
-                    entryCnt++;
+                    entryCnt.incrementAndGet();
                 }
 
                 entry = ais.getNextEntry();
@@ -411,6 +426,15 @@ public class PackageParser extends AbstractParser {
             EmbeddedDocumentExtractor extractor, Metadata parentMetadata, XHTMLContentHandler xhtml)
             throws SAXException, IOException, TikaException {
         String name = entry.getName();
+        //Try to detect charset of archive entry in case of non-unicode filename is used
+        if (detectCharsetsInEntryNames && entry instanceof ZipArchiveEntry) {
+            Charset candidate =
+                    getEncodingDetector().detect(new ByteArrayInputStream(((ZipArchiveEntry) entry).getRawName()),
+                            parentMetadata);
+            if (candidate != null) {
+                name = new String(((ZipArchiveEntry) entry).getRawName(), candidate);
+            }
+        }
         if (archive.canReadEntryData(entry)) {
             // Fetch the metadata on the entry contained in the archive
             Metadata entrydata = handleEntryMetadata(name, null, 
@@ -511,5 +535,16 @@ public class PackageParser extends AbstractParser {
         public void close() throws IOException {
             file.close();
         }
+    }
+
+    /**
+     * Whether or not to run the default charset detector against entry
+     * names in ZipFiles. The default is <code>true</code>.
+     *
+     * @param detectCharsetsInEntryNames
+     */
+    @Field
+    public void setDetectCharsetsInEntryNames(boolean detectCharsetsInEntryNames) {
+        this.detectCharsetsInEntryNames = detectCharsetsInEntryNames;
     }
 }

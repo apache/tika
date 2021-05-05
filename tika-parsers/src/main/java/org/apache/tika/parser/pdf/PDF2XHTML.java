@@ -37,6 +37,8 @@ import org.apache.pdfbox.util.Matrix;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.WriteOutContentHandler;
+
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 

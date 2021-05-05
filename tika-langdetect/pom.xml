@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>1.26-SNAPSHOT</version>
+    <version>1.27-SNAPSHOT</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -86,6 +86,10 @@
         <exclusion>
           <groupId>org.glassfish.jaxb</groupId>
           <artifactId>jaxb-runtime</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.sun.activation</groupId>
+          <artifactId>jakarta.activation</artifactId>
         </exclusion>
       </exclusions>
     </dependency>

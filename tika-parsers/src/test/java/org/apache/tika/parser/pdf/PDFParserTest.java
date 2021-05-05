@@ -25,8 +25,10 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
 
+import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1648,5 +1650,14 @@ public class PDFParserTest extends TikaTest {
             }
             return true;
         }
+    }
+
+    @Test
+    public void testDeeplyEmbeddedAttachments() throws Exception {
+        //test file comes from pdfcpu issue #120: https://github.com/pdfcpu/pdfcpu/issues/201
+        //in our regression corpus: pdfcpu-201-0.zip-0.pdf");
+        List<Metadata> metadataList = getRecursiveMetadata(
+                "testPDF_deeplyEmbeddedAttachments.pdf");
+        assertEquals(21, metadataList.size());
     }
 }

@@ -53,7 +53,7 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
     private final MimeTypes mimeTypes = tikaConfig.getMimeRepository();
     private final MediaTypeRegistry mediaTypeRegistry = mimeTypes.getMediaTypeRegistry();
     private final Detector detector = new DefaultDetector(mimeTypes);
-    private final StreamingZipContainerDetector streamingZipDetector = new StreamingZipContainerDetector();
+    private final StreamingZipContainerDetector streamingZipDetector = new StreamingZipContainerDetector(1000000);
 
     @After
     public void tearDown() throws TikaException {

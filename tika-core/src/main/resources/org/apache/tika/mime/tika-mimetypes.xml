@@ -7166,7 +7166,14 @@
 
   <mime-type type="text/x-yaml">
     <_comment>YAML source code</_comment>
+    <alias type="application/x-yaml" />
+    <alias type="application/x-yml" />
+    <alias type="application/yaml" />
+    <alias type="text/vnd.yaml" />
+    <alias type="text/yaml" />
+    <alias type="text/x-yml" />
     <glob pattern="*.yaml"/>
+    <glob pattern="*.yml"/>
     <sub-class-of type="text/plain"/>
   </mime-type>
 

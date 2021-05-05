@@ -33,11 +33,11 @@ import org.apache.commons.io.IOUtils;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.io.ClosedInputStream;
 import org.apache.tika.io.ProxyInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.utils.CommonsDigester;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
@@ -45,6 +45,7 @@ import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.utils.ParserUtils;
 import org.junit.Test;
+import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 public class RecursiveParserWrapperTest extends TikaTest {
@@ -99,7 +100,13 @@ public class RecursiveParserWrapperTest extends TikaTest {
                 "/test-documents/test_recursive_embedded.docx");
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, 60));
-        wrapper.parse(stream, handler, metadata, context);
+        try {
+            wrapper.parse(stream, handler, metadata, context);
+        } catch (SAXException e) {
+            if (!WriteLimitReachedException.isWriteLimitReached(e)) {
+                fail("should have been write limit reached");
+            }
+        }
         List<Metadata> list = handler.getMetadataList();
 
         assertEquals(5, list.size());
@@ -111,7 +118,7 @@ public class RecursiveParserWrapperTest extends TikaTest {
                 wlr++;
             }
         }
-        assertEquals(1, wlr);
+        assertEquals(2, wlr);
 
     }
 
@@ -381,7 +388,7 @@ public class RecursiveParserWrapperTest extends TikaTest {
                         -1);
 
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(contentHandlerFactory,
-                -1, tikaConfig.getMetadataFilter());
+                -1, -1, tikaConfig.getMetadataFilter());
         try (InputStream is = getClass().getResourceAsStream(path)) {
             wrapper.parse(is, handler, metadata, context);
         }

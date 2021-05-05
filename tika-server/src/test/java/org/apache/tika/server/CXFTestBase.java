@@ -92,7 +92,7 @@ public abstract class CXFTestBase {
     public void setUp() throws Exception {
 
         this.tika = new TikaConfig(getTikaConfigInputStream());
-        TikaResource.init(tika,
+        TikaResource.init(tika, isIncludeStackTrace(),
                 new CommonsDigester(DIGESTER_READ_LIMIT, "md5,sha1:32"),
                 new DefaultInputStreamFactory(), new ServerStatus("", 0,true));
         JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
@@ -106,7 +106,8 @@ public abstract class CXFTestBase {
         setUpResources(sf);
         setUpProviders(sf);
         sf.setAddress(endPoint + "/");
-
+        sf.setResourceComparator(new ProduceTypeResourceComparator());
+        setUpFeatures(sf);
         BindingFactoryManager manager = sf.getBus().getExtension(
                 BindingFactoryManager.class
         );
@@ -119,6 +120,11 @@ public abstract class CXFTestBase {
                 factory
         );
         server = sf.create();
+        setUpPostProcess(sf, server);
+    }
+
+    protected boolean isIncludeStackTrace() {
+        return false;
     }
 
     protected InputStream getTikaConfigInputStream() {
@@ -135,6 +141,16 @@ public abstract class CXFTestBase {
      * Have the test do {@link JAXRSServerFactoryBean#setProviders(java.util.List)}, if needed
      */
     protected abstract void setUpProviders(JAXRSServerFactoryBean sf);
+
+    /**
+     * Have the test do {@link JAXRSServerFactoryBean#setFeatures(java.util.List)}, if needed
+     */
+    protected void setUpFeatures(JAXRSServerFactoryBean sf) {}
+
+    /**
+     * Have the test do additional steps after it is started, if needed
+     */
+    protected void setUpPostProcess(JAXRSServerFactoryBean sf, Server server) {}
 
     @After
     public void tearDown() throws Exception {

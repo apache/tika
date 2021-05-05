@@ -85,16 +85,19 @@ public class ZipContainerDetector implements Detector {
     private static final String XPS_DOCUMENT =
             "http://schemas.microsoft.com/xps/2005/06/fixedrepresentation";
 
+    private static final String OPEN_XPS_DOCUMENT =
+            "http://schemas.openxps.org/oxps/v1.0/fixedrepresentation";
+
     private static final String STAR_OFFICE_6_WRITER = "application/vnd.sun.xml.writer";
     /** Serial version UID */
     private static final long serialVersionUID = 2891763938430295453L;
 
     //this has to be > 100,000 to handle some of the iworks files
     //in our unit tests
-    @Field
     int markLimit = 16 * 1024 * 1024;
 
-    private StreamingZipContainerDetector streamingZipContainerDetector = new StreamingZipContainerDetector();
+    private StreamingZipContainerDetector streamingZipContainerDetector
+            = new StreamingZipContainerDetector(markLimit);
 
     @Override
     public MediaType detect(InputStream input, Metadata metadata)
@@ -128,10 +131,7 @@ public class ZipContainerDetector implements Detector {
                     return detectZipFormatOnFile(tis);
                 }
             }
-
-            try (LookaheadInputStream lookahead = new LookaheadInputStream(input, markLimit)) {
-                return streamingZipContainerDetector.detect(lookahead, metadata);
-            }
+            return streamingZipContainerDetector.detect(input, metadata);
         } else if (!type.equals(MediaType.OCTET_STREAM)) {
             return type;
         } else {
@@ -147,8 +147,10 @@ public class ZipContainerDetector implements Detector {
      *
      * @param markLimit mark limit for streaming detection
      */
+    @Field
     public void setMarkLimit(int markLimit) {
         this.markLimit = markLimit;
+        this.streamingZipContainerDetector = new StreamingZipContainerDetector(markLimit);
     }
 
 
@@ -330,6 +332,10 @@ public class ZipContainerDetector implements Detector {
         }
         if (core.size() == 0) {
             core = pkg.getRelationshipsByType(XPS_DOCUMENT);
+            if (core.size() == 1) {
+                return MediaType.application("vnd.ms-xpsdocument");
+            }
+            core = pkg.getRelationshipsByType(OPEN_XPS_DOCUMENT);
             if (core.size() == 1) {
                 return MediaType.application("vnd.ms-xpsdocument");
             }

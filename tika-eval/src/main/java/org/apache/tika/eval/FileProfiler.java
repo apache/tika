@@ -75,7 +75,9 @@ public class FileProfiler extends AbstractProfiler {
                 .addOption("tablePrefix", true, "EXPERT: optional prefix for table names")
                 .addOption("drop", false, "drop tables if they exist")
                 .addOption("maxFilesToAdd", true, "maximum number of files to add to the crawler")
-
+                .addOption("timeoutThresholdMillis", true, "timeout per file in milliseconds")
+                .addOption("maxConsecWaitMillis", true,
+                        "max time for the crawler to wait to add a file to queue")
         ;
 
     }
@@ -135,11 +137,20 @@ public class FileProfiler extends AbstractProfiler {
         try (InputStream is = fileResource.openInputStream()) {
             try (TikaInputStream tis = TikaInputStream.get(is)) {
                 Path path = tis.getPath();
+                long length = -1;
                 Map<Cols, String> data = new HashMap<>();
+                try {
+                    length = Files.size(path);
+                } catch (IOException e) {
+                    LOG.warn("problem getting size: "+relPath, e);
+                }
+                long start = System.currentTimeMillis();
                 int tikaMimeId = writer.getMimeId(detectTika(tis));
+                long elapsed = System.currentTimeMillis()-start;
+                LOG.debug("took "+elapsed+ " ms for tika detect on length "+length);
                 String fileName = "";
                 String extension = "";
-                long length = -1;
+
                 try {
                     fileName = FilenameUtils.getName(relPath);
                 } catch (IllegalArgumentException e) {
@@ -152,12 +163,6 @@ public class FileProfiler extends AbstractProfiler {
                     LOG.warn("bad extension: "+relPath, e);
                 }
 
-                try {
-                    length = Files.size(path);
-                } catch (IOException e) {
-                    LOG.warn("problem getting size: "+relPath, e);
-                }
-
                 data.put(Cols.FILE_PATH, relPath);
                 data.put(Cols.FILE_NAME, fileName);
                 data.put(Cols.FILE_EXTENSION, extension);
@@ -165,7 +170,11 @@ public class FileProfiler extends AbstractProfiler {
                 data.put(Cols.TIKA_MIME_ID, Integer.toString(tikaMimeId));
                 data.put(Cols.SHA256, DigestUtils.sha256Hex(tis));
                 if (HAS_FILE) {
+                    start = System.currentTimeMillis();
                     int fileMimeId = writer.getMimeId(detectFile(tis));
+                    elapsed = System.currentTimeMillis()-start;
+                    LOG.debug("took "+elapsed+ " ms for file detect on length "+length);
+
                     data.put(Cols.FILE_MIME_ID, Integer.toString(fileMimeId));
                 }
                 writer.writeRow(FILE_PROFILES, data);

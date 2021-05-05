@@ -1,8 +1,40 @@
-Release 1.26 - xx/xx/xxxx
+Release 1.27 - ???
+
+   * Apply encoding detection to zip entry names via Ryan421 (TIKA-3374).
+
+   * Add json output for /tika endpoint in tika-server (TIKA-3352).
+
+   * Tika's PDFParser should use the underlying file if one is passed in
+     via a TikaInputStream (TIKA-3350)
+
+Release 1.26 - 03/24/2021
+
+   * Fix thread safety bug in OpenOffice parser (TIKA-3334).
+
+   * The "writeLimit" header now pertains to the combined characters
+     written per container document (and embedded documents) in the /rmeta
+     endpoint in tika-server (TIKA-3325); it no longer functions only
+     per container or embedded document.
+
+   * Extract more embedded files in PDFs by recursively processing the
+     embedded file tree (TIKA-3332).
+
+   * Allow for case insensitive headers for configuration of the PDFParser
+     and the TesseractOCRParser in tika-server via Subhajit Das (TIKA-3320).
+
+   * Improve detection and parsing of XPS files (TIKA-3316).
+
+   * General dependency upgrades (TIKA-3244).
 
    * Great optimization in ForkParser (TIKA-3237).
    
    * Fix parsing of emails attached to other emails in PST files (TIKA-3004).
+
+   * MP3 parser should output the xmpDM:duration metadata as seconds not 
+     milliseconds, consistent with the other Audio and Video parsers (TIKA-3318).
+
+   * MP4 parser check if any of the Compatible Brands match when identifying 
+     the subtype (TIKA-3310).
 
 Release 1.25 - 11/25/2020
 

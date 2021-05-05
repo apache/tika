@@ -54,6 +54,8 @@ import org.apache.poi.xssf.usermodel.XSSFRelation;
 import org.apache.poi.xssf.usermodel.XSSFShape;
 import org.apache.poi.xssf.usermodel.XSSFSimpleShape;
 import org.apache.poi.xssf.usermodel.helpers.HeaderFooterHelper;
+
+import org.apache.tika.exception.RuntimeSAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -183,7 +185,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             for (String footer : sheetExtractor.footers) {
                 extractHeaderFooter(footer, xhtml);
             }
-            
+
             // Do text held in shapes, if required
             if (config.getIncludeShapeBasedContent()) {
                 List<XSSFShape> shapes = iter.getShapes();
@@ -197,6 +199,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             extractHyperLinks(sheetPart, xhtml);
             // All done with this sheet
             xhtml.endElement("div");
+
         }
 
         //consider adding this back to POI
@@ -424,7 +427,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             footers = new ArrayList<String>();
         }
 
-        public void startRow(int rowNum) {
+        public void startRow(int rowNum) throws RuntimeSAXException {
             try {
                 // Missing rows, if desired, with a single empty row
                 if (includeMissingRows && rowNum > (lastSeenRow+1)) {
@@ -440,6 +443,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 xhtml.startElement("tr");
                 lastSeenCol = -1;
             } catch (SAXException e) {
+                throw new RuntimeSAXException(e);
             }
         }
 
@@ -447,6 +451,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             try {
                 xhtml.endElement("tr");
             } catch (SAXException e) {
+                throw new RuntimeSAXException(e);
             }
         }
 
@@ -479,6 +484,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
 
                 xhtml.endElement("td");
             } catch (SAXException e) {
+                throw new RuntimeSAXException(e);
             }
         }
 
@@ -605,4 +611,5 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             }
         }
     }
+
 }

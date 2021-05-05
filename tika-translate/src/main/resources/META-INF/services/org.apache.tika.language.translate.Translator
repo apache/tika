@@ -18,3 +18,4 @@ org.apache.tika.language.translate.GoogleTranslator
 org.apache.tika.language.translate.Lingo24Translator
 org.apache.tika.language.translate.CachedTranslator
 org.apache.tika.language.translate.JoshuaNetworkTranslator
+org.apache.tika.language.translate.RTGTranslator

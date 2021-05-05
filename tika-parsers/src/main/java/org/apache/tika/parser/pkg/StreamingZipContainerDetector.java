@@ -20,12 +20,15 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.io.IOUtils;
@@ -92,90 +95,60 @@ public class StreamingZipContainerDetector extends ZipContainerDetectorBase impl
 
     }
 
+    private final int markLimit;
+
+    public StreamingZipContainerDetector(int markLimit) {
+        this.markLimit = markLimit;
+    }
     /**
      *
-     * @param is inputstream to read from. Callers must mark/reset the stream
-     *           before/after this call to detect.  This call does not close the stream!
-     *           Depending on the file type, this call to detect may read the entire stream.
-     *           Make sure to use a {@link org.apache.tika.io.BoundedInputStream} or similar
-     *           if you want to protect against reading the entire stream.
+     * @param is the inputstream is wrapped in a boundedInputStream to guarantee
+     *           this doesn't stream beyond {@link #markLimit}
      * @return
      */
     @Override
-    public MediaType detect(InputStream is, Metadata metadata) {
+    public MediaType detect(InputStream is, Metadata metadata) throws IOException {
+        BoundedInputStream boundedInputStream = new BoundedInputStream(markLimit, is);
+        boundedInputStream.mark(markLimit);
+        try {
+            return _detect(boundedInputStream, metadata, false);
+        } finally {
+            boundedInputStream.reset();
+        }
+    }
 
+    private MediaType _detect(InputStream is, Metadata metadata, boolean allowStoredEntries)
+            throws IOException {
         Set<String> fileNames = new HashSet<>();
         Set<String> directoryNames = new HashSet<>();
+        MediaType mt = MediaType.APPLICATION_ZIP;
+
         try (ZipArchiveInputStream zipArchiveInputStream =
-                     new ZipArchiveInputStream(new CloseShieldInputStream(is))) {
+                     new ZipArchiveInputStream(new CloseShieldInputStream(is),
+                             "UTF8", false, allowStoredEntries)) {
             ZipArchiveEntry zae = zipArchiveInputStream.getNextZipEntry();
-            while (zae != null) {
-                String name = zae.getName();
-                if (zae.isDirectory()) {
-                    directoryNames.add(name);
-                    zae = zipArchiveInputStream.getNextZipEntry();
-                    continue;
-                }
-                fileNames.add(name);
-                //we could also parse _rel/.rels, but if
-                // there isn't a valid content_types, then POI
-                //will throw an exception...Better to backoff to PKG
-                //than correctly identify a truncated
-                if (name.equals("[Content_Types].xml")) {
-                    MediaType mt = parseOOXMLContentTypes(zipArchiveInputStream);
-                    if (mt != null) {
-                        return mt;
-                    }
-                    return TIKA_OOXML;
-                } else if (IWorkPackageParser.IWORK_CONTENT_ENTRIES.contains(name)) {
-                    IWorkPackageParser.IWORKDocumentType type = IWorkPackageParser.IWORKDocumentType.detectType(zipArchiveInputStream);
-                    if (type != null) {
-                        return type.getType();
-                    }
-                } else if (name.equals("mimetype")) {
-                    //can't rely on zae.getSize to determine if there is any
-                    //content here. :(
-                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                    BoundedInputStream bis = new BoundedInputStream(MAX_MIME_TYPE, zipArchiveInputStream);
-                    IOUtils.copy(bis, bos);
-                    //do anything with an inputstream > MAX_MIME_TYPE?
-                    if (bos.toByteArray().length > 0)  {
-                        //odt -- TODO -- check that the results are valid
-                        return MediaType.parse(new String(bos.toByteArray(), UTF_8));
-                    }
-                } else if (name.equals("META-INF/manifest.xml")) {
-                    //for an unknown reason, passing in the zipArchiveInputStream
-                    //"as is" can cause the iteration of the entries to stop early
-                    //without exception or warning.  So, copy the full stream, then
-                    //process.  TIKA-3061
-                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                    BoundedInputStream bis = new BoundedInputStream(MAX_MANIFEST, zipArchiveInputStream);
-                    IOUtils.copy(bis, bos);
-                    //TODO: do something if the full stream hasn't been read?
-                    MediaType mt = detectStarOfficeX(new ByteArrayInputStream(bos.toByteArray()));
-                    if (mt != null) {
-                        return mt;
-                    }
-                }
-                MediaType mt = IWork18PackageParser.IWork18DocumentType.detectIfPossible(zae);
-                if (mt != null) {
-                    return mt;
-                }
-                mt = IWork13PackageParser.IWork13DocumentType.detectIfPossible(zae);
-                if (mt != null) {
-                    return mt;
-                }
-                zae = zipArchiveInputStream.getNextZipEntry();
+            mt = processZAE(zae, zipArchiveInputStream, directoryNames, fileNames);
+        } catch (UnsupportedZipFeatureException zfe) {
+            if (allowStoredEntries == false &&
+                    zfe.getFeature() == UnsupportedZipFeatureException.Feature.DATA_DESCRIPTOR) {
+                is.reset();
+                mt = _detect(is, metadata, true);
             }
         } catch (SecurityException e) {
             throw e;
-        } catch (Exception e) {
-            //swallow
+        } catch (EOFException e) {
+            //truncated zip -- swallow
+        } catch (IOException e) {
+            //another option for a truncated zip
+        }
+
+        if (mt != MediaType.APPLICATION_ZIP) {
+            return mt;
         }
         //entrynames is the union of directory names and file names
         Set<String> entryNames = new HashSet<>(fileNames);
         entryNames.addAll(directoryNames);
-        MediaType mt = detectKmz(fileNames);
+        mt = detectKmz(fileNames);
         if (mt != null) {
             return mt;
         }
@@ -198,6 +171,70 @@ public class StreamingZipContainerDetector extends ZipContainerDetectorBase impl
                     return TIKA_OOXML;
                 }
             }
+        }
+        return MediaType.APPLICATION_ZIP;
+
+    }
+
+    private MediaType processZAE(ZipArchiveEntry zae, ZipArchiveInputStream zipArchiveInputStream,
+                            Set<String> directoryNames, Set<String> fileNames) throws IOException {
+        while (zae != null) {
+            String name = zae.getName();
+            if (zae.isDirectory()) {
+                directoryNames.add(name);
+                zae = zipArchiveInputStream.getNextZipEntry();
+                continue;
+            }
+            fileNames.add(name);
+            //we could also parse _rel/.rels, but if
+            // there isn't a valid content_types, then POI
+            //will throw an exception...Better to backoff to PKG
+            //than correctly identify a truncated
+            if (name.equals("[Content_Types].xml")) {
+                MediaType mt = parseOOXMLContentTypes(zipArchiveInputStream);
+                if (mt != null) {
+                    return mt;
+                }
+                return TIKA_OOXML;
+            } else if (IWorkPackageParser.IWORK_CONTENT_ENTRIES.contains(name)) {
+                IWorkPackageParser.IWORKDocumentType type = IWorkPackageParser.IWORKDocumentType.detectType(zipArchiveInputStream);
+                if (type != null) {
+                    return type.getType();
+                }
+            } else if (name.equals("mimetype")) {
+                //can't rely on zae.getSize to determine if there is any
+                //content here. :(
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                BoundedInputStream bis = new BoundedInputStream(MAX_MIME_TYPE, zipArchiveInputStream);
+                IOUtils.copy(bis, bos);
+                //do anything with an inputstream > MAX_MIME_TYPE?
+                if (bos.toByteArray().length > 0)  {
+                    //odt -- TODO -- check that the results are valid
+                    return MediaType.parse(new String(bos.toByteArray(), UTF_8));
+                }
+            } else if (name.equals("META-INF/manifest.xml")) {
+                //for an unknown reason, passing in the zipArchiveInputStream
+                //"as is" can cause the iteration of the entries to stop early
+                //without exception or warning.  So, copy the full stream, then
+                //process.  TIKA-3061
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                BoundedInputStream bis = new BoundedInputStream(MAX_MANIFEST, zipArchiveInputStream);
+                IOUtils.copy(bis, bos);
+                //TODO: do something if the full stream hasn't been read?
+                MediaType mt = detectStarOfficeX(new ByteArrayInputStream(bos.toByteArray()));
+                if (mt != null) {
+                    return mt;
+                }
+            }
+            MediaType mt = IWork18PackageParser.IWork18DocumentType.detectIfPossible(zae);
+            if (mt != null) {
+                return mt;
+            }
+            mt = IWork13PackageParser.IWork13DocumentType.detectIfPossible(zae);
+            if (mt != null) {
+                return mt;
+            }
+            zae = zipArchiveInputStream.getNextZipEntry();
         }
         return MediaType.APPLICATION_ZIP;
     }

@@ -170,4 +170,7 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory {
         return type;
     }
 
+    public int getWriteLimit() {
+        return writeLimit;
+    }
 }

@@ -47,6 +47,7 @@ import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.xssf.usermodel.XSSFRelation;
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
@@ -157,7 +158,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         return desc;
     }
 
-    private void handleThumbnail(ContentHandler handler) {
+    private void handleThumbnail(ContentHandler handler) throws SAXException {
         try {
             OPCPackage opcPackage = extractor.getPackage();
             for (PackageRelationship rel : opcPackage.getRelationshipsByType(PackageRelationshipTypes.THUMBNAIL)) {
@@ -176,6 +177,8 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                 thumbnailMetadata.set(Metadata.EMBEDDED_RELATIONSHIP_ID, thumbName);
                 thumbnailMetadata.set(Metadata.CONTENT_TYPE, tPart.getContentType());
                 thumbnailMetadata.set(TikaCoreProperties.TITLE, tPart.getPartName().getName());
+                thumbnailMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                        TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());
 
                 if (embeddedExtractor.shouldParseEmbedded(thumbnailMetadata)) {
                     embeddedExtractor.parseEmbedded(TikaInputStream.get(tStream), new EmbeddedContentHandler(handler), thumbnailMetadata, false);
@@ -186,7 +189,8 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         } catch (SecurityException e) {
             throw e;
         } catch (Exception ex) {
-            //swallow
+            //swallow unless write limit reached
+            WriteLimitReachedException.throwIfWriteLimitReached(ex);
         }
     }
 
@@ -206,9 +210,10 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                 for (PackageRelationship rel : source.getRelationships()) {
                     try {
                         handleEmbeddedPart(source, rel, handler, metadata, handledTarget);
-                    } catch (SAXException|SecurityException e) {
+                    } catch (SecurityException e) {
                         throw e;
                     } catch (Exception e) {
+                        WriteLimitReachedException.throwIfWriteLimitReached(e);
                         EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
                     }
                 }

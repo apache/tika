@@ -20,10 +20,12 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -32,7 +34,9 @@ import java.util.zip.ZipInputStream;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.config.Field;
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -62,7 +66,7 @@ public class OpenDocumentParser extends AbstractParser {
     private static final long serialVersionUID = -6410276875438618287L;
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
+            Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
                     MediaType.application("vnd.sun.xml.writer"),
                     MediaType.application("vnd.oasis.opendocument.text"),
                     MediaType.application("vnd.oasis.opendocument.graphics"),
@@ -98,8 +102,7 @@ public class OpenDocumentParser extends AbstractParser {
                     MediaType.application("x-vnd.oasis.opendocument.formula-template"))));
 
     private static final String META_NAME = "meta.xml";
-
-    private EmbeddedDocumentUtil embeddedDocumentUtil;
+    private static final String MANIFEST_NAME = "META-INF/manifest.xml";
 
     private Parser meta = new OpenDocumentMetaParser();
 
@@ -132,7 +135,7 @@ public class OpenDocumentParser extends AbstractParser {
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
 
-        embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
+        EmbeddedDocumentUtil embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
 
         // Open the Zip stream
         // Use a File if we can, and an already open zip is even better
@@ -160,20 +163,27 @@ public class OpenDocumentParser extends AbstractParser {
         EndDocumentShieldingContentHandler handler =
                 new EndDocumentShieldingContentHandler(xhtml);
 
-        if (zipFile != null) {
-            try {
-                handleZipFile(zipFile, metadata, context, handler);
-            } finally {
-                //Do we want to close silently == catch an exception here?
-                zipFile.close();
+        try {
+            if (zipFile != null) {
+                try {
+                    handleZipFile(zipFile, metadata, context, handler, embeddedDocumentUtil);
+                } finally {
+                    //Do we want to close silently == catch an exception here?
+                    zipFile.close();
+                }
+            } else {
+                try {
+                    handleZipStream(zipStream, metadata, context, handler, embeddedDocumentUtil);
+                } finally {
+                    //Do we want to close silently == catch an exception here?
+                    zipStream.close();
+                }
             }
-        } else {
-            try {
-                handleZipStream(zipStream, metadata, context, handler);
-            } finally {
-                //Do we want to close silently == catch an exception here?
-                zipStream.close();
+        } catch (SAXException e) {
+            if (e.getCause() != null && e.getCause() instanceof EncryptedDocumentException) {
+                throw (EncryptedDocumentException)e.getCause();
             }
+            throw e;
         }
 
         // Only now call the end document
@@ -187,43 +197,83 @@ public class OpenDocumentParser extends AbstractParser {
         this.extractMacros = extractMacros;
     }
 
-    private void handleZipStream(ZipInputStream zipStream, Metadata metadata, ParseContext context, EndDocumentShieldingContentHandler handler) throws IOException, TikaException, SAXException {
+    private void handleZipStream(ZipInputStream zipStream, Metadata metadata,
+                                 ParseContext context,
+                                 EndDocumentShieldingContentHandler handler,
+                                 EmbeddedDocumentUtil embeddedDocumentUtil) throws IOException,
+            TikaException, SAXException {
         ZipEntry entry = zipStream.getNextEntry();
 		if (entry == null) {
 			throw new IOException("No entries found in ZipInputStream");
 		}
+		List<SAXException> saxExceptions = new ArrayList<>();
         do {
-            handleZipEntry(entry, zipStream, metadata, context, handler);
+            try {
+                handleZipEntry(entry, zipStream, metadata, context, handler, embeddedDocumentUtil);
+            } catch (SAXException e) {
+                if (WriteLimitReachedException.isWriteLimitReached(e)) {
+                    throw e;
+                } else if (e.getCause() instanceof EncryptedDocumentException) {
+                    throw (EncryptedDocumentException)e.getCause();
+                } else {
+                    saxExceptions.add(e);
+                }
+            }
             entry = zipStream.getNextEntry();
         } while (entry != null);
+        //throw the first
+        if (saxExceptions.size() > 0) {
+            throw saxExceptions.get(0);
+        }
     }
 
     private void handleZipFile(ZipFile zipFile, Metadata metadata,
-                               ParseContext context, EndDocumentShieldingContentHandler handler)
+                               ParseContext context, EndDocumentShieldingContentHandler handler,
+                               EmbeddedDocumentUtil embeddedDocumentUtil)
             throws IOException, TikaException, SAXException {
+
+        ZipEntry entry = zipFile.getEntry(MANIFEST_NAME);
+        if (entry != null) {
+            handleZipEntry(entry, zipFile.getInputStream(entry), metadata, context, handler,
+                    embeddedDocumentUtil);
+        }
         // If we can, process the metadata first, then the
         //  rest of the file afterwards (TIKA-1353)
         // Only possible to guarantee that when opened from a file not a stream
-
-        ZipEntry entry = zipFile.getEntry(META_NAME);
+        entry = zipFile.getEntry(META_NAME);
         if (entry != null) {
-            handleZipEntry(entry, zipFile.getInputStream(entry), metadata, context, handler);
+            handleZipEntry(entry, zipFile.getInputStream(entry), metadata, context,
+                    handler, embeddedDocumentUtil);
         }
 
         Enumeration<? extends ZipEntry> entries = zipFile.entries();
         while (entries.hasMoreElements()) {
             entry = entries.nextElement();
             if (!META_NAME.equals(entry.getName())) {
-                handleZipEntry(entry, zipFile.getInputStream(entry), metadata, context, handler);
+                handleZipEntry(entry, zipFile.getInputStream(entry), metadata, context, handler,
+                        embeddedDocumentUtil);
             }
         }
     }
     private void handleZipEntry(ZipEntry entry, InputStream zip, Metadata metadata,
-                                ParseContext context, ContentHandler handler)
+                                ParseContext context, ContentHandler handler,
+                                EmbeddedDocumentUtil embeddedDocumentUtil)
             throws IOException, SAXException, TikaException {
-        if (entry == null) return;
+        if (entry == null) {
+            return;
+        }
+        if (entry.getName().contains("manifest.xml")) {
+            try {
+                checkForEncryption(zip, context);
+            } catch (SAXException e) {
+                if (e.getCause() != null && e.getCause() instanceof EncryptedDocumentException) {
+                    throw e;
+                }
+                //else, swallow for now
+            }
+        }
         if (entry.getName().equals("mimetype")) {
-            String type = IOUtils.toString(zip, UTF_8);
+            String type = IOUtils.toString(zip, UTF_8).trim();
             metadata.set(Metadata.CONTENT_TYPE, type);
         } else if (entry.getName().equals(META_NAME)) {
             meta.parse(zip, new DefaultHandler(), metadata, context);
@@ -278,6 +328,14 @@ public class OpenDocumentParser extends AbstractParser {
             }
 
         }
+    }
+
+    private void checkForEncryption(InputStream stream, ParseContext context)
+            throws SAXException, TikaException, IOException {
+        XMLReaderUtils.parseSAX(
+                new CloseShieldInputStream(stream),
+                new OfflineContentHandler(new EmbeddedContentHandler(
+                        new OpenDocumentManifestHandler())), context);
     }
 
     private void maybeHandleMacro(InputStream is, String embeddedName,
