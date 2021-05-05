@@ -16,9 +16,13 @@
  */
 package org.apache.tika.parser.mock;
 
+import java.util.List;
+
 import org.junit.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 public class MockParserTest extends TikaTest {
 
@@ -26,5 +30,12 @@ public class MockParserTest extends TikaTest {
     public void testFakeload() throws Exception {
         //just make sure there aren't any exceptions
         getRecursiveMetadata("mock_fakeload.xml");
+    }
+
+    @Test
+    public void testTimes() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("mock_times.xml");
+        assertContainsCount("hello",
+                metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT), 30);
     }
 }
