@@ -73,5 +73,69 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
                 metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION));
 
     }
+    /*
+    @Test
+    public void testWriteLimitInAll() throws Exception {
+        //specify your file directory here
+        Path testDocs = Paths.get("..../tika-parsers/src/test/resources/test-documents");
+        for (File f : testDocs.toFile().listFiles()) {
+            if (f.isDirectory()) {
+                continue;
+            }
+            System.out.println(f.getName());
+            testWriteLimit(f);
+        }
+    }
+    private void testWriteLimit(File f) throws Exception {
+        Response response = WebClient.create(endPoint + META_PATH+"/text").accept(
+                "application/json")
+                .put(f);
+        assertEquals(200, response.getStatus());
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+        int totalLen = 0;
+        StringBuilder sb = new StringBuilder();
+        for (Metadata m : metadataList) {
+            String txt = m.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT);
+            sb.append(txt);
+            totalLen += (txt == null) ? 0 : txt.length();
+        }
+        String fullText = sb.toString();
+        Random r = new Random();
+        for (int i = 0; i < 20; i++) {
+            int writeLimit = r.nextInt(totalLen+100);
+            response = WebClient.create(endPoint + META_PATH+"/text").accept(
+                    "application/json")
+                    .header("writeLimit", Integer.toString(writeLimit)).put(f);
+            assertEquals(200, response.getStatus());
+            reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+            List<Metadata> writeLimitMetadataList = JsonMetadataList.fromJson(reader);
+            int len = 0;
+            StringBuilder extracted = new StringBuilder();
+            for (Metadata m : writeLimitMetadataList) {
+                String txt = m.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT);
+                len += (txt == null) ? 0 : txt.length();
+                extracted.append(txt);
+            }
+            if (totalLen > len) {
+                boolean wlr = false;
+                for (Metadata m : writeLimitMetadataList) {
+                    if ("true".equals(m.get(AbstractRecursiveParserWrapperHandler.WRITE_LIMIT_REACHED))) {
+                        wlr = true;
+                    }
+                }
+                System.out.println(f.getName() + " actualLen:" + len + " : writeLimit: "
+                        + writeLimit + " : totalLen: "+totalLen);
+                assertTrue(f.getName() + ": writelimit: " + writeLimit + " len: "+len,
+                        len <= writeLimit);
+                assertEquals(f.getName() +" writeLimit: " + writeLimit +
+                                " : fullLen:" + totalLen + " limitedLen: " +len,
+                        true, wlr);
+            } else if (len > totalLen) {
+                fail("len should never be > totalLen "+len + "  : "+ totalLen);
+            }
+        }
+    }
+    */
 
 }

@@ -52,6 +52,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
@@ -142,7 +143,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         handleEmbeddedParts(xhtml, metadata);
 
         // thumbnail
-        handleThumbnail(xhtml);
+        handleThumbnail(xhtml, metadata);
 
         xhtml.endDocument();
     }
@@ -160,7 +161,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         return desc;
     }
 
-    private void handleThumbnail(ContentHandler handler) {
+    private void handleThumbnail(ContentHandler handler, Metadata metadata) throws SAXException {
         try {
             OPCPackage opcPackage = extractor.getPackage();
             for (PackageRelationship rel : opcPackage
@@ -193,7 +194,10 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         } catch (SecurityException e) {
             throw e;
         } catch (Exception ex) {
-            //swallow
+            WriteLimitReachedException.throwIfWriteLimitReached(ex);
+            //swallow otherwise
+            metadata.add(TikaCoreProperties.EMBEDDED_EXCEPTION,
+                    ExceptionUtils.getStackTrace(ex));
         }
     }
 

@@ -46,6 +46,7 @@ import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -224,6 +225,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                             .parse(new ByteArrayInputStream(v.getBytes(UTF_8)), h, m, parseContext);
                     handler.characters(h.toString());
                 } catch (SAXException e) {
+                    WriteLimitReachedException.throwIfWriteLimitReached(e);
                     //if something went wrong in htmlparser, just append the characters
                     handler.characters(v);
                 }

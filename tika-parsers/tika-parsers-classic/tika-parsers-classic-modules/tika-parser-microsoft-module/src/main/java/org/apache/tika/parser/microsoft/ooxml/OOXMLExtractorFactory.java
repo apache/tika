@@ -51,6 +51,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.detect.microsoft.ooxml.OPCPackageDetector;
+import org.apache.tika.exception.RuntimeSAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -234,6 +235,8 @@ public class OOXMLExtractorFactory {
             throw new TikaException("Error creating OOXML extractor", e);
         } catch (XmlException e) {
             throw new TikaException("Error creating OOXML extractor", e);
+        } catch (RuntimeSAXException e) {
+            throw(SAXException) e.getCause();
         } finally {
             if (tmpRepairedCopy != null) {
                 if (pkg != null) {

@@ -26,6 +26,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
@@ -98,7 +99,7 @@ public abstract class AbstractXML2003Parser extends AbstractParser {
                     new OfflineContentHandler(new EmbeddedContentHandler(
                             getContentHandler(tagged, metadata, context))));
         } catch (SAXException e) {
-            tagged.throwIfCauseOf(e);
+            WriteLimitReachedException.throwIfWriteLimitReached(e);
             throw new TikaException("XML parse error", e);
         } finally {
             xhtml.endDocument();

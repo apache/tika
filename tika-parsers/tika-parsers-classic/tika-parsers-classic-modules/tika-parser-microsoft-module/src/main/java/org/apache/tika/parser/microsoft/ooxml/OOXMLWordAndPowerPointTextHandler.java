@@ -337,7 +337,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
 
     }
 
-    private void startEditedSection(EditType editType, Attributes atts) {
+    private void startEditedSection(EditType editType, Attributes atts) throws SAXException {
         String editAuthor = atts.getValue(W_NS, "author");
         String editDateString = atts.getValue(W_NS, "date");
         Date editDate = null;
@@ -436,7 +436,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         }
     }
 
-    private void handleEndOfRuby() {
+    private void handleEndOfRuby() throws SAXException {
         if (rubyBuffer.length() > 0) {
             if (concatenatePhoneticRuns) {
                 bodyContentsHandler.run(currRunProperties, " (" + rubyBuffer.toString() + ")");
@@ -445,7 +445,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         }
     }
 
-    private void handleEndOfRun() {
+    private void handleEndOfRun() throws SAXException {
         bodyContentsHandler.run(currRunProperties, runBuffer.toString());
         if (inHlinkClick) {
             bodyContentsHandler.hyperlinkEnd();
@@ -459,7 +459,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         currRunProperties.setUnderline(UnderlinePatterns.NONE.name());
     }
 
-    private void handlePict() {
+    private void handlePict() throws SAXException {
         String picFileName = null;
         if (picRId != null) {
             picFileName = linkedRelationships.get(picRId);
@@ -522,53 +522,53 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
 
     public interface XWPFBodyContentsHandler {
 
-        void run(RunProperties runProperties, String contents);
+        void run(RunProperties runProperties, String contents) throws SAXException;
 
         /**
          * @param link the link; can be null
          */
-        void hyperlinkStart(String link);
+        void hyperlinkStart(String link) throws SAXException;
 
-        void hyperlinkEnd();
+        void hyperlinkEnd() throws SAXException;
 
-        void startParagraph(ParagraphProperties paragraphProperties);
+        void startParagraph(ParagraphProperties paragraphProperties) throws SAXException;
 
-        void endParagraph();
+        void endParagraph() throws SAXException;
 
-        void startTable();
+        void startTable() throws SAXException;
 
-        void endTable();
+        void endTable() throws SAXException;
 
-        void startTableRow();
+        void startTableRow() throws SAXException;
 
-        void endTableRow();
+        void endTableRow() throws SAXException;
 
-        void startTableCell();
+        void startTableCell() throws SAXException;
 
-        void endTableCell();
+        void endTableCell() throws SAXException;
 
-        void startSDT();
+        void startSDT() throws SAXException;
 
-        void endSDT();
+        void endSDT() throws SAXException;
 
-        void startEditedSection(String editor, Date date, EditType editType);
+        void startEditedSection(String editor, Date date, EditType editType) throws SAXException;
 
-        void endEditedSection();
+        void endEditedSection() throws SAXException;
 
-        boolean isIncludeDeletedText();
+        boolean isIncludeDeletedText() throws SAXException;
 
-        void footnoteReference(String id);
+        void footnoteReference(String id) throws SAXException;
 
-        void endnoteReference(String id);
+        void endnoteReference(String id) throws SAXException;
 
-        boolean isIncludeMoveFromText();
+        boolean isIncludeMoveFromText() throws SAXException;
 
-        void embeddedOLERef(String refId);
+        void embeddedOLERef(String refId) throws SAXException;
 
-        void embeddedPicRef(String picFileName, String picDescription);
+        void embeddedPicRef(String picFileName, String picDescription) throws SAXException;
 
-        void startBookmark(String id, String name);
+        void startBookmark(String id, String name) throws SAXException;
 
-        void endBookmark(String id);
+        void endBookmark(String id) throws SAXException;
     }
 }

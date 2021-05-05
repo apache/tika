@@ -23,10 +23,19 @@ public class WriteLimitReachedException extends SAXException {
     //in case of (hopefully impossible) cyclic exception
     private final static int MAX_DEPTH = 100;
 
-    public WriteLimitReachedException(String msg) {
-        super(msg);
+    private final int writeLimit;
+    public WriteLimitReachedException(int writeLimit) {
+        this.writeLimit = writeLimit;
     }
 
+    @Override
+    public String getMessage() {
+        return "Your document contained more than " + writeLimit
+                + " characters, and so your requested limit has been"
+                + " reached. To receive the full text of the document,"
+                + " increase your limit. (Text up to the limit is"
+                + " however available).";
+    }
     /**
      * Checks whether the given exception (or any of it's root causes) was
      * thrown by this handler as a signal of reaching the write limit.
@@ -51,6 +60,24 @@ public class WriteLimitReachedException extends SAXException {
             return true;
         } else {
             return t.getCause() != null && isWriteLimitReached(t.getCause(), depth + 1);
+        }
+    }
+
+    public static void throwIfWriteLimitReached(Exception ex) throws SAXException {
+        throwIfWriteLimitReached(ex, 0);
+    }
+
+    private static void throwIfWriteLimitReached(Exception ex, int depth) throws SAXException {
+        if (ex == null) {
+            return;
+        }
+        if (depth > MAX_DEPTH) {
+            return;
+        }
+        if (ex instanceof WriteLimitReachedException) {
+            throw (SAXException) ex;
+        } else {
+            isWriteLimitReached(ex.getCause(), depth + 1);
         }
     }
 }

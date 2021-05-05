@@ -349,7 +349,9 @@ public class TikaResource {
             logger.warn("{}: Encrypted document ({})", path, fileName, e);
             throw new TikaServerParseException(e);
         } catch (Exception e) {
-            logger.warn("{}: Text extraction failed ({})", path, fileName, e);
+            if (! WriteLimitReachedException.isWriteLimitReached(e)) {
+                logger.warn("{}: Text extraction failed ({})", path, fileName, e);
+            }
             throw new TikaServerParseException(e);
         } catch (OutOfMemoryError e) {
             logger.warn("{}: OOM ({})", path, fileName, e);

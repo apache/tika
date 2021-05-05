@@ -40,6 +40,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -205,6 +206,7 @@ public class OpenDocumentParser extends AbstractParser {
                 handleZipEntry(entry, zipStream, metadata, context, handler,
                         embeddedDocumentUtil);
             } catch (SAXException e) {
+                WriteLimitReachedException.throwIfWriteLimitReached(e);
                 if (e.getCause() instanceof EncryptedDocumentException) {
                     throw (EncryptedDocumentException)e.getCause();
                 } else {
