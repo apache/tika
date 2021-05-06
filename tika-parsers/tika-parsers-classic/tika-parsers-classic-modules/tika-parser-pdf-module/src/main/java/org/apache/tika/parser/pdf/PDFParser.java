@@ -480,6 +480,11 @@ public class PDFParser extends AbstractParser implements Initializable {
     }
 
     @Field
+    public void setOcrStrategyAuto(String ocrStrategyAuto) {
+        defaultConfig.setOcrStrategyAuto(ocrStrategyAuto);
+    }
+
+    @Field
     public void setOcrImageType(String imageType) {
         defaultConfig.setOcrImageType(imageType);
     }
