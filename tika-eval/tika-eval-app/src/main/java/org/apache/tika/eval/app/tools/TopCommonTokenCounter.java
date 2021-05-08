@@ -118,25 +118,25 @@ public class TopCommonTokenCounter {
             return;
         }
         Files.createDirectories(path.getParent());
-        BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8);
-        StringBuilder sb = new StringBuilder();
-        writer.write(LICENSE);
-        writer.write("#DOC_COUNT\t" + totalDocs + "\n");
-        writer.write("#SUM_DOC_FREQS\t" + sumDocFreqs + "\n");
-        writer.write("#SUM_TERM_FREQS\t" + sumTotalTermFreqs + "\n");
-        writer.write("#UNIQUE_TERMS\t" + uniqueTerms + "\n");
-        writer.write("#TOKEN\tDOCFREQ\tTERMFREQ\n");
-        //add these tokens no matter what
-        for (String t : INCLUDE_LIST) {
-            writer.write(t);
-            writer.newLine();
-        }
-        for (TokenDFTF tp : queue.getArray()) {
-            writer.write(getRow(sb, tp) + "\n");
+        try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
+            StringBuilder sb = new StringBuilder();
+            writer.write(LICENSE);
+            writer.write("#DOC_COUNT\t" + totalDocs + "\n");
+            writer.write("#SUM_DOC_FREQS\t" + sumDocFreqs + "\n");
+            writer.write("#SUM_TERM_FREQS\t" + sumTotalTermFreqs + "\n");
+            writer.write("#UNIQUE_TERMS\t" + uniqueTerms + "\n");
+            writer.write("#TOKEN\tDOCFREQ\tTERMFREQ\n");
+            //add these tokens no matter what
+            for (String t : INCLUDE_LIST) {
+                writer.write(t);
+                writer.newLine();
+            }
+            for (TokenDFTF tp : queue.getArray()) {
+                writer.write(getRow(sb, tp) + "\n");
 
+            }
+            writer.flush();
         }
-        writer.flush();
-        writer.close();
     }
 
     private static String getRow(StringBuilder sb, TokenDFTF tp) {

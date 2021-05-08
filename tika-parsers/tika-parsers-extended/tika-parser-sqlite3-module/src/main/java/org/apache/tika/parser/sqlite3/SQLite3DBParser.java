@@ -124,10 +124,10 @@ class SQLite3DBParser extends AbstractDBParser {
 
         try (Statement st = connection.createStatement()) {
             String sql = "SELECT name FROM sqlite_master WHERE type='table'";
-            ResultSet rs = st.executeQuery(sql);
-
-            while (rs.next()) {
-                tableNames.add(rs.getString(1));
+            try (ResultSet rs = st.executeQuery(sql)) {
+                while (rs.next()) {
+                    tableNames.add(rs.getString(1));
+                }
             }
         }
         return tableNames;

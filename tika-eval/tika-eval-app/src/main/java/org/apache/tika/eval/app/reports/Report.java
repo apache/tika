@@ -63,62 +63,64 @@ public class Report {
     }
 
     private void dumpXLSX(Connection c, Path reportsRoot) throws IOException, SQLException {
-        Statement st = c.createStatement();
-        Path out = reportsRoot.resolve(reportFilename);
-        Files.createDirectories(out.getParent());
+        try (Statement st = c.createStatement()) {
+            Path out = reportsRoot.resolve(reportFilename);
+            Files.createDirectories(out.getParent());
 
-        SXSSFWorkbook wb = new SXSSFWorkbook(new XSSFWorkbook(), 100, true, true);
-        wb.setCompressTempFiles(true);
-        defaultIntegerFormatter.reset(wb.getXSSFWorkbook());
-        defaultDoubleFormatter.reset(wb.getXSSFWorkbook());
-        sqlCellStyle = wb.createCellStyle();
-        sqlCellStyle.setVerticalAlignment(VerticalAlignment.TOP);
-        sqlCellStyle.setWrapText(true);
+            SXSSFWorkbook wb = new SXSSFWorkbook(new XSSFWorkbook(), 100, true, true);
+            wb.setCompressTempFiles(true);
+            defaultIntegerFormatter.reset(wb.getXSSFWorkbook());
+            defaultDoubleFormatter.reset(wb.getXSSFWorkbook());
+            sqlCellStyle = wb.createCellStyle();
+            sqlCellStyle.setVerticalAlignment(VerticalAlignment.TOP);
+            sqlCellStyle.setWrapText(true);
 
-
-        try {
-            dumpReportToWorkbook(st, wb);
-        } finally {
-            try (OutputStream os = Files.newOutputStream(out)) {
-                wb.write(os);
+            try {
+                dumpReportToWorkbook(st, wb);
             } finally {
-                wb.dispose();
+                try (OutputStream os = Files.newOutputStream(out)) {
+                    wb.write(os);
+                } finally {
+                    wb.dispose();
+                }
             }
         }
     }
 
     private void dumpReportToWorkbook(Statement st, SXSSFWorkbook wb)
-            throws IOException, SQLException {
-        ResultSet rs = st.executeQuery(sql);
+            throws SQLException {
+        SXSSFSheet sheet;
+        try (ResultSet rs = st.executeQuery(sql)) {
 
-        SXSSFSheet sheet = wb.createSheet("tika-eval Report");
-        sheet.trackColumnForAutoSizing(0);
+            sheet = wb.createSheet("tika-eval Report");
+            sheet.trackColumnForAutoSizing(0);
 
-        int rowCount = 0;
-        ResultSetMetaData meta = rs.getMetaData();
-        Set<String> colNames = new HashSet<>();
+            int rowCount = 0;
+            ResultSetMetaData meta = rs.getMetaData();
+            Set<String> colNames = new HashSet<>();
 
-        Row xssfRow = sheet.createRow(rowCount++);
-        //write headers and cache them to check against styles
-        for (int i = 1; i <= meta.getColumnCount(); i++) {
-            Cell cell = xssfRow.createCell(i - 1);
-            cell.setCellValue(meta.getColumnLabel(i));
-            colNames.add(meta.getColumnLabel(i));
-        }
-
-        ResultSetMetaData resultSetMetaData = rs.getMetaData();
-        while (rs.next()) {
-            xssfRow = sheet.createRow(rowCount++);
+            Row xssfRow = sheet.createRow(rowCount++);
+            //write headers and cache them to check against styles
             for (int i = 1; i <= meta.getColumnCount(); i++) {
                 Cell cell = xssfRow.createCell(i - 1);
-                XSLXCellFormatter formatter = cellFormatters.get(meta.getColumnLabel(i));
-                if (formatter == null) {
-                    formatter = getDefaultFormatter(resultSetMetaData.getColumnType(i));
-                }
-                if (formatter != null) {
-                    formatter.applyStyleAndValue(i, rs, cell);
-                } else {
-                    writeCell(meta, i, rs, cell);
+                cell.setCellValue(meta.getColumnLabel(i));
+                colNames.add(meta.getColumnLabel(i));
+            }
+
+            ResultSetMetaData resultSetMetaData = rs.getMetaData();
+            while (rs.next()) {
+                xssfRow = sheet.createRow(rowCount++);
+                for (int i = 1; i <= meta.getColumnCount(); i++) {
+                    Cell cell = xssfRow.createCell(i - 1);
+                    XSLXCellFormatter formatter = cellFormatters.get(meta.getColumnLabel(i));
+                    if (formatter == null) {
+                        formatter = getDefaultFormatter(resultSetMetaData.getColumnType(i));
+                    }
+                    if (formatter != null) {
+                        formatter.applyStyleAndValue(i, rs, cell);
+                    } else {
+                        writeCell(meta, i, rs, cell);
+                    }
                 }
             }
         }

@@ -37,9 +37,10 @@ public class ZipListFiles {
     }
 
     public static void listZipEntries(String path) throws IOException {
-        ZipFile zip = new ZipFile(path);
-        for (ZipEntry entry : Collections.list(zip.entries())) {
-            System.out.println(entry.getName());
+        try (ZipFile zip = new ZipFile(path)) {
+            for (ZipEntry entry : Collections.list(zip.entries())) {
+                System.out.println(entry.getName());
+            }
         }
     }
 }

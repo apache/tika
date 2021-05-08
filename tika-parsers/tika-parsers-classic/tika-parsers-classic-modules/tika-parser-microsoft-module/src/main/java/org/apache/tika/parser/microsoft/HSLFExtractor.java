@@ -80,84 +80,81 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
 
     protected void parse(DirectoryNode root, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
-        HSLFSlideShow ss;
         List<HSLFSlide> _slides;
 
-        try {
-            ss = new HSLFSlideShow(root);
-        } catch (EncryptedPowerPointFileException e) {
-            throw new EncryptedDocumentException(e);
-        }
+        try (HSLFSlideShow ss = new HSLFSlideShow(root)) {
+            _slides = ss.getSlides();
 
-        _slides = ss.getSlides();
+            xhtml.startElement("div", "class", "slideShow");
 
-        xhtml.startElement("div", "class", "slideShow");
+            /* Iterate over slides and extract text */
+            for (HSLFSlide slide : _slides) {
+                xhtml.startElement("div", "class", "slide");
+                HeadersFooters slideHeaderFooters =
+                        (officeParserConfig.isIncludeHeadersAndFooters()) ? slide.getHeadersFooters() :
+                                null;
 
-        /* Iterate over slides and extract text */
-        for (HSLFSlide slide : _slides) {
-            xhtml.startElement("div", "class", "slide");
-            HeadersFooters slideHeaderFooters =
-                    (officeParserConfig.isIncludeHeadersAndFooters()) ? slide.getHeadersFooters() :
-                            null;
+                HeadersFooters notesHeadersFooters = (officeParserConfig.isIncludeHeadersAndFooters()) ?
+                        ss.getNotesHeadersFooters() : null;
 
-            HeadersFooters notesHeadersFooters = (officeParserConfig.isIncludeHeadersAndFooters()) ?
-                    ss.getNotesHeadersFooters() : null;
+                if (officeParserConfig.isIncludeHeadersAndFooters()) {
+                    // Slide header, if present
+                    if (slideHeaderFooters != null && slideHeaderFooters.isHeaderVisible() &&
+                            slideHeaderFooters.getHeaderText() != null) {
+                        xhtml.startElement("p", "class", "slide-header");
 
-            if (officeParserConfig.isIncludeHeadersAndFooters()) {
-                // Slide header, if present
-                if (slideHeaderFooters != null && slideHeaderFooters.isHeaderVisible() &&
-                        slideHeaderFooters.getHeaderText() != null) {
-                    xhtml.startElement("p", "class", "slide-header");
+                        xhtml.characters(slideHeaderFooters.getHeaderText());
 
-                    xhtml.characters(slideHeaderFooters.getHeaderText());
-
-                    xhtml.endElement("p");
-                }
-            }
-
-            // Slide master, if present
-            if (officeParserConfig.isIncludeSlideMasterContent()) {
-                extractMaster(xhtml, slide.getMasterSheet());
-            }
-            // Slide text
-            xhtml.startElement("div", "class", "slide-content");
-            textRunsToText(xhtml, slide.getTextParagraphs());
-
-            // Table text
-            List<HSLFShape> shapes = getShapes(slide);
-            if (shapes != null) {
-                for (HSLFShape shape : shapes) {
-                    if (shape instanceof HSLFTable) {
-                        extractTableText(xhtml, (HSLFTable) shape);
+                        xhtml.endElement("p");
                     }
                 }
-            }
-            extractGroupText(xhtml, slide, 0);
-            //end slide content
-            xhtml.endElement("div");
 
-            if (officeParserConfig.isIncludeHeadersAndFooters()) {
-                // Slide footer, if present
-                if (slideHeaderFooters != null && slideHeaderFooters.isFooterVisible() &&
-                        slideHeaderFooters.getFooterText() != null) {
-                    xhtml.startElement("p", "class", "slide-footer");
-                    xhtml.characters(slideHeaderFooters.getFooterText());
-                    xhtml.endElement("p");
+                // Slide master, if present
+                if (officeParserConfig.isIncludeSlideMasterContent()) {
+                    extractMaster(xhtml, slide.getMasterSheet());
                 }
+                // Slide text
+                xhtml.startElement("div", "class", "slide-content");
+                textRunsToText(xhtml, slide.getTextParagraphs());
+
+                // Table text
+                List<HSLFShape> shapes = getShapes(slide);
+                if (shapes != null) {
+                    for (HSLFShape shape : shapes) {
+                        if (shape instanceof HSLFTable) {
+                            extractTableText(xhtml, (HSLFTable) shape);
+                        }
+                    }
+                }
+                extractGroupText(xhtml, slide, 0);
+                //end slide content
+                xhtml.endElement("div");
+
+                if (officeParserConfig.isIncludeHeadersAndFooters()) {
+                    // Slide footer, if present
+                    if (slideHeaderFooters != null && slideHeaderFooters.isFooterVisible() &&
+                            slideHeaderFooters.getFooterText() != null) {
+                        xhtml.startElement("p", "class", "slide-footer");
+                        xhtml.characters(slideHeaderFooters.getFooterText());
+                        xhtml.endElement("p");
+                    }
+                }
+                handleComments(slide, xhtml);
+                handleNotes(slide, notesHeadersFooters, xhtml);
+
+                // Now any embedded resources
+                handleSlideEmbeddedResources(slide, xhtml);
+
+                // Slide complete
+                xhtml.endElement("div");
             }
-            handleComments(slide, xhtml);
-            handleNotes(slide, notesHeadersFooters, xhtml);
 
-            // Now any embedded resources
-            handleSlideEmbeddedResources(slide, xhtml);
-
-            // Slide complete
-            xhtml.endElement("div");
-        }
-
-        handleSlideEmbeddedPictures(ss, xhtml);
-        if (officeParserConfig.isExtractMacros()) {
-            extractMacros(ss, xhtml);
+            handleSlideEmbeddedPictures(ss, xhtml);
+            if (officeParserConfig.isExtractMacros()) {
+                extractMacros(ss, xhtml);
+            }
+        } catch (EncryptedPowerPointFileException e) {
+            throw new EncryptedDocumentException(e);
         }
         // All slides done
         xhtml.endElement("div");

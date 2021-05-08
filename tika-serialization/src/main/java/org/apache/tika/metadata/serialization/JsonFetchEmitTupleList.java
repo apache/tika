@@ -33,15 +33,17 @@ import org.apache.tika.pipes.FetchEmitTuple;
 public class JsonFetchEmitTupleList {
 
     public static List<FetchEmitTuple> fromJson(Reader reader) throws IOException {
-        JsonParser jParser = new JsonFactory().createParser(reader);
-        JsonToken token = jParser.nextToken();
-        if (token != JsonToken.START_ARRAY) {
-            throw new IOException("require start array, but see: " + token.name());
-        }
-        List<FetchEmitTuple> list = new ArrayList<>();
-        while (token != JsonToken.END_ARRAY) {
-            list.add(JsonFetchEmitTuple.parseFetchEmitTuple(jParser));
-            token = jParser.nextToken();
+        List<FetchEmitTuple> list;
+        try (JsonParser jParser = new JsonFactory().createParser(reader)) {
+            JsonToken token = jParser.nextToken();
+            if (token != JsonToken.START_ARRAY) {
+                throw new IOException("require start array, but see: " + token.name());
+            }
+            list = new ArrayList<>();
+            while (token != JsonToken.END_ARRAY) {
+                list.add(JsonFetchEmitTuple.parseFetchEmitTuple(jParser));
+                token = jParser.nextToken();
+            }
         }
         return list;
     }

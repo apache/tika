@@ -228,9 +228,11 @@ abstract class AbstractPOIFSExtractor {
                     } catch (FileNotFoundException ioe) {
                         contentsEntry = (DocumentEntry) dir.getEntry("Contents");
                     }
-                    DocumentInputStream inp = new DocumentInputStream(contentsEntry);
-                    byte[] contents = new byte[contentsEntry.getSize()];
-                    inp.readFully(contents);
+                    byte[] contents;
+                    try (DocumentInputStream inp = new DocumentInputStream(contentsEntry)) {
+                        contents = new byte[contentsEntry.getSize()];
+                        inp.readFully(contents);
+                    }
                     embedded = TikaInputStream.get(contents);
 
                     // Try to work out what it is

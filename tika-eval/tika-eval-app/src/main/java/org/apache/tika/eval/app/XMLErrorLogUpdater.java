@@ -133,13 +133,14 @@ public class XMLErrorLogUpdater {
             int containerId = getContainerId(filePath);
             String sql = "SELECT count(1) from " + errorTableName + " where " + Cols.CONTAINER_ID +
                     " = " + containerId + " or " + Cols.FILE_PATH + "='" + filePath + "'";
-            ResultSet rs = statement.executeQuery(sql);
-
-            //now try to figure out if that file already exists
-            //in parse errors
-            int hitCount = 0;
-            while (rs.next()) {
-                hitCount = rs.getInt(1);
+            int hitCount;
+            try (ResultSet rs = statement.executeQuery(sql)) {
+                //now try to figure out if that file already exists
+                //in parse errors
+                hitCount = 0;
+                while (rs.next()) {
+                    hitCount = rs.getInt(1);
+                }
             }
 
             //if it does, update all records matching that path or container id
@@ -179,13 +180,14 @@ public class XMLErrorLogUpdater {
             String sql = "SELECT " + Cols.CONTAINER_ID.name() + " from " +
                     ExtractProfiler.CONTAINER_TABLE.getName() + " where " + Cols.FILE_PATH + " ='" +
                     resourceId + "'";
-            ResultSet rs = statement.executeQuery(sql);
-            int resultCount = 0;
-            while (rs.next()) {
-                containerId = rs.getInt(1);
-                resultCount++;
+            int resultCount;
+            try (ResultSet rs = statement.executeQuery(sql)) {
+                resultCount = 0;
+                while (rs.next()) {
+                    containerId = rs.getInt(1);
+                    resultCount++;
+                }
             }
-            rs.close();
 
             if (resultCount == 0) {
                 LOG.warn("Should have found a container for: {}", resourceId);
