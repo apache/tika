@@ -43,7 +43,7 @@ import org.apache.tika.utils.XMLReaderUtils;
 public abstract class ConfigBase {
 
     /**
-     * Use this to build a list of componentes for a composite item (e.g.
+     * Use this to build a list of components for a composite item (e.g.
      * CompositeMetadataFilter, FetcherManager), each with their own configurations
      *
      * @param compositeElementName

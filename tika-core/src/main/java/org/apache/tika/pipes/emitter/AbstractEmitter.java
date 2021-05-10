@@ -19,24 +19,9 @@ package org.apache.tika.pipes.emitter;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.tika.metadata.Metadata;
-
 public abstract class AbstractEmitter implements Emitter {
 
     private String name;
-
-    public static long estimateSizeInBytes(String id, List<Metadata> metadataList) {
-        long sz = 36 + id.length() * 2;
-        for (Metadata m : metadataList) {
-            for (String n : m.names()) {
-                sz += 36 + n.length() * 2;
-                for (String v : m.getValues(n)) {
-                    sz += 36 + v.length() * 2;
-                }
-            }
-        }
-        return sz;
-    }
 
     @Override
     public String getName() {

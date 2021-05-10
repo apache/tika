@@ -102,7 +102,7 @@ public class FileSystemFetchIterator extends FetchIterator implements Initializa
             String relPath = basePath.relativize(file).toString();
 
             try {
-                tryToAdd(new FetchEmitTuple(new FetchKey(fetcherName, relPath),
+                tryToAdd(new FetchEmitTuple(relPath, new FetchKey(fetcherName, relPath),
                         new EmitKey(emitterName, relPath), new Metadata()));
             } catch (TimeoutException e) {
                 throw new IOException(e);

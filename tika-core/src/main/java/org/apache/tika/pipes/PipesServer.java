@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.async;
+package org.apache.tika.pipes;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -35,61 +36,86 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
-import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.EmitKey;
+import org.apache.tika.pipes.emitter.Emitter;
+import org.apache.tika.pipes.emitter.EmitterManager;
+import org.apache.tika.pipes.emitter.TikaEmitterException;
 import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.FetcherManager;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
+import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.StringUtils;
 
-public class AsyncServer implements Runnable {
+public class PipesServer implements Runnable {
 
-    public static final byte ERROR = -1;
-
-    public static final byte DONE = 0;
+    public static final int TIMEOUT_EXIT_CODE = 3;
 
     public static final byte CALL = 1;
 
     public static final byte PING = 2;
 
-    public static final byte RESOURCE = 3;
+    public static final byte FAILED_TO_START = 3;
 
-    public static final byte READY = 4;
+    public static final byte PARSE_SUCCESS = 4;
 
-    public static final byte FAILED_TO_START = 5;
+    /**
+     * This will return the parse exception stack trace
+     */
+    public static final byte PARSE_EXCEPTION_NO_EMIT = 5;
 
-    public static final byte OOM = 6;
+    /**
+     * This will return the metadata list
+     */
+    public static final byte PARSE_EXCEPTION_EMIT = 6;
 
-    public static final byte TIMEOUT = 7;
+    public static final byte EMIT_SUCCESS = 7;
+
+    public static final byte EMIT_SUCCESS_PARSE_EXCEPTION = 8;
+
+    public static final byte EMIT_EXCEPTION = 9;
+
+    public static final byte NO_EMITTER_FOUND = 10;
+
+    public static final byte OOM = 11;
+
+    public static final byte TIMEOUT = 12;
+
+    public static final byte EMPTY_OUTPUT = 13;
+
 
     private final Object[] lock = new Object[0];
     private final Path tikaConfigPath;
     private final DataInputStream input;
     private final DataOutputStream output;
+    private final long maxExtractSizeToReturn;
     private final long serverParseTimeoutMillis;
     private final long serverWaitTimeoutMillis;
     private Parser parser;
     private TikaConfig tikaConfig;
     private FetcherManager fetcherManager;
+    private EmitterManager emitterManager;
     private volatile boolean parsing;
     private volatile long since;
 
-    //logging is fussy...the logging frameworks grab stderr/stdout
+    //logging is fussy...the logging frameworks grab stderr and stdout
     //before we can redirect.  slf4j complains on stderr, log4j2 unconfigured writes to stdout
     //We can add logging later but it has to be done carefully...
-    public AsyncServer(Path tikaConfigPath, InputStream in, PrintStream out,
+    public PipesServer(Path tikaConfigPath, InputStream in, PrintStream out,
+                       long maxExtractSizeToReturn,
                        long serverParseTimeoutMillis, long serverWaitTimeoutMillis)
             throws IOException, TikaException, SAXException {
         this.tikaConfigPath = tikaConfigPath;
         this.input = new DataInputStream(in);
         this.output = new DataOutputStream(out);
+        this.maxExtractSizeToReturn = maxExtractSizeToReturn;
         this.serverParseTimeoutMillis = serverParseTimeoutMillis;
         this.serverWaitTimeoutMillis = serverWaitTimeoutMillis;
         this.parsing = false;
@@ -99,11 +125,13 @@ public class AsyncServer implements Runnable {
 
     public static void main(String[] args) throws Exception {
         Path tikaConfig = Paths.get(args[0]);
-        long serverParseTimeoutMillis = Long.parseLong(args[1]);
-        long serverWaitTimeoutMillis = Long.parseLong(args[2]);
+        long maxForEmitBatchBytes = Long.parseLong(args[1]);
+        long serverParseTimeoutMillis = Long.parseLong(args[2]);
+        long serverWaitTimeoutMillis = Long.parseLong(args[3]);
 
-        AsyncServer server =
-                new AsyncServer(tikaConfig, System.in, System.out, serverParseTimeoutMillis,
+        PipesServer server =
+                new PipesServer(tikaConfig, System.in, System.out,
+                        maxForEmitBatchBytes, serverParseTimeoutMillis,
                 serverWaitTimeoutMillis);
         System.setIn(new ByteArrayInputStream(new byte[0]));
         System.setOut(System.err);
@@ -121,44 +149,47 @@ public class AsyncServer implements Runnable {
                 synchronized (lock) {
                     long elapsed = System.currentTimeMillis() - since;
                     if (parsing && elapsed > serverParseTimeoutMillis) {
-                        err("server timeout");
-                        System.exit(1);
+                        System.exit(TIMEOUT_EXIT_CODE);
                     } else if (!parsing && serverWaitTimeoutMillis > 0 &&
                             elapsed > serverWaitTimeoutMillis) {
-                        err("closing down from inactivity");
+                        debug("closing down from inactivity");
                         System.exit(0);
                     }
                 }
-                Thread.sleep(250);
+                Thread.sleep(100);
             }
         } catch (InterruptedException e) {
             //swallow
         }
     }
 
-    private void err(String msg) {
-        System.err.println(msg);
+    private void debug(String msg) {
+        System.err.println("debug " + msg.replaceAll("[\r\n]", " "));
+        System.err.flush();
+    }
+
+    private void warn(Throwable t) {
+        System.err.println("warn " + ExceptionUtils.getStackTrace(t).replaceAll("[\r\n]", " "));
         System.err.flush();
     }
 
     private void err(Throwable t) {
-        t.printStackTrace();
+        System.err.println("err " + ExceptionUtils.getStackTrace(t).replaceAll("[\r\n]", " "));
         System.err.flush();
     }
+
 
     public void processRequests() {
         //initialize
         try {
             initializeParser();
         } catch (Throwable t) {
-            t.printStackTrace();
-            System.err.flush();
+            err(t);
             try {
                 output.writeByte(FAILED_TO_START);
                 output.flush();
             } catch (IOException e) {
-                e.printStackTrace();
-                System.err.flush();
+                warn(e);
             }
             return;
         }
@@ -172,8 +203,7 @@ public class AsyncServer implements Runnable {
                     output.writeByte(PING);
                     output.flush();
                 } else if (request == CALL) {
-                    EmitData emitData = parseOne();
-                    write(emitData);
+                    parseOne();
                 } else {
                     throw new IllegalStateException("Unexpected request");
                 }
@@ -181,75 +211,120 @@ public class AsyncServer implements Runnable {
             }
         } catch (Throwable t) {
             t.printStackTrace();
+            err(t);
+            System.err.println("exiting");
+            exit(1);
         }
         System.err.flush();
     }
 
-    private void write(EmitData emitData) {
+    private boolean metadataIsEmpty(List<Metadata> metadataList) {
+        return metadataList == null || metadataList.size() == 0;
+    }
+
+    /**
+     * returns stack trace if there was a container exception or empty string
+     * if there was no stacktrace
+     * @param t
+     * @param metadataList
+     * @return
+     */
+    private String getContainerStacktrace(FetchEmitTuple t, List<Metadata> metadataList) {
+        if (metadataList == null || metadataList.size() < 1) {
+            return "";
+        }
+        String stack = metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION);
+        return (stack != null) ? stack : "";
+    }
+
+
+    private void emit(EmitData emitData, String parseExceptionStack) {
+        Emitter emitter = emitterManager.getEmitter(emitData.getEmitKey().getEmitterName());
+        if (emitter == null) {
+            write(NO_EMITTER_FOUND, new byte[0]);
+            return;
+        }
         try {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bos)) {
-                objectOutputStream.writeObject(emitData);
-            }
-            byte[] bytes = bos.toByteArray();
-            int len = bytes.length;
-            output.write(READY);
-            output.writeInt(len);
-            output.write(bytes);
-            output.flush();
-        } catch (IOException e) {
-            err(e);
-            //LOG.error("problem writing emit data", e);
-            exit(1);
+            emitter.emit(emitData.getEmitKey().getEmitKey(), emitData.getMetadataList());
+        } catch (IOException | TikaEmitterException e) {
+            String msg = ExceptionUtils.getStackTrace(e);
+            byte[] bytes = msg.getBytes(StandardCharsets.UTF_8);
+            //for now, we're hiding the parse exception if there was also an emit exception
+            write(EMIT_EXCEPTION, bytes);
+            return;
+        }
+        if (StringUtils.isBlank(parseExceptionStack)) {
+            write(EMIT_SUCCESS);
+        } else {
+            write(EMIT_SUCCESS_PARSE_EXCEPTION, parseExceptionStack.getBytes(StandardCharsets.UTF_8));
         }
     }
 
-    private EmitData parseOne() throws FetchException {
+
+    private void parseOne() throws FetchException {
         synchronized (lock) {
             parsing = true;
             since = System.currentTimeMillis();
         }
         try {
-            FetchEmitTuple t = readFetchEmitTuple();
-            Metadata userMetadata = t.getMetadata();
-            Metadata metadata = new Metadata();
-            String fetcherName = t.getFetchKey().getFetcherName();
-            String fetchKey = t.getFetchKey().getFetchKey();
-            List<Metadata> metadataList = null;
-            Fetcher fetcher = null;
-            try {
-                fetcher = fetcherManager.getFetcher(fetcherName);
-            } catch (TikaException | IOException e) {
-                err(e);
-                //LOG.error("can't get fetcher", e);
-                throw new FetchException(e);
-            }
-
-            try (InputStream stream = fetcher.fetch(fetchKey, metadata)) {
-                metadataList = parseMetadata(t, stream, metadata);
-            } catch (SecurityException e) {
-                throw e;
-            } catch (TikaException | IOException e) {
-                err(e);
-                //LOG.error("problem reading from fetcher", e);
-                throw new FetchException(e);
-            } catch (OutOfMemoryError e) {
-                //LOG.error("oom", e);
-                handleOOM(e);
-            }
-
-            injectUserMetadata(userMetadata, metadataList);
-            EmitKey emitKey = t.getEmitKey();
-            if (StringUtils.isBlank(emitKey.getEmitKey())) {
-                emitKey = new EmitKey(emitKey.getEmitterName(), fetchKey);
-                t.setEmitKey(emitKey);
-            }
-            return new EmitData(t.getEmitKey(), metadataList);
+            actuallyParse();
         } finally {
             synchronized (lock) {
                 parsing = false;
                 since = System.currentTimeMillis();
             }
+        }
+    }
+
+    public void actuallyParse() throws FetchException {
+        FetchEmitTuple t = readFetchEmitTuple();
+        List<Metadata> metadataList = null;
+
+        Fetcher fetcher = getFetcher(t.getFetchKey().getFetcherName());
+
+        Metadata metadata = new Metadata();
+        try (InputStream stream = fetcher.fetch(t.getFetchKey().getFetchKey(), metadata)) {
+            metadataList = parseMetadata(t, stream, metadata);
+        } catch (SecurityException e) {
+            throw e;
+        } catch (TikaException | IOException e) {
+            warn(e);
+            throw new FetchException(e);
+        } catch (OutOfMemoryError e) {
+            handleOOM(e);
+        }
+        if (metadataIsEmpty(metadataList)) {
+            write(EMPTY_OUTPUT);
+            return;
+        }
+
+        String stack = getContainerStacktrace(t, metadataList);
+        if (StringUtils.isBlank(stack) || t.getOnParseException() == FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT) {
+            injectUserMetadata(t.getMetadata(), metadataList);
+            EmitKey emitKey = t.getEmitKey();
+            if (StringUtils.isBlank(emitKey.getEmitKey())) {
+                emitKey = new EmitKey(emitKey.getEmitterName(), t.getFetchKey().getFetchKey());
+                t.setEmitKey(emitKey);
+            }
+            EmitData emitData = new EmitData(t.getEmitKey(), metadataList);
+            if (emitData.getEstimatedSizeBytes() >= maxExtractSizeToReturn) {
+                emit(emitData, stack);
+            } else {
+                write(emitData, stack);
+            }
+        } else {
+            write(PARSE_EXCEPTION_NO_EMIT, stack.getBytes(StandardCharsets.UTF_8));
+        }
+
+    }
+
+    private Fetcher getFetcher(String fetcherName) throws FetchException {
+        try {
+            return fetcherManager.getFetcher(fetcherName);
+        } catch (TikaException | IOException e) {
+            warn(e);
+            //LOG.error("can't get fetcher", e);
+            throw new FetchException(e);
         }
     }
 
@@ -266,31 +341,28 @@ public class AsyncServer implements Runnable {
 
     private List<Metadata> parseMetadata(FetchEmitTuple fetchEmitTuple, InputStream stream,
                                          Metadata metadata) {
-        //make these configurable
-        BasicContentHandlerFactory.HANDLER_TYPE type = BasicContentHandlerFactory.HANDLER_TYPE.TEXT;
-
-
+        HandlerConfig handlerConfig = fetchEmitTuple.getHandlerConfig();
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new BasicContentHandlerFactory(type,
-                    fetchEmitTuple.getHandlerConfig().getWriteLimit()),
-                fetchEmitTuple.getHandlerConfig().getMaxEmbeddedResources(),
+                new BasicContentHandlerFactory(handlerConfig.getType(),
+                    handlerConfig.getWriteLimit()),
+                handlerConfig.getMaxEmbeddedResources(),
                 tikaConfig.getMetadataFilter());
         ParseContext parseContext = new ParseContext();
         FetchKey fetchKey = fetchEmitTuple.getFetchKey();
         try {
             parser.parse(stream, handler, metadata, parseContext);
         } catch (SAXException e) {
-            err(e);
+            warn(e);
             //LOG.warn("problem:" + fetchKey.getFetchKey(), e);
         } catch (EncryptedDocumentException e) {
-            err(e);
+            warn(e);
             //LOG.warn("encrypted:" + fetchKey.getFetchKey(), e);
         } catch (SecurityException e) {
-            err(e);
+            warn(e);
             //LOG.warn("security exception: " + fetchKey.getFetchKey());
             throw e;
         } catch (Exception e) {
-            err(e);
+            warn(e);
             //LOG.warn("exception: " + fetchKey.getFetchKey());
         } catch (OutOfMemoryError e) {
             //TODO, maybe return file type gathered so far and then crash?
@@ -312,6 +384,8 @@ public class AsyncServer implements Runnable {
 
 
     private void exit(int exitCode) {
+        System.err.println("exiting: " + exitCode);
+        System.err.flush();
         System.exit(exitCode);
     }
 
@@ -342,6 +416,7 @@ public class AsyncServer implements Runnable {
         //TODO allowed named configurations in tika config
         this.tikaConfig = new TikaConfig(tikaConfigPath);
         this.fetcherManager = FetcherManager.load(tikaConfigPath);
+        this.emitterManager = EmitterManager.load(tikaConfigPath);
         Parser autoDetectParser = new AutoDetectParser(this.tikaConfig);
         this.parser = new RecursiveParserWrapper(autoDetectParser);
 
@@ -352,4 +427,42 @@ public class AsyncServer implements Runnable {
             super(t);
         }
     }
+
+    private void write(EmitData emitData, String stack) {
+        try {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bos)) {
+                objectOutputStream.writeObject(emitData);
+            }
+            write(PARSE_SUCCESS, bos.toByteArray());
+        } catch (IOException e) {
+            err(e);
+            //LOG.error("problem writing emit data", e);
+            exit(1);
+        }
+    }
+
+    private void write(byte status, byte[] bytes) {
+        try {
+            int len = bytes.length;
+            output.write(status);
+            output.writeInt(len);
+            output.write(bytes);
+            output.flush();
+        } catch (IOException e) {
+            err(e);
+            exit(1);
+        }
+    }
+
+    private void write(byte status) {
+        try {
+            output.write(status);
+            output.flush();
+        } catch (IOException e) {
+            err(e);
+            exit(1);
+        }
+    }
+
 }

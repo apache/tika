@@ -55,7 +55,6 @@ public class AsyncResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(AsyncResource.class);
 
-    private static final int DEFAULT_FETCH_EMIT_QUEUE_SIZE = 10000;
     long maxQueuePauseMs = 60000;
     private final AsyncProcessor asyncProcessor;
     private final FetcherManager fetcherManager;

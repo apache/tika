@@ -52,10 +52,10 @@ import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.utils.ProcessUtils;
 
-public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
+public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
 
     private static final Logger LOG =
-            LoggerFactory.getLogger(TikaServerEmitterIntegrationTest.class);
+            LoggerFactory.getLogger(TikaServerPipesIntegrationTest.class);
     private static final String EMITTER_NAME = "fse";
     private static final String FETCHER_NAME = "fsf";
     private static Path TMP_DIR;
@@ -76,7 +76,7 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
 
         for (String mockFile : FILES) {
             Files.copy(
-                    TikaEmitterTest.class.getResourceAsStream("/test-documents/mock/" + mockFile),
+                    TikaPipesTest.class.getResourceAsStream("/test-documents/mock/" + mockFile),
                     inputDir.resolve(mockFile));
         }
         TIKA_CONFIG = TMP_DIR.resolve("tika-config.xml");
@@ -92,9 +92,14 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
                 "<basePath>" + TMP_OUTPUT_DIR.toAbsolutePath() +
                 "</basePath>" + "</params>" + "</emitter>" + "</emitters>" + "<server><params>" +
                 "<enableUnsecureFeatures>true</enableUnsecureFeatures>" + "<port>9999</port>" +
-                "<endpoints>" + "<endpoint>emit</endpoint>" + "<endpoint>status</endpoint>" +
+                "<endpoints>" + "<endpoint>pipes</endpoint>" + "<endpoint>status</endpoint>" +
                 "</endpoints>";
-        String xml2 = "</params></server>" + "</properties>";
+        String xml2 = "</params></server>" +
+                "<pipes><params><tikaConfig>" +
+                ProcessUtils.escapeCommandLine(TIKA_CONFIG.toAbsolutePath().toString()) +
+                "</tikaConfig><numClients>10</numClients><forkedJvmArgs><arg>-Xmx256m" +
+                "</arg></forkedJvmArgs><timeoutMillis>5000</timeoutMillis>" +
+                "</params></pipes>" + "</properties>";
 
         String tikaConfigXML = xml1 + xml2;
 
@@ -138,6 +143,7 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
             JsonNode node = testOne("hello_world.xml", true);
             assertEquals("ok", node.get("status").asText());
         } catch (Exception e) {
+            e.printStackTrace();
             fail("shouldn't have an exception" + e.getMessage());
         } finally {
             if (p != null) {
@@ -185,13 +191,15 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
         }
     }
 
-    @Test(expected = ProcessingException.class)
+    @Test
     public void testSystemExit() throws Exception {
         Process p = null;
         try {
             p = startProcess(new String[]{"-config",
                     ProcessUtils.escapeCommandLine(TIKA_CONFIG.toAbsolutePath().toString())});
-            testOne("system_exit.xml", false);
+            JsonNode node = testOne("system_exit.xml", false);
+            assertEquals("parse_error", node.get("status").asText());
+            assertContains("unknown_crash", node.get("parse_error").asText());
         } finally {
             if (p != null) {
                 p.destroyForcibly();
@@ -206,8 +214,9 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
         try {
             p = startProcess(new String[]{"-config",
                     ProcessUtils.escapeCommandLine(TIKA_CONFIG.toAbsolutePath().toString())});
-            JsonNode response = testOne("fake_oom.xml", false);
-            assertContains("oom message", response.get("parse_error").asText());
+            JsonNode node = testOne("fake_oom.xml", false);
+            assertEquals("parse_error", node.get("status").asText());
+            assertContains("oom", node.get("parse_error").asText());
         } catch (ProcessingException e) {
             //depending on timing, there may be a connection exception --
             // TODO add more of a delay to server shutdown to ensure message is sent
@@ -219,13 +228,15 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
         }
     }
 
-    @Test(expected = ProcessingException.class)
+    @Test
     public void testTimeout() throws Exception {
         Process p = null;
         try {
             p = startProcess(new String[]{"-config", ProcessUtils.escapeCommandLine(
                     TIKA_CONFIG_TIMEOUT.toAbsolutePath().toString())});
-            JsonNode response = testOne("heavy_hang_30000.xml", false);
+            JsonNode node = testOne("heavy_hang_30000.xml", false);
+            assertEquals("parse_error", node.get("status").asText());
+            assertContains("timeout", node.get("parse_error").asText());
         } finally {
             if (p != null) {
                 p.destroyForcibly();
@@ -243,7 +254,7 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
 
         awaitServerStartup();
         Response response = WebClient
-                .create(endPoint + "/emit")
+                .create(endPoint + "/pipes")
                 .accept("application/json")
                 .post(getJsonString(fileName, onParseException));
         if (response.getStatus() == 200) {
@@ -262,7 +273,7 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
     private String getJsonString(String fileName,
                                  FetchEmitTuple.ON_PARSE_EXCEPTION onParseException)
             throws IOException {
-        FetchEmitTuple t = new FetchEmitTuple(new FetchKey(FETCHER_NAME, fileName),
+        FetchEmitTuple t = new FetchEmitTuple(fileName, new FetchKey(FETCHER_NAME, fileName),
                 new EmitKey(EMITTER_NAME, ""), new Metadata(), HandlerConfig.DEFAULT_HANDLER_CONFIG,
                 onParseException);
         return JsonFetchEmitTuple.toJson(t);

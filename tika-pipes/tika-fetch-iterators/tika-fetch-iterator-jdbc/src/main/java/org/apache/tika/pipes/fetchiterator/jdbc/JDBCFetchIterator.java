@@ -69,12 +69,18 @@ public class JDBCFetchIterator extends FetchIterator implements Initializable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JDBCFetchIterator.class);
 
+    private String idColumn;
     private String fetchKeyColumn;
     private String emitKeyColumn;
     private String connection;
     private String select;
 
     private Connection db;
+
+    @Field
+    public void setIdColumn(String idColumn) {
+        this.idColumn = idColumn;
+    }
 
     @Field
     public void setFetchKeyColumn(String fetchKeyColumn) {
@@ -163,6 +169,7 @@ public class JDBCFetchIterator extends FetchIterator implements Initializable {
         Metadata metadata = new Metadata();
         String fetchKey = "";
         String emitKey = "";
+        String id = "";
         for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
             if (i == fetchEmitKeyIndices.fetchKeyIndex) {
                 fetchKey = getString(i, rs);
@@ -180,13 +187,21 @@ public class JDBCFetchIterator extends FetchIterator implements Initializable {
                 emitKey = (emitKey == null) ? "" : emitKey;
                 continue;
             }
+            if (i == fetchEmitKeyIndices.idIndex) {
+                id = getString(i, rs);
+                if (id == null) {
+                    LOGGER.warn("id is empty for record " + toString(rs));
+                }
+                id = (id == null) ? "" : id;
+                continue;
+            }
             String val = getString(i, rs);
             if (val != null) {
                 metadata.set(headers.get(i - 1), val);
             }
         }
 
-        tryToAdd(new FetchEmitTuple(new FetchKey(fetcherName, fetchKey),
+        tryToAdd(new FetchEmitTuple(id, new FetchKey(fetcherName, fetchKey),
                 new EmitKey(emitterName, emitKey), metadata, handlerConfig, getOnParseException()));
     }
 
@@ -213,6 +228,7 @@ public class JDBCFetchIterator extends FetchIterator implements Initializable {
 
     private FetchEmitKeyIndices loadHeaders(ResultSetMetaData metaData, List<String> headers)
             throws SQLException {
+        int idIndex = -1;
         int fetchKeyIndex = -1;
         int emitKeyIndex = -1;
         for (int i = 1; i <= metaData.getColumnCount(); i++) {
@@ -222,9 +238,13 @@ public class JDBCFetchIterator extends FetchIterator implements Initializable {
             if (metaData.getColumnLabel(i).equalsIgnoreCase(emitKeyColumn)) {
                 emitKeyIndex = i;
             }
+            if (metaData.getColumnLabel(i).equalsIgnoreCase(idColumn)) {
+                idIndex = i;
+            }
+
             headers.add(metaData.getColumnLabel(i));
         }
-        return new FetchEmitKeyIndices(fetchKeyIndex, emitKeyIndex);
+        return new FetchEmitKeyIndices(idIndex, fetchKeyIndex, emitKeyIndex);
     }
 
     @Override
@@ -257,16 +277,18 @@ public class JDBCFetchIterator extends FetchIterator implements Initializable {
     }
 
     private static class FetchEmitKeyIndices {
+        private final int idIndex;
         private final int fetchKeyIndex;
         private final int emitKeyIndex;
 
-        public FetchEmitKeyIndices(int fetchKeyIndex, int emitKeyIndex) {
+        public FetchEmitKeyIndices(int idIndex, int fetchKeyIndex, int emitKeyIndex) {
+            this.idIndex = idIndex;
             this.fetchKeyIndex = fetchKeyIndex;
             this.emitKeyIndex = emitKeyIndex;
         }
 
         public boolean shouldSkip(int index) {
-            return fetchKeyIndex == index || emitKeyIndex == index;
+            return idIndex == index || fetchKeyIndex == index || emitKeyIndex == index;
         }
     }
 }

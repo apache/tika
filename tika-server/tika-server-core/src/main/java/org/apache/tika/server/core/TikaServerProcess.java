@@ -45,11 +45,12 @@ import org.apache.cxf.transport.common.gzip.GZIPInInterceptor;
 import org.apache.cxf.transport.common.gzip.GZIPOutInterceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
 
 import org.apache.tika.Tika;
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.digestutils.BouncyCastleDigester;
 import org.apache.tika.parser.digestutils.CommonsDigester;
@@ -57,9 +58,9 @@ import org.apache.tika.pipes.emitter.EmitterManager;
 import org.apache.tika.pipes.fetcher.FetcherManager;
 import org.apache.tika.server.core.resource.AsyncResource;
 import org.apache.tika.server.core.resource.DetectorResource;
-import org.apache.tika.server.core.resource.EmitterResource;
 import org.apache.tika.server.core.resource.LanguageResource;
 import org.apache.tika.server.core.resource.MetadataResource;
+import org.apache.tika.server.core.resource.PipesResource;
 import org.apache.tika.server.core.resource.RecursiveMetadataResource;
 import org.apache.tika.server.core.resource.TikaDetectors;
 import org.apache.tika.server.core.resource.TikaMimeTypes;
@@ -231,7 +232,7 @@ public class TikaServerProcess {
 
         List<ResourceProvider> resourceProviders = new ArrayList<>();
         List<Object> providers = new ArrayList<>();
-        loadAllProviders(tikaServerConfig, asyncResource, fetcherManager,
+        loadAllProviders(tikaServerConfig,
                 serverStatus,
                 resourceProviders,
                 providers);
@@ -258,14 +259,12 @@ public class TikaServerProcess {
     }
 
     private static void loadAllProviders(TikaServerConfig tikaServerConfig,
-                                         AsyncResource asyncResource,
-                                         FetcherManager fetcherManager,
                                          ServerStatus serverStatus,
                                          List<ResourceProvider> resourceProviders,
                                          List<Object> writers)
-            throws TikaConfigException, IOException {
+            throws TikaException, SAXException, IOException {
         List<ResourceProvider> tmpCoreProviders =
-                loadCoreProviders(tikaServerConfig, asyncResource, fetcherManager, serverStatus);
+                loadCoreProviders(tikaServerConfig, serverStatus);
 
         resourceProviders.addAll(tmpCoreProviders);
         resourceProviders.add(new SingletonResourceProvider(new TikaWelcome(tmpCoreProviders)));
@@ -309,11 +308,11 @@ public class TikaServerProcess {
     }
 
     private static List<ResourceProvider> loadCoreProviders(TikaServerConfig tikaServerConfig,
-                                                            AsyncResource asyncResource,
-                                                            FetcherManager fetcherManager,
                                                             ServerStatus serverStatus)
-            throws TikaConfigException, IOException {
+            throws TikaException, IOException, SAXException {
         List<ResourceProvider> resourceProviders = new ArrayList<>();
+        boolean addAsyncResource = false;
+        boolean addPipesResource = false;
         if (tikaServerConfig.getEndpoints().size() == 0) {
             resourceProviders.add(new SingletonResourceProvider(new MetadataResource()));
             resourceProviders.add(new SingletonResourceProvider(new RecursiveMetadataResource()));
@@ -329,54 +328,73 @@ public class TikaServerProcess {
             resourceProviders.add(new SingletonResourceProvider(new TikaParsers()));
             resourceProviders.add(new SingletonResourceProvider(new TikaVersion()));
             if (tikaServerConfig.isEnableUnsecureFeatures()) {
-                resourceProviders.add(new SingletonResourceProvider(new EmitterResource(
-                        fetcherManager, EmitterManager.load(tikaServerConfig.getConfigPath())
-                )));
-                resourceProviders.add(new SingletonResourceProvider(asyncResource));
+                addAsyncResource = true;
+                addPipesResource = true;
                 resourceProviders
                         .add(new SingletonResourceProvider(new TikaServerStatus(serverStatus)));
             }
-            resourceProviders.addAll(loadResourceServices());
-            return resourceProviders;
-        }
-        for (String endPoint : tikaServerConfig.getEndpoints()) {
-            if ("meta".equals(endPoint)) {
-                resourceProviders.add(new SingletonResourceProvider(new MetadataResource()));
-            } else if ("rmeta".equals(endPoint)) {
-                resourceProviders
-                        .add(new SingletonResourceProvider(new RecursiveMetadataResource()));
-            } else if ("detect".equals(endPoint)) {
-                resourceProviders
-                        .add(new SingletonResourceProvider(new DetectorResource(serverStatus)));
-            } else if ("language".equals(endPoint)) {
-                resourceProviders.add(new SingletonResourceProvider(new LanguageResource()));
-            } else if ("translate".equals(endPoint)) {
-                resourceProviders
-                        .add(new SingletonResourceProvider(new TranslateResource(serverStatus)));
-            } else if ("tika".equals(endPoint)) {
-                resourceProviders.add(new SingletonResourceProvider(new TikaResource()));
-            } else if ("unpack".equals(endPoint)) {
-                resourceProviders.add(new SingletonResourceProvider(new UnpackerResource()));
-            } else if ("mime".equals(endPoint)) {
-                resourceProviders.add(new SingletonResourceProvider(new TikaMimeTypes()));
-            } else if ("detectors".equals(endPoint)) {
-                resourceProviders.add(new SingletonResourceProvider(new TikaDetectors()));
-            } else if ("parsers".equals(endPoint)) {
-                resourceProviders.add(new SingletonResourceProvider(new TikaParsers()));
-            } else if ("version".equals(endPoint)) {
-                resourceProviders.add(new SingletonResourceProvider(new TikaVersion()));
-            } else if ("emit".equals(endPoint)) {
-                resourceProviders.add(new SingletonResourceProvider(
-                        new EmitterResource(fetcherManager,
-                                EmitterManager.load(tikaServerConfig.getConfigPath()))));
-            } else if ("async".equals(endPoint)) {
-                resourceProviders.add(new SingletonResourceProvider(asyncResource));
-            } else if ("status".equals(endPoint)) {
-                resourceProviders
-                        .add(new SingletonResourceProvider(new TikaServerStatus(serverStatus)));
+        } else {
+            for (String endPoint : tikaServerConfig.getEndpoints()) {
+                if ("meta".equals(endPoint)) {
+                    resourceProviders.add(new SingletonResourceProvider(new MetadataResource()));
+                } else if ("rmeta".equals(endPoint)) {
+                    resourceProviders.add(new SingletonResourceProvider(new RecursiveMetadataResource()));
+                } else if ("detect".equals(endPoint)) {
+                    resourceProviders.add(new SingletonResourceProvider(new DetectorResource(serverStatus)));
+                } else if ("language".equals(endPoint)) {
+                    resourceProviders.add(new SingletonResourceProvider(new LanguageResource()));
+                } else if ("translate".equals(endPoint)) {
+                    resourceProviders.add(new SingletonResourceProvider(new TranslateResource(serverStatus)));
+                } else if ("tika".equals(endPoint)) {
+                    resourceProviders.add(new SingletonResourceProvider(new TikaResource()));
+                } else if ("unpack".equals(endPoint)) {
+                    resourceProviders.add(new SingletonResourceProvider(new UnpackerResource()));
+                } else if ("mime".equals(endPoint)) {
+                    resourceProviders.add(new SingletonResourceProvider(new TikaMimeTypes()));
+                } else if ("detectors".equals(endPoint)) {
+                    resourceProviders.add(new SingletonResourceProvider(new TikaDetectors()));
+                } else if ("parsers".equals(endPoint)) {
+                    resourceProviders.add(new SingletonResourceProvider(new TikaParsers()));
+                } else if ("version".equals(endPoint)) {
+                    resourceProviders.add(new SingletonResourceProvider(new TikaVersion()));
+                } else if ("pipes".equals(endPoint)) {
+                    addPipesResource = true;
+                } else if ("async".equals(endPoint)) {
+                    addAsyncResource = true;
+                } else if ("status".equals(endPoint)) {
+                    resourceProviders.add(new SingletonResourceProvider(new TikaServerStatus(serverStatus)));
+                }
             }
-            resourceProviders.addAll(loadResourceServices());
         }
+
+        if (addAsyncResource) {
+            final AsyncResource localAsyncResource = new AsyncResource(tikaServerConfig.getConfigPath());
+            Runtime.getRuntime().addShutdownHook(new Thread() {
+                    public void run() {
+                        try {
+                            localAsyncResource.shutdownNow();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+            resourceProviders.add(new SingletonResourceProvider(localAsyncResource));
+        }
+        if (addPipesResource) {
+            final PipesResource localPipesResource =
+                    new PipesResource(tikaServerConfig.getConfigPath());
+            Runtime.getRuntime().addShutdownHook(new Thread() {
+                public void run() {
+                    try {
+                        localPipesResource.close();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+            resourceProviders.add(new SingletonResourceProvider(localPipesResource));
+        }
+        resourceProviders.addAll(loadResourceServices());
         return resourceProviders;
     }
 

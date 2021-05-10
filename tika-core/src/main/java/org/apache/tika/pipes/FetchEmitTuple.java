@@ -37,18 +37,19 @@ public class FetchEmitTuple implements Serializable {
     private final ON_PARSE_EXCEPTION onParseException;
     private HandlerConfig handlerConfig;
 
-    public FetchEmitTuple(FetchKey fetchKey, EmitKey emitKey, Metadata metadata) {
-        this(fetchKey, emitKey, metadata, HandlerConfig.DEFAULT_HANDLER_CONFIG,
+
+    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey) {
+        this(id, fetchKey, emitKey, new Metadata(), HandlerConfig.DEFAULT_HANDLER_CONFIG,
                 DEFAULT_ON_PARSE_EXCEPTION);
+    }
+    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, ON_PARSE_EXCEPTION onParseException) {
+        this(id, fetchKey, emitKey, new Metadata(), HandlerConfig.DEFAULT_HANDLER_CONFIG,
+                onParseException);
     }
 
     public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata metadata) {
         this(id, fetchKey, emitKey, metadata, HandlerConfig.DEFAULT_HANDLER_CONFIG,
                 DEFAULT_ON_PARSE_EXCEPTION);
-    }
-    public FetchEmitTuple(FetchKey fetchKey, EmitKey emitKey, Metadata metadata,
-                          HandlerConfig handlerConfig, ON_PARSE_EXCEPTION onParseException) {
-        this(fetchKey.getFetchKey(), fetchKey, emitKey, metadata, handlerConfig, onParseException);
     }
 
     public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata metadata,

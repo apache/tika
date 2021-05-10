@@ -43,6 +43,22 @@ public class EmitData implements Serializable {
         return metadataList;
     }
 
+    public long getEstimatedSizeBytes() {
+        return estimateSizeInBytes(getEmitKey().getEmitKey(), getMetadataList());
+    }
+
+    private static long estimateSizeInBytes(String id, List<Metadata> metadataList) {
+        long sz = 36 + id.length() * 2;
+        for (Metadata m : metadataList) {
+            for (String n : m.names()) {
+                sz += 36 + n.length() * 2;
+                for (String v : m.getValues(n)) {
+                    sz += 36 + v.length() * 2;
+                }
+            }
+        }
+        return sz;
+    }
     @Override
     public String toString() {
         return "EmitData{" + "emitKey=" + emitKey + ", metadataList=" + metadataList + '}';

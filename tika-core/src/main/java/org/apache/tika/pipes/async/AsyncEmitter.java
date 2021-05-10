@@ -30,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.pipes.emitter.AbstractEmitter;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.Emitter;
 import org.apache.tika.pipes.emitter.EmitterManager;
@@ -106,8 +105,7 @@ public class AsyncEmitter implements Callable<Integer> {
 
         void add(EmitData data) {
             size++;
-            long sz = AbstractEmitter
-                    .estimateSizeInBytes(data.getEmitKey().getEmitKey(), data.getMetadataList());
+            long sz = data.getEstimatedSizeBytes();
             if (estimatedSize + sz > maxBytes) {
                 LOG.debug("estimated size ({}) > maxBytes({}), going to emitAll",
                         (estimatedSize + sz), maxBytes);

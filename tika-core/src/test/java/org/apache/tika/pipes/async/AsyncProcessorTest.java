@@ -65,7 +65,13 @@ public class AsyncProcessorTest {
                 "    <fetcher class=\"org.apache.tika.pipes.fetcher.FileSystemFetcher\">" +
                 "      <params><name>mock</name>\n" + "      <basePath>" +
                 ProcessUtils.escapeCommandLine(inputDir.toAbsolutePath().toString()) +
-                "</basePath></params>\n" + "    </fetcher>" + "  </fetchers>" + "</properties>";
+                "</basePath></params>\n" + "    </fetcher>" + "  </fetchers>" +
+                        "<async><params><tikaConfig>" +
+                        ProcessUtils.escapeCommandLine(tikaConfigPath.toAbsolutePath().toString()) +
+                        "</tikaConfig><forkedJvmArgs><arg>-Xmx256m</arg" +
+                        "></forkedJvmArgs><maxForEmitBatchBytes>1000000</maxForEmitBatchBytes>" +
+                        "</params></async>" +
+                        "</properties>";
         Files.write(tikaConfigPath, xml.getBytes(StandardCharsets.UTF_8));
         Random r = new Random();
         for (int i = 0; i < totalFiles; i++) {
@@ -89,7 +95,8 @@ public class AsyncProcessorTest {
     public void testBasic() throws Exception {
         AsyncProcessor processor = new AsyncProcessor(tikaConfigPath);
         for (int i = 0; i < totalFiles; i++) {
-            FetchEmitTuple t = new FetchEmitTuple(new FetchKey("mock", i + ".xml"),
+            FetchEmitTuple t = new FetchEmitTuple("myId",
+                    new FetchKey("mock", i + ".xml"),
                     new EmitKey("mock", "emit-" + i), new Metadata());
             processor.offer(t, 1000);
         }

@@ -14,14 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.async;
+package org.apache.tika.pipes;
 
 /**
  * Fatal exception that means that something went seriously wrong.
  */
-public class AsyncRuntimeException extends RuntimeException {
+public class PipesException extends Exception {
 
-    public AsyncRuntimeException(Throwable t) {
+    public PipesException(Throwable t) {
         super(t);
     }
 }

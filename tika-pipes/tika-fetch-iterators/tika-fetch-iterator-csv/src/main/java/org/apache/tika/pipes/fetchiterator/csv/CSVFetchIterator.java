@@ -53,6 +53,13 @@ import org.apache.tika.utils.StringUtils;
  * to the metadata object.
  * <p>
  *  <ul>
+ *      <li>If an 'idColumn' is specified, this will use that
+ *      column's value as the id.</li>
+ *      <li>If no 'idColumn' is specified, but a 'fetchKeyColumn' is specified,
+ *          the string in the 'fetchKeyColumn' will be used as the 'id'.</li>
+ *      <li>The 'idColumn' value is not added to the metadata.</li>
+ *  </ul>
+ *  <ul>
  *      <li>If a 'fetchKeyColumn' is specified, this will use that
  *      column's value as the fetchKey.</li>
  *      <li>If no 'fetchKeyColumn' is specified, this will send the
@@ -76,7 +83,7 @@ public class CSVFetchIterator extends FetchIterator implements Initializable {
     private Path csvPath;
     private String fetchKeyColumn;
     private String emitKeyColumn;
-
+    private String idColumn;
 
     @Field
     public void setCsvPath(String csvPath) {
@@ -91,6 +98,11 @@ public class CSVFetchIterator extends FetchIterator implements Initializable {
     @Field
     public void setEmitKeyColumn(String emitKeyColumn) {
         this.emitKeyColumn = emitKeyColumn;
+    }
+
+    @Field
+    public void setIdColumn(String idColumn) {
+        this.idColumn = idColumn;
     }
 
     @Field
@@ -114,6 +126,7 @@ public class CSVFetchIterator extends FetchIterator implements Initializable {
             checkFetchEmitValidity(fetcherName, emitterName, fetchEmitKeyIndices, headers);
             HandlerConfig handlerConfig = getHandlerConfig();
             for (CSVRecord record : records) {
+                String id = getId(fetchEmitKeyIndices, record);
                 String fetchKey = getFetchKey(fetchEmitKeyIndices, record);
                 String emitKey = getEmitKey(fetchEmitKeyIndices, record);
                 if (StringUtils.isBlank(fetchKey) && !StringUtils.isBlank(fetcherName)) {
@@ -123,8 +136,11 @@ public class CSVFetchIterator extends FetchIterator implements Initializable {
                 if (StringUtils.isBlank(emitKey)) {
                     throw new IOException("emitKey must not be blank in :" + record);
                 }
+                if (StringUtils.isBlank(id) && ! StringUtils.isBlank(fetchKey)) {
+                    id = fetchKey;
+                }
                 Metadata metadata = loadMetadata(fetchEmitKeyIndices, headers, record);
-                tryToAdd(new FetchEmitTuple(new FetchKey(fetcherName, fetchKey),
+                tryToAdd(new FetchEmitTuple(id, new FetchKey(fetcherName, fetchKey),
                         new EmitKey(emitterName, emitKey), metadata, handlerConfig,
                         getOnParseException()));
             }
@@ -169,6 +185,14 @@ public class CSVFetchIterator extends FetchIterator implements Initializable {
         }
     }
 
+    private String getId(FetchEmitKeyIndices fetchEmitKeyIndices, CSVRecord record) {
+        if (fetchEmitKeyIndices.idIndex > -1) {
+            return record.get(fetchEmitKeyIndices.idIndex);
+        }
+        return StringUtils.EMPTY;
+    }
+
+
     private String getFetchKey(FetchEmitKeyIndices fetchEmitKeyIndices, CSVRecord record) {
         if (fetchEmitKeyIndices.fetchKeyIndex > -1) {
             return record.get(fetchEmitKeyIndices.fetchKeyIndex);
@@ -200,7 +224,7 @@ public class CSVFetchIterator extends FetchIterator implements Initializable {
             throws IOException {
         int fetchKeyColumnIndex = -1;
         int emitKeyColumnIndex = -1;
-
+        int idIndex = -1;
         for (int col = 0; col < record.size(); col++) {
             String header = record.get(col);
             if (StringUtils.isBlank(header)) {
@@ -212,9 +236,11 @@ public class CSVFetchIterator extends FetchIterator implements Initializable {
                 fetchKeyColumnIndex = col;
             } else if (header.equals(emitKeyColumn)) {
                 emitKeyColumnIndex = col;
+            } else if (header.equals(idColumn)) {
+                idIndex = col;
             }
         }
-        return new FetchEmitKeyIndices(fetchKeyColumnIndex, emitKeyColumnIndex);
+        return new FetchEmitKeyIndices(idIndex, fetchKeyColumnIndex, emitKeyColumnIndex);
     }
 
     @Override
@@ -225,16 +251,18 @@ public class CSVFetchIterator extends FetchIterator implements Initializable {
     }
 
     private static class FetchEmitKeyIndices {
+        private final int idIndex;
         private final int fetchKeyIndex;
         private final int emitKeyIndex;
 
-        public FetchEmitKeyIndices(int fetchKeyIndex, int emitKeyIndex) {
+        public FetchEmitKeyIndices(int idIndex, int fetchKeyIndex, int emitKeyIndex) {
+            this.idIndex = idIndex;
             this.fetchKeyIndex = fetchKeyIndex;
             this.emitKeyIndex = emitKeyIndex;
         }
 
         public boolean shouldSkip(int index) {
-            return fetchKeyIndex == index || emitKeyIndex == index;
+            return idIndex == index || fetchKeyIndex == index || emitKeyIndex == index;
         }
     }
 }

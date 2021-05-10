@@ -33,6 +33,9 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.pipes.FetchEmitTuple;
+import org.apache.tika.pipes.PipesClient;
+import org.apache.tika.pipes.PipesException;
+import org.apache.tika.pipes.PipesResult;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.EmitterManager;
 import org.apache.tika.pipes.fetchiterator.FetchIterator;
@@ -45,12 +48,11 @@ import org.apache.tika.pipes.fetchiterator.FetchIterator;
 public class AsyncProcessor implements Closeable {
 
     static final int PARSER_FUTURE_CODE = 1;
-    private final Path tikaConfigPath;
     private final ArrayBlockingQueue<FetchEmitTuple> fetchEmitTuples;
     private final ArrayBlockingQueue<EmitData> emitData;
     private final ExecutorCompletionService<Integer> executorCompletionService;
     private final ExecutorService executorService;
-    private final int fetchEmitTupleQSize = 1000;
+    private final int fetchEmitTupleQSize = 10000;
     private int numParserThreads = 10;
     private int numEmitterThreads = 2;
     private int numParserThreadsFinished = 0;
@@ -59,15 +61,15 @@ public class AsyncProcessor implements Closeable {
     boolean isShuttingDown = false;
 
     public AsyncProcessor(Path tikaConfigPath) throws TikaException, IOException, SAXException {
-        this.tikaConfigPath = tikaConfigPath;
         this.fetchEmitTuples = new ArrayBlockingQueue<>(fetchEmitTupleQSize);
         this.emitData = new ArrayBlockingQueue<>(100);
         this.executorService = Executors.newFixedThreadPool(numParserThreads + numEmitterThreads);
         this.executorCompletionService =
                 new ExecutorCompletionService<>(executorService);
 
+        AsyncConfig asyncConfig = AsyncConfig.load(tikaConfigPath);
         for (int i = 0; i < numParserThreads; i++) {
-            executorCompletionService.submit(new FetchEmitWorker(tikaConfigPath, fetchEmitTuples,
+            executorCompletionService.submit(new FetchEmitWorker(asyncConfig, fetchEmitTuples,
                     emitData));
         }
 
@@ -78,7 +80,7 @@ public class AsyncProcessor implements Closeable {
     }
 
     public synchronized boolean offer(List<FetchEmitTuple> newFetchEmitTuples, long offerMs)
-            throws AsyncRuntimeException, InterruptedException {
+            throws PipesException, InterruptedException {
         if (isShuttingDown) {
             throw new IllegalStateException(
                     "Can't call offer after calling close() or " + "shutdownNow()");
@@ -111,7 +113,7 @@ public class AsyncProcessor implements Closeable {
     }
 
     public synchronized boolean offer(FetchEmitTuple t, long offerMs)
-            throws AsyncRuntimeException, InterruptedException {
+            throws PipesException, InterruptedException {
         if (fetchEmitTuples == null) {
             throw new IllegalStateException("queue hasn't been initialized yet.");
         } else if (isShuttingDown) {
@@ -153,21 +155,21 @@ public class AsyncProcessor implements Closeable {
 
     private class FetchEmitWorker implements Callable<Integer> {
 
-        private final Path tikaConfigPath;
+        private final AsyncConfig asyncConfig;
         private final ArrayBlockingQueue<FetchEmitTuple> fetchEmitTuples;
         private final ArrayBlockingQueue<EmitData> emitDataQueue;
 
-        private FetchEmitWorker(Path tikaConfigPath,
+        private FetchEmitWorker(AsyncConfig asyncConfig,
                                 ArrayBlockingQueue<FetchEmitTuple> fetchEmitTuples,
                                 ArrayBlockingQueue<EmitData> emitDataQueue) {
-            this.tikaConfigPath = tikaConfigPath;
+            this.asyncConfig = asyncConfig;
             this.fetchEmitTuples = fetchEmitTuples;
             this.emitDataQueue = emitDataQueue;
         }
         @Override
         public Integer call() throws Exception {
 
-            try (AsyncClient asyncClient = new AsyncClient(tikaConfigPath)) {
+            try (PipesClient pipesClient = new PipesClient(asyncConfig)) {
                 while (true) {
                     FetchEmitTuple t = fetchEmitTuples.poll(1, TimeUnit.SECONDS);
                     if (t == null) {
@@ -175,15 +177,24 @@ public class AsyncProcessor implements Closeable {
                     } else if (t == FetchIterator.COMPLETED_SEMAPHORE) {
                         return PARSER_FUTURE_CODE;
                     } else {
-                        AsyncResult result = null;
+                        PipesResult result = null;
                         try {
-                            result = asyncClient.process(t);
+                            result = pipesClient.process(t);
                         } catch (IOException e) {
-                            result = AsyncResult.UNSPECIFIED_CRASH;
+                            result = PipesResult.UNSPECIFIED_CRASH;
                         }
-                        if (result.getStatus() == AsyncResult.STATUS.OK) {
-                            //TODO -- add timeout, this currently hangs forever
-                            emitDataQueue.offer(result.getEmitData());
+                        switch (result.getStatus()) {
+                            case PARSE_SUCCESS:
+                                //TODO -- add timeout, this currently hangs forever
+                                emitDataQueue.offer(result.getEmitData());
+                                break;
+                            case EMIT_SUCCESS:
+                                break;
+                            case EMIT_EXCEPTION:
+                            case UNSPECIFIED_CRASH:
+                            case OOM:
+                            case TIMEOUT:
+                                break;
                         }
                     }
                     checkActive();

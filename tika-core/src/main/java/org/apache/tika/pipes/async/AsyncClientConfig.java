@@ -22,9 +22,6 @@ import java.nio.file.Path;
 class AsyncClientConfig {
 
     private int fetchQueueSize = 20000;
-    private int numWorkers = 10;
-    private String[] workerJVMArgs;
-    private long parseTimeoutMs;
     private long waitTimeoutMs;
     private long maxFilesProcessed;
 

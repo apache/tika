@@ -132,7 +132,7 @@ public class TestJDBCFetchIterator {
                     fail("failed to find key pattern: " + k);
                 }
                 String aOrB = Integer.parseInt(num) % 2 == 0 ? "a" : "b";
-                assertEquals("id" + num, p.getMetadata().get("MY_ID"));
+                assertEquals("id" + num, p.getId());
                 assertEquals("project" + aOrB, p.getMetadata().get("MY_PROJECT"));
                 assertNull(p.getMetadata().get("fetchKey"));
                 assertNull(p.getMetadata().get("MY_FETCHKEY"));
@@ -151,6 +151,7 @@ public class TestJDBCFetchIterator {
                 "                <fetcherName>s3f</fetcherName>\n" +
                 "                <emitterName>s3e</emitterName>\n" +
                 "                <queueSize>57</queueSize>\n" +
+                "                <idColumn>my_id</idColumn>\n" +
                 "                <fetchKeyColumn>my_fetchkey</fetchKeyColumn>\n" +
                 "                <emitKeyColumn>my_fetchkey</emitKeyColumn>\n" +
                 "                <select>" +
