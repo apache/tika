@@ -130,8 +130,9 @@ public class AmazonTranscribe implements Transcriber {
         byte[] buffer = new byte[inputStream.available()];
         inputStream.read(buffer);
         File targetFile = new File("src/main/resources/targetFile.tmp");
-        OutputStream outStream = new FileOutputStream(targetFile);
-        outStream.write(buffer);
+        try (OutputStream outStream = new FileOutputStream(targetFile)) {
+            outStream.write(buffer);
+        }
         targetFile.deleteOnExit();
         uploadFileToBucket(targetFile, jobName);
         StartTranscriptionJobRequest startTranscriptionJobRequest = new StartTranscriptionJobRequest();
@@ -161,8 +162,9 @@ public class AmazonTranscribe implements Transcriber {
         byte[] buffer = new byte[inputStream.available()];
         inputStream.read(buffer);
         File targetFile = new File("src/main/resources/targetFile.tmp");
-        OutputStream outStream = new FileOutputStream(targetFile);
-        outStream.write(buffer);
+        try (OutputStream outStream = new FileOutputStream(targetFile)) {
+            outStream.write(buffer);
+        }
         targetFile.deleteOnExit();
         uploadFileToBucket(targetFile, jobName);
         StartTranscriptionJobRequest startTranscriptionJobRequest = new StartTranscriptionJobRequest();

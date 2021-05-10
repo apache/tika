@@ -595,9 +595,11 @@ public class WordExtractor extends AbstractPOIFSExtractor {
     }
 
     protected void parseWord6(DirectoryNode root, XHTMLContentHandler xhtml)
-            throws IOException, SAXException, TikaException {
-        HWPFOldDocument doc = new HWPFOldDocument(root);
-        Word6Extractor extractor = new Word6Extractor(doc);
+            throws IOException, SAXException {
+        Word6Extractor extractor;
+        try (HWPFOldDocument doc = new HWPFOldDocument(root)) {
+            extractor = new Word6Extractor(doc);
+        }
 
         for (String p : extractor.getParagraphText()) {
             xhtml.element("p", p);

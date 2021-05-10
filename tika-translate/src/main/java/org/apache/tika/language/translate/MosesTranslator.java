@@ -76,22 +76,22 @@ public class MosesTranslator extends ExternalTranslator {
     public String translate(String text, String sourceLanguage, String targetLanguage) throws TikaException, IOException {
         if (!isAvailable() || !checkCommand(buildCheckCommand(smtPath), 1)) return text;
         File tmpFile = new File(TMP_FILE_NAME);
-        @SuppressWarnings("resource")
-        OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(tmpFile), Charset.defaultCharset());
-        out.append(text).append('\n').close();
+        try (OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(tmpFile), Charset.defaultCharset())) {
+            out.append(text).append('\n').close();
+        }
 
         Runtime.getRuntime().exec(buildCommand(smtPath, scriptPath), new String[]{}, buildWorkingDirectory(scriptPath));
 
         File tmpTranslatedFile = new File(TMP_FILE_NAME + ".translated");
 
         StringBuilder stringBuilder = new StringBuilder();
-        @SuppressWarnings("resource")
-        BufferedReader reader = new BufferedReader(new InputStreamReader(
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
                 new FileInputStream(tmpTranslatedFile),
                 Charset.defaultCharset()
-        ));
-        String line;
-        while ((line = reader.readLine()) != null) stringBuilder.append(line);
+        ))) {
+            String line;
+            while ((line = reader.readLine()) != null) stringBuilder.append(line);
+        }
 
         if (!tmpFile.delete() || !tmpTranslatedFile.delete()){
             throw new IOException("Failed to delete temporary files.");

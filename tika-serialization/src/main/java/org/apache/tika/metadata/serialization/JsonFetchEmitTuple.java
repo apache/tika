@@ -51,12 +51,13 @@ public class JsonFetchEmitTuple {
 
 
     public static FetchEmitTuple fromJson(Reader reader) throws IOException {
-        JsonParser jParser = new JsonFactory().createParser(reader);
-        JsonToken token = jParser.nextToken();
-        if (token != JsonToken.START_OBJECT) {
-            throw new IOException("require start object, but see: " + token.name());
+        try (JsonParser jParser = new JsonFactory().createParser(reader)) {
+            JsonToken token = jParser.nextToken();
+            if (token != JsonToken.START_OBJECT) {
+                throw new IOException("require start object, but see: " + token.name());
+            }
+            return parseFetchEmitTuple(jParser);
         }
-        return parseFetchEmitTuple(jParser);
     }
 
 

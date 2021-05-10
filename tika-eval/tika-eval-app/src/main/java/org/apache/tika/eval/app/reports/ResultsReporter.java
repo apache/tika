@@ -303,17 +303,18 @@ public class ResultsReporter {
     }
 
     public void execute(Connection c, Path reportsDirectory) throws IOException, SQLException {
-        Statement st = c.createStatement();
-        for (String sql : before) {
-            LOG.info("processing before: {}", sql);
-            st.execute(sql);
-        }
-        for (Report r : reports) {
-            r.writeReport(c, reportsDirectory);
-        }
-        for (String sql : after) {
-            LOG.info("processing after: {}", sql);
-            st.execute(sql);
+        try (Statement st = c.createStatement()) {
+            for (String sql : before) {
+                LOG.info("processing before: {}", sql);
+                st.execute(sql);
+            }
+            for (Report r : reports) {
+                r.writeReport(c, reportsDirectory);
+            }
+            for (String sql : after) {
+                LOG.info("processing after: {}", sql);
+                st.execute(sql);
+            }
         }
     }
 }

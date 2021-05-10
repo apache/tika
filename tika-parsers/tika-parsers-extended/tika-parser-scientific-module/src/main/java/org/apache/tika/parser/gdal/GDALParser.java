@@ -232,30 +232,29 @@ public class GDALParser extends AbstractParser {
     }
 
     private void extractMetFromOutput(String output, Metadata met) {
-        Scanner scanner = new Scanner(output);
-        String currentKey = null;
-        String[] headings = {"Subdatasets", "Corner Coordinates"};
-        StringBuilder metVal = new StringBuilder();
-        while (scanner.hasNextLine()) {
-            String line = scanner.nextLine();
-            if (line.contains("=") || hasHeadings(line, headings)) {
-                if (currentKey != null) {
-                    // time to flush this key and met val
-                    met.add(currentKey, metVal.toString());
-                }
-                metVal.setLength(0);
+        try (Scanner scanner = new Scanner(output)) {
+            String currentKey = null;
+            String[] headings = {"Subdatasets", "Corner Coordinates"};
+            StringBuilder metVal = new StringBuilder();
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                if (line.contains("=") || hasHeadings(line, headings)) {
+                    if (currentKey != null) {
+                        // time to flush this key and met val
+                        met.add(currentKey, metVal.toString());
+                    }
+                    metVal.setLength(0);
 
-                String[] lineToks = line.split("=");
-                currentKey = lineToks[0].trim();
-                if (lineToks.length == 2) {
-                    metVal.append(lineToks[1]);
+                    String[] lineToks = line.split("=");
+                    currentKey = lineToks[0].trim();
+                    if (lineToks.length == 2) {
+                        metVal.append(lineToks[1]);
+                    }
                 } else {
-                    metVal.append("");
+                    metVal.append(line);
                 }
-            } else {
-                metVal.append(line);
-            }
 
+            }
         }
     }
 
@@ -274,21 +273,21 @@ public class GDALParser extends AbstractParser {
 
     private void applyPatternsToOutput(String output, Metadata metadata,
                                        Map<Pattern, String> metadataPatterns) {
-        Scanner scanner = new Scanner(output);
-        while (scanner.hasNextLine()) {
-            String line = scanner.nextLine();
-            for (Pattern p : metadataPatterns.keySet()) {
-                Matcher m = p.matcher(line);
-                if (m.find()) {
-                    if (metadataPatterns.get(p) != null && !metadataPatterns.get(p).equals("")) {
-                        metadata.add(metadataPatterns.get(p), m.group(1));
-                    } else {
-                        metadata.add(m.group(1), m.group(2));
+        try (Scanner scanner = new Scanner(output)) {
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                for (Pattern p : metadataPatterns.keySet()) {
+                    Matcher m = p.matcher(line);
+                    if (m.find()) {
+                        if (metadataPatterns.get(p) != null && !metadataPatterns.get(p).equals("")) {
+                            metadata.add(metadataPatterns.get(p), m.group(1));
+                        } else {
+                            metadata.add(m.group(1), m.group(2));
+                        }
                     }
                 }
             }
         }
-
     }
 
     private String execCommand(String[] cmd) throws IOException {

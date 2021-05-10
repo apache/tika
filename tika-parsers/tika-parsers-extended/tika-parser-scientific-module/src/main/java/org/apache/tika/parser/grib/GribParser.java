@@ -63,44 +63,46 @@ public class GribParser extends AbstractParser {
         File gribFile = tis.getFile();
 
         try {
-            NetcdfFile ncFile = NetcdfDataset.openFile(gribFile.getAbsolutePath(), null);
+            XHTMLContentHandler xhtml;
+            try (NetcdfFile ncFile = NetcdfDataset.openFile(gribFile.getAbsolutePath(), null)) {
 
-            // first parse out the set of global attributes
-            for (Attribute attr : ncFile.getGlobalAttributes()) {
-                Property property = resolveMetadataKey(attr.getFullName());
-                if (attr.getDataType().isString()) {
-                    metadata.add(property, attr.getStringValue());
-                } else if (attr.getDataType().isNumeric()) {
-                    int value = attr.getNumericValue().intValue();
-                    metadata.add(property, String.valueOf(value));
+                // first parse out the set of global attributes
+                for (Attribute attr : ncFile.getGlobalAttributes()) {
+                    Property property = resolveMetadataKey(attr.getFullName());
+                    if (attr.getDataType().isString()) {
+                        metadata.add(property, attr.getStringValue());
+                    } else if (attr.getDataType().isNumeric()) {
+                        int value = attr.getNumericValue().intValue();
+                        metadata.add(property, String.valueOf(value));
+                    }
                 }
-            }
 
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+                xhtml = new XHTMLContentHandler(handler, metadata);
 
-            xhtml.startDocument();
+                xhtml.startDocument();
 
-            xhtml.newline();
-            xhtml.startElement("ul");
-            xhtml.characters("dimensions:");
-            xhtml.newline();
-
-            for (Dimension dim : ncFile.getDimensions()) {
-                xhtml.element("li",
-                        dim.getFullName() + "=" + String.valueOf(dim.getLength()) + ";");
                 xhtml.newline();
-            }
+                xhtml.startElement("ul");
+                xhtml.characters("dimensions:");
+                xhtml.newline();
 
-            xhtml.startElement("ul");
-            xhtml.characters("variables:");
-            xhtml.newline();
-
-            for (Variable var : ncFile.getVariables()) {
-                xhtml.element("p",
-                        String.valueOf(var.getDataType()) + var.getNameAndDimensions() + ";");
-                for (Attribute element : var.getAttributes()) {
-                    xhtml.element("li", " :" + element + ";");
+                for (Dimension dim : ncFile.getDimensions()) {
+                    xhtml.element("li",
+                            dim.getFullName() + "=" + String.valueOf(dim.getLength()) + ";");
                     xhtml.newline();
+                }
+
+                xhtml.startElement("ul");
+                xhtml.characters("variables:");
+                xhtml.newline();
+
+                for (Variable var : ncFile.getVariables()) {
+                    xhtml.element("p",
+                            String.valueOf(var.getDataType()) + var.getNameAndDimensions() + ";");
+                    for (Attribute element : var.getAttributes()) {
+                        xhtml.element("li", " :" + element + ";");
+                        xhtml.newline();
+                    }
                 }
             }
             xhtml.endElement("ul");

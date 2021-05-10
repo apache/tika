@@ -177,27 +177,17 @@ public class ChmCommons {
      * @throws TikaException
      */
     public static void writeFile(byte[][] buffer, String fileToBeSaved) throws TikaException {
-        FileOutputStream output = null;
-        if (buffer != null && fileToBeSaved != null && !ChmCommons.isEmpty(fileToBeSaved)) {
-            try {
-                output = new FileOutputStream(fileToBeSaved);
-                for (byte[] bufferEntry : buffer) {
-                    output.write(bufferEntry);
-                }
-            } catch (FileNotFoundException e) {
-                throw new TikaException(e.getMessage());
-            } catch (IOException e) {
-                LOG.warn("problem writing tmp file", e);
-            } finally {
-                if (output != null) {
-                    try {
-                        output.flush();
-                        output.close();
-                    } catch (IOException e) {
-                        LOG.warn("problem writing tmp file", e);
-                    }
-                }
+        if (buffer == null || fileToBeSaved == null || ChmCommons.isEmpty(fileToBeSaved)) {
+            return;
+        }
+        try (FileOutputStream output = new FileOutputStream(fileToBeSaved)) {
+            for (byte[] bufferEntry : buffer) {
+                output.write(bufferEntry);
             }
+        } catch (FileNotFoundException e) {
+            throw new TikaException(e.getMessage());
+        } catch (IOException e) {
+            LOG.warn("problem writing tmp file", e);
         }
     }
 
