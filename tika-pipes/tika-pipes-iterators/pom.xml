@@ -28,7 +28,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>tika-fetch-iterators</artifactId>
+  <artifactId>tika-pipes-iterators</artifactId>
   <packaging>pom</packaging>
   <name>Apache Tika fetch iterators</name>
   <url>https://tika.apache.org/</url>

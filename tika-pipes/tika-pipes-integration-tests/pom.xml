@@ -50,7 +50,7 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-fetch-iterator-s3</artifactId>
+      <artifactId>tika-pipes-iterator-s3</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
