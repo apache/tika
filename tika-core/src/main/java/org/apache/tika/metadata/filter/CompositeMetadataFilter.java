@@ -21,7 +21,7 @@ import java.util.List;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 
-public class CompositeMetadataFilter implements MetadataFilter {
+public class CompositeMetadataFilter extends MetadataFilter {
 
     private final List<MetadataFilter> filters;
 

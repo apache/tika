@@ -318,6 +318,7 @@ public class RecursiveParserWrapperTest extends TikaTest {
         Metadata metadata = new Metadata();
         TikaConfig tikaConfig = null;
         Parser p = null;
+        System.out.println(getResourceAsFile("TIKA-3137-include.xml").getAbsolutePath());
         try (InputStream is = getResourceAsStream("TIKA-3137-include.xml")) {
             tikaConfig = new TikaConfig(is);
             p = new AutoDetectParser(tikaConfig);

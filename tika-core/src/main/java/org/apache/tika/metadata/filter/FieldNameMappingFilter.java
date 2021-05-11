@@ -16,18 +16,16 @@
  */
 package org.apache.tika.metadata.filter;
 
-import java.util.HashMap;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 
-public class FieldNameMappingFilter implements MetadataFilter {
-    private static final String MAPPING_OPERATOR = "->";
+public class FieldNameMappingFilter extends MetadataFilter {
 
-    Map<String, String> mapping = new HashMap<>();
+    Map<String, String> mappings = new LinkedHashMap<>();
 
     boolean excludeUnmapped = true;
 
@@ -35,23 +33,23 @@ public class FieldNameMappingFilter implements MetadataFilter {
     public void filter(Metadata metadata) throws TikaException {
         if (excludeUnmapped) {
             for (String n : metadata.names()) {
-                if (mapping.containsKey(n)) {
+                if (mappings.containsKey(n)) {
                     String[] vals = metadata.getValues(n);
                     metadata.remove(n);
                     for (String val : vals) {
-                        metadata.add(mapping.get(n), val);
+                        metadata.add(mappings.get(n), val);
                     }
                 } else {
-                    mapping.remove(n);
+                    metadata.remove(n);
                 }
             }
         } else {
             for (String n : metadata.names()) {
-                if (mapping.containsKey(n)) {
+                if (mappings.containsKey(n)) {
                     String[] vals = metadata.getValues(n);
                     metadata.remove(n);
                     for (String val : vals) {
-                        metadata.add(mapping.get(n), val);
+                        metadata.add(mappings.get(n), val);
                     }
                 }
             }
@@ -72,26 +70,9 @@ public class FieldNameMappingFilter implements MetadataFilter {
     }
 
     @Field
-    public void setMappings(List<String> mappings) {
-        for (String m : mappings) {
-            String[] args = m.split(MAPPING_OPERATOR);
-            if (args.length == 0 || args.length == 1) {
-                throw new IllegalArgumentException("Can't find mapping operator '->' in: " + m);
-            } else if (args.length > 2) {
-                throw new IllegalArgumentException(
-                        "Must have only one mapping operator. I found more than one: " + m);
-            }
-            String from = args[0].trim();
-            if (from.length() == 0) {
-                throw new IllegalArgumentException(
-                        "Must contain content before the " + "mapping operator '->'");
-            }
-            String to = args[1].trim();
-            if (to.length() == 0) {
-                throw new IllegalArgumentException(
-                        "Must contain content after the " + "mapping operator '->'");
-            }
-            mapping.put(from, to);
+    public void setMappings(Map<String, String> mappings) {
+        for (Map.Entry<String, String> e : mappings.entrySet()) {
+            this.mappings.put(e.getKey(), e.getValue());
         }
     }
 }

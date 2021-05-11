@@ -19,10 +19,10 @@
   <metadataFilters>
     <metadataFilter class="org.apache.tika.metadata.filter.IncludeFieldMetadataFilter">
       <params>
-        <param name="include" type="list">
-          <string>title</string>
-          <string>author</string>
-        </param>
+        <include>
+          <field>title</field>
+          <field>author</field>
+        </include>
       </params>
     </metadataFilter>
     <metadataFilter class="org.apache.tika.metadata.filter.MockUpperCaseFilter"/>

@@ -30,7 +30,7 @@ import org.apache.tika.mime.MediaType;
  * mime matches the mime filter.  The idea is that you might not want
  * to store/transmit metadata for images or specific file types.
  */
-public class ClearByMimeMetadataFilter implements MetadataFilter {
+public class ClearByMimeMetadataFilter extends MetadataFilter {
     private final Set<String> mimes;
 
     public ClearByMimeMetadataFilter() {
@@ -55,7 +55,6 @@ public class ClearByMimeMetadataFilter implements MetadataFilter {
             for (String n : metadata.names()) {
                 metadata.remove(n);
             }
-
         }
     }
 

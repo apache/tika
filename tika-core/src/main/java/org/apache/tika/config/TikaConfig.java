@@ -58,9 +58,8 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.language.translate.DefaultTranslator;
 import org.apache.tika.language.translate.Translator;
-import org.apache.tika.metadata.filter.CompositeMetadataFilter;
-import org.apache.tika.metadata.filter.DefaultMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
+import org.apache.tika.metadata.filter.NoOpFilter;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.mime.MimeTypeException;
@@ -149,7 +148,6 @@ public class TikaConfig {
         TranslatorXmlLoader translatorLoader = new TranslatorXmlLoader();
         ExecutorServiceXmlLoader executorLoader = new ExecutorServiceXmlLoader();
         EncodingDetectorXmlLoader encodingDetectorXmlLoader = new EncodingDetectorXmlLoader();
-        MetadataFilterXmlLoader metadataFilterXmlLoader = new MetadataFilterXmlLoader();
         updateXMLReaderUtils(element);
         this.mimeTypes = typesFromDomElement(element);
         this.detector = detectorLoader.loadOverall(element, mimeTypes, loader);
@@ -159,7 +157,7 @@ public class TikaConfig {
         this.parser = parserLoader.loadOverall(element, mimeTypes, loader);
         this.translator = translatorLoader.loadOverall(element, mimeTypes, loader);
         this.executorService = executorLoader.loadOverall(element, mimeTypes, loader);
-        this.metadataFilter = metadataFilterXmlLoader.loadOverall(element, mimeTypes, loader);
+        this.metadataFilter = MetadataFilter.load(element, true);
         this.serviceLoader = loader;
         TIMES_INSTANTIATED.incrementAndGet();
     }
@@ -184,7 +182,7 @@ public class TikaConfig {
         this.parser = getDefaultParser(mimeTypes, serviceLoader, encodingDetector);
         this.translator = getDefaultTranslator(serviceLoader);
         this.executorService = getDefaultExecutorService();
-        this.metadataFilter = getDefaultMetadataFilter(serviceLoader);
+        this.metadataFilter = new NoOpFilter();
         TIMES_INSTANTIATED.incrementAndGet();
     }
 
@@ -220,7 +218,7 @@ public class TikaConfig {
             this.detector = getDefaultDetector(mimeTypes, serviceLoader);
             this.translator = getDefaultTranslator(serviceLoader);
             this.executorService = getDefaultExecutorService();
-            this.metadataFilter = getDefaultMetadataFilter(serviceLoader);
+            this.metadataFilter = new NoOpFilter();
         } else {
             ServiceLoader tmpServiceLoader = new ServiceLoader();
             try (InputStream stream = getConfigInputStream(config, tmpServiceLoader)) {
@@ -231,7 +229,6 @@ public class TikaConfig {
                 EncodingDetectorXmlLoader encodingDetectorLoader = new EncodingDetectorXmlLoader();
                 TranslatorXmlLoader translatorLoader = new TranslatorXmlLoader();
                 ExecutorServiceXmlLoader executorLoader = new ExecutorServiceXmlLoader();
-                MetadataFilterXmlLoader metadataFilterXmlLoader = new MetadataFilterXmlLoader();
 
                 this.mimeTypes = typesFromDomElement(element);
                 this.encodingDetector =
@@ -244,8 +241,7 @@ public class TikaConfig {
                 this.translator = translatorLoader.loadOverall(element, mimeTypes, serviceLoader);
                 this.executorService =
                         executorLoader.loadOverall(element, mimeTypes, serviceLoader);
-                this.metadataFilter =
-                        metadataFilterXmlLoader.loadOverall(element, mimeTypes, serviceLoader);
+                this.metadataFilter = MetadataFilter.load(element, true);
             } catch (SAXException e) {
                 throw new TikaException("Specified Tika configuration has syntax errors: " + config,
                         e);
@@ -277,10 +273,6 @@ public class TikaConfig {
 
     private static ConfigurableThreadPoolExecutor getDefaultExecutorService() {
         return new SimpleThreadPoolExecutor();
-    }
-
-    private static MetadataFilter getDefaultMetadataFilter(ServiceLoader loader) {
-        return new DefaultMetadataFilter(loader);
     }
 
     private static InputStream getConfigInputStream(String config, ServiceLoader serviceLoader)
@@ -1307,93 +1299,6 @@ public class TikaConfig {
         @Override
         EncodingDetector decorate(EncodingDetector created, Element element) {
             return created; // No decoration of EncodingDetectors
-        }
-    }
-
-    private static class MetadataFilterXmlLoader extends XmlLoader<MetadataFilter, MetadataFilter> {
-
-        boolean supportsComposite() {
-            return true;
-        }
-
-        String getParentTagName() {
-            return "metadataFilters";
-        }
-
-        String getLoaderTagName() {
-            return "metadataFilter";
-        }
-
-        @Override
-        Class<? extends MetadataFilter> getLoaderClass() {
-            return MetadataFilter.class;
-        }
-
-
-        @Override
-        boolean isComposite(MetadataFilter loaded) {
-            return loaded instanceof CompositeMetadataFilter;
-        }
-
-        @Override
-        boolean isComposite(Class<? extends MetadataFilter> loadedClass) {
-            return CompositeMetadataFilter.class.isAssignableFrom(loadedClass);
-        }
-
-        @Override
-        MetadataFilter preLoadOne(Class<? extends MetadataFilter> loadedClass, String classname,
-                                  MimeTypes mimeTypes) throws TikaException {
-            // Check for classes which can't be set in config
-            // Continue with normal loading
-            return null;
-        }
-
-        @Override
-        MetadataFilter createDefault(MimeTypes mimeTypes, ServiceLoader loader) {
-            return getDefaultMetadataFilter(loader);
-        }
-
-        //this ignores the service loader
-        @Override
-        MetadataFilter createComposite(List<MetadataFilter> loaded, MimeTypes mimeTypes,
-                                       ServiceLoader loader) {
-            return new DefaultMetadataFilter(loaded);
-        }
-
-        @Override
-        MetadataFilter createComposite(Class<? extends MetadataFilter> metadataFilterClass,
-                                       List<MetadataFilter> childMetadataFilters,
-                                       Set<Class<? extends MetadataFilter>> excludeFilters,
-                                       Map<String, Param> params, MimeTypes mimeTypes,
-                                       ServiceLoader loader)
-                throws InvocationTargetException, IllegalAccessException, InstantiationException {
-            MetadataFilter metadataFilter = null;
-            Constructor<? extends MetadataFilter> c;
-
-            // Try the possible default and composite detector constructors
-            if (metadataFilter == null) {
-                try {
-                    c = metadataFilterClass.getConstructor(ServiceLoader.class, Collection.class);
-                    metadataFilter = c.newInstance(loader, excludeFilters);
-                } catch (NoSuchMethodException me) {
-                    me.printStackTrace();
-                }
-            }
-            if (metadataFilter == null) {
-                try {
-                    c = metadataFilterClass.getConstructor(List.class);
-                    metadataFilter = c.newInstance(childMetadataFilters);
-                } catch (NoSuchMethodException me) {
-                    me.printStackTrace();
-                }
-            }
-
-            return metadataFilter;
-        }
-
-        @Override
-        MetadataFilter decorate(MetadataFilter created, Element element) {
-            return created; // No decoration of MetadataFilters
         }
     }
 

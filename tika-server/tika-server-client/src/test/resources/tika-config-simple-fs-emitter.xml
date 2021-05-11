@@ -18,61 +18,61 @@
   under the License.
 -->
 <properties>
-    <service-loader initializableProblemHandler="throw"/>
-    <pipesIterators>
-        <pipesIterator class="org.apache.tika.pipes.pipesiterator.FileSystemPipesIterator">
-            <params>
-                <fetcherName>fs</fetcherName>
-                <basePath>fix</basePath>
-            </params>
-        </pipesIterator>
-    </pipesIterators>
-    <fetchers>
-        <fetcher class="org.apache.tika.pipes.fetcher.FileSystemFetcher">
-            <params>
-                <name>fs</name>
-                <basePath>fix</basePath>
-            </params>
-        </fetcher>
-    </fetchers>
-    <metadataFilters>
-        <metadataFilter class="org.apache.tika.metadata.filter.FieldNameMappingFilter">
-            <params>
-                <param name="mappings" type="list">
-                    <string>X-TIKA:content->content</string>
-                    <string>X-TIKA:embedded_resource_path->embedded_path</string>
-                    <string>Content-Length->length</string>
-                    <string>dc:creator->creators</string>
-                    <string>dc:title->title</string>
-                </param>
-            </params>
-        </metadataFilter>
-    </metadataFilters>
-    <emitters>
-        <emitter class="org.apache.tika.pipes.emitter.fs.FileSystemEmitter">
-            <params>
-                <name>fs</name>
-                <basePath>fix</basePath>
-            </params>
-        </emitter>
-        <!--
-        <emitter class="org.apache.tika.pipes.emitter.solr.SolrEmitter">
-            <params>
-                <param name="name" type="string">solr1</param>
-                <param name="url" type="string">http://localhost:8983/solr/tika-test</param>
-                <param name="attachmentStrategy" type="string">concatenate-content</param>
-                <param name="contentField" type="string">content</param>
-                <param name="commitWithin" type="int">10</param>
-            </params>
-        </emitter>
-        <emitter class="org.apache.tika.pipes.emitter.solr.SolrEmitter">
-            <params>
-                <param name="name" type="string">solr2</param>
-                <param name="url" type="string">http://localhost:8983/solr/tika-test</param>
-                <param name="attachmentStrategy" type="string">parent-child</param>
-                <param name="contentField" type="string">content</param>
-                <param name="commitWithin" type="int">10</param>
-            </params>
-        </emitter>-->
-    </emitters>
+  <service-loader initializableProblemHandler="throw"/>
+  <pipesIterators>
+    <pipesIterator class="org.apache.tika.pipes.pipesiterator.FileSystemPipesIterator">
+      <params>
+        <fetcherName>fs</fetcherName>
+        <basePath>fix</basePath>
+      </params>
+    </pipesIterator>
+  </pipesIterators>
+  <fetchers>
+    <fetcher class="org.apache.tika.pipes.fetcher.FileSystemFetcher">
+      <params>
+        <name>fs</name>
+        <basePath>fix</basePath>
+      </params>
+    </fetcher>
+  </fetchers>
+  <metadataFilters>
+    <metadataFilter class="org.apache.tika.metadata.filter.FieldNameMappingFilter">
+      <params>
+        <mappings>
+          <mapping from="X-TIKA:content" to="content"/>
+          <mapping from="X-TIKA:embedded_resource_path" to="embedded_path"/>
+          <mapping from="Content-Length" to="length"/>
+          <mapping from="dc:creator" to="creators"/>
+          <mapping from="dc:title" to="title"/>
+        </mappings>
+      </params>
+    </metadataFilter>
+  </metadataFilters>
+  <emitters>
+    <emitter class="org.apache.tika.pipes.emitter.fs.FileSystemEmitter">
+      <params>
+        <name>fs</name>
+        <basePath>fix</basePath>
+      </params>
+    </emitter>
+    <!--
+    <emitter class="org.apache.tika.pipes.emitter.solr.SolrEmitter">
+        <params>
+            <param name="name" type="string">solr1</param>
+            <param name="url" type="string">http://localhost:8983/solr/tika-test</param>
+            <param name="attachmentStrategy" type="string">concatenate-content</param>
+            <param name="contentField" type="string">content</param>
+            <param name="commitWithin" type="int">10</param>
+        </params>
+    </emitter>
+    <emitter class="org.apache.tika.pipes.emitter.solr.SolrEmitter">
+        <params>
+            <param name="name" type="string">solr2</param>
+            <param name="url" type="string">http://localhost:8983/solr/tika-test</param>
+            <param name="attachmentStrategy" type="string">parent-child</param>
+            <param name="contentField" type="string">content</param>
+            <param name="commitWithin" type="int">10</param>
+        </params>
+    </emitter>-->
+  </emitters>
 </properties>

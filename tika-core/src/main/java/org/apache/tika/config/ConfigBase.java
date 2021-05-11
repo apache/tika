@@ -23,13 +23,14 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -101,7 +102,7 @@ public abstract class ConfigBase {
     protected static <P, T> P buildComposite(String compositeElementName, Class<P> compositeClass,
                                              String itemName, Class<T> itemClass, InputStream is)
             throws TikaConfigException, IOException {
-        Node properties = null;
+        Element properties = null;
         try {
             properties = XMLReaderUtils.buildDOM(is).getDocumentElement();
         } catch (SAXException e) {
@@ -109,6 +110,14 @@ public abstract class ConfigBase {
         } catch (TikaException e) {
             throw new TikaConfigException("problem loading xml to dom", e);
         }
+        return buildComposite(compositeElementName, compositeClass, itemName, itemClass,
+                properties);
+    }
+
+    protected static <P, T> P buildComposite(String compositeElementName, Class<P> compositeClass,
+                String itemName, Class<T> itemClass, Element properties) throws TikaConfigException,
+            IOException {
+
         if (!properties.getLocalName().equals("properties")) {
             throw new TikaConfigException("expect properties as root node");
         }
@@ -264,7 +273,8 @@ public abstract class ConfigBase {
     private static void tryToSetMap(Object object, Node param) throws TikaConfigException {
         String name = param.getLocalName();
         //only supports string, string at this point
-        Map<String, String> map = new HashMap<>();
+        //use LinkedHashMap to keep insertion order!
+        Map<String, String> map = new LinkedHashMap<>();
         NodeList nodeList = param.getChildNodes();
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node n = nodeList.item(i);

@@ -17,21 +17,16 @@
 -->
 <properties>
   <metadataFilters>
-    <metadataFilter class="org.apache.tika.metadata.filter.IncludeFieldMetadataFilter">
+    <metadataFilter class="org.apache.tika.metadata.filter.FieldNameMappingFilter">
       <params>
-        <include>
-          <field>X-TIKA:content</field>
-          <field>extended-properties:Application</field>
-          <field>Content-Type</field>
-        </include>
-      </params>
-    </metadataFilter>
-    <metadataFilter class="org.apache.tika.metadata.filter.ClearByMimeMetadataFilter">
-      <params>
-        <mimes>
-          <mime>image/emf</mime>
-          <mime>text/plain</mime>
-        </mimes>
+        <excludeUnmapped>true</excludeUnmapped>
+        <mappings>
+          <mapping from="X-TIKA:content" to="content"/>
+          <mapping from="a" to="b"/>
+          <!-- note that the mapping only works once...not recursively -->
+          <mapping from="b" to="c"/>
+          <mapping from="c" to="d"/>
+        </mappings>
       </params>
     </metadataFilter>
   </metadataFilters>

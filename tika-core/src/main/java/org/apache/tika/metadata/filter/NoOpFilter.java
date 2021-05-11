@@ -23,7 +23,7 @@ import org.apache.tika.metadata.Metadata;
  * This filter performs no operations on the metadata
  * and leaves it untouched.
  */
-public class NoOpFilter implements MetadataFilter {
+public class NoOpFilter extends MetadataFilter {
 
     public static NoOpFilter NOOP_FILTER = new NoOpFilter();
 

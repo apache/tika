@@ -19,10 +19,10 @@
   <metadataFilters>
     <metadataFilter class="org.apache.tika.metadata.filter.ClearByMimeMetadataFilter">
       <params>
-        <param name="mimes" type="list">
-          <string>image/jpeg</string>
-          <string>application/pdf</string>
-        </param>
+        <mimes>
+          <mime>image/jpeg</mime>
+          <mime>application/pdf</mime>
+        </mimes>
       </params>
     </metadataFilter>
     <metadataFilter class="org.apache.tika.metadata.filter.MockUpperCaseFilter"/>

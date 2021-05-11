@@ -24,7 +24,7 @@ import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 
-public class IncludeFieldMetadataFilter implements MetadataFilter {
+public class IncludeFieldMetadataFilter extends MetadataFilter {
     private final Set<String> includeSet;
 
     public IncludeFieldMetadataFilter() {

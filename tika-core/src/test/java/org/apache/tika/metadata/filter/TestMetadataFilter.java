@@ -30,6 +30,7 @@ import org.junit.Test;
 import org.apache.tika.config.AbstractTikaConfigTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 
 public class TestMetadataFilter extends AbstractTikaConfigTest {
@@ -153,7 +154,6 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
 
         MetadataFilter filter = config.getMetadataFilter();
         filter.filter(metadata);
-        debug(metadata);
         assertEquals(0, metadata.size());
 
         metadata.set(Metadata.CONTENT_TYPE, MediaType.text("plain").toString());
@@ -161,6 +161,22 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
         filter.filter(metadata);
         assertEquals(2, metadata.size());
         assertEquals("AUTHOR", metadata.get("author"));
+    }
 
+    @Test
+    public void testFieldNameMapping() throws Exception {
+        TikaConfig config = getConfig("TIKA-3137-field-mapping.xml");
+
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.TIKA_CONTENT, "quick brown fox");
+        metadata.set("author", "author");
+        metadata.set("a", "a-value");
+
+        MetadataFilter filter = config.getMetadataFilter();
+        filter.filter(metadata);
+        assertEquals("quick brown fox", metadata.get("content"));
+        assertEquals("a-value", metadata.get("b"));
+        assertNull(metadata.get("author"));
+        assertNull(metadata.get("a"));
     }
 }

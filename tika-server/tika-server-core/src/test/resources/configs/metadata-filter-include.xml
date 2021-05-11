@@ -19,11 +19,11 @@
     <metadataFilters>
         <metadataFilter class="org.apache.tika.metadata.filter.IncludeFieldMetadataFilter">
             <params>
-                <param name="include" type="list">
-                    <string>X-TIKA:content</string>
-                    <string>extended-properties:Application</string>
-                    <string>Content-Type</string>
-                </param>
+                <include>
+                    <field>X-TIKA:content</field>
+                    <field>extended-properties:Application</field>
+                    <field>Content-Type</field>
+                </include>
             </params>
         </metadataFilter>
     </metadataFilters>

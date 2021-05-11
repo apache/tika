@@ -36,7 +36,7 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.filter.MetadataFilter;
 
-public class TikaEvalMetadataFilter implements MetadataFilter {
+public class TikaEvalMetadataFilter extends MetadataFilter {
 
     public static String TIKA_EVAL_NS = "tika-eval" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 

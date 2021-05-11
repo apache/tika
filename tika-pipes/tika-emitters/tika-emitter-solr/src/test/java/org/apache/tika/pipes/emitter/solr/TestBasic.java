@@ -34,7 +34,7 @@ import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.emitter.Emitter;
 import org.apache.tika.pipes.emitter.EmitterManager;
 
-@Ignore("requires solr to be up and running")
+@Ignore("requires solr to be up and running; please dockerize some tests, please, please")
 public class TestBasic {
 
     @Test

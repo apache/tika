@@ -18,37 +18,35 @@
   under the License.
 -->
 <properties>
-    <metadataFilters>
-        <metadataFilter class="org.apache.tika.metadata.filter.FieldNameMappingFilter">
-            <params>
-                <param name="mappings" type="list">
-                    <string>X-TIKA:content->content</string>
-                    <string>X-TIKA:embedded_resource_path->embedded_path</string>
-                    <string>Content-Length->length</string>
-                    <string>dc:creator->creators</string>
-                    <string>dc:title->title</string>
-                </param>
-            </params>
-        </metadataFilter>
-    </metadataFilters>
-    <emitters>
-        <emitter class="org.apache.tika.pipes.emitter.solr.SolrEmitter">
-            <params>
-                <name>solr1</name>
-                <url>http://localhost:8983/solr/tika-test</url>
-                <attachmentStrategy>concatenate-content</attachmentStrategy>
-                <contentField>content</contentField>
-                <commitWithin>10</commitWithin>
-            </params>
-        </emitter>
-        <emitter class="org.apache.tika.pipes.emitter.solr.SolrEmitter">
-            <params>
-                <name>solr2</name>
-                <url>http://localhost:8983/solr/tika-test</url>
-                <attachmentStrategy>parent-child</attachmentStrategy>
-                <contentField>content</contentField>
-                <commitWithin>10</commitWithin>
-            </params>
-        </emitter>
-    </emitters>
+  <metadataFilters>
+    <metadataFilter class="org.apache.tika.metadata.filter.FieldNameMappingFilter">
+      <mappings>
+        <mapping from="X-TIKA:content" to="content"/>
+        <mapping from="X-TIKA:embedded_resource_path" to="embedded_path"/>
+        <mapping from="Content-Length" to="length"/>
+        <mapping from="dc:creator" to="creators"/>
+        <mapping from="dc:title" to="title"/>
+      </mappings>
+    </metadataFilter>
+  </metadataFilters>
+  <emitters>
+    <emitter class="org.apache.tika.pipes.emitter.solr.SolrEmitter">
+      <params>
+        <name>solr1</name>
+        <url>http://localhost:8983/solr/tika-test</url>
+        <attachmentStrategy>concatenate-content</attachmentStrategy>
+        <contentField>content</contentField>
+        <commitWithin>10</commitWithin>
+      </params>
+    </emitter>
+    <emitter class="org.apache.tika.pipes.emitter.solr.SolrEmitter">
+      <params>
+        <name>solr2</name>
+        <url>http://localhost:8983/solr/tika-test</url>
+        <attachmentStrategy>parent-child</attachmentStrategy>
+        <contentField>content</contentField>
+        <commitWithin>10</commitWithin>
+      </params>
+    </emitter>
+  </emitters>
 </properties>

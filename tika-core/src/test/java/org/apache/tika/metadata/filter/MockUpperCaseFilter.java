@@ -24,7 +24,7 @@ import org.apache.tika.metadata.Metadata;
 /**
  * Mock Filter for testing uppercasing of all values
  */
-public class MockUpperCaseFilter implements MetadataFilter {
+public class MockUpperCaseFilter extends MetadataFilter {
 
     @Override
     public void filter(Metadata metadata) throws TikaException {
