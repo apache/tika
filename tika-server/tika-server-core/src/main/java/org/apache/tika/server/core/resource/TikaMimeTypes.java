@@ -66,7 +66,7 @@ public class TikaMimeTypes {
         List<MediaTypeDetails> types = getMediaTypes();
 
         // Get the first type in each section
-        SortedMap<String, String> firstType = new TreeMap<String, String>();
+        SortedMap<String, String> firstType = new TreeMap<>();
         for (MediaTypeDetails type : types) {
             if (!firstType.containsKey(type.type.getType())) {
                 firstType.put(type.type.getType(), type.type.toString());
@@ -104,10 +104,10 @@ public class TikaMimeTypes {
     @GET
     @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
     public String getMimeTypesJSON() throws IOException {
-        Map<String, Object> details = new HashMap<String, Object>();
+        Map<String, Object> details = new HashMap<>();
 
         for (MediaTypeDetails type : getMediaTypes()) {
-            Map<String, Object> typeDets = new HashMap<String, Object>();
+            Map<String, Object> typeDets = new HashMap<>();
 
             typeDets.put("alias", copyToStringArray(type.aliases));
             if (type.supertype != null) {
@@ -152,7 +152,7 @@ public class TikaMimeTypes {
         Map<MediaType, Parser> parsers =
                 ((CompositeParser) TikaResource.getConfig().getParser()).getParsers();
         List<MediaTypeDetails> types =
-                new ArrayList<TikaMimeTypes.MediaTypeDetails>(registry.getTypes().size());
+                new ArrayList<>(registry.getTypes().size());
 
         for (MediaType type : registry.getTypes()) {
             MediaTypeDetails details = new MediaTypeDetails();

@@ -122,13 +122,13 @@ public class TikaServerProcess {
             if (tikaServerConfig.isEnableUnsecureFeatures()) {
                 final AsyncResource localAsyncResource =
                         new AsyncResource(tikaServerConfig.getConfigPath());
-                Runtime.getRuntime().addShutdownHook(new Thread() { public void run() {
-                        try {
-                            localAsyncResource.shutdownNow();
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    } } );
+                Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                    try {
+                        localAsyncResource.shutdownNow();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }));
                 asyncResource = localAsyncResource;
             }
 
@@ -369,29 +369,25 @@ public class TikaServerProcess {
 
         if (addAsyncResource) {
             final AsyncResource localAsyncResource = new AsyncResource(tikaServerConfig.getConfigPath());
-            Runtime.getRuntime().addShutdownHook(new Thread() {
-                    public void run() {
-                        try {
-                            localAsyncResource.shutdownNow();
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                });
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                try {
+                    localAsyncResource.shutdownNow();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }));
             resourceProviders.add(new SingletonResourceProvider(localAsyncResource));
         }
         if (addPipesResource) {
             final PipesResource localPipesResource =
                     new PipesResource(tikaServerConfig.getConfigPath());
-            Runtime.getRuntime().addShutdownHook(new Thread() {
-                public void run() {
-                    try {
-                        localPipesResource.close();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                try {
+                    localPipesResource.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-            });
+            }));
             resourceProviders.add(new SingletonResourceProvider(localPipesResource));
         }
         resourceProviders.addAll(loadResourceServices());

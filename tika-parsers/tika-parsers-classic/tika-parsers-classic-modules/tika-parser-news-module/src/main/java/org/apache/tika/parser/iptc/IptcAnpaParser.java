@@ -125,7 +125,7 @@ public class IptcAnpaParser implements Parser {
      */
     private HashMap<String, String> loadProperties(InputStream is) {
 
-        HashMap<String, String> properties = new HashMap<String, String>();
+        HashMap<String, String> properties = new HashMap<>();
 
         FORMAT = this.scanFormat(is);
 
@@ -215,44 +215,65 @@ public class IptcAnpaParser implements Parser {
 
         byte[] value = new byte[0];
 
-        if (name.equals("residual")) {
-            // the header shouldn't be more than 1k, but just being generous here
-            int maxsize = 8192;     //  8K
-            byte bstart =
-                    SYN;     // check for SYN [0x16 : ctrl-v] (may have leftover residue from
-            // preceding message)
-            byte bfinish =
-                    SOH;     // check for SOH [0x01 : ctrl-a] (typically follows a pair of SYN
-            // [0x16 : ctrl-v])
-            value = getSection(is, maxsize, bstart, bfinish, true);
-        } else if (name.equals("header")) {
-            // the header shouldn't be more than 1k, but just being generous here
-            int maxsize = 8192;     //  8K
-            byte bstart =
-                    SOH;     // check for SOH [0x01 : ctrl-a] (typically follows a pair of SYN
-            // [0x16 : ctrl-v])
-            byte bfinish =
-                    STX;     // check for STX [0x02 : ctrl-b] (marks end of header, beginning of
-            // message)
-            value = getSection(is, maxsize, bstart, bfinish, true);
-        } else if (name.equals("body")) {
-            // the message shouldn't be more than 16k (?), leaving plenty of space
-            int maxsize = 524288;     //  512K
-            byte bstart =
-                    STX;     // check for STX [0x02 : ctrl-b] (marks end of header, beginning of
-            // message)
-            byte bfinish =
-                    ETX;     // check for ETX [0x03 : ctrl-c] (marks end of message, beginning of
-            // footer)
-            value = getSection(is, maxsize, bstart, bfinish, true);
-        } else if (name.equals("footer")) {
-            // the footer shouldn't be more than 1k , leaving plenty of space
-            int maxsize = 8192;     //  8K
-            byte bstart =
-                    ETX;     // check for ETX [0x03 : ctrl-c] (marks end of message, beginning of
-            // footer)
-            byte bfinish = EOT;     // check for EOT [0x04 : ctrl-d] (marks end of transmission)
-            value = getSection(is, maxsize, bstart, bfinish, true);
+        switch (name) {
+            case "residual": {
+                // the header shouldn't be more than 1k, but just being generous here
+                int maxsize = 8192;     //  8K
+
+                byte bstart =
+                        SYN;     // check for SYN [0x16 : ctrl-v] (may have leftover residue from
+
+                // preceding message)
+                byte bfinish =
+                        SOH;     // check for SOH [0x01 : ctrl-a] (typically follows a pair of SYN
+
+                // [0x16 : ctrl-v])
+                value = getSection(is, maxsize, bstart, bfinish, true);
+                break;
+            }
+            case "header": {
+                // the header shouldn't be more than 1k, but just being generous here
+                int maxsize = 8192;     //  8K
+
+                byte bstart =
+                        SOH;     // check for SOH [0x01 : ctrl-a] (typically follows a pair of SYN
+
+                // [0x16 : ctrl-v])
+                byte bfinish =
+                        STX;     // check for STX [0x02 : ctrl-b] (marks end of header, beginning of
+
+                // message)
+                value = getSection(is, maxsize, bstart, bfinish, true);
+                break;
+            }
+            case "body": {
+                // the message shouldn't be more than 16k (?), leaving plenty of space
+                int maxsize = 524288;     //  512K
+
+                byte bstart =
+                        STX;     // check for STX [0x02 : ctrl-b] (marks end of header, beginning of
+
+                // message)
+                byte bfinish =
+                        ETX;     // check for ETX [0x03 : ctrl-c] (marks end of message, beginning of
+
+                // footer)
+                value = getSection(is, maxsize, bstart, bfinish, true);
+                break;
+            }
+            case "footer": {
+                // the footer shouldn't be more than 1k , leaving plenty of space
+                int maxsize = 8192;     //  8K
+
+                byte bstart =
+                        ETX;     // check for ETX [0x03 : ctrl-c] (marks end of message, beginning of
+
+                // footer)
+                byte bfinish = EOT;     // check for EOT [0x04 : ctrl-d] (marks end of transmission)
+
+                value = getSection(is, maxsize, bstart, bfinish, true);
+                break;
+            }
         }
 
         return (value);

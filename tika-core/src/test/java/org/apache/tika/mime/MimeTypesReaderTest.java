@@ -102,7 +102,7 @@ public class MimeTypesReaderTest {
                 html.getMagics().size(), html.getMagics().size() >= minMatches);
 
         // Check on the overall magics
-        List<Magic> htmlMagics = new ArrayList<Magic>();
+        List<Magic> htmlMagics = new ArrayList<>();
         for (Magic magic : magics) {
             if (magic.getType().toString().equals("text/html")) {
                 htmlMagics.add(magic);
@@ -124,7 +124,7 @@ public class MimeTypesReaderTest {
                 excel.getMagics().size(), excel.getMagics().size() >= minMatches);
 
         // Check on the overall magics
-        List<Magic> excelMagics = new ArrayList<Magic>();
+        List<Magic> excelMagics = new ArrayList<>();
         for (Magic magic : magics) {
             if (magic.getType().toString().equals("application/vnd.ms-excel")) {
                 excelMagics.add(magic);

@@ -605,7 +605,7 @@ public class PDFParserTest extends TikaTest {
     @Test
     public void testVersions() throws Exception {
 
-        Map<String, String> dcFormat = new HashMap<String, String>();
+        Map<String, String> dcFormat = new HashMap<>();
         dcFormat.put("4.x", "application/pdf; version=1.3");
         dcFormat.put("5.x", "application/pdf; version=1.4");
         dcFormat.put("6.x", "application/pdf; version=1.5");
@@ -615,7 +615,7 @@ public class PDFParserTest extends TikaTest {
         dcFormat.put("10.x", "application/pdf; version=1.7");
         dcFormat.put("11.x.PDFA-1b", "application/pdf; version=1.7");
 
-        Map<String, String> pdfVersions = new HashMap<String, String>();
+        Map<String, String> pdfVersions = new HashMap<>();
         pdfVersions.put("4.x", "1.3");
         pdfVersions.put("5.x", "1.4");
         pdfVersions.put("6.x", "1.5");
@@ -625,7 +625,7 @@ public class PDFParserTest extends TikaTest {
         pdfVersions.put("10.x", "1.7");
         pdfVersions.put("11.x.PDFA-1b", "1.7");
 
-        Map<String, String> pdfExtensionVersions = new HashMap<String, String>();
+        Map<String, String> pdfExtensionVersions = new HashMap<>();
         pdfExtensionVersions.put("9.x", "1.7 Adobe Extension Level 3");
         pdfExtensionVersions.put("10.x", "1.7 Adobe Extension Level 8");
         pdfExtensionVersions.put("11.x.PDFA-1b", "1.7 Adobe Extension Level 8");

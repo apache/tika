@@ -33,7 +33,7 @@ import org.xml.sax.SAXException;
  */
 public class ToHTMLContentHandler extends ToXMLContentHandler {
 
-    private static final Set<String> EMPTY_ELEMENTS = new HashSet<String>(
+    private static final Set<String> EMPTY_ELEMENTS = new HashSet<>(
             Arrays.asList("area", "base", "basefont", "br", "col", "frame", "hr", "img", "input",
                     "isindex", "link", "meta", "param"));
 

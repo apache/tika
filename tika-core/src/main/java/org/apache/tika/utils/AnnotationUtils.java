@@ -74,12 +74,9 @@ public class AnnotationUtils {
 
         for (final AccessibleObject member : members) {
             if (member.isAnnotationPresent(annotation)) {
-                AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                    @Override
-                    public Void run() {
-                        member.setAccessible(true);
-                        return null;
-                    }
+                AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                    member.setAccessible(true);
+                    return null;
                 });
                 annotatedMembers.add(member);
             }

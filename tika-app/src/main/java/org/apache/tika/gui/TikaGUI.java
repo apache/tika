@@ -28,7 +28,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
-import javax.swing.ProgressMonitorInputStream;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.event.HyperlinkEvent;
@@ -72,7 +71,6 @@ import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.DelegatingParser;
 import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -123,16 +121,12 @@ public class TikaGUI extends JFrame
         }
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         final TikaConfig finalConfig = config;
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                new TikaGUI(new DigestingParser(
-                        new AutoDetectParser(finalConfig),
-                        new CommonsDigester(MAX_MARK,
-                                CommonsDigester.DigestAlgorithm.MD5,
-                                CommonsDigester.DigestAlgorithm.SHA256)
-                )).setVisible(true);
-            }
-        });
+        SwingUtilities.invokeLater(() -> new TikaGUI(new DigestingParser(
+                new AutoDetectParser(finalConfig),
+                new CommonsDigester(MAX_MARK,
+                        CommonsDigester.DigestAlgorithm.MD5,
+                        CommonsDigester.DigestAlgorithm.SHA256)
+        )).setVisible(true));
     }
 
     /**
@@ -628,7 +622,7 @@ public class TikaGUI extends JFrame
      * parser.
      */
     private static class ImageSavingParser extends AbstractParser {
-        private Map<String, File> wanted = new HashMap<String, File>();
+        private Map<String, File> wanted = new HashMap<>();
         private Parser downstreamParser;
         private File tmpDir;
 

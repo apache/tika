@@ -89,13 +89,8 @@ public class JackcessParserTest extends TikaTest {
     @Test
     public void testPassword() throws Exception {
         ParseContext c = new ParseContext();
-        c.set(PasswordProvider.class, new PasswordProvider() {
-            @Override
-            public String getPassword(Metadata metadata) {
-                return "tika";
-            }
-        });
-        String content = null;
+        c.set(PasswordProvider.class, metadata -> "tika");
+        String content;
         try (InputStream is = this
                 .getResourceAsStream("/test-documents/testAccess2_encrypted.accdb")) {
             content = getText(is, AUTO_DETECT_PARSER, c);
@@ -103,12 +98,7 @@ public class JackcessParserTest extends TikaTest {
         assertContains("red and brown", content);
 
         //now try wrong password
-        c.set(PasswordProvider.class, new PasswordProvider() {
-            @Override
-            public String getPassword(Metadata metadata) {
-                return "WRONG";
-            }
-        });
+        c.set(PasswordProvider.class, metadata -> "WRONG");
 
         boolean ex = false;
         try (InputStream is = this
@@ -120,12 +110,7 @@ public class JackcessParserTest extends TikaTest {
         assertTrue("failed to throw encrypted document exception for wrong password", ex);
 
         //now try null
-        c.set(PasswordProvider.class, new PasswordProvider() {
-            @Override
-            public String getPassword(Metadata metadata) {
-                return null;
-            }
-        });
+        c.set(PasswordProvider.class, metadata -> null);
 
         ex = false;
         try (InputStream is = this
@@ -151,12 +136,7 @@ public class JackcessParserTest extends TikaTest {
 
         //now try password on file that doesn't need a password
         c = new ParseContext();
-        c.set(PasswordProvider.class, new PasswordProvider() {
-            @Override
-            public String getPassword(Metadata metadata) {
-                return "tika";
-            }
-        });
+        c.set(PasswordProvider.class, metadata -> "tika");
         ex = false;
         try (InputStream is = this.getResourceAsStream("/test-documents/testAccess2.accdb")) {
             content = getText(is, AUTO_DETECT_PARSER, c);

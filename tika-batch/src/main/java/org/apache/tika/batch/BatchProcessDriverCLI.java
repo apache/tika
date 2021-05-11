@@ -78,12 +78,7 @@ public class BatchProcessDriverCLI {
         final BatchProcessDriverCLI runner = new BatchProcessDriverCLI(args);
 
         //make absolutely certain that the forked process is terminated
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                runner.stop();
-            }
-        });
+        Runtime.getRuntime().addShutdownHook(new Thread(runner::stop));
 
         runner.execute();
         System.out.println("FSBatchProcessDriver has gracefully completed");
@@ -91,7 +86,7 @@ public class BatchProcessDriverCLI {
     }
 
     private String[] tryToReadMaxRestarts(String[] commandLine) {
-        List<String> args = new ArrayList<String>();
+        List<String> args = new ArrayList<>();
         for (int i = 0; i < commandLine.length; i++) {
             String arg = commandLine[i];
             if (arg.equals("-maxRestarts")) {

@@ -98,7 +98,7 @@ public class TestParsingExample {
     public void testSerializedRecursiveParserWrapperExample()
             throws IOException, SAXException, TikaException {
         String json = parsingExample.serializedRecursiveParserWrapperExample();
-        assertTrue(json.indexOf("When in the Course") > -1);
+        assertTrue(json.contains("When in the Course"));
         //now try deserializing the JSON
         List<Metadata> metadataList = JsonMetadataList.fromJson(new StringReader(json));
         assertEquals(12, metadataList.size());

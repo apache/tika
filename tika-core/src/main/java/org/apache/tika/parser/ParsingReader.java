@@ -147,18 +147,16 @@ public class ParsingReader extends Reader {
      */
     public ParsingReader(Parser parser, InputStream stream, final Metadata metadata,
                          ParseContext context) throws IOException {
-        this(parser, stream, metadata, context, new Executor() {
-            public void execute(Runnable command) {
-                String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
-                if (name != null) {
-                    name = "Apache Tika: " + name;
-                } else {
-                    name = "Apache Tika";
-                }
-                Thread thread = new Thread(command, name);
-                thread.setDaemon(true);
-                thread.start();
+        this(parser, stream, metadata, context, command -> {
+            String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+            if (name != null) {
+                name = "Apache Tika: " + name;
+            } else {
+                name = "Apache Tika";
             }
+            Thread thread = new Thread(command, name);
+            thread.setDaemon(true);
+            thread.start();
         });
     }
 

@@ -88,12 +88,7 @@ public class TikaInputStreamTest {
 
     @Test
     public void testInputStreamFactoryBased() throws IOException {
-        TikaInputStream stream = TikaInputStream.get(new InputStreamFactory() {
-            @Override
-            public InputStream getInputStream() throws IOException {
-                return IOUtils.toInputStream("Hello, World!", UTF_8);
-            }
-        });
+        TikaInputStream stream = TikaInputStream.get(() -> IOUtils.toInputStream("Hello, World!", UTF_8));
         assertFalse(stream.hasFile());
         assertNull(stream.getOpenContainer());
         assertNotNull(stream.getInputStreamFactory());

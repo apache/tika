@@ -71,13 +71,13 @@ public class SourceCodeParserTest extends TikaTest {
                         createMetadata("text/x-java-source"));
 
         assertTrue(textContent.length() > 0);
-        assertTrue(textContent.indexOf("html") < 0);
+        assertFalse(textContent.contains("html"));
 
         textContent =
                 getText(new ByteArrayInputStream("public class HelloWorld {}".getBytes(UTF_8)),
                         sourceCodeParser, createMetadata("text/x-java-source"));
         assertTrue(textContent.length() > 0);
-        assertTrue(textContent.indexOf("html") < 0);
+        assertFalse(textContent.contains("html"));
     }
 
     @Test

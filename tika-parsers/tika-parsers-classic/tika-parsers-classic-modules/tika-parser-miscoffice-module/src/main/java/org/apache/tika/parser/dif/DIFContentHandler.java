@@ -41,8 +41,8 @@ public class DIFContentHandler extends DefaultHandler {
         this.delegate = delegate;
         this.isLeaf = false;
         this.metadata = metadata;
-        this.treeStack = new Stack<String>();
-        this.dataStack = new Stack<String>();
+        this.treeStack = new Stack<>();
+        this.dataStack = new Stack<>();
     }
 
     @Override

@@ -77,7 +77,7 @@ public class EpubParser extends AbstractParser {
     private static final long serialVersionUID = 215176772484050550L;
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<MediaType>(Arrays.asList(MediaType.application("epub+zip"),
+            new HashSet<>(Arrays.asList(MediaType.application("epub+zip"),
                     MediaType.application("x-ibooks+zip"))));
     @Field
     boolean streaming = false;

@@ -40,7 +40,7 @@ class ClassLoaderProxy extends ClassLoader implements ForkProxy {
      * lookup of commonly accessed, but often not present, resources like
      * <code>META-INF/services/javax.xml.parsers.SAXParserFactory</code>.
      */
-    private final Set<String> notFound = new HashSet<String>();
+    private final Set<String> notFound = new HashSet<>();
 
     private final int resource;
 
@@ -92,7 +92,7 @@ class ClassLoaderProxy extends ClassLoader implements ForkProxy {
         output.flush();
 
         // Receive the response
-        List<URL> resources = new ArrayList<URL>();
+        List<URL> resources = new ArrayList<>();
         while (input.readBoolean()) {
             resources.add(MemoryURLStreamHandler.createURL(readStream()));
         }

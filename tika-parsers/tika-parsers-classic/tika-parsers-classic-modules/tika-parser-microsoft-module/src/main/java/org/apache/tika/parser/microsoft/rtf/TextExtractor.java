@@ -137,11 +137,11 @@ final class TextExtractor {
     // (f0, f1, f2, etc.) to fonts and charsets, using the
     // \fcharsetN control word.  This mapping maps from the
     // N to corresponding Java charset:
-    private static final Map<Integer, Charset> FCHARSET_MAP = new HashMap<Integer, Charset>();
+    private static final Map<Integer, Charset> FCHARSET_MAP = new HashMap<>();
     // The RTF may specify the \ansicpgN charset in the
     // header; this maps the N to the corresponding Java
     // character set:
-    private static final Map<Integer, Charset> ANSICPG_MAP = new HashMap<Integer, Charset>();
+    private static final Map<Integer, Charset> ANSICPG_MAP = new HashMap<>();
 
     static {
         FCHARSET_MAP.put(0, WINDOWS_1252); // ANSI
@@ -249,11 +249,11 @@ final class TextExtractor {
     // Holds the font table from this RTF doc, mapping
     // the font number (from \fN control word) to the
     // corresponding charset:
-    private final Map<Integer, Charset> fontToCharset = new HashMap<Integer, Charset>();
+    private final Map<Integer, Charset> fontToCharset = new HashMap<>();
     // Group stack: when we open a new group, we push
     // the previous group state onto the stack; when we
     // close the group, we restore it
-    private final LinkedList<GroupState> groupStates = new LinkedList<GroupState>();
+    private final LinkedList<GroupState> groupStates = new LinkedList<>();
     private final StringBuilder pendingBuffer = new StringBuilder();
     private final XHTMLContentHandler out;
     private final Metadata metadata;
@@ -298,8 +298,8 @@ final class TextExtractor {
     private int fieldState;
     // Non-zero list index
     private int pendingListEnd;
-    private Map<Integer, ListDescriptor> listTable = new HashMap<Integer, ListDescriptor>();
-    private Map<Integer, ListDescriptor> listOverrideTable = new HashMap<Integer, ListDescriptor>();
+    private Map<Integer, ListDescriptor> listTable = new HashMap<>();
+    private Map<Integer, ListDescriptor> listOverrideTable = new HashMap<>();
     private Map<Integer, ListDescriptor> currentListTable;
     private ListDescriptor currentList;
     private int listTableLevel = -1;

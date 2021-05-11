@@ -42,7 +42,7 @@ public class LanguageProfile {
     /**
      * The ngrams that make up this profile.
      */
-    private final Map<String, Counter> ngrams = new HashMap<String, Counter>();
+    private final Map<String, Counter> ngrams = new HashMap<>();
     /**
      * Sorted ngram cache for faster distance calculation.
      */
@@ -143,7 +143,7 @@ public class LanguageProfile {
         double thisCount = Math.max(this.count, 1.0);
         double thatCount = Math.max(that.count, 1.0);
 
-        Set<String> ngrams = new HashSet<String>();
+        Set<String> ngrams = new HashSet<>();
         ngrams.addAll(this.ngrams.keySet());
         ngrams.addAll(that.ngrams.keySet());
         for (String ngram : ngrams) {
@@ -266,7 +266,7 @@ public class LanguageProfile {
 
         private List<Map.Entry<String, Counter>> getSortedNgrams() {
             List<Map.Entry<String, Counter>> entries =
-                    new ArrayList<Map.Entry<String, Counter>>(ngrams.size());
+                    new ArrayList<>(ngrams.size());
             entries.addAll(ngrams.entrySet());
             entries.sort(Map.Entry.comparingByKey());
             return entries;

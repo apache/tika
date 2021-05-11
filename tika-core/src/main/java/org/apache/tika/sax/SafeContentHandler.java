@@ -54,21 +54,13 @@ public class SafeContentHandler extends ContentHandlerDecorator {
      * Output through the {@link ContentHandler#characters(char[], int, int)}
      * method of the decorated content handler.
      */
-    private final Output charactersOutput = new Output() {
-        public void write(char[] ch, int start, int length) throws SAXException {
-            SafeContentHandler.super.characters(ch, start, length);
-        }
-    };
+    private final Output charactersOutput = SafeContentHandler.super::characters;
     /**
      * Output through the
      * {@link ContentHandler#ignorableWhitespace(char[], int, int)}
      * method of the decorated content handler.
      */
-    private final Output ignorableWhitespaceOutput = new Output() {
-        public void write(char[] ch, int start, int length) throws SAXException {
-            SafeContentHandler.super.ignorableWhitespace(ch, start, length);
-        }
-    };
+    private final Output ignorableWhitespaceOutput = SafeContentHandler.super::ignorableWhitespace;
 
     public SafeContentHandler(ContentHandler handler) {
         super(handler);

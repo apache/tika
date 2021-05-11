@@ -116,17 +116,15 @@ public class ExternalParser extends AbstractParser {
      * @return The thread that is created and started
      */
     private static Thread ignoreStream(final InputStream stream, boolean waitForDeath) {
-        Thread t = new Thread() {
-            public void run() {
-                try {
-                    IOUtils.copy(stream, NULL_OUTPUT_STREAM);
-                } catch (IOException e) {
-                    //swallow
-                } finally {
-                    IOUtils.closeQuietly(stream);
-                }
+        Thread t = new Thread(() -> {
+            try {
+                IOUtils.copy(stream, NULL_OUTPUT_STREAM);
+            } catch (IOException e) {
+                //swallow
+            } finally {
+                IOUtils.closeQuietly(stream);
             }
-        };
+        });
         t.start();
         if (waitForDeath) {
             try {
@@ -173,10 +171,7 @@ public class ExternalParser extends AbstractParser {
                 }
             }
             return true;
-        } catch (IOException e) {
-            // Some problem, command is there or is broken
-            return false;
-        } catch (InterruptedException | TimeoutException ie) {
+        } catch (IOException | InterruptedException | TimeoutException e) {
             // Some problem, command is there or is broken
             return false;
         } catch (SecurityException se) {
@@ -207,7 +202,7 @@ public class ExternalParser extends AbstractParser {
     }
 
     public void setSupportedTypes(Set<MediaType> supportedTypes) {
-        this.supportedTypes = Collections.unmodifiableSet(new HashSet<MediaType>(supportedTypes));
+        this.supportedTypes = Collections.unmodifiableSet(new HashSet<>(supportedTypes));
     }
 
     public String[] getCommand() {
@@ -292,11 +287,11 @@ public class ExternalParser extends AbstractParser {
             System.arraycopy(command, 0, cmd, 0, command.length);
         }
         for (int i = 0; i < cmd.length; i++) {
-            if (cmd[i].indexOf(INPUT_FILE_TOKEN) != -1) {
+            if (cmd[i].contains(INPUT_FILE_TOKEN)) {
                 cmd[i] = cmd[i].replace(INPUT_FILE_TOKEN, stream.getFile().getPath());
                 inputToStdIn = false;
             }
-            if (cmd[i].indexOf(OUTPUT_FILE_TOKEN) != -1) {
+            if (cmd[i].contains(OUTPUT_FILE_TOKEN)) {
                 output = tmp.createTemporaryFile();
                 outputFromStdOut = false;
                 cmd[i] = cmd[i].replace(OUTPUT_FILE_TOKEN, output.getPath());
@@ -390,16 +385,14 @@ public class ExternalParser extends AbstractParser {
      * @param stream  input stream
      */
     private void sendInput(final Process process, final InputStream stream) {
-        Thread t = new Thread() {
-            public void run() {
-                OutputStream stdin = process.getOutputStream();
-                try {
-                    IOUtils.copy(stream, stdin);
-                } catch (IOException e) {
-                    //swallow
-                }
+        Thread t = new Thread(() -> {
+            OutputStream stdin = process.getOutputStream();
+            try {
+                IOUtils.copy(stream, stdin);
+            } catch (IOException e) {
+                //swallow
             }
-        };
+        });
         t.start();
         try {
             t.join();
@@ -408,38 +401,36 @@ public class ExternalParser extends AbstractParser {
     }
 
     private void extractMetadata(final InputStream stream, final Metadata metadata) {
-        Thread t = new Thread() {
-            public void run() {
-                BufferedReader reader;
-                reader = new BufferedReader(new InputStreamReader(stream, UTF_8));
-                try {
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        boolean consumed = false;
-                        for (Pattern p : metadataPatterns.keySet()) {
-                            Matcher m = p.matcher(line);
-                            if (m.find()) {
-                                consumed = true;
-                                if (metadataPatterns.get(p) != null &&
-                                        !metadataPatterns.get(p).equals("")) {
-                                    metadata.add(metadataPatterns.get(p), m.group(1));
-                                } else {
-                                    metadata.add(m.group(1), m.group(2));
-                                }
+        Thread t = new Thread(() -> {
+            BufferedReader reader;
+            reader = new BufferedReader(new InputStreamReader(stream, UTF_8));
+            try {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    boolean consumed = false;
+                    for (Pattern p : metadataPatterns.keySet()) {
+                        Matcher m = p.matcher(line);
+                        if (m.find()) {
+                            consumed = true;
+                            if (metadataPatterns.get(p) != null &&
+                                    !metadataPatterns.get(p).equals("")) {
+                                metadata.add(metadataPatterns.get(p), m.group(1));
+                            } else {
+                                metadata.add(m.group(1), m.group(2));
                             }
                         }
-                        if (!consumed) {
-                            ignoredLineConsumer.consume(line);
-                        }
                     }
-                } catch (IOException e) {
-                    // Ignore
-                } finally {
-                    IOUtils.closeQuietly(reader);
-                    IOUtils.closeQuietly(stream);
+                    if (!consumed) {
+                        ignoredLineConsumer.consume(line);
+                    }
                 }
+            } catch (IOException e) {
+                // Ignore
+            } finally {
+                IOUtils.closeQuietly(reader);
+                IOUtils.closeQuietly(stream);
             }
-        };
+        });
         t.start();
         try {
             t.join();
@@ -456,11 +447,8 @@ public class ExternalParser extends AbstractParser {
         /**
          * A null consumer
          */
-        LineConsumer NULL = new LineConsumer() {
-            @Override
-            public void consume(String line) {
-                // ignores
-            }
+        LineConsumer NULL = line -> {
+            // ignores
         };
 
         /**

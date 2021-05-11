@@ -82,7 +82,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
      */
     protected static HeaderFooterHelper hfHelper = new HeaderFooterHelper();
     protected final DataFormatter formatter;
-    protected final List<PackagePart> sheetParts = new ArrayList<PackagePart>();
+    protected final List<PackagePart> sheetParts = new ArrayList<>();
     protected final Map<String, String> drawingHyperlinks = new HashMap<>();
     protected Metadata metadata;
     protected ParseContext parseContext;
@@ -146,10 +146,8 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
 
             iter = (XSSFReader.SheetIterator) xssfReader.getSheetsData();
             strings = new ReadOnlySharedStringsTable(container, config.isConcatenatePhoneticRuns());
-        } catch (InvalidFormatException e) {
+        } catch (OpenXML4JException e) {
             throw new XmlException(e);
-        } catch (OpenXML4JException oe) {
-            throw new XmlException(oe);
         }
 
         while (iter.hasNext()) {
@@ -288,14 +286,14 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                             "diagram-data", parentDrawing.getPackagePart(), metadata,
                             new OOXMLWordAndPowerPointTextHandler(
                                     new OOXMLTikaBodyPartHandler(xhtml),
-                                    new HashMap<String, String>()//empty
+                                    new HashMap<>()//empty
                             ));
                     //dump chart data
                     handleGeneralTextContainingPart(XSSFRelation.CHART.getRelation(), "chart",
                             parentDrawing.getPackagePart(), metadata,
                             new OOXMLWordAndPowerPointTextHandler(
                                     new OOXMLTikaBodyPartHandler(xhtml),
-                                    new HashMap<String, String>()//empty
+                                    new HashMap<>()//empty
                             ));
                 }
                 seenParentDrawings.add(parentDrawing.getPackagePart().getPartName().toString());
@@ -371,7 +369,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
      */
     @Override
     protected List<PackagePart> getMainDocumentParts() throws TikaException {
-        List<PackagePart> parts = new ArrayList<PackagePart>();
+        List<PackagePart> parts = new ArrayList<>();
         for (PackagePart part : sheetParts) {
             // Add the sheet
             parts.add(part);
@@ -423,8 +421,8 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             this.includeHeadersFooters = config.isIncludeHeadersAndFooters();
             this.includeMissingRows = config.isIncludeMissingRows();
             this.xhtml = xhtml;
-            headers = new ArrayList<String>();
-            footers = new ArrayList<String>();
+            headers = new ArrayList<>();
+            footers = new ArrayList<>();
         }
 
         public void startRow(int rowNum) {

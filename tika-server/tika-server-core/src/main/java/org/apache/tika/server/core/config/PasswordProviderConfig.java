@@ -48,12 +48,7 @@ public class PasswordProviderConfig implements ParseContextConfig {
         }
         if (tmpPassword != null) {
             final String password = tmpPassword;
-            context.set(PasswordProvider.class, new PasswordProvider() {
-                @Override
-                public String getPassword(Metadata metadata) {
-                    return password;
-                }
-            });
+            context.set(PasswordProvider.class, metadata1 -> password);
         }
     }
 

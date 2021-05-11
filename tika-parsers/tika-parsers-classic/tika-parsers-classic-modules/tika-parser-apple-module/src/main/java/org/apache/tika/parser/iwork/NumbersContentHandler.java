@@ -48,7 +48,7 @@ class NumbersContentHandler extends DefaultHandler {
     private int numberOfColumns = -1;
     private int currentColumn = 0;
 
-    private Map<String, String> menuItems = new HashMap<String, String>();
+    private Map<String, String> menuItems = new HashMap<>();
     private String currentMenuItemId;
 
     NumbersContentHandler(XHTMLContentHandler xhtml, Metadata metadata) {
@@ -111,7 +111,7 @@ class NumbersContentHandler extends DefaultHandler {
         }
 
         if ("sf:menu-choices".equals(qName)) {
-            menuItems = new HashMap<String, String>();
+            menuItems = new HashMap<>();
         }
 
         if (inTable && "sf:grid".equals(qName)) {

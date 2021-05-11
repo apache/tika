@@ -51,7 +51,7 @@ public class TNEFParser extends AbstractParser {
     private static final long serialVersionUID = 4611820730372823452L;
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<MediaType>(Arrays.asList(MediaType.application("vnd.ms-tnef"),
+            new HashSet<>(Arrays.asList(MediaType.application("vnd.ms-tnef"),
                     MediaType.application("ms-tnef"), MediaType.application("x-tnef"))));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {

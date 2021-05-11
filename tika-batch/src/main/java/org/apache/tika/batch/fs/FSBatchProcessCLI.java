@@ -113,7 +113,7 @@ public class FSBatchProcessCLI {
             System.exit(BatchProcessDriverCLI.PROCESS_NO_RESTART_EXIT_CODE);
         }
 
-        Map<String, String> mapArgs = new HashMap<String, String>();
+        Map<String, String> mapArgs = new HashMap<>();
         for (Option option : line.getOptions()) {
             String v = option.getValue();
             if (v == null || v.equals("")) {

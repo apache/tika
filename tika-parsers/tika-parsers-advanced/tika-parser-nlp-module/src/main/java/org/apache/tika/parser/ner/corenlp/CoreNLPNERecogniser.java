@@ -158,7 +158,7 @@ public class CoreNLPNERecogniser implements NERecogniser {
             for (Object entry : entries) {
                 String entityType = (String) firstField.get(entry);
                 if (!names.containsKey(entityType)) {
-                    names.put(entityType, new HashSet<String>());
+                    names.put(entityType, new HashSet<>());
                 }
                 Integer start = (Integer) secondField.get(entry);
                 Integer end = (Integer) thirdField.get(entry);

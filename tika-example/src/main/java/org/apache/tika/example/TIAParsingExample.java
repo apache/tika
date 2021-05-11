@@ -126,7 +126,7 @@ public class TIAParsingExample {
         InputStream stream = new ByteArrayInputStream(new byte[0]);
         ContentHandler handler = new DefaultHandler();
         ParseContext context = new ParseContext();
-        Map<MediaType, Parser> parsersByType = new HashMap<MediaType, Parser>();
+        Map<MediaType, Parser> parsersByType = new HashMap<>();
         parsersByType.put(MediaType.parse("text/html"), new HtmlParser());
         parsersByType.put(MediaType.parse("application/xml"), new XMLParser());
 

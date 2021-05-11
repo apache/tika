@@ -221,7 +221,7 @@ public class SQLite3ParserTest extends TikaTest {
 
     public static class InputStreamResettingHandler implements EmbeddedResourceHandler {
 
-        public List<byte[]> bytes = new ArrayList<byte[]>();
+        public List<byte[]> bytes = new ArrayList<>();
 
         @Override
         public void handle(String filename, MediaType mediaType, InputStream stream) {

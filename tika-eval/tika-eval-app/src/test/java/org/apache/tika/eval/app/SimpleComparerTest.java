@@ -353,7 +353,7 @@ public class SimpleComparerTest extends TikaTest {
         int i = 0;
         System.out.println("TABLE: " + tableInfo.getName());
         for (Map<Cols, String> row : table) {
-            SortedSet<Cols> keys = new TreeSet<Cols>(row.keySet());
+            SortedSet<Cols> keys = new TreeSet<>(row.keySet());
             for (Cols key : keys) {
                 System.out.println(i + " :: " + key + " : " + row.get(key));
             }
@@ -363,7 +363,7 @@ public class SimpleComparerTest extends TikaTest {
     }
 
     private void debugPrintRow(Map<Cols, String> row) {
-        SortedSet<Cols> keys = new TreeSet<Cols>(row.keySet());
+        SortedSet<Cols> keys = new TreeSet<>(row.keySet());
         for (Cols key : keys) {
             System.out.println(key + " : " + row.get(key));
         }

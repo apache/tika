@@ -18,7 +18,6 @@ package org.apache.tika.fuzzing;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.ParseContext;
 
 import java.io.IOException;
 import java.io.InputStream;

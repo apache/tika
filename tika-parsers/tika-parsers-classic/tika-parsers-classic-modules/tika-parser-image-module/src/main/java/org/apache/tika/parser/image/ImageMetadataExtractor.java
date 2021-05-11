@@ -117,9 +117,7 @@ public class ImageMetadataExtractor {
         try {
             com.drew.metadata.Metadata jpegMetadata = JpegMetadataReader.readMetadata(file);
             handle(jpegMetadata);
-        } catch (JpegProcessingException e) {
-            throw new TikaException("Can't read JPEG metadata", e);
-        } catch (MetadataException e) {
+        } catch (JpegProcessingException | MetadataException e) {
             throw new TikaException("Can't read JPEG metadata", e);
         }
     }
@@ -128,9 +126,7 @@ public class ImageMetadataExtractor {
         try {
             com.drew.metadata.Metadata tiffMetadata = TiffMetadataReader.readMetadata(file);
             handle(tiffMetadata);
-        } catch (MetadataException e) {
-            throw new TikaException("Can't read TIFF metadata", e);
-        } catch (TiffProcessingException e) {
+        } catch (MetadataException | TiffProcessingException e) {
             throw new TikaException("Can't read TIFF metadata", e);
         }
     }
@@ -143,9 +139,7 @@ public class ImageMetadataExtractor {
             handle(webPMetadata);
         } catch (IOException e) {
             throw e;
-        } catch (RiffProcessingException e) {
-            throw new TikaException("Can't process Riff data", e);
-        } catch (MetadataException e) {
+        } catch (RiffProcessingException | MetadataException e) {
             throw new TikaException("Can't process Riff data", e);
         }
     }

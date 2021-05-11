@@ -67,7 +67,7 @@ public class MetadataResourceTest extends CXFTestBase {
 
     @Override
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
-        List<Object> providers = new ArrayList<Object>();
+        List<Object> providers = new ArrayList<>();
         providers.add(new JSONMessageBodyWriter());
         providers.add(new CSVMessageBodyWriter());
         providers.add(new XMPMessageBodyWriter());
@@ -85,7 +85,7 @@ public class MetadataResourceTest extends CXFTestBase {
 
         CSVParser csvReader = new CSVParser(reader, CSVFormat.EXCEL);
 
-        Map<String, String> metadata = new HashMap<String, String>();
+        Map<String, String> metadata = new HashMap<>();
 
         for (CSVRecord r : csvReader) {
             metadata.put(r.get(0), r.get(1));
@@ -126,7 +126,7 @@ public class MetadataResourceTest extends CXFTestBase {
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         CSVParser csvReader = new CSVParser(reader, CSVFormat.EXCEL);
 
-        Map<String, String> metadata = new HashMap<String, String>();
+        Map<String, String> metadata = new HashMap<>();
 
         for (CSVRecord r : csvReader) {
             metadata.put(r.get(0), r.get(1));

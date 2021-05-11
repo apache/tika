@@ -112,12 +112,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
 
         // Wrong password currently silently gives no content
         // Ideally we'd like Commons Compress to give an error, but it doesn't...
-        recursingContext.set(PasswordProvider.class, new PasswordProvider() {
-            @Override
-            public String getPassword(Metadata metadata) {
-                return "wrong";
-            }
-        });
+        recursingContext.set(PasswordProvider.class, metadata1 -> "wrong");
         handler = new BodyContentHandler();
         try (InputStream stream = getResourceAsStream(
                 "/test-documents/test7Z_protected_passTika.7z")) {
@@ -137,12 +132,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
         ex = false;
         // Right password works fine if JCE Unlimited Strength has been installed!!!
         if (isStrongCryptoAvailable()) {
-            recursingContext.set(PasswordProvider.class, new PasswordProvider() {
-                @Override
-                public String getPassword(Metadata metadata) {
-                    return "Tika";
-                }
-            });
+            recursingContext.set(PasswordProvider.class, metadata12 -> "Tika");
             handler = new BodyContentHandler();
             try (InputStream stream = getResourceAsStream(
                     "/test-documents/test7Z_protected_passTika.7z")) {
@@ -163,12 +153,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
         } else {
             //if jce is not installed, test for IOException wrapped in TikaException
             boolean ioe = false;
-            recursingContext.set(PasswordProvider.class, new PasswordProvider() {
-                @Override
-                public String getPassword(Metadata metadata) {
-                    return "Tika";
-                }
-            });
+            recursingContext.set(PasswordProvider.class, metadata13 -> "Tika");
             handler = new BodyContentHandler();
             try (InputStream stream = getResourceAsStream(
                     "/test-documents/test7Z_protected_passTika.7z")) {

@@ -38,17 +38,17 @@ class Patterns implements Serializable {
     /**
      * Index of exact name patterns.
      */
-    private final Map<String, MimeType> names = new HashMap<String, MimeType>();
+    private final Map<String, MimeType> names = new HashMap<>();
 
     /**
      * Index of extension patterns of the form "*extension".
      */
-    private final Map<String, MimeType> extensions = new HashMap<String, MimeType>();
+    private final Map<String, MimeType> extensions = new HashMap<>();
     /**
      * Index of generic glob patterns, sorted by length.
      */
     private final SortedMap<String, MimeType> globs =
-            new TreeMap<String, MimeType>(new LengthComparator());
+            new TreeMap<>(new LengthComparator());
     private int minExtensionLength = Integer.MAX_VALUE;
     private int maxExtensionLength = 0;
 

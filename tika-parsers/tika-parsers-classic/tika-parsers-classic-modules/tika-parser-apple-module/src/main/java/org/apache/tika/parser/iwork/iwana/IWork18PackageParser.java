@@ -45,7 +45,7 @@ import org.apache.tika.parser.ParseContext;
 public class IWork18PackageParser extends AbstractParser {
 
     private final static Set<MediaType> supportedTypes = Collections.unmodifiableSet(
-            new HashSet<MediaType>(Arrays.asList(IWork18DocumentType.KEYNOTE18.getType(),
+            new HashSet<>(Arrays.asList(IWork18DocumentType.KEYNOTE18.getType(),
                     IWork18DocumentType.NUMBERS18.getType(),
                     IWork18DocumentType.PAGES18.getType())));
 

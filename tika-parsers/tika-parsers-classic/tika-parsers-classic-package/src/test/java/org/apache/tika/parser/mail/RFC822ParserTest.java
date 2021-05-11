@@ -120,11 +120,7 @@ public class RFC822ParserTest extends TikaTest {
 
         // Try again, this time with the password supplied
         // Check that we also get the zip's contents as well
-        context.set(PasswordProvider.class, new PasswordProvider() {
-            public String getPassword(Metadata metadata) {
-                return "test";
-            }
-        });
+        context.set(PasswordProvider.class, metadata1 -> "test");
         stream = getStream("test-documents/testRFC822_encrypted_zip");
         handler = new BodyContentHandler();
         EXTRACT_ALL_ALTERNATIVES_PARSER.parse(stream, handler, metadata, context);

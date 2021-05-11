@@ -556,16 +556,11 @@ public class SXWPFExtractorTest extends TikaTest {
 
     @Test
     public void testEncrypted() throws Exception {
-        Map<String, String> tests = new HashMap<String, String>();
+        Map<String, String> tests = new HashMap<>();
         tests.put("testWORD_protected_passtika.docx", "This is an encrypted Word 2007 File");
 
         Metadata m = new Metadata();
-        PasswordProvider passwordProvider = new PasswordProvider() {
-            @Override
-            public String getPassword(Metadata metadata) {
-                return "tika";
-            }
-        };
+        PasswordProvider passwordProvider = metadata -> "tika";
 
         OfficeParserConfig opc = new OfficeParserConfig();
         opc.setUseSAXDocxExtractor(true);

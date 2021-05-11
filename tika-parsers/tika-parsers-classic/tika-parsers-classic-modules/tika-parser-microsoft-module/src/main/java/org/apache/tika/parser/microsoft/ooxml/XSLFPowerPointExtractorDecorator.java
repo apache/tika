@@ -175,13 +175,13 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             handleGeneralTextContainingPart(RELATION_DIAGRAM_DATA, "diagram-data",
                     slide.getPackagePart(), metadata,
                     new OOXMLWordAndPowerPointTextHandler(new OOXMLTikaBodyPartHandler(xhtml),
-                            new HashMap<String, String>()//empty
+                            new HashMap<>()//empty
                     ));
             //now dump chart data
             handleGeneralTextContainingPart(XSLFRelation.CHART.getRelation(), "chart",
                     slide.getPackagePart(), metadata,
                     new OOXMLWordAndPowerPointTextHandler(new OOXMLTikaBodyPartHandler(xhtml),
-                            new HashMap<String, String>()//empty
+                            new HashMap<>()//empty
                     ));
         }
     }
@@ -322,10 +322,8 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 PackagePart slidePart;
                 try {
                     slidePart = document.getSlidePart(ctSlide);
-                } catch (IOException e) {
+                } catch (IOException | XmlException e) {
                     throw new TikaException("Broken OOXML file", e);
-                } catch (XmlException xe) {
-                    throw new TikaException("Broken OOXML file", xe);
                 }
                 addSlideParts(slidePart, parts);
             }

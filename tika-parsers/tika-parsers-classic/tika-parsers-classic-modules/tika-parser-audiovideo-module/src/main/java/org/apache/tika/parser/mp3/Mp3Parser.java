@@ -112,7 +112,7 @@ public class Mp3Parser extends AbstractParser {
 
         // Go in order of preference
         // Currently, that's newest to oldest
-        List<ID3Tags> tags = new ArrayList<ID3Tags>();
+        List<ID3Tags> tags = new ArrayList<>();
 
         if (v24 != null && v24.getTagsPresent()) {
             tags.add(v24);

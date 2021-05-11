@@ -35,7 +35,7 @@ class ExtendedGUID implements Comparable<ExtendedGUID> {
     @Override
     public int compareTo(ExtendedGUID other) {
         if (other.guid.equals(guid)) {
-            new Long(n).compareTo(other.n);
+            return Long.compare(n, other.n);
         }
         return guid.compareTo(other.guid);
     }

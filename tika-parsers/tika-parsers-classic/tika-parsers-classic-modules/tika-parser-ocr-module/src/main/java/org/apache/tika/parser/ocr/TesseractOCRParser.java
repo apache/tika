@@ -439,23 +439,21 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
      * once fully processed.
      */
     private Thread logStream(final InputStream stream, final StringBuilder out) {
-        return new Thread() {
-            public void run() {
-                Reader reader = new InputStreamReader(stream, UTF_8);
-                char[] buffer = new char[1024];
-                try {
-                    for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
-                        out.append(buffer, 0, n);
-                    }
-                } catch (IOException e) {
-                    //swallow
-                } finally {
-                    IOUtils.closeQuietly(stream);
+        return new Thread(() -> {
+            Reader reader = new InputStreamReader(stream, UTF_8);
+            char[] buffer = new char[1024];
+            try {
+                for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
+                    out.append(buffer, 0, n);
                 }
-
-                LOG.debug("{}", out);
+            } catch (IOException e) {
+                //swallow
+            } finally {
+                IOUtils.closeQuietly(stream);
             }
-        };
+
+            LOG.debug("{}", out);
+        });
     }
 
     @Override

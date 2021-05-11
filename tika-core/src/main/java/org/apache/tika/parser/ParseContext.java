@@ -53,7 +53,7 @@ public class ParseContext implements Serializable {
     /**
      * Map of objects in this context
      */
-    private final Map<String, Object> context = new HashMap<String, Object>();
+    private final Map<String, Object> context = new HashMap<>();
 
     /**
      * Adds the given value to the context as an implementation of the given
@@ -157,9 +157,7 @@ public class ParseContext implements Serializable {
             factory.setValidating(false);
             try {
                 factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            } catch (ParserConfigurationException e) {
-                //swallow
-            } catch (SAXNotSupportedException e) {
+            } catch (ParserConfigurationException | SAXNotSupportedException e) {
                 //swallow
             } catch (SAXNotRecognizedException e) {
                 // TIKA-271: Some XML parsers do not support the

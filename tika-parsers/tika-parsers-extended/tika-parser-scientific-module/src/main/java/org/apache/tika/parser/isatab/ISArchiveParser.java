@@ -17,7 +17,6 @@
 package org.apache.tika.parser.isatab;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -87,13 +86,7 @@ public class ISArchiveParser implements Parser {
             this.studyFileName = tis.getFile().getName();
 
             File locationFile = new File(location);
-            String[] investigationList = locationFile.list(new FilenameFilter() {
-
-                @Override
-                public boolean accept(File dir, String name) {
-                    return name.matches("i_.+\\.txt");
-                }
-            });
+            String[] investigationList = locationFile.list((dir, name) -> name.matches("i_.+\\.txt"));
 
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             xhtml.startDocument();

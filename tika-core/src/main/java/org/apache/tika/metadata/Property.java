@@ -36,7 +36,7 @@ import java.util.TreeSet;
  */
 public final class Property implements Comparable<Property> {
 
-    private static final Map<String, Property> properties = new HashMap<String, Property>();
+    private static final Map<String, Property> properties = new HashMap<>();
     private final String name;
     private final boolean internal;
     private final PropertyType propertyType;
@@ -57,7 +57,7 @@ public final class Property implements Comparable<Property> {
         this.valueType = valueType;
         if (choices != null) {
             this.choices = Collections
-                    .unmodifiableSet(new HashSet<String>(Arrays.asList(choices.clone())));
+                    .unmodifiableSet(new HashSet<>(Arrays.asList(choices.clone())));
         } else {
             this.choices = null;
         }
@@ -120,7 +120,7 @@ public final class Property implements Comparable<Property> {
     }
 
     public static SortedSet<Property> getProperties(String prefix) {
-        SortedSet<Property> set = new TreeSet<Property>();
+        SortedSet<Property> set = new TreeSet<>();
         String p = prefix + ":";
         synchronized (properties) {
             for (String name : properties.keySet()) {

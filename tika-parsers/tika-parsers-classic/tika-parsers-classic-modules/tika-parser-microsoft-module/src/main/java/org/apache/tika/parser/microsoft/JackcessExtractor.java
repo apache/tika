@@ -251,9 +251,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
         }
         Object b = m.getValue(TEXT_FORMAT_KEY);
         if (b instanceof Byte) {
-            if (((Byte) b).byteValue() == RICH_TEXT_FORMAT) {
-                return true;
-            }
+            return (Byte) b == RICH_TEXT_FORMAT;
         }
         return false;
     }

@@ -65,11 +65,7 @@ public class TokenCounter {
         TokenStream ts = analyzer.tokenStream(field, content);
         CharTermAttribute termAtt = ts.getAttribute(CharTermAttribute.class);
         ts.reset();
-        Map<String, MutableInt> tokenMap = map.get(field);
-        if (tokenMap == null) {
-            tokenMap = new HashMap<>();
-            map.put(field, tokenMap);
-        }
+        Map<String, MutableInt> tokenMap = map.computeIfAbsent(field, k -> new HashMap<>());
         while (ts.incrementToken()) {
             String token = termAtt.toString();
             MutableInt cnt = tokenMap.get(token);

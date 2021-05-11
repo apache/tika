@@ -108,7 +108,7 @@ public class CTAKESConfig implements Serializable {
         setAeDescriptorPath(props.getProperty("aeDescriptorPath", getAeDescriptorPath()));
         setUMLSUser(props.getProperty("UMLSUser", getUMLSUser()));
         setUMLSPass(props.getProperty("UMLSPass", getUMLSPass()));
-        setText(Boolean.valueOf(props.getProperty("text", Boolean.toString(isText()))));
+        setText(Boolean.parseBoolean(props.getProperty("text", Boolean.toString(isText()))));
         setMetadata(props.getProperty("metadata", getMetadataAsString()).split(","));
         setAnnotationProps(
                 props.getProperty("annotationProps", getAnnotationPropsAsString()).split(","));

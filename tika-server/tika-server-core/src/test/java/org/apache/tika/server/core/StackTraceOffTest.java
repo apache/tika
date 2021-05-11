@@ -60,7 +60,7 @@ public class StackTraceOffTest extends CXFTestBase {
 
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
-        List<ResourceProvider> rCoreProviders = new ArrayList<ResourceProvider>();
+        List<ResourceProvider> rCoreProviders = new ArrayList<>();
         rCoreProviders.add(new SingletonResourceProvider(new MetadataResource()));
         rCoreProviders.add(new SingletonResourceProvider(new RecursiveMetadataResource()));
         rCoreProviders
@@ -72,7 +72,7 @@ public class StackTraceOffTest extends CXFTestBase {
 
     @Override
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
-        List<Object> providers = new ArrayList<Object>();
+        List<Object> providers = new ArrayList<>();
         providers.add(new TikaServerParseExceptionMapper(false));
         providers.add(new JSONMessageBodyWriter());
         providers.add(new CSVMessageBodyWriter());

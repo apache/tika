@@ -40,10 +40,10 @@ public class NameEntityExtractor {
     private HashMap<String, Integer> tf;
 
     public NameEntityExtractor(NameFinderME nameFinder) throws IOException {
-        this.locationNameEntities = new ArrayList<String>();
+        this.locationNameEntities = new ArrayList<>();
         this.bestNameEntity = null;
         this.nameFinder = nameFinder;
-        this.tf = new HashMap<String, Integer>();
+        this.tf = new HashMap<>();
     }
 
     /*

@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.io.ByteArrayInputStream;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -83,19 +82,19 @@ public class CompositeParserTest {
     @Test
     public void testMimeTypeAliases() throws Exception {
         MediaType bmpCanonical = MediaType.image("bmp");
-        Map<String, String> bmpCanonicalMetadata = new HashMap<String, String>();
+        Map<String, String> bmpCanonicalMetadata = new HashMap<>();
         bmpCanonicalMetadata.put("BMP", "True");
         bmpCanonicalMetadata.put("Canonical", "True");
         Parser bmpCanonicalParser =
-                new DummyParser(new HashSet<MediaType>(Arrays.asList(bmpCanonical)),
+                new DummyParser(new HashSet<>(Collections.singletonList(bmpCanonical)),
                         bmpCanonicalMetadata, null);
 
         MediaType bmpAlias = MediaType.image("x-ms-bmp");
-        Map<String, String> bmpAliasMetadata = new HashMap<String, String>();
+        Map<String, String> bmpAliasMetadata = new HashMap<>();
         bmpAliasMetadata.put("BMP", "True");
         bmpAliasMetadata.put("Alias", "True");
         Parser bmpAliasParser =
-                new DummyParser(new HashSet<MediaType>(Arrays.asList(bmpAlias)), bmpAliasMetadata,
+                new DummyParser(new HashSet<>(Collections.singletonList(bmpAlias)), bmpAliasMetadata,
                         null);
 
         TikaConfig config = TikaConfig.getDefaultConfig();

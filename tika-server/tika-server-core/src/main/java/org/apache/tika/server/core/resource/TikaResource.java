@@ -23,7 +23,6 @@ import static org.apache.tika.server.core.resource.RecursiveMetadataResource.HAN
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.lang.reflect.Field;
@@ -432,15 +431,12 @@ public class TikaResource {
 
         logRequest(LOG, "/tika", metadata);
 
-        return new StreamingOutput() {
-            public void write(OutputStream outputStream)
-                    throws IOException, WebApplicationException {
-                Writer writer = new OutputStreamWriter(outputStream, UTF_8);
+        return outputStream -> {
+            Writer writer = new OutputStreamWriter(outputStream, UTF_8);
 
-                ContentHandler handler = new BoilerpipeContentHandler(writer);
+            ContentHandler handler = new BoilerpipeContentHandler(writer);
 
-                parse(parser, LOG, info.getPath(), is, handler, metadata, context);
-            }
+            parse(parser, LOG, info.getPath(), is, handler, metadata, context);
         };
     }
 
@@ -466,16 +462,13 @@ public class TikaResource {
 
         logRequest(LOG, "/tika", metadata);
 
-        return new StreamingOutput() {
-            public void write(OutputStream outputStream)
-                    throws IOException, WebApplicationException {
-                Writer writer = new OutputStreamWriter(outputStream, UTF_8);
+        return outputStream -> {
+            Writer writer = new OutputStreamWriter(outputStream, UTF_8);
 
-                BodyContentHandler body =
-                        new BodyContentHandler(new RichTextContentHandler(writer));
+            BodyContentHandler body =
+                    new BodyContentHandler(new RichTextContentHandler(writer));
 
-                parse(parser, LOG, info.getPath(), is, body, metadata, context);
-            }
+            parse(parser, LOG, info.getPath(), is, body, metadata, context);
         };
     }
 
@@ -618,27 +611,24 @@ public class TikaResource {
 
         logRequest(LOG, "/tika", metadata);
 
-        return new StreamingOutput() {
-            public void write(OutputStream outputStream)
-                    throws IOException, WebApplicationException {
-                Writer writer = new OutputStreamWriter(outputStream, UTF_8);
-                ContentHandler content;
+        return outputStream -> {
+            Writer writer = new OutputStreamWriter(outputStream, UTF_8);
+            ContentHandler content;
 
-                try {
-                    SAXTransformerFactory factory =
-                            (SAXTransformerFactory) SAXTransformerFactory.newInstance();
-                    TransformerHandler handler = factory.newTransformerHandler();
-                    handler.getTransformer().setOutputProperty(OutputKeys.METHOD, format);
-                    handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
-                    handler.getTransformer().setOutputProperty(OutputKeys.ENCODING, UTF_8.name());
-                    handler.setResult(new StreamResult(writer));
-                    content = new ExpandedTitleContentHandler(handler);
-                } catch (TransformerConfigurationException e) {
-                    throw new WebApplicationException(e);
-                }
-
-                parse(parser, LOG, info.getPath(), is, content, metadata, context);
+            try {
+                SAXTransformerFactory factory =
+                        (SAXTransformerFactory) SAXTransformerFactory.newInstance();
+                TransformerHandler handler = factory.newTransformerHandler();
+                handler.getTransformer().setOutputProperty(OutputKeys.METHOD, format);
+                handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
+                handler.getTransformer().setOutputProperty(OutputKeys.ENCODING, UTF_8.name());
+                handler.setResult(new StreamResult(writer));
+                content = new ExpandedTitleContentHandler(handler);
+            } catch (TransformerConfigurationException e) {
+                throw new WebApplicationException(e);
             }
+
+            parse(parser, LOG, info.getPath(), is, content, metadata, context);
         };
     }
 

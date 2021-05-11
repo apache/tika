@@ -36,7 +36,6 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLResolver;
-import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactory;
@@ -116,19 +115,10 @@ public class XMLReaderUtils implements Serializable {
     private static final ReentrantReadWriteLock SAX_READ_WRITE_LOCK = new ReentrantReadWriteLock();
     private static final ReentrantReadWriteLock DOM_READ_WRITE_LOCK = new ReentrantReadWriteLock();
     private static final AtomicInteger POOL_GENERATION = new AtomicInteger();
-    private static final EntityResolver IGNORING_SAX_ENTITY_RESOLVER = new EntityResolver() {
-        public InputSource resolveEntity(String publicId, String systemId)
-                throws SAXException, IOException {
-            return new InputSource(new StringReader(""));
-        }
-    };
-    private static final XMLResolver IGNORING_STAX_ENTITY_RESOLVER = new XMLResolver() {
-        @Override
-        public Object resolveEntity(String publicID, String systemID, String baseURI,
-                                    String namespace) throws XMLStreamException {
-            return "";
-        }
-    };
+    private static final EntityResolver IGNORING_SAX_ENTITY_RESOLVER =
+            (publicId, systemId) -> new InputSource(new StringReader(""));
+    private static final XMLResolver IGNORING_STAX_ENTITY_RESOLVER =
+            (publicID, systemID, baseURI, namespace) -> "";
     /**
      * Parser pool size
      */

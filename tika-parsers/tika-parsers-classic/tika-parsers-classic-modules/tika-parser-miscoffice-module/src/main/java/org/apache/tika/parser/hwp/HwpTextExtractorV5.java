@@ -302,13 +302,7 @@ public class HwpTextExtractorV5 implements Serializable {
 
                     HwpStreamReader sectionStream = new HwpStreamReader(input);
                     parse(sectionStream, xhtml);
-                } catch (InvalidKeyException e) {
-                    throw new IOException(e);
-                } catch (NoSuchAlgorithmException e) {
-                    throw new IOException(e);
-                } catch (NoSuchPaddingException e) {
-                    throw new IOException(e);
-                } catch (SAXException e) {
+                } catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | SAXException e) {
                     throw new IOException(e);
                 } finally {
                     IOUtils.closeQuietly(input);

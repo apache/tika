@@ -44,38 +44,51 @@ public class ID3v24Handler implements ID3Tags {
     private String albumArtist;
     private String disc;
     private String compilation;
-    private List<ID3Comment> comments = new ArrayList<ID3Comment>();
+    private List<ID3Comment> comments = new ArrayList<>();
 
     public ID3v24Handler(ID3v2Frame frame) throws IOException, SAXException, TikaException {
         RawTagIterator tags = new RawV24TagIterator(frame);
         while (tags.hasNext()) {
             RawTag tag = tags.next();
-            if (tag.name.equals("TIT2")) {
-                title = getTagString(tag.data, 0, tag.data.length);
-            } else if (tag.name.equals("TPE1")) {
-                artist = getTagString(tag.data, 0, tag.data.length);
-            } else if (tag.name.equals("TPE2")) {
-                albumArtist = getTagString(tag.data, 0, tag.data.length);
-            } else if (tag.name.equals("TALB")) {
-                album = getTagString(tag.data, 0, tag.data.length);
-            } else if (tag.name.equals("TYER")) {
-                year = getTagString(tag.data, 0, tag.data.length);
-            } else if (tag.name.equals("TDRC")) {
-                if (year == null) {
+            switch (tag.name) {
+                case "TIT2":
+                    title = getTagString(tag.data, 0, tag.data.length);
+                    break;
+                case "TPE1":
+                    artist = getTagString(tag.data, 0, tag.data.length);
+                    break;
+                case "TPE2":
+                    albumArtist = getTagString(tag.data, 0, tag.data.length);
+                    break;
+                case "TALB":
+                    album = getTagString(tag.data, 0, tag.data.length);
+                    break;
+                case "TYER":
                     year = getTagString(tag.data, 0, tag.data.length);
-                }
-            } else if (tag.name.equals("TCOM")) {
-                composer = getTagString(tag.data, 0, tag.data.length);
-            } else if (tag.name.equals("COMM")) {
-                comments.add(getComment(tag.data, 0, tag.data.length));
-            } else if (tag.name.equals("TRCK")) {
-                trackNumber = getTagString(tag.data, 0, tag.data.length);
-            } else if (tag.name.equals("TPOS")) {
-                disc = getTagString(tag.data, 0, tag.data.length);
-            } else if (tag.name.equals("TCMP")) {
-                compilation = getTagString(tag.data, 0, tag.data.length);
-            } else if (tag.name.equals("TCON")) {
-                genre = ID3v22Handler.extractGenre(getTagString(tag.data, 0, tag.data.length));
+                    break;
+                case "TDRC":
+                    if (year == null) {
+                        year = getTagString(tag.data, 0, tag.data.length);
+                    }
+                    break;
+                case "TCOM":
+                    composer = getTagString(tag.data, 0, tag.data.length);
+                    break;
+                case "COMM":
+                    comments.add(getComment(tag.data, 0, tag.data.length));
+                    break;
+                case "TRCK":
+                    trackNumber = getTagString(tag.data, 0, tag.data.length);
+                    break;
+                case "TPOS":
+                    disc = getTagString(tag.data, 0, tag.data.length);
+                    break;
+                case "TCMP":
+                    compilation = getTagString(tag.data, 0, tag.data.length);
+                    break;
+                case "TCON":
+                    genre = ID3v22Handler.extractGenre(getTagString(tag.data, 0, tag.data.length));
+                    break;
             }
         }
     }

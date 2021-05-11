@@ -233,7 +233,7 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
         if (link == null) {
             throw new IllegalArgumentException("Missing Link");
         }
-        List<URI> copy = new ArrayList<URI>(links.size() + 1);
+        List<URI> copy = new ArrayList<>(links.size() + 1);
         copy.addAll(links);
         copy.add(link);
         links = Collections.unmodifiableList(copy);
@@ -248,7 +248,7 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
      */
     void addRootXML(String namespaceURI, String localName) {
         if (rootXML == null) {
-            rootXML = new ArrayList<RootXML>();
+            rootXML = new ArrayList<>();
         }
         rootXML.add(new RootXML(this, namespaceURI, localName));
     }
@@ -281,7 +281,7 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
             return;
         }
         if (magics == null) {
-            magics = new ArrayList<Magic>();
+            magics = new ArrayList<>();
         }
         magics.add(magic);
     }
@@ -388,7 +388,7 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
         if (extensions == null) {
             extensions = Collections.singletonList(extension);
         } else if (extensions.size() == 1) {
-            extensions = new ArrayList<String>(extensions);
+            extensions = new ArrayList<>(extensions);
         }
         if (!extensions.contains(extension)) {
             extensions.add(extension);

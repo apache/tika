@@ -164,7 +164,7 @@ public class TikaToXMP {
 
     private static Map<MediaType, Class<? extends ITikaToXMPConverter>> getConverterMap() {
         if (converterMap == null) {
-            converterMap = new HashMap<MediaType, Class<? extends ITikaToXMPConverter>>();
+            converterMap = new HashMap<>();
             initialize();
         }
         return converterMap;

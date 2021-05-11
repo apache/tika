@@ -35,7 +35,7 @@ public class MediaTypeTest {
 
         assertEquals("text/plain", new MediaType("text", "plain").toString());
 
-        Map<String, String> parameters = new HashMap<String, String>();
+        Map<String, String> parameters = new HashMap<>();
         assertEquals("text/plain", new MediaType("text", "plain", parameters).toString());
 
         parameters.put("charset", "UTF-8");
@@ -52,7 +52,7 @@ public class MediaTypeTest {
         assertEquals("text/plain", new MediaType("TEXT", "PLAIN").toString());
         assertEquals("text/plain", new MediaType("Text", "Plain").toString());
 
-        Map<String, String> parameters = new HashMap<String, String>();
+        Map<String, String> parameters = new HashMap<>();
         assertEquals("text/plain", new MediaType("text", "PLAIN", parameters).toString());
 
         parameters.put("CHARSET", "UTF-8");
@@ -69,7 +69,7 @@ public class MediaTypeTest {
         assertEquals("text/plain", new MediaType(" text ", " plain ").toString());
         assertEquals("text/plain", new MediaType("\ttext", "plain\t").toString());
 
-        Map<String, String> parameters = new HashMap<String, String>();
+        Map<String, String> parameters = new HashMap<>();
         assertEquals("text/plain", new MediaType("text\r\n", " \tplain", parameters).toString());
 
         parameters.put(" charset", "UTF-8");
@@ -83,7 +83,7 @@ public class MediaTypeTest {
 
     @Test
     public void testQuote() {
-        Map<String, String> parameters = new HashMap<String, String>();
+        Map<String, String> parameters = new HashMap<>();
         parameters.put("a", " value with spaces ");
         parameters.put("b", "text/plain");
         parameters.put("c", "()<>@,;:\\\"/[]?=");
@@ -106,12 +106,16 @@ public class MediaTypeTest {
         assertEquals(3, type.getParameters().keySet().size());
         boolean gotCharset = false, gotFoo = false, gotFoo2 = false;
         for (String param : type.getParameters().keySet()) {
-            if (param.equals("charset")) {
-                gotCharset = true;
-            } else if (param.equals("foo")) {
-                gotFoo = true;
-            } else if (param.equals("foo2")) {
-                gotFoo2 = true;
+            switch (param) {
+                case "charset":
+                    gotCharset = true;
+                    break;
+                case "foo":
+                    gotFoo = true;
+                    break;
+                case "foo2":
+                    gotFoo2 = true;
+                    break;
             }
         }
         assertTrue(gotCharset && gotFoo && gotFoo2);

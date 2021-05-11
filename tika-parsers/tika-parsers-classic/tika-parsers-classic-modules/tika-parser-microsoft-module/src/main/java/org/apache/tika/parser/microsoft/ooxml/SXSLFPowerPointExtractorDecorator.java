@@ -128,12 +128,12 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                     mainDocument, metadata, new PlaceHolderSkipper(
                             new OOXMLWordAndPowerPointTextHandler(
                                     new OOXMLTikaBodyPartHandler(xhtml),
-                                    new HashMap<String, String>())));
+                                    new HashMap<>())));
 
             handleGeneralTextContainingPart(HANDOUT_MASTER, "slide-handout-master", mainDocument,
                     metadata,
                     new OOXMLWordAndPowerPointTextHandler(new OOXMLTikaBodyPartHandler(xhtml),
-                            new HashMap<String, String>()));
+                            new HashMap<>()));
         }
     }
 

@@ -1047,7 +1047,7 @@ public class OOXMLParserTest extends TikaTest {
 
     @Test
     public void testEncrypted() throws Exception {
-        Map<String, String> tests = new HashMap<String, String>();
+        Map<String, String> tests = new HashMap<>();
         //the first three contain javax.crypto.CipherInputStream
         tests.put("testWORD_protected_passtika.docx", "This is an encrypted Word 2007 File");
         tests.put("testPPT_protected_passtika.pptx", "This is an encrypted PowerPoint 2007 slide.");

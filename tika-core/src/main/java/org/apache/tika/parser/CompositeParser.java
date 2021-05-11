@@ -74,7 +74,7 @@ public class CompositeParser extends AbstractParser {
         if (excludeParsers == null || excludeParsers.isEmpty()) {
             this.parsers = parsers;
         } else {
-            this.parsers = new ArrayList<Parser>();
+            this.parsers = new ArrayList<>();
             for (Parser p : parsers) {
                 if (!isExcluded(excludeParsers, p.getClass())) {
                     this.parsers.add(p);
@@ -97,7 +97,7 @@ public class CompositeParser extends AbstractParser {
     }
 
     public Map<MediaType, Parser> getParsers(ParseContext context) {
-        Map<MediaType, Parser> map = new HashMap<MediaType, Parser>();
+        Map<MediaType, Parser> map = new HashMap<>();
         for (Parser parser : parsers) {
             for (MediaType type : parser.getSupportedTypes(context)) {
                 map.put(registry.normalize(type), parser);
@@ -132,15 +132,15 @@ public class CompositeParser extends AbstractParser {
      * @since Apache Tika 0.10
      */
     public Map<MediaType, List<Parser>> findDuplicateParsers(ParseContext context) {
-        Map<MediaType, Parser> types = new HashMap<MediaType, Parser>();
-        Map<MediaType, List<Parser>> duplicates = new HashMap<MediaType, List<Parser>>();
+        Map<MediaType, Parser> types = new HashMap<>();
+        Map<MediaType, List<Parser>> duplicates = new HashMap<>();
         for (Parser parser : parsers) {
             for (MediaType type : parser.getSupportedTypes(context)) {
                 MediaType canonicalType = registry.normalize(type);
                 if (types.containsKey(canonicalType)) {
                     List<Parser> list = duplicates.get(canonicalType);
                     if (list == null) {
-                        list = new ArrayList<Parser>();
+                        list = new ArrayList<>();
                         list.add(types.get(canonicalType));
                         duplicates.put(canonicalType, list);
                     }
@@ -197,7 +197,7 @@ public class CompositeParser extends AbstractParser {
      * @param parsers component parsers, keyed by media type
      */
     public void setParsers(Map<MediaType, Parser> parsers) {
-        this.parsers = new ArrayList<Parser>(parsers.size());
+        this.parsers = new ArrayList<>(parsers.size());
         for (Map.Entry<MediaType, Parser> entry : parsers.entrySet()) {
             this.parsers.add(ParserDecorator
                     .withTypes(entry.getValue(), Collections.singleton(entry.getKey())));

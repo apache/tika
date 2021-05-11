@@ -24,6 +24,6 @@ import org.apache.tika.concurrent.ConfigurableThreadPoolExecutor;
 
 public class DummyExecutor extends ThreadPoolExecutor implements ConfigurableThreadPoolExecutor {
     public DummyExecutor() {
-        super(1, 1, 0L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+        super(1, 1, 0L, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
     }
 }

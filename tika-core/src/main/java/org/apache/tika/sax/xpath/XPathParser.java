@@ -39,7 +39,7 @@ import java.util.Map;
  */
 public class XPathParser {
 
-    private final Map<String, String> prefixes = new HashMap<String, String>();
+    private final Map<String, String> prefixes = new HashMap<>();
 
     public XPathParser() {
     }

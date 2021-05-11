@@ -39,7 +39,7 @@ public abstract class MetadataFields {
     private static HashSet<String> known;
 
     static {
-        known = new HashSet<String>();
+        known = new HashSet<>();
         setKnownForClass(TikaCoreProperties.class);
         setKnownForClass(Metadata.class);
     }

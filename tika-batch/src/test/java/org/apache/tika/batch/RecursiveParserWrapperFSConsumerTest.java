@@ -51,7 +51,7 @@ public class RecursiveParserWrapperFSConsumerTest extends TikaTest {
         final Metadata metadata = new Metadata();
         metadata.add(TikaCoreProperties.RESOURCE_NAME_KEY, "embedded_with_npe.xml");
 
-        ArrayBlockingQueue<FileResource> queue = new ArrayBlockingQueue<FileResource>(2);
+        ArrayBlockingQueue<FileResource> queue = new ArrayBlockingQueue<>(2);
         queue.add(new FileResource() {
 
             @Override
@@ -102,7 +102,7 @@ public class RecursiveParserWrapperFSConsumerTest extends TikaTest {
         final Metadata metadata = new Metadata();
         metadata.add(TikaCoreProperties.RESOURCE_NAME_KEY, "embedded_then_npe.xml");
 
-        ArrayBlockingQueue<FileResource> queue = new ArrayBlockingQueue<FileResource>(2);
+        ArrayBlockingQueue<FileResource> queue = new ArrayBlockingQueue<>(2);
         queue.add(new FileResource() {
 
             @Override
@@ -145,7 +145,7 @@ public class RecursiveParserWrapperFSConsumerTest extends TikaTest {
 
 
     private class MockOSFactory implements OutputStreamFactory {
-        List<ByteArrayOutputStream> streams = new ArrayList<ByteArrayOutputStream>();
+        List<ByteArrayOutputStream> streams = new ArrayList<>();
 
         @Override
         public OutputStream getOutputStream(Metadata metadata) throws IOException {

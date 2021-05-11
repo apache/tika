@@ -119,8 +119,8 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
 
         if (objects != null && !objects.isEmpty()) {
             int count;
-            List<RecognisedObject> acceptedObjects = new ArrayList<RecognisedObject>();
-            List<String> xhtmlIds = new ArrayList<String>();
+            List<RecognisedObject> acceptedObjects = new ArrayList<>();
+            List<String> xhtmlIds = new ArrayList<>();
             String xhtmlStartVal = null;
             count = 0;
             objects.sort((o1, o2) -> Double.compare(o2.getConfidence(), o1.getConfidence()));

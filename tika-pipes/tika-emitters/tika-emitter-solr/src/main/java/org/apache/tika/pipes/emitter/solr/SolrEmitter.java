@@ -195,14 +195,18 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
      */
     @Field
     public void setAttachmentStrategy(String attachmentStrategy) {
-        if (attachmentStrategy.equals("skip")) {
-            this.attachmentStrategy = AttachmentStrategy.SKIP;
-        } else if (attachmentStrategy.equals("concatenate-content")) {
-            this.attachmentStrategy = AttachmentStrategy.CONCATENATE_CONTENT;
-        } else if (attachmentStrategy.equals("parent-child")) {
-            this.attachmentStrategy = AttachmentStrategy.PARENT_CHILD;
-        } else {
-            throw new IllegalArgumentException("Expected 'skip', 'concatenate-content' or " +
+        switch (attachmentStrategy) {
+            case "skip":
+                this.attachmentStrategy = AttachmentStrategy.SKIP;
+                break;
+            case "concatenate-content":
+                this.attachmentStrategy = AttachmentStrategy.CONCATENATE_CONTENT;
+                break;
+            case "parent-child":
+                this.attachmentStrategy = AttachmentStrategy.PARENT_CHILD;
+                break;
+            default:
+                throw new IllegalArgumentException("Expected 'skip', 'concatenate-content' or " +
                     "'parent-child'. I regret I do not recognize: " + attachmentStrategy);
         }
     }

@@ -341,13 +341,11 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
             consumersManager.init();
             return;
         }
-        Thread timed = new Thread() {
-            public void run() {
-                LOG.trace("about to start consumers manager");
-                consumersManager.init();
-                LOG.trace("finished starting consumers manager");
-            }
-        };
+        Thread timed = new Thread(() -> {
+            LOG.trace("about to start consumers manager");
+            consumersManager.init();
+            LOG.trace("finished starting consumers manager");
+        });
         //don't allow this thread to keep process alive
         timed.setDaemon(true);
         timed.start();
@@ -368,13 +366,11 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
             consumersManager.shutdown();
             return;
         }
-        Thread timed = new Thread() {
-            public void run() {
-                LOG.trace("starting to shutdown consumers manager");
-                consumersManager.shutdown();
-                LOG.trace("finished shutting down consumers manager");
-            }
-        };
+        Thread timed = new Thread(() -> {
+            LOG.trace("starting to shutdown consumers manager");
+            consumersManager.shutdown();
+            LOG.trace("finished shutting down consumers manager");
+        });
         timed.setDaemon(true);
         timed.start();
         try {

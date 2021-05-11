@@ -54,7 +54,7 @@ public class ExecutableParser extends AbstractParser implements MachineMetadata 
     private static final MediaType ELF_SHAREDLIB = MediaType.application("x-sharedlib");
     private static final MediaType ELF_COREDUMP = MediaType.application("x-coredump");
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<MediaType>(
+            new HashSet<>(
                     Arrays.asList(PE_EXE, ELF_GENERAL, ELF_OBJECT, ELF_EXECUTABLE, ELF_SHAREDLIB,
                             ELF_COREDUMP)));
 

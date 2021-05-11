@@ -17,7 +17,6 @@
 package org.apache.tika.detect.zip;
 
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -95,12 +94,7 @@ abstract class ZipContainerDetectorBase {
         Set<Pattern> tmpPatterns = (Set<Pattern>) ipaEntryPatterns.clone();
 
         for (String entryName : entryNames) {
-            Iterator<Pattern> ip = tmpPatterns.iterator();
-            while (ip.hasNext()) {
-                if (ip.next().matcher(entryName).matches()) {
-                    ip.remove();
-                }
-            }
+            tmpPatterns.removeIf(pattern -> pattern.matcher(entryName).matches());
             if (tmpPatterns.isEmpty()) {
                 // We've found everything we need to find
                 return MediaType.application("x-itunes-ipa");

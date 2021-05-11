@@ -100,7 +100,7 @@ public class ParserDecorator extends AbstractParser {
             public Set<MediaType> getSupportedTypes(ParseContext context) {
                 // Get our own, writable copy of the types the parser supports
                 Set<MediaType> parserTypes =
-                        new HashSet<MediaType>(super.getSupportedTypes(context));
+                        new HashSet<>(super.getSupportedTypes(context));
                 // Remove anything on our excludes list
                 parserTypes.removeAll(excludeTypes);
                 // Return whatever is left

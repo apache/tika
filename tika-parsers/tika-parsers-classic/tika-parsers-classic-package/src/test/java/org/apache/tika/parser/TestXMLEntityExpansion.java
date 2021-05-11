@@ -89,17 +89,14 @@ public class TestXMLEntityExpansion extends XMLTestBase {
                 .getBytes(StandardCharsets.UTF_8);
         byte[] injected = injectXML(bytes, ENTITY_EXPANSION_BOMB);
 
-        Thread thread = new Thread() {
-            @Override
-            public void run() {
-                try {
-                    parse("injected", new ByteArrayInputStream(injected),
-                            new XMLTestBase.VulnerableSAXParser(), new ParseContext());
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
+        Thread thread = new Thread(() -> {
+            try {
+                parse("injected", new ByteArrayInputStream(injected),
+                        new VulnerableSAXParser(), new ParseContext());
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
-        };
+        });
         thread.start();
         Thread.sleep(10000);
         assertTrue(thread.isAlive());

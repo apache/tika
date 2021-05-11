@@ -37,12 +37,12 @@ public class LinkContentHandler extends DefaultHandler {
      * but it's possible (though unlikely) for also other kinds of nesting
      * to occur.
      */
-    private final LinkedList<LinkBuilder> builderStack = new LinkedList<LinkBuilder>();
+    private final LinkedList<LinkBuilder> builderStack = new LinkedList<>();
 
     /**
      * Collected links
      */
-    private final List<Link> links = new ArrayList<Link>();
+    private final List<Link> links = new ArrayList<>();
 
     /**
      * Whether to collapse whitespace in anchor text

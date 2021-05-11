@@ -36,7 +36,7 @@ public class ParserDecoratorTest {
     public void withAndWithoutTypes() {
         Set<MediaType> onlyTxt = Collections.singleton(MediaType.TEXT_PLAIN);
         Set<MediaType> onlyOct = Collections.singleton(MediaType.OCTET_STREAM);
-        Set<MediaType> both = new HashSet<MediaType>();
+        Set<MediaType> both = new HashSet<>();
         both.addAll(onlyOct);
         both.addAll(onlyTxt);
 
@@ -53,7 +53,7 @@ public class ParserDecoratorTest {
 
         // With a parser with other types, still just the decorated type
         p = ParserDecorator
-                .withTypes(new DummyParser(onlyOct, new HashMap<String, String>(), ""), onlyTxt);
+                .withTypes(new DummyParser(onlyOct, new HashMap<>(), ""), onlyTxt);
         types = p.getSupportedTypes(context);
         assertEquals(1, types.size());
         assertEquals(types.toString(), true, types.contains(MediaType.TEXT_PLAIN));
@@ -65,13 +65,13 @@ public class ParserDecoratorTest {
         assertEquals(0, types.size());
 
         p = ParserDecorator
-                .withoutTypes(new DummyParser(onlyOct, new HashMap<String, String>(), ""), onlyTxt);
+                .withoutTypes(new DummyParser(onlyOct, new HashMap<>(), ""), onlyTxt);
         types = p.getSupportedTypes(context);
         assertEquals(1, types.size());
         assertEquals(types.toString(), true, types.contains(MediaType.OCTET_STREAM));
 
         p = ParserDecorator
-                .withoutTypes(new DummyParser(both, new HashMap<String, String>(), ""), onlyTxt);
+                .withoutTypes(new DummyParser(both, new HashMap<>(), ""), onlyTxt);
         types = p.getSupportedTypes(context);
         assertEquals(1, types.size());
         assertEquals(types.toString(), true, types.contains(MediaType.OCTET_STREAM));
@@ -84,14 +84,14 @@ public class ParserDecoratorTest {
     public void withFallback() throws Exception {
         Set<MediaType> onlyOct = Collections.singleton(MediaType.OCTET_STREAM);
         Set<MediaType> octAndText =
-                new HashSet<MediaType>(Arrays.asList(MediaType.OCTET_STREAM, MediaType.TEXT_PLAIN));
+                new HashSet<>(Arrays.asList(MediaType.OCTET_STREAM, MediaType.TEXT_PLAIN));
 
         ParseContext context = new ParseContext();
         BodyContentHandler handler;
         Metadata metadata;
 
         ErrorParser pFail = new ErrorParser();
-        DummyParser pWork = new DummyParser(onlyOct, new HashMap<String, String>(), "Fell back!");
+        DummyParser pWork = new DummyParser(onlyOct, new HashMap<>(), "Fell back!");
         EmptyParser pNothing = new EmptyParser();
 
         // Create a combination which will fail first

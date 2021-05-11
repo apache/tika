@@ -174,7 +174,7 @@ public class ISATabUtils {
         boolean studySection = false;
         boolean studyTarget = false;
 
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, String> map = new HashMap<>();
 
         try (CSVParser csvParser = new CSVParser(reader, CSVFormat.TDF)) {
 

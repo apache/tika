@@ -64,7 +64,7 @@ public class CSVMessageBodyWriter implements MessageBodyWriter<Metadata> {
 
         for (String name : metadata.names()) {
             String[] values = metadata.getValues(name);
-            ArrayList<String> list = new ArrayList<String>(values.length + 1);
+            ArrayList<String> list = new ArrayList<>(values.length + 1);
             list.add(name);
             list.addAll(Arrays.asList(values));
             writer.printRecord(list);

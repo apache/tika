@@ -50,7 +50,7 @@ public class TikaWelcome {
     private static final String DOCS_URL = "https://wiki.apache.org/tika/TikaJAXRS";
 
     private static final Map<Class<? extends Annotation>, String> HTTP_METHODS =
-            new HashMap<Class<? extends Annotation>, String>();
+            new HashMap<>();
 
     static {
         HTTP_METHODS.put(DELETE.class, "DELETE");
@@ -63,7 +63,7 @@ public class TikaWelcome {
 
     private Tika tika;
     private HTMLHelper html;
-    private List<Class<?>> endpoints = new LinkedList<Class<?>>();
+    private List<Class<?>> endpoints = new LinkedList<>();
 
     public TikaWelcome(List<ResourceProvider> rCoreProviders) {
         this.tika = new Tika(TikaResource.getConfig());
@@ -74,7 +74,7 @@ public class TikaWelcome {
     }
 
     protected List<Endpoint> identifyEndpoints() {
-        List<Endpoint> found = new ArrayList<Endpoint>();
+        List<Endpoint> found = new ArrayList<>();
         for (Class<?> endpoint : endpoints) {
             Path p = endpoint.getAnnotation(Path.class);
             String basePath = null;
@@ -122,16 +122,7 @@ public class TikaWelcome {
                 }
             }
         }
-        found.sort(new Comparator<Endpoint>() {
-            @Override
-            public int compare(Endpoint e1, Endpoint e2) {
-                int res = e1.path.compareTo(e2.path);
-                if (res == 0) {
-                    res = e1.methodName.compareTo(e2.methodName);
-                }
-                return res;
-            }
-        });
+        found.sort(Comparator.comparing((Endpoint e) -> e.path).thenComparing(e -> e.methodName));
         return found;
     }
 

@@ -173,7 +173,7 @@ public class MimeTypesFactory {
                 Collections.list(classLoader.getResources(classPrefix + extensionFilePath));
 
         // Swap that into an Array, and process
-        List<URL> urls = new ArrayList<URL>();
+        List<URL> urls = new ArrayList<>();
         urls.add(coreURL);
         urls.addAll(extensionURLs);
 

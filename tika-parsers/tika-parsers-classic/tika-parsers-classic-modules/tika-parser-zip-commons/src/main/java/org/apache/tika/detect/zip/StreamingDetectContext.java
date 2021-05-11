@@ -29,7 +29,7 @@ public class StreamingDetectContext {
     /**
      * Map of objects in this context
      */
-    private final Map<String, Object> context = new HashMap<String, Object>();
+    private final Map<String, Object> context = new HashMap<>();
 
     /**
      * Adds the given value to the context as an implementation of the given

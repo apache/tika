@@ -111,11 +111,7 @@ public class AsyncEmitter implements Callable<Integer> {
                         (estimatedSize + sz), maxBytes);
                 emitAll();
             }
-            List<EmitData> cached = map.get(data.getEmitKey().getEmitterName());
-            if (cached == null) {
-                cached = new ArrayList<>();
-                map.put(data.getEmitKey().getEmitterName(), cached);
-            }
+            List<EmitData> cached = map.computeIfAbsent(data.getEmitKey().getEmitterName(), k -> new ArrayList<>());
             updateEstimatedSize(sz);
             cached.add(data);
         }

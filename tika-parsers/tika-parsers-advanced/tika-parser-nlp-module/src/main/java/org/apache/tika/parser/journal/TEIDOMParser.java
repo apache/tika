@@ -178,7 +178,7 @@ public class TEIDOMParser {
     }
 
     private String getMetadataFullAffiliations(List<Author> authorList) {
-        List<Affiliation> unique = new ArrayList<Affiliation>();
+        List<Affiliation> unique = new ArrayList<>();
         StringBuilder metAffils = new StringBuilder();
 
         for (Author a : authorList) {
@@ -201,7 +201,7 @@ public class TEIDOMParser {
     private String getMetadataAuthors(List<Author> authorList) {
         // generates Chris A. Mattmann 1, 2 Daniel J. Crichton 1 Nenad Medvidovic 2
         // Steve Hughes 1
-        List<Affiliation> unique = new ArrayList<Affiliation>();
+        List<Affiliation> unique = new ArrayList<>();
         StringBuilder metAuthors = new StringBuilder();
 
         for (Author a : authorList) {
@@ -240,7 +240,7 @@ public class TEIDOMParser {
     private String getMetadataAffiliations(List<Author> authorList) {
         // generates 1 Jet Propulsion Laboratory California Institute of Technology
         // ; 2 Computer Science Department University of Southern California
-        List<Affiliation> unique = new ArrayList<Affiliation>();
+        List<Affiliation> unique = new ArrayList<>();
         StringBuilder metAffil = new StringBuilder();
 
         for (Author a : authorList) {
@@ -271,7 +271,7 @@ public class TEIDOMParser {
 
     private String getMetadataAddresses(List<Author> authorList) {
         // generates: "Pasadena, CA 91109, USA Los Angeles, CA 90089, USA",
-        List<Address> unique = new ArrayList<Address>();
+        List<Address> unique = new ArrayList<>();
         StringBuilder metAddress = new StringBuilder();
 
         for (Author a : authorList) {
@@ -444,7 +444,7 @@ public class TEIDOMParser {
             this.surName = null;
             this.middleName = null;
             this.firstName = null;
-            this.affiliations = new ArrayList<Affiliation>();
+            this.affiliations = new ArrayList<>();
         }
 
         /**
@@ -590,7 +590,7 @@ public class TEIDOMParser {
         private List<OrgTypeName> typeNames;
 
         public OrgName() {
-            this.typeNames = new ArrayList<OrgTypeName>();
+            this.typeNames = new ArrayList<>();
         }
 
         /**

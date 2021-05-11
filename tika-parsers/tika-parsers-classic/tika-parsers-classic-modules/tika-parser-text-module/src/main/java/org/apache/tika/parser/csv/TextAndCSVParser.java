@@ -85,7 +85,7 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
     private static final Map<Character, String> CHAR_TO_STRING_DELIMITER_MAP = new HashMap<>();
     private static final Map<String, Character> STRING_TO_CHAR_DELIMITER_MAP = new HashMap<>();
     private static final Set<MediaType> SUPPORTED_TYPES = Collections
-            .unmodifiableSet(new HashSet<MediaType>(Arrays.asList(CSV, TSV, MediaType.TEXT_PLAIN)));
+            .unmodifiableSet(new HashSet<>(Arrays.asList(CSV, TSV, MediaType.TEXT_PLAIN)));
 
     static {
         CHAR_TO_STRING_DELIMITER_MAP.put(',', "comma");
@@ -346,7 +346,7 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
             if (CHAR_TO_STRING_DELIMITER_MAP.containsKey(params.getDelimiter())) {
                 attrs.put(DELIMITER, CHAR_TO_STRING_DELIMITER_MAP.get(params.getDelimiter()));
             } else {
-                attrs.put(DELIMITER, Integer.toString((int) params.getDelimiter().charValue()));
+                attrs.put(DELIMITER, Integer.toString((int) params.getDelimiter()));
             }
         }
         MediaType type = new MediaType(mediaType, attrs);

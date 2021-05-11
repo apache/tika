@@ -41,7 +41,7 @@ class WP6DocumentAreaExtractor extends WPDocumentAreaExtractor {
      * skipped according to their size (minus the first char if already read).
      */
     private static final Map<Integer, Integer> FIXED_LENGTH_FUNCTION_SIZES =
-            MapUtils.putAll(new HashMap<Integer, Integer>(),
+            MapUtils.putAll(new HashMap<>(),
                     new Integer[]{240, 4,  // Extended Character
                             241, 5,  // Undo
                             242, 3,  // Attribute On

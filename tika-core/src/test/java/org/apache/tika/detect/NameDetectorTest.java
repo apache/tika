@@ -40,7 +40,7 @@ public class NameDetectorTest {
 
     @Before
     public void setUp() {
-        Map<Pattern, MediaType> patterns = new HashMap<Pattern, MediaType>();
+        Map<Pattern, MediaType> patterns = new HashMap<>();
         patterns.put(Pattern.compile(".*\\.txt", Pattern.CASE_INSENSITIVE), MediaType.TEXT_PLAIN);
         patterns.put(Pattern.compile("README"), MediaType.TEXT_PLAIN);
         patterns.put(Pattern.compile(".*\\.hdr"), MediaType.application("envi.hdr"));

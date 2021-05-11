@@ -38,7 +38,7 @@ class WP5DocumentAreaExtractor extends WPDocumentAreaExtractor {
      * skipped according to their size (minus the first char if already read).
      */
     private static final Map<Integer, Integer> FIXED_LENGTH_FUNCTION_SIZES =
-            MapUtils.putAll(new HashMap<Integer, Integer>(),
+            MapUtils.putAll(new HashMap<>(),
                     new Integer[]{192, 4,  // Extended character
                             193, 9,  // Center/Align/ Tab/Left Margin Release
                             194, 11, // Indent

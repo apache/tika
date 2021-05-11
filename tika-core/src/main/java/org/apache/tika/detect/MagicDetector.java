@@ -227,27 +227,43 @@ public class MagicDetector implements Detector {
             radix = 8;
         }
 
-        if (type.equals("string") || type.equals("regex") || type.equals("unicodeLE") ||
-                type.equals("unicodeBE")) {
-            decoded = decodeString(value, type);
-        } else if (type.equals("stringignorecase")) {
-            decoded = decodeString(value.toLowerCase(Locale.ROOT), type);
-        } else if (type.equals("byte")) {
-            decoded = tmpVal.getBytes(UTF_8);
-        } else if (type.equals("host16") || type.equals("little16")) {
-            int i = Integer.parseInt(tmpVal, radix);
-            decoded = new byte[]{(byte) (i & 0x00FF), (byte) (i >> 8)};
-        } else if (type.equals("big16")) {
-            int i = Integer.parseInt(tmpVal, radix);
-            decoded = new byte[]{(byte) (i >> 8), (byte) (i & 0x00FF)};
-        } else if (type.equals("host32") || type.equals("little32")) {
-            long i = Long.parseLong(tmpVal, radix);
-            decoded = new byte[]{(byte) ((i & 0x000000FF)), (byte) ((i & 0x0000FF00) >> 8),
-                    (byte) ((i & 0x00FF0000) >> 16), (byte) ((i & 0xFF000000) >> 24)};
-        } else if (type.equals("big32")) {
-            long i = Long.parseLong(tmpVal, radix);
-            decoded = new byte[]{(byte) ((i & 0xFF000000) >> 24), (byte) ((i & 0x00FF0000) >> 16),
-                    (byte) ((i & 0x0000FF00) >> 8), (byte) ((i & 0x000000FF))};
+        switch (type) {
+            case "string":
+            case "regex":
+            case "unicodeLE":
+            case "unicodeBE":
+                decoded = decodeString(value, type);
+                break;
+            case "stringignorecase":
+                decoded = decodeString(value.toLowerCase(Locale.ROOT), type);
+                break;
+            case "byte":
+                decoded = tmpVal.getBytes(UTF_8);
+                break;
+            case "host16":
+            case "little16": {
+                int i = Integer.parseInt(tmpVal, radix);
+                decoded = new byte[]{(byte) (i & 0x00FF), (byte) (i >> 8)};
+                break;
+            }
+            case "big16": {
+                int i = Integer.parseInt(tmpVal, radix);
+                decoded = new byte[]{(byte) (i >> 8), (byte) (i & 0x00FF)};
+                break;
+            }
+            case "host32":
+            case "little32": {
+                long i = Long.parseLong(tmpVal, radix);
+                decoded = new byte[]{(byte) ((i & 0x000000FF)), (byte) ((i & 0x0000FF00) >> 8),
+                        (byte) ((i & 0x00FF0000) >> 16), (byte) ((i & 0xFF000000) >> 24)};
+                break;
+            }
+            case "big32": {
+                long i = Long.parseLong(tmpVal, radix);
+                decoded = new byte[]{(byte) ((i & 0xFF000000) >> 24), (byte) ((i & 0x00FF0000) >> 16),
+                        (byte) ((i & 0x0000FF00) >> 8), (byte) ((i & 0x000000FF))};
+                break;
+            }
         }
         return decoded;
     }

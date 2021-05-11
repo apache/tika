@@ -47,7 +47,7 @@ public class ChmParser extends AbstractParser {
     private static final long serialVersionUID = 5938777307516469802L;
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<MediaType>(Arrays.asList(MediaType.application("vnd.ms-htmlhelp"),
+            new HashSet<>(Arrays.asList(MediaType.application("vnd.ms-htmlhelp"),
                     MediaType.application("chm"), MediaType.application("x-chm"))));
 
     @Override

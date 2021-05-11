@@ -185,9 +185,7 @@ public class EmbeddedDocumentUtil implements Serializable {
                 mimeType = localMimeTypes.forName(mediaType.toString());
                 detected = true;
                 is.reset();
-            } catch (IOException e) {
-                //swallow
-            } catch (MimeTypeException e) {
+            } catch (IOException | MimeTypeException e) {
                 //swallow
             }
         }

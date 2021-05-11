@@ -47,7 +47,7 @@ public class SecureContentHandler extends ContentHandlerDecorator {
     /**
      * Current number of nested &lt;div class="package-entr"&gt; elements.
      */
-    private final LinkedList<Integer> packageEntryDepths = new LinkedList<Integer>();
+    private final LinkedList<Integer> packageEntryDepths = new LinkedList<>();
     /**
      * Number of output characters that Tika has produced so far.
      */

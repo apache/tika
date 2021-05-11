@@ -20,12 +20,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
-import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.NotSerializableException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -137,8 +136,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
             // Check the right details
             assertNotNull(e.getCause());
             assertEquals(NotSerializableException.class, e.getCause().getClass());
-            assertEquals("Unable to serialize ParseContext to pass to the Forked Parser",
-                    e.getMessage());
+            assertEquals("Unable to serialize ParseContext to pass to the Forked Parser",e.getMessage());
         } finally {
             parser.close();
         }
@@ -218,22 +216,15 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
             parseContexts[i] = new ParseContext();
         }
         try {
-            super.testMultiThreaded(parser, parseContexts, numThreads, 5, new FileFilter() {
-                @Override
-                public boolean accept(File pathname) {
-                    if (pathname.getAbsolutePath().contains("mock")) {
-                        return true;
-                    } else {
-                        return false;
-                    }
-                    /*
-                            if (pathname.getName().contains("11_hang.rar") ||
-                                    pathname.getName().contains("radar_profiles_2009.mat") ||
-                                    pathname.getAbsolutePath().contains("mock")) {
-                                //return false;
-                            }
-                            return true;*/
-                }
+            super.testMultiThreaded(parser, parseContexts, numThreads, 5, pathname -> {
+                return pathname.getAbsolutePath().contains("mock");
+                /*
+                        if (pathname.getName().contains("11_hang.rar") ||
+                                pathname.getName().contains("radar_profiles_2009.mat") ||
+                                pathname.getAbsolutePath().contains("mock")) {
+                            //return false;
+                        }
+                        return true;*/
             });
         } catch (Throwable t) {
             t.printStackTrace();
@@ -309,7 +300,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
         public RuntimeException re = null;
 
         public Set<MediaType> getSupportedTypes(ParseContext context) {
-            return new HashSet<MediaType>(Arrays.asList(MediaType.TEXT_PLAIN));
+            return new HashSet<>(Collections.singletonList(MediaType.TEXT_PLAIN));
         }
 
         public void parse(InputStream stream, ContentHandler handler, Metadata metadata,

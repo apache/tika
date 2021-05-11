@@ -49,7 +49,7 @@ class HtmlHandler extends TextContentHandler {
 
     // List of attributes that need to be resolved.
     private static final Set<String> URI_ATTRIBUTES =
-            new HashSet<String>(Arrays.asList("src", "href", "longdesc", "cite"));
+            new HashSet<>(Arrays.asList("src", "href", "longdesc", "cite"));
     private static final Pattern ICBM =
             Pattern.compile("\\s*(-?\\d+\\.\\d+)[,\\s]+(-?\\d+\\.\\d+)\\s*");
     private static final Attributes EMPTY_ATTS = new AttributesImpl();

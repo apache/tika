@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Locale;
 
 import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackagePart;
@@ -91,10 +90,8 @@ public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
             styles = xssfReader.getXSSFBStylesTable();
             iter = (XSSFBReader.SheetIterator) xssfReader.getSheetsData();
             strings = new XSSFBSharedStringsTable(container);
-        } catch (InvalidFormatException e) {
+        } catch (OpenXML4JException e) {
             throw new XmlException(e);
-        } catch (OpenXML4JException oe) {
-            throw new XmlException(oe);
         }
 
         while (iter.hasNext()) {

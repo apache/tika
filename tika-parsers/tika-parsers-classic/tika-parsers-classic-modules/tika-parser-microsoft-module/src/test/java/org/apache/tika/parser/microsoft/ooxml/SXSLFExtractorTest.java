@@ -468,7 +468,7 @@ public class SXSLFExtractorTest extends TikaTest {
 
     @Test
     public void testEncrypted() throws Exception {
-        Map<String, String> tests = new HashMap<String, String>();
+        Map<String, String> tests = new HashMap<>();
         tests.put("testPPT_protected_passtika.pptx", "This is an encrypted PowerPoint 2007 slide.");
 
         Metadata m = new Metadata();

@@ -17,6 +17,7 @@
 package org.apache.tika.pipes.fetcher;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * Pair of fetcherName (which fetcher to call) and the key
@@ -66,12 +67,10 @@ public class FetchKey implements Serializable {
 
         FetchKey fetchKey = (FetchKey) o;
 
-        if (fetcherName != null ? !fetcherName.equals(fetchKey.fetcherName) :
-                fetchKey.fetcherName != null) {
+        if (!Objects.equals(fetcherName, fetchKey.fetcherName)) {
             return false;
         }
-        return this.fetchKey != null ? this.fetchKey.equals(fetchKey.fetchKey) :
-                fetchKey.fetchKey == null;
+        return Objects.equals(this.fetchKey, fetchKey.fetchKey);
     }
 
     @Override

@@ -124,7 +124,7 @@ public class ZipParserTest extends AbstractPkgTest {
     }
 
     private class GatherRelIDsDocumentExtractor implements EmbeddedDocumentExtractor {
-        public Set<String> allRelIDs = new HashSet<String>();
+        public Set<String> allRelIDs = new HashSet<>();
 
         public boolean shouldParseEmbedded(Metadata metadata) {
             String relID = metadata.get(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID);

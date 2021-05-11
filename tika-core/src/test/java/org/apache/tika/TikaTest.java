@@ -534,11 +534,11 @@ public abstract class TikaTest {
      */
     public static class TrackingHandler implements EmbeddedResourceHandler {
         private final Set<MediaType> skipTypes;
-        public List<String> filenames = new ArrayList<String>();
-        public List<MediaType> mediaTypes = new ArrayList<MediaType>();
+        public List<String> filenames = new ArrayList<>();
+        public List<MediaType> mediaTypes = new ArrayList<>();
 
         public TrackingHandler() {
-            skipTypes = new HashSet<MediaType>();
+            skipTypes = new HashSet<>();
         }
 
         public TrackingHandler(Set<MediaType> skipTypes) {
@@ -560,7 +560,7 @@ public abstract class TikaTest {
      */
     public static class ByteCopyingHandler implements EmbeddedResourceHandler {
 
-        public List<byte[]> bytes = new ArrayList<byte[]>();
+        public List<byte[]> bytes = new ArrayList<>();
 
         @Override
         public void handle(String filename, MediaType mediaType, InputStream stream) {

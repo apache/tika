@@ -25,7 +25,6 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
-import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -41,8 +40,8 @@ import com.adobe.xmp.options.PropertyOptions;
  */
 public class OpenDocumentConverter extends AbstractConverter {
     protected static final Set<Namespace> ADDITIONAL_NAMESPACES = Collections
-            .unmodifiableSet( new HashSet<Namespace>( Arrays.asList( new Namespace(
-                    Office.NAMESPACE_URI_DOC_META, Office.PREFIX_DOC_META ) ) ) );
+            .unmodifiableSet(new HashSet<>(Collections.singletonList(new Namespace(
+                    Office.NAMESPACE_URI_DOC_META, Office.PREFIX_DOC_META))) );
 
     public OpenDocumentConverter() throws TikaException {
         super();

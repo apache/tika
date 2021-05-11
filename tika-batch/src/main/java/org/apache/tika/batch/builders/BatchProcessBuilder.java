@@ -145,7 +145,7 @@ public class BatchProcessBuilder {
         ArrayBlockingQueue<FileResource> queue = buildQueue(docElement, runtimeAttributes);
 
         NodeList children = docElement.getChildNodes();
-        Map<String, Node> keyNodes = new HashMap<String, Node>();
+        Map<String, Node> keyNodes = new HashMap<>();
         for (int i = 0; i < children.getLength(); i++) {
             Node child = children.item(i);
             if (child.getNodeType() != Node.ELEMENT_NODE) {
@@ -220,7 +220,7 @@ public class BatchProcessBuilder {
 
     private Map<String, String> setNumConsumersInRuntimeAttributes(Node docElement,
                                                                    Map<String, String> incomingRuntimeAttributes) {
-        Map<String, String> runtimeAttributes = new HashMap<String, String>();
+        Map<String, String> runtimeAttributes = new HashMap<>();
 
         for (Map.Entry<String, String> e : incomingRuntimeAttributes.entrySet()) {
             runtimeAttributes.put(e.getKey(), e.getValue());
@@ -271,7 +271,7 @@ public class BatchProcessBuilder {
             maxQueueSize = DEFAULT_MAX_QUEUE_SIZE;
         }
 
-        return new ArrayBlockingQueue<FileResource>(maxQueueSize);
+        return new ArrayBlockingQueue<>(maxQueueSize);
     }
 
     private ConsumersManager buildConsumersManager(Node node, Map<String, String> runtimeAttributes,

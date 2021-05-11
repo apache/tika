@@ -158,7 +158,7 @@ public class CleanPhoneText {
         int idx = 0;
         Pattern p = Pattern.compile(cleanPhoneRegex);
         Matcher m = p.matcher(text);
-        ArrayList<String> phoneNumbers = new ArrayList<String>();
+        ArrayList<String> phoneNumbers = new ArrayList<>();
         while (m.find(idx)) {
             String digits = m.group(1);
             int start = m.start(1);

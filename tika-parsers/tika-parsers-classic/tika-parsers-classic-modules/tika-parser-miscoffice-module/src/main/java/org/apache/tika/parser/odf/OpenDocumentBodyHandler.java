@@ -67,7 +67,7 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
      * and left out from event stream.
      */
     private static final HashMap<QName, TargetElement> MAPPINGS =
-            new HashMap<QName, TargetElement>();
+            new HashMap<>();
     private static final char[] SPACE = new char[]{' '};
     private static final String CLASS = "class";
     private static final Attributes ANNOTATION_ATTRIBUTES = buildAttributes(CLASS, "annotation");
@@ -92,7 +92,7 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
         MAPPINGS.put(new QName(SVG_NS, "desc"), new TargetElement(XHTML, "span"));
         MAPPINGS.put(new QName(TEXT_NS, "span"), new TargetElement(XHTML, "span"));
 
-        final HashMap<QName, QName> aAttsMapping = new HashMap<QName, QName>();
+        final HashMap<QName, QName> aAttsMapping = new HashMap<>();
         aAttsMapping.put(new QName(XLINK_NS, "href"), new QName("href"));
         aAttsMapping.put(new QName(XLINK_NS, "title"), new QName("title"));
         MAPPINGS.put(new QName(TEXT_NS, "a"), new TargetElement(XHTML, "a",
@@ -105,7 +105,7 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
         // repeating of rows is ignored; for columns, see below!
         MAPPINGS.put(new QName(TABLE_NS, "table-row"), new TargetElement(XHTML, "tr"));
         // special mapping for rowspan/colspan attributes
-        final HashMap<QName, QName> tableCellAttsMapping = new HashMap<QName, QName>();
+        final HashMap<QName, QName> tableCellAttsMapping = new HashMap<>();
         tableCellAttsMapping
                 .put(new QName(TABLE_NS, "number-columns-spanned"), new QName("colspan"));
         tableCellAttsMapping.put(new QName(TABLE_NS, "number-rows-spanned"), new QName("rowspan"));
@@ -134,14 +134,14 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
     private StringBuilder base64BinaryDataBuffer = new StringBuilder();
     private int nodeDepth = 0;
     private int completelyFiltered = 0;
-    private Stack<String> headingStack = new Stack<String>();
-    private Map<String, TextStyle> paragraphTextStyleMap = new HashMap<String, TextStyle>();
-    private Map<String, TextStyle> textStyleMap = new HashMap<String, TextStyle>();
-    private Map<String, ListStyle> listStyleMap = new HashMap<String, ListStyle>();
+    private Stack<String> headingStack = new Stack<>();
+    private Map<String, TextStyle> paragraphTextStyleMap = new HashMap<>();
+    private Map<String, TextStyle> textStyleMap = new HashMap<>();
+    private Map<String, ListStyle> listStyleMap = new HashMap<>();
     private String currParagraphStyleName; //paragraph style name
     private TextStyle currTextStyle; //this is the text style for particular spans/paragraphs
     private String currTextStyleName;
-    private Stack<ListStyle> listStyleStack = new Stack<ListStyle>();
+    private Stack<ListStyle> listStyleStack = new Stack<>();
     private ListStyle listStyle;
     // True if we are currently in the named style:
     private boolean curUnderlined;
@@ -387,7 +387,7 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
             String fontWeight = attrs.getValue(FORMATTING_OBJECTS_NS, "font-weight");
             if ("bold".equals(fontWeight) || "bolder".equals(fontWeight) ||
                     (fontWeight != null && Character.isDigit(fontWeight.charAt(0)) &&
-                            Integer.valueOf(fontWeight) > 500)) {
+                     Integer.parseInt(fontWeight) > 500)) {
                 currTextStyle.bold = true;
             }
             String underlineStyle = attrs.getValue(STYLE_NS, "text-underline-style");

@@ -206,7 +206,7 @@ public class GDALParser extends AbstractParser {
     }
 
     private Map<Pattern, String> getPatterns() {
-        Map<Pattern, String> patterns = new HashMap<Pattern, String>();
+        Map<Pattern, String> patterns = new HashMap<>();
         this.addPatternWithColon("Driver", patterns);
         this.addPatternWithColon("Files", patterns);
         this.addPatternWithIs("Size", patterns);

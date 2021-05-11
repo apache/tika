@@ -27,7 +27,6 @@ import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.poi.ooxml.POIXMLDocument;
 import org.apache.poi.ooxml.extractor.ExtractorFactory;
 import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.exceptions.InvalidOperationException;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
@@ -229,11 +228,7 @@ public class OOXMLExtractorFactory {
             } else {
                 throw new TikaException("Error creating OOXML extractor", e);
             }
-        } catch (InvalidFormatException e) {
-            throw new TikaException("Error creating OOXML extractor", e);
-        } catch (OpenXML4JException e) {
-            throw new TikaException("Error creating OOXML extractor", e);
-        } catch (XmlException e) {
+        } catch (OpenXML4JException | XmlException e) {
             throw new TikaException("Error creating OOXML extractor", e);
         } catch (RuntimeSAXException e) {
             throw(SAXException) e.getCause();

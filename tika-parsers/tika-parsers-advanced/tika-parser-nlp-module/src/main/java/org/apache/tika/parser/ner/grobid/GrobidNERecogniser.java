@@ -163,12 +163,12 @@ public class GrobidNERecogniser implements NERecogniser {
      */
     public Map<String, Set<String>> recognise(String text) {
 
-        Map<String, Set<String>> entities = new HashMap<String, Set<String>>();
-        Set<String> measurementNumberSet = new HashSet<String>();
-        Set<String> unitSet = new HashSet<String>();
-        Set<String> measurementSet = new HashSet<String>();
-        Set<String> normalizedMeasurementSet = new HashSet<String>();
-        Set<String> measurementTypeSet = new HashSet<String>();
+        Map<String, Set<String>> entities = new HashMap<>();
+        Set<String> measurementNumberSet = new HashSet<>();
+        Set<String> unitSet = new HashSet<>();
+        Set<String> measurementSet = new HashSet<>();
+        Set<String> normalizedMeasurementSet = new HashSet<>();
+        Set<String> measurementTypeSet = new HashSet<>();
 
         try {
             String url = restHostUrlStr + readRestEndpoint();

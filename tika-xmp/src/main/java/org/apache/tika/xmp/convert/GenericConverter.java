@@ -100,6 +100,6 @@ public class GenericConverter extends AbstractConverter {
     @Override
     public Set<Namespace> getAdditionalNamespaces() {
         // no additional namespaces needed
-        return Collections.unmodifiableSet( new HashSet<Namespace>() );
+        return Collections.unmodifiableSet(new HashSet<>() );
     }
 }

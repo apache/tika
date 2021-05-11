@@ -61,7 +61,7 @@ public class PSDParser extends AbstractParser {
     private static final long serialVersionUID = 883387734607994914L;
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<MediaType>(Arrays.asList(MediaType.image("vnd.adobe.photoshop"))));
+            new HashSet<>(Arrays.asList(MediaType.image("vnd.adobe.photoshop"))));
 
     private static final int MAX_DATA_LENGTH_BYTES = 10_000_000;
     private static final int MAX_BLOCKS = 10000;

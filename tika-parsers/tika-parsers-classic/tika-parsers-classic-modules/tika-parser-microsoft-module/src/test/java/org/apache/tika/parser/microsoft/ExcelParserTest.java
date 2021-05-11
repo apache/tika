@@ -17,6 +17,7 @@
 package org.apache.tika.parser.microsoft;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -198,7 +199,7 @@ public class ExcelParserTest extends TikaTest {
 
             assertEquals("application/vnd.ms-excel", metadata.get(Metadata.CONTENT_TYPE));
 
-            assertEquals(null, metadata.get(TikaCoreProperties.TITLE));
+            assertNull(metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Antoni", metadata.get(TikaCoreProperties.CREATOR));
             assertEquals("2011-11-25T09:52:48Z", metadata.get(TikaCoreProperties.CREATED));
 

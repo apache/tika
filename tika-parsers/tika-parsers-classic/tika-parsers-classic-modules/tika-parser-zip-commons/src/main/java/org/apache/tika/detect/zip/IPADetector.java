@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -60,12 +59,7 @@ public class IPADetector implements ZipContainerDetector {
             ZipArchiveEntry entry = entries.nextElement();
             String name = entry.getName();
 
-            Iterator<Pattern> ip = tmpPatterns.patterns.iterator();
-            while (ip.hasNext()) {
-                if (ip.next().matcher(name).matches()) {
-                    ip.remove();
-                }
-            }
+            tmpPatterns.patterns.removeIf(pattern -> pattern.matcher(name).matches());
             if (tmpPatterns.patterns.isEmpty()) {
                 // We've found everything we need to find
                 return MediaType.application("x-itunes-ipa");
@@ -87,12 +81,7 @@ public class IPADetector implements ZipContainerDetector {
             detectContext.set(TmpPatterns.class, tmp);
         }
 
-        Iterator<Pattern> ip = tmp.patterns.iterator();
-        while (ip.hasNext()) {
-            if (ip.next().matcher(name).matches()) {
-                ip.remove();
-            }
-        }
+        tmp.patterns.removeIf(pattern -> pattern.matcher(name).matches());
         if (tmp.patterns.isEmpty()) {
             // We've found everything we need to find
             return IPA;

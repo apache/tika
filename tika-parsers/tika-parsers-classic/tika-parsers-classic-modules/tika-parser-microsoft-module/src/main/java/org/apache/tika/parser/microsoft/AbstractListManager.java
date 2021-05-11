@@ -29,8 +29,8 @@ public abstract class AbstractListManager {
     private final static String BULLET = "\u00b7";
 
     protected Map<Integer, ParagraphLevelCounter> listLevelMap =
-            new HashMap<Integer, ParagraphLevelCounter>();
-    protected Map<Integer, LevelTuple[]> overrideTupleMap = new HashMap<Integer, LevelTuple[]>();
+            new HashMap<>();
+    protected Map<Integer, LevelTuple[]> overrideTupleMap = new HashMap<>();
 
     //helper class that is docx/doc format agnostic
     protected class ParagraphLevelCounter {
@@ -41,7 +41,7 @@ public abstract class AbstractListManager {
         private final Integer FIRST_SKIPPED = -2;
         private final LevelTuple[] levelTuples;
         Pattern LEVEL_INTERPOLATOR = Pattern.compile("%(\\d+)");
-        private List<Integer> counts = new ArrayList<Integer>();
+        private List<Integer> counts = new ArrayList<>();
         private int lastLevel = -1;
 
         public ParagraphLevelCounter(LevelTuple[] levelTuples) {

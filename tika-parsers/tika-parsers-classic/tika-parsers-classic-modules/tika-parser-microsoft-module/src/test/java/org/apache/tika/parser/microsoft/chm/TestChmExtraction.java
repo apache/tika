@@ -17,11 +17,11 @@
 package org.apache.tika.parser.microsoft.chm;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -117,7 +117,7 @@ public class TestChmExtraction extends MultiThreadedTikaTest {
         final Pattern htmlPairP = Pattern.compile("\\Q<html\\E.+\\Q</html>\\E",
                 Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.DOTALL);
 
-        Set<String> names = new HashSet<String>();
+        Set<String> names = new HashSet<>();
 
         for (DirectoryListingEntry directoryListingEntry : entries.getDirectoryListingEntryList()) {
             byte[] data = chmExtractor.extractChmEntry(directoryListingEntry);
@@ -167,23 +167,21 @@ public class TestChmExtraction extends MultiThreadedTikaTest {
     public void testMultiThreadedChmExtraction() throws InterruptedException {
         ExecutorService executor = Executors.newFixedThreadPool(TestParameters.NTHREADS);
         for (int i = 0; i < TestParameters.NTHREADS; i++) {
-            executor.execute(new Runnable() {
-                public void run() {
-                    for (String fileName : files) {
-                        InputStream stream = null;
+            executor.execute(() -> {
+                for (String fileName : files) {
+                    InputStream stream = null;
+                    try {
+                        stream = getResourceAsStream(fileName);
+                        BodyContentHandler handler = new BodyContentHandler(-1);
+                        parser.parse(stream, handler, new Metadata(), new ParseContext());
+                        assertFalse(handler.toString().isEmpty());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    } finally {
                         try {
-                            stream = getResourceAsStream(fileName);
-                            BodyContentHandler handler = new BodyContentHandler(-1);
-                            parser.parse(stream, handler, new Metadata(), new ParseContext());
-                            assertTrue(!handler.toString().isEmpty());
-                        } catch (Exception e) {
+                            stream.close();
+                        } catch (IOException e) {
                             e.printStackTrace();
-                        } finally {
-                            try {
-                                stream.close();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
                         }
                     }
                 }
@@ -220,25 +218,20 @@ public class TestChmExtraction extends MultiThreadedTikaTest {
         }
 
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER);
-        testMultiThreaded(wrapper, parseContexts, 10, 10, new FileFilter() {
-            @Override
-            public boolean accept(File pathname) {
-                if (pathname.getName().toLowerCase(Locale.ENGLISH).endsWith(".chm")) {
-                    //this file is a beast, skip it
-                    if (pathname.getName().equals("testChm2.chm")) {
-                        return false;
-                        //this file throws an exception in the baseline and then
-                        //isn't included in the actual tests.
-                        //If we do want to include it we need to change the way
-                        //MultiThreadedTikaTest handles files that throw exceptions
-                    } else if (pathname.getName().equals("testChm_oom.chm")) {
-                        return false;
-                    } else {
-                        return true;
-                    }
-                } else {
+        testMultiThreaded(wrapper, parseContexts, 10, 10, pathname -> {
+            if (pathname.getName().toLowerCase(Locale.ENGLISH).endsWith(".chm")) {
+                //this file is a beast, skip it
+                if (pathname.getName().equals("testChm2.chm")) {
                     return false;
+                    //this file throws an exception in the baseline and then
+                    //isn't included in the actual tests.
+                    //If we do want to include it we need to change the way
+                    //MultiThreadedTikaTest handles files that throw exceptions
+                } else {
+                    return !pathname.getName().equals("testChm_oom.chm");
                 }
+            } else {
+                return false;
             }
         });
     }

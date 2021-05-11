@@ -35,7 +35,7 @@ import org.xml.sax.SAXException;
  */
 public class ToXMLContentHandler extends ToTextContentHandler {
 
-    protected final Map<String, String> namespaces = new HashMap<String, String>();
+    protected final Map<String, String> namespaces = new HashMap<>();
     private final String encoding;
 
     protected boolean inStartElement = false;
@@ -240,7 +240,7 @@ public class ToXMLContentHandler extends ToTextContentHandler {
             if (namespaces.isEmpty()) {
                 this.namespaces = Collections.emptyMap();
             } else {
-                this.namespaces = new HashMap<String, String>(namespaces);
+                this.namespaces = new HashMap<>(namespaces);
             }
         }
 

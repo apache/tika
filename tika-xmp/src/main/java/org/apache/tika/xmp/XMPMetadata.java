@@ -306,7 +306,7 @@ public class XMPMetadata extends Metadata {
         Integer result = null;
 
         try {
-            result = new Integer( XMPUtils.convertToInteger( this.get( property.getName() ) ) );
+            result = XMPUtils.convertToInteger(this.get(property.getName()));
         }
         catch (XMPException e) {
             // Ignore

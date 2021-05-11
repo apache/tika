@@ -124,11 +124,7 @@ public class XMLProfiler extends AbstractParser {
             if (starts == 0) {
                 metadata.set(ROOT_ENTITY, qName);
             }
-            Set<String> localNames = entities.get(uri);
-            if (localNames == null) {
-                localNames = new TreeSet<>();
-                entities.put(uri, localNames);
-            }
+            Set<String> localNames = entities.computeIfAbsent(uri, k -> new TreeSet<>());
             localNames.add(localName);
             starts++;
         }

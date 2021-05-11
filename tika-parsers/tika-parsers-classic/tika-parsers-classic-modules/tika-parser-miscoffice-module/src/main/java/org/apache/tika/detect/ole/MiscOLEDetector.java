@@ -109,7 +109,7 @@ public class MiscOLEDetector implements Detector {
     }
 
     private static Set<String> getTopLevelNames(DirectoryNode root) {
-        Set<String> names = new HashSet<String>();
+        Set<String> names = new HashSet<>();
         for (Entry entry : root) {
             names.add(entry.getName());
         }

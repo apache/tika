@@ -41,7 +41,7 @@ public class Mp3ParserTest extends TikaTest {
      */
     private static void checkDuration(Metadata metadata, int expected) {
         assertEquals("Wrong duration", expected,
-                Math.round(Float.valueOf(metadata.get(XMPDM.DURATION))));
+                Math.round(Float.parseFloat(metadata.get(XMPDM.DURATION))));
     }
 
     /**
