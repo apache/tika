@@ -32,19 +32,14 @@ import java.util.Map;
  * when unit testing
  */
 public class ResourceLoggingClassLoader extends ClassLoader {
-    private final Map<String, List<URL>> loadedResources = new HashMap<String, List<URL>>();
+    private final Map<String, List<URL>> loadedResources = new HashMap<>();
 
     public ResourceLoggingClassLoader(ClassLoader realClassloader) {
         super(realClassloader);
     }
 
     private List<URL> fetchRecord(String name) {
-        List<URL> alreadyLoaded = loadedResources.get(name);
-        if (alreadyLoaded == null) {
-            alreadyLoaded = new ArrayList<URL>();
-            loadedResources.put(name, alreadyLoaded);
-        }
-        return alreadyLoaded;
+        return loadedResources.computeIfAbsent(name, k -> new ArrayList<>());
     }
 
     @Override

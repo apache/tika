@@ -48,7 +48,7 @@ public class CompositeDetector implements Detector {
         if (excludeDetectors == null || excludeDetectors.isEmpty()) {
             this.detectors = detectors;
         } else {
-            this.detectors = new ArrayList<Detector>();
+            this.detectors = new ArrayList<>();
             for (Detector d : detectors) {
                 if (!isExcluded(excludeDetectors, d.getClass())) {
                     this.detectors.add(d);

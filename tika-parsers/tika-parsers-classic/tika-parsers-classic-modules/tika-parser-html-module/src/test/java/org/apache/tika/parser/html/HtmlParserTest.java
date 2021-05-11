@@ -215,7 +215,7 @@ public class HtmlParserTest extends TikaTest {
         String test =
                 "<html><head><base href=\"" + base + "\"></head>" + "<body><a href=\"" + relative +
                         "\">test</a></body></html>";
-        final List<String> links = new ArrayList<String>();
+        final List<String> links = new ArrayList<>();
         new HtmlParser()
                 .parse(new ByteArrayInputStream(test.getBytes(UTF_8)), new DefaultHandler() {
                     @Override
@@ -1152,7 +1152,7 @@ public class HtmlParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "text/html");
 
-        final List<String> links = new ArrayList<String>();
+        final List<String> links = new ArrayList<>();
         new HtmlParser()
                 .parse(new ByteArrayInputStream(html.getBytes(UTF_8)), new DefaultHandler() {
                     @Override
@@ -1184,8 +1184,7 @@ public class HtmlParserTest extends TikaTest {
                 @Override
                 public void startElement(String uri, String local, String name,
                                          Attributes attributes) throws SAXException {
-
-                    int count = tagFrequencies.containsKey(name) ? tagFrequencies.get(name) : 0;
+                    int count = tagFrequencies.getOrDefault(name, 0);
                     tagFrequencies.put(name, count + 1);
                 }
             };

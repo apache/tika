@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser;
 
-import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,15 +48,7 @@ public class AutoDetectReaderParserTest extends MultiThreadedTikaTest {
         for (int i = 0; i < numThreads; i++) {
             contexts[i] = new ParseContext();
         }
-        FileFilter fileFilter = new FileFilter() {
-            @Override
-            public boolean accept(File pathname) {
-                if (pathname.getName().endsWith(".txt") || pathname.getName().endsWith(".html")) {
-                    return true;
-                }
-                return false;
-            }
-        };
+        FileFilter fileFilter = pathname -> pathname.getName().endsWith(".txt") || pathname.getName().endsWith(".html");
         testMultiThreaded(AUTO_DETECT_PARSER, contexts, numThreads, numIterations, fileFilter);
     }
 

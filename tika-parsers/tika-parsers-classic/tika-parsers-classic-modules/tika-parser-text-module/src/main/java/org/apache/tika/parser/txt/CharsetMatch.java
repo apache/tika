@@ -160,7 +160,7 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
              * should be stripped off before creating the string.
              */
             int startSuffix =
-                    name.indexOf("_rtl") < 0 ? name.indexOf("_ltr") : name.indexOf("_rtl");
+                    !name.contains("_rtl") ? name.indexOf("_ltr") : name.indexOf("_rtl");
             if (startSuffix > 0) {
                 name = name.substring(0, startSuffix);
             }

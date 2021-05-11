@@ -20,7 +20,6 @@ package org.apache.tika.example;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -85,7 +84,7 @@ public class RollbackSoftware {
          */
         public Set<MediaType> getSupportedTypes(ParseContext context) {
             return Collections
-                    .unmodifiableSet(new HashSet<MediaType>(Arrays.asList(MediaType.TEXT_PLAIN)));
+                    .unmodifiableSet(new HashSet<>(Arrays.asList(MediaType.TEXT_PLAIN)));
         }
 
         /*
@@ -110,11 +109,7 @@ public class RollbackSoftware {
                           ParseContext context) throws IOException, SAXException, TikaException {
 
             File deployArea = new File(IOUtils.toString(is, UTF_8));
-            File[] versions = deployArea.listFiles(new FileFilter() {
-                public boolean accept(File pathname) {
-                    return !pathname.getName().startsWith("current");
-                }
-            });
+            File[] versions = deployArea.listFiles(pathname -> !pathname.getName().startsWith("current"));
 
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             xhtml.startDocument();

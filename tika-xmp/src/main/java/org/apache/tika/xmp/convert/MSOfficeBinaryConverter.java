@@ -43,9 +43,9 @@ public class MSOfficeBinaryConverter extends AbstractConverter {
     }
 
     protected static final Set<Namespace> ADDITIONAL_NAMESPACES = Collections
-            .unmodifiableSet( new HashSet<Namespace>( Arrays.asList( new Namespace(
-                    OfficeOpenXMLCore.NAMESPACE_URI, OfficeOpenXMLCore.PREFIX ), new Namespace(
-                    OfficeOpenXMLExtended.NAMESPACE_URI, OfficeOpenXMLExtended.PREFIX ) ) ) );
+            .unmodifiableSet(new HashSet<>(Arrays.asList(new Namespace(
+                    OfficeOpenXMLCore.NAMESPACE_URI, OfficeOpenXMLCore.PREFIX), new Namespace(
+                    OfficeOpenXMLExtended.NAMESPACE_URI, OfficeOpenXMLExtended.PREFIX))) );
 
     /**
      * @throws XMPException

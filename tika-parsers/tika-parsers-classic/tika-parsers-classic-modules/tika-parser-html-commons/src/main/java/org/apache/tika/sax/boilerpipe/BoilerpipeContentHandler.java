@@ -332,7 +332,7 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
             this.qName = qName;
             this.attrs = attrs;
             this.elementType = elementType;
-            this.characters = new ArrayList<char[]>();
+            this.characters = new ArrayList<>();
         }
 
         @Override

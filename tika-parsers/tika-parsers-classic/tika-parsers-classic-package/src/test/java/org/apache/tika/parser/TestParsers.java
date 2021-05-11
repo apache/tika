@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.InputStream;
 
@@ -129,11 +128,6 @@ public class TestParsers extends MultiThreadedTikaTest {
         for (int i = 0; i < 10; i++) {
             contexts[i] = new ParseContext();
         }
-        testMultiThreaded(AUTO_DETECT_PARSER, contexts, 10, 100, new FileFilter() {
-            @Override
-            public boolean accept(File pathname) {
-                return true;
-            }
-        });
+        testMultiThreaded(AUTO_DETECT_PARSER, contexts, 10, 100, pathname -> true);
     }
 }

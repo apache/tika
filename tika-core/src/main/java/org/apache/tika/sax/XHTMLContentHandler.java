@@ -91,7 +91,7 @@ public class XHTMLContentHandler extends SafeContentHandler {
     }
 
     private static Set<String> unmodifiableSet(String... elements) {
-        return Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(elements)));
+        return Collections.unmodifiableSet(new HashSet<>(Arrays.asList(elements)));
     }
 
     /**

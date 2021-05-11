@@ -137,7 +137,7 @@ public class TikaPipesTest extends CXFTestBase {
 
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
-        List<ResourceProvider> rCoreProviders = new ArrayList<ResourceProvider>();
+        List<ResourceProvider> rCoreProviders = new ArrayList<>();
         try {
             rCoreProviders.add(new SingletonResourceProvider(new PipesResource(TIKA_CONFIG_PATH)));
         } catch (IOException | TikaConfigException e) {
@@ -170,8 +170,8 @@ public class TikaPipesTest extends CXFTestBase {
 
         Metadata userMetadata = new Metadata();
         userMetadata.set("my-key", "my-value");
-        for (int i = 0; i < VALUE_ARRAY.length; i++) {
-            userMetadata.add("my-key-multi", VALUE_ARRAY[i]);
+        for (String s : VALUE_ARRAY) {
+            userMetadata.add("my-key-multi", s);
         }
 
         FetchEmitTuple t =
@@ -205,8 +205,8 @@ public class TikaPipesTest extends CXFTestBase {
 
         Metadata userMetadata = new Metadata();
         userMetadata.set("my-key", "my-value");
-        for (int i = 0; i < VALUE_ARRAY.length; i++) {
-            userMetadata.add("my-key-multi", VALUE_ARRAY[i]);
+        for (String s : VALUE_ARRAY) {
+            userMetadata.add("my-key-multi", s);
         }
 
         FetchEmitTuple t =
@@ -237,8 +237,8 @@ public class TikaPipesTest extends CXFTestBase {
     public void testPostNPE() throws Exception {
         Metadata userMetadata = new Metadata();
         userMetadata.set("my-key", "my-value");
-        for (int i = 0; i < VALUE_ARRAY.length; i++) {
-            userMetadata.add("my-key-multi", VALUE_ARRAY[i]);
+        for (String s : VALUE_ARRAY) {
+            userMetadata.add("my-key-multi", s);
         }
 
         FetchEmitTuple t =

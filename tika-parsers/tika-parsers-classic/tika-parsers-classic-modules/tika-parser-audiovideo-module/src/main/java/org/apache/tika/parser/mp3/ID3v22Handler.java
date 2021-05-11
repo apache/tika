@@ -42,32 +42,43 @@ public class ID3v22Handler implements ID3Tags {
     private String trackNumber;
     private String albumArtist;
     private String disc;
-    private List<ID3Comment> comments = new ArrayList<ID3Comment>();
+    private List<ID3Comment> comments = new ArrayList<>();
 
     public ID3v22Handler(ID3v2Frame frame) throws IOException, SAXException, TikaException {
         RawTagIterator tags = new RawV22TagIterator(frame);
         while (tags.hasNext()) {
             RawTag tag = tags.next();
-            if (tag.name.equals("TT2")) {
-                title = getTagString(tag.data, 0, tag.data.length);
-            } else if (tag.name.equals("TP1")) {
-                artist = getTagString(tag.data, 0, tag.data.length);
-            } else if (tag.name.equals("TP2")) {
-                albumArtist = getTagString(tag.data, 0, tag.data.length);
-            } else if (tag.name.equals("TAL")) {
-                album = getTagString(tag.data, 0, tag.data.length);
-            } else if (tag.name.equals("TYE")) {
-                year = getTagString(tag.data, 0, tag.data.length);
-            } else if (tag.name.equals("TCM")) {
-                composer = getTagString(tag.data, 0, tag.data.length);
-            } else if (tag.name.equals("COM")) {
-                comments.add(getComment(tag.data, 0, tag.data.length));
-            } else if (tag.name.equals("TRK")) {
-                trackNumber = getTagString(tag.data, 0, tag.data.length);
-            } else if (tag.name.equals("TPA")) {
-                disc = getTagString(tag.data, 0, tag.data.length);
-            } else if (tag.name.equals("TCO")) {
-                genre = extractGenre(getTagString(tag.data, 0, tag.data.length));
+            switch (tag.name) {
+                case "TT2":
+                    title = getTagString(tag.data, 0, tag.data.length);
+                    break;
+                case "TP1":
+                    artist = getTagString(tag.data, 0, tag.data.length);
+                    break;
+                case "TP2":
+                    albumArtist = getTagString(tag.data, 0, tag.data.length);
+                    break;
+                case "TAL":
+                    album = getTagString(tag.data, 0, tag.data.length);
+                    break;
+                case "TYE":
+                    year = getTagString(tag.data, 0, tag.data.length);
+                    break;
+                case "TCM":
+                    composer = getTagString(tag.data, 0, tag.data.length);
+                    break;
+                case "COM":
+                    comments.add(getComment(tag.data, 0, tag.data.length));
+                    break;
+                case "TRK":
+                    trackNumber = getTagString(tag.data, 0, tag.data.length);
+                    break;
+                case "TPA":
+                    disc = getTagString(tag.data, 0, tag.data.length);
+                    break;
+                case "TCO":
+                    genre = extractGenre(getTagString(tag.data, 0, tag.data.length));
+                    break;
             }
         }
     }
@@ -82,9 +93,7 @@ public class ID3v22Handler implements ID3Tags {
             try {
                 int genreID = Integer.parseInt(rawGenre.substring(open + 1, close));
                 return ID3Tags.GENRES[genreID];
-            } catch (ArrayIndexOutOfBoundsException invalidNum) {
-                return genreStr;
-            } catch (NumberFormatException notANum) {
+            } catch (ArrayIndexOutOfBoundsException | NumberFormatException e) {
                 return genreStr;
             }
         } else {

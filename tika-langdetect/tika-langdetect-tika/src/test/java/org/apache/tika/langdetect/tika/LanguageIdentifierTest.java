@@ -93,7 +93,7 @@ public class LanguageIdentifierTest {
         assertTrue(identifier.isReasonablyCertain());
 
         // English and German profiles loaded explicitly from initProfiles method
-        HashMap<String, LanguageProfile> profilesMap = new HashMap<String, LanguageProfile>();
+        HashMap<String, LanguageProfile> profilesMap = new HashMap<>();
         profilesMap.put("en", enProfile);
         profilesMap.put("de", deProfile);
         LanguageIdentifier.initProfiles(profilesMap);

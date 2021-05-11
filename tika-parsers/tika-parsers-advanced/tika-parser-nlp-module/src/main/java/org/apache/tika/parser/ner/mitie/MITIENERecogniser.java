@@ -145,7 +145,7 @@ public class MITIENERecogniser implements NERecogniser {
                 int tag_index = (Integer) entityMentionClass.getMethod("getTag")
                         .invoke(entityMentionObject);
                 String tag = possibleTags.get(tag_index);
-                Set<String> x = new HashSet<String>();
+                Set<String> x = new HashSet<>();
                 if (names.containsKey(tag)) {
                     x = names.get(tag);
                 } else {

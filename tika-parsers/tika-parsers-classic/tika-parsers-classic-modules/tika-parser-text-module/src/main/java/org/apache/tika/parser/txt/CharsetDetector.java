@@ -304,7 +304,7 @@ public class CharsetDetector {
         int i;
         CharsetMatch charsetMatch;
         int confidence;
-        ArrayList<CharsetMatch> matches = new ArrayList<CharsetMatch>();
+        ArrayList<CharsetMatch> matches = new ArrayList<>();
         //  Iterate over all possible charsets, remember all that
         //    give a match quality > 0.
         for (i = 0; i < ALL_CS_RECOGNIZERS.size(); i++) {

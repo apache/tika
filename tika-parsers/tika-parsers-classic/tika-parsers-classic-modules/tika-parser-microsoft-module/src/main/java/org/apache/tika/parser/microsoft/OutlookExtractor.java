@@ -486,7 +486,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             if (headerKeyMatcher.find()) {
                 if (lastKey != null) {
                     List<String> vals = headers.get(lastKey);
-                    vals = (vals == null) ? new ArrayList<String>() : vals;
+                    vals = (vals == null) ? new ArrayList<>() : vals;
                     vals.add(decodeHeader(sb.toString()));
                     headers.put(lastKey, vals);
                 }
@@ -507,7 +507,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         //make sure to add the last value
         if (sb.length() > 0 && lastKey != null) {
             List<String> vals = headers.get(lastKey);
-            vals = (vals == null) ? new ArrayList<String>() : vals;
+            vals = (vals == null) ? new ArrayList<>() : vals;
             vals.add(decodeHeader(sb.toString()));
             headers.put(lastKey, vals);
         }

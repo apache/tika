@@ -143,7 +143,7 @@ public class JDBCTableReader {
     }
 
     public List<String> getHeaders() throws IOException {
-        List<String> headers = new LinkedList<String>();
+        List<String> headers = new LinkedList<>();
         //lazy initialization
         if (results == null) {
             reset();

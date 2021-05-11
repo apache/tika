@@ -130,7 +130,7 @@ public class Param<T> implements Serializable {
             value = valueAttr;
         }
 
-        Param<T> ret = new Param<T>();
+        Param<T> ret = new Param<>();
         ret.name = nameAttr.getTextContent();
         if (typeAttr != null) {
             ret.setTypeString(typeAttr.getTextContent());

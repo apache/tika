@@ -120,7 +120,7 @@ public class FLVParser extends AbstractParser {
 
     private Object readAMFStrictArray(DataInputStream input) throws IOException {
         long count = readUInt32(input);
-        ArrayList<Object> list = new ArrayList<Object>();
+        ArrayList<Object> list = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             list.add(readAMFData(input, -1));
         }
@@ -136,7 +136,7 @@ public class FLVParser extends AbstractParser {
     }
 
     private Object readAMFObject(DataInputStream input) throws IOException {
-        HashMap<String, Object> array = new HashMap<String, Object>();
+        HashMap<String, Object> array = new HashMap<>();
         while (true) {
             String key = readAMFString(input);
             int dataType = input.read();
@@ -150,7 +150,7 @@ public class FLVParser extends AbstractParser {
 
     private Object readAMFEcmaArray(DataInputStream input) throws IOException {
         long size = readUInt32(input);
-        HashMap<String, Object> array = new HashMap<String, Object>();
+        HashMap<String, Object> array = new HashMap<>();
         for (int i = 0; i < size; i++) {
             String key = readAMFString(input);
             int dataType = input.read();

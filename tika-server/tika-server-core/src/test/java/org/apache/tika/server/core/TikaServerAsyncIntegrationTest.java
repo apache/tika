@@ -146,16 +146,11 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
     @Test
     public void testBasic() throws Exception {
 
-        Thread serverThread = new Thread() {
-            @Override
-            public void run() {
-                TikaServerCli.main(new String[]{
-                        //for debugging/development, use no fork; otherwise go with the default
-                        //"-noFork",
-                        "-p", INTEGRATION_TEST_PORT, "-config",
-                        TIKA_CONFIG.toAbsolutePath().toString()});
-            }
-        };
+        Thread serverThread = new Thread(() -> TikaServerCli.main(new String[]{
+                //for debugging/development, use no fork; otherwise go with the default
+                //"-noFork",
+                "-p", INTEGRATION_TEST_PORT, "-config",
+                TIKA_CONFIG.toAbsolutePath().toString()}));
         serverThread.start();
 
         try {

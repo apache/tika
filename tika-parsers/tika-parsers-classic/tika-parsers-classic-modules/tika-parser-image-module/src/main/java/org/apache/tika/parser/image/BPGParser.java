@@ -48,7 +48,7 @@ public class BPGParser extends AbstractImageParser {
     protected static final int EXTENSION_TAG_THUMBNAIL = 4;
     private static final long serialVersionUID = -161736541253892772L;
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<MediaType>(
+            new HashSet<>(
                     Arrays.asList(MediaType.image("x-bpg"), MediaType.image("bpg"))));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {

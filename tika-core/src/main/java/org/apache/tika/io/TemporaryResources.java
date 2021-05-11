@@ -83,15 +83,13 @@ public class TemporaryResources implements Closeable {
     public Path createTempFile() throws IOException {
         final Path path = tempFileDir == null ? Files.createTempFile("apache-tika-", ".tmp") :
                 Files.createTempFile(tempFileDir, "apache-tika-", ".tmp");
-        addResource(new Closeable() {
-            public void close() throws IOException {
-                try {
-                    Files.delete(path);
-                } catch (IOException e) {
-                    // delete when exit if current delete fail
-                    LOG.warn("delete tmp file fail, will delete it on exit");
-                    path.toFile().deleteOnExit();
-                }
+        addResource(() -> {
+            try {
+                Files.delete(path);
+            } catch (IOException e) {
+                // delete when exit if current delete fail
+                LOG.warn("delete tmp file fail, will delete it on exit");
+                path.toFile().deleteOnExit();
             }
         });
         return path;

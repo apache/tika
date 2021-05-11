@@ -71,7 +71,7 @@ public class MboxParser extends AbstractParser {
 
     private static final String EMAIL_HEADER_METADATA_PREFIX = "MboxParser-";
     private static final String EMAIL_FROMLINE_METADATA = EMAIL_HEADER_METADATA_PREFIX + "from";
-    private final Map<Integer, Metadata> trackingMetadata = new HashMap<Integer, Metadata>();
+    private final Map<Integer, Metadata> trackingMetadata = new HashMap<>();
     private boolean tracking = false;
 
 
@@ -100,7 +100,7 @@ public class MboxParser extends AbstractParser {
             do {
                 if (curLine.startsWith(MBOX_RECORD_DIVIDER)) {
                     Metadata mailMetadata = new Metadata();
-                    Queue<String> multiline = new LinkedList<String>();
+                    Queue<String> multiline = new LinkedList<>();
                     mailMetadata.add(EMAIL_FROMLINE_METADATA,
                             curLine.substring(MBOX_RECORD_DIVIDER.length()));
                     mailMetadata.set(Metadata.CONTENT_TYPE, "message/rfc822");

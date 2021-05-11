@@ -129,13 +129,13 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         handleGeneralTextContainingPart(RELATION_DIAGRAM_DATA, "diagram-data",
                 document.getPackagePart(), metadata,
                 new OOXMLWordAndPowerPointTextHandler(new OOXMLTikaBodyPartHandler(xhtml),
-                        new HashMap<String, String>()//empty
+                        new HashMap<>()//empty
                 ));
         //handle chart data
         handleGeneralTextContainingPart(XSSFRelation.CHART.getRelation(), "chart",
                 document.getPackagePart(), metadata,
                 new OOXMLWordAndPowerPointTextHandler(new OOXMLTikaBodyPartHandler(xhtml),
-                        new HashMap<String, String>()//empty
+                        new HashMap<>()//empty
                 ));
 
         // then all document footers
@@ -463,7 +463,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
      */
     @Override
     protected List<PackagePart> getMainDocumentParts() {
-        List<PackagePart> parts = new ArrayList<PackagePart>();
+        List<PackagePart> parts = new ArrayList<>();
         parts.add(document.getPackagePart());
         addRelatedParts(document.getPackagePart(), parts);
         return parts;

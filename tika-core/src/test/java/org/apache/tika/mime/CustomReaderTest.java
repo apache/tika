@@ -62,8 +62,8 @@ public class CustomReaderTest {
     }
 
     static class CustomMimeTypesReader extends MimeTypesReader {
-        public Map<String, String> values = new HashMap<String, String>();
-        public List<String> ignorePatterns = new ArrayList<String>();
+        public Map<String, String> values = new HashMap<>();
+        public List<String> ignorePatterns = new ArrayList<>();
 
         CustomMimeTypesReader(MimeTypes types) {
             super(types);

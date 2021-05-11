@@ -46,6 +46,6 @@ public class POIXMLTextExtractorDecorator extends AbstractOOXMLExtractor {
 
     @Override
     protected List<PackagePart> getMainDocumentParts() {
-        return new ArrayList<PackagePart>();
+        return new ArrayList<>();
     }
 }

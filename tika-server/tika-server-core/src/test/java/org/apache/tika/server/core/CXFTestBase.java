@@ -161,7 +161,7 @@ public abstract class CXFTestBase {
     }
 
     protected Map<String, String> readZipArchive(InputStream inputStream) throws IOException {
-        Map<String, String> data = new HashMap<String, String>();
+        Map<String, String> data = new HashMap<>();
         Path tempFile = writeTemporaryArchiveFile(inputStream, "zip");
         ZipFile zip = new ZipFile(tempFile.toFile());
         Enumeration<ZipArchiveEntry> entries = zip.getEntries();
@@ -190,7 +190,7 @@ public abstract class CXFTestBase {
 
     protected Map<String, String> readArchiveFromStream(ArchiveInputStream zip)
             throws IOException {
-        Map<String, String> data = new HashMap<String, String>();
+        Map<String, String> data = new HashMap<>();
         while (true) {
             ArchiveEntry entry = zip.getNextEntry();
             if (entry == null) {

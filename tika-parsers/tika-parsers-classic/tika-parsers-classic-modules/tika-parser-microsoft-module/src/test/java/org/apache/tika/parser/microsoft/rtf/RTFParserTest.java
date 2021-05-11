@@ -411,7 +411,7 @@ public class RTFParserTest extends TikaTest {
     //TIKA-1010 test linked embedded doc
     @Test
     public void testEmbeddedLinkedDocument() throws Exception {
-        Set<MediaType> skipTypes = new HashSet<MediaType>();
+        Set<MediaType> skipTypes = new HashSet<>();
         skipTypes.add(MediaType.parse("image/emf"));
         skipTypes.add(MediaType.parse("image/wmf"));
 

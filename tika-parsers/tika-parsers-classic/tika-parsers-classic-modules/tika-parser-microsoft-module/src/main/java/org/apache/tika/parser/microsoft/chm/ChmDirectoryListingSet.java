@@ -57,7 +57,7 @@ public class ChmDirectoryListingSet {
      */
     public ChmDirectoryListingSet(byte[] data, ChmItsfHeader chmItsHeader,
                                   ChmItspHeader chmItspHeader) throws TikaException {
-        setDirectoryListingEntryList(new ArrayList<DirectoryListingEntry>());
+        setDirectoryListingEntryList(new ArrayList<>());
         ChmCommons.assertByteArrayNotNull(data);
         setData(data);
         enumerateChmDirectoryListingList(chmItsHeader, chmItspHeader);

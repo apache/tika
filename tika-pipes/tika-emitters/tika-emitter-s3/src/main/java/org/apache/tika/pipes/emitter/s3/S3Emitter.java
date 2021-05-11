@@ -129,8 +129,7 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
                 emit(emitKey, is, new Metadata());
             }
         } else {
-            TemporaryResources tmp = new TemporaryResources();
-            try {
+            try (TemporaryResources tmp = new TemporaryResources()) {
                 Path tmpPath = tmp.createTempFile();
                 try (Writer writer = Files.newBufferedWriter(tmpPath, StandardCharsets.UTF_8,
                         StandardOpenOption.CREATE)) {
@@ -141,8 +140,6 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
                 try (InputStream is = TikaInputStream.get(tmpPath)) {
                     emit(emitKey, is, new Metadata());
                 }
-            } finally {
-                tmp.close();
             }
         }
     }

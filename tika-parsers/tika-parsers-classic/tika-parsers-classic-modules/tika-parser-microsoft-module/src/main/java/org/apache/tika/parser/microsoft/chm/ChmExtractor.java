@@ -127,7 +127,7 @@ public class ChmExtractor {
                     getChmDirList().getDirectoryListingEntryList().get(getIndexOfContent())
                             .getLength());
 
-            setLzxBlocksCache(new ArrayList<ChmLzxBlock>());
+            setLzxBlocksCache(new ArrayList<>());
 
         } catch (IOException e) {
             LOG.warn("IOException parsing chm file", e);
@@ -234,7 +234,7 @@ public class ChmExtractor {
      * @return list of chm entities
      */
     public List<String> enumerateChm() {
-        List<String> listOfEntries = new ArrayList<String>();
+        List<String> listOfEntries = new ArrayList<>();
         for (DirectoryListingEntry directoryListingEntry : getChmDirList()
                 .getDirectoryListingEntryList()) {
             listOfEntries.add(directoryListingEntry.getName());

@@ -145,7 +145,7 @@ public class DefaultParser extends CompositeParser {
     public List<Parser> getAllComponentParsers() {
         List<Parser> parsers = super.getAllComponentParsers();
         if (loader != null) {
-            parsers = new ArrayList<Parser>(parsers);
+            parsers = new ArrayList<>(parsers);
             parsers.addAll(loader.loadDynamicServiceProviders(Parser.class));
         }
         return parsers;

@@ -353,7 +353,7 @@ public class ComparerBatchTest extends FSBatchTestBase {
 
     private Map<String, String> getRow(String table, String where) throws Exception {
         String sql = getSql("*", table, where);
-        Map<String, String> results = new HashMap<String, String>();
+        Map<String, String> results = new HashMap<>();
 
         try (Statement st = conn.createStatement()) {
             ResultSet rs = st.executeQuery(sql);

@@ -62,7 +62,7 @@ public class Metadata
      * Constructs a new, empty metadata.
      */
     public Metadata() {
-        metadata = new HashMap<String, String[]>();
+        metadata = new HashMap<>();
     }
 
     private static DateFormat createDateFormat(String format, TimeZone timezone) {

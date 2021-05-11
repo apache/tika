@@ -50,7 +50,7 @@ public class XMLParser extends AbstractParser {
     private static final long serialVersionUID = -6028836725280212837L;
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<MediaType>(
+            new HashSet<>(
                     Arrays.asList(MediaType.application("xml"), MediaType.image("svg+xml"))));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {

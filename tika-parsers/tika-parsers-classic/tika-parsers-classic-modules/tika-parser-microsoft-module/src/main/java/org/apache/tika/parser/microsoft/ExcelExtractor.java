@@ -245,7 +245,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
         /**
          * List of worksheet names.
          */
-        private List<String> sheetNames = new ArrayList<String>();
+        private List<String> sheetNames = new ArrayList<>();
         /**
          * Index of the current worksheet within the workbook.
          * Used to find the worksheet name in the {@link #sheetNames} list.
@@ -260,13 +260,13 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
          * Extra text or cells that crops up, typically as part of a
          * worksheet but not always.
          */
-        private List<Cell> extraTextCells = new ArrayList<Cell>();
+        private List<Cell> extraTextCells = new ArrayList<>();
         /**
          * These aren't complete when we first see them, as the
          * depend on continue records that aren't always
          * contiguous. Collect them for later processing.
          */
-        private List<DrawingGroupRecord> drawingGroups = new ArrayList<DrawingGroupRecord>();
+        private List<DrawingGroupRecord> drawingGroups = new ArrayList<>();
 
         /**
          * Construct a new listener instance outputting parsed data to
@@ -364,12 +364,8 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             if (exception == null) {
                 try {
                     internalProcessRecord(record);
-                } catch (TikaException te) {
-                    exception = te;
-                } catch (IOException ie) {
-                    exception = ie;
-                } catch (SAXException se) {
-                    exception = se;
+                } catch (TikaException | IOException | SAXException e) {
+                    exception = e;
                 }
             }
         }
@@ -599,7 +595,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
 
         private void newSheet() {
             currentSheetIndex++;
-            currentSheet = new TreeMap<Point, Cell>(new PointComparator());
+            currentSheet = new TreeMap<>(new PointComparator());
         }
 
         /**

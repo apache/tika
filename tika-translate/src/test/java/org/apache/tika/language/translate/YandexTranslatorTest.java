@@ -17,16 +17,17 @@
 
 package org.apache.tika.language.translate;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeTrue;
-
 import org.apache.tika.exception.TikaException;
-import java.io.IOException;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+
+import java.io.IOException;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 
 /**
  * Generic Tests to ensure that the RSS library behaves as expected
@@ -52,30 +53,21 @@ public class YandexTranslatorTest {
            assertNotNull("Text not translated", transText);
            assumeTrue(expectedText.equals(transText));
 	}
-	catch(TikaException e){
+	catch(TikaException | IOException e){
 	    e.printStackTrace();
 	    fail(e.getMessage());
 	}
-	catch(IOException e){
-            e.printStackTrace();
-            fail(e.getMessage());
-        }
     }
 
     @Test
     public void test2UNDEFINED_DE_ES_Translation() {
         String inputText = "Guten Tag!!!";
         String expectedText = "Buen Día!!!";
-        try{
-          String transText = translator.translate(inputText, "es");
-	   assertNotNull("Text not translated", transText);
-	   assumeTrue(expectedText.equals(transText));
-        }
-        catch(TikaException e){
-	   e.printStackTrace();
-	   fail(e.getMessage());
-        }
-        catch(IOException e){
+        try {
+            String transText = translator.translate(inputText, "es");
+            assertNotNull("Text not translated", transText);
+            assumeTrue(expectedText.equals(transText));
+        } catch (TikaException | IOException e) {
             e.printStackTrace();
             fail(e.getMessage());
         }
@@ -85,19 +77,13 @@ public class YandexTranslatorTest {
     public void test3UNDEFINED_IT_EN_Translation() {
         String inputText = "Buona Sera!!!";
         String expectedText = "Good Evening!!!";
-        try{
-           String transText = translator.translate(inputText, "en");
-           assertNotNull("Text not translated", transText);
-           assumeTrue(expectedText.equals(transText));
-	}
-	catch(TikaException e){
-            e.printStackTrace();
-            fail(e.getMessage());
-	}
-        catch(IOException e){
+        try {
+            String transText = translator.translate(inputText, "en");
+            assertNotNull("Text not translated", transText);
+            assumeTrue(expectedText.equals(transText));
+        } catch (TikaException | IOException e) {
             e.printStackTrace();
             fail(e.getMessage());
         }
     }
-
 }

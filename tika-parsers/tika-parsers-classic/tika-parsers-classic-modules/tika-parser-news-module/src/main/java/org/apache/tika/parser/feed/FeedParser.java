@@ -55,7 +55,7 @@ public class FeedParser extends AbstractParser {
     private static final long serialVersionUID = -3785361933034525186L;
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<MediaType>(Arrays.asList(MediaType.application("rss+xml"),
+            new HashSet<>(Arrays.asList(MediaType.application("rss+xml"),
                     MediaType.application("atom+xml"))));
 
     private static String stripTags(SyndContent c) {

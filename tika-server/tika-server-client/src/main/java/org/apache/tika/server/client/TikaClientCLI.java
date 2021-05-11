@@ -175,9 +175,7 @@ public class TikaClientCLI {
                 try {
                     LOGGER.debug("about to parse: {}", t.getFetchKey());
                     client.parse(t);
-                } catch (IOException e) {
-                    LOGGER.warn(t.getFetchKey().toString(), e);
-                } catch (TikaException e) {
+                } catch (IOException | TikaException e) {
                     LOGGER.warn(t.getFetchKey().toString(), e);
                 }
             }

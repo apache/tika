@@ -70,7 +70,7 @@ public class OfficeParser extends AbstractOfficeParser {
     private static final long serialVersionUID = 7393462244028653479L;
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<MediaType>(Arrays.asList(POIFSDocumentType.WORKBOOK.type,
+            new HashSet<>(Arrays.asList(POIFSDocumentType.WORKBOOK.type,
                     POIFSDocumentType.OLE10_NATIVE.type, POIFSDocumentType.WORDDOCUMENT.type,
                     POIFSDocumentType.UNKNOWN.type, POIFSDocumentType.ENCRYPTED.type,
                     POIFSDocumentType.POWERPOINT.type, POIFSDocumentType.PUBLISHER.type,
@@ -313,7 +313,7 @@ public class OfficeParser extends AbstractOfficeParser {
         }
 
         public static POIFSDocumentType detectType(DirectoryEntry node) {
-            Set<String> names = new HashSet<String>();
+            Set<String> names = new HashSet<>();
             for (Entry entry : node) {
                 names.add(entry.getName());
             }

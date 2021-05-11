@@ -66,7 +66,7 @@ public class OpenDocumentParser extends AbstractParser {
     private static final long serialVersionUID = -6410276875438618287L;
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<MediaType>(Arrays.asList(MediaType.application("vnd.sun.xml.writer"),
+            new HashSet<>(Arrays.asList(MediaType.application("vnd.sun.xml.writer"),
                     MediaType.application("vnd.oasis.opendocument.text"),
                     MediaType.application("vnd.oasis.opendocument.graphics"),
                     MediaType.application("vnd.oasis.opendocument.presentation"),

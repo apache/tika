@@ -53,7 +53,7 @@ public class JsonMetadataListTest {
         m2.add("k3", "v4");
         m2.add("k4", "v1");
 
-        List<Metadata> metadataList = new LinkedList<Metadata>();
+        List<Metadata> metadataList = new LinkedList<>();
         metadataList.add(m1);
         metadataList.add(m2);
         StringWriter writer = new StringWriter();
@@ -110,7 +110,7 @@ public class JsonMetadataListTest {
         m2.add("k3", "v4");
         m2.add("k4", "v1");
 
-        List<Metadata> metadataList = new LinkedList<Metadata>();
+        List<Metadata> metadataList = new LinkedList<>();
         metadataList.add(m1);
         metadataList.add(m2);
         StringWriter writer = new StringWriter();

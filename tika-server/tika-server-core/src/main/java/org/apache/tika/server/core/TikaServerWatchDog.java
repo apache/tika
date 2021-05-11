@@ -68,20 +68,18 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
     }
 
     private static void redirectIO(final InputStream src, final PrintStream targ) {
-        Thread gobbler = new Thread(new Runnable() {
-            public void run() {
-                BufferedReader reader =
-                        new BufferedReader(new InputStreamReader(src, StandardCharsets.UTF_8));
-                String line = null;
-                try {
+        Thread gobbler = new Thread(() -> {
+            BufferedReader reader =
+                    new BufferedReader(new InputStreamReader(src, StandardCharsets.UTF_8));
+            String line;
+            try {
+                line = reader.readLine();
+                while (line != null) {
+                    targ.println(line);
                     line = reader.readLine();
-                    while (line != null) {
-                        targ.println(line);
-                        line = reader.readLine();
-                    }
-                } catch (IOException e) {
-                    //swallow
                 }
+            } catch (IOException e) {
+                //swallow
             }
         });
         gobbler.setDaemon(true);

@@ -686,11 +686,7 @@ public class TikaCLI {
 
     private void displayMetModels(){
         Class<?>[] modelClasses = Metadata.class.getInterfaces();
-        Arrays.sort(modelClasses, new Comparator<Class<?>>() {
-            public int compare(Class<?> o1, Class<?> o2) {
-                return o1.getName().compareTo(o2.getName());
-            }
-        });
+        Arrays.sort(modelClasses, Comparator.comparing(Class::getName));
 
         for (Class<?> modelClass: modelClasses) {
             // we don't care about internal Tika met classes
@@ -698,11 +694,7 @@ public class TikaCLI {
             if (!modelClass.getSimpleName().contains("Tika")) {
                 System.out.println(modelClass.getSimpleName());
                 Field[] keyFields = modelClass.getFields();
-                Arrays.sort(keyFields, new Comparator<Field>() {
-                    public int compare(Field o1, Field o2) {
-                        return o1.getName().compareTo(o2.getName());
-                    }
-                });
+                Arrays.sort(keyFields, Comparator.comparing(Field::getName));
                 for (Field keyField: keyFields) {
                     System.out.println(" "+keyField.getName());
                 }
@@ -784,21 +776,19 @@ public class TikaCLI {
     private Parser[] sortParsers(Map<Parser, Set<MediaType>> parsers) {
         // Get a nicely sorted list of the parsers
         Parser[] sortedParsers = parsers.keySet().toArray(new Parser[0]);
-        Arrays.sort(sortedParsers, new Comparator<Parser>() {
-            public int compare(Parser p1, Parser p2) {
-                String name1 = p1.getClass().getName();
-                String name2 = p2.getClass().getName();
-                return name1.compareTo(name2);
-            }
+        Arrays.sort(sortedParsers, (p1, p2) -> {
+            String name1 = p1.getClass().getName();
+            String name2 = p2.getClass().getName();
+            return name1.compareTo(name2);
         });
         return sortedParsers;
     }
 
     private Map<Parser, Set<MediaType>> invertMediaTypeMap(Map<MediaType, Parser> supported) {
-        Map<Parser,Set<MediaType>> parsers = new HashMap<Parser, Set<MediaType>>();
+        Map<Parser,Set<MediaType>> parsers = new HashMap<>();
         for(Entry<MediaType, Parser> e : supported.entrySet()) {
             if (!parsers.containsKey(e.getValue())) {
-                parsers.put(e.getValue(), new HashSet<MediaType>());
+                parsers.put(e.getValue(), new HashSet<>());
             }
             parsers.get(e.getValue()).add(e.getKey());
         }
@@ -839,8 +829,8 @@ public class TikaCLI {
      * @param magicDir Path to the magic directory
      */
     private void compareFileMagic(String magicDir) throws Exception {
-        Set<String> tikaLacking = new TreeSet<String>();
-        Set<String> tikaNoMagic = new TreeSet<String>();
+        Set<String> tikaLacking = new TreeSet<>();
+        Set<String> tikaNoMagic = new TreeSet<>();
         
         // Sanity check
         File dir = new File(magicDir);
@@ -854,7 +844,7 @@ public class TikaCLI {
         }
     
         // Find all the mimetypes in the directory
-        Set<String> fileMimes = new HashSet<String>();
+        Set<String> fileMimes = new HashSet<>();
         for (File mf : dir.listFiles()) {
             if (mf.isFile()) {
                 BufferedReader r = new BufferedReader(new InputStreamReader(

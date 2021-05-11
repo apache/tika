@@ -18,9 +18,6 @@ package org.apache.tika.parser.microsoft.xml;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.File;
-import java.io.FileFilter;
-
 import org.junit.AfterClass;
 import org.junit.Test;
 
@@ -74,15 +71,8 @@ public class XML2003ParserTest extends MultiThreadedTikaTest {
             contexts[i] = new ParseContext();
         }
 
-        testMultiThreaded(AUTO_DETECT_PARSER, contexts, numThreads, 2, new FileFilter() {
-            @Override
-            public boolean accept(File pathname) {
-                if (pathname.getName().equals("testWORD2003.xml")) {
-                    return true;
-                }
-                return false;
-            }
-        });
+        testMultiThreaded(AUTO_DETECT_PARSER, contexts, numThreads, 2,
+                pathname -> pathname.getName().equals("testWORD2003.xml"));
 
     }
 }

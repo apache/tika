@@ -129,17 +129,21 @@ public class JsonFetchEmitTuple {
         int maxEmbeddedResources = -1;
         String fieldName = jParser.nextFieldName();
         while (fieldName != null) {
-            if (HANDLER_CONFIG_TYPE.equals(fieldName)) {
-                String value = jParser.nextTextValue();
-                handlerType = BasicContentHandlerFactory
-                        .parseHandlerType(value, HandlerConfig.DEFAULT_HANDLER_CONFIG.getType());
-            } else if (HANDLER_CONFIG_WRITE_LIMIT.equals(fieldName)) {
-                writeLimit = jParser.nextIntValue(-1);
-            } else if (HANDLER_CONFIG_MAX_EMBEDDED_RESOURCES.equals(fieldName)) {
-                maxEmbeddedResources = jParser.nextIntValue(-1);
-            } else {
-                throw new IllegalArgumentException("I regret I don't understand '" + fieldName +
-                        "' in the context of a handler config");
+            switch (fieldName) {
+                case HANDLER_CONFIG_TYPE:
+                    String value = jParser.nextTextValue();
+                    handlerType = BasicContentHandlerFactory
+                            .parseHandlerType(value, HandlerConfig.DEFAULT_HANDLER_CONFIG.getType());
+                    break;
+                case HANDLER_CONFIG_WRITE_LIMIT:
+                    writeLimit = jParser.nextIntValue(-1);
+                    break;
+                case HANDLER_CONFIG_MAX_EMBEDDED_RESOURCES:
+                    maxEmbeddedResources = jParser.nextIntValue(-1);
+                    break;
+                default:
+                    throw new IllegalArgumentException("I regret I don't understand '" + fieldName +
+                                                       "' in the context of a handler config");
             }
             fieldName = jParser.nextFieldName();
         }

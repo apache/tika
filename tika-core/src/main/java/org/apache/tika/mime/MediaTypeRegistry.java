@@ -42,7 +42,7 @@ public class MediaTypeRegistry implements Serializable {
      * Known type inheritance relationships. The mapping is from a media type
      * to the closest supertype.
      */
-    private final Map<MediaType, MediaType> inheritance = new HashMap<MediaType, MediaType>();
+    private final Map<MediaType, MediaType> inheritance = new HashMap<>();
 
     /**
      * Returns the built-in media type registry included in Tika.
@@ -62,7 +62,7 @@ public class MediaTypeRegistry implements Serializable {
      * @since Apache Tika 0.8
      */
     public SortedSet<MediaType> getTypes() {
-        return new TreeSet<MediaType>(registry.values());
+        return new TreeSet<>(registry.values());
     }
 
     /**
@@ -90,7 +90,7 @@ public class MediaTypeRegistry implements Serializable {
      * @since Apache Tika 1.8
      */
     public SortedSet<MediaType> getChildTypes(MediaType type) {
-        SortedSet<MediaType> children = new TreeSet<MediaType>();
+        SortedSet<MediaType> children = new TreeSet<>();
         for (Map.Entry<MediaType, MediaType> entry : inheritance.entrySet()) {
             if (entry.getValue().equals(type)) {
                 children.add(entry.getKey());

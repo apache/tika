@@ -47,7 +47,7 @@ public class ServiceLoader {
      * source of service instances in the {@link #loadServiceProviders(Class)}
      * method.
      */
-    private static final Map<Object, RankedService> services = new HashMap<Object, RankedService>();
+    private static final Map<Object, RankedService> services = new HashMap<>();
     private static final Pattern COMMENT = Pattern.compile("#.*");
     private static final Pattern WHITESPACE = Pattern.compile("\\s+");
     /**
@@ -245,7 +245,7 @@ public class ServiceLoader {
      * @return available service providers
      */
     public <T> List<T> loadServiceProviders(Class<T> iface) {
-        List<T> providers = new ArrayList<T>();
+        List<T> providers = new ArrayList<>();
         providers.addAll(loadDynamicServiceProviders(iface));
         providers.addAll(loadStaticServiceProviders(iface));
         return providers;
@@ -264,10 +264,10 @@ public class ServiceLoader {
     public <T> List<T> loadDynamicServiceProviders(Class<T> iface) {
         if (dynamic) {
             synchronized (services) {
-                List<RankedService> list = new ArrayList<RankedService>(services.values());
+                List<RankedService> list = new ArrayList<>(services.values());
                 Collections.sort(list);
 
-                List<T> providers = new ArrayList<T>(list.size());
+                List<T> providers = new ArrayList<>(list.size());
                 for (RankedService service : list) {
                     if (service.isInstanceOf(iface)) {
                         providers.add((T) service.service);
@@ -276,7 +276,7 @@ public class ServiceLoader {
                 return providers;
             }
         } else {
-            return new ArrayList<T>(0);
+            return new ArrayList<>(0);
         }
     }
 
@@ -291,7 +291,7 @@ public class ServiceLoader {
      * @since Apache Tika 1.6
      */
     protected <T> List<String> identifyStaticServiceProviders(Class<T> iface) {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
 
         if (loader != null) {
             String serviceName = iface.getName();
@@ -326,7 +326,7 @@ public class ServiceLoader {
     @SuppressWarnings("unchecked")
     public <T> List<T> loadStaticServiceProviders(Class<T> iface,
                                                   Collection<Class<? extends T>> excludes) {
-        List<T> providers = new ArrayList<T>();
+        List<T> providers = new ArrayList<>();
 
         if (loader != null) {
             List<String> names = identifyStaticServiceProviders(iface);

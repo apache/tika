@@ -279,7 +279,7 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
             String isRegex = attributes.getValue(ISREGEX_ATTR);
             if (pattern != null) {
                 try {
-                    types.addPattern(type, pattern, Boolean.valueOf(isRegex));
+                    types.addPattern(type, pattern, Boolean.parseBoolean(isRegex));
                 } catch (MimeTypeException e) {
                     handleGlobError(type, pattern, e, qName, attributes);
                 }
@@ -424,7 +424,7 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
                 parent.subclauses = Collections.singletonList(clause);
             } else {
                 if (parent.subclauses.size() == 1) {
-                    parent.subclauses = new ArrayList<Clause>(parent.subclauses);
+                    parent.subclauses = new ArrayList<>(parent.subclauses);
                 }
                 parent.subclauses.add(clause);
             }

@@ -75,9 +75,7 @@ public class ListManager extends AbstractListManager {
         } catch (NoSuchElementException e) {
             //somewhat frequent exception when initializing HWPFList
             return "";
-        } catch (IllegalArgumentException e) {
-            return "";
-        } catch (NullPointerException e) {
+        } catch (IllegalArgumentException | NullPointerException e) {
             return "";
         }
 

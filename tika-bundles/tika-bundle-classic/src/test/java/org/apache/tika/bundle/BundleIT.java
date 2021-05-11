@@ -205,7 +205,7 @@ public class BundleIT {
 
         // Get the raw detectors list from the traditional service loading mechanism
         DefaultDetector detector = new DefaultDetector();
-        Set<String> rawDetectors = new HashSet<String>();
+        Set<String> rawDetectors = new HashSet<>();
         for (Detector d : detector.getDetectors()) {
             if (d instanceof DefaultDetector) {
                 for (Detector dChild : ((DefaultDetector) d).getDetectors()) {

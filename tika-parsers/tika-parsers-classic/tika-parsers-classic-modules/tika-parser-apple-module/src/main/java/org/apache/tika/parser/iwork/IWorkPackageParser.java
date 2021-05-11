@@ -60,7 +60,7 @@ public class IWorkPackageParser extends AbstractParser {
      * Which files within an iWork file contain the actual content?
      */
     public final static Set<String> IWORK_CONTENT_ENTRIES = Collections.unmodifiableSet(
-            new HashSet<String>(Arrays.asList("index.apxl", "index.xml", "presentation.apxl")));
+            new HashSet<>(Arrays.asList("index.apxl", "index.xml", "presentation.apxl")));
     /**
      * All iWork files contain one of these, so we can detect based on it
      */
@@ -73,7 +73,7 @@ public class IWorkPackageParser extends AbstractParser {
      * This parser handles all iWorks formats.
      */
     private final static Set<MediaType> supportedTypes = Collections.unmodifiableSet(
-            new HashSet<MediaType>(Arrays.asList(MediaType.application("vnd.apple.iwork"),
+            new HashSet<>(Arrays.asList(MediaType.application("vnd.apple.iwork"),
                     IWORKDocumentType.KEYNOTE.getType(), IWORKDocumentType.NUMBERS.getType(),
                     IWORKDocumentType.PAGES.getType())));
 

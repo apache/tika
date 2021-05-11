@@ -42,7 +42,7 @@ public class MockDBWriter implements IDBWriter {
     public void writeRow(TableInfo tableInfo, Map<Cols, String> row) throws IOException {
         List<Map<Cols, String>> table = db.get(tableInfo.getName());
         if (table == null) {
-            table = new ArrayList<Map<Cols, String>>();
+            table = new ArrayList<>();
         }
         table.add(row);
         db.put(tableInfo.getName(), table);

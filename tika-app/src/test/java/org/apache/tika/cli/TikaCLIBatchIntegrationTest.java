@@ -37,7 +37,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
-import org.apache.tika.utils.ProcessUtils;
 
 import org.junit.After;
 import org.junit.Before;

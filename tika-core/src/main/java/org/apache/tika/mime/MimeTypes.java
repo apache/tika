@@ -73,7 +73,7 @@ public final class MimeTypes implements Detector, Serializable {
      */
     private static final long serialVersionUID = -1350863170146349036L;
     private static final Map<ClassLoader, MimeTypes> CLASSLOADER_SPECIFIC_DEFAULT_TYPES =
-            new HashMap<ClassLoader, MimeTypes>();
+            new HashMap<>();
     private static MimeTypes DEFAULT_TYPES = null;
     /**
      * Root type, application/octet-stream.
@@ -107,11 +107,11 @@ public final class MimeTypes implements Detector, Serializable {
     /**
      * Sorted list of all registered magics
      */
-    private final List<Magic> magics = new ArrayList<Magic>();
+    private final List<Magic> magics = new ArrayList<>();
     /**
      * Sorted list of all registered rootXML
      */
-    private final List<MimeType> xmls = new ArrayList<MimeType>();
+    private final List<MimeType> xmls = new ArrayList<>();
 
     public MimeTypes() {
         rootMimeType = new MimeType(MediaType.OCTET_STREAM);
@@ -227,7 +227,7 @@ public final class MimeTypes implements Detector, Serializable {
         }
 
         // Then, check for magic bytes
-        List<MimeType> result = new ArrayList<MimeType>(1);
+        List<MimeType> result = new ArrayList<>(1);
         int currentPriority = -1;
         for (Magic magic : magics) {
             if (currentPriority > 0 && currentPriority > magic.getPriority()) {

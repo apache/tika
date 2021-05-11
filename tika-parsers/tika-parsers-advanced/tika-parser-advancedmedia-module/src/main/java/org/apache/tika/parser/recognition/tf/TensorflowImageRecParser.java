@@ -82,12 +82,7 @@ public class TensorflowImageRecParser extends ExternalParser implements ObjectRe
             new File("tensorflow" + File.separator + SCRIPT_FILE_NAME);
     private static final File DEFAULT_MODEL_FILE =
             new File("tensorflow" + File.separator + "tf-objectrec-model");
-    private static final LineConsumer IGNORED_LINE_LOGGER = new LineConsumer() {
-        @Override
-        public void consume(String line) {
-            LOG.debug(line);
-        }
-    };
+    private static final LineConsumer IGNORED_LINE_LOGGER = LOG::debug;
 
     @Field
     private String executor = "python";

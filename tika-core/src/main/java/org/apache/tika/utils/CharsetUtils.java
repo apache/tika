@@ -38,7 +38,7 @@ public class CharsetUtils {
 
     private static final Pattern WIN_NAME_PATTERN = Pattern.compile("win-?(\\d+)");
 
-    private static final Map<String, Charset> COMMON_CHARSETS = new HashMap<String, Charset>();
+    private static final Map<String, Charset> COMMON_CHARSETS = new HashMap<>();
 
     private static Method getCharsetICU = null;
     private static Method isSupportedICU = null;
@@ -81,7 +81,7 @@ public class CharsetUtils {
     }
 
     private static Map<String, Charset> initCommonCharsets(String... names) {
-        Map<String, Charset> charsets = new HashMap<String, Charset>();
+        Map<String, Charset> charsets = new HashMap<>();
         for (String name : names) {
             try {
                 Charset charset = Charset.forName(name);
@@ -104,8 +104,7 @@ public class CharsetUtils {
      */
     public static boolean isSupported(String charsetName) {
         try {
-            if (isSupportedICU != null &&
-                    ((Boolean) isSupportedICU.invoke(null, charsetName)).booleanValue()) {
+            if (isSupportedICU != null && (Boolean) isSupportedICU.invoke(null, charsetName)) {
                 return true;
             }
             return Charset.isSupported(charsetName);

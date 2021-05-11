@@ -413,7 +413,7 @@ public class TestMetadata {
         int numThreads = 10;
         ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
         ExecutorCompletionService<Integer> executorCompletionService =
-                new ExecutorCompletionService<Integer>(executorService);
+                new ExecutorCompletionService<>(executorService);
         for (int i = 0; i < numThreads; i++) {
             executorCompletionService.submit(new MetadataDateAdder());
         }

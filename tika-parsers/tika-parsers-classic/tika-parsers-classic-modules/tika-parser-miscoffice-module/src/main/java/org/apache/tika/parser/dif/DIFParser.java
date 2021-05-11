@@ -18,7 +18,6 @@ package org.apache.tika.parser.dif;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -45,7 +44,7 @@ public class DIFParser extends AbstractParser {
      */
     private static final long serialVersionUID = 971505521275777826L;
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<MediaType>(Arrays.asList(MediaType.application("dif+xml"))));
+            new HashSet<>(Collections.singletonList(MediaType.application("dif+xml"))));
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {

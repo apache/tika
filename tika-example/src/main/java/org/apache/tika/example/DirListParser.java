@@ -128,9 +128,9 @@ public class DirListParser implements Parser {
         metadata.add("LastModifiedDate", lastModDate);
         metadata.add("Filename", fileName);
 
-        if (filePerms.indexOf("x") != -1 && filePerms.indexOf("d") == -1) {
+        if (filePerms.contains("x") && !filePerms.contains("d")) {
             if (metadata.get("NumExecutables") != null) {
-                int numExecs = Integer.valueOf(metadata.get("NumExecutables"));
+                int numExecs = Integer.parseInt(metadata.get("NumExecutables"));
                 numExecs++;
                 metadata.set("NumExecutables", String.valueOf(numExecs));
             } else {

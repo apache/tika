@@ -129,7 +129,7 @@ public class Latin1StringsParser extends AbstractParser {
      * @return the set of supported types
      */
     private static Set<MediaType> getTypes() {
-        HashSet<MediaType> supportedTypes = new HashSet<MediaType>();
+        HashSet<MediaType> supportedTypes = new HashSet<>();
         supportedTypes.add(MediaType.OCTET_STREAM);
         return supportedTypes;
     }

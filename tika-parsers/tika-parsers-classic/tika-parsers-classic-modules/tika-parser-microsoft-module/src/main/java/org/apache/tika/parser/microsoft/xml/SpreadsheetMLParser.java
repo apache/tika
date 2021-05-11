@@ -84,26 +84,33 @@ public class SpreadsheetMLParser extends AbstractXML2003Parser {
             localName = localName.toLowerCase(Locale.US);
 
             if (MS_SPREADSHEET_URN.equals(uri)) {
-                if (BODY.equals(localName)) {
-                    inBody = true;
-                } else if (TABLE.equals(localName)) {
-                    handler.startElement(XHTMLContentHandler.XHTML, TABLE, TABLE, EMPTY_ATTRS);
-                    handler.startElement(XHTMLContentHandler.XHTML, TBODY, TBODY, EMPTY_ATTRS);
-                } else if (WORKSHEET.equals(localName)) {
-                    String worksheetName = attrs.getValue(MS_SPREADSHEET_URN, "Name");
-                    AttributesImpl xhtmlAttrs = new AttributesImpl();
-                    if (worksheetName != null) {
-                        xhtmlAttrs.addAttribute(XHTMLContentHandler.XHTML, NAME_ATTR, NAME_ATTR,
-                                CDATA, worksheetName);
-                    }
-                    handler.startElement(XHTMLContentHandler.XHTML, DIV, DIV, xhtmlAttrs);
-                } else if (ROW.equals(localName)) {
-                    handler.startElement(XHTMLContentHandler.XHTML, TR, TR, EMPTY_ATTRS);
-                } else if (CELL.equals(localName)) {
-                    href = attrs.getValue(MS_SPREADSHEET_URN, "HRef");
-                    handler.startElement(XHTMLContentHandler.XHTML, TD, TD, EMPTY_ATTRS);
-                } else if (DATA.equals(localName)) {
-                    inData = true;
+                switch (localName) {
+                    case BODY:
+                        inBody = true;
+                        break;
+                    case TABLE:
+                        handler.startElement(XHTMLContentHandler.XHTML, TABLE, TABLE, EMPTY_ATTRS);
+                        handler.startElement(XHTMLContentHandler.XHTML, TBODY, TBODY, EMPTY_ATTRS);
+                        break;
+                    case WORKSHEET:
+                        String worksheetName = attrs.getValue(MS_SPREADSHEET_URN, "Name");
+                        AttributesImpl xhtmlAttrs = new AttributesImpl();
+                        if (worksheetName != null) {
+                            xhtmlAttrs.addAttribute(XHTMLContentHandler.XHTML, NAME_ATTR, NAME_ATTR,
+                                    CDATA, worksheetName);
+                        }
+                        handler.startElement(XHTMLContentHandler.XHTML, DIV, DIV, xhtmlAttrs);
+                        break;
+                    case ROW:
+                        handler.startElement(XHTMLContentHandler.XHTML, TR, TR, EMPTY_ATTRS);
+                        break;
+                    case CELL:
+                        href = attrs.getValue(MS_SPREADSHEET_URN, "HRef");
+                        handler.startElement(XHTMLContentHandler.XHTML, TD, TD, EMPTY_ATTRS);
+                        break;
+                    case DATA:
+                        inData = true;
+                        break;
                 }
             }
         }
@@ -121,34 +128,40 @@ public class SpreadsheetMLParser extends AbstractXML2003Parser {
         public void endElement(String uri, String localName, String qName) throws SAXException {
             localName = localName.toLowerCase(Locale.US);
             if (MS_SPREADSHEET_URN.equals(uri)) {
-                if (TABLE.equals(localName)) {
-                    handler.endElement(XHTMLContentHandler.XHTML, TBODY, TBODY);
-                    handler.endElement(XHTMLContentHandler.XHTML, TABLE, TABLE);
+                switch (localName) {
+                    case TABLE:
+                        handler.endElement(XHTMLContentHandler.XHTML, TBODY, TBODY);
+                        handler.endElement(XHTMLContentHandler.XHTML, TABLE, TABLE);
 
-                } else if (WORKSHEET.equals(localName)) {
-                    handler.endElement(XHTMLContentHandler.XHTML, DIV, DIV);
-                } else if (ROW.equals(localName)) {
-                    handler.endElement(XHTMLContentHandler.XHTML, TR, TR);
-                } else if (CELL.equals(localName)) {
-                    handler.endElement(XHTMLContentHandler.XHTML, TD, TD);
-                } else if (DATA.equals(localName)) {
-                    if (href != null) {
-                        AttributesImpl attrs = new AttributesImpl();
-                        attrs.addAttribute(XHTMLContentHandler.XHTML, HREF, HREF, CDATA, href);
-                        handler.startElement(XHTMLContentHandler.XHTML, A, A, attrs);
-                    }
-                    String b = buffer.toString();
-                    if (b == null) {
-                        b = "";
-                    }
-                    char[] chars = b.trim().toCharArray();
-                    handler.characters(chars, 0, chars.length);
-                    if (href != null) {
-                        handler.endElement(XHTMLContentHandler.XHTML, A, A);
-                    }
-                    buffer.setLength(0);
-                    inData = false;
-                    href = null;
+                        break;
+                    case WORKSHEET:
+                        handler.endElement(XHTMLContentHandler.XHTML, DIV, DIV);
+                        break;
+                    case ROW:
+                        handler.endElement(XHTMLContentHandler.XHTML, TR, TR);
+                        break;
+                    case CELL:
+                        handler.endElement(XHTMLContentHandler.XHTML, TD, TD);
+                        break;
+                    case DATA:
+                        if (href != null) {
+                            AttributesImpl attrs = new AttributesImpl();
+                            attrs.addAttribute(XHTMLContentHandler.XHTML, HREF, HREF, CDATA, href);
+                            handler.startElement(XHTMLContentHandler.XHTML, A, A, attrs);
+                        }
+                        String b = buffer.toString();
+                        if (b == null) {
+                            b = "";
+                        }
+                        char[] chars = b.trim().toCharArray();
+                        handler.characters(chars, 0, chars.length);
+                        if (href != null) {
+                            handler.endElement(XHTMLContentHandler.XHTML, A, A);
+                        }
+                        buffer.setLength(0);
+                        inData = false;
+                        href = null;
+                        break;
                 }
             }
 

@@ -53,7 +53,7 @@ public class RegexUtils {
             return Collections.emptyList();
         }
 
-        List<String> extractions = new ArrayList<String>();
+        List<String> extractions = new ArrayList<>();
         final Matcher matcher = LINKS_PATTERN.matcher(content);
         while (matcher.find()) {
             extractions.add(matcher.group());

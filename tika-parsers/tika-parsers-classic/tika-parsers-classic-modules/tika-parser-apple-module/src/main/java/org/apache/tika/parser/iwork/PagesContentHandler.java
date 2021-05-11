@@ -45,10 +45,10 @@ class PagesContentHandler extends DefaultHandler {
     private HeaderFooter footers = null;
     private Footnotes footnotes = null;
     private Annotations annotations = null;
-    private Map<String, List<List<String>>> tableData = new HashMap<String, List<List<String>>>();
+    private Map<String, List<List<String>>> tableData = new HashMap<>();
     private String activeTableId;
     private int numberOfColumns = 0;
-    private List<String> activeRow = new ArrayList<String>();
+    private List<String> activeRow = new ArrayList<>();
     private String metaDataLocalName;
     private String metaDataQName;
     PagesContentHandler(XHTMLContentHandler xhtml, Metadata metadata) {
@@ -105,7 +105,7 @@ class PagesContentHandler extends DefaultHandler {
             String kind = attributes.getValue("sf:kind");
             if ("tabular-attachment".equals(kind)) {
                 activeTableId = attributes.getValue("sfa:ID");
-                tableData.put(activeTableId, new ArrayList<List<String>>());
+                tableData.put(activeTableId, new ArrayList<>());
             }
         } else if ("sf:attachment-ref".equals(qName)) {
             String idRef = attributes.getValue("sfa:IDREF");
@@ -249,7 +249,7 @@ class PagesContentHandler extends DefaultHandler {
 
             if (activeRow.size() >= 3) {
                 tableData.get(activeTableId).add(activeRow);
-                activeRow = new ArrayList<String>();
+                activeRow = new ArrayList<>();
             }
         }
     }
@@ -347,7 +347,7 @@ class PagesContentHandler extends DefaultHandler {
         /**
          * Mark -> Text
          */
-        Map<String, String> footnotes = new HashMap<String, String>();
+        Map<String, String> footnotes = new HashMap<>();
         String lastSeenMark = null;
 
         /**
@@ -447,7 +447,7 @@ class PagesContentHandler extends DefaultHandler {
         /**
          * ID -> Text
          */
-        Map<String, String> annotations = new HashMap<String, String>();
+        Map<String, String> annotations = new HashMap<>();
         String currentID = null;
         StringBuffer currentText = null;
 

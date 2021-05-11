@@ -33,7 +33,7 @@ public class XMLDOMUtil {
      * @return map of attributes
      */
     public static Map<String, String> mapifyAttrs(Node node, Map<String, String> overwrite) {
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, String> map = new HashMap<>();
         NamedNodeMap nnMap = node.getAttributes();
         for (int i = 0; i < nnMap.getLength(); i++) {
             Node attr = nnMap.item(i);

@@ -176,7 +176,7 @@ public class AnnotationUtilsTest {
         Map<String, Param> params = new HashMap<>();
         try {
             String val = "someval";
-            params.put("field", new Param<String>("field", String.class, val));
+            params.put("field", new Param<>("field", String.class, val));
             AnnotationUtils.assignFieldParams(parser, params);
             Assert.assertEquals(val, parser.field);
         } catch (Exception e) {
@@ -186,7 +186,7 @@ public class AnnotationUtilsTest {
 
         try {
             Date val = new Date();
-            params.put("field", new Param<Date>("field", Date.class, val));
+            params.put("field", new Param<>("field", Date.class, val));
             AnnotationUtils.assignFieldParams(parser, params);
             Assert.fail("Exception expected, Date is not assignable to CharSequence.");
         } catch (TikaConfigException e) {

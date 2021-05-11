@@ -68,7 +68,7 @@ public final class ExternalParsersConfigReader implements ExternalParsersConfigR
     }
 
     public static List<ExternalParser> read(Element element) throws TikaException, IOException {
-        List<ExternalParser> parsers = new ArrayList<ExternalParser>();
+        List<ExternalParser> parsers = new ArrayList<>();
 
         if (element != null && element.getTagName().equals(EXTERNAL_PARSERS_TAG)) {
             NodeList nodes = element.getChildNodes();
@@ -105,17 +105,22 @@ public final class ExternalParsersConfigReader implements ExternalParsersConfigR
             Node node = children.item(i);
             if (node.getNodeType() == Node.ELEMENT_NODE) {
                 Element child = (Element) node;
-                if (child.getTagName().equals(CHECK_TAG)) {
-                    boolean present = readCheckTagAndCheck(child);
-                    if (!present) {
-                        return null;
-                    }
-                } else if (child.getTagName().equals(COMMAND_TAG)) {
-                    parser.setCommand(getString(child));
-                } else if (child.getTagName().equals(MIMETYPES_TAG)) {
-                    parser.setSupportedTypes(readMimeTypes(child));
-                } else if (child.getTagName().equals(METADATA_TAG)) {
-                    parser.setMetadataExtractionPatterns(readMetadataPatterns(child));
+                switch (child.getTagName()) {
+                    case CHECK_TAG:
+                        boolean present = readCheckTagAndCheck(child);
+                        if (!present) {
+                            return null;
+                        }
+                        break;
+                    case COMMAND_TAG:
+                        parser.setCommand(getString(child));
+                        break;
+                    case MIMETYPES_TAG:
+                        parser.setSupportedTypes(readMimeTypes(child));
+                        break;
+                    case METADATA_TAG:
+                        parser.setMetadataExtractionPatterns(readMetadataPatterns(child));
+                        break;
                 }
             }
         }
@@ -124,7 +129,7 @@ public final class ExternalParsersConfigReader implements ExternalParsersConfigR
     }
 
     private static Set<MediaType> readMimeTypes(Element mimeTypes) {
-        Set<MediaType> types = new HashSet<MediaType>();
+        Set<MediaType> types = new HashSet<>();
 
         NodeList children = mimeTypes.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
@@ -141,7 +146,7 @@ public final class ExternalParsersConfigReader implements ExternalParsersConfigR
     }
 
     private static Map<Pattern, String> readMetadataPatterns(Element metadataDef) {
-        Map<Pattern, String> metadata = new HashMap<Pattern, String>();
+        Map<Pattern, String> metadata = new HashMap<>();
 
         NodeList children = metadataDef.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
@@ -161,7 +166,7 @@ public final class ExternalParsersConfigReader implements ExternalParsersConfigR
 
     private static boolean readCheckTagAndCheck(Element checkDef) {
         String command = null;
-        List<Integer> errorVals = new ArrayList<Integer>();
+        List<Integer> errorVals = new ArrayList<>();
 
         NodeList children = checkDef.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {

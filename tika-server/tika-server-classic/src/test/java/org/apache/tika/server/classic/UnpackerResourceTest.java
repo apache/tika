@@ -81,7 +81,7 @@ public class UnpackerResourceTest extends CXFTestBase {
 
     @Override
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
-        List<Object> providers = new ArrayList<Object>();
+        List<Object> providers = new ArrayList<>();
         providers.add(new TarWriter());
         providers.add(new ZipWriter());
         providers.add(new TikaServerParseExceptionMapper(false));

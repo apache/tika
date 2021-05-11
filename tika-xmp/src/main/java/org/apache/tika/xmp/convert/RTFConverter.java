@@ -38,8 +38,8 @@ import com.adobe.xmp.options.PropertyOptions;
  */
 public class RTFConverter extends AbstractConverter {
     protected static final Set<Namespace> ADDITIONAL_NAMESPACES = Collections
-            .unmodifiableSet( new HashSet<Namespace>( Arrays.asList( new Namespace(
-                    OfficeOpenXMLExtended.NAMESPACE_URI, OfficeOpenXMLExtended.PREFIX ) ) ) );
+            .unmodifiableSet(new HashSet<>(Arrays.asList(new Namespace(
+                    OfficeOpenXMLExtended.NAMESPACE_URI, OfficeOpenXMLExtended.PREFIX))) );
 
     public RTFConverter() throws TikaException {
         super();

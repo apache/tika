@@ -17,6 +17,7 @@
 package org.apache.tika.parser;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -53,7 +54,7 @@ public class RecursiveParserWrapperTest extends TikaTest {
         Metadata container = list.get(0);
         String content = container.get(TikaCoreProperties.TIKA_CONTENT);
         //not much differentiates html from xml in this test file
-        assertTrue(content.indexOf("<p class=\"header\" />") > -1);
+        assertTrue(content.contains("<p class=\"header\" />"));
     }
 
     @Test
@@ -63,7 +64,7 @@ public class RecursiveParserWrapperTest extends TikaTest {
         Metadata container = list.get(0);
         String content = container.get(TikaCoreProperties.TIKA_CONTENT);
         //not much differentiates html from xml in this test file
-        assertTrue(content.indexOf("<p class=\"header\"></p>") > -1);
+        assertTrue(content.contains("<p class=\"header\"></p>"));
     }
 
     @Test
@@ -72,8 +73,8 @@ public class RecursiveParserWrapperTest extends TikaTest {
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1));
         Metadata container = list.get(0);
         String content = container.get(TikaCoreProperties.TIKA_CONTENT);
-        assertTrue(content.indexOf("<p ") < 0);
-        assertTrue(content.indexOf("embed_0") > -1);
+        assertFalse(content.contains("<p "));
+        assertTrue(content.contains("embed_0"));
     }
 
     @Test
@@ -171,7 +172,7 @@ public class RecursiveParserWrapperTest extends TikaTest {
     @Test
     public void testEmbeddedResourcePath() throws Exception {
 
-        Set<String> targets = new HashSet<String>();
+        Set<String> targets = new HashSet<>();
         targets.add("/embed1.zip");
         targets.add("/embed1.zip/embed2.zip");
         targets.add("/embed1.zip/embed2.zip/embed3.zip");
@@ -190,9 +191,9 @@ public class RecursiveParserWrapperTest extends TikaTest {
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
         Metadata container = list.get(0);
         String content = container.get(TikaCoreProperties.TIKA_CONTENT);
-        assertTrue(content.indexOf("<p class=\"header\" />") > -1);
+        assertTrue(content.contains("<p class=\"header\" />"));
 
-        Set<String> seen = new HashSet<String>();
+        Set<String> seen = new HashSet<>();
         for (Metadata m : list) {
             String path = m.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
             if (path != null) {

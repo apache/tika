@@ -140,10 +140,7 @@ public class ExternalEmbedder implements Embedder {
                 }
             }
             return true;
-        } catch (IOException e) {
-            // Some problem, command is there or is broken
-            return false;
-        } catch (InterruptedException ie) {
+        } catch (IOException | InterruptedException e) {
             // Some problem, command is there or is broken
             return false;
         }
@@ -159,7 +156,7 @@ public class ExternalEmbedder implements Embedder {
 
     public void setSupportedEmbedTypes(Set<MediaType> supportedEmbedTypes) {
         this.supportedEmbedTypes =
-                Collections.unmodifiableSet(new HashSet<MediaType>(supportedEmbedTypes));
+                Collections.unmodifiableSet(new HashSet<>(supportedEmbedTypes));
     }
 
     /**
@@ -290,7 +287,7 @@ public class ExternalEmbedder implements Embedder {
      * @return the metadata-related command line arguments
      */
     protected List<String> getCommandMetadataSegments(Metadata metadata) {
-        List<String> commandMetadataSegments = new ArrayList<String>();
+        List<String> commandMetadataSegments = new ArrayList<>();
         if (metadata == null || metadata.names() == null) {
             return commandMetadataSegments;
         }
@@ -354,23 +351,23 @@ public class ExternalEmbedder implements Embedder {
 
         // Build our command
         String[] origCmd = command;
-        List<String> cmd = new ArrayList<String>();
+        List<String> cmd = new ArrayList<>();
         for (String commandSegment : origCmd) {
-            if (commandSegment.indexOf(ExternalParser.INPUT_FILE_TOKEN) != -1) {
+            if (commandSegment.contains(ExternalParser.INPUT_FILE_TOKEN)) {
                 commandSegment = commandSegment.replace(ExternalParser.INPUT_FILE_TOKEN,
                         tikaInputStream.getFile().toString());
                 inputToStdIn = false;
             }
-            if (commandSegment.indexOf(ExternalParser.OUTPUT_FILE_TOKEN) != -1) {
+            if (commandSegment.contains(ExternalParser.OUTPUT_FILE_TOKEN)) {
                 tempOutputFile = tmp.createTemporaryFile();
                 commandSegment = commandSegment
                         .replace(ExternalParser.OUTPUT_FILE_TOKEN, tempOutputFile.toString());
                 outputFromStdOut = false;
             }
-            if (commandSegment.indexOf(METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN) != -1) {
+            if (commandSegment.contains(METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN)) {
                 serializeMetadataCommandArgumentsToken = true;
             }
-            if (commandSegment.indexOf(METADATA_COMMAND_ARGUMENTS_TOKEN) != -1) {
+            if (commandSegment.contains(METADATA_COMMAND_ARGUMENTS_TOKEN)) {
                 if (hasMetadataCommandArguments) {
                     cmd.addAll(commandMetadataSegments);
                 }
@@ -384,7 +381,7 @@ public class ExternalEmbedder implements Embedder {
                 // Find all metadata tokens and replace with encapsulated metadata
                 int i = 0;
                 for (String commandSegment : cmd) {
-                    if (commandSegment.indexOf(METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN) != -1) {
+                    if (commandSegment.contains(METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN)) {
                         commandSegment = commandSegment
                                 .replace(METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN,
                                         serializeMetadata(commandMetadataSegments));
@@ -468,13 +465,11 @@ public class ExternalEmbedder implements Embedder {
      */
     private void multiThreadedStreamCopy(final InputStream inputStream,
                                          final OutputStream outputStream) {
-        new Thread(new Runnable() {
-            public void run() {
-                try {
-                    IOUtils.copy(inputStream, outputStream);
-                } catch (IOException e) {
-                    System.out.println("ERROR: " + e.getMessage());
-                }
+        new Thread(() -> {
+            try {
+                IOUtils.copy(inputStream, outputStream);
+            } catch (IOException e) {
+                System.out.println("ERROR: " + e.getMessage());
             }
         }).start();
     }

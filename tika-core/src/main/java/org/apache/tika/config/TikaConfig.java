@@ -369,7 +369,7 @@ public class TikaConfig {
         if (parentNode != null) {
             // Find only the direct child parser/detector objects
             NodeList nodes = parentNode.getChildNodes();
-            List<Element> elements = new ArrayList<Element>();
+            List<Element> elements = new ArrayList<>();
             for (int i = 0; i < nodes.getLength(); i++) {
                 Node node = nodes.item(i);
                 if (node instanceof Element) {
@@ -610,7 +610,7 @@ public class TikaConfig {
         @SuppressWarnings("unchecked")
         CT loadOverall(Element element, MimeTypes mimeTypes, ServiceLoader loader)
                 throws TikaException, IOException {
-            List<T> loaded = new ArrayList<T>();
+            List<T> loaded = new ArrayList<>();
 
             // Find the children of the parent tag, if any
             for (Element le : getTopLevelElementChildren(element, getParentTagName(),
@@ -684,7 +684,7 @@ public class TikaConfig {
                 // Is this a composite or decorated class? If so, support recursion
                 if (isComposite(loadedClass)) {
                     // Get the child objects for it
-                    List<T> children = new ArrayList<T>();
+                    List<T> children = new ArrayList<>();
                     NodeList childNodes = element.getElementsByTagName(getLoaderTagName());
                     if (childNodes.getLength() > 0) {
                         for (int i = 0; i < childNodes.getLength(); i++) {
@@ -697,7 +697,7 @@ public class TikaConfig {
                     }
 
                     // Get the list of children to exclude
-                    Set<Class<? extends T>> excludeChildren = new HashSet<Class<? extends T>>();
+                    Set<Class<? extends T>> excludeChildren = new HashSet<>();
                     NodeList excludeChildNodes =
                             element.getElementsByTagName(getLoaderTagName() + "-exclude");
                     if (excludeChildNodes.getLength() > 0) {

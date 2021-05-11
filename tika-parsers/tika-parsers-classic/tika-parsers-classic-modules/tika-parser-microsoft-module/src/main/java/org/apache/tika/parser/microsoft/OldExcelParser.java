@@ -44,7 +44,7 @@ public class OldExcelParser extends AbstractParser {
     private static final long serialVersionUID = 4611820730372823452L;
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<MediaType>(Arrays.asList(MediaType.application("vnd.ms-excel.sheet.4"),
+            new HashSet<>(Arrays.asList(MediaType.application("vnd.ms-excel.sheet.4"),
                     MediaType.application("vnd.ms-excel.workspace.4"),
                     MediaType.application("vnd.ms-excel.sheet.3"),
                     MediaType.application("vnd.ms-excel.workspace.3"),

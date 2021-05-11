@@ -48,7 +48,7 @@ public class XHTMLContentHandlerTest {
      */
     private static String[] getRealWords(String string) {
         String[] possibleWords = string.split("\\s+");
-        List<String> words = new ArrayList<String>(possibleWords.length);
+        List<String> words = new ArrayList<>(possibleWords.length);
         for (String word : possibleWords) {
             if (word.length() > 0) {
                 words.add(word);

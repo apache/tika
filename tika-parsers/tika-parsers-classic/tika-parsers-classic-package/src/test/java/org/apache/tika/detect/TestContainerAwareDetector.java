@@ -22,10 +22,10 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
@@ -355,11 +355,8 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
     }
 
     private int countTemporaryFiles() {
-        return new File(System.getProperty("java.io.tmpdir")).listFiles(new FilenameFilter() {
-            public boolean accept(File dir, String name) {
-                return name.startsWith("apache-tika-");
-            }
-        }).length;
+        return Objects.requireNonNull(new File(System.getProperty("java.io.tmpdir"))
+                .listFiles((dir, name) -> name.startsWith("apache-tika-"))).length;
     }
 
     private void assertRemovalTempfiles(String fileName) throws Exception {
@@ -506,15 +503,7 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
     @Test
     public void testXMLMultiThreaded() throws Exception {
         Detector detector = new Tika().getDetector();
-        FileFilter filter = new FileFilter() {
-            @Override
-            public boolean accept(File pathname) {
-                if (pathname.getName().endsWith(".xml")) {
-                    return true;
-                }
-                return false;
-            }
-        };
+        FileFilter filter = pathname -> pathname.getName().endsWith(".xml");
         int numThreads = 1;
         XMLReaderUtils.setPoolSize(numThreads);
         testDetector(detector, numThreads, 20, filter, numThreads * 2);

@@ -45,7 +45,7 @@ public class IWork13PackageParser extends AbstractParser {
      */
     public final static String IWORK13_COMMON_ENTRY = "Metadata/BuildVersionHistory.plist";
     private final static Set<MediaType> supportedTypes = Collections.unmodifiableSet(
-            new HashSet<MediaType>(Arrays.asList(IWork13DocumentType.KEYNOTE13.getType(),
+            new HashSet<>(Arrays.asList(IWork13DocumentType.KEYNOTE13.getType(),
                     IWork13DocumentType.NUMBERS13.getType(),
                     IWork13DocumentType.PAGES13.getType())));
 

@@ -51,7 +51,7 @@ public class MidiParser extends AbstractParser {
     private static final long serialVersionUID = 6343278584336189432L;
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<MediaType>(
+            new HashSet<>(
                     Arrays.asList(MediaType.application("x-midi"), MediaType.audio("midi"))));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {

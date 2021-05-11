@@ -28,7 +28,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
-import org.apache.tika.config.Param;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.recognition.RecognisedObject;
@@ -40,7 +39,7 @@ public class TensorflowImageRecParserTest {
     @Test
     public void recognise() throws Exception {
         TensorflowImageRecParser recogniser = new TensorflowImageRecParser();
-        recogniser.initialize(new HashMap<String, Param>());
+        recogniser.initialize(new HashMap<>());
         try (InputStream stream = getClass().getClassLoader()
                 .getResourceAsStream("test-documents/testJPEG.jpg")) {
             List<RecognisedObject> objects = recogniser

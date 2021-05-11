@@ -120,7 +120,7 @@ public class BasicTikaFSConsumersBuilder extends AbstractConsumersBuilder {
             config = TikaConfig.getDefaultConfig();
         }
 
-        List<FileResourceConsumer> consumers = new LinkedList<FileResourceConsumer>();
+        List<FileResourceConsumer> consumers = new LinkedList<>();
         int numConsumers = BatchProcessBuilder.getNumConsumers(runtimeAttributes);
 
         NodeList nodeList = node.getChildNodes();
@@ -131,12 +131,16 @@ public class BasicTikaFSConsumersBuilder extends AbstractConsumersBuilder {
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node child = nodeList.item(i);
             String cn = child.getNodeName();
-            if (cn.equals("parser")) {
-                parserFactoryNode = child;
-            } else if (cn.equals("contenthandler")) {
-                contentHandlerFactoryNode = child;
-            } else if (cn.equals("outputstream")) {
-                outputStreamFactoryNode = child;
+            switch (cn) {
+                case "parser":
+                    parserFactoryNode = child;
+                    break;
+                case "contenthandler":
+                    contentHandlerFactoryNode = child;
+                    break;
+                case "outputstream":
+                    outputStreamFactoryNode = child;
+                    break;
             }
         }
 

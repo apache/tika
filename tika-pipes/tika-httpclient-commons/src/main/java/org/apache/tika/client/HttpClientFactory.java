@@ -319,26 +319,23 @@ public class HttpClientFactory {
 
     //if there's a bad/missing keepalive strategy
     public ConnectionKeepAliveStrategy getKeepAliveStrategy() {
-        return new ConnectionKeepAliveStrategy() {
-
-            public long getKeepAliveDuration(HttpResponse response, HttpContext context) {
-                // Honor 'keep-alive' header
-                HeaderElementIterator it = new BasicHeaderElementIterator(
-                        response.headerIterator(HTTP.CONN_KEEP_ALIVE));
-                while (it.hasNext()) {
-                    HeaderElement he = it.nextElement();
-                    String param = he.getName();
-                    String value = he.getValue();
-                    if (value != null && param != null &&
-                            param.equalsIgnoreCase("timeout")) {
-                        try {
-                            return Long.parseLong(value) * 1000;
-                        } catch (NumberFormatException ignore) {
-                        }
+        return (response, context) -> {
+            // Honor 'keep-alive' header
+            HeaderElementIterator it = new BasicHeaderElementIterator(
+                    response.headerIterator(HTTP.CONN_KEEP_ALIVE));
+            while (it.hasNext()) {
+                HeaderElement he = it.nextElement();
+                String param = he.getName();
+                String value = he.getValue();
+                if (value != null && param != null &&
+                        param.equalsIgnoreCase("timeout")) {
+                    try {
+                        return Long.parseLong(value) * 1000;
+                    } catch (NumberFormatException ignore) {
                     }
                 }
-                return keepAliveOnBadKeepAliveValueMs;
             }
+            return keepAliveOnBadKeepAliveValueMs;
         };
     }
 

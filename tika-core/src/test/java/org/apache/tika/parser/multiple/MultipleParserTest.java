@@ -53,7 +53,7 @@ public class MultipleParserTest {
         // Some media types
         Set<MediaType> onlyOct = Collections.singleton(MediaType.OCTET_STREAM);
         Set<MediaType> octAndText =
-                new HashSet<MediaType>(Arrays.asList(MediaType.OCTET_STREAM, MediaType.TEXT_PLAIN));
+                new HashSet<>(Arrays.asList(MediaType.OCTET_STREAM, MediaType.TEXT_PLAIN));
         // TODO One with a subtype
     }
 
@@ -74,7 +74,7 @@ public class MultipleParserTest {
         // Some parsers
         ErrorParser pFail = new ErrorParser();
         DummyParser pContent =
-                new DummyParser(onlyOct, new HashMap<String, String>(), "Fell back!");
+                new DummyParser(onlyOct, new HashMap<>(), "Fell back!");
         EmptyParser pNothing = new EmptyParser();
 
 

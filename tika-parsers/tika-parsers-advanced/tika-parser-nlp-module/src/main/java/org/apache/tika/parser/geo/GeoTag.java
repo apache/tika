@@ -25,7 +25,7 @@ import org.apache.tika.parser.geo.gazetteer.Location;
 
 public class GeoTag {
     Location location = new Location();
-    List<GeoTag> alternatives = new ArrayList<GeoTag>();
+    List<GeoTag> alternatives = new ArrayList<>();
 
     public void setMain(String name, String longitude, String latitude) {
         this.location.setName(name);

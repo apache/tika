@@ -29,12 +29,8 @@ public class ClassLoaderUtil {
                 return (T) clazz.newInstance();
             }
             throw new IllegalArgumentException(
-                    iface.toString() + " is not assignable from " + className);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        } catch (InstantiationException e) {
-            throw new RuntimeException(e);
-        } catch (IllegalAccessException e) {
+                    iface + " is not assignable from " + className);
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
 

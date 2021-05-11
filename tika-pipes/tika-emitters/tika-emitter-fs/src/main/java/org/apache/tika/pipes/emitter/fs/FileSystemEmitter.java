@@ -110,15 +110,19 @@ public class FileSystemEmitter extends AbstractEmitter implements StreamEmitter 
 
     @Field
     public void setOnExists(String onExists) {
-        if (onExists.equals("skip")) {
-            this.onExists = ON_EXISTS.SKIP;
-        } else if (onExists.equals("replace")) {
-            this.onExists = ON_EXISTS.REPLACE;
-        } else if (onExists.equals("exception")) {
-            this.onExists = ON_EXISTS.EXCEPTION;
-        } else {
-            throw new IllegalArgumentException("Don't understand '" + onExists +
-                    "'; must be one of: 'skip', 'replace', 'exception'");
+        switch (onExists) {
+            case "skip":
+                this.onExists = ON_EXISTS.SKIP;
+                break;
+            case "replace":
+                this.onExists = ON_EXISTS.REPLACE;
+                break;
+            case "exception":
+                this.onExists = ON_EXISTS.EXCEPTION;
+                break;
+            default:
+                throw new IllegalArgumentException("Don't understand '" + onExists +
+                                                   "'; must be one of: 'skip', 'replace', 'exception'");
         }
     }
 

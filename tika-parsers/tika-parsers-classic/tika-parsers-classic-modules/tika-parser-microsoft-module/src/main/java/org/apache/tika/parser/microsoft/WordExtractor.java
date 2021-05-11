@@ -70,8 +70,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
     // could be improved by using the real delimiter in xchFollow
     //  [MS-DOC], v20140721, 2.4.6.3, Part 3, Step 3
     private static final String LIST_DELIMITER = " ";
-    private static final Map<String, TagAndStyle> fixedParagraphStyles =
-            new HashMap<String, TagAndStyle>();
+    private static final Map<String, TagAndStyle> fixedParagraphStyles = new HashMap<>();
     private static final TagAndStyle defaultParagraphStyle = new TagAndStyle("p", null);
 
     static {
@@ -424,8 +423,8 @@ public class WordExtractor extends AbstractPOIFSExtractor {
     private int handleSpecialCharacterRuns(Paragraph p, int index, boolean skipStyling,
                                            PicturesSource pictures, XHTMLContentHandler xhtml)
             throws SAXException, TikaException, IOException {
-        List<CharacterRun> controls = new ArrayList<CharacterRun>();
-        List<CharacterRun> texts = new ArrayList<CharacterRun>();
+        List<CharacterRun> controls = new ArrayList<>();
+        List<CharacterRun> texts = new ArrayList<>();
         boolean has14 = false;
 
         // Split it into before and after the 14
@@ -441,7 +440,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             } else if (cr.text().equals("\u0015")) {
                 if (!has14) {
                     texts = controls;
-                    controls = new ArrayList<CharacterRun>();
+                    controls = new ArrayList<>();
                 }
                 break;
             } else if (cr.text().equals("\u0014\u0015")) {
@@ -651,7 +650,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
      */
     private static class PicturesSource {
         private PicturesTable picturesTable;
-        private Set<Picture> output = new HashSet<Picture>();
+        private Set<Picture> output = new HashSet<>();
         private Map<Integer, Picture> lookup;
         private List<Picture> nonU1based;
         private List<Picture> all;
@@ -662,7 +661,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             all = picturesTable.getAllPictures();
 
             // Build the Offset-Picture lookup map
-            lookup = new HashMap<Integer, Picture>();
+            lookup = new HashMap<>();
             for (Picture p : all) {
                 lookup.put(p.getStartOffset(), p);
             }
@@ -672,7 +671,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             // These are \u0008 escher floating ones, ones
             //  found outside the normal text, and who
             //  knows what else...
-            nonU1based = new ArrayList<Picture>();
+            nonU1based = new ArrayList<>();
             nonU1based.addAll(all);
             Range r = doc.getRange();
             for (int i = 0; i < r.numCharacterRuns(); i++) {

@@ -45,8 +45,8 @@ class BatchCommandLineBuilder {
 
     protected static String[] build(String[] args) throws IOException {
 
-        Map<String, String> processArgs = new LinkedHashMap<String, String>();
-        Map<String, String> jvmOpts = new LinkedHashMap<String,String>();
+        Map<String, String> processArgs = new LinkedHashMap<>();
+        Map<String, String> jvmOpts = new LinkedHashMap<>();
         //take the args, and divide them into process args and options for
         //the forked jvm process (i.e. log files, etc)
         mapifyArgs(args, processArgs, jvmOpts);
@@ -72,7 +72,7 @@ class BatchCommandLineBuilder {
             jvmOpts.put("-Dlog4j.configuration=log4j_batch_process.properties", "");
         }
         //now build the full command line
-        List<String> fullCommand = new ArrayList<String>();
+        List<String> fullCommand = new ArrayList<>();
         fullCommand.add("java");
         boolean foundHeadlessOption = false;
         for (Map.Entry<String, String> e : jvmOpts.entrySet()) {

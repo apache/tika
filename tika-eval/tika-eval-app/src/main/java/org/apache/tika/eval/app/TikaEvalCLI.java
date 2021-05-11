@@ -59,18 +59,25 @@ public class TikaEvalCLI {
         String tool = args[0];
         String[] subsetArgs = new String[args.length - 1];
         System.arraycopy(args, 1, subsetArgs, 0, args.length - 1);
-        if (tool.equals("Report")) {
-            handleReport(subsetArgs);
-        } else if (tool.equals("Compare")) {
-            handleCompare(subsetArgs);
-        } else if (tool.equals("Profile")) {
-            handleProfile(subsetArgs);
-        } else if (tool.equals("StartDB")) {
-            handleStartDB(subsetArgs);
-        } else if (tool.equals("FileProfile")) {
-            handleProfileFiles(subsetArgs);
-        } else {
-            System.out.println(specifyTools());
+        switch (tool) {
+            case "Report":
+                handleReport(subsetArgs);
+                break;
+            case "Compare":
+                handleCompare(subsetArgs);
+                break;
+            case "Profile":
+                handleProfile(subsetArgs);
+                break;
+            case "StartDB":
+                handleStartDB(subsetArgs);
+                break;
+            case "FileProfile":
+                handleProfileFiles(subsetArgs);
+                break;
+            default:
+                System.out.println(specifyTools());
+                break;
         }
     }
 
@@ -80,10 +87,10 @@ public class TikaEvalCLI {
         boolean containsBC = false;
         String inputDir = null;
         //confirm there's a batch-config file
-        for (int i = 0; i < argList.size(); i++) {
-            String arg = argList.get(i);
+        for (String arg : argList) {
             if (arg.equals("-bc")) {
                 containsBC = true;
+                break;
             }
         }
 
@@ -146,33 +153,38 @@ public class TikaEvalCLI {
         //confirm there's a batch-config file
         for (int i = 0; i < argList.size(); i++) {
             String arg = argList.get(i);
-            if (arg.equals("-bc")) {
-                containsBC = true;
-            } else if (arg.equals("-inputDir")) {
-                if (i + 1 >= argList.size()) {
-                    System.err.println("Must specify directory after -inputDir");
-                    ExtractProfiler.USAGE();
-                    return;
-                }
-                inputDir = argList.get(i + 1);
-                i++;
-            } else if (arg.equals("-extracts")) {
-                if (i + 1 >= argList.size()) {
-                    System.err.println("Must specify directory after -extracts");
-                    ExtractProfiler.USAGE();
-                    return;
-                }
-                extracts = argList.get(i + 1);
-                i++;
-            } else if (arg.equals("-alterExtract")) {
-                if (i + 1 >= argList.size()) {
-                    System.err.println("Must specify type 'as_is', 'first_only' or " +
-                            "'concatenate_content' after -alterExtract");
-                    ExtractComparer.USAGE();
-                    return;
-                }
-                alterExtract = argList.get(i + 1);
-                i++;
+            switch (arg) {
+                case "-bc":
+                    containsBC = true;
+                    break;
+                case "-inputDir":
+                    if (i + 1 >= argList.size()) {
+                        System.err.println("Must specify directory after -inputDir");
+                        ExtractProfiler.USAGE();
+                        return;
+                    }
+                    inputDir = argList.get(i + 1);
+                    i++;
+                    break;
+                case "-extracts":
+                    if (i + 1 >= argList.size()) {
+                        System.err.println("Must specify directory after -extracts");
+                        ExtractProfiler.USAGE();
+                        return;
+                    }
+                    extracts = argList.get(i + 1);
+                    i++;
+                    break;
+                case "-alterExtract":
+                    if (i + 1 >= argList.size()) {
+                        System.err.println("Must specify type 'as_is', 'first_only' or " +
+                                           "'concatenate_content' after -alterExtract");
+                        ExtractComparer.USAGE();
+                        return;
+                    }
+                    alterExtract = argList.get(i + 1);
+                    i++;
+                    break;
             }
         }
 
@@ -243,33 +255,38 @@ public class TikaEvalCLI {
         //confirm there's a batch-config file
         for (int i = 0; i < argList.size(); i++) {
             String arg = argList.get(i);
-            if (arg.equals("-bc")) {
-                containsBC = true;
-            } else if (arg.equals("-inputDir")) {
-                if (i + 1 >= argList.size()) {
-                    System.err.println("Must specify directory after -inputDir");
-                    ExtractComparer.USAGE();
-                    return;
-                }
-                inputDir = argList.get(i + 1);
-                i++;
-            } else if (arg.equals("-extractsA")) {
-                if (i + 1 >= argList.size()) {
-                    System.err.println("Must specify directory after -extractsA");
-                    ExtractComparer.USAGE();
-                    return;
-                }
-                extractsA = argList.get(i + 1);
-                i++;
-            } else if (arg.equals("-alterExtract")) {
-                if (i + 1 >= argList.size()) {
-                    System.err.println("Must specify type 'as_is', 'first_only' or " +
-                            "'concatenate_content' after -alterExtract");
-                    ExtractComparer.USAGE();
-                    return;
-                }
-                alterExtract = argList.get(i + 1);
-                i++;
+            switch (arg) {
+                case "-bc":
+                    containsBC = true;
+                    break;
+                case "-inputDir":
+                    if (i + 1 >= argList.size()) {
+                        System.err.println("Must specify directory after -inputDir");
+                        ExtractComparer.USAGE();
+                        return;
+                    }
+                    inputDir = argList.get(i + 1);
+                    i++;
+                    break;
+                case "-extractsA":
+                    if (i + 1 >= argList.size()) {
+                        System.err.println("Must specify directory after -extractsA");
+                        ExtractComparer.USAGE();
+                        return;
+                    }
+                    extractsA = argList.get(i + 1);
+                    i++;
+                    break;
+                case "-alterExtract":
+                    if (i + 1 >= argList.size()) {
+                        System.err.println("Must specify type 'as_is', 'first_only' or " +
+                                           "'concatenate_content' after -alterExtract");
+                        ExtractComparer.USAGE();
+                        return;
+                    }
+                    alterExtract = argList.get(i + 1);
+                    i++;
+                    break;
             }
         }
         if (alterExtract != null && !alterExtract.equals("as_is") &&

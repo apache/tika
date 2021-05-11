@@ -103,16 +103,14 @@ public class ForkParserTest extends TikaTest {
             for (int i = 0; i < threads.length; i++) {
                 final ContentHandler o = new BodyContentHandler();
                 output[i] = o;
-                threads[i] = new Thread() {
-                    public void run() {
-                        try {
-                            InputStream stream = new ByteArrayInputStream(new byte[0]);
-                            parser.parse(stream, o, new Metadata(), context);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+                threads[i] = new Thread(() -> {
+                    try {
+                        InputStream stream = new ByteArrayInputStream(new byte[0]);
+                        parser.parse(stream, o, new Metadata(), context);
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                };
+                });
                 threads[i].start();
             }
 
@@ -141,16 +139,14 @@ public class ForkParserTest extends TikaTest {
                     }
                 };
                 pipes[i] = new PipedOutputStream(input);
-                threads[i] = new Thread() {
-                    public void run() {
-                        try {
-                            ContentHandler o = new DefaultHandler();
-                            parser.parse(input, o, new Metadata(), context);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+                threads[i] = new Thread(() -> {
+                    try {
+                        ContentHandler o = new DefaultHandler();
+                        parser.parse(input, o, new Metadata(), context);
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                };
+                });
                 threads[i].start();
             }
 
@@ -158,17 +154,15 @@ public class ForkParserTest extends TikaTest {
             barrier.acquire(parser.getPoolSize());
 
             final ContentHandler o = new BodyContentHandler();
-            Thread blocked = new Thread() {
-                public void run() {
-                    try {
-                        barrier.release();
-                        InputStream stream = new ByteArrayInputStream(new byte[0]);
-                        parser.parse(stream, o, new Metadata(), context);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+            Thread blocked = new Thread(() -> {
+                try {
+                    barrier.release();
+                    InputStream stream = new ByteArrayInputStream(new byte[0]);
+                    parser.parse(stream, o, new Metadata(), context);
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-            };
+            });
             blocked.start();
 
             // Wait until the last thread is started, and then some to

@@ -52,7 +52,7 @@ public class AudioParser extends AbstractParser {
     private static final long serialVersionUID = -6015684081240882695L;
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<MediaType>(
+            new HashSet<>(
                     Arrays.asList(MediaType.audio("basic"), MediaType.audio("vnd.wave"),
                             // Official, fixed in Tika 1.16
                             MediaType.audio("x-wav"),    // Older, used until Tika 1.16

@@ -77,7 +77,7 @@ public class TikaDetectors {
     @GET
     @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
     public String getDetectorsJSON() throws IOException {
-        Map<String, Object> details = new HashMap<String, Object>();
+        Map<String, Object> details = new HashMap<>();
         detectorAsMap(TikaResource.getConfig().getDetector(), details);
         return new ObjectMapper().writeValueAsString(details);
     }
@@ -88,9 +88,9 @@ public class TikaDetectors {
         boolean isComposite = (d instanceof CompositeDetector);
         details.put("composite", isComposite);
         if (isComposite) {
-            List<Map<String, Object>> c = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> c = new ArrayList<>();
             for (Detector cd : ((CompositeDetector) d).getDetectors()) {
-                Map<String, Object> cdet = new HashMap<String, Object>();
+                Map<String, Object> cdet = new HashMap<>();
                 detectorAsMap(cd, cdet);
                 c.add(cdet);
             }

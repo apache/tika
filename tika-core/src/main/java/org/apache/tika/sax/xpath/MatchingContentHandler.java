@@ -31,7 +31,7 @@ import org.apache.tika.sax.ContentHandlerDecorator;
  */
 public class MatchingContentHandler extends ContentHandlerDecorator {
 
-    private final LinkedList<Matcher> matchers = new LinkedList<Matcher>();
+    private final LinkedList<Matcher> matchers = new LinkedList<>();
 
     private Matcher matcher;
 

@@ -62,7 +62,7 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
      * Used to optimize type lookup and to avoid having too many
      * {@link MediaType} instances in memory.
      */
-    private static final Map<String, MediaType> SIMPLE_TYPES = new HashMap<String, MediaType>();
+    private static final Map<String, MediaType> SIMPLE_TYPES = new HashMap<>();
 
     public static final MediaType OCTET_STREAM = parse("application/octet-stream");
 
@@ -111,7 +111,7 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
             builder.append('/');
             builder.append(subtype);
 
-            SortedMap<String, String> map = new TreeMap<String, String>();
+            SortedMap<String, String> map = new TreeMap<>();
             for (Map.Entry<String, String> entry : parameters.entrySet()) {
                 String key = entry.getKey().trim().toLowerCase(Locale.ENGLISH);
                 map.put(key, entry.getValue());
@@ -206,7 +206,7 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
      * @since Apache Tika 1.2
      */
     public static Set<MediaType> set(MediaType... types) {
-        Set<MediaType> set = new HashSet<MediaType>();
+        Set<MediaType> set = new HashSet<>();
         for (MediaType type : types) {
             if (type != null) {
                 set.add(type);
@@ -224,7 +224,7 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
      * @since Apache Tika 1.2
      */
     public static Set<MediaType> set(String... types) {
-        Set<MediaType> set = new HashSet<MediaType>();
+        Set<MediaType> set = new HashSet<>();
         for (String type : types) {
             MediaType mt = parse(type);
             if (mt != null) {
@@ -301,7 +301,7 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
         // Extracts k1=v1, k2=v2 from mime/type; k1=v1; k2=v2
         // Note - this logic isn't fully RFC2045 compliant yet, as it
         //  doesn't fully handle quoted keys or values (eg containing ; or =)
-        Map<String, String> parameters = new HashMap<String, String>();
+        Map<String, String> parameters = new HashMap<>();
         while (string.length() > 0) {
             String key = string;
             String value = "";
@@ -351,7 +351,7 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
         } else if (b.isEmpty()) {
             return a;
         } else {
-            Map<String, String> union = new HashMap<String, String>();
+            Map<String, String> union = new HashMap<>();
             union.putAll(a);
             union.putAll(b);
             return union;

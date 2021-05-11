@@ -76,16 +76,13 @@ class XPSPageContentHandler extends DefaultHandler {
     //sort based on y coordinate of first element in each row
     //this requires every row to have at least one element
     private static Comparator<? super List<GlyphRun>> ROW_SORTER =
-            new Comparator<List<GlyphRun>>() {
-                @Override
-                public int compare(List<GlyphRun> o1, List<GlyphRun> o2) {
-                    if (o1.get(0).originY < o2.get(0).originY) {
-                        return -1;
-                    } else if (o1.get(0).originY > o2.get(0).originY) {
-                        return 1;
-                    }
-                    return 0;
+            (Comparator<List<GlyphRun>>) (o1, o2) -> {
+                if (o1.get(0).originY < o2.get(0).originY) {
+                    return -1;
+                } else if (o1.get(0).originY > o2.get(0).originY) {
+                    return 1;
                 }
+                return 0;
             };
     private final XHTMLContentHandler xhml;
     private final Map<String, Metadata> embeddedInfos;

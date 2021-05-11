@@ -113,7 +113,7 @@ class ParsingTransferHandler extends TransferHandler {
     }
 
     private static List<File> uriToFileList(Object data) {
-        List<File> list = new ArrayList<File>();
+        List<File> list = new ArrayList<>();
         StringTokenizer st = new StringTokenizer(data.toString(), "\r\n");
         while (st.hasMoreTokens())
         {

@@ -129,7 +129,7 @@ public class TikaParsers {
     }
 
     protected String getParsersJSON(boolean withMimeTypes) throws IOException {
-        Map<String, Object> details = new HashMap<String, Object>();
+        Map<String, Object> details = new HashMap<>();
         parserAsMap(new ParserDetails(TikaResource.getConfig().getParser()), withMimeTypes,
                 details);
         ObjectMapper objectMapper = new ObjectMapper();
@@ -142,15 +142,15 @@ public class TikaParsers {
         details.put("decorated", p.isDecorated);
 
         if (p.isComposite) {
-            List<Map<String, Object>> c = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> c = new ArrayList<>();
             for (Parser cp : p.childParsers) {
-                Map<String, Object> cdet = new HashMap<String, Object>();
+                Map<String, Object> cdet = new HashMap<>();
                 parserAsMap(new ParserDetails(cp), withMimeTypes, cdet);
                 c.add(cdet);
             }
             details.put("children", c);
         } else if (withMimeTypes) {
-            List<String> mts = new ArrayList<String>(p.supportedTypes.size());
+            List<String> mts = new ArrayList<>(p.supportedTypes.size());
             for (MediaType mt : p.supportedTypes) {
                 mts.add(mt.toString());
             }
@@ -235,9 +235,9 @@ public class TikaParsers {
 
                 // Get the unique set of child parsers
                 Set<Parser> children =
-                        new HashSet<Parser>(((CompositeParser) p).getParsers(EMPTY_PC).values());
+                        new HashSet<>(((CompositeParser) p).getParsers(EMPTY_PC).values());
                 // Sort it by class name
-                childParsers = new ArrayList<Parser>(children);
+                childParsers = new ArrayList<>(children);
                 childParsers.sort(Comparator.comparing(parser -> parser.getClass().getName()));
             } else {
                 supportedTypes = p.getSupportedTypes(EMPTY_PC);

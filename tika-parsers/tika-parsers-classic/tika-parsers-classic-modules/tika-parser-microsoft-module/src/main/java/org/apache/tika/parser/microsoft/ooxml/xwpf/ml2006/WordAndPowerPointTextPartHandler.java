@@ -41,7 +41,7 @@ class WordAndPowerPointTextPartHandler extends OOXMLWordAndPowerPointTextHandler
                                             RelationshipsManager relationshipsManager,
                                             OfficeParserConfig officeParserConfig) {
         super(new OOXMLTikaBodyPartHandler(xhtml, null, null, officeParserConfig),
-                new HashMap<String, String>());
+                new HashMap<>());
         this.contentType = contentType;
     }
 

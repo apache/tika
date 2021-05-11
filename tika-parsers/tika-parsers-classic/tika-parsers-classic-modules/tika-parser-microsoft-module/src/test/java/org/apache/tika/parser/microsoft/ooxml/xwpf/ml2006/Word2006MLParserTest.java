@@ -19,8 +19,6 @@ package org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.File;
-import java.io.FileFilter;
 import java.util.List;
 
 import org.junit.AfterClass;
@@ -186,16 +184,8 @@ public class Word2006MLParserTest extends MultiThreadedTikaTest {
             contexts[i] = new ParseContext();
         }
 
-        testMultiThreaded(AUTO_DETECT_PARSER, contexts, numThreads, 2, new FileFilter() {
-            @Override
-            public boolean accept(File pathname) {
-                if (pathname.getName().equals("testWORD_2006ml.xml")) {
-                    return true;
-                }
-                return false;
-            }
-        });
-
+        testMultiThreaded(AUTO_DETECT_PARSER, contexts, numThreads, 2,
+                pathname -> pathname.getName().equals("testWORD_2006ml.xml"));
     }
 
 }

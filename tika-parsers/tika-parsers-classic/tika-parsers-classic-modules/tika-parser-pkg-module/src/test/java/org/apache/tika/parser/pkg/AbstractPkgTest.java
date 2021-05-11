@@ -57,10 +57,10 @@ public abstract class AbstractPkgTest extends TikaTest {
 
     @SuppressWarnings("serial")
     protected static class EmbeddedTrackingParser extends AbstractParser {
-        protected List<String> filenames = new ArrayList<String>();
-        protected List<String> mediatypes = new ArrayList<String>();
-        protected List<String> createdAts = new ArrayList<String>();
-        protected List<String> modifiedAts = new ArrayList<String>();
+        protected List<String> filenames = new ArrayList<>();
+        protected List<String> mediatypes = new ArrayList<>();
+        protected List<String> createdAts = new ArrayList<>();
+        protected List<String> modifiedAts = new ArrayList<>();
         protected byte[] lastSeenStart;
 
         public void reset() {

@@ -177,11 +177,7 @@ public class CompressorParser extends AbstractParser {
         CompressorInputStream cis;
         try {
             CompressorParserOptions options =
-                    context.get(CompressorParserOptions.class, new CompressorParserOptions() {
-                        public boolean decompressConcatenated(Metadata metadata) {
-                            return false;
-                        }
-                    });
+                    context.get(CompressorParserOptions.class, metadata1 -> false);
             CompressorStreamFactory factory =
                     new CompressorStreamFactory(options.decompressConcatenated(metadata),
                             memoryLimitInKb);

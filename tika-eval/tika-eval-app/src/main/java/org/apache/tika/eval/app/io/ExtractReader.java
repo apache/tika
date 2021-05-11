@@ -130,16 +130,20 @@ public class ExtractReader {
         try {
             is = Files.newInputStream(extractFile);
             if (fileSuffixes.compression != null) {
-                if (fileSuffixes.compression.equals("bz2")) {
-                    is = new BZip2CompressorInputStream(is);
-                } else if (fileSuffixes.compression.equals("gz") ||
-                        fileSuffixes.compression.equals("gzip")) {
-                    is = new GzipCompressorInputStream(is);
-                } else if (fileSuffixes.compression.equals("zip")) {
-                    is = new ZCompressorInputStream(is);
-                } else {
-                    LOG.warn("Can't yet process compression of type: {}", fileSuffixes.compression);
-                    return metadataList;
+                switch (fileSuffixes.compression) {
+                    case "bz2":
+                        is = new BZip2CompressorInputStream(is);
+                        break;
+                    case "gz":
+                    case "gzip":
+                        is = new GzipCompressorInputStream(is);
+                        break;
+                    case "zip":
+                        is = new ZCompressorInputStream(is);
+                        break;
+                    default:
+                        LOG.warn("Can't yet process compression of type: {}", fileSuffixes.compression);
+                        return metadataList;
                 }
             }
             reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));

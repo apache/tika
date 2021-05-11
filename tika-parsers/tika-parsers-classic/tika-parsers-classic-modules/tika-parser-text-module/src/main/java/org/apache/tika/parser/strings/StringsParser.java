@@ -178,7 +178,7 @@ public class StringsParser extends AbstractParser implements Initializable {
         String stringsProg = getStringsPath() + getStringsProg();
 
         // Builds the command array
-        ArrayList<String> cmdList = new ArrayList<String>(4);
+        ArrayList<String> cmdList = new ArrayList<>(4);
         cmdList.add(stringsProg);
         cmdList.add("-n");
         cmdList.add("" + config.getMinLength());
@@ -217,22 +217,20 @@ public class StringsParser extends AbstractParser implements Initializable {
 
     private Thread logStream(final InputStream stream, final ContentHandler handler,
                              final AtomicInteger totalBytes) {
-        return new Thread() {
-            public void run() {
-                Reader reader = new InputStreamReader(stream, UTF_8);
-                char[] buffer = new char[1024];
-                try {
-                    for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
-                        handler.characters(buffer, 0, n);
-                        totalBytes.addAndGet(n);
-                    }
-                } catch (SAXException | IOException e) {
-                    //swallow
-                } finally {
-                    IOUtils.closeQuietly(stream);
+        return new Thread(() -> {
+            Reader reader = new InputStreamReader(stream, UTF_8);
+            char[] buffer = new char[1024];
+            try {
+                for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
+                    handler.characters(buffer, 0, n);
+                    totalBytes.addAndGet(n);
                 }
+            } catch (SAXException | IOException e) {
+                //swallow
+            } finally {
+                IOUtils.closeQuietly(stream);
             }
-        };
+        });
     }
 
     public String getStringsPath() {
