@@ -391,7 +391,7 @@ public class HttpClientFactory {
         }
     }
 
-    private class AES {
+    private static class AES {
         private final SecretKeySpec secretKey;
         private byte[] key;
 

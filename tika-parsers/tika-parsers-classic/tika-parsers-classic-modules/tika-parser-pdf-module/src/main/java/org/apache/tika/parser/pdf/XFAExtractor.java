@@ -290,7 +290,7 @@ class XFAExtractor {
         return "";
     }
 
-    class XFAField {
+    static class XFAField {
         String fieldName;
         String toolTip;
         String pdfObjRef;

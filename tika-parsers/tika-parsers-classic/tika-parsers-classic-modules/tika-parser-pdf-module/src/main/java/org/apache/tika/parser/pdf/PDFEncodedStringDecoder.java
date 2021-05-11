@@ -95,7 +95,7 @@ class PDFEncodedStringDecoder {
         return value;
     }
 
-    class COSStringParser extends COSParser {
+    static class COSStringParser extends COSParser {
 
         COSStringParser(RandomAccessRead buffer) throws IOException {
             super(buffer);

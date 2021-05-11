@@ -63,7 +63,7 @@ public class InterruptableParsingExample {
         return false;
     }
 
-    class QueryMatchedException extends SAXException {
+    static class QueryMatchedException extends SAXException {
     }
 
     /**

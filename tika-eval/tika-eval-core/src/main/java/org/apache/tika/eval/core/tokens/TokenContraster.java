@@ -166,7 +166,7 @@ public class TokenContraster {
         }
     }
 
-    private class TokenCountDiff {
+    private static class TokenCountDiff {
         private final String token;
         private final int diff;
         private final int count;

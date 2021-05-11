@@ -45,7 +45,7 @@ public class MockConfigTest {
     }
 
 
-    public class MockConfig extends ConfigBase {
+    public static class MockConfig extends ConfigBase {
 
         private Map<String, String> mappings;
         private Map<String, Integer> mappedIntegers;

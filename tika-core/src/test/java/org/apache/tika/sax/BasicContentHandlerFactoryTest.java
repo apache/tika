@@ -295,7 +295,7 @@ public class BasicContentHandlerFactoryTest {
 
     //Simple mockparser that writes a title
     //and charsToWrite number of 'a'
-    private class MockParser implements Parser {
+    private static class MockParser implements Parser {
         private final String XHTML = "http://www.w3.org/1999/xhtml";
         private final Attributes EMPTY_ATTRIBUTES = new AttributesImpl();
         private final char[] TITLE = "This is the title".toCharArray();

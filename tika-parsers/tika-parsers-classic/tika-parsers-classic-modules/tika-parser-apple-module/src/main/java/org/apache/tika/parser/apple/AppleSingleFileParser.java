@@ -177,7 +177,7 @@ public class AppleSingleFileParser extends AbstractParser {
         return EndianUtils.readShortBE(stream);//number of entries
     }
 
-    private class FieldInfo {
+    private static class FieldInfo {
 
         private final long entryId;
         private final long offset;

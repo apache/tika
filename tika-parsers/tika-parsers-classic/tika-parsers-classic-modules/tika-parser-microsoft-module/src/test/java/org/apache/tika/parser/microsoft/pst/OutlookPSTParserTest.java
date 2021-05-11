@@ -146,7 +146,7 @@ public class OutlookPSTParserTest extends TikaTest {
         // the bodyhtml
     }
 
-    private class EmbeddedTrackingExtrator extends ParsingEmbeddedDocumentExtractor {
+    private static class EmbeddedTrackingExtrator extends ParsingEmbeddedDocumentExtractor {
         List<Metadata> trackingMetadata = new ArrayList<>();
 
         public EmbeddedTrackingExtrator(ParseContext context) {

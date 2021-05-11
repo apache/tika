@@ -88,7 +88,7 @@ public class XSLFEventBasedPowerPointExtractor extends POIXMLTextExtractor {
     }
 
 
-    private class XSLFToTextContentHandler
+    private static class XSLFToTextContentHandler
             implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
         private final StringBuilder buffer;
 

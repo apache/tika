@@ -64,7 +64,7 @@ public class AlphaIdeographFilterFactory extends TokenFilterFactory {
     /**
      * Remove tokens that do not contain an alphabetic or ideographic
      */
-    private class AlphaFilter extends FilteringTokenFilter {
+    private static class AlphaFilter extends FilteringTokenFilter {
 
         private final CharTermAttribute termAtt = addAttribute(CharTermAttribute.class);
         private final TypeAttribute typeAtt = addAttribute(TypeAttribute.class);

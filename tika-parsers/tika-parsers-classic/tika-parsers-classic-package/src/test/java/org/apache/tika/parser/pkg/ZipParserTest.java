@@ -123,7 +123,7 @@ public class ZipParserTest extends AbstractPkgTest {
                 results.get(4).get("X-TIKA:EXCEPTION:embedded_exception"));
     }
 
-    private class GatherRelIDsDocumentExtractor implements EmbeddedDocumentExtractor {
+    private static class GatherRelIDsDocumentExtractor implements EmbeddedDocumentExtractor {
         public Set<String> allRelIDs = new HashSet<>();
 
         public boolean shouldParseEmbedded(Metadata metadata) {

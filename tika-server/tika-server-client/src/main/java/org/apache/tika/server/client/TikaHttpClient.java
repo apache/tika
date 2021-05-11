@@ -164,7 +164,7 @@ class TikaHttpClient {
         throw new TimeoutWaitingForTikaException("");
     }
 
-    private class TimeoutWaitingForTikaException extends TikaException {
+    private static class TimeoutWaitingForTikaException extends TikaException {
         public TimeoutWaitingForTikaException(String msg) {
             super(msg);
         }

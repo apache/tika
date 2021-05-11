@@ -374,6 +374,6 @@ public class MimeTypesReaderTest {
         MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes(new CustomClassLoader());
     }
 
-    private class CustomClassLoader extends ClassLoader {
+    private static class CustomClassLoader extends ClassLoader {
     }
 }

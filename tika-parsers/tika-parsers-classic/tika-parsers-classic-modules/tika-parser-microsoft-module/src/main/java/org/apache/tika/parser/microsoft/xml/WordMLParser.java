@@ -90,7 +90,7 @@ public class WordMLParser extends AbstractXML2003Parser {
         metadata.set(Metadata.CONTENT_TYPE, MEDIA_TYPE.toString());
     }
 
-    private class WordMLHandler extends DefaultHandler {
+    private static class WordMLHandler extends DefaultHandler {
         private final ContentHandler handler;
         private boolean ignoreCharacters;
         private boolean inBody = false;
@@ -173,7 +173,7 @@ public class WordMLParser extends AbstractXML2003Parser {
         }
     }
 
-    private class PictHandler extends DefaultHandler {
+    private static class PictHandler extends DefaultHandler {
         final StringBuilder buffer = new StringBuilder();
         final Metadata parentMetadata;
         final ContentHandler handler;

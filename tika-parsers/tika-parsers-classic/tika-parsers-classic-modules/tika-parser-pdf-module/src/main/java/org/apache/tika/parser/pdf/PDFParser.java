@@ -660,7 +660,7 @@ public class PDFParser extends AbstractParser implements Initializable {
      * Copied from AcroformDefaultFixup minus generation of appearances and handling of orphan
      * widgets, which we don't need.
      */
-    class TikaAcroFormFixup extends AbstractFixup {
+    static class TikaAcroFormFixup extends AbstractFixup {
         TikaAcroFormFixup(PDDocument document) {
             super(document);
         }
