@@ -40,8 +40,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.pipes.FetchEmitTuple;
-import org.apache.tika.pipes.fetchiterator.FetchIterator;
-import org.apache.tika.pipes.fetchiterator.FetchIteratorManager;
+import org.apache.tika.pipes.pipesiterator.PipesIterator;
 
 public class TikaClientCLI {
 
@@ -66,12 +65,12 @@ public class TikaClientCLI {
         ExecutorService executorService = Executors.newFixedThreadPool(numThreads + 1);
         ExecutorCompletionService<Integer> completionService =
                 new ExecutorCompletionService<>(executorService);
-        final FetchIterator fetchIterator =
-                FetchIteratorManager.build(tikaConfigPath).getFetchIterator();
+        final PipesIterator pipesIterator =
+                PipesIterator.build(tikaConfigPath);
         final ArrayBlockingQueue<FetchEmitTuple> queue =
                 new ArrayBlockingQueue<>(QUEUE_SIZE);
 
-        completionService.submit(new FetchIteratorWrapper(fetchIterator, queue, numThreads));
+        completionService.submit(new PipesIteratorWrapper(pipesIterator, queue, numThreads));
         if (tikaServerUrls.size() == numThreads) {
             logDiffSizes(tikaServerUrls.size(), numThreads);
             for (int i = 0; i < numThreads; i++) {
@@ -133,7 +132,7 @@ public class TikaClientCLI {
                     send(localCache);
                     throw new TimeoutException("exceeded maxWaitMs");
                 }
-                if (t == FetchIterator.COMPLETED_SEMAPHORE) {
+                if (t == PipesIterator.COMPLETED_SEMAPHORE) {
                     send(localCache);
                     return 1;
                 }
@@ -169,7 +168,7 @@ public class TikaClientCLI {
                 if (t == null) {
                     throw new TimeoutException("exceeded maxWaitMs");
                 }
-                if (t == FetchIterator.COMPLETED_SEMAPHORE) {
+                if (t == PipesIterator.COMPLETED_SEMAPHORE) {
                     return 1;
                 }
                 try {
@@ -182,15 +181,15 @@ public class TikaClientCLI {
         }
     }
 
-    private class FetchIteratorWrapper implements Callable<Integer> {
-        private final FetchIterator fetchIterator;
+    private class PipesIteratorWrapper implements Callable<Integer> {
+        private final PipesIterator pipesIterator;
         private final ArrayBlockingQueue<FetchEmitTuple> queue;
         private final int numThreads;
 
-        public FetchIteratorWrapper(FetchIterator fetchIterator,
+        public PipesIteratorWrapper(PipesIterator pipesIterator,
                                     ArrayBlockingQueue<FetchEmitTuple> queue,
                                     int numThreads) {
-            this.fetchIterator = fetchIterator;
+            this.pipesIterator = pipesIterator;
             this.queue = queue;
             this.numThreads = numThreads;
 
@@ -198,12 +197,12 @@ public class TikaClientCLI {
 
         @Override
         public Integer call() throws Exception {
-            for (FetchEmitTuple t : fetchIterator) {
+            for (FetchEmitTuple t : pipesIterator) {
                 //potentially blocks forever
                 queue.put(t);
             }
             for (int i = 0; i < numThreads; i ++) {
-                queue.put(FetchIterator.COMPLETED_SEMAPHORE);
+                queue.put(PipesIterator.COMPLETED_SEMAPHORE);
             }
             return 1;
         }

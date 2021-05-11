@@ -19,14 +19,14 @@
 -->
 <properties>
     <service-loader initializableProblemHandler="throw"/>
-    <fetchIterators>
-        <fetchIterator class="org.apache.tika.pipes.fetchiterator.FileSystemFetchIterator">
+    <pipesIterators>
+        <pipesIterator class="org.apache.tika.pipes.pipesiterator.FileSystemPipesIterator">
             <params>
                 <fetcherName>fs</fetcherName>
                 <basePath>fix</basePath>
             </params>
-        </fetchIterator>
-    </fetchIterators>
+        </pipesIterator>
+    </pipesIterators>
     <fetchers>
         <fetcher class="org.apache.tika.pipes.fetcher.FileSystemFetcher">
             <params>

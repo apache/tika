@@ -43,6 +43,52 @@ import org.apache.tika.utils.XMLReaderUtils;
 public abstract class ConfigBase {
 
     /**
+     * Use this to build a single class, where the user specifies the instance class, e.g.
+     * PipesIterator
+     *
+     * @param itemName
+     * @param is
+     * @throws TikaConfigException
+     * @throws IOException
+     */
+    protected static <T> T buildSingle(String itemName, Class<T> itemClass, InputStream is)
+            throws TikaConfigException, IOException {
+        Node properties = null;
+        try {
+            properties = XMLReaderUtils.buildDOM(is).getDocumentElement();
+        } catch (SAXException e) {
+            throw new IOException(e);
+        } catch (TikaException e) {
+            throw new TikaConfigException("problem loading xml to dom", e);
+        }
+        if (!properties.getLocalName().equals("properties")) {
+            throw new TikaConfigException("expect properties as root node");
+        }
+        NodeList children = properties.getChildNodes();
+        T toReturn = null;
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+            if (child.getNodeType() != 1) {
+                continue;
+            }
+            if (itemName.equals(child.getLocalName())) {
+                if (toReturn != null) {
+                    throw new TikaConfigException("There can only be one " + itemName +
+                            " in a config");
+                }
+                T item = buildClass(child, itemName, itemClass);
+                setParams(item, child, new HashSet<>());
+                toReturn = (T)item;
+            }
+        }
+        if (toReturn == null) {
+            throw new TikaConfigException("could not find " + itemName);
+        }
+        return toReturn;
+    }
+
+
+    /**
      * Use this to build a list of components for a composite item (e.g.
      * CompositeMetadataFilter, FetcherManager), each with their own configurations
      *
@@ -224,9 +270,27 @@ public abstract class ConfigBase {
             Node n = nodeList.item(i);
             if (n.getNodeType() == 1) {
                 NamedNodeMap m = n.getAttributes();
-                String from = m.getNamedItem("from").getTextContent();
-                String to = m.getNamedItem("to").getTextContent();
-                map.put(from, to);
+                String key = null;
+                String value = null;
+                if (m.getNamedItem("from") != null) {
+                    key = m.getNamedItem("from").getTextContent();
+                } else if (m.getNamedItem("key") != null) {
+                    key = m.getNamedItem("key").getTextContent();
+                }
+                if (m.getNamedItem("to") != null) {
+                    value = m.getNamedItem("to").getTextContent();
+                } else if (m.getNamedItem("value") != null) {
+                    value = m.getNamedItem("value").getTextContent();
+                }
+                if (key == null) {
+                    throw new TikaConfigException("must specify a 'key' or 'from' value in a map " +
+                            "object : " + param);
+                }
+                if (value == null) {
+                    throw new TikaConfigException("must specify a 'value' or 'to' value in a " +
+                            "map object : " + param);
+                }
+                map.put(key, value);
             }
 
         }
@@ -315,16 +379,6 @@ public abstract class ConfigBase {
             "Couldn't find setter: " + setter + " for object " + object.getClass());
     }
 
-    private static List<String> loadStringList(String itemName, NodeList nodelist) {
-        List<String> list = new ArrayList<>();
-        for (int i = 0; i < nodelist.getLength(); i++) {
-            Node n = nodelist.item(i);
-            if (itemName.equals(n.getLocalName())) {
-                list.add(n.getTextContent());
-            }
-        }
-        return list;
-    }
 
     /**
      * This should be overridden to do something with the settings

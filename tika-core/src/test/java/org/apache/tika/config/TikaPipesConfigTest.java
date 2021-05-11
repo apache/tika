@@ -29,7 +29,7 @@ import org.apache.tika.pipes.emitter.EmitterManager;
 import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.FetcherManager;
 import org.apache.tika.pipes.fetcher.FileSystemFetcher;
-import org.apache.tika.pipes.fetchiterator.FetchIteratorManager;
+import org.apache.tika.pipes.pipesiterator.PipesIterator;
 
 public class TikaPipesConfigTest extends AbstractTikaConfigTest {
     //this handles tests for the newer pipes type configs.
@@ -78,17 +78,17 @@ public class TikaPipesConfigTest extends AbstractTikaConfigTest {
     }
 
     @Test
-    public void testFetchIterator() throws Exception {
-        FetchIteratorManager fim =
-                FetchIteratorManager.build(getConfigFilePath("fetch-iterator-config.xml"));
-        assertEquals("fs1", fim.getFetchIterator().getFetcherName());
+    public void testPipesIterator() throws Exception {
+        PipesIterator it =
+                PipesIterator.build(getConfigFilePath("pipes-iterator-config.xml"));
+        assertEquals("fs1", it.getFetcherName());
     }
 
     @Test(expected = TikaConfigException.class)
-    public void testMultipleFetchIterators() throws Exception {
-        FetchIteratorManager fim =
-                FetchIteratorManager.build(getConfigFilePath("fetch-iterator-multiple-config.xml"));
-        assertEquals("fs1", fim.getFetchIterator().getFetcherName());
+    public void testMultiplePipesIterators() throws Exception {
+        PipesIterator it =
+                PipesIterator.build(getConfigFilePath("pipes-iterator-multiple-config.xml"));
+        assertEquals("fs1", it.getFetcherName());
     }
 
 }

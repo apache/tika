@@ -28,16 +28,16 @@
             </params>
         </fetcher>
     </fetchers>
-    <fetchIterators>
-        <fetchIterator class="org.apache.tika.pipes.fetchiterator.s3.S3FetchIterator">
+    <pipesIterators>
+        <pipesIterator class="org.apache.tika.pipes.pipesiterator.s3.S3PipesIterator">
             <params>
                 <fetcherName>s3f</fetcherName>
                 <region>us-east-1</region>
                 <bucket><!-- fill in here --></bucket>
                 <profile><!-- fill in here --></profile>
             </params>
-        </fetchIterator>
-    </fetchIterators>
+        </pipesIterator>
+    </pipesIterators>
     <emitters>
         <emitter class="org.apache.tika.pipes.emitter.s3.S3Emitter">
             <params>

@@ -38,7 +38,7 @@ import org.apache.tika.pipes.PipesException;
 import org.apache.tika.pipes.PipesResult;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.EmitterManager;
-import org.apache.tika.pipes.fetchiterator.FetchIterator;
+import org.apache.tika.pipes.pipesiterator.PipesIterator;
 
 /**
  * This is the main class for handling async requests. This manages
@@ -174,7 +174,7 @@ public class AsyncProcessor implements Closeable {
                     FetchEmitTuple t = fetchEmitTuples.poll(1, TimeUnit.SECONDS);
                     if (t == null) {
                         //skip
-                    } else if (t == FetchIterator.COMPLETED_SEMAPHORE) {
+                    } else if (t == PipesIterator.COMPLETED_SEMAPHORE) {
                         return PARSER_FUTURE_CODE;
                     } else {
                         PipesResult result = null;

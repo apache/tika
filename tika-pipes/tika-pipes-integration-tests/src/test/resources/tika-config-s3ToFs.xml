@@ -27,14 +27,14 @@
             </params>
         </fetcher>
     </fetchers>
-    <fetchIterators>
-        <fetchIterator class="org.apache.tika.pipes.fetchiterator.s3.S3FetchIterator">
+    <pipesIterators>
+        <pipesIterator class="org.apache.tika.pipes.pipesiterator.s3.S3PipesIterator">
             <params>
                 <fetcherName>s3</fetcherName>
                 <bucket><!-- fill in here --></bucket>
                 <region>us-east-1</region>
                 <profile><!-- fill in here --></profile>
             </params>
-        </fetchIterator>
-    </fetchIterators>
+        </pipesIterator>
+    </pipesIterators>
 </properties>

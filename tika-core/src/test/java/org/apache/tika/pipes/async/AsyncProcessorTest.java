@@ -37,7 +37,7 @@ import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
-import org.apache.tika.pipes.fetchiterator.FetchIterator;
+import org.apache.tika.pipes.pipesiterator.PipesIterator;
 import org.apache.tika.utils.ProcessUtils;
 
 public class AsyncProcessorTest {
@@ -101,7 +101,7 @@ public class AsyncProcessorTest {
             processor.offer(t, 1000);
         }
         for (int i = 0; i < 10; i++) {
-            processor.offer(FetchIterator.COMPLETED_SEMAPHORE, 1000);
+            processor.offer(PipesIterator.COMPLETED_SEMAPHORE, 1000);
         }
         //TODO clean this up
         while (processor.checkActive()) {

@@ -48,8 +48,7 @@ import org.apache.tika.pipes.emitter.EmitterManager;
 import org.apache.tika.pipes.emitter.s3.S3Emitter;
 import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.FetcherManager;
-import org.apache.tika.pipes.fetchiterator.FetchIterator;
-import org.apache.tika.pipes.fetchiterator.FetchIteratorManager;
+import org.apache.tika.pipes.pipesiterator.PipesIterator;
 
 @Ignore("turn these into actual tests")
 public class PipeIntegrationTests {
@@ -89,7 +88,7 @@ public class PipeIntegrationTests {
     @Test
     public void testS3ToFS() throws Exception {
         Fetcher fetcher = getFetcher("tika-config-s3ToFs.xml", "s3f");
-        FetchIterator fetchIterator = getFetchIterator("tika-config-s3ToFs.xml");
+        PipesIterator pipesIterator = getPipesIterator("tika-config-s3ToFs.xml");
 
         int numConsumers = 1;
         ExecutorService es = Executors.newFixedThreadPool(numConsumers + 1);
@@ -98,11 +97,11 @@ public class PipeIntegrationTests {
         for (int i = 0; i < numConsumers; i++) {
             completionService.submit(new FSFetcherEmitter(queue, fetcher, null));
         }
-        for (FetchEmitTuple t : fetchIterator) {
+        for (FetchEmitTuple t : pipesIterator) {
             queue.offer(t);
         }
         for (int i = 0; i < numConsumers; i++) {
-            queue.offer(FetchIterator.COMPLETED_SEMAPHORE);
+            queue.offer(PipesIterator.COMPLETED_SEMAPHORE);
         }
         int finished = 0;
         try {
@@ -119,7 +118,7 @@ public class PipeIntegrationTests {
     public void testS3ToS3() throws Exception {
         Fetcher fetcher = getFetcher("tika-config-s3Tos3.xml", "s3f");
         Emitter emitter = getEmitter("tika-config-s3Tos3.xml", "s3e");
-        FetchIterator fetchIterator = getFetchIterator("tika-config-s3Tos3.xml");
+        PipesIterator pipesIterator = getPipesIterator("tika-config-s3Tos3.xml");
         int numConsumers = 20;
         ExecutorService es = Executors.newFixedThreadPool(numConsumers + 1);
         ExecutorCompletionService<Integer> completionService = new ExecutorCompletionService<>(es);
@@ -127,11 +126,11 @@ public class PipeIntegrationTests {
         for (int i = 0; i < numConsumers; i++) {
             completionService.submit(new S3FetcherEmitter(queue, fetcher, (S3Emitter) emitter));
         }
-        for (FetchEmitTuple t : fetchIterator) {
+        for (FetchEmitTuple t : pipesIterator) {
             queue.offer(t);
         }
         for (int i = 0; i < numConsumers; i++) {
-            queue.offer(FetchIterator.COMPLETED_SEMAPHORE);
+            queue.offer(PipesIterator.COMPLETED_SEMAPHORE);
         }
         int finished = 0;
         try {
@@ -154,9 +153,8 @@ public class PipeIntegrationTests {
         return manager.getEmitter(emitterName);
     }
 
-    private FetchIterator getFetchIterator(String fileName) throws Exception {
-        FetchIteratorManager fim = FetchIteratorManager.build(getPath(fileName));
-        return fim.getFetchIterator();
+    private PipesIterator getPipesIterator(String fileName) throws Exception {
+        return PipesIterator.build(getPath(fileName));
     }
 
     private Path getPath(String fileName) throws Exception {
@@ -186,7 +184,7 @@ public class PipeIntegrationTests {
                 if (t == null) {
                     throw new TimeoutException("");
                 }
-                if (t == FetchIterator.COMPLETED_SEMAPHORE) {
+                if (t == PipesIterator.COMPLETED_SEMAPHORE) {
                     return 1;
                 }
                 process(t);
@@ -228,7 +226,7 @@ public class PipeIntegrationTests {
                 if (t == null) {
                     throw new TimeoutException("");
                 }
-                if (t == FetchIterator.COMPLETED_SEMAPHORE) {
+                if (t == PipesIterator.COMPLETED_SEMAPHORE) {
                     return 1;
                 }
                 process(t);
