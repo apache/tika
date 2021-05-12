@@ -517,7 +517,7 @@ public class TEIDOMParser {
 
     }
 
-    class Affiliation {
+    static class Affiliation {
 
         private OrgName orgName;
 

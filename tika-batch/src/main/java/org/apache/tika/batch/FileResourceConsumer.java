@@ -44,7 +44,7 @@ import org.apache.tika.sax.ToXMLContentHandler;
 /**
  * This is a base class for file consumers. The
  * goal of this class is to abstract out the multithreading
- * and recordkeeping components.
+ * and record keeping components.
  * <p/>
  */
 public abstract class FileResourceConsumer implements Callable<IFileProcessorFutureResult> {
@@ -56,22 +56,18 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
     public static String PARSE_ERR = "parse_err";
     public static String PARSE_EX = "parse_ex";
     public static String ELAPSED_MILLIS = "elapsedMS";
-    private static AtomicInteger numConsumers = new AtomicInteger(-1);
+    private static final AtomicInteger numConsumers = new AtomicInteger(-1);
     private final ArrayBlockingQueue<FileResource> fileQueue;
     private final int consumerId;
     //used to lock checks on state to prevent
     private final Object lock = new Object();
-    private long maxConsecWaitInMillis = 10 * 60 * 1000;// 10 minutes
+    private final long MAX_CONSEC_WAIT_IN_MILLIS = 10 * 60 * 1000;// 10 minutes
     //this records the file that is currently
     //being processed.  It is null if no file is currently being processed.
     //no need for volatile because of lock for checkForStales
     private FileStarted currentFile = null;
-    //total number of files consumed; volatile so that reporter
-    //sees the latest
-    private volatile int numResourcesConsumed = 0;
-    //total number of exceptions that were handled by subclasses;
-    //volatile so that reporter sees the latest
-    private volatile int numHandledExceptions = 0;
+    private static final AtomicInteger numResourcesConsumed = new AtomicInteger(0);
+    private static final AtomicInteger numHandledExceptions = new AtomicInteger(0);
     //after this has been set to ACTIVELY_CONSUMING,
     //this should only be set by setEndedState.
     private volatile STATE currentState = STATE.NOT_YET_STARTED;
@@ -93,7 +89,7 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
                         fileResource.getResourceId());
 
                 if (consumed) {
-                    numResourcesConsumed++;
+                    numResourcesConsumed.incrementAndGet();
                 }
                 fileResource = getNextFileResource();
             }
@@ -102,7 +98,7 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
         }
 
         setEndedState(STATE.COMPLETED);
-        return new FileConsumerFutureResult(currentFile, numResourcesConsumed);
+        return new FileConsumerFutureResult(currentFile, numResourcesConsumed.get());
     }
 
     /**
@@ -130,7 +126,7 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
      * Make sure to call this appropriately!
      */
     protected void incrementHandledExceptions() {
-        numHandledExceptions++;
+        numHandledExceptions.incrementAndGet();
     }
 
     /**
@@ -142,12 +138,11 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
     public boolean isStillActive() {
         if (Thread.currentThread().isInterrupted()) {
             return false;
-        } else if (currentState == STATE.NOT_YET_STARTED ||
-                currentState == STATE.ACTIVELY_CONSUMING ||
-                currentState == STATE.ASKED_TO_SHUTDOWN) {
-            return true;
-        }
-        return false;
+        } 
+        
+        return currentState == STATE.NOT_YET_STARTED ||
+                      currentState == STATE.ACTIVELY_CONSUMING ||
+                      currentState == STATE.ASKED_TO_SHUTDOWN;
     }
 
     private boolean _processFileResource(FileResource fileResource) {
@@ -192,11 +187,11 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
     }
 
     public int getNumResourcesConsumed() {
-        return numResourcesConsumed;
+        return numResourcesConsumed.get();
     }
 
     public int getNumHandledExceptions() {
-        return numHandledExceptions;
+        return numHandledExceptions.get();
     }
 
     /**
@@ -315,7 +310,7 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
                     fileQueue.size());
 
             long elapsed = System.currentTimeMillis() - start;
-            if (maxConsecWaitInMillis > 0 && elapsed > maxConsecWaitInMillis) {
+            if (MAX_CONSEC_WAIT_IN_MILLIS > 0 && elapsed > MAX_CONSEC_WAIT_IN_MILLIS) {
                 setEndedState(STATE.EXCEEDED_MAX_CONSEC_WAIT_MILLIS);
                 break;
             }
@@ -331,7 +326,6 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
                 LOG.warn(e.getMessage(), e);
             }
         }
-        closeable = null;
     }
 
     protected void flushAndClose(Closeable closeable) {
