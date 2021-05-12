@@ -114,7 +114,7 @@ public class LanguageIdentifierTest {
         for (int m = 0; m < MRUNS; m++) {
             LanguageProfile.useInterleaved =
                     (m & 1) == 1; // Alternate between standard and interleaved
-            String currentResult = "";
+            StringBuilder currentResult = new StringBuilder();
             final long start = System.nanoTime();
             for (int i = 0; i < IRUNS; i++) {
                 for (String language : languages) {
@@ -122,21 +122,21 @@ public class LanguageIdentifierTest {
                     writeTo(language, writer);
                     LanguageIdentifier identifier = new LanguageIdentifier(writer.getProfile());
                     if (identifier.isReasonablyCertain()) {
-                        currentResult += identifier.getLanguage();
+                        currentResult.append(identifier.getLanguage());
                         detected++;
                     }
                 }
             }
-            System.out.println(String.format(Locale.ROOT,
-                    "Performed %d detections at %2d ms/test with interleaved=%b",
+            System.out.printf(Locale.ROOT,
+                    "Performed %d detections at %2d ms/test with interleaved=%b%n",
                     languages.length * IRUNS,
                     (System.nanoTime() - start) / 1000000 / (languages.length * IRUNS),
-                    LanguageProfile.useInterleaved));
+                    LanguageProfile.useInterleaved);
             if (lastResult !=
                     null) { // Might as well test that they behave the same while we're at it
-                assertEquals("This result should be equal to the last", lastResult, currentResult);
+                assertEquals("This result should be equal to the last", lastResult, currentResult.toString());
             }
-            lastResult = currentResult;
+            lastResult = currentResult.toString();
         }
         if (detected == -1) {
             System.out.println(

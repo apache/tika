@@ -586,7 +586,7 @@ public class TEIDOMParser {
 
     }
 
-    class OrgName {
+    static class OrgName {
         private List<OrgTypeName> typeNames;
 
         public OrgName() {
@@ -710,7 +710,7 @@ public class TEIDOMParser {
         }
     }
 
-    private class Address {
+    private static class Address {
 
         private String region;
         private String postCode;

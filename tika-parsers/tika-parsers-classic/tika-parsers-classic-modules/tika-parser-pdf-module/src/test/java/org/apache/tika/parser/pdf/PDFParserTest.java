@@ -639,6 +639,7 @@ public class PDFParserTest extends TikaTest {
             for (String v : vals) {
                 if (v.equals(e.getValue())) {
                     foundDC = true;
+                    break;
                 }
             }
             assertTrue("dc:format ::" + e.getValue(), foundDC);

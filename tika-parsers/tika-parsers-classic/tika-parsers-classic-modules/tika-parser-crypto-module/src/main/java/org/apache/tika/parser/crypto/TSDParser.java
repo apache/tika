@@ -140,7 +140,7 @@ public class TSDParser extends AbstractParser {
     }
 
     private void buildMetas(List<TSDMetas> tsdMetasList, Metadata metadata) {
-        Integer count = 1;
+        int count = 1;
 
         for (TSDMetas tsdm : tsdMetasList) {
             metadata.set(TSD_LOOP_LABEL + count + " - " + Metadata.CONTENT_TYPE, TSD_MIME_TYPE);

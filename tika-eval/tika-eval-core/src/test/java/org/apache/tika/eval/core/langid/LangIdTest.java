@@ -49,7 +49,7 @@ public class LangIdTest {
         for (String lang : langs) {
             Set<String> tokens = commonTokens.getTokens(lang);
             if (tokens.size() == 0) {
-                System.out.println(String.format(Locale.US, "missing common tokens for: %s", lang));
+                System.out.printf(Locale.US, "missing common tokens for: %s%n", lang);
             } else if (tokens.size() < 250) { //ssw has 255
                 fail(String.format(Locale.US, "common tokens too small (%s) for: %s", tokens.size(),
                         lang));

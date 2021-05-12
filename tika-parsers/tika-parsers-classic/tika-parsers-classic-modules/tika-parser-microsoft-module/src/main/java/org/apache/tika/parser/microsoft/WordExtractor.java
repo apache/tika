@@ -456,15 +456,15 @@ public class WordExtractor extends AbstractPOIFSExtractor {
 
         // Do we need to do something special with this?
         if (controls.size() > 0) {
-            String text = controls.get(0).text();
+            StringBuilder text = new StringBuilder(controls.get(0).text());
             for (int j = 1; j < controls.size(); j++) {
-                text += controls.get(j).text();
+                text.append(controls.get(j).text());
             }
 
-            if ((text.startsWith("HYPERLINK") || text.startsWith(" HYPERLINK")) &&
-                    text.indexOf('"') > -1) {
-                int start = text.indexOf('"') + 1;
-                int end = findHyperlinkEnd(text, start);
+            if ((text.toString().startsWith("HYPERLINK") || text.toString().startsWith(" HYPERLINK"))
+                    && text.toString().indexOf('"') > -1) {
+                int start = text.toString().indexOf('"') + 1;
+                int end = findHyperlinkEnd(text.toString(), start);
                 String url = "";
                 if (start >= 0 && start < end && end <= text.length()) {
                     url = text.substring(start, end);

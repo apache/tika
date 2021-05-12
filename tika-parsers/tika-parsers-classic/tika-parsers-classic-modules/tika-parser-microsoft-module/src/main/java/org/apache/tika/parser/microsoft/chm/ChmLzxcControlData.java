@@ -248,16 +248,27 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
      */
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("size(unknown):=" + this.getSize() + ", ");
-        sb.append("signature(Compression type identifier):=" +
-                new String(this.getSignature(), UTF_8) + ", ");
-        sb.append("version(Possibly numeric code for LZX):=" + this.getVersion() +
-                System.getProperty("line.separator"));
-        sb.append("resetInterval(The Huffman reset interval):=" + this.getResetInterval() + ", ");
-        sb.append("windowSize:=" + this.getWindowSize() + ", ");
-        sb.append("windowsPerReset(unknown (sometimes 2, sometimes 1, sometimes 0):=" +
-                this.getWindowsPerReset() + ", ");
-        sb.append("unknown_18:=" + this.getUnknown_18() + System.getProperty("line.separator"));
+        sb.append("size(unknown):=")
+                .append(this.getSize())
+                .append(", ");
+        sb.append("signature(Compression type identifier):=")
+                .append(new String(this.getSignature(), UTF_8))
+                .append(", ");
+        sb.append("version(Possibly numeric code for LZX):=")
+                .append(this.getVersion())
+                .append(System.getProperty("line.separator"));
+        sb.append("resetInterval(The Huffman reset interval):=")
+                .append(this.getResetInterval())
+                .append(", ");
+        sb.append("windowSize:=")
+                .append(this.getWindowSize())
+                .append(", ");
+        sb.append("windowsPerReset(unknown (sometimes 2, sometimes 1, sometimes 0):=")
+                .append(this.getWindowsPerReset())
+                .append(", ");
+        sb.append("unknown_18:=")
+                .append(this.getUnknown_18())
+                .append(System.getProperty("line.separator"));
         return sb.toString();
     }
 

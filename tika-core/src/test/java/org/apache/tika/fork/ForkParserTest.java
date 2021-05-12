@@ -491,7 +491,7 @@ public class ForkParserTest extends TikaTest {
             }
             if (!contentHandler.getClass().equals(DefaultHandler.class)) {
                 sb.append("\n");
-                sb.append("CONTENT: " + contentHandler.toString());
+                sb.append("CONTENT: ").append(contentHandler);
                 sb.append("\n\n");
             }
             return sb.toString().getBytes(StandardCharsets.UTF_8);

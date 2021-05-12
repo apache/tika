@@ -40,7 +40,7 @@ public class TikaEvalCLI {
         StringBuilder sb = new StringBuilder();
         sb.append("Must specify one of the following tools in the first parameter:\n");
         for (String s : tools) {
-            sb.append(s + "\n");
+            sb.append(s).append("\n");
         }
         return sb.toString();
 
@@ -82,7 +82,7 @@ public class TikaEvalCLI {
     }
 
     private void handleProfileFiles(String[] subsetArgs) throws Exception {
-        List<String> argList = new ArrayList(Arrays.asList(subsetArgs));
+        List<String> argList = Arrays.asList(subsetArgs);
 
         boolean containsBC = false;
         String inputDir = null;
@@ -106,7 +106,7 @@ public class TikaEvalCLI {
                 argList.add(tmpBCConfig.toAbsolutePath().toString());
             }
 
-            String[] updatedArgs = argList.toArray(new String[argList.size()]);
+            String[] updatedArgs = argList.toArray(new String[0]);
             DefaultParser defaultCLIParser = new DefaultParser();
             try {
                 CommandLine commandLine = defaultCLIParser.parse(FileProfiler.OPTIONS, updatedArgs);

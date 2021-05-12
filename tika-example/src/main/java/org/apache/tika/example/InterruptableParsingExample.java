@@ -71,7 +71,7 @@ public class InterruptableParsingExample {
      * <p>
      * Throws {@link QueryMatchedException} when query string is found.
      */
-    class InterruptingContentHandler extends DefaultHandler {
+    static class InterruptingContentHandler extends DefaultHandler {
         private String query;
         private StringBuilder sb = new StringBuilder();
 

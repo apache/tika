@@ -93,11 +93,11 @@ public class ChmBlockInfo {
      */
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("iniBlock:=" + getIniBlock() + ", ");
-        sb.append("startBlock:=" + getStartBlock() + ", ");
-        sb.append("endBlock:=" + getEndBlock() + ", ");
-        sb.append("startOffset:=" + getStartOffset() + ", ");
-        sb.append("endOffset:=" + getEndOffset() + System.getProperty("line.separator"));
+        sb.append("iniBlock:=").append(getIniBlock()).append(", ");
+        sb.append("startBlock:=").append(getStartBlock()).append(", ");
+        sb.append("endBlock:=").append(getEndBlock()).append(", ");
+        sb.append("startOffset:=").append(getStartOffset()).append(", ");
+        sb.append("endOffset:=").append(getEndOffset()).append(System.getProperty("line.separator"));
         return sb.toString();
     }
 

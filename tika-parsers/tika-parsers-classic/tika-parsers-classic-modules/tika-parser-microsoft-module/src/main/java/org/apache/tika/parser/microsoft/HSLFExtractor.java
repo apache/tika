@@ -179,7 +179,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                 if (authorStringBuilder.length() > 0) {
                     authorStringBuilder.append(" ");
                 }
-                authorStringBuilder.append("(" + comment.getAuthorInitials() + ")");
+                authorStringBuilder.append("(").append(comment.getAuthorInitials()).append(")");
             }
             if (authorStringBuilder.length() > 0) {
                 if (comment.getText() != null) {

@@ -175,8 +175,9 @@ public class Latin1StringsParser extends AbstractParser {
 
         xhtml.characters(new String(output, 0, outPos, "windows-1252"));
 
-        for (int k = 0; k < tmpPos - outPos; k++)
-            output[k] = output[outPos + k];
+        if (tmpPos - outPos >= 0) {
+            System.arraycopy(output, outPos, output, 0, tmpPos - outPos);
+        }
         tmpPos = tmpPos - outPos;
         outPos = 0;
     }

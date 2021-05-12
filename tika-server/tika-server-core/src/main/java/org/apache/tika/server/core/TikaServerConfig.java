@@ -332,12 +332,7 @@ public class TikaServerConfig extends ConfigBase {
             }
         }
         //add headless if not already configured
-        boolean foundHeadlessOption = false;
-        for (String arg : forkedJvmArgs) {
-            if (arg.contains("java.awt.headless")) {
-                foundHeadlessOption = true;
-            }
-        }
+        boolean foundHeadlessOption = forkedJvmArgs.stream().anyMatch(arg -> arg.contains("java.awt.headless"));
         //if user has already specified headless...don't modify
         if (!foundHeadlessOption) {
             forkedJvmArgs.add("-Djava.awt.headless=true");

@@ -44,8 +44,7 @@ public class ServiceLoaderUtilsTest {
         Detector[] detectors = new Detector[]{new MyCustomDetector(), new EmptyDetector(),
                 new FileCommandDetector(), new OverrideDetector(), new ZeroSizeFileDetector()};
         List<Detector> expected = Arrays.asList(detectors);
-        List<Detector> shuffled = new ArrayList<>();
-        shuffled.addAll(expected);
+        List<Detector> shuffled = new ArrayList<>(expected);
         Random random = new Random(42);
         for (int i = 0; i < 10; i++) {
             Collections.shuffle(shuffled, random);

@@ -22,7 +22,6 @@ import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -61,7 +60,7 @@ public class PSDParser extends AbstractParser {
     private static final long serialVersionUID = 883387734607994914L;
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList(MediaType.image("vnd.adobe.photoshop"))));
+            new HashSet<>(Collections.singletonList(MediaType.image("vnd.adobe.photoshop"))));
 
     private static final int MAX_DATA_LENGTH_BYTES = 10_000_000;
     private static final int MAX_BLOCKS = 10000;

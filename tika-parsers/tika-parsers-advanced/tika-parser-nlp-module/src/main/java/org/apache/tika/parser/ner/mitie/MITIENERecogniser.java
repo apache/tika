@@ -155,11 +155,12 @@ public class MITIENERecogniser implements NERecogniser {
                         .invoke(entityMentionObject);
                 int end = (Integer) entityMentionClass.getMethod("getEnd")
                         .invoke(entityMentionObject);
-                String match = "";
-                for (; start < end; start++) {
-                    match += stringVector.get(start) + " ";
+                StringBuilder match = new StringBuilder();
+                while (start < end) {
+                    match.append(stringVector.get(start)).append(" ");
+                    start++;
                 }
-                x.add(match.trim());
+                x.add(match.toString().trim());
             }
 
         } catch (Exception e) {

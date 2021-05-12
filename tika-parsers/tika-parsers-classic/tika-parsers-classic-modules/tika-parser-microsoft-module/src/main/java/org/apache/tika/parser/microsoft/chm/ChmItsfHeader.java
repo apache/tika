@@ -66,19 +66,19 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
      */
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(new String(getSignature(), UTF_8) + " ");
-        sb.append(getVersion() + " ");
-        sb.append(getHeaderLen() + " ");
-        sb.append(getUnknown_000c() + " ");
-        sb.append(getLastModified() + " ");
-        sb.append(getLangId() + " ");
-        sb.append(getDir_uuid() + " ");
-        sb.append(getStream_uuid() + " ");
-        sb.append(getUnknownOffset() + " ");
-        sb.append(getUnknownLen() + " ");
-        sb.append(getDirOffset() + " ");
-        sb.append(getDirLen() + " ");
-        sb.append(getDataOffset() + " ");
+        sb.append(new String(getSignature(), UTF_8)).append(" ");
+        sb.append(getVersion()).append(" ");
+        sb.append(getHeaderLen()).append(" ");
+        sb.append(getUnknown_000c()).append(" ");
+        sb.append(getLastModified()).append(" ");
+        sb.append(getLangId()).append(" ");
+        sb.append(getDir_uuid()).append(" ");
+        sb.append(getStream_uuid()).append(" ");
+        sb.append(getUnknownOffset()).append(" ");
+        sb.append(getUnknownLen()).append(" ");
+        sb.append(getDirOffset()).append(" ");
+        sb.append(getDirLen()).append(" ");
+        sb.append(getDataOffset()).append(" ");
         return sb.toString();
     }
 

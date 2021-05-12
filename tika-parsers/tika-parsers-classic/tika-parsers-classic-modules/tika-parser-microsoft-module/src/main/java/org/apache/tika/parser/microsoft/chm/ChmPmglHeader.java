@@ -94,11 +94,11 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("signatute:=" + new String(getSignature(), UTF_8) + ", ");
-        sb.append("free space:=" + getFreeSpace() + ", ");
-        sb.append("unknown0008:=" + getUnknown0008() + ", ");
-        sb.append("prev block:=" + getBlockPrev() + ", ");
-        sb.append("next block:=" + getBlockNext() + System.getProperty("line.separator"));
+        sb.append("signatute:=").append(new String(getSignature(), UTF_8)).append(", ");
+        sb.append("free space:=").append(getFreeSpace()).append(", ");
+        sb.append("unknown0008:=").append(getUnknown0008()).append(", ");
+        sb.append("prev block:=").append(getBlockPrev()).append(", ");
+        sb.append("next block:=").append(getBlockNext()).append(System.getProperty("line.separator"));
         return sb.toString();
     }
 

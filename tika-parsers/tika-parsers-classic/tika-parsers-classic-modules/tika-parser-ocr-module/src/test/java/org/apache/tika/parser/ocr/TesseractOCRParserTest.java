@@ -235,9 +235,7 @@ public class TesseractOCRParserTest extends TikaTest {
         for (Parser p : new Parser[]{new BPGParser(), new HeifParser(), new ICNSParser(),
                 new ImageParser(), new JpegParser(), new PSDParser(), new TiffParser(),
                 new WebPParser(),}) {
-            for (MediaType mt : p.getSupportedTypes(new ParseContext())) {
-                imageParserMimes.add(mt);
-            }
+            imageParserMimes.addAll(p.getSupportedTypes(new ParseContext()));
         }
         //mime types that Tesseract will cover if there is no existing parser
         //that in turn will call tesseract .. e.g. the mime subtype doesn't start

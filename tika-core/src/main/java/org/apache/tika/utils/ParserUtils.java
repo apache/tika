@@ -80,7 +80,7 @@ public class ParserUtils {
         String[] parsedBys = metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY);
         if (parsedBys == null || parsedBys.length == 0) {
             metadata.add(TikaCoreProperties.TIKA_PARSED_BY, className);
-        } else if (! Arrays.stream(parsedBys).anyMatch(className::equals)) {
+        } else if (Arrays.stream(parsedBys).noneMatch(className::equals)) {
             //only add parser once
             metadata.add(TikaCoreProperties.TIKA_PARSED_BY, className);
         }

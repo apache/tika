@@ -101,30 +101,39 @@ public class ICNSParser extends AbstractParser {
             }
             offset = offset + icon_length;
         }
-        String icon_details = "", iconmask_details = "", bitsPerPixel, dimensions;
+        StringBuilder icon_details = new StringBuilder();
+        StringBuilder iconmask_details = new StringBuilder();
+        String bitsPerPixel;
+        String dimensions;
         for (ICNSType icon : icons) {
             bitsPerPixel = (icon.getBitsPerPixel() != 0) ? icon.getBitsPerPixel() + " bpp" :
                     "JPEG 2000 or PNG format";
             dimensions = (!icon.hasRetinaDisplay()) ? (icon.getHeight() + "x" + icon.getWidth()) :
                     (icon.getHeight() + "x" + icon.getWidth() + "@2X");
-            icon_details = icon_details + ", " + dimensions + " (" + bitsPerPixel + ")";
+            icon_details.append(", ").append(dimensions).append(" (").append(bitsPerPixel).append(")");
         }
         for (ICNSType icon : icon_masks) {
-            iconmask_details =
-                    iconmask_details + ", " + icon.getHeight() + "x" + icon.getWidth() + " (" +
-                            icon.getBitsPerPixel() + " bpp" + ")";
+            iconmask_details
+                    .append(", ")
+                    .append(icon.getHeight())
+                    .append("x")
+                    .append(icon.getWidth())
+                    .append(" (")
+                    .append(icon.getBitsPerPixel())
+                    .append(" bpp")
+                    .append(")");
         }
 
         metadata.set(Metadata.CONTENT_TYPE, ICNS_MIME_TYPE);
-        if (!icon_details.equals("")) {
+        if (!icon_details.toString().equals("")) {
             metadata.set("Icon count", String.valueOf(icons.size()));
-            icon_details = icon_details.substring(2);
-            metadata.set("Icon details", icon_details);
+            icon_details = new StringBuilder(icon_details.substring(2));
+            metadata.set("Icon details", icon_details.toString());
         }
-        if (!iconmask_details.equals("")) {
+        if (!iconmask_details.toString().equals("")) {
             metadata.set("Masked icon count", String.valueOf(icon_masks.size()));
-            iconmask_details = iconmask_details.substring(2);
-            metadata.set("Masked icon details", iconmask_details);
+            iconmask_details = new StringBuilder(iconmask_details.substring(2));
+            metadata.set("Masked icon details", iconmask_details.toString());
         }
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();

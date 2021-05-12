@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 
 import org.junit.Test;
 
@@ -103,7 +104,7 @@ public class JempboxExtractorTest extends TikaTest {
 
     @Test
     public void testJoinCreators() {
-        assertEquals("Mr B", new JempboxExtractor(null).joinCreators(Arrays.asList("Mr B")));
+        assertEquals("Mr B", new JempboxExtractor(null).joinCreators(Collections.singletonList("Mr B")));
         // TODO use multi-value property instead?
         assertEquals("Mr B, Mr A",
                 new JempboxExtractor(null).joinCreators(Arrays.asList("Mr B", "Mr A")));

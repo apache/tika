@@ -77,7 +77,7 @@ public class AbstractBufferTest {
         assertEquals(keys.size(), b.getNumWrites());
     }
 
-    private class Tester implements Callable<MyTestResult> {
+    private static class Tester implements Callable<MyTestResult> {
 
         private final AbstractDBBuffer dbBuffer;
         private final int numGets;

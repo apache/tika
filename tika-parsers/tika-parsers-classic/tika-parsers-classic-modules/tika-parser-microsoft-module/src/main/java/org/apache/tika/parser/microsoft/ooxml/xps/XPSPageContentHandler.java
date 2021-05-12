@@ -139,7 +139,7 @@ class XPSPageContentHandler extends DefaultHandler {
         Float originX = null;
         Float originY = null;
         String unicodeString = null;
-        Integer bidilevel = 1;
+        int bidilevel = 1;
         String indicesString = null;
 
         for (int i = 0; i < atts.getLength(); i++) {

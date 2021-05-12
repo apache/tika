@@ -81,15 +81,14 @@ public class ChmLzxcResetTable implements ChmAccessor<ChmLzxcResetTable> {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("version:=" + getVersion() + System.getProperty("line.separator"));
-        sb.append("block_count:=" + getBlockCount() + System.getProperty("line.separator"));
-        sb.append("unknown:=" + getUnknown() + System.getProperty("line.separator"));
-        sb.append("table_offset:=" + getTableOffset() + System.getProperty("line.separator"));
-        sb.append(
-                "uncompressed_len:=" + getUncompressedLen() + System.getProperty("line.separator"));
-        sb.append("compressed_len:=" + getCompressedLen() + System.getProperty("line.separator"));
-        sb.append("block_len:=" + getBlockLen() + System.getProperty("line.separator"));
-        sb.append("block_addresses:=" + Arrays.toString(getBlockAddress()));
+        sb.append("version:=").append(getVersion()).append(System.getProperty("line.separator"));
+        sb.append("block_count:=").append(getBlockCount()).append(System.getProperty("line.separator"));
+        sb.append("unknown:=").append(getUnknown()).append(System.getProperty("line.separator"));
+        sb.append("table_offset:=").append(getTableOffset()).append(System.getProperty("line.separator"));
+        sb.append("uncompressed_len:=").append(getUncompressedLen()).append(System.getProperty("line.separator"));
+        sb.append("compressed_len:=").append(getCompressedLen()).append(System.getProperty("line.separator"));
+        sb.append("block_len:=").append(getBlockLen()).append(System.getProperty("line.separator"));
+        sb.append("block_addresses:=").append(Arrays.toString(getBlockAddress()));
         return sb.toString();
     }
 
