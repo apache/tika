@@ -277,7 +277,7 @@ public class TopCommonTokenCounter {
         }
     }
 
-    private class TokenDFTF {
+    private static class TokenDFTF {
 
         final String token;
         final int df;

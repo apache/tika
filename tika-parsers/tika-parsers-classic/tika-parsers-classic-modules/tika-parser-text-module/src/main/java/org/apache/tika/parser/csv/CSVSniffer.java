@@ -384,7 +384,7 @@ class CSVSniffer {
 
     }
 
-    private class CloseShieldReader extends ProxyReader {
+    private static class CloseShieldReader extends ProxyReader {
         public CloseShieldReader(Reader r) {
             super(r);
         }

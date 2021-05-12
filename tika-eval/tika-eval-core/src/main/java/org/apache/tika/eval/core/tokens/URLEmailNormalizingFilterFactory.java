@@ -52,7 +52,7 @@ public class URLEmailNormalizingFilterFactory extends TokenFilterFactory {
     /**
      * Normalize urls and emails
      */
-    private class URLEmailFilter extends TokenFilter {
+    private static class URLEmailFilter extends TokenFilter {
 
         private final CharTermAttribute termAtt = addAttribute(CharTermAttribute.class);
         private final TypeAttribute typeAtt = addAttribute(TypeAttribute.class);

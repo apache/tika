@@ -156,7 +156,7 @@ public class DBWriter implements IDBWriter {
         }
     }
 
-    private class LastInsert {
+    private static class LastInsert {
         private long lastInsert = System.currentTimeMillis();
         private long rowCount = 0;
     }

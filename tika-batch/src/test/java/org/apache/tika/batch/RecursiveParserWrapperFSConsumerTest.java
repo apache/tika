@@ -144,7 +144,7 @@ public class RecursiveParserWrapperFSConsumerTest extends TikaTest {
     }
 
 
-    private class MockOSFactory implements OutputStreamFactory {
+    private static class MockOSFactory implements OutputStreamFactory {
         List<ByteArrayOutputStream> streams = new ArrayList<>();
 
         @Override

@@ -65,7 +65,7 @@ public class ServerStatusTest {
 
     }
 
-    private class MockTask implements Callable<Integer> {
+    private static class MockTask implements Callable<Integer> {
         private final ServerStatus serverStatus;
         private final int filesToProcess;
         Random r = new Random();

@@ -272,7 +272,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
      * This tracks the state of the parse of a single document.
      * In future versions, this will allow the RecursiveParserWrapper to be thread safe.
      */
-    private class ParserState {
+    private static class ParserState {
         private final AbstractRecursiveParserWrapperHandler recursiveParserWrapperHandler;
         private int unknownCount = 0;
 
@@ -281,7 +281,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
         }
     }
 
-    private class RecursivelySecureContentHandler extends SecureContentHandler {
+    private static class RecursivelySecureContentHandler extends SecureContentHandler {
         private ContentHandler handler;
 
         //total allowable chars across all handlers

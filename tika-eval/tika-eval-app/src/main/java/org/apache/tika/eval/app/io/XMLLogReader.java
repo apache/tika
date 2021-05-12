@@ -79,7 +79,7 @@ public class XMLLogReader {
     }
 
 
-    class LogXMLWrappingInputStream extends InputStream {
+    static class LogXMLWrappingInputStream extends InputStream {
         //plagiarized from log4j's chainsaw
         private final static String HEADER =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<log4j:eventSet version=\"1.2\" " +

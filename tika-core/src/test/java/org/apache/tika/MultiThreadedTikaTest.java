@@ -378,7 +378,7 @@ public class MultiThreadedTikaTest extends TikaTest {
         }
     }
 
-    private class SAXPoolResizer implements Callable<Integer> {
+    private static class SAXPoolResizer implements Callable<Integer> {
         private final int maxResize;
         private final Random rand = new Random();
 
@@ -404,7 +404,7 @@ public class MultiThreadedTikaTest extends TikaTest {
         }
     }
 
-    private class TikaDetectorRunner implements Callable<Integer> {
+    private static class TikaDetectorRunner implements Callable<Integer> {
         private final Detector detector;
         private final int iterations;
         private final Path[] files;

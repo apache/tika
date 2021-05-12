@@ -1311,7 +1311,7 @@ public class PDFParserTest extends TikaTest {
      * Simple class to count end of document events.  If functionality is useful,
      * move to org.apache.tika in src/test
      */
-    private class EventCountingHandler extends ContentHandlerDecorator {
+    private static class EventCountingHandler extends ContentHandlerDecorator {
         private int endDocument = 0;
 
         @Override
@@ -1324,7 +1324,7 @@ public class PDFParserTest extends TikaTest {
         }
     }
 
-    private class AvoidInlineSelector implements DocumentSelector {
+    private static class AvoidInlineSelector implements DocumentSelector {
 
         @Override
         public boolean select(Metadata metadata) {

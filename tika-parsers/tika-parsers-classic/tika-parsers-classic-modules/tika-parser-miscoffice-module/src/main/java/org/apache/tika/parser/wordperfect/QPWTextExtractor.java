@@ -225,7 +225,7 @@ class QPWTextExtractor {
         public abstract void extract(Context ctx) throws IOException, SAXException;
     }
 
-    class Context {
+    static class Context {
         private final WPInputStream in;
         private final XHTMLContentHandler xhtml;
         private final Metadata metadata;

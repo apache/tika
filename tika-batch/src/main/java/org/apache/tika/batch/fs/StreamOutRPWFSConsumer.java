@@ -133,7 +133,7 @@ public class StreamOutRPWFSConsumer extends AbstractFSConsumer {
     //if we use the ForkParser, the output will not have to be streamed
     //back to the proxy, but can
     //be written straight to disk.
-    private class WriteoutRPWHandler extends AbstractRecursiveParserWrapperHandler {
+    private static class WriteoutRPWHandler extends AbstractRecursiveParserWrapperHandler {
         private final JsonStreamingSerializer jsonWriter;
         private final MetadataFilter metadataFilter;
 

@@ -96,7 +96,7 @@ public class DBConsumersManager extends ConsumersManager {
         errorLogs.add(p);
     }
 
-    class LogTablePair {
+    static class LogTablePair {
         Path log;
         TableInfo tableInfo;
     }

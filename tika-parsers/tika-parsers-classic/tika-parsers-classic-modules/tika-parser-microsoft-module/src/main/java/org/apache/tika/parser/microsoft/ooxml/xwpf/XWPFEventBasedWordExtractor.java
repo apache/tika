@@ -256,7 +256,7 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
         return null;
     }
 
-    private class XWPFToTextContentHandler
+    private static class XWPFToTextContentHandler
             implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
         private final StringBuilder buffer;
 

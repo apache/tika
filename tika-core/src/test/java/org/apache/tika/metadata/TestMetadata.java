@@ -490,7 +490,7 @@ public class TestMetadata {
         assertEquals("key=value1", m.toString());
     }
 
-    private class MetadataDateAdder implements Callable<Integer> {
+    private static class MetadataDateAdder implements Callable<Integer> {
         private final Random random = new Random();
 
         @Override

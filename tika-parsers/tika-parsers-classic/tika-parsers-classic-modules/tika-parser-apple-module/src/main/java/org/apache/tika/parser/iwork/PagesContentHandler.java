@@ -443,7 +443,7 @@ class PagesContentHandler extends DefaultHandler {
      * Represents Annotations in a document. We currently
      * just grab all the sf:p text in each one
      */
-    private class Annotations {
+    private static class Annotations {
         /**
          * ID -> Text
          */

@@ -67,7 +67,7 @@ public class SpreadsheetMLParser extends AbstractXML2003Parser {
         metadata.set(Metadata.CONTENT_TYPE, MEDIA_TYPE.toString());
     }
 
-    private class ExcelMLHandler extends DefaultHandler {
+    private static class ExcelMLHandler extends DefaultHandler {
         final ContentHandler handler;
         StringBuilder buffer = new StringBuilder();
         String href = null;

@@ -655,7 +655,7 @@ public class TEIDOMParser {
 
     }
 
-    class OrgTypeName {
+    static class OrgTypeName {
         private String name;
         private String type;
 
@@ -828,7 +828,7 @@ public class TEIDOMParser {
         }
     }
 
-    private class Country {
+    private static class Country {
         private String key;
         private String content;
 

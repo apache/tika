@@ -527,7 +527,7 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
         TIMED_OUT_CONSUMER, PARENT_SHUTDOWN, BATCH_PROCESS_ALIVE_TOO_LONG,
     }
 
-    private class State {
+    private static class State {
         long start = -1;
         int numConsumers = 0;
         int numNonConsumers = 0;
@@ -568,7 +568,7 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
         }
     }
 
-    private class TimeoutFutureResult implements IFileProcessorFutureResult {
+    private static class TimeoutFutureResult implements IFileProcessorFutureResult {
         //used to be used when more than one timeout was allowed
         //TODO: get rid of this?
         private final int timedOutCount;

@@ -207,7 +207,7 @@ public class TikaWelcome {
         return text.toString();
     }
 
-    protected class Endpoint {
+    protected static class Endpoint {
         public final String className;
         public final String methodName;
         public final String path;

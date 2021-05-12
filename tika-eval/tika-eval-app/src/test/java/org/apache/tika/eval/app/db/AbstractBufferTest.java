@@ -124,7 +124,7 @@ public class AbstractBufferTest {
         }
     }
 
-    private class MyTestResult {
+    private static class MyTestResult {
         Map<String, Integer> m;
 
         private MyTestResult(Map<String, Integer> m) {
@@ -141,7 +141,7 @@ public class AbstractBufferTest {
         }
     }
 
-    private class TestBuffer extends AbstractDBBuffer {
+    private static class TestBuffer extends AbstractDBBuffer {
         @Override
         public void write(int id, String value) throws RuntimeException {
             try {

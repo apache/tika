@@ -453,7 +453,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 
     }
 
-    private class CommentAuthors {
+    private static class CommentAuthors {
         Map<String, String> nameMap = new HashMap<>();
         Map<String, String> initialMap = new HashMap<>();
 

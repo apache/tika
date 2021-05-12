@@ -395,7 +395,7 @@ public class BatchProcessTest extends FSBatchTestBase {
 
     }
 
-    private class StreamStrings {
+    private static class StreamStrings {
         private final String outString;
         private final String errString;
 

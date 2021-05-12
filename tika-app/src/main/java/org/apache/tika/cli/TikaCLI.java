@@ -1157,7 +1157,7 @@ public class TikaCLI {
         }
     }
 
-    private class NoDocumentMetHandler extends DefaultHandler {
+    private static class NoDocumentMetHandler extends DefaultHandler {
 
         protected final Metadata metadata;
 
@@ -1197,7 +1197,7 @@ public class TikaCLI {
     /**
      * Outputs the Tika metadata as XMP using the Tika XMP module
      */
-    private class NoDocumentXMPMetaHandler extends DefaultHandler
+    private static class NoDocumentXMPMetaHandler extends DefaultHandler
     {
     	protected final Metadata metadata;
     	

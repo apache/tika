@@ -181,7 +181,7 @@ public class TikaClientCLI {
         }
     }
 
-    private class PipesIteratorWrapper implements Callable<Integer> {
+    private static class PipesIteratorWrapper implements Callable<Integer> {
         private final PipesIterator pipesIterator;
         private final ArrayBlockingQueue<FetchEmitTuple> queue;
         private final int numThreads;

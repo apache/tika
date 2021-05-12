@@ -33,7 +33,7 @@ public class TextSha256Signature implements BytesRefCalculator<String> {
         return new TextSha256Instance();
     }
 
-    class TextSha256Instance implements BytesRefCalcInstance<String> {
+    static class TextSha256Instance implements BytesRefCalcInstance<String> {
         private MessageDigest messageDigest = DigestUtils.getSha256Digest();
 
         @Override

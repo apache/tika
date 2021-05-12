@@ -273,7 +273,7 @@ public class TSDParser extends AbstractParser {
         }
     }
 
-    private class TSDMetas {
+    private static class TSDMetas {
         private final String DATE_FORMAT = "dd/MM/yyyy HH:mm:ss";
 
         private Boolean parseBuilt = false;

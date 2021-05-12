@@ -150,7 +150,7 @@ public class FSDirectoryCrawler extends FileResourceCrawler {
     //simple lexical order for the file name, we don't really care about localization.
     //we do want this, though, because file.compareTo behaves differently
     //on different OS's.
-    private class FileNameComparator implements Comparator<Path> {
+    private static class FileNameComparator implements Comparator<Path> {
 
         @Override
         public int compare(Path f1, Path f2) {

@@ -303,7 +303,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         }
     }
 
-    class AngleCollector extends PDFTextStripper {
+    static class AngleCollector extends PDFTextStripper {
         Set<Integer> angles = new HashSet<>();
 
         /**

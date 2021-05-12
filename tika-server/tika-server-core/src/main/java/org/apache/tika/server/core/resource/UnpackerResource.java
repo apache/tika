@@ -157,7 +157,7 @@ public class UnpackerResource {
         return files;
     }
 
-    private class MyEmbeddedDocumentExtractor implements EmbeddedDocumentExtractor {
+    private static class MyEmbeddedDocumentExtractor implements EmbeddedDocumentExtractor {
         private final MutableInt count;
         private final Map<String, byte[]> zout;
         private final EmbeddedStreamTranslator embeddedStreamTranslator =

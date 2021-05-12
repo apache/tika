@@ -227,7 +227,7 @@ public class MagicDetectorTest {
      * InputStream class that does not read in all available bytes in
      * one go.
      */
-    private class RestrictiveInputStream extends ByteArrayInputStream {
+    private static class RestrictiveInputStream extends ByteArrayInputStream {
         public RestrictiveInputStream(byte[] buf) {
             super(buf);
         }
