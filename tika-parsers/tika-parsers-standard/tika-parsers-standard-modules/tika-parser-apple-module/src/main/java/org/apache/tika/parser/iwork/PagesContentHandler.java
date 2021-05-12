@@ -336,7 +336,7 @@ class PagesContentHandler extends DefaultHandler {
      */
     private enum DocumentPart {
         METADATA, PARSABLE_TEXT, HEADERS, HEADER_ODD, HEADER_EVEN, HEADER_FIRST, FOOTERS,
-        FOOTER_ODD, FOOTER_EVEN, FOOTER_FIRST, FOOTNOTES, ANNOTATIONS;
+        FOOTER_ODD, FOOTER_EVEN, FOOTER_FIRST, FOOTNOTES, ANNOTATIONS
     }
 
     /**

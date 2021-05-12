@@ -60,7 +60,7 @@ public class SQLite3ParserTest extends TikaTest {
         }
 
         try (InputStream is = getResourceAsStream(TEST_FILE1);
-                ByteArrayOutputStream bos = new ByteArrayOutputStream();) {
+                ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
             IOUtils.copy(is, bos);
             try (InputStream stream = new ByteArrayInputStream(bos.toByteArray())) {
                 _testBasic(stream);

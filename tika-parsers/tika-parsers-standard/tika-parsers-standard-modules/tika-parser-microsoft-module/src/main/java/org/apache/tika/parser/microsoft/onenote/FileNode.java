@@ -257,11 +257,11 @@ class FileNode {
                     subType.revisionManifest.revisionRole);
 
         }
-        if ((gctxid != ExtendedGUID.nil() ||
+        if ((!gctxid.equals(ExtendedGUID.nil()) ||
                 id == FndStructureConstants.RevisionManifestStart7FND) && shouldPrintHeader) {
             LOG.debug("{}[gctxid {}]", IndentUtil.getIndent(indentLevel + 1), gctxid);
         }
-        if (gosid != ExtendedGUID.nil() && shouldPrintHeader) {
+        if (!gosid.equals(ExtendedGUID.nil()) && shouldPrintHeader) {
             LOG.debug("{}[end {}]:{}", IndentUtil.getIndent(indentLevel + 1),
                     FndStructureConstants.nameOf(id), gosid);
 

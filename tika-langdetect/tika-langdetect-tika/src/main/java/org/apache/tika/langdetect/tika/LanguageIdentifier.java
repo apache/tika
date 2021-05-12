@@ -198,7 +198,7 @@ public class LanguageIdentifier {
      * @return true if there are errors. Use getErrors() to retrieve.
      */
     public static boolean hasErrors() {
-        return errors != "";
+        return !errors.equals("");
     }
 
     /**

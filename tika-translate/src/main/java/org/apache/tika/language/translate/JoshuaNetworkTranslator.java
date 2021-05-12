@@ -224,7 +224,7 @@ public class JoshuaNetworkTranslator extends AbstractTranslator {
       if (connection.getResponseCode() == 200)
         return true;
     } catch (IOException ioe) {
-      LOG.error("Error retreiving response code from Joshua Network Translator. {}", ioe);
+      LOG.error("Error retrieving response code from Joshua Network Translator.", ioe);
     }
     return false;
   }

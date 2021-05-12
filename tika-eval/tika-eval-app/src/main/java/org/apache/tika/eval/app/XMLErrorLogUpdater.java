@@ -149,7 +149,6 @@ public class XMLErrorLogUpdater {
                         type.ordinal() + "," + Cols.FILE_PATH + "='" + filePath + "'" + " where " +
                         Cols.CONTAINER_ID + "=" + containerId + " or " + Cols.FILE_PATH + "='" +
                         filePath + "'";
-                ;
 
             } else {
                 //if not and container id > -1

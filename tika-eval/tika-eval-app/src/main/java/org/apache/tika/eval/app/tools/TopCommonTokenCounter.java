@@ -173,10 +173,7 @@ public class TopCommonTokenCounter {
                 List<Document> docs = new ArrayList<>();
                 for (Path inputFile : inputFiles) {
                     //total hack
-                    boolean isLeipzig = false;
-                    if (inputFile.getFileName().toString().contains("-sentences.txt")) {
-                        isLeipzig = true;
-                    }
+                    boolean isLeipzig = inputFile.getFileName().toString().contains("-sentences.txt");
                     int lines = 0;
                     try (BufferedReader reader = getReader(inputFile)) {
                         String line = reader.readLine();
@@ -336,7 +333,7 @@ public class TopCommonTokenCounter {
         }
     }
 
-    private class TokenDFPriorityQueue extends AbstractTokenTFDFPriorityQueue {
+    private static class TokenDFPriorityQueue extends AbstractTokenTFDFPriorityQueue {
 
         TokenDFPriorityQueue(int maxSize) {
             super(maxSize);

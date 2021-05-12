@@ -143,8 +143,6 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
         delegate.startPrefixMapping(prefix, uri);
     }
 
-    ;
-
     @Override
     public void startElement(String uri, String localName, String qName, Attributes atts)
             throws SAXException {
@@ -161,8 +159,6 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
             delegate.startElement(uri, localName, qName, atts);
         }
     }
-
-    ;
 
     @Override
     public void characters(char[] chars, int offset, int length) throws SAXException {
@@ -182,8 +178,6 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
         }
     }
 
-    ;
-
     @Override
     public void endElement(String uri, String localName, String qName) throws SAXException {
         super.endElement(uri, localName, qName);
@@ -201,8 +195,6 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
             elements.add(new RecordedElement());
         }
     }
-
-    ;
 
     @Override
     public void endDocument() throws SAXException {
@@ -302,8 +294,6 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
 
         delegate.endDocument();
     }
-
-    ;
 
     private static class RecordedElement {
         private String uri;
