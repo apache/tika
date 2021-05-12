@@ -67,6 +67,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.config.TikaConfigSerializer;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.DefaultEmbeddedStreamTranslator;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -95,6 +96,11 @@ import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.digestutils.CommonsDigester;
 import org.apache.tika.parser.pdf.PDFParserConfig;
+import org.apache.tika.pipes.FetchEmitTuple;
+import org.apache.tika.pipes.PipesException;
+import org.apache.tika.pipes.async.AsyncProcessor;
+import org.apache.tika.pipes.fetcher.Fetcher;
+import org.apache.tika.pipes.pipesiterator.PipesIterator;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerFactory;
@@ -135,6 +141,9 @@ public class TikaCLI {
             BatchProcessDriverCLI batchDriver = new BatchProcessDriverCLI(batchArgs);
             batchDriver.execute();
             return;
+        } else if (cli.testForAsync(args)) {
+            async(args);
+            return;
         }
 
         if (args.length > 0) {
@@ -155,6 +164,41 @@ public class TikaCLI {
                 cli.process("-");
             } else {
                 cli.process("--gui");
+            }
+        }
+    }
+
+    private boolean testForAsync(String[] args) {
+        for (String arg : args) {
+            if (arg.equals("-a") || arg.equals("--async")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static void async(String[] args) throws InterruptedException, PipesException,
+            TikaException,
+            IOException,
+            SAXException {
+        String tikaConfigPath = "";
+        for (String arg : args) {
+            if (arg.startsWith("--config=")) {
+                tikaConfigPath = arg.substring(9);
+            }
+        }
+        PipesIterator pipesIterator = PipesIterator.build(Paths.get(tikaConfigPath));
+        try (AsyncProcessor processor = new AsyncProcessor(Paths.get(tikaConfigPath))) {
+            for (FetchEmitTuple t : pipesIterator) {
+                processor.offer(t, 2000);
+            }
+            processor.finished();
+            while (true) {
+                if (processor.checkActive()) {
+                    Thread.sleep(500);
+                } else {
+                    break;
+                }
             }
         }
     }
@@ -335,6 +379,8 @@ public class TikaCLI {
 
     private DigestingParser.Digester digester = null;
 
+    private boolean asyncMode = false;
+
     private boolean pipeMode = true;
 
     private boolean fork = false;
@@ -395,7 +441,9 @@ public class TikaCLI {
             // ignore, as container-aware detectors are now always used
         } else if (arg.equals("-f") || arg.equals("--fork")) {
             fork = true;
-        } else if (arg.startsWith("--config=")) {
+        } else if (arg.equals("-a") || arg.equals("--async")) {
+            asyncMode = true;
+        } else  if (arg.startsWith("--config=")) {
             configFilePath = arg.substring("--config=".length());
         } else if (arg.startsWith("--digest=")) {
             digester = new CommonsDigester(MAX_MARK,
@@ -553,6 +601,8 @@ public class TikaCLI {
         out.println("    -J  or --jsonRecursive Output metadata and content from all");
         out.println("                           embedded files (choose content type");
         out.println("                           with -x, -h, -t or -m; default is -x)");
+        out.println("    -a  or --async         Run Tika in async mode; must specify details in a" +
+                " tikaConfig file");
         out.println("    -l  or --language      Output only language");
         out.println("    -d  or --detect        Detect document type");
         out.println("           --digest=X      Include digest X (md2, md5, sha1,");

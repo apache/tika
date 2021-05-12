@@ -100,7 +100,7 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
 
         TIKA_CONFIG_XML =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" +
-                        "<fetcher class=\"org.apache.tika.pipes.fetcher.FileSystemFetcher\">" +
+                        "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" +
                         "<params>" + "<name>" + FETCHER_NAME +
                         "</name>" + "<basePath>" +
                         inputDir.toAbsolutePath() + "</basePath>" + "</params>" + "</fetcher>" +

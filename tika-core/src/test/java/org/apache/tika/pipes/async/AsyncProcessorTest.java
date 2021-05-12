@@ -62,7 +62,7 @@ public class AsyncProcessorTest {
                 "  <emitter class=\"org.apache.tika.pipes.async.MockEmitter\">\n" +
                 "    <params>\n" + "      <name>mock</name>\n" + "    </params>" + "  </emitter>" +
                 "  </emitters>" + "  <fetchers>" +
-                "    <fetcher class=\"org.apache.tika.pipes.fetcher.FileSystemFetcher\">" +
+                "    <fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" +
                 "      <params><name>mock</name>\n" + "      <basePath>" +
                 ProcessUtils.escapeCommandLine(inputDir.toAbsolutePath().toString()) +
                 "</basePath></params>\n" + "    </fetcher>" + "  </fetchers>" +

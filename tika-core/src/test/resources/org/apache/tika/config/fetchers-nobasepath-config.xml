@@ -17,13 +17,13 @@
 -->
 <properties>
   <fetchers>
-    <fetcher class="org.apache.tika.pipes.fetcher.FileSystemFetcher">
+    <fetcher class="org.apache.tika.pipes.fetcher.fs.FileSystemFetcher">
       <params>
         <name>fs1</name>
         <basePath>/my/base/path1</basePath>
       </params>
     </fetcher>
-    <fetcher class="org.apache.tika.pipes.fetcher.FileSystemFetcher">
+    <fetcher class="org.apache.tika.pipes.fetcher.fs.FileSystemFetcher">
       <params>
         <name>fs2</name>
       </params>

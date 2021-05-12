@@ -102,7 +102,7 @@ public class TikaPipesTest extends CXFTestBase {
 
         TIKA_CONFIG_XML =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" +
-                        "<fetcher class=\"org.apache.tika.pipes.fetcher.FileSystemFetcher\">" +
+                        "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" +
                         "<params>" + "<name>fsf</name>" +
                         "<basePath>" + inputDir.toAbsolutePath() +
                         "</basePath>" + "</params>" + "</fetcher>" + "</fetchers>" + "<emitters>" +

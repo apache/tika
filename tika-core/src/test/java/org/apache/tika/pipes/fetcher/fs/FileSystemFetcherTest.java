@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.fetcher;
+package org.apache.tika.pipes.fetcher.fs;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

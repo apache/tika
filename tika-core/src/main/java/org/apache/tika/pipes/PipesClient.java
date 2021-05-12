@@ -193,7 +193,6 @@ public class PipesClient implements Closeable {
             logGobblerThread.interrupt();
         }
         ProcessBuilder pb = new ProcessBuilder(getCommandline());
-
         process = pb.start();
         logGobbler = new LogGobbler(process.getErrorStream());
         logGobblerThread = new Thread(logGobbler);
@@ -251,7 +250,7 @@ public class PipesClient implements Closeable {
         commandLine.add(maxForEmitBatchBytes);
         commandLine.add(Long.toString(pipesConfig.getTimeoutMillis()));
         commandLine.add(Long.toString(pipesConfig.getShutdownClientAfterMillis()));
-
+        LOG.debug("commandline: " + commandLine.toString());
         return commandLine.toArray(new String[0]);
     }
 

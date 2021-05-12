@@ -26,11 +26,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.tika.exception.TikaException;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -43,9 +47,55 @@ public class TikaCLITest {
     private ByteArrayOutputStream errContent = null;
     private PrintStream stdout = null;
     private PrintStream stderr = null;
-    private final File testDataFile = new File("src/test/resources/test-data");
+    private static final File testDataFile = new File("src/test/resources/test-data");
     private final URI testDataURI = testDataFile.toURI();
     private String resourcePrefix;
+    private static Path ASYNC_CONFIG;
+    private static Path ASYNC_OUTPUT_DIR;
+
+    @BeforeClass
+    public static void setUpClass() throws Exception {
+        ASYNC_OUTPUT_DIR = Files.createTempDirectory("tika-cli-async-");
+        ASYNC_CONFIG = Files.createTempFile("async-config-", ".xml");
+        String xml = "<properties>" +
+                "<async>" +
+                "<params>" +
+                "<numClients>3</numClients>" +
+                "<tikaConfig>" + ASYNC_CONFIG.toAbsolutePath() + "</tikaConfig>" +
+                "</params>" +
+                "</async>" +
+                "<fetchers>" +
+                "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" +
+                "<params>" +
+                "<name>fsf</name>" +
+                "<basePath>" + testDataFile.getAbsolutePath() + "</basePath>" +
+                "</params>" +
+                "</fetcher>" +
+                "</fetchers>" +
+                "<emitters>" +
+                "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" +
+                "<params>" +
+                "<name>fse</name>" +
+                "<basePath>" + ASYNC_OUTPUT_DIR.toAbsolutePath() + "</basePath>" +
+                "</params></emitter>" +
+                "</emitters>" +
+                "<pipesIterator " +
+                "class=\"org.apache.tika.pipes.pipesiterator.FileSystemPipesIterator\">" +
+                "<params>" +
+                "<basePath>" + testDataFile.getAbsolutePath() + "</basePath>" +
+                "<fetcherName>fsf</fetcherName>" +
+                "<emitterName>fse</emitterName>" +
+                "</params>" +
+                "</pipesIterator>" +
+                "</properties>";
+        Files.write(ASYNC_CONFIG, xml.getBytes(UTF_8));
+    }
+
+    @AfterClass
+    public static void tearDownClass() throws Exception {
+        Files.delete(ASYNC_CONFIG);
+        FileUtils.deleteDirectory(ASYNC_OUTPUT_DIR.toFile());
+    }
 
     /**
      * reset resourcePrefix
@@ -573,6 +623,21 @@ public class TikaCLITest {
         content = getParamOutContent("--list-parser-details-apt");
         assertTrue(content.contains("application/vnd.oasis.opendocument.text-web"));
     }
+
+    @Test
+    public void testAsync() throws Exception {
+        String content = getParamOutContent("-a",
+                "--config="+ASYNC_CONFIG.toAbsolutePath());
+
+        int json = 0;
+        for (File f : ASYNC_OUTPUT_DIR.toFile().listFiles()) {
+            if (f.getName().endsWith(".json")) {
+                json++;
+            }
+        }
+        assertEquals(17, json);
+    }
+
 
     /**
      * reset outContent and errContent if they are not empty

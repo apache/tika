@@ -38,6 +38,9 @@ public class AsyncConfig extends PipesConfigBase {
         try (InputStream is = Files.newInputStream(p)) {
             asyncConfig.configure("async", is);
         }
+        if (asyncConfig.getTikaConfig() == null) {
+            asyncConfig.setTikaConfig(p);
+        }
         return asyncConfig;
     }
 
@@ -74,7 +77,7 @@ public class AsyncConfig extends PipesConfigBase {
      *  What is the maximum bytes size per extract that
      *  will be allowed in the emit queue.  If an extract is too
      *  big, skip the emit queue and forward it directly from the processor.  If
-     *  set to <code>0</code>, this will never send a an extract back for batch emitting,
+     *  set to <code>0</code>, this will never send an extract back for batch emitting,
      *  but will emit the extract directly from the processor.
      * @return
      */

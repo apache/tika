@@ -64,6 +64,11 @@
       <artifactId>tika-batch</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-emitter-fs</artifactId>
+      <version>${project.version}</version>
+    </dependency>
 
     <!-- logging -->
     <dependency>

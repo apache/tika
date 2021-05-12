@@ -52,29 +52,29 @@ public class AsyncProcessor implements Closeable {
     private final ArrayBlockingQueue<EmitData> emitData;
     private final ExecutorCompletionService<Integer> executorCompletionService;
     private final ExecutorService executorService;
-    private final int fetchEmitTupleQSize = 10000;
-    private int numParserThreads = 10;
-    private int numEmitterThreads = 2;
+    private final AsyncConfig asyncConfig;
     private int numParserThreadsFinished = 0;
     private boolean addedEmitterSemaphores = false;
     private int finished = 0;
     boolean isShuttingDown = false;
 
     public AsyncProcessor(Path tikaConfigPath) throws TikaException, IOException, SAXException {
-        this.fetchEmitTuples = new ArrayBlockingQueue<>(fetchEmitTupleQSize);
+        this.asyncConfig = AsyncConfig.load(tikaConfigPath);
+        this.fetchEmitTuples = new ArrayBlockingQueue<>(asyncConfig.getQueueSize());
         this.emitData = new ArrayBlockingQueue<>(100);
-        this.executorService = Executors.newFixedThreadPool(numParserThreads + numEmitterThreads);
+        this.executorService = Executors.newFixedThreadPool(
+                asyncConfig.getNumClients() + asyncConfig.getNumEmitters());
         this.executorCompletionService =
                 new ExecutorCompletionService<>(executorService);
 
-        AsyncConfig asyncConfig = AsyncConfig.load(tikaConfigPath);
-        for (int i = 0; i < numParserThreads; i++) {
+
+        for (int i = 0; i < asyncConfig.getNumClients(); i++) {
             executorCompletionService.submit(new FetchEmitWorker(asyncConfig, fetchEmitTuples,
                     emitData));
         }
 
         EmitterManager emitterManager = EmitterManager.load(tikaConfigPath);
-        for (int i = 0; i < numEmitterThreads; i++) {
+        for (int i = 0; i < asyncConfig.getNumEmitters(); i++) {
             executorCompletionService.submit(new AsyncEmitter(emitData, emitterManager));
         }
     }
@@ -85,9 +85,9 @@ public class AsyncProcessor implements Closeable {
             throw new IllegalStateException(
                     "Can't call offer after calling close() or " + "shutdownNow()");
         }
-        if (newFetchEmitTuples.size() > fetchEmitTupleQSize) {
+        if (newFetchEmitTuples.size() > asyncConfig.getQueueSize()) {
             throw new OfferLargerThanQueueSize(newFetchEmitTuples.size(),
-                    fetchEmitTupleQSize);
+                    asyncConfig.getQueueSize());
         }
         long start = System.currentTimeMillis();
         long elapsed = System.currentTimeMillis() - start;
@@ -124,6 +124,13 @@ public class AsyncProcessor implements Closeable {
         return fetchEmitTuples.offer(t, offerMs, TimeUnit.MILLISECONDS);
     }
 
+    public void finished() throws InterruptedException {
+        for (int i = 0; i < asyncConfig.getNumClients(); i++) {
+            //can hang forever
+            fetchEmitTuples.offer(PipesIterator.COMPLETED_SEMAPHORE);
+        }
+    }
+
     public boolean checkActive() {
 
         Future<Integer> future = executorCompletionService.poll();
@@ -139,13 +146,14 @@ public class AsyncProcessor implements Closeable {
             }
             finished++;
         }
-        if (numParserThreadsFinished == numParserThreads && ! addedEmitterSemaphores) {
-            for (int i = 0; i < numEmitterThreads; i++) {
+        if (numParserThreadsFinished == asyncConfig.getNumClients() && ! addedEmitterSemaphores) {
+            for (int i = 0; i < asyncConfig.getNumEmitters(); i++) {
+                //can hang forever
                 emitData.offer(AsyncEmitter.EMIT_DATA_STOP_SEMAPHORE);
             }
             addedEmitterSemaphores = true;
         }
-        return finished != (numEmitterThreads + numParserThreads);
+        return finished != (asyncConfig.getNumClients() + asyncConfig.getNumEmitters());
     }
 
     @Override

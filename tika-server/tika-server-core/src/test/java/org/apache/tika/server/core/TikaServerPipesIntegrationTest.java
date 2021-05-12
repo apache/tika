@@ -83,7 +83,7 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
         TIKA_CONFIG_TIMEOUT = TMP_DIR.resolve("tika-config-timeout.xml");
         //TODO -- clean this up so that port is sufficient and we don't need portString
         String xml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" +
-                "<fetcher class=\"org.apache.tika.pipes.fetcher.FileSystemFetcher\">" + "<params>" +
+                "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" + "<params>" +
                 "<name>" + FETCHER_NAME + "</name>" +
                 "<basePath>" + inputDir.toAbsolutePath() +
                 "</basePath>" + "</params>" + "</fetcher>" + "</fetchers>" + "<emitters>" +
