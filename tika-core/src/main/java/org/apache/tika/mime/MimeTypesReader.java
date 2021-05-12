@@ -36,6 +36,8 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXResult;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
@@ -115,7 +117,7 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
      */
     private static int POOL_SIZE = 10;
     private static ArrayBlockingQueue<SAXParser> SAX_PARSERS = new ArrayBlockingQueue<>(POOL_SIZE);
-
+    static Logger LOG = LoggerFactory.getLogger(MimeTypesReader.class);
     static {
         try {
             setPoolSize(POOL_SIZE);
@@ -213,9 +215,14 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
         factory.setNamespaceAware(false);
         try {
             factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        } catch (ParserConfigurationException | SAXException e) {
+            LOG.warn("can't set secure processing feature on: " + factory.getClass() +
+                    ". User assumes responsibility for consequences.");
+        }
+        try {
             return factory.newSAXParser();
         } catch (ParserConfigurationException | SAXException e) {
-            throw new TikaException("problem creating SAX parser factory", e);
+            throw new TikaException("Can't create new sax parser", e);
         }
     }
 
