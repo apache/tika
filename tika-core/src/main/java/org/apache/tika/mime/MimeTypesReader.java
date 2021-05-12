@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.utils.XMLReaderUtils;
@@ -112,13 +114,17 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
 
     private static ArrayBlockingQueue<SAXParser> SAX_PARSERS = new ArrayBlockingQueue<>(POOL_SIZE);
 
+    private static Logger LOG = Logger.getLogger(MimeTypesReader.class.getName());
+
     static {
         try {
             setPoolSize(POOL_SIZE);
         } catch (TikaException e) {
             throw new RuntimeException("problem initializing SAXParser pool", e);
         }
-    }    protected final MimeTypes types;
+    }
+
+    protected final MimeTypes types;
 
     /** Current type */
     protected MimeType type = null;
@@ -428,9 +434,15 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
         try {
             factory.setFeature(
                     XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            return factory.newSAXParser();
         } catch (ParserConfigurationException|SAXException e) {
-            throw new TikaException("problem creating SAX parser factory", e);
+            LOG.log(Level.WARNING,
+                    "can't set secure parsing feature on SAXParserFactory: " +
+                    factory.getClass() + ". User assumes responsibility for consequences.");
+        }
+        try {
+            return factory.newSAXParser();
+        } catch (ParserConfigurationException | SAXException e) {
+            throw new TikaException("can't create saxparser", e);
         }
     }
 }
