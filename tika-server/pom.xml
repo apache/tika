@@ -20,7 +20,7 @@
   <packaging>pom</packaging>
   <modules>
     <module>tika-server-core</module>
-    <module>tika-server-classic</module>
+    <module>tika-server-standard</module>
     <module>tika-server-client</module>
   </modules>
 

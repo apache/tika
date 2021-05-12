@@ -33,7 +33,7 @@
   <packaging>pom</packaging>
 
   <modules>
-    <module>tika-bundle-classic</module>
+    <module>tika-bundle-standard</module>
   </modules>
 
 </project>

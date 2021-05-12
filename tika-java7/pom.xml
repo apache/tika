@@ -84,7 +84,7 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-parsers-classic-package</artifactId>
+      <artifactId>tika-parsers-standard-package</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

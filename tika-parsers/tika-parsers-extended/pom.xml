@@ -29,6 +29,7 @@
 
   <artifactId>tika-parsers-extended</artifactId>
   <packaging>pom</packaging>
+  <name>Apache Tika extended parsers</name>
 
   <dependencies>
     <dependency>

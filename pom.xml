@@ -108,11 +108,11 @@
                             name="tika-parsers/tika-parsers-extended/tika-parser-sqlite3-module/target/tika-parser-sqlite3-module-${project.version}.jar*"/>
                         <include name="tika-app/target/tika-app-${project.version}.jar*"/>
                         <include
-                            name="tika-server/tika-server-classic/target/tika-server-classic-${project.version}.jar*"/>
+                            name="tika-server/tika-server-standard/target/tika-server-standard-${project.version}.jar*"/>
                         <include
-                            name="tika-server/tika-server-classic/target/tika-server-classic-${project.version}-bin.tgz*"/>
+                            name="tika-server/tika-server-standard/target/tika-server-standard-${project.version}-bin.tgz*"/>
                         <include
-                            name="tika-server/tika-server-classic/target/tika-server-classic-${project.version}-bin.zip*"/>
+                            name="tika-server/tika-server-standard/target/tika-server-standard-${project.version}-bin.zip*"/>
                         <include name="tika-eval/tika-eval-app/target/tika-eval-app-${project.version}.jar*"/>
                       </fileset>
                     </copy>

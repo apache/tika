@@ -30,7 +30,7 @@ confinement: strict
 apps:
    run:
     command: 
-       java -jar $SNAP/jar/tika-server-classic-$SNAP_VERSION.jar
+       java -jar $SNAP/jar/tika-server-standard-$SNAP_VERSION.jar
 
 parts:
   compile-tika:

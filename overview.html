@@ -25,11 +25,11 @@ As of Apache Tika 2.0, there are three parser packages.
 <ol>
     <li>tike-parser-modules: basic parsers -- java only, no native code, no parsers that require rest calls</li>
     <li>tike-parsers-extended: extended parsers -- allowed: native code and parsers that require rest calls, heavy dependencies</li>
-    <li>tika-parsers-advanced: parsers/recognizers that rely on machine learning and/or natural language processing</li>
+    <li>tika-parsers-ml: parsers/recognizers that rely on machine learning and/or natural language processing</li>
 </ol>
 <p>
 The <i>tika-parser-modules</i> modules are packaged as one in <i>tika-parsers</i>.  The tika-app and tika-server jars
-depend on <i>tika-parsers</i>.  If you need an extended-parser or an advanced parser, you're responsible for adding
+depend on <i>tika-parsers</i>.  If you need an extended-parser or an ml parser, you're responsible for adding
 those jars to your classpath.
 </p>
 </body>

@@ -41,7 +41,7 @@
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-parsers-classic-package</artifactId>
+      <artifactId>tika-parsers-standard-package</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -124,7 +124,7 @@
               </createDependencyReducedPom>
               <artifactSet>
                 <excludes>
-                  <exclude>org.apache.tika:tika-parsers-classic-package:jar:</exclude>
+                  <exclude>org.apache.tika:tika-parsers-standard-package:jar:</exclude>
                 </excludes>
               </artifactSet>
               <filters>
