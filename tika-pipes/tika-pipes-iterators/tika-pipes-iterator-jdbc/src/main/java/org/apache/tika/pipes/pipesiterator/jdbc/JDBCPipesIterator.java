@@ -211,7 +211,7 @@ public class JDBCPipesIterator extends PipesIterator implements Initializable {
             String val = rs.getString(i);
             val = (val == null) ? "" : val;
             val = (val.length() > 100) ? val.substring(0, 100) : val;
-            sb.append(rs.getMetaData().getColumnLabel(i) + ":" + val + "\n");
+            sb.append(rs.getMetaData().getColumnLabel(i)).append(":").append(val).append("\n");
         }
         return sb.toString();
     }

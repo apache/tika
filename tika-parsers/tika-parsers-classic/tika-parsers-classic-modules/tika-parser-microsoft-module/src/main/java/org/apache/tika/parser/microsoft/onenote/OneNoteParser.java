@@ -19,7 +19,6 @@ package org.apache.tika.parser.microsoft.onenote;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -57,7 +56,7 @@ public class OneNoteParser extends AbstractParser {
 
     static {
         // All types should be 4 bytes long, space padded as needed
-        typesMap.put(MediaType.application("onenote; format=one"), Arrays.asList("ONE "));
+        typesMap.put(MediaType.application("onenote; format=one"), Collections.singletonList("ONE "));
         // TODO - add onetoc and other onenote mime types
     }
 

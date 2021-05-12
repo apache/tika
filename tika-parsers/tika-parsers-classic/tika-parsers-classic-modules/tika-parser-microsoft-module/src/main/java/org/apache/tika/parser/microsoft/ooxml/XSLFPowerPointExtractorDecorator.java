@@ -156,7 +156,7 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                         if (authorStringBuilder.length() > 0) {
                             authorStringBuilder.append(" ");
                         }
-                        authorStringBuilder.append("(" + comment.getAuthorInitials() + ")");
+                        authorStringBuilder.append("(").append(comment.getAuthorInitials()).append(")");
                     }
                     if (comment.getText() != null && authorStringBuilder.length() > 0) {
                         authorStringBuilder.append(" - ");

@@ -22,7 +22,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -84,7 +83,7 @@ public class RollbackSoftware {
          */
         public Set<MediaType> getSupportedTypes(ParseContext context) {
             return Collections
-                    .unmodifiableSet(new HashSet<>(Arrays.asList(MediaType.TEXT_PLAIN)));
+                    .unmodifiableSet(new HashSet<>(Collections.singletonList(MediaType.TEXT_PLAIN)));
         }
 
         /*

@@ -61,7 +61,7 @@ public class CommonTokenOverlapCounter {
         denom = setA.size() + setB.size();
         double percent = (double) overlap / (double) denom;
         if (percent > 0.01) {
-            System.out.println(String.format(Locale.US, "%s %s %.2f", langA, langB, percent));
+            System.out.printf(Locale.US, "%s %s %.2f%n", langA, langB, percent);
         }
     }
 

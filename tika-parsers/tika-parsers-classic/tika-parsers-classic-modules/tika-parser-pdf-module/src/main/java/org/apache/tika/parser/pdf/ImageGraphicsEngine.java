@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -80,9 +81,9 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
             Arrays.asList(COSName.DCT_DECODE.getName(), COSName.DCT_DECODE_ABBREVIATION.getName());
 
 
-    private static final List<String> JP2 = Arrays.asList(COSName.JPX_DECODE.getName());
+    private static final List<String> JP2 = Collections.singletonList(COSName.JPX_DECODE.getName());
 
-    private static final List<String> JB2 = Arrays.asList(COSName.JBIG2_DECODE.getName());
+    private static final List<String> JB2 = Collections.singletonList(COSName.JBIG2_DECODE.getName());
     final List<IOException> exceptions = new ArrayList<>();
     private final EmbeddedDocumentExtractor embeddedDocumentExtractor;
     private final PDFParserConfig pdfParserConfig;

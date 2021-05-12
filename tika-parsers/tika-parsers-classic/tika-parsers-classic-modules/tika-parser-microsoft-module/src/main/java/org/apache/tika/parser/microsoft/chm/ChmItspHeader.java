@@ -68,35 +68,61 @@ public class ChmItspHeader implements ChmAccessor<ChmItspHeader> {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("[ signature:=" + new String(getSignature(), UTF_8) +
-                System.getProperty("line.separator"));
-        sb.append("version:=\t" + getVersion() + System.getProperty("line.separator"));
-        sb.append("header_len:=\t" + getHeader_len() + System.getProperty("line.separator"));
-        sb.append("unknown_00c:=\t" + getUnknown_000c() + System.getProperty("line.separator"));
-        sb.append("block_len:=\t" + getBlock_len() + " [directory chunk size]" +
-                System.getProperty("line.separator"));
-        sb.append("blockidx_intvl:=" + getBlockidx_intvl() +
-                ", density of quickref section, usually 2" + System.getProperty("line.separator"));
-        sb.append("index_depth:=\t" + getIndex_depth() +
-                ", depth of the index tree - 1 there is no index, 2 if there is one level of PMGI" +
-                " chunk" + System.getProperty("line.separator"));
-        sb.append("index_root:=\t" + getIndex_root() +
-                ", chunk number of root index chunk, -1 if there is none" +
-                System.getProperty("line.separator"));
-        sb.append("index_head:=\t" + getIndex_head() +
-                ", chunk number of first PMGL (listing) chunk" +
-                System.getProperty("line.separator"));
-        sb.append("unknown_0024:=\t" + getUnknown_0024() +
-                ", chunk number of last PMGL (listing) chunk" +
-                System.getProperty("line.separator"));
-        sb.append("num_blocks:=\t" + getNum_blocks() + ", -1 (unknown)" +
-                System.getProperty("line.separator"));
-        sb.append("unknown_002c:=\t" + getUnknown_002c() + ", number of directory chunks (total)" +
-                System.getProperty("line.separator"));
-        sb.append("lang_id:=\t" + getLang_id() + " - " + ChmCommons.getLanguage(getLang_id()) +
-                System.getProperty("line.separator"));
-        sb.append("system_uuid:=" + getSystem_uuid() + System.getProperty("line.separator"));
-        sb.append("unknown_0044:=" + getUnknown_0044() + " ]");
+        sb.append("[ signature:=")
+                .append(new String(getSignature(), UTF_8))
+                .append(System.getProperty("line.separator"));
+        sb.append("version:=\t")
+                .append(getVersion())
+                .append(System.getProperty("line.separator"));
+        sb.append("header_len:=\t")
+                .append(getHeader_len())
+                .append(System.getProperty("line.separator"));
+        sb.append("unknown_00c:=\t")
+                .append(getUnknown_000c())
+                .append(System.getProperty("line.separator"));
+        sb.append("block_len:=\t")
+                .append(getBlock_len())
+                .append(" [directory chunk size]")
+                .append(System.getProperty("line.separator"));
+        sb.append("blockidx_intvl:=")
+                .append(getBlockidx_intvl())
+                .append(", density of quickref section, usually 2")
+                .append(System.getProperty("line.separator"));
+        sb.append("index_depth:=\t")
+                .append(getIndex_depth())
+                .append(", depth of the index tree - 1 there is no index, 2 if there is one level of PMGI")
+                .append(" chunk")
+                .append(System.getProperty("line.separator"));
+        sb.append("index_root:=\t")
+                .append(getIndex_root())
+                .append(", chunk number of root index chunk, -1 if there is none")
+                .append(System.getProperty("line.separator"));
+        sb.append("index_head:=\t")
+                .append(getIndex_head())
+                .append(", chunk number of first PMGL (listing) chunk")
+                .append(System.getProperty("line.separator"));
+        sb.append("unknown_0024:=\t")
+                .append(getUnknown_0024())
+                .append(", chunk number of last PMGL (listing) chunk")
+                .append(System.getProperty("line.separator"));
+        sb.append("num_blocks:=\t")
+                .append(getNum_blocks())
+                .append(", -1 (unknown)")
+                .append(System.getProperty("line.separator"));
+        sb.append("unknown_002c:=\t")
+                .append(getUnknown_002c()).append(", number of directory chunks (total)")
+                .append(System.getProperty("line.separator"));
+        sb.append("lang_id:=\t")
+                .append(getLang_id())
+                .append(" - ")
+                .append(ChmCommons.getLanguage(getLang_id()))
+                .append(System.getProperty("line.separator"));
+        sb.append("system_uuid:=")
+                .append(getSystem_uuid())
+                .append(System.getProperty("line.separator"));
+        sb.append("unknown_0044:=")
+                .append(getUnknown_0044())
+                .append(" ]");
         return sb.toString();
     }
 

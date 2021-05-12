@@ -234,9 +234,7 @@ public class PipesClient implements Closeable {
         if (! hasExitOnOOM) {
             //warn
         }
-        for (String arg : configArgs) {
-            commandLine.add(arg);
-        }
+        commandLine.addAll(configArgs);
         commandLine.add("org.apache.tika.pipes.PipesServer");
         commandLine.add(
                 ProcessUtils.escapeCommandLine(pipesConfig.getTikaConfig().toAbsolutePath().toString()));

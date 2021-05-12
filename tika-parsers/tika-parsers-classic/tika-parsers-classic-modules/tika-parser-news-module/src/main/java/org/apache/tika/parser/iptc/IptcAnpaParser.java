@@ -365,9 +365,9 @@ public class IptcAnpaParser implements Parser {
         String env_category = "";
         String env_urgency = "";
         String hdr_edcode = "";
-        String hdr_subject = "";
-        String hdr_date = "";
-        String hdr_time = "";
+        StringBuilder hdr_subject = new StringBuilder();
+        StringBuilder hdr_date = new StringBuilder();
+        StringBuilder hdr_time = new StringBuilder();
 
         int read = 0;
 
@@ -405,7 +405,7 @@ public class IptcAnpaParser implements Parser {
                 byte val_next = value[read++];
                 while ((subject) && (val_next != SP) &&
                         (val_next != 0x00)) {  // ignore the envelope subject
-                    hdr_subject += (char) (val_next & 0xff);  // convert the byte to an unsigned int
+                    hdr_subject.append((char) (val_next & 0xff));  // convert the byte to an unsigned int
                     val_next = (read < value.length) ? value[read++] : 0x00;
                     while (val_next == SP) {  // consume all the spaces
                         subject = false;
@@ -427,8 +427,7 @@ public class IptcAnpaParser implements Parser {
                     while (((val_next >= (byte) 0x30) && (val_next <= (byte) 0x39))
                             // consume all numerics and hyphens
                             || (val_next == HY)) {
-                        hdr_date +=
-                                (char) (val_next & 0xff);  // convert the byte to an unsigned int
+                        hdr_date.append((char) (val_next & 0xff));  // convert the byte to an unsigned int
                         val_next = (read < value.length) ? value[read++] : 0x00;
                     }
                 } else if (val_next == SP) {
@@ -440,8 +439,7 @@ public class IptcAnpaParser implements Parser {
                     while (((val_next >= (byte) 0x30) && (val_next <= (byte) 0x39))
                             // consume all numerics and hyphens
                             || (val_next == HY)) {
-                        hdr_time +=
-                                (char) (val_next & 0xff);  // convert the byte to an unsigned int
+                        hdr_time.append((char) (val_next & 0xff));  // convert the byte to an unsigned int
                         val_next = (read < value.length) ? value[read++] : 0x00;
                     }
                 }
@@ -459,11 +457,11 @@ public class IptcAnpaParser implements Parser {
     private boolean parseBody(byte[] value, HashMap<String, String> properties) {
         boolean added = false;
 
-        String bdy_heading = "";
-        String bdy_title = "";
-        String bdy_source = "";
-        String bdy_author = "";
-        String bdy_body = "";
+        StringBuilder bdy_heading = new StringBuilder();
+        StringBuilder bdy_title = new StringBuilder();
+        StringBuilder bdy_source = new StringBuilder();
+        StringBuilder bdy_author = new StringBuilder();
+        StringBuilder bdy_body = new StringBuilder();
 
         int read = 0;
         boolean done = false;
@@ -478,8 +476,7 @@ public class IptcAnpaParser implements Parser {
                     // AP, NYT, and Bloomberg end with < , Reuters with EOL
                     while ((val_next != LT) && (val_next != CR) &&
                             (val_next != LF)) {   // less than delimiter (\x3c) and not EOL
-                        bdy_heading +=
-                                (char) (val_next & 0xff);  // convert the byte to an unsigned int
+                        bdy_heading.append((char) (val_next & 0xff));  // convert the byte to an unsigned int
                         val_next = (read < value.length) ? value[read++] : 0x00;
                         if (read >= value.length) {
                             break;
@@ -531,8 +528,7 @@ public class IptcAnpaParser implements Parser {
                     // AP, NYT, and Bloomberg end with < , Reuters with EOL
                     while ((val_next != LT) && (val_next != CT) && (val_next != CR) && (val_next !=
                             LF)) {   // less than delimiter (\x3c), or carat (\x5e) and not EOL
-                        bdy_title +=
-                                (char) (val_next & 0xff);  // convert the byte to an unsigned int
+                        bdy_title.append((char) (val_next & 0xff));  // convert the byte to an unsigned int
                         val_next = (read < value.length) ? value[read++] : 0x00;
                         if (read >= value.length) {
                             break;
@@ -593,7 +589,7 @@ public class IptcAnpaParser implements Parser {
             // pull apart the body, getting the title (^....\x0d\x0a)
             boolean metastarted = false;
             String longline = "";
-            String longkey = "";
+            String longkey;
             while (read < value.length) {
                 byte val_next = value[read++];
 
@@ -605,12 +601,11 @@ public class IptcAnpaParser implements Parser {
                 if (val_next ==
                         CT) {      //  start of a new section , could be authors, sources, etc
                     val_next = (read < value.length) ? value[read++] : 0x00;
-                    String tmp_line = "";
+                    StringBuilder tmp_line = new StringBuilder();
                     while ((val_next != LT) && (val_next != CT) && (val_next != CR) &&
                             (val_next != LF) && (val_next != 0)) {
                         // less than delimiter (\x3c), maybe also badly formed with just new line
-                        tmp_line +=
-                                (char) (val_next & 0xff);  // convert the byte to an unsigned int
+                        tmp_line.append((char) (val_next & 0xff));  // convert the byte to an unsigned int
                         val_next = (read < value.length) ? value[read++] : 0x00;
                         if (read >= value.length) {
                             break;
@@ -634,49 +629,49 @@ public class IptcAnpaParser implements Parser {
                             --read;
                         }
                     }
-                    if (tmp_line.toLowerCase(Locale.ROOT).startsWith("by") ||
+                    if (tmp_line.toString().toLowerCase(Locale.ROOT).startsWith("by") ||
                             longline.equals("bdy_author")) {
                         longkey = "bdy_author";
 
                         // prepend a space to subsequent line, so it gets parsed consistent with
                         // the lead line
-                        tmp_line = (longline.equals(longkey) ? " " : "") + tmp_line;
+                        tmp_line.insert(0, (longline.equals(longkey) ? " " : ""));
 
                         // we have an author candidate
                         int term = tmp_line.length();
                         term = Math.min(term,
-                                (tmp_line.contains("<") ? tmp_line.indexOf("<") : term));
+                                (tmp_line.toString().contains("<") ? tmp_line.indexOf("<") : term));
                         term = Math.min(term,
-                                (tmp_line.contains("=") ? tmp_line.indexOf("=") : term));
+                                (tmp_line.toString().contains("=") ? tmp_line.indexOf("=") : term));
                         term = Math.min(term,
-                                (tmp_line.contains("\n") ? tmp_line.indexOf("\n") : term));
+                                (tmp_line.toString().contains("\n") ? tmp_line.indexOf("\n") : term));
                         term = (term > 0) ? term : tmp_line.length();
-                        bdy_author += tmp_line.substring(tmp_line.indexOf(" "), term);
+                        bdy_author.append(tmp_line.substring(tmp_line.indexOf(" "), term));
                         metastarted = true;
                         longline =
-                                ((tmp_line.contains("=")) && (!longline.equals(longkey)) ? longkey :
+                                ((tmp_line.toString().contains("=")) && (!longline.equals(longkey)) ? longkey :
                                         "");
                     } else if (FORMAT == this.FMT_IPTC_BLM) {
                         String byline = "   by ";
-                        if (tmp_line.toLowerCase(Locale.ROOT).contains(byline)) {
+                        if (tmp_line.toString().toLowerCase(Locale.ROOT).contains(byline)) {
                             longkey = "bdy_author";
 
                             int term = tmp_line.length();
                             term = Math.min(term,
-                                    (tmp_line.contains("<") ? tmp_line.indexOf("<") : term));
+                                    (tmp_line.toString().contains("<") ? tmp_line.indexOf("<") : term));
                             term = Math.min(term,
-                                    (tmp_line.contains("=") ? tmp_line.indexOf("=") : term));
+                                    (tmp_line.toString().contains("=") ? tmp_line.indexOf("=") : term));
                             term = Math.min(term,
-                                    (tmp_line.contains("\n") ? tmp_line.indexOf("\n") : term));
+                                    (tmp_line.toString().contains("\n") ? tmp_line.indexOf("\n") : term));
                             term = (term > 0) ? term : tmp_line.length();
                             // for bloomberg, the author line sits below their copyright statement
-                            bdy_author += tmp_line.substring(
-                                    tmp_line.toLowerCase(Locale.ROOT).indexOf(byline) +
-                                            byline.length(), term) + " ";
+                            bdy_author.append(tmp_line.substring(
+                                    tmp_line.toString().toLowerCase(Locale.ROOT).indexOf(byline) +
+                                    byline.length(), term)).append(" ");
                             metastarted = true;
-                            longline = ((tmp_line.contains("=")) && (!longline.equals(longkey)) ?
+                            longline = ((tmp_line.toString().contains("=")) && (!longline.equals(longkey)) ?
                                     longkey : "");
-                        } else if (tmp_line.toLowerCase(Locale.ROOT).startsWith("c.")) {
+                        } else if (tmp_line.toString().toLowerCase(Locale.ROOT).startsWith("c.")) {
                             // the author line for bloomberg is a multiline starting with c.2011
                             // Bloomberg News
                             // then containing the author info on the next line
@@ -684,8 +679,8 @@ public class IptcAnpaParser implements Parser {
                                 value[--read] = CT;
                                 continue;
                             }
-                        } else if (tmp_line.toLowerCase(Locale.ROOT).trim().startsWith("(") &&
-                                tmp_line.toLowerCase(Locale.ROOT).trim().endsWith(")")) {
+                        } else if (tmp_line.toString().toLowerCase(Locale.ROOT).trim().startsWith("(") &&
+                                   tmp_line.toString().toLowerCase(Locale.ROOT).trim().endsWith(")")) {
                             // the author line may have one or more comment lines between the
                             // copyright
                             // statement, and the By AUTHORNAME line
@@ -694,44 +689,43 @@ public class IptcAnpaParser implements Parser {
                                 continue;
                             }
                         }
-                    } else if (tmp_line.toLowerCase(Locale.ROOT).startsWith("eds") ||
-                            longline.equals("bdy_source")) {
+                    } else if (tmp_line.toString().toLowerCase(Locale.ROOT).startsWith("eds") ||
+                               longline.equals("bdy_source")) {
                         longkey = "bdy_source";
                         // prepend a space to subsequent line, so it gets parsed consistent with
                         // the lead line
-                        tmp_line = (longline.equals(longkey) ? " " : "") + tmp_line;
+                        tmp_line.insert(0, (longline.equals(longkey) ? " " : ""));
 
                         // we have a source candidate
                         int term = tmp_line.length();
                         term = Math.min(term,
-                                (tmp_line.contains("<") ? tmp_line.indexOf("<") : term));
+                                (tmp_line.toString().contains("<") ? tmp_line.indexOf("<") : term));
                         term = Math.min(term,
-                                (tmp_line.contains("=") ? tmp_line.indexOf("=") : term));
+                                (tmp_line.toString().contains("=") ? tmp_line.indexOf("=") : term));
 //                  term = Math.min(term, (tmp_line.indexOf("\n") > -1 ? tmp_line.indexOf("\n") :
 //                  term));
                         term = (term > 0) ? term : tmp_line.length();
-                        bdy_source += tmp_line.substring(tmp_line.indexOf(" ") + 1, term) + " ";
+                        bdy_source.append(tmp_line.substring(tmp_line.indexOf(" ") + 1, term)).append(" ");
                         metastarted = true;
                         longline = (!longline.equals(longkey) ? longkey : "");
                     } else {
                         // this has fallen all the way through.  trap it as part of the subject,
                         // rather than just losing it
                         if (!metastarted) {
-                            bdy_title += " , " +
-                                    tmp_line;     //  not sure where else to put this but in the
+                            bdy_title.append(" , ").append(tmp_line);     //  not sure where else to put this but in the
                             // title
                         } else {
                             // what to do with stuff that is metadata, which falls after metadata
                             // lines started?
-                            bdy_body += " " + tmp_line +
-                                    " , ";     //  not sure where else to put this but in the title
+                            bdy_body.append(" ")
+                                    .append(tmp_line)
+                                    .append(" , ");     //  not sure where else to put this but in the title
                         }
                     }
                 } else {  // we're on to the main body
                     while ((read < value.length) && (val_next != 0)) {
                         // read until the train runs out of tracks
-                        bdy_body +=
-                                (char) (val_next & 0xff);  // convert the byte to an unsigned int
+                        bdy_body.append((char) (val_next & 0xff));  // convert the byte to an unsigned int
                         val_next = (read < value.length) ? value[read++] : 0x00;
                         if (read >= value.length) {
                             break;
@@ -743,11 +737,11 @@ public class IptcAnpaParser implements Parser {
             }
             done = true; // don't let this run back through and start thrashing metadata
         }
-        properties.put("body", bdy_body);
-        properties.put("title", bdy_title);
-        properties.put("subject", bdy_heading);
-        properties.put("author", bdy_author);
-        properties.put("source", bdy_source);
+        properties.put("body", bdy_body.toString());
+        properties.put("title", bdy_title.toString());
+        properties.put("subject", bdy_heading.toString());
+        properties.put("author", bdy_author.toString());
+        properties.put("source", bdy_source.toString());
 
         added = (bdy_body.length() + bdy_title.length() + bdy_heading.length() +
                 bdy_author.length() + bdy_source.length()) > 0;
@@ -758,7 +752,7 @@ public class IptcAnpaParser implements Parser {
     private boolean parseFooter(byte[] value, HashMap<String, String> properties) {
         boolean added = false;
 
-        String ftr_source = "";
+        StringBuilder ftr_source = new StringBuilder();
         String ftr_datetime = "";
 
         int read = 0;
@@ -772,7 +766,7 @@ public class IptcAnpaParser implements Parser {
 
             while (((val_next < (byte) 0x30) || (val_next > (byte) 0x39)) &&
                     (val_next != 0)) {  // consume all non-numerics first
-                ftr_source += (char) (val_next & 0xff);  // convert the byte to an unsigned int
+                ftr_source.append((char) (val_next & 0xff));  // convert the byte to an unsigned int
                 val_next = (read < value.length) ? value[read] :
                         0x00;  // attempt to read until end of stream
                 read++;
@@ -826,7 +820,7 @@ public class IptcAnpaParser implements Parser {
             done = true; // don't let this run back through and start thrashing metadata
         }
 
-        properties.put("publisher", ftr_source);
+        properties.put("publisher", ftr_source.toString());
         properties.put("created", ftr_datetime);
         properties.put("modified", ftr_datetime);
 

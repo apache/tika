@@ -1317,7 +1317,7 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
      *                               policy.
      */
     public void write(PDDocument doc, SignatureInterface signInterface) throws IOException {
-        Long idTime = doc.getDocumentId() == null ? System.currentTimeMillis() :
+        long idTime = doc.getDocumentId() == null ? System.currentTimeMillis() :
                 doc.getDocumentId();
 
         pdDocument = doc;

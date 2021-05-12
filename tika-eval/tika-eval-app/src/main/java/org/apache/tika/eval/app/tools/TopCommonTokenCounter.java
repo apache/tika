@@ -258,7 +258,7 @@ public class TopCommonTokenCounter {
         return new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
     }
 
-    private abstract class AbstractTokenTFDFPriorityQueue extends PriorityQueue<TokenDFTF> {
+    private abstract static class AbstractTokenTFDFPriorityQueue extends PriorityQueue<TokenDFTF> {
 
         AbstractTokenTFDFPriorityQueue(int maxSize) {
             super(maxSize);

@@ -75,9 +75,11 @@ public class ChmDirectoryListingSet {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("list:=" + getDirectoryListingEntryList().toString() +
-                System.getProperty("line.separator"));
-        sb.append("number of list items:=" + getDirectoryListingEntryList().size());
+        sb.append("list:=")
+                .append(getDirectoryListingEntryList().toString())
+                .append(System.getProperty("line.separator"));
+        sb.append("number of list items:=")
+                .append(getDirectoryListingEntryList().size());
         return sb.toString();
     }
 

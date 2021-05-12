@@ -224,11 +224,11 @@ class OneNotePtr {
     }
 
     private String getIndent() {
-        String retval = "";
+        StringBuilder retval = new StringBuilder();
         for (int i = 0; i < indentLevel; ++i) {
-            retval += "  ";
+            retval.append("  ");
         }
-        return retval;
+        return retval.toString();
     }
 
     public void reposition(FileChunkReference loc) throws IOException {

@@ -409,7 +409,7 @@ public class TikaGUI extends JFrame
     private void handleError(String name, Throwable t) {
         StringWriter writer = new StringWriter();
         writer.append("Apache Tika was unable to parse the document\n");
-        writer.append("at " + name + ".\n\n");
+        writer.append("at ").append(name).append(".\n\n");
         writer.append("The full exception stack trace is included below:\n\n");
         t.printStackTrace(new PrintWriter(writer));
 

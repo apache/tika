@@ -137,7 +137,7 @@ public class TokenContraster {
 
     }
 
-    class TokenCountDiffQueue extends PriorityQueue<TokenCountDiff> {
+    static class TokenCountDiffQueue extends PriorityQueue<TokenCountDiff> {
 
         TokenCountDiffQueue(int maxSize) {
             super(maxSize);

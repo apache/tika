@@ -33,7 +33,7 @@ public abstract class AbstractListManager {
     protected Map<Integer, LevelTuple[]> overrideTupleMap = new HashMap<>();
 
     //helper class that is docx/doc format agnostic
-    protected class ParagraphLevelCounter {
+    protected static class ParagraphLevelCounter {
 
         //counts can == 0 if the format is decimal, make sure
         //that flag values are < 0

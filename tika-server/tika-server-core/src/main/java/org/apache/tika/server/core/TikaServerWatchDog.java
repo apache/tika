@@ -138,7 +138,7 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
                             forkedProcess.close();
                             mustRestart = true;
                         } else {
-                            Long elapsed = Duration.between(Instant.ofEpochMilli(status.timestamp),
+                            long elapsed = Duration.between(Instant.ofEpochMilli(status.timestamp),
                                     Instant.now()).toMillis();
                             if (elapsed > tikaServerConfig.getTaskTimeoutMillis()) {
                                 LOG.info(
@@ -255,7 +255,7 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
 
         private ForkedStatus readStatus() throws Exception {
             Instant started = Instant.now();
-            Long elapsed = Duration.between(started, Instant.now()).toMillis();
+            long elapsed = Duration.between(started, Instant.now()).toMillis();
             //only reading, but need to include write to allow for locking
             try (FileChannel fc = FileChannel.open(forkedStatusFile, READ, WRITE)) {
 

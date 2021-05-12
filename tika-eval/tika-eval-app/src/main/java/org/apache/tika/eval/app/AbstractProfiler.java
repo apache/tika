@@ -609,7 +609,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
             if (i > 0) {
                 sb.append(" | ");
             }
-            sb.append(pairs.get(i).getKey() + ": " + pairs.get(i).getValue());
+            sb.append(pairs.get(i).getKey()).append(": ").append(pairs.get(i).getValue());
         }
         data.put(Cols.UNICODE_CHAR_BLOCKS, sb.toString());
     }
@@ -648,7 +648,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
             if (i++ > 0) {
                 sb.append(" | ");
             }
-            sb.append(t.getToken() + ": " + t.getValue());
+            sb.append(t.getToken()).append(": ").append(t.getValue());
         }
 
         data.put(Cols.TOP_N_TOKENS, sb.toString());

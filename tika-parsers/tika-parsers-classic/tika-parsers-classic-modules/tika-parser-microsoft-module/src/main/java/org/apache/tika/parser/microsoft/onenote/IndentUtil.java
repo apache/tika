@@ -18,10 +18,10 @@ package org.apache.tika.parser.microsoft.onenote;
 
 class IndentUtil {
     public static String getIndent(int indentLevel) {
-        String retval = "";
+        StringBuilder retval = new StringBuilder();
         for (int i = 0; i < indentLevel; ++i) {
-            retval += "  ";
+            retval.append("  ");
         }
-        return retval;
+        return retval.toString();
     }
 }

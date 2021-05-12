@@ -164,7 +164,7 @@ public class ListManager extends AbstractListManager {
             //adds one.  In .doc, this was the array index;
             //but in .docx, this is the level number
             int lvlNum = (int) numberText.charAt(offset - 1) + 1;
-            sb.append("%" + lvlNum);
+            sb.append("%").append(lvlNum);
             last = offset;
         }
         if (last < numberText.length()) {

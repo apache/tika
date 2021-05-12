@@ -142,8 +142,8 @@ public class ChmPmgiHeader implements ChmAccessor<ChmPmgiHeader> {
      */
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("signature:=" + new String(getSignature(), UTF_8) + ", ");
-        sb.append("free space:=" + getFreeSpace() + System.getProperty("line.separator"));
+        sb.append("signature:=").append(new String(getSignature(), UTF_8)).append(", ");
+        sb.append("free space:=").append(getFreeSpace()).append(System.getProperty("line.separator"));
         return sb.toString();
     }
 

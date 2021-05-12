@@ -278,7 +278,7 @@ public class JDBCUtil {
     //does not close the connection
     private void createTable(Connection conn, TableInfo tableInfo) throws SQLException {
         StringBuilder createSql = new StringBuilder();
-        createSql.append("CREATE TABLE " + tableInfo.getName());
+        createSql.append("CREATE TABLE ").append(tableInfo.getName());
         createSql.append("(");
 
         int last = 0;
@@ -299,7 +299,6 @@ public class JDBCUtil {
         createSql.append(")");
         try (Statement st = conn.createStatement()) {
             st.execute(createSql.toString());
-            st.close();
         }
         conn.commit();
     }

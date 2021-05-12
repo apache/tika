@@ -193,7 +193,7 @@ public class ExtractProfiler extends AbstractProfiler {
         }
 
         Map<Cols, String> contOutput = new HashMap<>();
-        Long srcFileLen = getSourceFileLength(fps, metadataList);
+        long srcFileLen = getSourceFileLength(fps, metadataList);
         contOutput.put(Cols.LENGTH,
                 srcFileLen > NON_EXISTENT_FILE_LENGTH ? Long.toString(srcFileLen) : "");
         contOutput.put(Cols.CONTAINER_ID, containerIdString);

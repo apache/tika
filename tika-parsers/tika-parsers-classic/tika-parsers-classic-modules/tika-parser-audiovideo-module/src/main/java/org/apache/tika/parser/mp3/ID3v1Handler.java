@@ -20,7 +20,7 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.xml.sax.ContentHandler;
@@ -135,7 +135,7 @@ public class ID3v1Handler implements ID3Tags {
     }
 
     public List<ID3Comment> getComments() {
-        return Arrays.asList(comment);
+        return Collections.singletonList(comment);
     }
 
     public String getGenre() {
