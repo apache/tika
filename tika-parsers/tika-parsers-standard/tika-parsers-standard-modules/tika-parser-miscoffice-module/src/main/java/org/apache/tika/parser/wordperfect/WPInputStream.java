@@ -60,7 +60,7 @@ class WPInputStream extends InputStream {
         if ((ch1 | ch2) < 0) {
             throw new EOFException();
         }
-        return (ch2 << 8) + (ch1 << 0);
+        return (ch2 << 8) + ch1;
     }
 
     /**
@@ -78,7 +78,7 @@ class WPInputStream extends InputStream {
         if ((ch1 | ch2 | ch3 | ch4) < 0) {
             throw new EOFException();
         }
-        return ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
+        return ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + ch1);
     }
 
     /**
