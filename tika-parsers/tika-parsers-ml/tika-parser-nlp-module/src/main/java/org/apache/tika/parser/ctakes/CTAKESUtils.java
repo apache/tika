@@ -103,9 +103,8 @@ public class CTAKESUtils {
         }
 
         // create AE
-        AnalysisEngine ae = UIMAFramework.produceAnalysisEngine(aeSpecifier);
 
-        return ae;
+        return UIMAFramework.produceAnalysisEngine(aeSpecifier);
     }
 
     /**
@@ -129,9 +128,8 @@ public class CTAKESUtils {
      *                                         are invalid.
      */
     public static JCas getJCas(AnalysisEngine ae) throws ResourceInitializationException {
-        JCas jcas = ae.newJCas();
 
-        return jcas;
+        return ae.newJCas();
     }
 
     /**

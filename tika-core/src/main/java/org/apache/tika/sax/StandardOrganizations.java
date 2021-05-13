@@ -186,8 +186,7 @@ public class StandardOrganizations {
      * organizations.
      */
     public static String getOrganzationsRegex() {
-        String regex = "(" + String.join("|", organizations.keySet()) + ")";
 
-        return regex;
+        return "(" + String.join("|", organizations.keySet()) + ")";
     }
 }

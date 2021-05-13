@@ -148,9 +148,7 @@ public class ListManager extends AbstractListManager {
 
         StringBuilder sb = new StringBuilder();
         int last = 0;
-        for (byte numberOffset : numberOffsets) {
-            int offset = (int) numberOffset;
-
+        for (int offset : numberOffsets) {
             if (offset == 0) {
                 break;
             }

@@ -234,8 +234,7 @@ public class ParsingReader extends Reader {
         } else if (throwable instanceof IOException) {
             throw (IOException) throwable;
         } else if (throwable != null) {
-            IOException exception = new IOException("", throwable);
-            throw exception;
+            throw new IOException("", throwable);
         }
         return reader.read(cbuf, off, len);
     }

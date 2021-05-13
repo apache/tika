@@ -339,8 +339,7 @@ public class HwpTextExtractorV5 implements Serializable {
         int offset = 4 + (data[0] & 0xF); // 4 + (0~15) ?
         byte[] key = Arrays.copyOfRange(data, offset, offset + 16);
 
-        SecretKeySpec secretKey = new SecretKeySpec(key, "AES");
-        return secretKey;
+        return new SecretKeySpec(key, "AES");
     }
 
     public InputStream createDecryptStream(InputStream input, Key key)

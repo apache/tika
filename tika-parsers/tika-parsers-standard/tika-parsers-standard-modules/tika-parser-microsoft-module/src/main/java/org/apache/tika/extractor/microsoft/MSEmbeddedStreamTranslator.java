@@ -72,10 +72,7 @@ public class MSEmbeddedStreamTranslator implements EmbeddedStreamTranslator {
                 try {
                     Ole10Native ole = Ole10Native.createFromEmbeddedOleObject(poifs);
                     if (ole.getDataSize() > 0) {
-                        String label = ole.getLabel();
-
-                        name = label;
-
+                        name = ole.getLabel();
                         data = ole.getDataBuffer();
                     }
                 } catch (Ole10NativeException ex) {

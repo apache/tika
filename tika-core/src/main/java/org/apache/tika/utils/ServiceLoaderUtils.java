@@ -53,10 +53,7 @@ public class ServiceLoaderUtils {
      */
     public static <T> T newInstance(String className, ClassLoader loader) {
         try {
-            Class loadedClass = Class.forName(className, true, loader);
-            Class<T> castedClass = loadedClass;
-            T instance = castedClass.newInstance();
-            return instance;
+            return ((Class<T>) Class.forName(className, true, loader)).newInstance();
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }

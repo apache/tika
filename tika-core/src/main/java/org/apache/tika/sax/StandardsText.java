@@ -97,9 +97,7 @@ public class StandardsText {
                                                                          double threshold) {
         Map<Integer, String> headers = findHeaders(text);
 
-        ArrayList<StandardReference> standardReferences = findStandards(text, headers, threshold);
-
-        return standardReferences;
+        return findStandards(text, headers, threshold);
     }
 
     /**
