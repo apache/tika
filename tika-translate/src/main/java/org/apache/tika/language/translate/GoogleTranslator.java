@@ -47,69 +47,69 @@ import org.slf4j.LoggerFactory;
  */
 public class GoogleTranslator extends AbstractTranslator {
 
-	private static final Logger LOG = LoggerFactory.getLogger(GoogleTranslator.class);
+    private static final Logger LOG = LoggerFactory.getLogger(GoogleTranslator.class);
 
-	private static final String GOOGLE_TRANSLATE_URL_BASE = "https://www.googleapis.com/language/translate/v2";
+    private static final String GOOGLE_TRANSLATE_URL_BASE = "https://www.googleapis.com/language/translate/v2";
 
-	private static final String DEFAULT_KEY = "dummy-secret";
+    private static final String DEFAULT_KEY = "dummy-secret";
 
-	private WebClient client;
+    private WebClient client;
 
-	private String apiKey;
+    private String apiKey;
 
-	private boolean isAvailable;
+    private boolean isAvailable;
 
-	public GoogleTranslator() {
-		this.client = WebClient.create(GOOGLE_TRANSLATE_URL_BASE);
-		this.isAvailable = true;
-		Properties config = new Properties();
-		try {
-			config.load(GoogleTranslator.class
-					.getResourceAsStream(
-							"translator.google.properties"));
-			this.apiKey = config.getProperty("translator.client-secret");
-			if (this.apiKey.equals(DEFAULT_KEY))
-				this.isAvailable = false;
-		} catch (Exception e) {
-			LOG.warn("Exception reading config file", e);
-			isAvailable = false;
-		}
-	}
+    public GoogleTranslator() {
+        this.client = WebClient.create(GOOGLE_TRANSLATE_URL_BASE);
+        this.isAvailable = true;
+        Properties config = new Properties();
+        try {
+            config.load(GoogleTranslator.class
+                    .getResourceAsStream(
+                            "translator.google.properties"));
+            this.apiKey = config.getProperty("translator.client-secret");
+            if (this.apiKey.equals(DEFAULT_KEY))
+                this.isAvailable = false;
+        } catch (Exception e) {
+            LOG.warn("Exception reading config file", e);
+            isAvailable = false;
+        }
+    }
 
-	@Override
-	public String translate(String text, String sourceLanguage,
-			String targetLanguage) throws TikaException, IOException {
-		if (!this.isAvailable)
-			return text;
-		Response response = client.accept(MediaType.APPLICATION_JSON)
-				.query("key", apiKey).query("source", sourceLanguage)
-				.query("target", targetLanguage).query("q", text).get();
-		BufferedReader reader = new BufferedReader(new InputStreamReader(
-				(InputStream) response.getEntity(), UTF_8));
-		String line = null;
-		StringBuffer responseText = new StringBuffer();
-		while ((line = reader.readLine()) != null) {
-			responseText.append(line);
-		}
+    @Override
+    public String translate(String text, String sourceLanguage,
+            String targetLanguage) throws TikaException, IOException {
+        if (!this.isAvailable)
+            return text;
+        Response response = client.accept(MediaType.APPLICATION_JSON)
+                .query("key", apiKey).query("source", sourceLanguage)
+                .query("target", targetLanguage).query("q", text).get();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(
+                (InputStream) response.getEntity(), UTF_8));
+        String line = null;
+        StringBuffer responseText = new StringBuffer();
+        while ((line = reader.readLine()) != null) {
+            responseText.append(line);
+        }
 
-		ObjectMapper mapper = new ObjectMapper();
-		JsonNode jsonResp = mapper.readTree(responseText.toString());
-		return jsonResp.findValuesAsText("translatedText").get(0);
-	}
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode jsonResp = mapper.readTree(responseText.toString());
+        return jsonResp.findValuesAsText("translatedText").get(0);
+    }
 
-	@Override
-	public String translate(String text, String targetLanguage)
-			throws TikaException, IOException {
-		if (!this.isAvailable)
-			return text;
-		
-		String sourceLanguage = detectLanguage(text).getLanguage();
-		return translate(text, sourceLanguage, targetLanguage);
-	}
+    @Override
+    public String translate(String text, String targetLanguage)
+            throws TikaException, IOException {
+        if (!this.isAvailable)
+            return text;
 
-	@Override
-	public boolean isAvailable() {
-		return this.isAvailable;
-	}
+        String sourceLanguage = detectLanguage(text).getLanguage();
+        return translate(text, sourceLanguage, targetLanguage);
+    }
+
+    @Override
+    public boolean isAvailable() {
+        return this.isAvailable;
+    }
 
 }
