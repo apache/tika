@@ -99,7 +99,7 @@ public class TranscribeTranslateExample {
                 text = amazonTranscribe(args[1]);
                 System.out.print("Transcription successful!\nEXTRAXCTED TEXT: " + text);
             } else {
-              System.out.print("Incorrect invocation, see Javadoc.");
+                System.out.print("Incorrect invocation, see Javadoc.");
             }
         } else {
             System.out.print("Incorrect invocation, see Javadoc.");
