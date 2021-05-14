@@ -30,7 +30,12 @@ import java.io.ObjectOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +54,7 @@ public class PipesClient implements Closeable {
     private final PipesConfigBase pipesConfig;
     private DataOutputStream output;
     private DataInputStream input;
+    private final ExecutorService executorService = Executors.newFixedThreadPool(1);
 
     public PipesClient(PipesConfigBase pipesConfig) {
         this.pipesConfig = pipesConfig;
@@ -82,74 +88,108 @@ public class PipesClient implements Closeable {
         if (process != null) {
             process.destroyForcibly();
         }
+        executorService.shutdownNow();
     }
 
     public PipesResult process(FetchEmitTuple t) throws IOException {
         if (! ping()) {
             restart();
         }
-
         if (pipesConfig.getMaxFilesProcessed() > 0 &&
                 filesProcessed >= pipesConfig.getMaxFilesProcessed()) {
             LOG.info("restarting server after hitting max files: " + filesProcessed);
             restart();
         }
-        //TODO consider adding a timer here too
-        // this could block forever if the watchdog thread in the server fails
-        // or is starved
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bos)) {
-            objectOutputStream.writeObject(t);
-        }
-        byte[] bytes = bos.toByteArray();
-        output.write(PipesServer.CALL);
-        output.writeInt(bytes.length);
-        output.write(bytes);
-        output.flush();
+        return actuallyProcess(t);
+    }
 
+    private PipesResult actuallyProcess(FetchEmitTuple t) {
         long start = System.currentTimeMillis();
-        try {
-            return readResults(t);
-        } catch (IOException e) {
-
-            try {
-                process.waitFor(200, TimeUnit.MILLISECONDS);
-            } catch (InterruptedException interruptedException) {
-                //wait just a little bit to let process end to get exit value
-            } finally {
-                process.destroyForcibly();
+        FutureTask<PipesResult> futureTask = new FutureTask<>(() -> {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bos)) {
+                objectOutputStream.writeObject(t);
             }
-            if (! process.isAlive() && PipesServer.TIMEOUT_EXIT_CODE == process.exitValue()) {
-                LOG.warn("{} timed out", t.getId());
+            byte[] bytes = bos.toByteArray();
+            output.write(PipesServer.CALL);
+            output.writeInt(bytes.length);
+            output.write(bytes);
+            output.flush();
+
+            return readResults(t, start);
+        });
+
+        try {
+            executorService.execute(futureTask);
+            return futureTask.get(pipesConfig.getTimeoutMillis(), TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            process.destroyForcibly();
+            return PipesResult.INTERRUPTED_EXCEPTION;
+        } catch (ExecutionException e) {
+            long elapsed = System.currentTimeMillis() - start;
+            destroyWithPause();
+            if (!process.isAlive() && PipesServer.TIMEOUT_EXIT_CODE == process.exitValue()) {
+                LOG.warn("server timeout: {} in {} ms", t.getId(), elapsed);
                 return PipesResult.TIMEOUT;
             }
+            try {
+                process.waitFor(500, TimeUnit.MILLISECONDS);
+                if (process.isAlive()) {
+                    LOG.warn("crash: {} in {} ms with no exit code available", t.getId(), elapsed);
+                } else {
+                    LOG.warn("crash: {} in {} ms with exit code {}", t.getId(), elapsed, process.exitValue());
+                }
+            } catch (InterruptedException interruptedException) {
+                //swallow
+            }
             return PipesResult.UNSPECIFIED_CRASH;
+        } catch (TimeoutException e) {
+            long elapsed = System.currentTimeMillis() - start;
+            process.destroyForcibly();
+            LOG.warn("client timeout: {} in {} ms", t.getId(), elapsed);
+            return PipesResult.TIMEOUT;
+        } finally {
+            futureTask.cancel(true);
         }
     }
 
-    private PipesResult readResults(FetchEmitTuple t) throws IOException {
+    private void destroyWithPause() {
+        //wait just a little bit to let process end to get exit value
+        //if there's a timeout on the server side
+        try {
+            process.waitFor(200, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException interruptedException) {
+            //swallow
+        } finally {
+            process.destroyForcibly();
+        }
+
+    }
+
+    private PipesResult readResults(FetchEmitTuple t, long start) throws IOException {
         int status = input.read();
+        long millis = System.currentTimeMillis() - start;
         switch (status) {
             case PipesServer.OOM:
-                LOG.warn("oom: " + t.getId());
+                LOG.warn("oom: {} in {} ms", t.getId(), millis);
                 return PipesResult.OOM;
             case PipesServer.TIMEOUT:
-                LOG.warn("timeout: " + t.getId());
+                LOG.warn("server response timeout: {} in {} ms", t.getId(), millis);
                 return PipesResult.TIMEOUT;
             case PipesServer.EMIT_EXCEPTION:
-                LOG.warn("emit exception: " + t.getId());
+                LOG.warn("emit exception: {} in {} ms", t.getId(), millis);
                 return readMessage(PipesResult.STATUS.EMIT_EXCEPTION);
             case PipesServer.NO_EMITTER_FOUND:
                 LOG.warn("no emitter found: " + t.getId());
                 return PipesResult.NO_EMITTER_FOUND;
             case PipesServer.PARSE_SUCCESS:
             case PipesServer.PARSE_EXCEPTION_EMIT:
-                LOG.info("parse success: " + t.getId());
+                LOG.info("parse success: {} in {} ms", t.getId(), millis);
                 return deserializeEmitData();
             case PipesServer.PARSE_EXCEPTION_NO_EMIT:
                 return readMessage(PipesResult.STATUS.PARSE_EXCEPTION_NO_EMIT);
             case PipesServer.EMIT_SUCCESS:
-                LOG.info("emit success: " + t.getId());
+                LOG.info("emit success: {} in {} ms", t.getId(), millis);
                 return PipesResult.EMIT_SUCCESS;
             case PipesServer.EMIT_SUCCESS_PARSE_EXCEPTION:
                 return readMessage(PipesResult.STATUS.EMIT_SUCCESS_PARSE_EXCEPTION);
@@ -200,6 +240,31 @@ public class PipesClient implements Closeable {
         logGobblerThread.start();
         input = new DataInputStream(process.getInputStream());
         output = new DataOutputStream(process.getOutputStream());
+        //wait for ready signal
+        FutureTask<Integer> futureTask = new FutureTask<>(() -> {
+            int b = input.read();
+            if (b != PipesServer.READY) {
+                throw new RuntimeException("Couldn't start server: " + b);
+            }
+            return 1;
+        });
+        executorService.submit(futureTask);
+        try {
+            futureTask.get(pipesConfig.getStartupTimeoutMillis(), TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            process.destroyForcibly();
+            return;
+        } catch (ExecutionException e) {
+            LOG.error("couldn't start server", e);
+            process.destroyForcibly();
+            throw new RuntimeException(e);
+        } catch (TimeoutException e) {
+            LOG.error("couldn't start server in time", e);
+            process.destroyForcibly();
+            throw new RuntimeException(e);
+        } finally {
+            futureTask.cancel(true);
+        }
     }
 
     private String[] getCommandline() {

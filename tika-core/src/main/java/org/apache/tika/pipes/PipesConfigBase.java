@@ -26,7 +26,8 @@ import org.apache.tika.config.ConfigBase;
 public class PipesConfigBase extends ConfigBase {
 
     private long timeoutMillis = 30000;
-    private long shutdownClientAfterMillis = 1200000;
+    private long startupTimeoutMillis = 240000;
+    private long shutdownClientAfterMillis = 300000;
     private int numClients = 10;
     private List<String> forkedJvmArgs = new ArrayList<>();
     private int maxFilesProcessed = 10000;
@@ -91,5 +92,9 @@ public class PipesConfigBase extends ConfigBase {
 
     public void setJavaPath(String javaPath) {
         this.javaPath = javaPath;
+    }
+
+    public long getStartupTimeoutMillis() {
+        return startupTimeoutMillis;
     }
 }

@@ -31,7 +31,7 @@ public class AsyncConfig extends PipesConfigBase {
 
     private long maxForEmitBatchBytes = 0;
     private int queueSize = 10000;
-    private final int numEmitters = 1;
+    private int numEmitters = 1;
 
     public static AsyncConfig load(Path p) throws IOException, TikaConfigException {
         AsyncConfig asyncConfig = new AsyncConfig();
@@ -87,6 +87,10 @@ public class AsyncConfig extends PipesConfigBase {
 
     public void setMaxForEmitBatchBytes(long maxForEmitBatchBytes) {
         this.maxForEmitBatchBytes = maxForEmitBatchBytes;
+    }
+
+    public void setNumEmitters(int numEmitters) {
+        this.numEmitters = numEmitters;
     }
 
     /**

@@ -75,7 +75,8 @@ public class AsyncProcessor implements Closeable {
 
         EmitterManager emitterManager = EmitterManager.load(tikaConfigPath);
         for (int i = 0; i < asyncConfig.getNumEmitters(); i++) {
-            executorCompletionService.submit(new AsyncEmitter(emitData, emitterManager));
+            executorCompletionService.submit(new AsyncEmitter(asyncConfig, emitData,
+                    emitterManager));
         }
     }
 

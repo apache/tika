@@ -56,39 +56,43 @@ import org.apache.tika.utils.StringUtils;
 
 public class PipesServer implements Runnable {
 
-    public static final int TIMEOUT_EXIT_CODE = 3;
+    //this has to be some number not close to 0-3
+    //it looks like the server crashes with exit value 3 on OOM, for example
+    public static final int TIMEOUT_EXIT_CODE = 17;
 
-    public static final byte CALL = 1;
+    public static final byte READY = 1;
 
-    public static final byte PING = 2;
+    public static final byte CALL = 2;
 
-    public static final byte FAILED_TO_START = 3;
+    public static final byte PING = 3;
 
-    public static final byte PARSE_SUCCESS = 4;
+    public static final byte FAILED_TO_START = 4;
+
+    public static final byte PARSE_SUCCESS = 5;
 
     /**
      * This will return the parse exception stack trace
      */
-    public static final byte PARSE_EXCEPTION_NO_EMIT = 5;
+    public static final byte PARSE_EXCEPTION_NO_EMIT = 6;
 
     /**
      * This will return the metadata list
      */
-    public static final byte PARSE_EXCEPTION_EMIT = 6;
+    public static final byte PARSE_EXCEPTION_EMIT = 7;
 
-    public static final byte EMIT_SUCCESS = 7;
+    public static final byte EMIT_SUCCESS = 8;
 
-    public static final byte EMIT_SUCCESS_PARSE_EXCEPTION = 8;
+    public static final byte EMIT_SUCCESS_PARSE_EXCEPTION = 9;
 
-    public static final byte EMIT_EXCEPTION = 9;
+    public static final byte EMIT_EXCEPTION = 10;
 
-    public static final byte NO_EMITTER_FOUND = 10;
+    public static final byte NO_EMITTER_FOUND = 11;
 
-    public static final byte OOM = 11;
+    public static final byte OOM = 12;
 
-    public static final byte TIMEOUT = 12;
+    public static final byte TIMEOUT = 13;
 
-    public static final byte EMPTY_OUTPUT = 13;
+    public static final byte EMPTY_OUTPUT = 14;
 
 
     private final Object[] lock = new Object[0];
@@ -149,11 +153,12 @@ public class PipesServer implements Runnable {
                 synchronized (lock) {
                     long elapsed = System.currentTimeMillis() - since;
                     if (parsing && elapsed > serverParseTimeoutMillis) {
-                        System.exit(TIMEOUT_EXIT_CODE);
+                        warn("timeout server; elapsed " + elapsed + " with " + serverParseTimeoutMillis);
+                        exit(TIMEOUT_EXIT_CODE);
                     } else if (!parsing && serverWaitTimeoutMillis > 0 &&
                             elapsed > serverWaitTimeoutMillis) {
                         debug("closing down from inactivity");
-                        System.exit(0);
+                        exit(0);
                     }
                 }
                 Thread.sleep(100);
@@ -165,6 +170,11 @@ public class PipesServer implements Runnable {
 
     private void debug(String msg) {
         System.err.println("debug " + msg.replaceAll("[\r\n]", " "));
+        System.err.flush();
+    }
+
+    private void warn(String msg) {
+        System.err.println("warn " + msg);
         System.err.flush();
     }
 
@@ -195,10 +205,12 @@ public class PipesServer implements Runnable {
         }
         //main loop
         try {
+            output.write(READY);
+            output.flush();
             while (true) {
                 int request = input.read();
                 if (request == -1) {
-                    break;
+                    exit(1);
                 } else if (request == PING) {
                     output.writeByte(PING);
                     output.flush();
@@ -402,11 +414,11 @@ public class PipesServer implements Runnable {
         } catch (IOException e) {
             err(e);
             //LOG.error("problem reading tuple", e);
-            System.exit(1);
+            exit(1);
         } catch (ClassNotFoundException e) {
             err(e);
             //LOG.error("can't find class?!", e);
-            System.exit(1);
+            exit(1);
         }
         //unreachable, no?!
         return null;

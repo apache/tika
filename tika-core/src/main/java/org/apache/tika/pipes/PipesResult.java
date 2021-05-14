@@ -26,7 +26,8 @@ public class PipesResult {
         PARSE_EXCEPTION_EMIT, PARSE_SUCCESS,
         OOM, TIMEOUT, UNSPECIFIED_CRASH,
         NO_EMITTER_FOUND,
-        EMIT_SUCCESS, EMIT_SUCCESS_PARSE_EXCEPTION, EMIT_EXCEPTION
+        EMIT_SUCCESS, EMIT_SUCCESS_PARSE_EXCEPTION, EMIT_EXCEPTION,
+        INTERRUPTED_EXCEPTION
     }
 
     public static PipesResult CLIENT_UNAVAILABLE_WITHIN_MS =
@@ -36,6 +37,7 @@ public class PipesResult {
     public static PipesResult UNSPECIFIED_CRASH = new PipesResult(STATUS.UNSPECIFIED_CRASH);
     public static PipesResult EMIT_SUCCESS = new PipesResult(STATUS.EMIT_SUCCESS);
     public static PipesResult NO_EMITTER_FOUND = new PipesResult(STATUS.NO_EMITTER_FOUND);
+    public static PipesResult INTERRUPTED_EXCEPTION = new PipesResult(STATUS.INTERRUPTED_EXCEPTION);
     private final STATUS status;
     private final EmitData emitData;
     private final String message;
@@ -68,5 +70,11 @@ public class PipesResult {
 
     public String getMessage() {
         return message;
+    }
+
+    @Override
+    public String toString() {
+        return "PipesResult{" + "status=" + status + ", emitData=" + emitData + ", message='" +
+                message + '\'' + '}';
     }
 }

@@ -38,6 +38,7 @@
   <metadataFilters>
     <metadataFilter class="org.apache.tika.metadata.filter.FieldNameMappingFilter">
       <params>
+        <excludeUnmapped>true</excludeUnmapped>
         <mappings>
           <mapping from="X-TIKA:content" to="content"/>
           <mapping from="X-TIKA:embedded_resource_path" to="embedded_path"/>

@@ -46,12 +46,27 @@ public class AsyncProcessorTest {
             "<throw class=\"java.lang.OutOfMemoryError\">oom message</throw>\n</mock>";
     private final String OK = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
             "<metadata action=\"add\" name=\"dc:creator\">Nikolai Lobachevsky</metadata>" +
-            "<write element=\"p\">main_content</write>" + "</mock>";
+            "<write element=\"p\">main_content</write>" +
+            "</mock>";
+
+    private final String TIMEOUT = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
+            "<metadata action=\"add\" name=\"dc:creator\">Nikolai Lobachevsky</metadata>" +
+            "<write element=\"p\">main_content</write>" +
+            "<fakeload millis=\"60000\" cpu=\"1\" mb=\"10\"/>" + "</mock>";
+
+    private final String SYSTEM_EXIT = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
+            "<metadata action=\"add\" name=\"dc:creator\">Nikolai Lobachevsky</metadata>" +
+            "<write element=\"p\">main_content</write>" +
+            "<system_exit/>" + "</mock>";
+
     private final int totalFiles = 100;
     private Path tikaConfigPath;
     private Path inputDir;
     private int ok = 0;
     private int oom = 0;
+    private int timeouts = 0;
+    private int crash = 0;
+
 
     @Before
     public void setUp() throws SQLException, IOException {
@@ -68,16 +83,24 @@ public class AsyncProcessorTest {
                 "</basePath></params>\n" + "    </fetcher>" + "  </fetchers>" +
                         "<async><params><tikaConfig>" +
                         ProcessUtils.escapeCommandLine(tikaConfigPath.toAbsolutePath().toString()) +
-                        "</tikaConfig><forkedJvmArgs><arg>-Xmx256m</arg" +
+                        "</tikaConfig><forkedJvmArgs><arg>-Xmx512m</arg" +
                         "></forkedJvmArgs><maxForEmitBatchBytes>1000000</maxForEmitBatchBytes>" +
-                        "</params></async>" +
+                        "<timeoutMillis>5000</timeoutMillis>" +
+                        "<numClients>4</numClients></params></async>" +
                         "</properties>";
         Files.write(tikaConfigPath, xml.getBytes(StandardCharsets.UTF_8));
         Random r = new Random();
         for (int i = 0; i < totalFiles; i++) {
-            if (r.nextFloat() < 0.1) {
+            float f = r.nextFloat();
+            if (f < 0.05) {
                 Files.write(inputDir.resolve(i + ".xml"), OOM.getBytes(StandardCharsets.UTF_8));
                 oom++;
+            } else if (f < 0.10) {
+                Files.write(inputDir.resolve(i + ".xml"), TIMEOUT.getBytes(StandardCharsets.UTF_8));
+                timeouts++;
+            } else if (f < 0.15) {
+                Files.write(inputDir.resolve(i + ".xml"), SYSTEM_EXIT.getBytes(StandardCharsets.UTF_8));
+                crash++;
             } else {
                 Files.write(inputDir.resolve(i + ".xml"), OK.getBytes(StandardCharsets.UTF_8));
                 ok++;
@@ -85,6 +108,18 @@ public class AsyncProcessorTest {
         }
     }
 
+/*
+    private void writeLarge(Path resolve) throws IOException {
+        try (BufferedWriter writer = Files.newBufferedWriter(resolve, StandardCharsets.UTF_8)) {
+            writer.write("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>");
+            writer.write("<mock>");
+            for (int i = 0; i < 10000000; i++) {
+                writer.write("<write element=\"p\">hello hello hello hello hello</write>");
+            }
+            writer.write("</mock>");
+        }
+    }
+*/
     @After
     public void tearDown() throws SQLException, IOException {
         Files.delete(tikaConfigPath);

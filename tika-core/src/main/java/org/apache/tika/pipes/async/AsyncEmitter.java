@@ -47,27 +47,25 @@ public class AsyncEmitter implements Callable<Integer> {
 
     private static final Logger LOG = LoggerFactory.getLogger(AsyncEmitter.class);
 
-    //TODO -- need to configure these
-    private final long emitWithinMs = 1000;
-
-    private long maxEstimatedBytes = 10_000_000;
-
+    private final AsyncConfig asyncConfig;
     private final EmitterManager emitterManager;
     private final ArrayBlockingQueue<EmitData> emitDataQueue;
 
     Instant lastEmitted = Instant.now();
 
-    public AsyncEmitter(ArrayBlockingQueue<EmitData> emitData, EmitterManager emitterManager) {
+    public AsyncEmitter(AsyncConfig asyncConfig, ArrayBlockingQueue<EmitData> emitData,
+                        EmitterManager emitterManager) {
+        this.asyncConfig = asyncConfig;
         this.emitDataQueue = emitData;
         this.emitterManager = emitterManager;
     }
 
     @Override
     public Integer call() throws Exception {
-        EmitDataCache cache = new EmitDataCache(maxEstimatedBytes);
+        EmitDataCache cache = new EmitDataCache(asyncConfig.getEmitMaxEstimatedBytes());
 
         while (true) {
-            EmitData emitData = emitDataQueue.poll(100, TimeUnit.MILLISECONDS);
+            EmitData emitData = emitDataQueue.poll(500, TimeUnit.MILLISECONDS);
             if (emitData == EMIT_DATA_STOP_SEMAPHORE) {
                 cache.emitAll();
                 return EMITTER_FUTURE_CODE;
@@ -80,8 +78,8 @@ public class AsyncEmitter implements Callable<Integer> {
             }
             LOG.debug("cache size: ({}) bytes and count: {}", cache.estimatedSize, cache.size);
             long elapsed = ChronoUnit.MILLIS.between(lastEmitted, Instant.now());
-            if (elapsed > emitWithinMs) {
-                LOG.debug("{} elapsed > {}, going to emitAll", elapsed, emitWithinMs);
+            if (elapsed > asyncConfig.getEmitWithinMillis()) {
+                LOG.debug("{} elapsed > {}, going to emitAll", elapsed, asyncConfig.getEmitWithinMillis());
                 //this can block
                 cache.emitAll();
             }
@@ -118,14 +116,14 @@ public class AsyncEmitter implements Callable<Integer> {
 
         private void emitAll() {
             int emitted = 0;
-            LOG.debug("about to emit {}", size);
+            LOG.debug("about to emit {} files, {} estimated bytes", size, estimatedSize);
             for (Map.Entry<String, List<EmitData>> e : map.entrySet()) {
                 Emitter emitter = emitterManager.getEmitter(e.getKey());
                 tryToEmit(emitter, e.getValue());
                 emitted += e.getValue().size();
             }
 
-            LOG.debug("emitted: {}", emitted);
+            LOG.debug("emitted: {} files", emitted);
             estimatedSize = 0;
             size = 0;
             map.clear();
