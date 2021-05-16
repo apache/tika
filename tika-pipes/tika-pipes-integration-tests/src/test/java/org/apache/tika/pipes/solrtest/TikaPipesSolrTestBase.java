@@ -16,6 +16,10 @@
  */
 package org.apache.tika.pipes.solrtest;
 
+import java.io.File;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
@@ -28,10 +32,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
-
-import java.io.File;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 
 public abstract class TikaPipesSolrTestBase {
 
