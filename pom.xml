@@ -39,7 +39,6 @@
     <module>tika-parent</module>
     <module>tika-core</module>
     <module>tika-serialization</module>
-    <module>tika-pipes</module>
     <module>tika-parsers</module>
     <module>tika-bundles</module>
     <module>tika-xmp</module>
@@ -47,6 +46,7 @@
     <module>tika-langdetect</module>
     <module>tika-app</module>
     <module>tika-server</module>
+    <module>tika-pipes</module>
     <module>tika-eval</module>
     <module>tika-fuzzing</module>
     <module>tika-translate</module>

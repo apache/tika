@@ -320,6 +320,7 @@
     <jempbox.version>1.8.16</jempbox.version>
     <jetty.version>9.4.40.v20210413</jetty.version>
     <jhighlight.version>1.0.3</jhighlight.version>
+    <jna.version>5.8.0</jna.version>
     <joda.time.version>2.10.9</joda.time.version>
     <json.simple.version>1.1.1</json.simple.version>
     <juniversalchardet.version>1.0.3</juniversalchardet.version>
