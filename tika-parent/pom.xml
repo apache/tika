@@ -347,9 +347,11 @@
     <sis.version>1.0</sis.version>
     <!-- we'll need to stay on 1.7 until we're java modularized ? -->
     <slf4j.version>1.7.30</slf4j.version>
+    <solrj.version>8.8.2</solrj.version>
     <spring.version>5.3.3</spring.version>
     <sqlite.version>3.34.0</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
+    <test.containers.version>1.15.2</test.containers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
     <tukaani.version>1.8</tukaani.version>
     <twelvemonkeys.version>3.6.1</twelvemonkeys.version>

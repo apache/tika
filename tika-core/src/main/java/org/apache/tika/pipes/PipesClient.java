@@ -342,6 +342,8 @@ public class PipesClient implements Closeable {
                     SERVER_LOG.warn(line.substring(5));
                 } else if (line.startsWith("error ")) {
                     SERVER_LOG.error(line.substring(6));
+                } else {
+                    SERVER_LOG.error(line);
                 }
                 try {
                     line = reader.readLine();

@@ -39,5 +39,6 @@
     <module>tika-pipes-iterator-csv</module>
     <module>tika-pipes-iterator-jdbc</module>
     <module>tika-pipes-iterator-s3</module>
+    <module>tika-pipes-iterator-solr</module>
   </modules>
 </project>
