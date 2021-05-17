@@ -25,9 +25,9 @@ import org.testcontainers.utility.DockerImageName;
 public class TikaPipesSolr7Test extends TikaPipesSolrTestBase {
 
     @Rule
-    public GenericContainer<?> solr7 = new GenericContainer<>(DockerImageName.parse("solr:7"))
-            .withExposedPorts(8983, 9983)
-            .withCommand("-DzkRun");
+    public GenericContainer<?> solr7 =
+            new GenericContainer<>(DockerImageName.parse("solr:7")).withExposedPorts(8983, 9983)
+                    .withCommand("-DzkRun");
 
     @Before
     public void setupTest() throws Exception {

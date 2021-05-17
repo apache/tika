@@ -34,6 +34,9 @@ import org.apache.solr.client.solrj.impl.LBHttpSolrClient;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.params.CursorMarkParams;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
@@ -45,8 +48,6 @@ import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.pipes.pipesiterator.PipesIterator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Iterates through results from a Solr query.
@@ -54,7 +55,7 @@ import org.slf4j.LoggerFactory;
 public class SolrPipesIterator extends PipesIterator implements Initializable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SolrPipesIterator.class);
-
+    private final HttpClientFactory httpClientFactory;
     private String solrCollection;
     /**
      * You can specify solrUrls, or you can specify solrZkHosts and use use zookeeper to determine the solr server urls.
@@ -71,8 +72,6 @@ public class SolrPipesIterator extends PipesIterator implements Initializable {
     private int rows = 5000;
     private int connectionTimeout = 10000;
     private int socketTimeout = 60000;
-
-    private final HttpClientFactory httpClientFactory;
 
     public SolrPipesIterator() throws TikaConfigException {
         httpClientFactory = new HttpClientFactory();
@@ -203,7 +202,9 @@ public class SolrPipesIterator extends PipesIterator implements Initializable {
                 QueryResponse qr = solrClient.query(solrCollection, query);
                 long totalToFetch = qr.getResults().getNumFound();
                 String nextCursorMark = qr.getNextCursorMark();
-                LOGGER.info("Query to fetch files to parse collection={}, q={}, onCount={}, totalCount={}", solrCollection, query, fileCount, totalToFetch);
+                LOGGER.info(
+                        "Query to fetch files to parse collection={}, q={}, onCount={}, totalCount={}",
+                        solrCollection, query, fileCount, totalToFetch);
                 for (SolrDocument sd : qr.getResults()) {
                     ++fileCount;
                     String fetchKey = (String) sd.getFieldValue(idField);
@@ -213,11 +214,8 @@ public class SolrPipesIterator extends PipesIterator implements Initializable {
                         metadata.add(nextField, (String) sd.getFieldValue(nextField));
                     }
                     LOGGER.info("iterator doc: {}, idField={}, fetchKey={}", sd, idField, fetchKey);
-                    tryToAdd(new FetchEmitTuple(fetchKey,
-                            new FetchKey(fetcherName, fetchKey),
-                            new EmitKey(emitterName, emitKey),
-                            new Metadata(),
-                            handlerConfig,
+                    tryToAdd(new FetchEmitTuple(fetchKey, new FetchKey(fetcherName, fetchKey),
+                            new EmitKey(emitterName, emitKey), new Metadata(), handlerConfig,
                             getOnParseException()));
                 }
                 if (cursorMark.equals(nextCursorMark)) {
@@ -234,14 +232,11 @@ public class SolrPipesIterator extends PipesIterator implements Initializable {
         if (solrUrls == null || solrUrls.isEmpty()) {
             return new CloudSolrClient.Builder(solrZkHosts, Optional.ofNullable(solrZkChroot))
                     .withHttpClient(httpClientFactory.build())
-                    .withConnectionTimeout(connectionTimeout)
-                    .withSocketTimeout(socketTimeout)
+                    .withConnectionTimeout(connectionTimeout).withSocketTimeout(socketTimeout)
                     .build();
         }
-        return new LBHttpSolrClient.Builder()
-                .withConnectionTimeout(connectionTimeout)
-                .withSocketTimeout(socketTimeout)
-                .withHttpClient(httpClientFactory.build())
+        return new LBHttpSolrClient.Builder().withConnectionTimeout(connectionTimeout)
+                .withSocketTimeout(socketTimeout).withHttpClient(httpClientFactory.build())
                 .withBaseSolrUrls(solrUrls.toArray(new String[]{})).build();
     }
 
@@ -254,11 +249,15 @@ public class SolrPipesIterator extends PipesIterator implements Initializable {
         mustNotBeEmpty("parsingIdField", this.parsingIdField);
         mustNotBeEmpty("failCountField", this.failCountField);
         mustNotBeEmpty("sizeFieldName", this.sizeFieldName);
-        if ((this.solrUrls == null || this.solrUrls.isEmpty()) && (this.solrZkHosts == null || this.solrZkHosts.isEmpty())) {
-            throw new IllegalArgumentException("expected either param solrUrls or param solrZkHosts, but neither was specified");
+        if ((this.solrUrls == null || this.solrUrls.isEmpty()) &&
+                (this.solrZkHosts == null || this.solrZkHosts.isEmpty())) {
+            throw new IllegalArgumentException(
+                    "expected either param solrUrls or param solrZkHosts, but neither was specified");
         }
-        if (this.solrUrls != null && !this.solrUrls.isEmpty() && this.solrZkHosts != null && !this.solrZkHosts.isEmpty()) {
-            throw new IllegalArgumentException("expected either param solrUrls or param solrZkHosts, but both were specified");
+        if (this.solrUrls != null && !this.solrUrls.isEmpty() && this.solrZkHosts != null &&
+                !this.solrZkHosts.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "expected either param solrUrls or param solrZkHosts, but both were specified");
         }
     }
 }

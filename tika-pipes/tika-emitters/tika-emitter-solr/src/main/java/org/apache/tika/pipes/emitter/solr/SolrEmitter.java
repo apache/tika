@@ -31,6 +31,9 @@ import org.apache.solr.client.solrj.impl.CloudSolrClient;
 import org.apache.solr.client.solrj.impl.LBHttpSolrClient;
 import org.apache.solr.client.solrj.request.UpdateRequest;
 import org.apache.solr.common.SolrInputDocument;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
@@ -41,26 +44,12 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.emitter.AbstractEmitter;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 
 public class SolrEmitter extends AbstractEmitter implements Initializable {
 
-    public enum AttachmentStrategy {
-        SKIP,
-        CONCATENATE_CONTENT,
-        PARENT_CHILD,
-        //anything else?
-    }
-
-    public enum UpdateStrategy {
-        ADD,
-        UPDATE_MUST_EXIST,
-        UPDATE_MUST_NOT_EXIST,
-    }
-
     private static final Logger LOG = LoggerFactory.getLogger(SolrEmitter.class);
-
+    private final HttpClientFactory httpClientFactory;
     private AttachmentStrategy attachmentStrategy = AttachmentStrategy.PARENT_CHILD;
     private UpdateStrategy updateStrategy = UpdateStrategy.ADD;
     private String solrCollection;
@@ -75,16 +64,14 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
     private int commitWithin = 1000;
     private int connectionTimeout = 10000;
     private int socketTimeout = 60000;
-    private final HttpClientFactory httpClientFactory;
     private SolrClient solrClient;
-
     public SolrEmitter() throws TikaConfigException {
         httpClientFactory = new HttpClientFactory();
     }
 
     @Override
-    public void emit(String emitKey, List<Metadata> metadataList) throws IOException,
-            TikaEmitterException {
+    public void emit(String emitKey, List<Metadata> metadataList)
+            throws IOException, TikaEmitterException {
         if (metadataList == null || metadataList.size() == 0) {
             LOG.warn("metadataList is null or empty");
             return;
@@ -104,8 +91,7 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
         } else if (updateStrategy == UpdateStrategy.UPDATE_MUST_NOT_EXIST) {
             solrInputDocument.setField("_version_", -1);
         }
-        if (attachmentStrategy == AttachmentStrategy.SKIP ||
-                metadataList.size() == 1) {
+        if (attachmentStrategy == AttachmentStrategy.SKIP || metadataList.size() == 1) {
             addMetadataToSolrInputDocument(metadataList.get(0), solrInputDocument, updateStrategy);
         } else if (attachmentStrategy == AttachmentStrategy.CONCATENATE_CONTENT) {
             //this only handles text for now, not xhtml
@@ -128,8 +114,8 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
                 addMetadataToSolrInputDocument(m, childSolrInputDocument, updateStrategy);
             }
         } else {
-            throw new IllegalArgumentException("I don't yet support this attachment strategy: "
-                    + attachmentStrategy);
+            throw new IllegalArgumentException(
+                    "I don't yet support this attachment strategy: " + attachmentStrategy);
         }
         docsToUpdate.add(solrInputDocument);
     }
@@ -142,12 +128,14 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
         }
         List<SolrInputDocument> docsToUpdate = new ArrayList<>();
         for (EmitData d : batch) {
-            addMetadataAsSolrInputDocuments(d.getEmitKey().getEmitKey(), d.getMetadataList(), docsToUpdate);
+            addMetadataAsSolrInputDocuments(d.getEmitKey().getEmitKey(), d.getMetadataList(),
+                    docsToUpdate);
         }
         emitSolrBatch(docsToUpdate);
     }
 
-    private void emitSolrBatch(List<SolrInputDocument> docsToUpdate) throws IOException, TikaEmitterException {
+    private void emitSolrBatch(List<SolrInputDocument> docsToUpdate)
+            throws IOException, TikaEmitterException {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Emitting solr doc batch: {}", docsToUpdate);
         }
@@ -164,7 +152,8 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
         }
     }
 
-    private void addMetadataToSolrInputDocument(Metadata metadata, SolrInputDocument solrInputDocument,
+    private void addMetadataToSolrInputDocument(Metadata metadata,
+                                                SolrInputDocument solrInputDocument,
                                                 UpdateStrategy updateStrategy) {
         for (String n : metadata.names()) {
             String[] vals = metadata.getValues(n);
@@ -175,16 +164,18 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
                     solrInputDocument.setField(n, vals[0]);
                 } else {
                     solrInputDocument.setField(n, new HashMap<String, String>() {{
-                        put("set", vals[0]);
-                    }});
+                            put("set", vals[0]);
+                        }
+                    });
                 }
             } else if (vals.length > 1) {
                 if (updateStrategy == UpdateStrategy.ADD) {
                     solrInputDocument.setField(n, vals);
                 } else {
                     solrInputDocument.setField(n, new HashMap<String, String[]>() {{
-                        put("set", vals);
-                    }});
+                            put("set", vals);
+                        }
+                    });
                 }
             }
         }
@@ -220,6 +211,10 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
         this.socketTimeout = socketTimeout;
     }
 
+    public String getContentField() {
+        return contentField;
+    }
+
     /**
      * This is the field _after_ metadata mappings have been applied
      * that contains the "content" for each metadata object.
@@ -234,17 +229,13 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
         this.contentField = contentField;
     }
 
-    public String getContentField() {
-        return contentField;
+    public int getCommitWithin() {
+        return commitWithin;
     }
 
     @Field
     public void setCommitWithin(int commitWithin) {
         this.commitWithin = commitWithin;
-    }
-
-    public int getCommitWithin() {
-        return commitWithin;
     }
 
     /**
@@ -308,21 +299,18 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         if (solrUrls == null || solrUrls.isEmpty()) {
             solrClient = new CloudSolrClient.Builder(solrZkHosts, Optional.ofNullable(solrZkChroot))
-                    .withConnectionTimeout(connectionTimeout)
-                    .withSocketTimeout(socketTimeout)
-                    .withHttpClient(httpClientFactory.build())
-                    .build();
+                    .withConnectionTimeout(connectionTimeout).withSocketTimeout(socketTimeout)
+                    .withHttpClient(httpClientFactory.build()).build();
         } else {
-            solrClient = new LBHttpSolrClient.Builder()
-                    .withConnectionTimeout(connectionTimeout)
-                    .withSocketTimeout(socketTimeout)
-                    .withHttpClient(httpClientFactory.build())
-                    .withBaseSolrUrls(solrUrls.toArray(new String[] {})).build();
+            solrClient = new LBHttpSolrClient.Builder().withConnectionTimeout(connectionTimeout)
+                    .withSocketTimeout(socketTimeout).withHttpClient(httpClientFactory.build())
+                    .withBaseSolrUrls(solrUrls.toArray(new String[]{})).build();
         }
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler)
+            throws TikaConfigException {
         mustNotBeEmpty("solrCollection", this.solrCollection);
         mustNotBeEmpty("urlFieldName", this.idField);
         if ((this.solrUrls == null || this.solrUrls.isEmpty()) &&
@@ -335,5 +323,14 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
             throw new IllegalArgumentException(
                     "expected either param solrUrls or param solrZkHosts, but both were specified");
         }
+    }
+
+    public enum AttachmentStrategy {
+        SKIP, CONCATENATE_CONTENT, PARENT_CHILD,
+        //anything else?
+    }
+
+    public enum UpdateStrategy {
+        ADD, UPDATE_MUST_EXIST, UPDATE_MUST_NOT_EXIST,
     }
 }

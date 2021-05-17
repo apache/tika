@@ -184,7 +184,7 @@ public class PipesServer implements Runnable {
     }
 
     private void err(Throwable t) {
-        System.err.println("err " + ExceptionUtils.getStackTrace(t).replaceAll("[\r\n]", " "));
+        System.err.println("error " + ExceptionUtils.getStackTrace(t).replaceAll("[\r\n]", " "));
         System.err.flush();
     }
 
