@@ -218,7 +218,7 @@ class OneNotePtr {
         }
         int c1 = dif.read();
         int c2 = dif.read();
-        long res = (((c1 & 0xff) << 0) + ((c2 & 0xff) << 8));
+        long res = (((c1 & 0xff)) + ((c2 & 0xff) << 8));
         offset = dif.position();
         return res;
     }

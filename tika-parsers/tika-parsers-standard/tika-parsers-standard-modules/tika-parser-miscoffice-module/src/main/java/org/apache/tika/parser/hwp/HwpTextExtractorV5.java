@@ -453,7 +453,7 @@ public class HwpTextExtractorV5 implements Serializable {
         }
 
         private int rand() {
-            random_seed = (random_seed * 214013 + 2531011) & 0xFFFFFFFF;
+            random_seed = (random_seed * 214013 + 2531011);
             return (random_seed >> 16) & 0x7FFF;
         }
     }

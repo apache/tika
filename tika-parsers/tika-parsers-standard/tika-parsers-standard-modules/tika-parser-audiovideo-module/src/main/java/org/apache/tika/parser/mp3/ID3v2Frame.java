@@ -128,20 +128,20 @@ public class ID3v2Frame implements MP3Frame {
         int b1 = data[offset + 1] & 0xFF;
         int b2 = data[offset + 2] & 0xFF;
         int b3 = data[offset + 3] & 0xFF;
-        return (b0 << 24) + (b1 << 16) + (b2 << 8) + (b3 << 0);
+        return (b0 << 24) + (b1 << 16) + (b2 << 8) + (b3);
     }
 
     protected static int getInt3(byte[] data, int offset) {
         int b0 = data[offset + 0] & 0xFF;
         int b1 = data[offset + 1] & 0xFF;
         int b2 = data[offset + 2] & 0xFF;
-        return (b0 << 16) + (b1 << 8) + (b2 << 0);
+        return (b0 << 16) + (b1 << 8) + (b2);
     }
 
     protected static int getInt2(byte[] data, int offset) {
         int b0 = data[offset + 0] & 0xFF;
         int b1 = data[offset + 1] & 0xFF;
-        return (b0 << 8) + (b1 << 0);
+        return (b0 << 8) + (b1);
     }
 
     /**
@@ -154,7 +154,7 @@ public class ID3v2Frame implements MP3Frame {
         int b1 = data[offset + 1] & 0x7F;
         int b2 = data[offset + 2] & 0x7F;
         int b3 = data[offset + 3] & 0x7F;
-        return (b0 << 21) + (b1 << 14) + (b2 << 7) + (b3 << 0);
+        return (b0 << 21) + (b1 << 14) + (b2 << 7) + (b3);
     }
 
     protected static byte[] readFully(InputStream inp, int length) throws IOException {
