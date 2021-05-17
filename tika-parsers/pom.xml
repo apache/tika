@@ -318,7 +318,7 @@
     <dependency>
       <groupId>org.tallison</groupId>
       <artifactId>isoparser</artifactId>
-      <version>1.9.41.4</version>
+      <version>1.9.41.6</version>
     </dependency>
     <!-- this is a fork of com.drewnoakes
       metadata extractor that shade/relocates com.adobe.internal
