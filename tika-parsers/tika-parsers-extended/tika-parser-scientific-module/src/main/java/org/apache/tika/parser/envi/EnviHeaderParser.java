@@ -153,8 +153,7 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
                 mapInfoValueStringBuilder.append(mapInfoValue.charAt(i));
             }
         }
-        String[] mapInfoValues = mapInfoValueStringBuilder.toString().split(",");
-        return mapInfoValues;
+        return mapInfoValueStringBuilder.toString().split(",");
     }
 
     // Conversion logic taken from https://stackoverflow.com/questions/343865/how-to-convert-from-utm-to-latlng-in-python-or-javascript/344083#344083

@@ -586,8 +586,7 @@ class OneNotePtr {
                     data.id == FndStructureConstants.CanRevise.ObjectDeclaration2RefCountFND ||
                     data.id ==
                             FndStructureConstants.CanRevise.ReadOnlyObjectDeclaration2RefCountFND) {
-                long refCnt = deserializeLittleEndianChar();
-                data.subType.objectDeclarationWithRefCount.cRef = refCnt;
+                data.subType.objectDeclarationWithRefCount.cRef = deserializeLittleEndianChar();
             } else {
                 data.subType.objectDeclarationWithRefCount.cRef = deserializeLittleEndianInt();
             }

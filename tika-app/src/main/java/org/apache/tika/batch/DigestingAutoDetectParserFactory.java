@@ -33,8 +33,7 @@ public class DigestingAutoDetectParserFactory extends ParserFactory {
         if (digester == null) {
             return p;
         }
-        DigestingParser d = new DigestingParser(p, digester);
-        return d;
+        return new DigestingParser(p, digester);
     }
 
     public void setDigester(DigestingParser.Digester digester) {

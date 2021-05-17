@@ -119,8 +119,7 @@ public class AbstractBufferTest {
                 Integer val = dbBuffer.getId(k);
                 m.put(k, val);
             }
-            MyTestResult r = new MyTestResult(m);
-            return r;
+            return new MyTestResult(m);
         }
     }
 

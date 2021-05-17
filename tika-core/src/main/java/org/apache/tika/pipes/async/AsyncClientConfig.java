@@ -26,9 +26,8 @@ class AsyncClientConfig {
     private long maxFilesProcessed;
 
     public static AsyncClientConfig load(Path p) throws IOException {
-        AsyncClientConfig asyncConfig = new AsyncClientConfig();
 
-        return asyncConfig;
+        return new AsyncClientConfig();
     }
 
 

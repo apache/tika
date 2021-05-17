@@ -108,8 +108,7 @@ public class TIAParsingExample {
     public static File tikaInputStreamGetFile(String filename) throws Exception {
         try (InputStream stream = TikaInputStream.get(new File(filename))) {
             TikaInputStream tikaInputStream = TikaInputStream.get(stream);
-            File file = tikaInputStream.getFile();
-            return file;
+            return tikaInputStream.getFile();
         }
     }
 

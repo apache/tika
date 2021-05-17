@@ -173,8 +173,7 @@ abstract class CharsetRecog_mbcs extends CharsetRecognizer {
                 done = true;
                 return -1;
             }
-            int byteValue = (int) det.fRawInput[nextIndex++] & 0x00ff;
-            return byteValue;
+            return (int) det.fRawInput[nextIndex++] & 0x00ff;
         }
     }
 

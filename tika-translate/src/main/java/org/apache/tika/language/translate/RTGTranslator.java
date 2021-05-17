@@ -129,8 +129,7 @@ public class RTGTranslator extends AbstractTranslator {
             JSONParser parser = new JSONParser();
             JSONObject obj = (JSONObject) parser.parse(reader);
             List<String> sentences = (List<String>) obj.get("translation");
-            String output = String.join("\n", sentences);
-            return output;
+            return String.join("\n", sentences);
         } catch (ParseException e){
             throw new IOException(e.getMessage(), e);
         }

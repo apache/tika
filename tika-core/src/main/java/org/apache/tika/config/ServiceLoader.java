@@ -229,8 +229,7 @@ public class ServiceLoader {
      */
     public Enumeration<URL> findServiceResources(String filePattern) {
         try {
-            Enumeration<URL> resources = loader.getResources(filePattern);
-            return resources;
+            return loader.getResources(filePattern);
         } catch (IOException ignore) {
             // We couldn't get the list of service resource files
             List<URL> empty = Collections.emptyList();

@@ -161,8 +161,7 @@ public class DWGParser extends AbstractParser {
         if (stringData[stringLen - 1] == 0) {
             stringLen--;
         }
-        String value = StringUtil.getFromCompressedUnicode(stringData, 0, stringLen);
-        return value;
+        return StringUtil.getFromCompressedUnicode(stringData, 0, stringLen);
     }
 
     /**

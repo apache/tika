@@ -29,8 +29,7 @@ public class CustomMimeInfo {
         String path = "file:///path/to/prescription-type.xml";
         MimeTypes typeDatabase = MimeTypesFactory.create(new URL(path));
         Tika tika = new Tika(typeDatabase);
-        String type = tika.detect("/path/to/prescription.xpd");
-        return type;
+        return tika.detect("/path/to/prescription.xpd");
     }
 
     public static String customCompositeDetector() throws Exception {
@@ -38,8 +37,7 @@ public class CustomMimeInfo {
         MimeTypes typeDatabase = MimeTypesFactory.create(new URL(path));
         Tika tika =
                 new Tika(new CompositeDetector(typeDatabase, new EncryptedPrescriptionDetector()));
-        String type = tika.detect("/path/to/tmp/prescription.xpd");
-        return type;
+        return tika.detect("/path/to/tmp/prescription.xpd");
     }
 
     public static void main(String[] args) throws Exception {
