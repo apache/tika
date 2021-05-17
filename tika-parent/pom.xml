@@ -306,7 +306,7 @@
     <httpcomponents.version>4.5.13</httpcomponents.version>
     <httpcore.version>4.4.14</httpcore.version>
     <imageio.version>1.4.0</imageio.version>
-    <isoparser.version>1.9.41.4</isoparser.version>
+    <isoparser.version>1.9.41.6</isoparser.version>
     <jackcess.version>4.0.0</jackcess.version>
     <jackcess.encrypt.version>4.0.1</jackcess.encrypt.version>
     <jackrabbit.version>2.21.5</jackrabbit.version>
