@@ -55,7 +55,7 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
     private final int port;
     private final String id;
     private final TikaServerConfig tikaServerConfig;
-    private Object[] forkedStatusLock = new Object[0];
+    private final Object[] forkedStatusLock = new Object[0];
     private volatile FORKED_STATUS forkedStatus = FORKED_STATUS.INITIALIZING;
     private volatile Instant lastPing = null;
     private ForkedProcess forkedProcess = null;

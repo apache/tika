@@ -50,13 +50,13 @@ import org.slf4j.MarkerFactory;
 public class StrawManTikaAppDriver implements Callable<Integer> {
     private static final Logger LOG = LoggerFactory.getLogger(StrawManTikaAppDriver.class);
 
-    private static AtomicInteger threadCount = new AtomicInteger(0);
+    private static final AtomicInteger threadCount = new AtomicInteger(0);
     private final int totalThreads;
     private final int threadNum;
-    private Path inputRoot = null;
-    private Path outputRoot = null;
-    private Path fileList = null;
-    private String[] args = null;
+    private final Path inputRoot;
+    private final Path outputRoot;
+    private final Path fileList;
+    private final String[] args;
 
     public StrawManTikaAppDriver(Path inputRoot, Path outputRoot, int totalThreads, Path fileList,
                                  String[] args) {
@@ -96,7 +96,7 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
         int initialParams = (fileList == null) ? 3 : 4;
         List<String> commandLine =
                 new ArrayList<>(Arrays.asList(args).subList(initialParams, args.length));
-        totalThreads = (totalThreads < 1) ? 1 : totalThreads;
+        totalThreads = Math.max(totalThreads, 1);
         ExecutorService ex = Executors.newFixedThreadPool(totalThreads);
         ExecutorCompletionService<Integer> completionService = new ExecutorCompletionService<>(ex);
 
@@ -157,10 +157,10 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
     }
 
     private class TikaVisitor extends SimpleFileVisitor<Path> {
-        private volatile int processed = 0;
+        private final AtomicInteger processed = new AtomicInteger(0);
 
         int getProcessed() {
-            return processed;
+            return processed.get();
         }
 
         @Override
@@ -193,7 +193,6 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
             }
             commandLine.add(fullPath);
 
-
             Path outputFile =
                     Paths.get(outputRoot.toAbsolutePath().toString(), relPath.toString() + suffix);
             try {
@@ -209,7 +208,7 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
             builder.redirectOutput(outputFile.toFile());
             builder.redirectError(ProcessBuilder.Redirect.INHERIT);
 
-            Process proc = null;
+            Process proc;
             try {
                 proc = builder.start();
             } catch (IOException e) {
@@ -244,7 +243,7 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
             } catch (IOException e) {
                 LOG.warn("couldn't close process outputstream", e);
             }
-            processed++;
+            processed.incrementAndGet();
             return FileVisitResult.CONTINUE;
         }
 
