@@ -70,6 +70,25 @@
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
+      <artifactId>tika-transcribe</artifactId>
+      <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>commons-codec</groupId>
+          <artifactId>commons-codec</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-databind</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-core</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
@@ -147,15 +166,6 @@
       <artifactId>junit</artifactId>
       <scope>test</scope>
     </dependency>
-    <!--
-    <dependency>
-      <groupId>org.apache.tika</groupId>
-      <artifactId>tika-test-resources</artifactId>
-      <version>${project.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-    -->
   </dependencies>
 
   <description>This module contains examples of how to use Apache Tika.</description>
