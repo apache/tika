@@ -17,22 +17,23 @@
 
 package org.apache.tika.example;
 
-import java.io.FileInputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
+import org.apache.tika.Tika;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.language.translate.GoogleTranslator;
 import org.apache.tika.language.translate.Translator;
-import org.apache.tika.transcribe.AmazonTranscribe;
-import org.apache.tika.transcribe.Transcriber;
 
 /**
  * This example demonstrates primitive logic for
  * chaining Tika API calls. In this case translation
- * could be considered as a downstream process to 
+ * could be considered as a downstream process to
  * transcription.
  * We simply pass the output of
- * a call to {@link Transcriber#transcribe(java.io.InputStream)}
- * into {@link Translator#translate(String, String)}. 
- * The {@link GoogleTranslator} is configured with a target 
+ * a call to {@link Tika#parseToString(Path)}
+ * into {@link Translator#translate(String, String)}.
+ * The {@link GoogleTranslator} is configured with a target
  * language of "en-US".
  * @author lewismc
  *
@@ -42,7 +43,7 @@ public class TranscribeTranslateExample {
     /**
      * Use {@link GoogleTranslator} to execute translation on
      * input data. This implementation needs configured as explained in the Javadoc.
-     * In this implementation, Google will try to guess the input language. The target 
+     * In this implementation, Google will try to guess the input language. The target
      * language is "en-US".
      * @param text input text to translate.
      * @return translated text String.
@@ -61,43 +62,55 @@ public class TranscribeTranslateExample {
     }
 
     /**
-     * Use {@link AmazonTranscribe} to execute transcription on input data.
-     * This implementation needs configured as explained in the Javadoc.
+     * Use {@link org.apache.tika.parser.transcribe.aws.AmazonTranscribe} to execute transcription
+     * on input data.
+     * This implementation needs to be configured as explained in the Javadoc.
      * @param file the name of the file (which needs to be on the Java Classpath) to transcribe.
      * @return transcribed text.
      */
-    public static String amazonTranscribe(String file) {
-        String filePath = TranscribeTranslateExample.class.getClassLoader().getResource(file).getPath();
-        String result = null;
-        Transcriber transcriber = new AmazonTranscribe();
-        if (transcriber.isAvailable()) {
-            try {
-                result = transcriber.transcribe(new FileInputStream(filePath));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        return result;
+    public static String amazonTranscribe(Path tikaConfig, Path file) throws Exception {
+        return new Tika(new TikaConfig(tikaConfig)).parseToString(file);
     }
 
     /**
      * Main method to run this example. This program can be invoked as follows
      * <ol>
-     * <li><code>transcribe-translate ${file}</code>; which executes both 
-     * transcription then translation on the given resource, or 
-     * <li><code>transcribe ${file}</code>; which executes only translation</li>
-     * @param args either of the commands described above and the input file 
-     * (which needs to be on the Java Classpath). 
+     * <li><code>transcribe-translate ${tika-config.xml} ${file}</code>; which executes both
+     * transcription then translation on the given resource, or
+     * <li><code>transcribe ${tika-config.xml} ${file}</code>; which executes only translation</li>
+     * @param args either of the commands described above and the input file
+     * (which needs to be on the Java Classpath).
+     *
+     *
+     *
+     * ${tika-config.xml} must include credentials for aws and a temporary storage bucket:
+     * <pre>
+     * {@code
+     *  <properties>
+     *   <parsers>
+     *     <parser class="org.apache.tika.parser.DefaultParser"/>
+     *     <parser class="org.apache.tika.parser.transcribe.aws.AmazonTranscribe">
+     *       <params>
+     *         <param name="bucket" type="string">bucket</param>
+     *         <param name="clientId" type="string">clientId</param>
+     *         <param name="clientSecret" type="string">clientSecret</param>
+     *       </params>
+     *     </parser>
+     *   </parsers>
+     * </properties>
+     * }
+     * </pre>
      */
-    public static void main (String[] args) {
+    public static void main (String[] args) throws Exception {
         String text = null;
-        if (args.length != 0) {
-            if ("transcribe-translate".equals(args[0])) {
-                text = googleTranslateToEnglish(amazonTranscribe(args[1]));
-                System.out.print("Transcription and translation successful!\nEXTRAXCTED TEXT: " + text);
-            } else if ("transcribe".equals(args[0])) {
-                text = amazonTranscribe(args[1]);
-                System.out.print("Transcription successful!\nEXTRAXCTED TEXT: " + text);
+        if (args.length > 1) {
+            if ("transcribe-translate".equals(args[1])) {
+                text = googleTranslateToEnglish(amazonTranscribe(Paths.get(args[0]),
+                        Paths.get(args[1])));
+                System.out.print("Transcription and translation successful!\nEXTRACTED TEXT: " + text);
+            } else if ("transcribe".equals(args[1])) {
+                text = amazonTranscribe(Paths.get(args[0]), Paths.get(args[1]));
+                System.out.print("Transcription successful!\nEXTRACTED TEXT: " + text);
             } else {
                 System.out.print("Incorrect invocation, see Javadoc.");
             }
