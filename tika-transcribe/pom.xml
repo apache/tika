@@ -25,19 +25,20 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <artifactId>tika-parsers-ml</artifactId>
         <groupId>org.apache.tika</groupId>
+        <artifactId>tika-parent</artifactId>
         <version>2.0.0-SNAPSHOT</version>
+        <relativePath>../tika-parent/pom.xml</relativePath>
     </parent>
 
-    <artifactId>tika-transcribe-aws</artifactId>
+    <artifactId>tika-transcribe</artifactId>
     <packaging>bundle</packaging>
-    <name>Apache Tika transcribe aws</name>
+    <name>Apache Tika transcribe</name>
     <url>http://tika.apache.org/</url>
     <!--TODO use latest aws version or the one defined in the tika-parent-->
     <dependencies>
         <dependency>
-            <groupId>${project.groupId}</groupId>
+            <groupId>org.apache.tika</groupId>
             <artifactId>tika-core</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -54,35 +55,7 @@
                     <groupId>commons-codec</groupId>
                     <artifactId>commons-codec</artifactId>
                 </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-databind</artifactId>
-                </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-            <version>${jackson.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>${jackson.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>commons-logging</groupId>
-            <artifactId>commons-logging</artifactId>
-            <version>${commons.logging.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>commons-codec</groupId>
-            <artifactId>commons-codec</artifactId>
-            <version>${commons.codec.version}</version>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
@@ -98,14 +71,6 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>tika-core</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-            <type>test-jar</type>
         </dependency>
     </dependencies>
     <build>
@@ -146,7 +111,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Automatic-Module-Name>org.apache.tika.parser.transcribe.aws</Automatic-Module-Name>
+                            <Automatic-Module-Name>org.apache.tika.translate</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
                 </configuration>
