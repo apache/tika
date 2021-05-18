@@ -64,13 +64,13 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.tika</groupId>
+      <groupId>${project.groupId}</groupId>
       <artifactId>tika-eval-core</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.tika</groupId>
-      <artifactId>tika-transcribe</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-transcribe-aws</artifactId>
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
@@ -88,7 +88,7 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>org.apache.tika</groupId>
+      <groupId>${project.groupId}</groupId>
       <artifactId>tika-core</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
