@@ -40,6 +40,7 @@
     <module>tika-age-recogniser</module>
     <module>tika-parser-advancedmedia-module</module>
     <module>tika-dl</module>
+    <module>tika-transcribe-aws</module>
   </modules>
 
   <build>
