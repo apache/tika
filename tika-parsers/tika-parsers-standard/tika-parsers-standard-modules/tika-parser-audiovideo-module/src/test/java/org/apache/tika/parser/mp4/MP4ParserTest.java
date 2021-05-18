@@ -22,7 +22,6 @@ import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
