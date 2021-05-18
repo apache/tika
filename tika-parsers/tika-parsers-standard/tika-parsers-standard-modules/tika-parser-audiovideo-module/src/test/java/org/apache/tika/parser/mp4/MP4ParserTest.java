@@ -22,6 +22,7 @@ import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -94,7 +95,7 @@ public class MP4ParserTest extends TikaTest {
 
     // TODO Test a MP4 Video file
     // TODO Test an old QuickTime Video File
-    @Test(timeout = 30000)
+    @Test(timeout = 30000, expected = org.apache.tika.exception.TikaException.class)
     public void testInfiniteLoop() throws Exception {
         //test that a truncated mp4 doesn't cause an infinite loop
         //TIKA-1931 and TIKA-1924
