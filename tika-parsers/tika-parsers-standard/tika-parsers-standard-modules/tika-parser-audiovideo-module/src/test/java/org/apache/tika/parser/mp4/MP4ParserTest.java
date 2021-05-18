@@ -94,7 +94,7 @@ public class MP4ParserTest extends TikaTest {
 
     // TODO Test a MP4 Video file
     // TODO Test an old QuickTime Video File
-    @Test(timeout = 30000, expected = org.apache.tika.exception.TikaException.class)
+    @Test(timeout = 30000)
     public void testInfiniteLoop() throws Exception {
         //test that a truncated mp4 doesn't cause an infinite loop
         //TIKA-1931 and TIKA-1924
