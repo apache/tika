@@ -1,3 +1,9 @@
+Release 2.0.0-BETA - 05/19/2021
+   
+   * Refactor pipes module for resilience
+
+   * Add transcribe capability (TIKA-94).
+
 Release 2.0.0-ALPHA - 01/13/2021
 
    BREAKING CHANGES in 2.0.0
