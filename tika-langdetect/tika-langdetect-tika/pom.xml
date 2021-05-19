@@ -63,10 +63,9 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-langdetect-commons</artifactId>
+      <artifactId>tika-langdetect-test-commons</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
-      <type>test-jar</type>
     </dependency>
   </dependencies>
   <build>
