@@ -114,6 +114,7 @@ public abstract class CXFTestBase {
         setUpResources(sf);
         setUpProviders(sf);
         sf.setAddress(endPoint + "/");
+        sf.setResourceComparator(new ProduceTypeResourceComparator());
 
         BindingFactoryManager manager = sf.getBus().getExtension(BindingFactoryManager.class);
 
