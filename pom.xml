@@ -19,14 +19,13 @@
   under the License.
 -->
 
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>2.0.0-SNAPSHOT</version>
+    <version>2.0.0-BETA</version>
     <relativePath>tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -96,34 +95,28 @@
                 <phase>deploy</phase>
                 <configuration>
                   <tasks>
-                    <mkdir dir="${basedir}/target/${project.version}"/>
+                    <mkdir dir="${basedir}/target/${project.version}" />
                     <copy todir="${basedir}/target/${project.version}" flatten="true">
                       <fileset dir="${basedir}">
-                        <include name="CHANGES.txt"/>
-                        <include name="target/*-src.zip*"/>
-                        <include
-                            name="tika-parsers/tika-parsers-extended/tika-parser-scientific-module/target/tika-parser-scientific-module-${project.version}.jar*"/>
-                        <include
-                            name="tika-parsers/tika-parsers-extended/tika-parser-sqlite3-module/target/tika-parser-sqlite3-module-${project.version}.jar*"/>
-                        <include name="tika-app/target/tika-app-${project.version}.jar*"/>
-                        <include
-                            name="tika-server/tika-server-standard/target/tika-server-standard-${project.version}.jar*"/>
-                        <include
-                            name="tika-server/tika-server-standard/target/tika-server-standard-${project.version}-bin.tgz*"/>
-                        <include
-                            name="tika-server/tika-server-standard/target/tika-server-standard-${project.version}-bin.zip*"/>
-                        <include name="tika-eval/tika-eval-app/target/tika-eval-app-${project.version}.jar*"/>
+                        <include name="CHANGES.txt" />
+                        <include name="target/*-src.zip*" />
+                        <include name="tika-parsers/tika-parsers-extended/tika-parser-scientific-module/target/tika-parser-scientific-module-${project.version}.jar*" />
+                        <include name="tika-parsers/tika-parsers-extended/tika-parser-sqlite3-module/target/tika-parser-sqlite3-module-${project.version}.jar*" />
+                        <include name="tika-app/target/tika-app-${project.version}.jar*" />
+                        <include name="tika-server/tika-server-standard/target/tika-server-standard-${project.version}.jar*" />
+                        <include name="tika-server/tika-server-standard/target/tika-server-standard-${project.version}-bin.tgz*" />
+                        <include name="tika-server/tika-server-standard/target/tika-server-standard-${project.version}-bin.zip*" />
+                        <include name="tika-eval/tika-eval-app/target/tika-eval-app-${project.version}.jar*" />
                       </fileset>
                     </copy>
                     <checksum algorithm="SHA-512" fileext=".sha512">
                       <fileset dir="${basedir}/target/${project.version}">
-                        <include name="*.tgz"/>
-                        <include name="*.zip"/>
-                        <include name="*.?ar"/>
+                        <include name="*.tgz" />
+                        <include name="*.zip" />
+                        <include name="*.?ar" />
                       </fileset>
                     </checksum>
-                    <checksum file="${basedir}/target/${project.version}/tika-${project.version}-src.zip"
-                              algorithm="SHA-512" property="checksum"/>
+                    <checksum file="${basedir}/target/${project.version}/tika-${project.version}-src.zip" algorithm="SHA-512" property="checksum" />
                     <echo file="${basedir}/target/vote.txt">
                       From: ${username}@apache.org
                       To: dev@tika.apache.org
@@ -149,7 +142,7 @@
                       [ ] +1 Release this package as Apache Tika ${project.version}
                       [ ] -1 Do not release this package because...${line.separator}
                     </echo>
-                    <echo/>
+                    <echo />
                     <echo>
                       The release candidate has been prepared in:
 
@@ -163,7 +156,7 @@
 
                       file://${basedir}/target/vote.txt
                     </echo>
-                    <echo/>
+                    <echo />
                   </tasks>
                 </configuration>
               </execution>

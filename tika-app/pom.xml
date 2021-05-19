@@ -19,14 +19,13 @@
   under the License.
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>2.0.0-SNAPSHOT</version>
+    <version>2.0.0-BETA</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -153,7 +152,7 @@
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <mainClass>org.apache.tika.cli.TikaCLI</mainClass>
                 </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
                 <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
                   <resource>META-INF/LICENSE</resource>
                   <file>target/classes/META-INF/LICENSE</file>
@@ -227,24 +226,24 @@
                 <configuration>
                   <target>
                     <exec executable="${ikvm}/bin/ikvmc.exe">
-                      <arg value="-nowarn:0100"/>
-                      <arg value="-nowarn:0105"/>
-                      <arg value="-nowarn:0109"/>
-                      <arg value="-nowarn:0111"/>
-                      <arg value="-nowarn:0112"/>
-                      <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Util.dll"/>
-                      <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Charsets.dll"/>
-                      <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Text.dll"/>
-                      <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Core.dll"/>
-                      <arg value="-reference:${ikvm}/bin/IKVM.AWT.WinForms.dll"/>
-                      <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Media.dll"/>
-                      <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Misc.dll"/>
-                      <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Security.dll"/>
-                      <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.SwingAWT.dll"/>
-                      <arg value="-target:library"/>
-                      <arg value="-compressresources"/>
-                      <arg value="-out:${project.build.directory}/${project.build.finalName}.dll"/>
-                      <arg value="${project.build.directory}/${project.build.finalName}.jar"/>
+                      <arg value="-nowarn:0100" />
+                      <arg value="-nowarn:0105" />
+                      <arg value="-nowarn:0109" />
+                      <arg value="-nowarn:0111" />
+                      <arg value="-nowarn:0112" />
+                      <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Util.dll" />
+                      <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Charsets.dll" />
+                      <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Text.dll" />
+                      <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Core.dll" />
+                      <arg value="-reference:${ikvm}/bin/IKVM.AWT.WinForms.dll" />
+                      <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Media.dll" />
+                      <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Misc.dll" />
+                      <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Security.dll" />
+                      <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.SwingAWT.dll" />
+                      <arg value="-target:library" />
+                      <arg value="-compressresources" />
+                      <arg value="-out:${project.build.directory}/${project.build.finalName}.dll" />
+                      <arg value="${project.build.directory}/${project.build.finalName}.jar" />
                     </exec>
                   </target>
                 </configuration>
