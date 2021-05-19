@@ -160,25 +160,11 @@
       <version>1.2.0</version>
     </dependency>
     <dependency>
-      <groupId>com.sun.istack</groupId>
-      <artifactId>istack-commons-runtime</artifactId>
-      <version>3.0.11</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>com.sun.xml.fastinfoset</groupId>
       <artifactId>FastInfoset</artifactId>
       <version>1.2.16</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>org.glassfish.jaxb</groupId>
-      <artifactId>txw2</artifactId>
-      <version>${jaxb.version}</version>
-      <scope>test</scope>
-    </dependency>
-
-
   </dependencies>
 
   <build>

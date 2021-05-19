@@ -236,6 +236,17 @@ May the gods of dependency management fix this in the future.
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <version>${rat.version}</version>
+        <configuration>
+          <excludes>
+            <exclude>src/test/resources/test-documents/**</exclude>
+            <exclude>src/test/resources/ground-truth/**</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
     </plugins>
 
   </build>

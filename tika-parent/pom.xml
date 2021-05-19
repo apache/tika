@@ -279,7 +279,7 @@
     <rat.version>0.13</rat.version>
 
     <!-- dependency versions -->
-    <aws.version>1.11.1018</aws.version>
+    <aws.version>1.11.1021</aws.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
     <bouncycastle.version>1.68</bouncycastle.version>
@@ -292,7 +292,7 @@
     <commons.csv.version>1.8</commons.csv.version>
     <commons.exec.version>1.3</commons.exec.version>
     <commons.io.version>2.8.0</commons.io.version>
-    <commons.lang3.version>3.11</commons.lang3.version>
+    <commons.lang3.version>3.12.0</commons.lang3.version>
     <commons.logging.version>1.2</commons.logging.version>
     <commons.math3.version>3.6.1</commons.math3.version>
     <ctakes.version>4.0.0.1</ctakes.version>
@@ -301,7 +301,7 @@
     <dl4j.version>1.0.0-beta6</dl4j.version>
     <geoapi.version>3.0.1</geoapi.version>
     <gson.version>2.8.6</gson.version>
-    <guava.version>30.1-jre</guava.version>
+    <guava.version>30.1.1-jre</guava.version>
     <h2.version>1.4.200</h2.version>
     <httpcomponents.version>4.5.13</httpcomponents.version>
     <httpcore.version>4.4.14</httpcore.version>
@@ -309,34 +309,34 @@
     <isoparser.version>1.9.41.6</isoparser.version>
     <jackcess.version>4.0.0</jackcess.version>
     <jackcess.encrypt.version>4.0.1</jackcess.encrypt.version>
-    <jackrabbit.version>2.21.5</jackrabbit.version>
-    <jackson.version>2.12.1</jackson.version>
+    <jackrabbit.version>2.21.6</jackrabbit.version>
+    <jackson.version>2.12.3</jackson.version>
     <javax.annotation.version>1.3.2</javax.annotation.version>
     <javax.jcr.version>2.0</javax.jcr.version>
     <javax.rest.version>2.1.1</javax.rest.version>
-    <jaxb.version>2.3.3</jaxb.version>
+    <jaxb.version>2.3.4</jaxb.version>
     <jbig2.version>3.0.3</jbig2.version>
     <jdom2.version>2.0.6</jdom2.version>
     <jempbox.version>1.8.16</jempbox.version>
-    <jetty.version>9.4.40.v20210413</jetty.version>
+    <jetty.version>9.4.41.v20210516</jetty.version>
     <jhighlight.version>1.0.3</jhighlight.version>
     <jna.version>5.8.0</jna.version>
-    <joda.time.version>2.10.9</joda.time.version>
+    <joda.time.version>2.10.10</joda.time.version>
     <json.simple.version>1.1.1</json.simple.version>
     <juniversalchardet.version>1.0.3</juniversalchardet.version>
     <junrar.version>7.4.0</junrar.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.14.1</log4j2.version>
-    <lombok.version>1.18.16</lombok.version>
-    <lucene.version>8.7.0</lucene.version>
+    <lombok.version>1.18.20</lombok.version>
+    <lucene.version>8.8.2</lucene.version>
     <metadata.extractor.version>2.15.0.1</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
-    <mime4j.version>0.8.3</mime4j.version>
+    <mime4j.version>0.8.4</mime4j.version>
     <mockito.version>3.7.7</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <opencsv.version>2.3</opencsv.version>
     <pdfbox.version>2.0.23</pdfbox.version>
-    <objenesis.version>3.1</objenesis.version>
+    <objenesis.version>3.2</objenesis.version>
     <openjson.version>1.0.12</openjson.version>
     <opennlp.version>1.9.3</opennlp.version>
     <optimaize.version>0.6</optimaize.version>
@@ -349,19 +349,19 @@
     <!-- we'll need to stay on 1.7 until we're java modularized ? -->
     <slf4j.version>1.7.30</slf4j.version>
     <solrj.version>8.8.2</solrj.version>
-    <spring.version>5.3.3</spring.version>
+    <spring.version>5.3.7</spring.version>
     <sqlite.version>3.34.0</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
     <test.containers.version>1.15.2</test.containers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
-    <tukaani.version>1.8</tukaani.version>
-    <twelvemonkeys.version>3.6.1</twelvemonkeys.version>
-    <uima.version>3.1.1</uima.version>
-    <uimafit.version>3.1.0</uimafit.version>
+    <tukaani.version>1.9</tukaani.version>
+    <twelvemonkeys.version>3.7.0</twelvemonkeys.version>
+    <uima.version>3.2.0</uima.version>
+    <uimafit.version>3.2.0</uimafit.version>
     <vorbis.version>0.8</vorbis.version>
     <xerces.version>2.12.1</xerces.version>
     <xmpcore.version>6.1.11</xmpcore.version>
-    <zstd.version>1.4.8-1</zstd.version>
+    <zstd.version>1.4.9-5</zstd.version>
   </properties>
 
   <dependencyManagement>
@@ -379,7 +379,7 @@
       <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
-        <version>4.13.1</version>
+        <version>4.13.2</version>
         <scope>test</scope>
       </dependency>
       <dependency>
