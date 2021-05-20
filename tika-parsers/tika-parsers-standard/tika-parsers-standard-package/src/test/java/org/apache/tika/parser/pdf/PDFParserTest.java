@@ -253,7 +253,10 @@ public class PDFParserTest extends TikaTest {
             PDFParserConfig config = new PDFParserConfig();
             config.setOcrStrategy(strategy);
             context.set(PDFParserConfig.class, config);
-        }
+        };
+        PDFParserConfig config = context.get(PDFParserConfig.class, new PDFParserConfig());
+        config.setOcrRenderingStrategy(PDFParserConfig.OCR_RENDERING_STRATEGY.ALL);
+        context.set(PDFParserConfig.class, config);
         XMLResult xmlResult = getXML("testPDFEmbeddingAndEmbedded.docx", context);
 
         //can get dehaystack depending on version of tesseract and/or preprocessing
@@ -376,6 +379,26 @@ public class PDFParserTest extends TikaTest {
         config.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.NO_OCR);
         String txt = getText("testOCR.pdf", new Metadata(), context);
         assertEquals("", txt.trim());
+    }
+
+    @Test
+    public void testOCRNoText() throws Exception {
+        assumeTrue("can run OCR", canRunOCR());
+        PDFParserConfig config = new PDFParserConfig();
+        config.setOcrRenderingStrategy(PDFParserConfig.OCR_RENDERING_STRATEGY.ALL);
+        config.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.OCR_ONLY);
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(PDFParserConfig.class, config);
+        XMLResult xmlResult = getXML("testPDF_XFA_govdocs1_258578.pdf", parseContext);
+        assertContains("PARK", xmlResult.xml);
+        assertContains("Applications", xmlResult.xml);
+
+        config.setOcrRenderingStrategy(PDFParserConfig.OCR_RENDERING_STRATEGY.NO_TEXT);
+        config.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.OCR_ONLY);
+        parseContext.set(PDFParserConfig.class, config);
+        xmlResult = getXML("testPDF_XFA_govdocs1_258578.pdf", parseContext);
+        assertContains("NATIONAL", xmlResult.xml);
+        assertNotContained("Applications", xmlResult.xml);
     }
 
     @Test

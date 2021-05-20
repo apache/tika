@@ -96,6 +96,8 @@ public class PDFParserConfig implements Serializable {
 
     private OCR_STRATEGY ocrStrategy = OCR_STRATEGY.AUTO;
 
+    private OCR_RENDERING_STRATEGY ocrRenderingStrategy = OCR_RENDERING_STRATEGY.NO_TEXT;
+
     private int ocrDPI = 300;
     private ImageType ocrImageType = ImageType.GRAY;
     private String ocrImageFormatName = "png";
@@ -263,12 +265,23 @@ public class PDFParserConfig implements Serializable {
     }
 
     /**
-     * If true, extract inline embedded OBXImages.
+     * If <code>true</code>, extract the literal inline embedded OBXImages.
+     * <p/>
      * <b>Beware:</b> some PDF documents of modest size (~4MB) can contain
      * thousands of embedded images totaling &gt; 2.5 GB.  Also, at least as of PDFBox 1.8.5,
      * there can be surprisingly large memory consumption and/or out of memory errors.
-     * Set to <code>true</code> with caution.
      * <p/>
+     * Along the same lines, note that this does not extract "logical" images.  Some PDF writers
+     * break up a single logical image into hundreds of little images.  With this option set to
+     * <code>true</code>, you might get those hundreds of little images.
+     * logical image into
+     * <p/>
+     * NOTE ALSO: this extracts the raw images without clipping, rotation, masks, color
+     * inverstion, etc. The images that this extracts may look nothing like what a human
+     * would expect given the appearance of the PDF.
+     * <p/>
+     * Set to <code>true</code> only with the greatest caution.
+     *
      * The default is <code>false</code>.
      * <p/>
      *
@@ -489,6 +502,25 @@ public class PDFParserConfig implements Serializable {
      */
     public void setOcrStrategy(String ocrStrategyString) {
         setOcrStrategy(OCR_STRATEGY.parse(ocrStrategyString));
+    }
+
+    public OCR_RENDERING_STRATEGY getOcrRenderingStrategy() {
+        return ocrRenderingStrategy;
+    }
+
+    public void setOcrRenderingStrategy(String ocrRenderingStrategyString) {
+        setOcrRenderingStrategy(OCR_RENDERING_STRATEGY.parse(ocrRenderingStrategyString));
+    }
+
+    /**
+     * When rendering the page for OCR, do you want to include the rendering of the electronic text,
+     * ALL, or do you only want to run OCR on the images and vector graphics (NO_TEXT)?
+     *
+     * @param ocrRenderingStrategy
+     */
+    public void setOcrRenderingStrategy(OCR_RENDERING_STRATEGY ocrRenderingStrategy) {
+        this.ocrRenderingStrategy = ocrRenderingStrategy;
+        userConfigured.add("ocrRenderingStrategy");
     }
 
     /**
@@ -837,6 +869,34 @@ public class PDFParserConfig implements Serializable {
             sb.append("' as an OCR_STRATEGY. I only recognize:");
             int i = 0;
             for (OCR_STRATEGY strategy : OCR_STRATEGY.values()) {
+                if (i++ > 0) {
+                    sb.append(", ");
+                }
+                sb.append(strategy.toString());
+
+            }
+            throw new IllegalArgumentException(sb.toString());
+        }
+    }
+
+    public enum OCR_RENDERING_STRATEGY {
+        NO_TEXT, ALL; //AUTO?
+        // Would TEXT_ONLY be useful in instances where the unicode mappings
+        // are corrupt/non-existent?
+
+        private static OCR_RENDERING_STRATEGY parse(String s) {
+            if (s == null) {
+                return NO_TEXT;
+            } else if ("no_text".equals(s.toLowerCase(Locale.ROOT))) {
+                return NO_TEXT;
+            } else if ("all".equals(s.toLowerCase(Locale.ROOT))) {
+                return ALL;
+            }
+            StringBuilder sb = new StringBuilder();
+            sb.append("I regret that I don't recognize '").append(s);
+            sb.append("' as an OCR_STRATEGY. I only recognize:");
+            int i = 0;
+            for (OCR_RENDERING_STRATEGY strategy : OCR_RENDERING_STRATEGY.values()) {
                 if (i++ > 0) {
                     sb.append(", ");
                 }

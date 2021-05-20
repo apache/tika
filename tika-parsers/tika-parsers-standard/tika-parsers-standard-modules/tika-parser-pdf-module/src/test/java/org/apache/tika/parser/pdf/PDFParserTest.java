@@ -23,7 +23,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.awt.image.BufferedImage;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -36,7 +41,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.ImageType;
+import org.apache.pdfbox.rendering.PDFRenderer;
+import org.apache.pdfbox.tools.imageio.ImageIOUtil;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -1382,4 +1390,22 @@ public class PDFParserTest extends TikaTest {
         metadata.set(TikaCoreProperties.TIKA_CONTENT, contentHandler.toString());
         return metadata;
     }*/
+
+    @Test
+    public void oneOff() throws Exception {
+        Path p = Paths.get("/home/tallison/Intellij/tika-main/tika-parsers/tika-parsers-standard" +
+                "/tika-parsers-standard-modules/tika-parser-pdf-module/src/test/resources/test" +
+                "-documents/testPDF_XFA_govdocs1_258578.pdf");
+        p = Paths.get("/home/tallison/Downloads/tiger.pdf");
+        PDDocument pdDocument = PDDocument.load(p.toFile());
+        PDFRenderer renderer = new NoTextPDFRenderer(pdDocument);
+        Path target = Paths.get("/home/tallison/Desktop/tiger-no-text.png");
+        BufferedImage image = renderer.renderImageWithDPI(0, 300);
+        try (OutputStream os = Files.newOutputStream(target)) {
+            //TODO: get output format from TesseractConfig
+            ImageIOUtil.writeImage(image, "png", os, 300);
+        }
+    }
+
+
 }

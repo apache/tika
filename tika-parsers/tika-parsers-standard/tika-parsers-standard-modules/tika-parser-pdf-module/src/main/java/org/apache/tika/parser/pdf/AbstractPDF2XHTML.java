@@ -465,10 +465,11 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             }
         }
 
-        PDFRenderer renderer = new PDFRenderer(pdDocument);
+        PDFRenderer renderer =
+                config.getOcrRenderingStrategy() == PDFParserConfig.OCR_RENDERING_STRATEGY.NO_TEXT ?
+                        new NoTextPDFRenderer(pdDocument) : new PDFRenderer(pdDocument);
 
         try (TemporaryResources tmp = new TemporaryResources()) {
-
             int dpi = config.getOcrDPI();
             Path tmpFile = null;
             try {
