@@ -19,7 +19,7 @@ Release 2.0.0-ALPHA - 01/13/2021
        We have moved away from configuration via .properties files because
        of confusion among users.  This affects the PDFParser, TesseractOCRParser
        and the StringsParser.
-     * For those parsers that can be configured per parse via a config object
+     * In tika-server, for those parsers that can be configured per parse via a config object
        passed in through the ParseContext, the config object will only update those fields
        that the user has modified.  The config object will no longer
        fully reset all settings to the default settings per parse.
