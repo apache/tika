@@ -16,15 +16,12 @@
  */
 package org.apache.tika.pipes;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.charset.StandardCharsets;
@@ -49,8 +46,6 @@ public class PipesClient implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(PipesClient.class);
 
     private Process process;
-    private LogGobbler logGobbler;
-    private Thread logGobblerThread;
     private final PipesConfigBase pipesConfig;
     private DataOutputStream output;
     private DataInputStream input;
@@ -229,22 +224,17 @@ public class PipesClient implements Closeable {
         } else {
             LOG.info("starting process");
         }
-        if (logGobblerThread != null) {
-            logGobblerThread.interrupt();
-        }
         ProcessBuilder pb = new ProcessBuilder(getCommandline());
+        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
         process = pb.start();
-        logGobbler = new LogGobbler(process.getErrorStream());
-        logGobblerThread = new Thread(logGobbler);
-        logGobblerThread.setDaemon(true);
-        logGobblerThread.start();
         input = new DataInputStream(process.getInputStream());
         output = new DataOutputStream(process.getOutputStream());
         //wait for ready signal
         FutureTask<Integer> futureTask = new FutureTask<>(() -> {
             int b = input.read();
             if (b != PipesServer.READY) {
-                throw new RuntimeException("Couldn't start server: " + b);
+                throw new RuntimeException("Couldn't start server: " + b +
+                        " Make absolutely certain that your logger is not writing to stdout.");
             }
             return 1;
         });
@@ -272,7 +262,7 @@ public class PipesClient implements Closeable {
         boolean hasClassPath = false;
         boolean hasHeadless = false;
         boolean hasExitOnOOM = false;
-
+        boolean hasLog4j = false;
         for (String arg : configArgs) {
             if (arg.startsWith("-Djava.awt.headless")) {
                 hasHeadless = true;
@@ -283,6 +273,9 @@ public class PipesClient implements Closeable {
             if (arg.equals("-XX:+ExitOnOutOfMemoryError") ||
                     arg.equals("-XX:+CrashOnOutOfMemoryError")) {
                 hasExitOnOOM = true;
+            }
+            if (arg.startsWith("-Dlog4j.configuration")) {
+                hasLog4j = true;
             }
         }
 
@@ -299,6 +292,9 @@ public class PipesClient implements Closeable {
         if (! hasExitOnOOM) {
             //warn
         }
+        if (! hasLog4j) {
+            commandLine.add("-Dlog4j.configurationFile=classpath:pipes-fork-server-default-log4j2.xml");
+        }
         commandLine.addAll(configArgs);
         commandLine.add("org.apache.tika.pipes.PipesServer");
         commandLine.add(
@@ -313,44 +309,7 @@ public class PipesClient implements Closeable {
         commandLine.add(maxForEmitBatchBytes);
         commandLine.add(Long.toString(pipesConfig.getTimeoutMillis()));
         commandLine.add(Long.toString(pipesConfig.getShutdownClientAfterMillis()));
-        LOG.debug("commandline: " + commandLine.toString());
+        LOG.debug("commandline: " + commandLine);
         return commandLine.toArray(new String[0]);
-    }
-
-    public static class LogGobbler implements Runnable {
-        private static final Logger SERVER_LOG = LoggerFactory.getLogger(LogGobbler.class);
-
-        private final BufferedReader reader;
-        public LogGobbler(InputStream is) {
-            reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
-        }
-
-        @Override
-        public void run() {
-            String line = null;
-            try {
-                line = reader.readLine();
-            } catch (IOException e) {
-                return;
-            }
-            while (line != null) {
-                if (line.startsWith("debug ")) {
-                    SERVER_LOG.debug(line.substring(6));
-                } else if (line.startsWith("info ")) {
-                    SERVER_LOG.info(line.substring(5));
-                } else if (line.startsWith("warn ")) {
-                    SERVER_LOG.warn(line.substring(5));
-                } else if (line.startsWith("error ")) {
-                    SERVER_LOG.error(line.substring(6));
-                } else {
-                    SERVER_LOG.debug(line);
-                }
-                try {
-                    line = reader.readLine();
-                } catch (IOException e) {
-                    return;
-                }
-            }
-        }
     }
 }

@@ -63,9 +63,8 @@ public class ForkParserTikaBinTest extends TikaTest {
         try (JarOutputStream jarOs = new JarOutputStream(Files.newOutputStream(JAR_FILE))) {
             ClassLoader loader = ForkServer.class.getClassLoader();
             ClassPath classPath = ClassPath.from(loader);
-
             addClasses(jarOs, classPath, ci -> ci.getPackageName().startsWith("org.slf4j"));
-            addClasses(jarOs, classPath, ci -> ci.getPackageName().startsWith("org.apache.log4j"));
+            addClasses(jarOs, classPath, ci -> ci.getPackageName().startsWith("org.apache.logging"));
             addClasses(jarOs, classPath,
                     ci -> ci.getPackageName().startsWith("org.apache.commons.io"));
             //exclude TypeDetectionBenchmark because it is not serializable

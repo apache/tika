@@ -30,6 +30,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaConfig;
@@ -54,7 +56,17 @@ import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.StringUtils;
 
+/**
+ * This server is forked from the PipesClient.  This class isolates
+ * parsing from the client to protect the primary JVM.
+ *
+ * When configuring logging for this class, make absolutely certain
+ * not to write to STDOUT.  This class uses STDOUT to communicate with
+ * the PipesClient.
+ */
 public class PipesServer implements Runnable {
+
+    private static final Logger LOG = LoggerFactory.getLogger(PipesServer.class);
 
     //this has to be some number not close to 0-3
     //it looks like the server crashes with exit value 3 on OOM, for example
@@ -139,7 +151,6 @@ public class PipesServer implements Runnable {
                 serverWaitTimeoutMillis);
         System.setIn(new ByteArrayInputStream(new byte[0]));
         System.setOut(System.err);
-
         Thread watchdog = new Thread(server, "Tika Watchdog");
         watchdog.setDaemon(true);
         watchdog.start();
@@ -153,11 +164,11 @@ public class PipesServer implements Runnable {
                 synchronized (lock) {
                     long elapsed = System.currentTimeMillis() - since;
                     if (parsing && elapsed > serverParseTimeoutMillis) {
-                        warn("timeout server; elapsed " + elapsed + " with " + serverParseTimeoutMillis);
+                        LOG.warn("timeout server; elapsed {}  with {}", elapsed, serverParseTimeoutMillis);
                         exit(TIMEOUT_EXIT_CODE);
                     } else if (!parsing && serverWaitTimeoutMillis > 0 &&
                             elapsed > serverWaitTimeoutMillis) {
-                        debug("closing down from inactivity");
+                        LOG.debug("closing down from inactivity");
                         exit(0);
                     }
                 }
@@ -168,38 +179,17 @@ public class PipesServer implements Runnable {
         }
     }
 
-    private void debug(String msg) {
-        System.err.println("debug " + msg.replaceAll("[\r\n]", " "));
-        System.err.flush();
-    }
-
-    private void warn(String msg) {
-        System.err.println("warn " + msg);
-        System.err.flush();
-    }
-
-    private void warn(Throwable t) {
-        System.err.println("warn " + ExceptionUtils.getStackTrace(t).replaceAll("[\r\n]", " "));
-        System.err.flush();
-    }
-
-    private void err(Throwable t) {
-        System.err.println("error " + ExceptionUtils.getStackTrace(t).replaceAll("[\r\n]", " "));
-        System.err.flush();
-    }
-
-
     public void processRequests() {
         //initialize
         try {
             initializeParser();
         } catch (Throwable t) {
-            err(t);
+            LOG.error("couldn't initialize parser", t);
             try {
                 output.writeByte(FAILED_TO_START);
                 output.flush();
             } catch (IOException e) {
-                warn(e);
+                LOG.warn("couldn't notify of failure to start", e);
             }
             return;
         }
@@ -222,9 +212,7 @@ public class PipesServer implements Runnable {
                 output.flush();
             }
         } catch (Throwable t) {
-            t.printStackTrace();
-            err(t);
-            System.err.println("exiting");
+            LOG.error("main loop error (did the forking process shut down?)", t);
             exit(1);
         }
         System.err.flush();
@@ -300,7 +288,7 @@ public class PipesServer implements Runnable {
         } catch (SecurityException e) {
             throw e;
         } catch (TikaException | IOException e) {
-            warn(e);
+            LOG.warn("fetch exception", e);
             throw new FetchException(e);
         } catch (OutOfMemoryError e) {
             handleOOM(e);
@@ -334,8 +322,7 @@ public class PipesServer implements Runnable {
         try {
             return fetcherManager.getFetcher(fetcherName);
         } catch (TikaException | IOException e) {
-            warn(e);
-            //LOG.error("can't get fetcher", e);
+            LOG.error("can't load fetcher", e);
             throw new FetchException(e);
         }
     }
@@ -347,7 +334,7 @@ public class PipesServer implements Runnable {
         } catch (IOException e) {
             //swallow at this point
         }
-        err(oom);
+        LOG.error("oom", oom);
         exit(1);
     }
 
@@ -364,18 +351,14 @@ public class PipesServer implements Runnable {
         try {
             parser.parse(stream, handler, metadata, parseContext);
         } catch (SAXException e) {
-            warn(e);
-            //LOG.warn("problem:" + fetchKey.getFetchKey(), e);
+            LOG.warn("sax problem:" + fetchEmitTuple.getId(), e);
         } catch (EncryptedDocumentException e) {
-            warn(e);
-            //LOG.warn("encrypted:" + fetchKey.getFetchKey(), e);
+            LOG.warn("encrypted document:" + fetchEmitTuple.getId(), e);
         } catch (SecurityException e) {
-            warn(e);
-            //LOG.warn("security exception: " + fetchKey.getFetchKey());
+            LOG.warn("security exception:" + fetchEmitTuple.getId(), e);
             throw e;
         } catch (Exception e) {
-            warn(e);
-            //LOG.warn("exception: " + fetchKey.getFetchKey());
+            LOG.warn("exception: " + fetchEmitTuple.getId(), e);
         } catch (OutOfMemoryError e) {
             //TODO, maybe return file type gathered so far and then crash?
             //LOG.error("oom: " + fetchKey.getFetchKey());
@@ -396,8 +379,7 @@ public class PipesServer implements Runnable {
 
 
     private void exit(int exitCode) {
-        System.err.println("exiting: " + exitCode);
-        System.err.flush();
+        LOG.warn("exiting: {}", exitCode);
         System.exit(exitCode);
     }
 
@@ -412,12 +394,10 @@ public class PipesServer implements Runnable {
                 return (FetchEmitTuple) objectInputStream.readObject();
             }
         } catch (IOException e) {
-            err(e);
-            //LOG.error("problem reading tuple", e);
+            LOG.error("problem reading tuple", e);
             exit(1);
         } catch (ClassNotFoundException e) {
-            err(e);
-            //LOG.error("can't find class?!", e);
+            LOG.error("can't find class?!", e);
             exit(1);
         }
         //unreachable, no?!
@@ -448,8 +428,7 @@ public class PipesServer implements Runnable {
             }
             write(PARSE_SUCCESS, bos.toByteArray());
         } catch (IOException e) {
-            err(e);
-            //LOG.error("problem writing emit data", e);
+            LOG.error("problem writing emit data (forking process shutdown?)", e);
             exit(1);
         }
     }
@@ -462,7 +441,7 @@ public class PipesServer implements Runnable {
             output.write(bytes);
             output.flush();
         } catch (IOException e) {
-            err(e);
+            LOG.error("problem writing data (forking process shutdown?)", e);
             exit(1);
         }
     }
@@ -472,7 +451,7 @@ public class PipesServer implements Runnable {
             output.write(status);
             output.flush();
         } catch (IOException e) {
-            err(e);
+            LOG.error("problem writing data (forking process shutdown?)", e);
             exit(1);
         }
     }

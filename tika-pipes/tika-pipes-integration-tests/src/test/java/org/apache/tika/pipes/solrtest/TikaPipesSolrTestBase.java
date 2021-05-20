@@ -85,9 +85,9 @@ public abstract class TikaPipesSolrTestBase {
     protected void runTikaAsyncSolrPipeIteratorFileFetcherSolrEmitter(boolean useZk)
             throws Exception {
         File tikaConfigFile = new File("target", "ta.xml");
-        File log4jPropFile = new File("target", "tmp-log4j2.properties");
+        File log4jPropFile = new File("target", "tmp-log4j2.xml");
         try (InputStream is = PipeIntegrationTests.class
-                .getResourceAsStream("/tika-async-log4j2.properties")) {
+                .getResourceAsStream("/pipes-fork-server-custom-log4j2.xml")) {
             FileUtils.copyInputStreamToFile(is, log4jPropFile);
         }
         String tikaConfigTemplateXml;
