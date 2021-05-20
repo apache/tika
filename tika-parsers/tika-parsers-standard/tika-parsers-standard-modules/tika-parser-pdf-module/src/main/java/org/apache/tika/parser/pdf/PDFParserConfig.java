@@ -274,10 +274,9 @@ public class PDFParserConfig implements Serializable {
      * Along the same lines, note that this does not extract "logical" images.  Some PDF writers
      * break up a single logical image into hundreds of little images.  With this option set to
      * <code>true</code>, you might get those hundreds of little images.
-     * logical image into
      * <p/>
      * NOTE ALSO: this extracts the raw images without clipping, rotation, masks, color
-     * inverstion, etc. The images that this extracts may look nothing like what a human
+     * inversion, etc. The images that this extracts may look nothing like what a human
      * would expect given the appearance of the PDF.
      * <p/>
      * Set to <code>true</code> only with the greatest caution.
