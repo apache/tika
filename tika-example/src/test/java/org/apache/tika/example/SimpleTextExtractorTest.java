@@ -18,7 +18,6 @@
 package org.apache.tika.example;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -27,7 +26,9 @@ import java.io.PrintStream;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 
-public class SimpleTextExtractorTest {
+import org.apache.tika.TikaTest;
+
+public class SimpleTextExtractorTest extends TikaTest {
     @Test
     public void testSimpleTextExtractor() throws Exception {
         String message = "This is Tika - Hello, World! This is simple UTF-8 text" +
@@ -45,6 +46,6 @@ public class SimpleTextExtractorTest {
 
         System.setOut(out);
 
-        assertEquals(message, buffer.toString(UTF_8.name()).trim());
+        assertContains(message, buffer.toString(UTF_8.name()).trim());
     }
 }
