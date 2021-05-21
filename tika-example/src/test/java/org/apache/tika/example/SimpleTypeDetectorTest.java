@@ -25,8 +25,10 @@ import java.io.PrintStream;
 
 import org.junit.Test;
 
+import org.apache.tika.TikaTest;
+
 @SuppressWarnings("deprecation")
-public class SimpleTypeDetectorTest {
+public class SimpleTypeDetectorTest extends TikaTest {
 
     @Test
     public void testSimpleTypeDetector() throws Exception {
@@ -39,7 +41,7 @@ public class SimpleTypeDetectorTest {
 
         System.setOut(out);
 
-        assertEquals("pom.xml: application/xml", buffer.toString(UTF_8.name()).trim());
+        assertContains("pom.xml: application/xml", buffer.toString(UTF_8.name()).trim());
     }
 
 }
