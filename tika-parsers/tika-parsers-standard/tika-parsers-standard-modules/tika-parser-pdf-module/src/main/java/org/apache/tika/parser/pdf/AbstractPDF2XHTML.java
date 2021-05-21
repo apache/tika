@@ -55,6 +55,7 @@ import org.apache.pdfbox.pdmodel.PDDocumentNameDictionary;
 import org.apache.pdfbox.pdmodel.PDEmbeddedFilesNameTreeNode;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageTree;
+import org.apache.pdfbox.pdmodel.common.COSObjectable;
 import org.apache.pdfbox.pdmodel.common.PDDestinationOrAction;
 import org.apache.pdfbox.pdmodel.common.PDNameTreeNode;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDComplexFileSpecification;
@@ -123,6 +124,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
      * the embedded document tree.
      */
     private final static int MAX_RECURSION_DEPTH = 100;
+    private final static int MAX_BOOKMARK_ITEMS = 10000;
     private static final MediaType XFA_MEDIA_TYPE = MediaType.application("vnd.adobe.xdp+xml");
     private static final MediaType XMP_MEDIA_TYPE = MediaType.application("rdf+xml");
     final List<IOException> exceptions = new ArrayList<>();
@@ -797,24 +799,32 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     void extractBookmarkText() throws SAXException, IOException, TikaException {
         PDDocumentOutline outline = document.getDocumentCatalog().getDocumentOutline();
         if (outline != null) {
-            extractBookmarkText(outline);
+            Set<COSObjectable> seen = new HashSet<>();
+            extractBookmarkText(outline, seen, 0);
         }
     }
 
-    void extractBookmarkText(PDOutlineNode bookmark)
+    void extractBookmarkText(PDOutlineNode bookmark, Set<COSObjectable> seen, int itemCount)
             throws SAXException, IOException, TikaException {
         PDOutlineItem current = bookmark.getFirstChild();
-
+        if (itemCount > MAX_BOOKMARK_ITEMS) {
+            return;
+        }
         if (current != null) {
+            if (seen.contains(current)) {
+                return;
+            }
             xhtml.startElement("ul");
             while (current != null) {
+                seen.add(current);
                 xhtml.startElement("li");
                 xhtml.characters(current.getTitle());
                 xhtml.endElement("li");
                 handleDestinationOrAction(current.getAction(), ActionTrigger.BOOKMARK);
                 // Recurse:
-                extractBookmarkText(current);
+                extractBookmarkText(current, seen, itemCount + 1);
                 current = current.getNextSibling();
+                itemCount++;
             }
             xhtml.endElement("ul");
         }
