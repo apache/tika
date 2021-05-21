@@ -25,7 +25,8 @@ Release 2.0.0-ALPHA - 01/13/2021
        fully reset all settings to the default settings per parse.
        This has a more intuitive "update the base/configured settings" with
        what has been changed in the config object.
-
+     * We are now using non-shaded versions of xmpcore with namespaces com.adobe.internal.*
+       vs com.adobe.*.
 
    * tika-parsers
      * The parser modules have been broken into three main modules:
