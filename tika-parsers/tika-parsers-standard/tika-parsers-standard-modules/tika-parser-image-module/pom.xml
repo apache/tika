@@ -30,9 +30,9 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.tallison</groupId>
+      <groupId>com.drewnoakes</groupId>
       <artifactId>metadata-extractor</artifactId>
-      <version>${metadata.extractor.version}</version>
+      <version>2.16.0</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>

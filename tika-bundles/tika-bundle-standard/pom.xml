@@ -219,7 +219,7 @@
               vorbis-java-tika|
               isoparser|
               metadata-extractor|
-              xmpcore-shaded|
+              xmpcore|
               json-simple|
               boilerpipe|
               rome|

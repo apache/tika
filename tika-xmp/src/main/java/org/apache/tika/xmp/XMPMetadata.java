@@ -34,17 +34,17 @@ import org.apache.tika.metadata.PropertyTypeException;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.xmp.convert.TikaToXMP;
 
-import com.adobe.xmp.XMPDateTime;
-import com.adobe.xmp.XMPException;
-import com.adobe.xmp.XMPIterator;
-import com.adobe.xmp.XMPMeta;
-import com.adobe.xmp.XMPMetaFactory;
-import com.adobe.xmp.XMPSchemaRegistry;
-import com.adobe.xmp.XMPUtils;
-import com.adobe.xmp.options.IteratorOptions;
-import com.adobe.xmp.options.PropertyOptions;
-import com.adobe.xmp.options.SerializeOptions;
-import com.adobe.xmp.properties.XMPProperty;
+import com.adobe.internal.xmp.XMPDateTime;
+import com.adobe.internal.xmp.XMPException;
+import com.adobe.internal.xmp.XMPIterator;
+import com.adobe.internal.xmp.XMPMeta;
+import com.adobe.internal.xmp.XMPMetaFactory;
+import com.adobe.internal.xmp.XMPSchemaRegistry;
+import com.adobe.internal.xmp.XMPUtils;
+import com.adobe.internal.xmp.options.IteratorOptions;
+import com.adobe.internal.xmp.options.PropertyOptions;
+import com.adobe.internal.xmp.options.SerializeOptions;
+import com.adobe.internal.xmp.properties.XMPProperty;
 
 /**
  * Provides a conversion of the Metadata map from Tika to the XMP data model by also providing the

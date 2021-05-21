@@ -30,9 +30,9 @@ import org.apache.tika.parser.microsoft.ooxml.OOXMLParser;
 import org.apache.tika.parser.microsoft.rtf.RTFParser;
 import org.apache.tika.parser.odf.OpenDocumentParser;
 
-import com.adobe.xmp.XMPException;
-import com.adobe.xmp.XMPMeta;
-import com.adobe.xmp.XMPMetaFactory;
+import com.adobe.internal.xmp.XMPException;
+import com.adobe.internal.xmp.XMPMeta;
+import com.adobe.internal.xmp.XMPMetaFactory;
 
 public class TikaToXMP {
     /**

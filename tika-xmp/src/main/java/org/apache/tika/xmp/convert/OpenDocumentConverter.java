@@ -28,10 +28,10 @@ import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.TikaCoreProperties;
 
-import com.adobe.xmp.XMPConst;
-import com.adobe.xmp.XMPException;
-import com.adobe.xmp.XMPMeta;
-import com.adobe.xmp.options.PropertyOptions;
+import com.adobe.internal.xmp.XMPConst;
+import com.adobe.internal.xmp.XMPException;
+import com.adobe.internal.xmp.XMPMeta;
+import com.adobe.internal.xmp.options.PropertyOptions;
 
 /**
  * Tika to XMP mapping for the Open Document formats: Text (.odt), Spreatsheet (.ods), Graphics

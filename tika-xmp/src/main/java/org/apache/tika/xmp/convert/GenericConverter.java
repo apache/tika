@@ -28,11 +28,11 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPRights;
 import org.apache.tika.metadata.Property.PropertyType;
 
-import com.adobe.xmp.XMPException;
-import com.adobe.xmp.XMPMeta;
-import com.adobe.xmp.XMPMetaFactory;
-import com.adobe.xmp.XMPSchemaRegistry;
-import com.adobe.xmp.options.PropertyOptions;
+import com.adobe.internal.xmp.XMPException;
+import com.adobe.internal.xmp.XMPMeta;
+import com.adobe.internal.xmp.XMPMetaFactory;
+import com.adobe.internal.xmp.XMPSchemaRegistry;
+import com.adobe.internal.xmp.options.PropertyOptions;
 
 /**
  * Trys to convert as much of the properties in the <code>Metadata</code> map to XMP namespaces.

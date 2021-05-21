@@ -32,12 +32,12 @@ import org.apache.tika.xmp.convert.TikaToXMP;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.adobe.xmp.XMPConst;
-import com.adobe.xmp.XMPException;
-import com.adobe.xmp.XMPIterator;
-import com.adobe.xmp.XMPMeta;
-import com.adobe.xmp.XMPMetaFactory;
-import com.adobe.xmp.properties.XMPProperty;
+import com.adobe.internal.xmp.XMPConst;
+import com.adobe.internal.xmp.XMPException;
+import com.adobe.internal.xmp.XMPIterator;
+import com.adobe.internal.xmp.XMPMeta;
+import com.adobe.internal.xmp.XMPMetaFactory;
+import com.adobe.internal.xmp.properties.XMPProperty;
 
 /**
  * Tests the Tika <code>Metadata</code> to XMP conversion functionatlity

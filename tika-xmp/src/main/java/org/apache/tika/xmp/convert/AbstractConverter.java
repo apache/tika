@@ -22,13 +22,13 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 
-import com.adobe.xmp.XMPConst;
-import com.adobe.xmp.XMPException;
-import com.adobe.xmp.XMPMeta;
-import com.adobe.xmp.XMPMetaFactory;
-import com.adobe.xmp.XMPSchemaRegistry;
-import com.adobe.xmp.XMPUtils;
-import com.adobe.xmp.options.PropertyOptions;
+import com.adobe.internal.xmp.XMPConst;
+import com.adobe.internal.xmp.XMPException;
+import com.adobe.internal.xmp.XMPMeta;
+import com.adobe.internal.xmp.XMPMetaFactory;
+import com.adobe.internal.xmp.XMPSchemaRegistry;
+import com.adobe.internal.xmp.XMPUtils;
+import com.adobe.internal.xmp.options.PropertyOptions;
 
 /**
  * Base class for Tika Metadata to XMP converter which provides some needed common functionality.

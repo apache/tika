@@ -29,11 +29,11 @@ import org.apache.tika.metadata.XMPRights;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.adobe.xmp.XMPConst;
-import com.adobe.xmp.XMPException;
-import com.adobe.xmp.XMPMeta;
-import com.adobe.xmp.XMPUtils;
-import com.adobe.xmp.properties.XMPProperty;
+import com.adobe.internal.xmp.XMPConst;
+import com.adobe.internal.xmp.XMPException;
+import com.adobe.internal.xmp.XMPMeta;
+import com.adobe.internal.xmp.XMPUtils;
+import com.adobe.internal.xmp.properties.XMPProperty;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
