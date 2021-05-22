@@ -27,8 +27,12 @@ import org.apache.solr.client.solrj.impl.LBHttpSolrClient;
 import org.apache.solr.common.SolrInputDocument;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
+import org.testcontainers.utility.DockerImageName;
 
 import org.apache.tika.cli.TikaCLI;
 import org.apache.tika.pipes.PipeIntegrationTests;
@@ -44,6 +48,25 @@ public abstract class TikaPipesSolrTestBase {
     private int solrPort;
     private int zkPort;
     private String solrEndpoint;
+
+    public abstract boolean useZk();
+    public abstract String getSolrImageName();
+
+    @Rule
+    public GenericContainer<?> solrContainer =
+            new GenericContainer<>(DockerImageName.parse(getSolrImageName())).withExposedPorts(8983,
+                    9983)
+                    .withCommand("-DzkRun");
+
+    @Before
+    public void setupTest() throws Exception {
+        setupSolr(solrContainer);
+    }
+
+    @Test
+    public void testFetchIteratorWithSolrUrls() throws Exception {
+        runTikaAsyncSolrPipeIteratorFileFetcherSolrEmitter();
+    }
 
     private void createTestHtmlFiles(String bodyContent) throws Exception {
         testFileFolder.mkdirs();
@@ -80,9 +103,8 @@ public abstract class TikaPipesSolrTestBase {
     /**
      * Runs a test using Solr Pipe Iterator, File Fetcher and Solr Emitter.
      *
-     * @param useZk If true, use zookeeper to connect to solr. Otherwise use direct solr URLs.
      */
-    protected void runTikaAsyncSolrPipeIteratorFileFetcherSolrEmitter(boolean useZk)
+    protected void runTikaAsyncSolrPipeIteratorFileFetcherSolrEmitter()
             throws Exception {
         File tikaConfigFile = new File("target", "ta.xml");
         File log4jPropFile = new File("target", "tmp-log4j2.xml");
@@ -97,7 +119,7 @@ public abstract class TikaPipesSolrTestBase {
         }
 
         String tikaConfigXml =
-                createTikaConfigXml(useZk, tikaConfigFile, log4jPropFile, tikaConfigTemplateXml,
+                createTikaConfigXml(useZk(), tikaConfigFile, log4jPropFile, tikaConfigTemplateXml,
                         SolrEmitter.UpdateStrategy.ADD,
                         SolrEmitter.AttachmentStrategy.CONCATENATE_CONTENT);
         FileUtils.writeStringToFile(tikaConfigFile, tikaConfigXml, StandardCharsets.UTF_8);
@@ -119,7 +141,7 @@ public abstract class TikaPipesSolrTestBase {
         // It should not fail, and docs should be updated.
         createTestHtmlFiles("updated");
         tikaConfigXml =
-                createTikaConfigXml(useZk, tikaConfigFile, log4jPropFile, tikaConfigTemplateXml,
+                createTikaConfigXml(useZk(), tikaConfigFile, log4jPropFile, tikaConfigTemplateXml,
                         SolrEmitter.UpdateStrategy.UPDATE_MUST_EXIST,
                         SolrEmitter.AttachmentStrategy.CONCATENATE_CONTENT);
         FileUtils.writeStringToFile(tikaConfigFile, tikaConfigXml, StandardCharsets.UTF_8);

@@ -16,31 +16,15 @@
  */
 package org.apache.tika.pipes.solrtest;
 
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.utility.DockerImageName;
-
 public class TikaPipesSolr8Test extends TikaPipesSolrTestBase {
 
-    @Rule
-    public GenericContainer<?> solr8 =
-            new GenericContainer<>(DockerImageName.parse("solr:8")).withExposedPorts(8983, 9983)
-                    .withCommand("-DzkRun");
-
-    @Before
-    public void setupTest() throws Exception {
-        setupSolr(solr8);
+    @Override
+    public String getSolrImageName() {
+        return "solr:8";
     }
 
-    @Test
-    public void testFetchIteratorWithSolrUrls() throws Exception {
-        runTikaAsyncSolrPipeIteratorFileFetcherSolrEmitter(false);
-    }
-
-    @Test
-    public void testFetchIteratorWithZkHost() throws Exception {
-        runTikaAsyncSolrPipeIteratorFileFetcherSolrEmitter(true);
+    @Override
+    public boolean useZk() {
+        return false;
     }
 }

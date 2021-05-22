@@ -16,16 +16,23 @@
  */
 package org.apache.tika.pipes.solrtest;
 
-public class TikaPipesSolr6Test extends TikaPipesSolrTestBase {
+import static org.junit.Assume.assumeTrue;
 
-    @Override
-    public boolean useZk() {
-        return false;
+import org.junit.BeforeClass;
+
+import org.apache.tika.utils.SystemUtils;
+
+public class TikaPipesSolr8ZkTest extends TikaPipesSolr8Test {
+
+    @BeforeClass
+    public static void setUp() {
+        assumeTrue("zk test only works on linux (and not mac os x)",
+                SystemUtils.IS_OS_UNIX && ! SystemUtils.IS_OS_MAC_OSX);
     }
 
     @Override
-    public String getSolrImageName() {
-        return "solr:6";
+    public boolean useZk() {
+        return true;
     }
 
 }
