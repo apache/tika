@@ -76,6 +76,11 @@ public class ServiceLoader {
         this(loader, handler, false);
     }
 
+    public ServiceLoader(ClassLoader loader, boolean dynamic) {
+        this(loader, Boolean.getBoolean("org.apache.tika.service.error.warn") ? LoadErrorHandler.WARN :
+                        LoadErrorHandler.IGNORE, true);
+    }
+
     public ServiceLoader(ClassLoader loader) {
         this(loader,
                 Boolean.getBoolean("org.apache.tika.service.error.warn") ? LoadErrorHandler.WARN :
