@@ -66,7 +66,7 @@ public class DefaultZipContainerDetector implements Detector {
     @Field
     int markLimit = 16 * 1024 * 1024;
 
-    private ServiceLoader loader;
+    private transient ServiceLoader loader;
 
     private List<ZipContainerDetector> staticZipDetectors;
 
