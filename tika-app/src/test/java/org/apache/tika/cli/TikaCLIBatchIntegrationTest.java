@@ -33,19 +33,18 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 public class TikaCLIBatchIntegrationTest {
 
-    private Path testInputDir = Paths.get("src/test/resources/test-data");
     private final String propsFileName = "log4j2_batch_process_test.properties";
+    private Path testInputDir = Paths.get("src/test/resources/test-data");
     private String testInputDirForCommandLine;
     private Path tempOutputDir;
     private String tempOutputDirForCommandLine;
@@ -81,8 +80,7 @@ public class TikaCLIBatchIntegrationTest {
 
     @Test
     public void testSimplestBatchIntegration() throws Exception {
-        String[] params = {testInputDirForCommandLine,
-                tempOutputDirForCommandLine};
+        String[] params = {testInputDirForCommandLine, tempOutputDirForCommandLine};
         TikaCLI.main(params);
 
         assertFileExists(tempOutputDir.resolve("bad_xml.xml.xml"));
@@ -91,10 +89,8 @@ public class TikaCLIBatchIntegrationTest {
 
     @Test
     public void testBasicBatchIntegration() throws Exception {
-        String[] params = {"-i", testInputDirForCommandLine,
-                "-o", tempOutputDirForCommandLine,
-                "-numConsumers", "2"
-        };
+        String[] params = {"-i", testInputDirForCommandLine, "-o", tempOutputDirForCommandLine,
+                "-numConsumers", "2"};
         TikaCLI.main(params);
 
         assertFileExists(tempOutputDir.resolve("bad_xml.xml.xml"));
@@ -103,10 +99,8 @@ public class TikaCLIBatchIntegrationTest {
 
     @Test
     public void testJsonRecursiveBatchIntegration() throws Exception {
-        String[] params = {"-i", testInputDirForCommandLine,
-                "-o", tempOutputDirForCommandLine,
-                "-numConsumers", "10",
-                "-J", //recursive Json
+        String[] params = {"-i", testInputDirForCommandLine, "-o", tempOutputDirForCommandLine,
+                "-numConsumers", "10", "-J", //recursive Json
                 "-t" //plain text in content
         };
         TikaCLI.main(params);
@@ -115,28 +109,27 @@ public class TikaCLIBatchIntegrationTest {
         try (Reader reader = Files.newBufferedReader(jsonFile, UTF_8)) {
             List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
             assertEquals(12, metadataList.size());
-            assertTrue(metadataList.get(6).get(TikaCoreProperties.TIKA_CONTENT).contains("human events"));
+            assertTrue(metadataList.get(6).get(TikaCoreProperties.TIKA_CONTENT)
+                    .contains("human events"));
         }
     }
 
     @Test
     public void testStreamingJsonRecursiveBatchIntegration() throws Exception {
-        String[] params = {"-i", testInputDirForCommandLine,
-                "-o", tempOutputDirForCommandLine,
-                "-numConsumers", "10",
-                "-J", //recursive Json
+        String[] params = {"-i", testInputDirForCommandLine, "-o", tempOutputDirForCommandLine,
+                "-numConsumers", "10", "-J", //recursive Json
                 "-t", //plain text in content
-                "-streamOut"
-        };
+                "-streamOut"};
         TikaCLI.main(params);
 
         Path jsonFile = tempOutputDir.resolve("test_recursive_embedded.docx.json");
         try (Reader reader = Files.newBufferedReader(jsonFile, UTF_8)) {
             List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
             assertEquals(12, metadataList.size());
-            assertTrue(metadataList.get(6).get(TikaCoreProperties.TIKA_CONTENT).contains("human events"));
+            assertTrue(metadataList.get(6).get(TikaCoreProperties.TIKA_CONTENT)
+                    .contains("human events"));
             //test that the last written object has been bumped to the first by JsonMetadataList.fromJson()
-            assertNull( metadataList.get(0).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+            assertNull(metadataList.get(0).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
         }
     }
 
@@ -173,13 +166,10 @@ public class TikaCLIBatchIntegrationTest {
             IOUtils.closeQuietly(reader);
         }
 */
-        String[] params = {"-i", testInputDirForCommandLine,
-                "-o", tempOutputDirForCommandLine,
-                "-numConsumers", "10",
-                "-J", //recursive Json
+        String[] params = {"-i", testInputDirForCommandLine, "-o", tempOutputDirForCommandLine,
+                "-numConsumers", "10", "-J", //recursive Json
                 "-t", //plain text in content
-                "-digest", "sha512"
-        };
+                "-digest", "sha512"};
         TikaCLI.main(params);
         Path jsonFile = tempOutputDir.resolve("test_recursive_embedded.docx.json");
         try (Reader reader = Files.newBufferedReader(jsonFile, UTF_8)) {
@@ -187,13 +177,13 @@ public class TikaCLIBatchIntegrationTest {
             List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
             assertEquals(12, metadataList.size());
             assertNotNull(metadataList.get(0).get("X-TIKA:digest:SHA512"));
-            assertTrue(metadataList.get(0).get("X-TIKA:digest:SHA512").startsWith("ee46d973ee1852c01858"));
+            assertTrue(metadataList.get(0).get("X-TIKA:digest:SHA512")
+                    .startsWith("ee46d973ee1852c01858"));
         }
     }
 
     private void assertFileExists(Path path) {
-        assertTrue("File doesn't exist: "+path.toAbsolutePath(),
-                Files.isRegularFile(path));
+        assertTrue("File doesn't exist: " + path.toAbsolutePath(), Files.isRegularFile(path));
     }
 
 }

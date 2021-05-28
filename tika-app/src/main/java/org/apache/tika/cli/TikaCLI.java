@@ -18,11 +18,6 @@ package org.apache.tika.cli;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.sax.SAXTransformerFactory;
-import javax.xml.transform.sax.TransformerHandler;
-import javax.xml.transform.stream.StreamResult;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -55,11 +50,21 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.sax.SAXTransformerFactory;
+import javax.xml.transform.sax.TransformerHandler;
+import javax.xml.transform.stream.StreamResult;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
-
+import org.apache.logging.log4j.Level;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.Tika;
 import org.apache.tika.batch.BatchProcessDriverCLI;
@@ -108,26 +113,132 @@ import org.apache.tika.sax.WriteOutContentHandler;
 import org.apache.tika.sax.boilerpipe.BoilerpipeContentHandler;
 import org.apache.tika.xmp.XMPMetadata;
 
-import org.apache.logging.log4j.Level;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 /**
  * Simple command line interface for Apache Tika.
  */
 public class TikaCLI {
-    private final int MAX_MARK = 20*1024*1024;//20MB
+    private static final Logger LOG = LoggerFactory.getLogger(TikaCLI.class);
+
+    private final int MAX_MARK = 20 * 1024 * 1024;//20MB
+
+    private final OutputType NO_OUTPUT = new OutputType() {
+        @Override
+        protected ContentHandler getContentHandler(OutputStream output, Metadata metadata) {
+            return new DefaultHandler();
+        }
+    };
+
+    private final OutputType XML = new OutputType() {
+        @Override
+        protected ContentHandler getContentHandler(OutputStream output, Metadata metadata)
+                throws Exception {
+            return getTransformerHandler(output, "xml", encoding, prettyPrint);
+        }
+    };
 
     private File extractDir = new File(".");
+    private ParseContext context;
+    private Detector detector;
+    private Parser parser;
+    private TikaConfig config;
+    private String configFilePath;
+    private OutputType type = XML;
+    private boolean recursiveJSON = false;
+    private URI networkURI = null;
+    /**
+     * Output character encoding, or <code>null</code> for platform default
+     */
+    private String encoding = null;
+    private final OutputType TEXT = new OutputType() {
+        @Override
+        protected ContentHandler getContentHandler(OutputStream output, Metadata metadata)
+                throws Exception {
+            return new BodyContentHandler(getOutputWriter(output, encoding));
+        }
+    };
+    private final OutputType TEXT_MAIN = new OutputType() {
+        @Override
+        protected ContentHandler getContentHandler(OutputStream output, Metadata metadata)
+                throws Exception {
+            return new BoilerpipeContentHandler(getOutputWriter(output, encoding));
+        }
+    };
+    private final OutputType TEXT_ALL = new OutputType() {
+        @Override
+        protected ContentHandler getContentHandler(OutputStream output, Metadata metadata)
+                throws Exception {
+            return new WriteOutContentHandler(getOutputWriter(output, encoding));
+        }
+    };
+    private final OutputType METADATA = new OutputType() {
+        @Override
+        protected ContentHandler getContentHandler(OutputStream output, Metadata metadata)
+                throws Exception {
+            final PrintWriter writer = new PrintWriter(getOutputWriter(output, encoding));
+            return new NoDocumentMetHandler(metadata, writer);
+        }
+    };
+    private final OutputType JSON = new OutputType() {
+        @Override
+        protected ContentHandler getContentHandler(OutputStream output, Metadata metadata)
+                throws Exception {
+            final PrintWriter writer = new PrintWriter(getOutputWriter(output, encoding));
+            return new NoDocumentJSONMetHandler(metadata, writer);
+        }
+    };
+    private final OutputType XMP = new OutputType() {
+        @Override
+        protected ContentHandler getContentHandler(OutputStream output, final Metadata metadata)
+                throws Exception {
+            final PrintWriter writer = new PrintWriter(getOutputWriter(output, encoding));
+            return new NoDocumentXMPMetaHandler(metadata, writer);
+        }
+    };
+    private final OutputType LANGUAGE = new OutputType() {
+        @Override
+        protected ContentHandler getContentHandler(OutputStream output, Metadata metadata)
+                throws Exception {
+            final PrintWriter writer = new PrintWriter(getOutputWriter(output, encoding));
+            return new LanguageHandler() {
+                public void endDocument() {
+                    writer.println(getLanguage().getLanguage());
+                    writer.flush();
+                }
+            };
+        }
+    };
+    private final OutputType DETECT = new OutputType() {
+        @Override
+        public void process(InputStream stream, OutputStream output, Metadata metadata)
+                throws Exception {
+            PrintWriter writer = new PrintWriter(getOutputWriter(output, encoding));
+            writer.println(detector.detect(stream, metadata).toString());
+            writer.flush();
+        }
+    };
+    /**
+     * Password for opening encrypted documents, or <code>null</code>.
+     */
+    private String password = System.getenv("TIKA_PASSWORD");
+    private DigestingParser.Digester digester = null;
+    private boolean asyncMode = false;
+    private boolean pipeMode = true;
+    private boolean fork = false;
+    private boolean prettyPrint;
 
-    private static final Logger LOG = LoggerFactory.getLogger(TikaCLI.class);
+    private final OutputType HTML = new OutputType() {
+        @Override
+        protected ContentHandler getContentHandler(OutputStream output, Metadata metadata)
+                throws Exception {
+            return new ExpandedTitleContentHandler(
+                    getTransformerHandler(output, "html", encoding, prettyPrint));
+        }
+    };
 
     public TikaCLI() {
         context = new ParseContext();
     }
+
     public static void main(String[] args) throws Exception {
         TikaCLI cli = new TikaCLI();
 
@@ -166,19 +277,8 @@ public class TikaCLI {
         }
     }
 
-    private boolean testForAsync(String[] args) {
-        for (String arg : args) {
-            if (arg.equals("-a") || arg.equals("--async")) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static void async(String[] args) throws InterruptedException, PipesException,
-            TikaException,
-            IOException,
-            SAXException {
+    private static void async(String[] args)
+            throws InterruptedException, PipesException, TikaException, IOException, SAXException {
         String tikaConfigPath = "";
         for (String arg : args) {
             if (arg.startsWith("--config=")) {
@@ -201,189 +301,76 @@ public class TikaCLI {
         }
     }
 
+    /**
+     * Returns a output writer with the given encoding.
+     *
+     * @param output   output stream
+     * @param encoding output encoding,
+     *                 or <code>null</code> for the platform default
+     * @return output writer
+     * @throws UnsupportedEncodingException if the given encoding is not supported
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-277">TIKA-277</a>
+     */
+    private static Writer getOutputWriter(OutputStream output, String encoding)
+            throws UnsupportedEncodingException {
+        if (encoding != null) {
+            return new OutputStreamWriter(output, encoding);
+        } else if (System.getProperty("os.name").toLowerCase(Locale.ROOT).startsWith("mac os x")) {
+            // TIKA-324: Override the default encoding on Mac OS X
+            return new OutputStreamWriter(output, UTF_8);
+        } else {
+            return new OutputStreamWriter(output, Charset.defaultCharset());
+        }
+    }
+
+    /**
+     * Returns a transformer handler that serializes incoming SAX events
+     * to XHTML or HTML (depending the given method) using the given output
+     * encoding.
+     *
+     * @param output   output stream
+     * @param method   "xml" or "html"
+     * @param encoding output encoding,
+     *                 or <code>null</code> for the platform default
+     * @return {@link System#out} transformer handler
+     * @throws TransformerConfigurationException if the transformer can not be created
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-277">TIKA-277</a>
+     */
+    private static TransformerHandler getTransformerHandler(OutputStream output, String method,
+                                                            String encoding, boolean prettyPrint)
+            throws TransformerConfigurationException {
+        SAXTransformerFactory factory = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
+        TransformerHandler handler = factory.newTransformerHandler();
+        handler.getTransformer().setOutputProperty(OutputKeys.METHOD, method);
+        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, prettyPrint ? "yes" : "no");
+        if (encoding != null) {
+            handler.getTransformer().setOutputProperty(OutputKeys.ENCODING, encoding);
+        }
+        handler.setResult(new StreamResult(output));
+        return handler;
+    }
+
+    private boolean testForAsync(String[] args) {
+        for (String arg : args) {
+            if (arg.equals("-a") || arg.equals("--async")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void extractInlineImagesFromPDFs() {
         if (configFilePath == null && context.get(PDFParserConfig.class) == null) {
             PDFParserConfig pdfParserConfig = new PDFParserConfig();
             pdfParserConfig.setExtractInlineImages(true);
             String warn = "As a convenience, TikaCLI has turned on extraction of\n" +
                     "inline images for the PDFParser (TIKA-2374).\n" +
-                    "Aside from the -z option, this is not the default behavior\n"+
+                    "Aside from the -z option, this is not the default behavior\n" +
                     "in Tika generally or in tika-server.";
             LOG.info(warn);
             context.set(PDFParserConfig.class, pdfParserConfig);
         }
     }
-
-    private class OutputType {
-        public void process(
-                InputStream input, OutputStream output, Metadata metadata)
-                throws Exception {
-            Parser p = parser;
-            if (fork) {
-                p = new ForkParser(TikaCLI.class.getClassLoader(), p);
-            }
-            ContentHandler handler = getContentHandler(output, metadata);
-
-            p.parse(input, handler, metadata, context);
-            // fix for TIKA-596: if a parser doesn't generate
-            // XHTML output, the lack of an output document prevents
-            // metadata from being output: this fixes that
-            if (handler instanceof NoDocumentMetHandler){
-                NoDocumentMetHandler metHandler = (NoDocumentMetHandler)handler;
-                if(!metHandler.metOutput()){
-                    metHandler.endDocument();
-                }
-            }
-        }
-
-        protected ContentHandler getContentHandler(
-                OutputStream output, Metadata metadata) throws Exception {
-            throw new UnsupportedOperationException();
-        }
-        
-    }
-
-    private final OutputType XML = new OutputType() {
-        @Override
-        protected ContentHandler getContentHandler(
-                OutputStream output, Metadata metadata) throws Exception {
-            return getTransformerHandler(output, "xml", encoding, prettyPrint);
-        }
-    };
-
-    private final OutputType HTML = new OutputType() {
-        @Override
-        protected ContentHandler getContentHandler(
-                OutputStream output, Metadata metadata) throws Exception {
-            return new ExpandedTitleContentHandler(getTransformerHandler(output, "html", encoding, prettyPrint));
-        }
-    };
-
-    private final OutputType TEXT = new OutputType() {
-        @Override
-        protected ContentHandler getContentHandler(
-                OutputStream output, Metadata metadata) throws Exception {
-            return new BodyContentHandler(getOutputWriter(output, encoding));
-        }
-    };
-
-    private final OutputType NO_OUTPUT = new OutputType() {
-        @Override
-        protected ContentHandler getContentHandler(
-                OutputStream output, Metadata metadata) {
-            return new DefaultHandler();
-        }
-    };
-
-    private final OutputType TEXT_MAIN = new OutputType() {
-        @Override
-        protected ContentHandler getContentHandler(
-                OutputStream output, Metadata metadata) throws Exception {
-            return new BoilerpipeContentHandler(getOutputWriter(output, encoding));
-        }
-    };
-
-    private final OutputType TEXT_ALL = new OutputType() {
-        @Override
-        protected ContentHandler getContentHandler(
-            OutputStream output, Metadata metadata) throws Exception {
-            return new WriteOutContentHandler(getOutputWriter(output, encoding));
-        }
-    };
-
-    private final OutputType METADATA = new OutputType() {
-        @Override
-        protected ContentHandler getContentHandler(
-                OutputStream output, Metadata metadata) throws Exception {
-            final PrintWriter writer =
-                new PrintWriter(getOutputWriter(output, encoding));
-            return new NoDocumentMetHandler(metadata, writer);
-        }
-    };
-
-    private final OutputType JSON = new OutputType() {
-        @Override
-        protected ContentHandler getContentHandler(
-                OutputStream output, Metadata metadata) throws Exception {
-            final PrintWriter writer =
-                    new PrintWriter(getOutputWriter(output, encoding));
-            return new NoDocumentJSONMetHandler(metadata, writer);
-        }
-    };
-
-    private final OutputType XMP = new OutputType() {
-        @Override
-        protected ContentHandler getContentHandler(
-                OutputStream output, final Metadata metadata) throws Exception {
-            final PrintWriter writer =
-                    new PrintWriter(getOutputWriter(output, encoding));
-            return new NoDocumentXMPMetaHandler(metadata, writer);
-        }
-    };
-
-    private final OutputType LANGUAGE = new OutputType() {
-        @Override
-        protected ContentHandler getContentHandler(
-                OutputStream output, Metadata metadata) throws Exception {
-            final PrintWriter writer =
-                new PrintWriter(getOutputWriter(output, encoding));
-            return new LanguageHandler() {
-                public void endDocument() {
-                    writer.println(getLanguage().getLanguage());
-                    writer.flush();
-                }
-            };
-        }
-    };
-
-    private final OutputType DETECT = new OutputType() {
-        @Override
-        public void process(
-                InputStream stream, OutputStream output, Metadata metadata)
-                throws Exception {
-            PrintWriter writer =
-                new PrintWriter(getOutputWriter(output, encoding));
-            writer.println(detector.detect(stream, metadata).toString());
-            writer.flush();
-        }
-    };
-    
-    
-    private ParseContext context;
-    
-    private Detector detector;
-
-    private Parser parser;
-
-    private TikaConfig config;
-
-    private String configFilePath;
-
-    private OutputType type = XML;
-
-    private boolean recursiveJSON = false;
-
-    private URI networkURI = null;
-    
-    /**
-     * Output character encoding, or <code>null</code> for platform default
-     */
-    private String encoding = null;
-
-    /**
-     * Password for opening encrypted documents, or <code>null</code>.
-     */
-    private String password = System.getenv("TIKA_PASSWORD");
-
-    private DigestingParser.Digester digester = null;
-
-    private boolean asyncMode = false;
-
-    private boolean pipeMode = true;
-
-    private boolean fork = false;
-
-    private boolean prettyPrint;
 
     public void process(String arg) throws Exception {
         if (arg.equals("-?") || arg.equals("--help")) {
@@ -396,7 +383,7 @@ public class TikaCLI {
             org.apache.logging.log4j.core.config.Configurator.setRootLevel(Level.DEBUG);
         } else if (arg.equals("-g") || arg.equals("--gui")) {
             pipeMode = false;
-            if (configFilePath != null){
+            if (configFilePath != null) {
                 TikaGUI.main(new String[]{configFilePath});
             } else {
                 TikaGUI.main(new String[0]);
@@ -405,18 +392,19 @@ public class TikaCLI {
             pipeMode = false;
             displayParsers(false, false);
         } else if (arg.equals("--list-detector") || arg.equals("--list-detectors")) {
-           pipeMode = false;
-           displayDetectors();
+            pipeMode = false;
+            displayDetectors();
         } else if (arg.equals("--list-parser-detail") || arg.equals("--list-parser-details")) {
             pipeMode = false;
             displayParsers(true, false);
-        } else if (arg.equals("--list-parser-detail-apt") || arg.equals("--list-parser-details-apt")) {
+        } else if (arg.equals("--list-parser-detail-apt") ||
+                arg.equals("--list-parser-details-apt")) {
             pipeMode = false;
             displayParsers(true, true);
-        } else if(arg.equals("--list-met-models")){
+        } else if (arg.equals("--list-met-models")) {
             pipeMode = false;
             displayMetModels();
-        } else if(arg.equals("--list-supported-types")){
+        } else if (arg.equals("--list-supported-types")) {
             pipeMode = false;
             displaySupportedTypes();
         } else if (arg.startsWith("--compare-file-magic=")) {
@@ -434,18 +422,16 @@ public class TikaCLI {
         } else if (arg.equals("--dump-static-full-config")) {
             pipeMode = false;
             dumpConfig(TikaConfigSerializer.Mode.STATIC_FULL);
-        } else if (arg.equals("--container-aware")
-                || arg.equals("--container-aware-detector")) {
+        } else if (arg.equals("--container-aware") || arg.equals("--container-aware-detector")) {
             // ignore, as container-aware detectors are now always used
         } else if (arg.equals("-f") || arg.equals("--fork")) {
             fork = true;
         } else if (arg.equals("-a") || arg.equals("--async")) {
             asyncMode = true;
-        } else  if (arg.startsWith("--config=")) {
+        } else if (arg.startsWith("--config=")) {
             configFilePath = arg.substring("--config=".length());
         } else if (arg.startsWith("--digest=")) {
-            digester = new CommonsDigester(MAX_MARK,
-                    arg.substring("--digest=".length()));
+            digester = new CommonsDigester(MAX_MARK, arg.substring("--digest=".length()));
         } else if (arg.startsWith("-e")) {
             encoding = arg.substring("-e".length());
         } else if (arg.startsWith("--encoding=")) {
@@ -454,7 +440,7 @@ public class TikaCLI {
             password = arg.substring("-p".length());
         } else if (arg.startsWith("--password=")) {
             password = arg.substring("--password=".length());
-        } else  if (arg.equals("-j") || arg.equals("--json")) {
+        } else if (arg.equals("-j") || arg.equals("--json")) {
             type = JSON;
         } else if (arg.equals("-J") || arg.equals("--jsonRecursive")) {
             recursiveJSON = true;
@@ -490,11 +476,11 @@ public class TikaCLI {
             context.set(EmbeddedDocumentExtractor.class, new FileEmbeddedDocumentExtractor());
         } else if (arg.equals("-r") || arg.equals("--pretty-print")) {
             prettyPrint = true;
-        } else if (arg.equals("-p") || arg.equals("--port")
-                || arg.equals("-s") || arg.equals("--server")) {
+        } else if (arg.equals("-p") || arg.equals("--port") || arg.equals("-s") ||
+                arg.equals("--server")) {
             throw new IllegalArgumentException(
-                    "As of Tika 2.0, the server option is no longer supported in tika-app.\n"+
-                    "See https://wiki.apache.org/tika/TikaJAXRS for usage.");
+                    "As of Tika 2.0, the server option is no longer supported in tika-app.\n" +
+                            "See https://wiki.apache.org/tika/TikaJAXRS for usage.");
         } else if (arg.startsWith("-c")) {
             networkURI = new URI(arg.substring("-c".length()));
         } else if (arg.startsWith("--client=")) {
@@ -502,10 +488,10 @@ public class TikaCLI {
         } else {
             pipeMode = false;
             configure();
-            
+
             if (arg.equals("-")) {
-                try (InputStream stream = TikaInputStream.get(
-                        new CloseShieldInputStream(System.in))) {
+                try (InputStream stream = TikaInputStream
+                        .get(new CloseShieldInputStream(System.in))) {
                     type.process(stream, System.out, new Metadata());
                 }
             } else {
@@ -520,8 +506,7 @@ public class TikaCLI {
                     handleRecursiveJson(url, System.out);
                 } else {
                     Metadata metadata = new Metadata();
-                    try (InputStream input =
-                            TikaInputStream.get(url, metadata)) {
+                    try (InputStream input = TikaInputStream.get(url, metadata)) {
                         type.process(input, System.out, metadata);
                     } finally {
                         System.out.flush();
@@ -535,27 +520,29 @@ public class TikaCLI {
         configure();
         TikaConfig localConfig = (config == null) ? TikaConfig.getDefaultConfig() : config;
 
-        TikaConfigSerializer.serialize(localConfig, mode,
-                new OutputStreamWriter(System.out, UTF_8), UTF_8);
+        TikaConfigSerializer
+                .serialize(localConfig, mode, new OutputStreamWriter(System.out, UTF_8), UTF_8);
     }
 
-    private void handleRecursiveJson(URL url, OutputStream output) throws IOException, SAXException, TikaException {
+    private void handleRecursiveJson(URL url, OutputStream output)
+            throws IOException, SAXException, TikaException {
         Metadata metadata = new Metadata();
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
         RecursiveParserWrapperHandler handler =
-                new RecursiveParserWrapperHandler(getContentHandlerFactory(type),
-                        -1, config.getMetadataFilter());
+                new RecursiveParserWrapperHandler(getContentHandlerFactory(type), -1,
+                        config.getMetadataFilter());
         try (InputStream input = TikaInputStream.get(url, metadata)) {
             wrapper.parse(input, handler, metadata, context);
         }
         JsonMetadataList.setPrettyPrinting(prettyPrint);
-        try(Writer writer = getOutputWriter(output, encoding)) {
+        try (Writer writer = getOutputWriter(output, encoding)) {
             JsonMetadataList.toJson(handler.getMetadataList(), writer);
         }
     }
 
     private ContentHandlerFactory getContentHandlerFactory(OutputType type) {
-        BasicContentHandlerFactory.HANDLER_TYPE handlerType = BasicContentHandlerFactory.HANDLER_TYPE.IGNORE;
+        BasicContentHandlerFactory.HANDLER_TYPE handlerType =
+                BasicContentHandlerFactory.HANDLER_TYPE.IGNORE;
         if (type.equals(HTML)) {
             handlerType = BasicContentHandlerFactory.HANDLER_TYPE.HTML;
         } else if (type.equals(XML)) {
@@ -569,6 +556,7 @@ public class TikaCLI {
         }
         return new BasicContentHandlerFactory(handlerType, -1);
     }
+
     private void usage() {
         PrintStream out = System.out;
         out.println("usage: java -jar tika-app.jar [option...] [file...]");
@@ -582,7 +570,8 @@ public class TikaCLI {
         out.println("    -f  or --fork          Use Fork Mode for out-of-process extraction");
         out.println();
         out.println("    --config=<tika-config.xml>");
-        out.println("        TikaConfig file. Must be specified before -g, -s, -f or the dump-x-config !");
+        out.println(
+                "        TikaConfig file. Must be specified before -g, -s, -f or the dump-x-config !");
         out.println("    --dump-minimal-config  Print minimal TikaConfig");
         out.println("    --dump-current-config  Print current TikaConfig");
         out.println("    --dump-static-config   Print static config");
@@ -591,7 +580,8 @@ public class TikaCLI {
         out.println("    -x  or --xml           Output XHTML content (default)");
         out.println("    -h  or --html          Output HTML content");
         out.println("    -t  or --text          Output plain text content (body)");
-        out.println("    -T  or --text-main     Output plain text content (main content only via boilerpipe handler)");
+        out.println(
+                "    -T  or --text-main     Output plain text content (main content only via boilerpipe handler)");
         out.println("    -A  or --text-all      Output all text content");
         out.println("    -m  or --metadata      Output only metadata");
         out.println("    -j  or --json          Output metadata in JSON");
@@ -609,7 +599,8 @@ public class TikaCLI {
         out.println("    -pX or --password=X    Use document password X");
         out.println("    -z  or --extract       Extract all attachements into current directory");
         out.println("    --extract-dir=<dir>    Specify target directory for -z");
-        out.println("    -r  or --pretty-print  For JSON, XML and XHTML outputs, adds newlines and");
+        out.println(
+                "    -r  or --pretty-print  For JSON, XML and XHTML outputs, adds newlines and");
         out.println("                           whitespace, for better readability");
         out.println();
         out.println("    --list-parsers");
@@ -617,7 +608,8 @@ public class TikaCLI {
         out.println("    --list-parser-details");
         out.println("         List the available document parsers and their supported mime types");
         out.println("    --list-parser-details-apt");
-        out.println("         List the available document parsers and their supported mime types in apt format.");
+        out.println(
+                "         List the available document parsers and their supported mime types in apt format.");
         out.println("    --list-detectors");
         out.println("         List the available document detectors");
         out.println("    --list-met-models");
@@ -627,7 +619,8 @@ public class TikaCLI {
         out.println();
         out.println();
         out.println("    --compare-file-magic=<dir>");
-        out.println("         Compares Tika's known media types to the File(1) tool's magic directory");
+        out.println(
+                "         Compares Tika's known media types to the File(1) tool's magic directory");
         out.println("Description:");
         out.println("    Apache Tika will parse the file(s) specified on the");
         out.println("    command line and output the extracted text content");
@@ -660,15 +653,18 @@ public class TikaCLI {
         out.println("    -numConsumers              Number of processing threads");
         out.println("    -bc                        Batch config file");
         out.println("    -maxRestarts               Maximum number of times the ");
-        out.println("                               watchdog process will restart the forked process.");
+        out.println(
+                "                               watchdog process will restart the forked process.");
         out.println("    -timeoutThresholdMillis    Number of milliseconds allowed to a parse");
-        out.println("                               before the process is terminated and restarted");
+        out.println(
+                "                               before the process is terminated and restarted");
         out.println("    -fileList                  List of files to process, with");
         out.println("                               paths relative to the input directory");
         out.println("    -includeFilePat            Regular expression to determine which");
         out.println("                               files to process, e.g. \"(?i)\\.pdf\"");
         out.println("    -excludeFilePat            Regular expression to determine which");
-        out.println("                               files to avoid processing, e.g. \"(?i)\\.pdf\"");
+        out.println(
+                "                               files to avoid processing, e.g. \"(?i)\\.pdf\"");
         out.println("    -maxFileSizeBytes          Skip files longer than this value");
         out.println();
         out.println("    Control the type of output with -x, -h, -t and/or -J.");
@@ -691,12 +687,10 @@ public class TikaCLI {
     }
 
     private boolean testForBatch(String[] args) {
-        if (args.length == 2 && ! args[0].startsWith("-")
-                && ! args[1].startsWith("-")) {
+        if (args.length == 2 && !args[0].startsWith("-") && !args[1].startsWith("-")) {
             Path inputCand = Paths.get(args[0]);
             Path outputCand = Paths.get(args[1]);
-            if (Files.isDirectory(inputCand) &&
-                    !Files.isRegularFile(outputCand)) {
+            if (Files.isDirectory(inputCand) && !Files.isRegularFile(outputCand)) {
                 return true;
             }
         }
@@ -708,7 +702,6 @@ public class TikaCLI {
         }
         return false;
     }
-
 
     private void configure() throws TikaException, IOException, SAXException {
 
@@ -732,19 +725,19 @@ public class TikaCLI {
         context.set(PasswordProvider.class, new SimplePasswordProvider(password));
     }
 
-    private void displayMetModels(){
+    private void displayMetModels() {
         Class<?>[] modelClasses = Metadata.class.getInterfaces();
         Arrays.sort(modelClasses, Comparator.comparing(Class::getName));
 
-        for (Class<?> modelClass: modelClasses) {
+        for (Class<?> modelClass : modelClasses) {
             // we don't care about internal Tika met classes
             // if we do, then we can take this conditional out
             if (!modelClass.getSimpleName().contains("Tika")) {
                 System.out.println(modelClass.getSimpleName());
                 Field[] keyFields = modelClass.getFields();
                 Arrays.sort(keyFields, Comparator.comparing(Field::getName));
-                for (Field keyField: keyFields) {
-                    System.out.println(" "+keyField.getName());
+                for (Field keyField : keyFields) {
+                    System.out.println(" " + keyField.getName());
                 }
             }
         }
@@ -755,42 +748,52 @@ public class TikaCLI {
      * If a parser is a composite parser, it will list the
      * sub parsers and their mime-types.
      */
-    private void displayParsers(boolean includeMimeTypes, boolean aptListFormat) throws TikaException, IOException, SAXException {
+    private void displayParsers(boolean includeMimeTypes, boolean aptListFormat)
+            throws TikaException, IOException, SAXException {
         configure();
         displayParser(parser, includeMimeTypes, aptListFormat, 3);
     }
-     
+
     private void displayParser(Parser p, boolean includeMimeTypes, boolean apt, int i) {
         String decorated = null;
         if (p instanceof ParserDecorator) {
-            ParserDecorator pd = (ParserDecorator)p;
+            ParserDecorator pd = (ParserDecorator) p;
             decorated = " (Wrapped by " + pd.getDecorationName() + ")";
             p = pd.getWrappedParser();
         }
-        
+
         boolean isComposite = (p instanceof CompositeParser);
         String name = p.getClass().getName();
-                      
+
         if (apt) {
-            name = name.substring(0, name.lastIndexOf(".") + 1) + "{{{./api/" + name.replace(".", "/") + "}" + name.substring(name.lastIndexOf(".") + 1) + "}}";
+            name = name.substring(0, name.lastIndexOf(".") + 1) + "{{{./api/" +
+                    name.replace(".", "/") + "}" + name.substring(name.lastIndexOf(".") + 1) + "}}";
         } else if (decorated != null) {
             name += decorated;
         }
-        if ((apt && !isComposite) || !apt) {    // Don't display Composite parsers in the apt output.
-            System.out.println(indent(i) + ((apt) ? "* " : "") + name + (isComposite ? " (Composite Parser):" : ""));
-            if (apt) System.out.println();
+        if ((apt && !isComposite) ||
+                !apt) {    // Don't display Composite parsers in the apt output.
+            System.out.println(indent(i) + ((apt) ? "* " : "") + name +
+                    (isComposite ? " (Composite Parser):" : ""));
+            if (apt) {
+                System.out.println();
+            }
             if (includeMimeTypes && !isComposite) {
                 for (MediaType mt : p.getSupportedTypes(context)) {
                     System.out.println(indent(i + 3) + ((apt) ? "* " : "") + mt);
-                    if (apt) System.out.println();
+                    if (apt) {
+                        System.out.println();
+                    }
                 }
             }
         }
-        
+
         if (isComposite) {
-            Parser[] subParsers = sortParsers(invertMediaTypeMap(((CompositeParser) p).getParsers()));
-            for(Parser sp : subParsers) {
-                displayParser(sp, includeMimeTypes, apt, i + ((apt) ? 0 : 3));  // Don't indent for Composites in apt.
+            Parser[] subParsers =
+                    sortParsers(invertMediaTypeMap(((CompositeParser) p).getParsers()));
+            for (Parser sp : subParsers) {
+                displayParser(sp, includeMimeTypes, apt,
+                        i + ((apt) ? 0 : 3));  // Don't indent for Composites in apt.
             }
         }
     }
@@ -804,15 +807,15 @@ public class TikaCLI {
         configure();
         displayDetector(detector, 0);
     }
-     
+
     private void displayDetector(Detector d, int i) {
         boolean isComposite = (d instanceof CompositeDetector);
         String name = d.getClass().getName();
         System.out.println(indent(i) + name + (isComposite ? " (Composite Detector):" : ""));
         if (isComposite) {
-            List<Detector> subDetectors = ((CompositeDetector)d).getDetectors();
-            for(Detector sd : subDetectors) {
-                displayDetector(sd, i+2);
+            List<Detector> subDetectors = ((CompositeDetector) d).getDetectors();
+            for (Detector sd : subDetectors) {
+                displayDetector(sd, i + 2);
             }
         }
     }
@@ -833,8 +836,8 @@ public class TikaCLI {
     }
 
     private Map<Parser, Set<MediaType>> invertMediaTypeMap(Map<MediaType, Parser> supported) {
-        Map<Parser,Set<MediaType>> parsers = new HashMap<>();
-        for(Entry<MediaType, Parser> e : supported.entrySet()) {
+        Map<Parser, Set<MediaType>> parsers = new HashMap<>();
+        for (Entry<MediaType, Parser> e : supported.entrySet()) {
             if (!parsers.containsKey(e.getValue())) {
                 parsers.put(e.getValue(), new HashSet<>());
             }
@@ -863,44 +866,43 @@ public class TikaCLI {
             Parser p = parsers.get(type);
             if (p != null) {
                 if (p instanceof CompositeParser) {
-                    p = ((CompositeParser)p).getParsers().get(type);
+                    p = ((CompositeParser) p).getParsers().get(type);
                 }
                 System.out.println("  parser:    " + p.getClass().getName());
             }
         }
     }
-    
+
     /**
-     * Compares our mime types registry with the File(1) tool's 
-     *  directory of (uncompiled) Magic entries. 
+     * Compares our mime types registry with the File(1) tool's
+     * directory of (uncompiled) Magic entries.
      * (Well, those with mimetypes anyway)
+     *
      * @param magicDir Path to the magic directory
      */
     private void compareFileMagic(String magicDir) throws Exception {
         Set<String> tikaLacking = new TreeSet<>();
         Set<String> tikaNoMagic = new TreeSet<>();
-        
+
         // Sanity check
         File dir = new File(magicDir);
-        if ((new File(dir, "elf")).exists() &&
-            (new File(dir, "mime")).exists() &&
-            (new File(dir, "vorbis")).exists()) {
+        if ((new File(dir, "elf")).exists() && (new File(dir, "mime")).exists() &&
+                (new File(dir, "vorbis")).exists()) {
             // Looks plausible
         } else {
             throw new IllegalArgumentException(
-                    magicDir + " doesn't seem to hold uncompressed file magic entries"); 
+                    magicDir + " doesn't seem to hold uncompressed file magic entries");
         }
-    
+
         // Find all the mimetypes in the directory
         Set<String> fileMimes = new HashSet<>();
         for (File mf : dir.listFiles()) {
             if (mf.isFile()) {
-                BufferedReader r = new BufferedReader(new InputStreamReader(
-                        new FileInputStream(mf), UTF_8));
+                BufferedReader r =
+                        new BufferedReader(new InputStreamReader(new FileInputStream(mf), UTF_8));
                 String line;
                 while ((line = r.readLine()) != null) {
-                    if (line.startsWith("!:mime") ||
-                        line.startsWith("#!:mime")) {
+                    if (line.startsWith("!:mime") || line.startsWith("#!:mime")) {
                         String mime = line.substring(7).trim();
                         fileMimes.add(mime);
                     }
@@ -908,7 +910,7 @@ public class TikaCLI {
                 r.close();
             }
         }
-        
+
         // See how those compare to the Tika ones
         TikaConfig config = TikaConfig.getDefaultConfig();
         MimeTypes mimeTypes = config.getMimeRepository();
@@ -916,16 +918,16 @@ public class TikaCLI {
         for (String mime : fileMimes) {
             try {
                 final MimeType type = mimeTypes.getRegisteredMimeType(mime);
-                
+
                 if (type == null) {
                     // Tika doesn't know about this one
                     tikaLacking.add(mime);
                 } else {
                     // Tika knows about this one!
-                    
+
                     // Does Tika have magic for it?
                     boolean hasMagic = type.hasMagic();
-                    
+
                     // How about the children?
                     if (!hasMagic) {
                         for (MediaType child : registry.getChildTypes(type.getType())) {
@@ -935,7 +937,7 @@ public class TikaCLI {
                             }
                         }
                     }
-                    
+
                     // How about the parents?
                     MimeType parentType = type;
                     while (parentType != null && !hasMagic) {
@@ -946,8 +948,8 @@ public class TikaCLI {
                             // Check the parent next
                             MediaType parent = registry.getSupertype(type.getType());
                             if (parent == MediaType.APPLICATION_XML ||
-                                parent == MediaType.TEXT_PLAIN ||
-                                parent == MediaType.OCTET_STREAM) {
+                                    parent == MediaType.TEXT_PLAIN ||
+                                    parent == MediaType.OCTET_STREAM) {
                                 // Stop checking parents if we hit a top level type
                                 parent = null;
                             }
@@ -967,7 +969,7 @@ public class TikaCLI {
                 // Silently skip
             }
         }
-        
+
         // Check how many tika knows about
         int tikaTypes = 0;
         int tikaAliases = 0;
@@ -975,91 +977,147 @@ public class TikaCLI {
             tikaTypes++;
             tikaAliases += registry.getAliases(type).size();
         }
-        
+
         // Report
         System.out.println("Tika knows about " + tikaTypes + " unique mime types");
-        System.out.println("Tika knows about " + (tikaTypes+tikaAliases) + " mime types including aliases");
-        System.out.println("The File Magic directory knows about " + fileMimes.size() + " unique mime types");
+        System.out.println(
+                "Tika knows about " + (tikaTypes + tikaAliases) + " mime types including aliases");
+        System.out.println(
+                "The File Magic directory knows about " + fileMimes.size() + " unique mime types");
         System.out.println();
         System.out.println("The following mime types are known to File but not Tika:");
         for (String mime : tikaLacking) {
             System.out.println("  " + mime);
         }
         System.out.println();
-        System.out.println("The following mime types from File have no Tika magic (but their children might):");
+        System.out.println(
+                "The following mime types from File have no Tika magic (but their children might):");
         for (String mime : tikaNoMagic) {
             System.out.println("  " + mime);
         }
     }
 
-    /**
-     * Returns a output writer with the given encoding.
-     *
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-277">TIKA-277</a>
-     * @param output output stream
-     * @param encoding output encoding,
-     *                 or <code>null</code> for the platform default
-     * @return output writer
-     * @throws UnsupportedEncodingException
-     *         if the given encoding is not supported
-     */
-    private static Writer getOutputWriter(OutputStream output, String encoding)
-            throws UnsupportedEncodingException {
-        if (encoding != null) {
-            return new OutputStreamWriter(output, encoding);
-        } else if (System.getProperty("os.name")
-                .toLowerCase(Locale.ROOT).startsWith("mac os x")) {
-            // TIKA-324: Override the default encoding on Mac OS X
-            return new OutputStreamWriter(output, UTF_8);
-        } else {
-            return new OutputStreamWriter(output, Charset.defaultCharset());
+    private static class NoDocumentMetHandler extends DefaultHandler {
+
+        protected final Metadata metadata;
+
+        protected PrintWriter writer;
+
+        private boolean metOutput;
+
+        public NoDocumentMetHandler(Metadata metadata, PrintWriter writer) {
+            this.metadata = metadata;
+            this.writer = writer;
+            this.metOutput = false;
         }
+
+        @Override
+        public void endDocument() {
+            String[] names = metadata.names();
+            Arrays.sort(names);
+            outputMetadata(names);
+            writer.flush();
+            this.metOutput = true;
+        }
+
+        public void outputMetadata(String[] names) {
+            for (String name : names) {
+                for (String value : metadata.getValues(name)) {
+                    writer.println(name + ": " + value);
+                }
+            }
+        }
+
+        public boolean metOutput() {
+            return this.metOutput;
+        }
+
     }
 
     /**
-     * Returns a transformer handler that serializes incoming SAX events
-     * to XHTML or HTML (depending the given method) using the given output
-     * encoding.
-     *
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-277">TIKA-277</a>
-     * @param output output stream
-     * @param method "xml" or "html"
-     * @param encoding output encoding,
-     *                 or <code>null</code> for the platform default
-     * @return {@link System#out} transformer handler
-     * @throws TransformerConfigurationException
-     *         if the transformer can not be created
+     * Outputs the Tika metadata as XMP using the Tika XMP module
      */
-    private static TransformerHandler getTransformerHandler(
-            OutputStream output, String method, String encoding, boolean prettyPrint)
-            throws TransformerConfigurationException {
-        SAXTransformerFactory factory = (SAXTransformerFactory)
-                SAXTransformerFactory.newInstance();
-        TransformerHandler handler = factory.newTransformerHandler();
-        handler.getTransformer().setOutputProperty(OutputKeys.METHOD, method);
-        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, prettyPrint ? "yes" : "no");
-        if (encoding != null) {
-            handler.getTransformer().setOutputProperty(
-                    OutputKeys.ENCODING, encoding);
+    private static class NoDocumentXMPMetaHandler extends DefaultHandler {
+        protected final Metadata metadata;
+
+        protected PrintWriter writer;
+
+        public NoDocumentXMPMetaHandler(Metadata metadata, PrintWriter writer) {
+            this.metadata = metadata;
+            this.writer = writer;
         }
-        handler.setResult(new StreamResult(output));
-        return handler;
+
+        @Override
+        public void endDocument() throws SAXException {
+            try {
+                XMPMetadata xmp = new XMPMetadata(metadata);
+                String result;
+                result = xmp.toString();
+                writer.write(result);
+                writer.flush();
+            } catch (TikaException e) {
+                throw new SAXException(e);
+            }
+        }
     }
 
-    private class FileEmbeddedDocumentExtractor
-            implements EmbeddedDocumentExtractor {
+    private static class SimplePasswordProvider implements PasswordProvider, Serializable {
+        private final String password;
 
-        private int count = 0;
+        public SimplePasswordProvider(String password) {
+            this.password = password;
+        }
+
+        @Override
+        public String getPassword(Metadata metadata) {
+            return password;
+        }
+    }
+
+    private class OutputType {
+        public void process(InputStream input, OutputStream output, Metadata metadata)
+                throws Exception {
+            Parser p = parser;
+            if (fork) {
+                p = new ForkParser(TikaCLI.class.getClassLoader(), p);
+            }
+            ContentHandler handler = getContentHandler(output, metadata);
+
+            p.parse(input, handler, metadata, context);
+            // fix for TIKA-596: if a parser doesn't generate
+            // XHTML output, the lack of an output document prevents
+            // metadata from being output: this fixes that
+            if (handler instanceof NoDocumentMetHandler) {
+                NoDocumentMetHandler metHandler = (NoDocumentMetHandler) handler;
+                if (!metHandler.metOutput()) {
+                    metHandler.endDocument();
+                }
+            }
+        }
+
+        protected ContentHandler getContentHandler(OutputStream output, Metadata metadata)
+                throws Exception {
+            throw new UnsupportedOperationException();
+        }
+
+    }
+
+    private class FileEmbeddedDocumentExtractor implements EmbeddedDocumentExtractor {
+
         private final TikaConfig config = TikaConfig.getDefaultConfig();
-        private final EmbeddedStreamTranslator embeddedStreamTranslator = new DefaultEmbeddedStreamTranslator();
+        private final EmbeddedStreamTranslator embeddedStreamTranslator =
+                new DefaultEmbeddedStreamTranslator();
+        private int count = 0;
 
         public boolean shouldParseEmbedded(Metadata metadata) {
             return true;
         }
 
-        public void parseEmbedded(InputStream inputStream, ContentHandler contentHandler, Metadata metadata, boolean outputHtml) throws SAXException, IOException {
+        public void parseEmbedded(InputStream inputStream, ContentHandler contentHandler,
+                                  Metadata metadata, boolean outputHtml)
+                throws SAXException, IOException {
 
-            if (! inputStream.markSupported()) {
+            if (!inputStream.markSupported()) {
                 inputStream = TikaInputStream.get(inputStream);
             }
             MediaType contentType = detector.detect(inputStream, metadata);
@@ -1078,11 +1136,12 @@ public class TikaCLI {
                     throw new IOException("unable to create directory \"" + parent + "\"");
                 }
             }
-            System.out.println("Extracting '"+name+"' ("+contentType+") to " + outputFile);
+            System.out.println("Extracting '" + name + "' (" + contentType + ") to " + outputFile);
 
             try (FileOutputStream os = new FileOutputStream(outputFile)) {
                 if (embeddedStreamTranslator.shouldTranslate(inputStream, metadata)) {
-                    try (InputStream translated = embeddedStreamTranslator.translate(inputStream, metadata)) {
+                    try (InputStream translated = embeddedStreamTranslator
+                            .translate(inputStream, metadata)) {
                         IOUtils.copy(translated, os);
                     }
                 } else {
@@ -1092,19 +1151,16 @@ public class TikaCLI {
                 //
                 // being a CLI program messages should go to the stderr too
                 //
-                String msg = String.format(
-                    Locale.ROOT,
-                    "Ignoring unexpected exception trying to save embedded file %s (%s)",
-                    name,
-                    e.getMessage()
-                );
+                String msg = String.format(Locale.ROOT,
+                        "Ignoring unexpected exception trying to save embedded file %s (%s)", name,
+                        e.getMessage());
                 LOG.warn(msg, e);
             }
         }
 
         private File getOutputFile(String name, Metadata metadata, MediaType contentType) {
             String ext = getExtension(contentType);
-            if (name.indexOf('.')==-1 && contentType!=null) {
+            if (name.indexOf('.') == -1 && contentType != null) {
                 name += ext;
             }
 
@@ -1122,7 +1178,7 @@ public class TikaCLI {
             }
 
             if (normalizedName == null) {
-                normalizedName = "file"+count++ +ext;
+                normalizedName = "file" + count++ + ext;
             }
             //strip off initial C:/ or ~/ or /
             int prefixLength = FilenameUtils.getPrefixLength(normalizedName);
@@ -1133,15 +1189,15 @@ public class TikaCLI {
             //if file already exists, prepend uuid
             if (outputFile.exists()) {
                 String fileName = FilenameUtils.getName(normalizedName);
-                outputFile = new File(extractDir, UUID.randomUUID().toString()+"-"+fileName);
+                outputFile = new File(extractDir, UUID.randomUUID().toString() + "-" + fileName);
             }
             return outputFile;
         }
 
         private String getExtension(MediaType contentType) {
             try {
-                String ext = config.getMimeRepository().forName(
-                        contentType.toString()).getExtension();
+                String ext =
+                        config.getMimeRepository().forName(contentType.toString()).getExtension();
                 if (ext == null) {
                     return ".bin";
                 } else {
@@ -1155,86 +1211,17 @@ public class TikaCLI {
         }
     }
 
-    private static class NoDocumentMetHandler extends DefaultHandler {
-
-        protected final Metadata metadata;
-
-        protected PrintWriter writer;
-        
-        private boolean metOutput;
-
-        public NoDocumentMetHandler(Metadata metadata, PrintWriter writer){
-            this.metadata = metadata;
-            this.writer = writer;
-            this.metOutput = false;
-        }
-        
-        @Override
-        public void endDocument() {
-            String[] names = metadata.names();
-            Arrays.sort(names);
-            outputMetadata(names);
-            writer.flush();
-            this.metOutput = true;
-        }
-        
-        public void outputMetadata(String[] names) {
-           for (String name : names) {
-              for(String value : metadata.getValues(name)) {
-                 writer.println(name + ": " + value);
-              }
-           }
-        }
-        
-        public boolean metOutput(){
-            return this.metOutput;
-        }
-        
-    }
-
-    /**
-     * Outputs the Tika metadata as XMP using the Tika XMP module
-     */
-    private static class NoDocumentXMPMetaHandler extends DefaultHandler
-    {
-    	protected final Metadata metadata;
-    	
-        protected PrintWriter writer;
-        
-        public NoDocumentXMPMetaHandler(Metadata metadata, PrintWriter writer){
-        	this.metadata = metadata;
-            this.writer = writer;
-        }
-        
-        @Override
-        public void endDocument() throws SAXException 
-        {
-        	try 
-        	{
-        		XMPMetadata xmp = new XMPMetadata(metadata);
-        		String result;
-        		result = xmp.toString();
-        		writer.write(result);
-        		writer.flush();
-        	} 
-        	catch (TikaException e) 
-        	{
-        		throw new SAXException(e);
-        	}
-        }
-    }
-
     private class NoDocumentJSONMetHandler extends DefaultHandler {
 
         protected final Metadata metadata;
-        
+
         protected PrintWriter writer;
 
         public NoDocumentJSONMetHandler(Metadata metadata, PrintWriter writer) {
             this.metadata = metadata;
             this.writer = writer;
         }
-        
+
         @Override
         public void endDocument() throws SAXException {
             try {
@@ -1244,20 +1231,6 @@ public class TikaCLI {
             } catch (IOException e) {
                 throw new SAXException(e);
             }
-        }        
-    }
-
-
-    private static class SimplePasswordProvider
-            implements PasswordProvider, Serializable {
-        private final String password;
-        public SimplePasswordProvider(String password) {
-            this.password = password;
-        }
-
-        @Override
-        public String getPassword(Metadata metadata) {
-            return password;
         }
     }
 }

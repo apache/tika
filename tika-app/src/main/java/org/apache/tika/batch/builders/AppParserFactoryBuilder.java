@@ -20,6 +20,8 @@ package org.apache.tika.batch.builders;
 import java.util.Locale;
 import java.util.Map;
 
+import org.w3c.dom.Node;
+
 import org.apache.tika.batch.DigestingAutoDetectParserFactory;
 import org.apache.tika.batch.ParserFactory;
 import org.apache.tika.parser.DigestingParser;
@@ -27,7 +29,6 @@ import org.apache.tika.parser.digestutils.BouncyCastleDigester;
 import org.apache.tika.parser.digestutils.CommonsDigester;
 import org.apache.tika.util.ClassLoaderUtil;
 import org.apache.tika.util.XMLDOMUtil;
-import org.w3c.dom.Node;
 
 public class AppParserFactoryBuilder implements IParserFactoryBuilder {
 
@@ -44,13 +45,13 @@ public class AppParserFactoryBuilder implements IParserFactoryBuilder {
             } else if (bString.equals("false")) {
                 pf.setParseRecursively(false);
             } else {
-                throw new RuntimeException("parseRecursively must have value of \"true\" or \"false\": "+
-                        bString);
+                throw new RuntimeException(
+                        "parseRecursively must have value of \"true\" or \"false\": " + bString);
             }
         }
         if (pf instanceof DigestingAutoDetectParserFactory) {
             DigestingParser.Digester d = buildDigester(localAttrs);
-            ((DigestingAutoDetectParserFactory)pf).setDigester(d);
+            ((DigestingAutoDetectParserFactory) pf).setDigester(d);
         }
         return pf;
     }
@@ -59,16 +60,16 @@ public class AppParserFactoryBuilder implements IParserFactoryBuilder {
 
         String readLimitString = localAttrs.get("digestMarkLimit");
         if (readLimitString == null) {
-            throw new IllegalArgumentException("Must specify \"digestMarkLimit\" for "+
-            "the DigestingAutoDetectParserFactory");
+            throw new IllegalArgumentException("Must specify \"digestMarkLimit\" for " +
+                    "the DigestingAutoDetectParserFactory");
         }
         int readLimit = -1;
 
         try {
             readLimit = Integer.parseInt(readLimitString);
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Parameter \"digestMarkLimit\" must be a parseable int: "+
-            readLimitString);
+            throw new IllegalArgumentException(
+                    "Parameter \"digestMarkLimit\" must be a parseable int: " + readLimitString);
         }
         String digestString = localAttrs.get("digest");
         try {
@@ -77,8 +78,10 @@ public class AppParserFactoryBuilder implements IParserFactoryBuilder {
             try {
                 return new BouncyCastleDigester(readLimit, digestString);
             } catch (IllegalArgumentException bcException) {
-                throw new IllegalArgumentException("Tried both CommonsDigester ("+commonsException.getMessage()+
-                        ") and BouncyCastleDigester ("+bcException.getMessage()+")", bcException);
+                throw new IllegalArgumentException(
+                        "Tried both CommonsDigester (" + commonsException.getMessage() +
+                                ") and BouncyCastleDigester (" + bcException.getMessage() + ")",
+                        bcException);
             }
         }
     }

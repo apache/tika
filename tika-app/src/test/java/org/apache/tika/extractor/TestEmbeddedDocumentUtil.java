@@ -17,16 +17,17 @@
 
 package org.apache.tika.extractor;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+import org.junit.Test;
+
 import org.apache.tika.batch.DigestingAutoDetectParserFactory;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 public class TestEmbeddedDocumentUtil {
     //TODO -- figure out how to mock this into tika-core
@@ -36,7 +37,9 @@ public class TestEmbeddedDocumentUtil {
         Parser p = new AutoDetectParser();
         ParseContext parseContext = new ParseContext();
         parseContext.set(Parser.class, p);
-        Parser txtParser = EmbeddedDocumentUtil.tryToFindExistingLeafParser(org.apache.tika.parser.csv.TextAndCSVParser.class, parseContext);
+        Parser txtParser = EmbeddedDocumentUtil
+                .tryToFindExistingLeafParser(org.apache.tika.parser.csv.TextAndCSVParser.class,
+                        parseContext);
         assertNotNull(txtParser);
         assertEquals(org.apache.tika.parser.csv.TextAndCSVParser.class, txtParser.getClass());
 
@@ -45,10 +48,12 @@ public class TestEmbeddedDocumentUtil {
     @Test
     public void testDoublyDecorated() {
         Parser d = new DigestingAutoDetectParserFactory().getParser(TikaConfig.getDefaultConfig());
-        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(d,true);
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(d, true);
         ParseContext parseContext = new ParseContext();
         parseContext.set(Parser.class, wrapper);
-        Parser txtParser = EmbeddedDocumentUtil.tryToFindExistingLeafParser(org.apache.tika.parser.csv.TextAndCSVParser.class, parseContext);
+        Parser txtParser = EmbeddedDocumentUtil
+                .tryToFindExistingLeafParser(org.apache.tika.parser.csv.TextAndCSVParser.class,
+                        parseContext);
         assertNotNull(txtParser);
         assertEquals(org.apache.tika.parser.csv.TextAndCSVParser.class, txtParser.getClass());
     }

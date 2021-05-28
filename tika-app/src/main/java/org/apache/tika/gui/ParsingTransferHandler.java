@@ -26,7 +26,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
-
 import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.TransferHandler;
@@ -40,29 +39,47 @@ class ParsingTransferHandler extends TransferHandler {
      * Serial version UID.
      */
     private static final long serialVersionUID = -557932290014044494L;
-
-    private final TransferHandler delegate;
-
-    private final TikaGUI tika;
-
     private static DataFlavor uriListFlavor;
     private static DataFlavor urlListFlavor;
+
     static {
-         try {
-             uriListFlavor = new DataFlavor("text/uri-list;class=java.lang.String");
-             urlListFlavor = new DataFlavor("text/plain;class=java.lang.String");
-         } catch (ClassNotFoundException e) {
-         }
+        try {
+            uriListFlavor = new DataFlavor("text/uri-list;class=java.lang.String");
+            urlListFlavor = new DataFlavor("text/plain;class=java.lang.String");
+        } catch (ClassNotFoundException e) {
+            //swallow
+        }
     }
+
+    private final TransferHandler delegate;
+    private final TikaGUI tika;
 
     public ParsingTransferHandler(TransferHandler delegate, TikaGUI tika) {
         this.delegate = delegate;
         this.tika = tika;
     }
 
+    private static List<File> uriToFileList(Object data) {
+        List<File> list = new ArrayList<>();
+        StringTokenizer st = new StringTokenizer(data.toString(), "\r\n");
+        while (st.hasMoreTokens()) {
+            String s = st.nextToken();
+            if (s.startsWith("#")) {
+                continue;
+            }
+            try {
+                list.add(new File(new URI(s)));
+            } catch (Exception e) {
+                //swallow
+            }
+        }
+        return list;
+    }
+
     public boolean canImport(JComponent component, DataFlavor[] flavors) {
         for (DataFlavor flavor : flavors) {
-            if (flavor.equals(DataFlavor.javaFileListFlavor) || flavor.equals(uriListFlavor) || flavor.equals(urlListFlavor)) {
+            if (flavor.equals(DataFlavor.javaFileListFlavor) || flavor.equals(uriListFlavor) ||
+                    flavor.equals(urlListFlavor)) {
                 return true;
             }
         }
@@ -70,18 +87,16 @@ class ParsingTransferHandler extends TransferHandler {
     }
 
     @SuppressWarnings("unchecked")
-    public boolean importData(
-            JComponent component, Transferable transferable) {
+    public boolean importData(JComponent component, Transferable transferable) {
         try {
             if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-                importFiles((List<File>) transferable.getTransferData(
-                        DataFlavor.javaFileListFlavor));
+                importFiles(
+                        (List<File>) transferable.getTransferData(DataFlavor.javaFileListFlavor));
             } else if (transferable.isDataFlavorSupported(urlListFlavor)) {
                 Object data = transferable.getTransferData(urlListFlavor);
                 tika.openURL(new URL(data.toString()));
             } else if (transferable.isDataFlavorSupported(uriListFlavor)) {
-                importFiles(uriToFileList(
-                        transferable.getTransferData(uriListFlavor)));
+                importFiles(uriToFileList(transferable.getTransferData(uriListFlavor)));
             }
             return true;
         } catch (Exception e) {
@@ -110,22 +125,5 @@ class ParsingTransferHandler extends TransferHandler {
 
     public Icon getVisualRepresentation(Transferable arg0) {
         return delegate.getVisualRepresentation(arg0);
-    }
-
-    private static List<File> uriToFileList(Object data) {
-        List<File> list = new ArrayList<>();
-        StringTokenizer st = new StringTokenizer(data.toString(), "\r\n");
-        while (st.hasMoreTokens())
-        {
-            String s = st.nextToken();
-            if (s.startsWith("#")) {
-                continue;
-            }
-            try {
-                list.add(new File(new URI(s)));
-            } catch (Exception e) {
-            }
-        }
-        return list;
     }
 }

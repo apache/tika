@@ -18,8 +18,6 @@
 package org.apache.tika.cli;
 
 
-import org.apache.commons.lang3.SystemUtils;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.commons.lang3.SystemUtils;
 
 /**
  * This takes a TikaCLI commandline and builds the full commandline for
@@ -55,7 +55,7 @@ class BatchCommandLineBuilder {
         translateCommandLine(args, processArgs);
 
         //maybe the user specified a different classpath?!
-        if (! jvmOpts.containsKey("-cp") && ! jvmOpts.containsKey("--classpath")) {
+        if (!jvmOpts.containsKey("-cp") && !jvmOpts.containsKey("--classpath")) {
             String cp = System.getProperty("java.class.path");
             jvmOpts.put("-cp", cp);
         }
@@ -68,7 +68,7 @@ class BatchCommandLineBuilder {
             }
         }
         //use the log4j config file inside the app /resources/log4j2_batch_process.properties
-        if (! hasLog4j) {
+        if (!hasLog4j) {
             jvmOpts.put("-Dlog4j.configuration=log4j_batch_process.properties", "");
         }
         //now build the full command line
@@ -85,7 +85,7 @@ class BatchCommandLineBuilder {
             }
         }
         //run in headless mode unless the user asks for something else TIKA-2434
-        if (! foundHeadlessOption) {
+        if (!foundHeadlessOption) {
             fullCommand.add("-Djava.awt.headless=true");
         }
         fullCommand.add("org.apache.tika.batch.fs.FSBatchProcessCLI");
@@ -115,12 +115,12 @@ class BatchCommandLineBuilder {
     /**
      * Take the input args and separate them into args that belong on the commandline
      * and those that belong as jvm args for the forked process.
-     * @param args -- literal args from TikaCLI commandline
+     *
+     * @param args        -- literal args from TikaCLI commandline
      * @param commandLine args that should be part of the batch commandline
-     * @param jvmArgs args that belong as jvm arguments for the forked process
+     * @param jvmArgs     args that belong as jvm arguments for the forked process
      */
-    private static void mapifyArgs(final String[] args,
-                                   final Map<String, String> commandLine,
+    private static void mapifyArgs(final String[] args, final Map<String, String> commandLine,
                                    final Map<String, String> jvmArgs) {
 
         if (args.length == 0) {
@@ -130,18 +130,18 @@ class BatchCommandLineBuilder {
         Matcher matcher = JVM_OPTS_PATTERN.matcher("");
         for (int i = 0; i < args.length; i++) {
             if (matcher.reset(args[i]).find()) {
-                String jvmArg = matcher.group(1)+matcher.group(2);
+                String jvmArg = matcher.group(1) + matcher.group(2);
                 String v = "";
-                if (i < args.length-1 && ! args[i+1].startsWith("-")){
-                    v = args[i+1];
+                if (i < args.length - 1 && !args[i + 1].startsWith("-")) {
+                    v = args[i + 1];
                     i++;
                 }
                 jvmArgs.put(jvmArg, v);
             } else if (args[i].startsWith("-")) {
                 String k = args[i];
                 String v = "";
-                if (i < args.length-1 && ! args[i+1].startsWith("-")){
-                    v = args[i+1];
+                if (i < args.length - 1 && !args[i + 1].startsWith("-")) {
+                    v = args[i + 1];
                     i++;
                 }
                 commandLine.put(k, v);
@@ -149,16 +149,17 @@ class BatchCommandLineBuilder {
         }
     }
 
-    private static void translateCommandLine(String[] args, Map<String, String> map) throws IOException {
+    private static void translateCommandLine(String[] args, Map<String, String> map)
+            throws IOException {
         //if there are only two args and they are both directories, treat the first
         //as input and the second as output.
-        if (args.length == 2 && !args[0].startsWith("-") && ! args[1].startsWith("-")) {
+        if (args.length == 2 && !args[0].startsWith("-") && !args[1].startsWith("-")) {
             Path candInput = Paths.get(args[0]);
             Path candOutput = Paths.get(args[1]);
 
             if (Files.isRegularFile(candOutput)) {
-                throw new IllegalArgumentException("Can't specify an existing file as the "+
-                "second argument for the output directory of a batch process");
+                throw new IllegalArgumentException("Can't specify an existing file as the " +
+                        "second argument for the output directory of a batch process");
             }
 
             if (Files.isDirectory(candInput)) {

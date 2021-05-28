@@ -31,10 +31,11 @@ import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.tika.utils.ProcessUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import org.apache.tika.utils.ProcessUtils;
 
 public class TikaCLIBatchCommandLineTest {
 
@@ -59,7 +60,8 @@ public class TikaCLIBatchCommandLineTest {
             throw new RuntimeException("Couldn't open testFile");
         }
         testInputPathForCommandLine = testInput.toAbsolutePath().toString();
-        escapedInputPathForCommandLine = BatchCommandLineBuilder.commandLineSafe(testInputPathForCommandLine);
+        escapedInputPathForCommandLine =
+                BatchCommandLineBuilder.commandLineSafe(testInputPathForCommandLine);
     }
 
     @After
@@ -105,12 +107,11 @@ public class TikaCLIBatchCommandLineTest {
         assertTrue(log < classInd);
         assertTrue(inputDir > classInd);
     }
-    
+
     @Test
     public void testBasicMappingOfArgs() throws Exception {
-        String[] params = {"-JXmx1g", "-JDlog4j.configuration=batch_process_log4j.xml",
-                "-bc", "batch-config.xml",
-                "-J", "-h", "-inputDir", testInputPathForCommandLine};
+        String[] params = {"-JXmx1g", "-JDlog4j.configuration=batch_process_log4j.xml", "-bc",
+                "batch-config.xml", "-J", "-h", "-inputDir", testInputPathForCommandLine};
 
         String[] commandLine = BatchCommandLineBuilder.build(params);
         Map<String, String> attrs = mapify(commandLine);
@@ -163,7 +164,7 @@ public class TikaCLIBatchCommandLineTest {
         String configPath = "c:/somewhere/someConfig.xml";
 
         String[] params = {"--inputDir", testInputPathForCommandLine, "--outputDir", outputRoot,
-                "--config="+configPath};
+                "--config=" + configPath};
         String[] commandLine = BatchCommandLineBuilder.build(params);
         Map<String, String> attrs = mapify(commandLine);
         assertEquals(escapedInputPathForCommandLine, attrs.get("-inputDir"));
