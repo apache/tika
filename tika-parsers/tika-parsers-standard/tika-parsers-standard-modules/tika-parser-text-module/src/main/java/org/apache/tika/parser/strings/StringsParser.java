@@ -182,7 +182,6 @@ public class StringsParser extends AbstractParser implements Initializable {
         cmdList.add(stringsProg);
         cmdList.add("-n");
         cmdList.add("" + config.getMinLength());
-        ;
         // Currently, encoding option is not supported by Windows (and other) versions
         if (hasEncodingOption) {
             cmdList.add("-e");

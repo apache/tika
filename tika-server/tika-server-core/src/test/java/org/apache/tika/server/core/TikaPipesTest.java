@@ -20,6 +20,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -259,12 +260,11 @@ public class TikaPipesTest extends CXFTestBase {
                 StandardCharsets.UTF_8)) {
             jsonResponse = new ObjectMapper().readTree(reader);
         }
-        ;
         String parseException = jsonResponse.get("parse_exception").asText();
         assertNotNull(parseException);
         assertContains("NullPointerException", parseException);
-        assertEquals(true, jsonResponse.get("emitted").asBoolean());
-        List<Metadata> metadataList = null;
+        assertTrue(jsonResponse.get("emitted").asBoolean());
+        List<Metadata> metadataList;
         try (Reader reader = Files
                 .newBufferedReader(TMP_OUTPUT_DIR.resolve("null_pointer.xml.json"))) {
             metadataList = JsonMetadataList.fromJson(reader);
@@ -298,11 +298,10 @@ public class TikaPipesTest extends CXFTestBase {
                 StandardCharsets.UTF_8)) {
             jsonResponse = new ObjectMapper().readTree(reader);
         }
-        ;
         String parseException = jsonResponse.get("parse_exception").asText();
         assertNotNull(parseException);
         assertContains("NullPointerException", parseException);
-        assertEquals(false, jsonResponse.get("emitted").asBoolean());
+        assertFalse(jsonResponse.get("emitted").asBoolean());
         assertFalse(Files.isRegularFile(TMP_NPE_OUTPUT_FILE));
     }
 }
