@@ -344,11 +344,13 @@
 
     <cxf.version>3.4.3</cxf.version>
     <slf4j.version>1.7.30</slf4j.version>
-        <log4j.version>1.2.17</log4j.version>
-    <jackson.version>2.12.2</jackson.version>
+    <log4j.version>1.2.17</log4j.version>
+    <jackson.version>2.12.3</jackson.version>
     <!-- when this is next upgraded, see if we can get rid of
-         javax.activation dependency in tika-server -->
-    <jaxb.version>3.0.0</jaxb.version>
+         javax.activation dependency in tika-server.
+         Until then, DO NOT go above 2.x unless you know what you're doing.
+         See TIKA-3407 -->
+    <jaxb.version>2.3.3</jaxb.version>
     <cli.version>1.4</cli.version>
     <lucene.version>8.8.1</lucene.version>
     <mockito.version>3.8.0</mockito.version>
