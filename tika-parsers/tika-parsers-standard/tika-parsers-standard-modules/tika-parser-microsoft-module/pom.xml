@@ -157,12 +157,16 @@
       <artifactId>bcprov-jdk15on</artifactId>
       <version>${bouncycastle.version}</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/log4j/log4j -->
+    <!-- logging -->
     <dependency>
-      <groupId>log4j</groupId>
-      <artifactId>log4j</artifactId>
-      <version>1.2.17</version>
-      <scope>test</scope>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <version>${log4j2.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j-impl</artifactId>
+      <version>${log4j2.version}</version>
     </dependency>
   </dependencies>
   <build>

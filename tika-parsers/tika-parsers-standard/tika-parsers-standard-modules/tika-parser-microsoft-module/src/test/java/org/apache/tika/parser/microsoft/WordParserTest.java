@@ -26,8 +26,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
@@ -350,15 +352,17 @@ public class WordParserTest extends TikaTest {
     @Test
     public void testExceptions1() throws Exception {
         XMLResult xml;
-        Level logLevelStart = Logger.getRootLogger().getLevel();
-        Logger.getRootLogger().setLevel(Level.ERROR);
+        LoggerContext ctx = (LoggerContext) LogManager.getContext();
+        LoggerConfig lc = ctx.getConfiguration().getRootLogger();
+        Level originalLevel = lc.getLevel();
+        lc.setLevel(Level.ERROR);
         try {
             xml = getXML("testException1.doc");
             assertContains("total population", xml.xml);
             xml = getXML("testException2.doc");
             assertContains("electric charge", xml.xml);
         } finally {
-            Logger.getRootLogger().setLevel(logLevelStart);
+            lc.setLevel(originalLevel);
         }
     }
 

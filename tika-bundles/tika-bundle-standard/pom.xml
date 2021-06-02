@@ -144,6 +144,7 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
+      <version>${slf4j.version}</version>
       <scope>test</scope>
     </dependency>
 
@@ -267,8 +268,9 @@
               com.adobe.xmp;resolution:=optional,
               com.adobe.xmp.impl;resolution:=optional,
               com.adobe.xmp.options;resolution:=optional,
-              com.dd.plist;resolution:=optional,
               com.adobe.xmp.properties;resolution:=optional,
+              com.apple.eawt;resolution:=optional,
+              com.dd.plist;resolution:=optional,
               com.github.luben.zstd;resolution:=optional,
               com.github.jaiimageio.*;resolution:=optional,
               com.google.common.util.concurrent.internal;resolution:=optional,
