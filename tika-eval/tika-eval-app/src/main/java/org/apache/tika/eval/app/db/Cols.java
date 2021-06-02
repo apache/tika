@@ -62,7 +62,6 @@ public enum Cols {
     TAGS_A, TAGS_B, TAGS_DIV, TAGS_I, TAGS_IMG, TAGS_LI, TAGS_P, TAGS_OL, TAGS_TABLE, TAGS_TD,
     TAGS_TITLE, TAGS_TR, TAGS_UL, TAGS_U,
     TAGS_PARSE_EXCEPTION, //if there was a SAX|IO|TikaException while parsing the html or xhtml
-    ;
 
 }
 

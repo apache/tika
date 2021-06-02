@@ -64,7 +64,7 @@ public class AgeRecogniserTest extends TikaTest {
         //test config is added to resources directory
         try (InputStream is = getResourceAsStream(CONFIG_FILE);
                 InputStream bis = new ByteArrayInputStream(
-                        TEST_TEXT.getBytes(Charset.defaultCharset()));) {
+                        TEST_TEXT.getBytes(Charset.defaultCharset()))) {
             TikaConfig config = new TikaConfig(is);
             Tika tika = new Tika(config);
 

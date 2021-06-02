@@ -73,7 +73,6 @@ public class PooledTimeSeriesParser extends AbstractParser {
             new HashSet<>(Arrays.asList(
                     new MediaType[]{MediaType.video("avi"), MediaType.video("mp4")}))) :
             Collections.<MediaType>emptySet();
-    ;
     // TODO: Add all supported video types
 
     private static final Logger LOG = LoggerFactory.getLogger(PooledTimeSeriesParser.class);
