@@ -50,7 +50,7 @@ public class FetcherStreamFactory implements InputStreamFactory {
     }
 
     @Override
-    public InputStream getInputSteam(InputStream is, Metadata metadata, HttpHeaders httpHeaders)
+    public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders)
             throws IOException {
         String fetcherName = httpHeaders.getHeaderString("fetcherName");
         String fetchKey = httpHeaders.getHeaderString("fetchKey");

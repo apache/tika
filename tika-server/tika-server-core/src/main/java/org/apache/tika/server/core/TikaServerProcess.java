@@ -119,7 +119,8 @@ public class TikaServerProcess {
             CommandLine line = cliParser.parse(options, args);
             TikaServerConfig tikaServerConfig = TikaServerConfig.load(line);
             LOG.debug("forked config: {}", tikaServerConfig);
-            if (tikaServerConfig.isEnableUnsecureFeatures()) {
+            if (tikaServerConfig.isEnableUnsecureFeatures() &&
+                    tikaServerConfig.getEndpoints().contains("async")) {
                 final AsyncResource localAsyncResource =
                         new AsyncResource(tikaServerConfig.getConfigPath());
                 Runtime.getRuntime().addShutdownHook(new Thread(() -> {

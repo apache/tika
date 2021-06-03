@@ -29,7 +29,7 @@ import org.apache.tika.metadata.Metadata;
 public class DefaultInputStreamFactory implements InputStreamFactory {
 
     @Override
-    public InputStream getInputSteam(InputStream is, Metadata metadata, HttpHeaders httpHeaders)
+    public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders)
             throws IOException {
         return is;
     }

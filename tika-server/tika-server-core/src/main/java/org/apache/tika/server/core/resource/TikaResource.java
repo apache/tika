@@ -154,7 +154,7 @@ public class TikaResource {
     public static InputStream getInputStream(InputStream is, Metadata metadata,
                                              HttpHeaders headers) {
         try {
-            return inputStreamFactory.getInputSteam(is, metadata, headers);
+            return inputStreamFactory.getInputStream(is, metadata, headers);
         } catch (IOException e) {
             throw new TikaServerParseException(e);
         }

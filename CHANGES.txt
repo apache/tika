@@ -12,6 +12,7 @@ Release 2.0.0-ALPHA - 01/13/2021
        is on the user's path see (https://cwiki.apache.org/confluence/display/TIKA/TikaOCR#TikaOCR-disable-ocr)
        for how to disable OCR.
      * By default, when rendering a page for OCR, the PDFParser does not render glyphs/text.
+     * tika-server's "enableFileUrl" has been removed in favor of a FileSystemFetcher.
      * Removed deprecated Metadata keys/properties (TIKA-1974).
      * Removed dangerous calls to read an inputstream or convert to bytes
        without specifying a charset
