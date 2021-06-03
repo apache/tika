@@ -26,7 +26,6 @@ public interface PDF {
     String PDF_PREFIX = "pdf" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
     String PDFA_PREFIX = "pdfa" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
     String PDFAID_PREFIX = "pdfaid" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
-    String PDF_PREFLIGHT_PREFIX = "pdf-preflight" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
     /**
      * Prefix to be used for properties that record what was stored
@@ -102,20 +101,4 @@ public interface PDF {
 
     Property HAS_MARKED_CONTENT = Property.internalBoolean(PDF_PREFIX + "hasMarkedContent");
 
-    Property PREFLIGHT_IS_VALID = Property.internalBoolean(PDF_PREFLIGHT_PREFIX + "isValid");
-    Property PREFLIGHT_PARSE_EXCEPTION =
-            Property.internalText(PDF_PREFLIGHT_PREFIX + "parseException");
-    Property PREFLIGHT_VALIDATION_ERRORS =
-            Property.internalTextBag(PDF_PREFLIGHT_PREFIX + "validationErrors");
-    Property PREFLIGHT_SPECIFICATION =
-            Property.internalText(PDF_PREFLIGHT_PREFIX + "specification");
-    Property PREFLIGHT_TRAILER_COUNT =
-            Property.internalInteger(PDF_PREFLIGHT_PREFIX + "trailerCount");
-    Property PREFLIGHT_XREF_TYPE = Property.internalText(PDF_PREFLIGHT_PREFIX + "xrefType");
-    Property PREFLIGHT_ICC_PROFILE = Property.internalText(PDF_PREFLIGHT_PREFIX + "iccProfile");
-    Property PREFLIGHT_IS_LINEARIZED =
-            Property.internalBoolean(PDF_PREFLIGHT_PREFIX + "isLinearized");
-
-    Property PREFLIGHT_INCREMENTAL_UPDATES =
-            Property.internalBoolean(PDF_PREFLIGHT_PREFIX + "hasIncrementalUpdates");
 }

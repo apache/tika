@@ -198,7 +198,6 @@
               pdfbox|
               pdfbox-tools|
               pdfbox-debugger|
-              pdfbox-preflight|
               fontbox|
               jempbox|
               bcmail-jdk15on|
@@ -316,7 +315,6 @@
               org.apache.commons.exec;resolution:=optional,
               org.apache.jcp.xml.dsig.internal.dom;resolution:=optional,
               org.apache.pdfbox.debugger;resolution:=optional,
-              org.apache.pdfbox.preflight.*;resolution:=optional,
               org.apache.tools.ant;resolution:=optional,
               org.apache.tools.ant.taskdefs;resolution:=optional,
               org.apache.tools.ant.types;resolution:=optional,
