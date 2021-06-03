@@ -112,29 +112,14 @@ public class TikaServerProcess {
 
     public static void main(String[] args) throws Exception {
         LOG.info("Starting {} server", new Tika());
-        AsyncResource asyncResource = null;
         try {
             Options options = getOptions();
             CommandLineParser cliParser = new DefaultParser();
             CommandLine line = cliParser.parse(options, args);
             TikaServerConfig tikaServerConfig = TikaServerConfig.load(line);
             LOG.debug("forked config: {}", tikaServerConfig);
-            if (tikaServerConfig.isEnableUnsecureFeatures() &&
-                    tikaServerConfig.getEndpoints().contains("async")) {
-                final AsyncResource localAsyncResource =
-                        new AsyncResource(tikaServerConfig.getConfigPath());
-                Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                    try {
-                        localAsyncResource.shutdownNow();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }));
-                asyncResource = localAsyncResource;
-            }
 
-
-            ServerDetails serverDetails = initServer(tikaServerConfig, asyncResource);
+            ServerDetails serverDetails = initServer(tikaServerConfig);
             startServer(serverDetails);
 
         } catch (Exception e) {
@@ -156,8 +141,7 @@ public class TikaServerProcess {
     }
 
     //This returns the server, configured and ready to be started.
-    private static ServerDetails initServer(TikaServerConfig tikaServerConfig,
-                                            AsyncResource asyncResource) throws Exception {
+    private static ServerDetails initServer(TikaServerConfig tikaServerConfig) throws Exception {
         String host = tikaServerConfig.getHost();
         int[] ports = tikaServerConfig.getPorts();
         if (ports.length > 1) {
@@ -196,7 +180,6 @@ public class TikaServerProcess {
 
         //TODO -- clean this up -- only load as necessary
         FetcherManager fetcherManager = null;
-        EmitterManager emitterManager = null;
         InputStreamFactory inputStreamFactory = null;
         if (tikaServerConfig.isEnableUnsecureFeatures()) {
             fetcherManager = FetcherManager.load(tikaServerConfig.getConfigPath());
@@ -330,8 +313,14 @@ public class TikaServerProcess {
             resourceProviders.add(new SingletonResourceProvider(new TikaParsers()));
             resourceProviders.add(new SingletonResourceProvider(new TikaVersion()));
             if (tikaServerConfig.isEnableUnsecureFeatures()) {
-                addAsyncResource = true;
-                addPipesResource = true;
+                //check to make sure there are both fetchers and emitters
+                //specified.  It is possible that users may only specify fetchers
+                //for legacy endpoints.
+                if (tikaServerConfig.getSupportedFetchers().size() > 0 &&
+                        tikaServerConfig.getSupportedEmitters().size() > 0) {
+                    addAsyncResource = true;
+                    addPipesResource = true;
+                }
                 resourceProviders
                         .add(new SingletonResourceProvider(new TikaServerStatus(serverStatus)));
             }
@@ -370,7 +359,8 @@ public class TikaServerProcess {
         }
 
         if (addAsyncResource) {
-            final AsyncResource localAsyncResource = new AsyncResource(tikaServerConfig.getConfigPath());
+            final AsyncResource localAsyncResource = new AsyncResource(
+                    tikaServerConfig.getConfigPath(), tikaServerConfig.getSupportedFetchers());
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 try {
                     localAsyncResource.shutdownNow();

@@ -25,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.POST;
@@ -48,7 +49,6 @@ import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.emitter.EmitterManager;
 import org.apache.tika.pipes.fetcher.FetchKey;
-import org.apache.tika.pipes.fetcher.FetcherManager;
 
 @Path("/async")
 public class AsyncResource {
@@ -57,14 +57,14 @@ public class AsyncResource {
 
     long maxQueuePauseMs = 60000;
     private final AsyncProcessor asyncProcessor;
-    private final FetcherManager fetcherManager;
+    private final Set<String> supportedFetchers;
     private final EmitterManager emitterManager;
     private ArrayBlockingQueue<FetchEmitTuple> queue;
 
-    public AsyncResource(java.nio.file.Path tikaConfigPath)
+    public AsyncResource(java.nio.file.Path tikaConfigPath, Set<String> supportedFetchers)
             throws TikaException, IOException, SAXException {
         this.asyncProcessor = new AsyncProcessor(tikaConfigPath);
-        this.fetcherManager = FetcherManager.load(tikaConfigPath);
+        this.supportedFetchers = supportedFetchers;
         this.emitterManager = EmitterManager.load(tikaConfigPath);
     }
 
@@ -104,7 +104,7 @@ public class AsyncResource {
         //the requested fetchers and emitters
         //throw early
         for (FetchEmitTuple t : request.getTuples()) {
-            if (!fetcherManager.getSupported().contains(t.getFetchKey().getFetcherName())) {
+            if (!supportedFetchers.contains(t.getFetchKey().getFetcherName())) {
                 return badFetcher(t.getFetchKey());
             }
             if (!emitterManager.getSupported().contains(t.getEmitKey().getEmitterName())) {

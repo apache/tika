@@ -19,6 +19,8 @@ package org.apache.tika.server.core;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -37,8 +39,10 @@ public class TikaServerConfigTest {
         Set<String> settings = new HashSet<>();
         CommandLineParser parser = new DefaultParser();
         CommandLine emptyCommandLine = parser.parse(new Options(), new String[]{});
+        Path path = Paths.get(TikaConfigTest.class.getResource(
+                "/configs/tika-config-server.xml").toURI());
         TikaServerConfig config = TikaServerConfig
-                .load(TikaConfigTest.class.getResourceAsStream("/configs/tika-config-server.xml"),
+                .load(path,
                         emptyCommandLine,
                         settings);
         assertEquals(-1, config.getMaxRestarts());
@@ -47,5 +51,25 @@ public class TikaServerConfigTest {
 
         assertTrue(settings.contains("taskTimeoutMillis"));
         assertTrue(settings.contains("enableUnsecureFeatures"));
+    }
+
+    @Test
+    public void testSupportedFetchersEmitters() throws Exception {
+        Set<String> settings = new HashSet<>();
+        CommandLineParser parser = new DefaultParser();
+        CommandLine emptyCommandLine = parser.parse(new Options(), new String[]{});
+        Path path = Paths.get(TikaConfigTest.class.getResource(
+                "/configs/tika-config-server-fetchers-emitters.xml").toURI());
+        TikaServerConfig config = TikaServerConfig
+                .load(path,
+                        emptyCommandLine,
+                        settings);
+        assertEquals(-1, config.getMaxRestarts());
+        assertEquals(54321, config.getTaskTimeoutMillis());
+        assertEquals(true, config.isEnableUnsecureFeatures());
+        assertEquals(1, config.getSupportedFetchers().size());
+        assertEquals(1, config.getSupportedEmitters().size());
+        assertTrue(config.getSupportedFetchers().contains("fsf"));
+        assertTrue(config.getSupportedEmitters().contains("fse"));
     }
 }

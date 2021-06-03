@@ -31,12 +31,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.cli.CommandLine;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import org.apache.tika.config.ConfigBase;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.utils.ProcessUtils;
 import org.apache.tika.utils.StringUtils;
+import org.apache.tika.utils.XMLReaderUtils;
 
 public class TikaServerConfig extends ConfigBase {
 
@@ -97,6 +101,8 @@ public class TikaServerConfig extends ConfigBase {
     private boolean returnStackTrace = false;
     private boolean noFork = false;
     private String tempFilePrefix = "apache-tika-server-forked-tmp-"; //can be set for debugging
+    private Set<String> supportedFetchers = new HashSet<>();
+    private Set<String> supportedEmitters = new HashSet<>();
     private List<String> forkedJvmArgs = new ArrayList<>();
     private String idBase = UUID.randomUUID().toString();
     private String port = Integer.toString(DEFAULT_PORT);
@@ -126,7 +132,6 @@ public class TikaServerConfig extends ConfigBase {
         Set<String> settings = new HashSet<>();
         if (commandLine.hasOption("c")) {
             config = load(Paths.get(commandLine.getOptionValue("c")), commandLine, settings);
-            config.setConfigPath(commandLine.getOptionValue("c"));
         } else {
             config = new TikaServerConfig();
         }
@@ -169,11 +174,17 @@ public class TikaServerConfig extends ConfigBase {
     static TikaServerConfig load(Path p, CommandLine commandLine, Set<String> settings) throws IOException,
             TikaException {
         try (InputStream is = Files.newInputStream(p)) {
-            return TikaServerConfig.load(is, commandLine, settings);
+            TikaServerConfig config = TikaServerConfig.load(is, commandLine, settings);
+            if (config.getConfigPath() == null) {
+                config.setConfigPath(p.toAbsolutePath().toString());
+            }
+            loadSupportedFetchersEmitters(config);
+            return config;
         }
     }
 
-    static TikaServerConfig load(InputStream is, CommandLine commandLine, Set<String> settings)
+    private static TikaServerConfig load(InputStream is, CommandLine commandLine,
+                                       Set<String> settings)
             throws IOException, TikaException {
         TikaServerConfig tikaServerConfig = new TikaServerConfig();
         Set<String> configSettings = tikaServerConfig.configure("server", is);
@@ -183,6 +194,65 @@ public class TikaServerConfig extends ConfigBase {
             tikaServerConfig.setNoFork(true);
         }
         return tikaServerConfig;
+    }
+
+    private static void loadSupportedFetchersEmitters(TikaServerConfig tikaServerConfig)
+            throws IOException, TikaConfigException {
+        //this is an abomination... clean up this double read
+        try (InputStream is = Files.newInputStream(tikaServerConfig.getConfigPath())) {
+            Node properties = null;
+            try {
+                properties = XMLReaderUtils.buildDOM(is).getDocumentElement();
+            } catch (SAXException e) {
+                throw new IOException(e);
+            } catch (TikaException e) {
+                throw new TikaConfigException("problem loading xml to dom", e);
+            }
+            if (!properties.getLocalName().equals("properties")) {
+                throw new TikaConfigException("expect properties as root node");
+            }
+            NodeList children = properties.getChildNodes();
+            for (int i = 0; i < children.getLength(); i++) {
+                Node child = children.item(i);
+                if ("fetchers".equals(child.getLocalName())) {
+                    loadSupported(child, "fetcher", tikaServerConfig.supportedFetchers);
+                } else if ("emitters".equals(child.getLocalName())) {
+                    loadSupported(child, "emitter", tikaServerConfig.supportedEmitters);
+                }
+            }
+        }
+    }
+
+    private static void loadSupported(Node compound,
+                                      String itemName,
+                                      Set<String> supported) {
+        NodeList children = compound.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+            if (itemName.equals(child.getLocalName())) {
+                String name = getName(child);
+                if (name != null) {
+                    supported.add(name);
+                }
+            }
+        }
+    }
+
+    private static String getName(Node fetcherOrEmitter) {
+        NodeList children = fetcherOrEmitter.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+            if ("params".equals(child.getLocalName())) {
+                NodeList params = child.getChildNodes();
+                for (int j = 0; j < params.getLength(); j++) {
+                    Node param = params.item(j);
+                    if ("name".equals(param.getLocalName())) {
+                        return param.getTextContent();
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     public boolean isNoFork() {
@@ -507,4 +577,11 @@ public class TikaServerConfig extends ConfigBase {
         return indivPorts.stream().mapToInt(Integer::intValue).toArray();
     }
 
+    public Set<String> getSupportedFetchers() {
+        return supportedFetchers;
+    }
+
+    public Set<String> getSupportedEmitters() {
+        return supportedEmitters;
+    }
 }
