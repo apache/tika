@@ -45,6 +45,11 @@ import java.util.List;
 
 import static org.apache.pdfbox.preflight.PreflightConstants.DICTIONARY_KEY_LINEARIZED;
 
+/**
+ * @deprecated This will be removed in 2.x.  The PDFBox community voted
+ * to retire the preflight parser in PDFBox 4.x.
+ */
+@Deprecated
 public class PDFPreflightParser extends PDFParser {
 
     private static final PDFPreflightParserConfig DEFAULT = new PDFPreflightParserConfig();
