@@ -20,6 +20,7 @@ package org.apache.tika.server;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.lang.management.ManagementFactory;
+import java.net.BindException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,6 +47,7 @@ import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.cxf.rs.security.cors.CrossOriginResourceSharingFilter;
+import org.apache.cxf.service.factory.ServiceConstructionException;
 import org.apache.cxf.transport.common.gzip.GZIPInInterceptor;
 import org.apache.cxf.transport.common.gzip.GZIPOutInterceptor;
 import org.apache.tika.Tika;
@@ -84,6 +86,8 @@ import org.slf4j.LoggerFactory;
 
 public class TikaServerCli {
 
+
+    public static final int BIND_EXCEPTION = 42;
 
     //used in spawn-child mode
     private static final long DEFAULT_MAX_FILES = 100000;
@@ -177,8 +181,26 @@ public class TikaServerCli {
                     }
                 }
             }
-            executeLegacy(line, options);
+            try {
+                executeLegacy(line, options);
+            } catch (ServiceConstructionException e) {
+                if (isBindException(e)) {
+                    LOG.warn("failed to bind to port", e);
+                    System.exit(BIND_EXCEPTION);
+                }
+                throw e;
+            }
         }
+    }
+
+    private static boolean isBindException(Throwable e) {
+        if (e == null) {
+            return false;
+        }
+        if (e instanceof BindException) {
+            return true;
+        }
+        return isBindException(e.getCause());
     }
 
     private static String[] stripChildArgs(String[] args) {
@@ -288,27 +310,16 @@ public class TikaServerCli {
             String serverId = line.hasOption("i") ? line.getOptionValue("i") : UUID.randomUUID().toString();
             LOG.debug("SERVER ID:" +serverId);
             ServerStatus serverStatus;
+            //this is used in a forked process to write status to the forking process
+            //and to check status from forking process
+            //it will be null if running in legacy no fork mode
             //if this is a child process
             if (line.hasOption("child")) {
                 serverStatus = new ServerStatus(serverId, Integer.parseInt(line.getOptionValue("numRestarts")),
                         false);
                 //redirect!!!
-                InputStream in = System.in;
-                System.setIn(new ByteArrayInputStream(new byte[0]));
                 System.setOut(System.err);
 
-                long maxFiles = DEFAULT_MAX_FILES;
-                if (line.hasOption("maxFiles")) {
-                    maxFiles = Long.parseLong(line.getOptionValue("maxFiles"));
-                }
-
-                ServerTimeouts serverTimeouts = configureServerTimeouts(line);
-                String childStatusFile = line.getOptionValue("childStatusFile");
-                Thread serverThread =
-                new Thread(new ServerStatusWatcher(serverStatus, in,
-                        Paths.get(childStatusFile), maxFiles, serverTimeouts));
-
-                serverThread.start();
             } else {
                 serverStatus = new ServerStatus(serverId, 0, true);
             }
@@ -379,6 +390,25 @@ public class TikaServerCli {
             Server server = sf.create();
             if (line.hasOption("metrics")) {
                 MetricsHelper.registerPostStart(sf, server);
+            }
+
+            //start the forked server thread after the server has started
+            if (line.hasOption("child")) {
+                long maxFiles = DEFAULT_MAX_FILES;
+                if (line.hasOption("maxFiles")) {
+                    maxFiles = Long.parseLong(line.getOptionValue("maxFiles"));
+                }
+
+                ServerTimeouts serverTimeouts = configureServerTimeouts(line);
+                String childStatusFile = line.getOptionValue("childStatusFile");
+                InputStream in = System.in;
+                System.setIn(new ByteArrayInputStream(new byte[0]));
+
+                Thread serverThread =
+                        new Thread(new ServerStatusWatcher(serverStatus, in,
+                                Paths.get(childStatusFile), maxFiles, serverTimeouts));
+
+                serverThread.start();
             }
             LOG.info("Started Apache Tika server at {}", url);
     }
