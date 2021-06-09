@@ -1,5 +1,7 @@
 Release 1.27 - ???
 
+   * Deprecate experimental PDFPreflightParser (TIKA-3437).
+
    * Apply encoding detection to zip entry names via Ryan421 (TIKA-3374).
 
    * Add json output for /tika endpoint in tika-server (TIKA-3352).
