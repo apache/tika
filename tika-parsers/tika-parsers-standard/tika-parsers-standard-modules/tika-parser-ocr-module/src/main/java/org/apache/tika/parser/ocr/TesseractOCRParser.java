@@ -65,7 +65,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
+import org.apache.tika.parser.AbstractExternalProcessParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.sax.OfflineContentHandler;
@@ -85,7 +85,7 @@ import org.apache.tika.utils.XMLReaderUtils;
  * parseContext.set(TesseractOCRConfig.class, config);<br>
  * </p>
  */
-public class TesseractOCRParser extends AbstractParser implements Initializable {
+public class TesseractOCRParser extends AbstractExternalProcessParser implements Initializable {
 
     public static final String TESS_META = "tess:";
     public static final Property IMAGE_ROTATION = Property.externalRealSeq(TESS_META + "rotation");
@@ -342,12 +342,17 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         setEnv(pb);
 
         Process process = null;
+        String id = null;
         try {
             process = pb.start();
+            id = register(process);
             runOCRProcess(process, config.getTimeoutSeconds());
         } finally {
             if (process != null) {
                 process.destroyForcibly();
+            }
+            if (id != null) {
+                release(id);
             }
         }
     }

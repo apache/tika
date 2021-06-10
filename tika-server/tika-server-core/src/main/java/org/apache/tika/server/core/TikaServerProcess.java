@@ -20,6 +20,7 @@ package org.apache.tika.server.core;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.BindException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -87,6 +88,8 @@ public class TikaServerProcess {
     public static final Set<String> LOG_LEVELS = new HashSet<>(Arrays.asList("debug", "info"));
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerProcess.class);
     public static int DO_NOT_RESTART_EXIT_VALUE = -100;
+    public static final int BIND_EXCEPTION = 42;
+
 
     private static Options getOptions() {
         Options options = new Options();
@@ -120,7 +123,7 @@ public class TikaServerProcess {
             LOG.debug("forked config: {}", tikaServerConfig);
 
             ServerDetails serverDetails = initServer(tikaServerConfig);
-            startServer(serverDetails);
+            startServer(serverDetails, tikaServerConfig);
 
         } catch (Exception e) {
             LOG.error("Can't start: ", e);
@@ -128,15 +131,41 @@ public class TikaServerProcess {
         }
     }
 
-    private static void startServer(ServerDetails serverDetails) throws Exception {
+    private static boolean isBindException(Throwable e) {
+        if (e == null) {
+            return false;
+        }
+        if (e instanceof BindException) {
+            return true;
+        }
+        return isBindException(e.getCause());
+    }
+
+    private static void startServer(ServerDetails serverDetails, TikaServerConfig tikaServerConfig) throws Exception {
 
         try {
             //start the server
             Server server = serverDetails.sf.create();
         } catch (ServiceConstructionException e) {
             LOG.warn("exception starting server", e);
+            if (isBindException(e)) {
+                System.exit(BIND_EXCEPTION);
+            }
             System.exit(DO_NOT_RESTART_EXIT_VALUE);
         }
+
+        if (! tikaServerConfig.isNoFork()) {
+            //redirect
+            InputStream in = System.in;
+            System.setIn(new ByteArrayInputStream(new byte[0]));
+
+            String forkedStatusFile = tikaServerConfig.getForkedStatusFile();
+            Thread serverThread = new Thread(new ServerStatusWatcher(serverDetails.serverStatus, in,
+                    Paths.get(forkedStatusFile), tikaServerConfig));
+
+            serverThread.start();
+        }
+
         LOG.info("Started Apache Tika server {} at {}", serverDetails.serverId, serverDetails.url);
     }
 
@@ -199,17 +228,7 @@ public class TikaServerProcess {
             serverStatus = new ServerStatus(serverId, 0, true);
         } else {
             serverStatus = new ServerStatus(serverId, tikaServerConfig.getNumRestarts(), false);
-            //redirect!!!
-            InputStream in = System.in;
-            System.setIn(new ByteArrayInputStream(new byte[0]));
             System.setOut(System.err);
-
-            String forkedStatusFile = tikaServerConfig.getForkedStatusFile();
-            Thread serverThread = new Thread(
-                    new ServerStatusWatcher(serverStatus, in, Paths.get(forkedStatusFile),
-                            tikaServerConfig));
-
-            serverThread.start();
         }
         TikaResource.init(tika, tikaServerConfig, digester, inputStreamFactory, serverStatus);
         JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
@@ -240,6 +259,7 @@ public class TikaServerProcess {
         details.sf = sf;
         details.url = url;
         details.serverId = serverId;
+        details.serverStatus = serverStatus;
         return details;
     }
 
@@ -467,5 +487,6 @@ public class TikaServerProcess {
         JAXRSServerFactoryBean sf;
         String serverId;
         String url;
+        ServerStatus serverStatus;
     }
 }
