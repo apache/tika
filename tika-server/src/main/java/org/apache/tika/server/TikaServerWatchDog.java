@@ -58,6 +58,9 @@ public class TikaServerWatchDog {
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerWatchDog.class);
     private static final String DEFAULT_CHILD_STATUS_FILE_PREFIX = "tika-server-child-process-mmap-";
 
+    //this is the shutdown hook for the child (forked) process
+    private static Thread SHUTDOWN_HOOK = null;
+
     private Object[] childStatusLock = new Object[0];
     private volatile CHILD_STATUS childStatus = CHILD_STATUS.INITIALIZING;
     private volatile Instant lastPing = null;
@@ -251,7 +254,6 @@ public class TikaServerWatchDog {
     }
 
     private class ChildProcess {
-        private Thread SHUTDOWN_HOOK = null;
 
         private final Process process;
         private final DataOutputStream toChild;
@@ -439,12 +441,12 @@ public class TikaServerWatchDog {
             //redirect stdout to parent stderr to avoid error msgs
             //from maven during build: Corrupted STDOUT by directly writing to native stream in forked
             redirectIO(process.getInputStream(), System.err);
-            if (SHUTDOWN_HOOK != null) {
-                Runtime.getRuntime().removeShutdownHook(SHUTDOWN_HOOK);
-            }
+            Thread oldHook = SHUTDOWN_HOOK;
             SHUTDOWN_HOOK = new Thread(() -> this.close());
             Runtime.getRuntime().addShutdownHook(SHUTDOWN_HOOK);
-
+            if (oldHook != null) {
+                Runtime.getRuntime().removeShutdownHook(oldHook);
+            }
             return process;
         }
     }
@@ -470,9 +472,12 @@ public class TikaServerWatchDog {
     }
 
     private static synchronized void destroyChildForcibly(Process process) {
-        process = process.destroyForcibly();
 
         try {
+            //wait for process to stop itself -- this can help prevent
+            // orphaned processes, e.g.tesseract
+            process.waitFor(10, TimeUnit.SECONDS);
+            process = process.destroyForcibly();
             boolean destroyed = process.waitFor(60, TimeUnit.SECONDS);
             if (! destroyed) {
                 LOG.error("Child process still alive after 60 seconds. " +
@@ -490,6 +495,8 @@ public class TikaServerWatchDog {
         } catch (InterruptedException e) {
             LOG.warn("interrupted exception while trying to destroy the forked process");
             //swallow
+        } finally {
+            process.destroyForcibly();
         }
     }
 

@@ -1,5 +1,11 @@
 Release 1.27 - ???
 
+   * Prevent rare infinite loop in tika-server's -spawnChild mode
+     when restart fails because of failure to bind to the port (TIKA-3441).
+
+   * Improve likelihood that tesseract will not be orphaned on
+     jvm restart in tika-server (TIKA-3441).
+
    * Deprecate experimental PDFPreflightParser (TIKA-3437).
 
    * Apply encoding detection to zip entry names via Ryan421 (TIKA-3374).

@@ -33,6 +33,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.parser.AbstractExternalProcessParser;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
@@ -99,7 +100,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  *
  *
  */
-public class TesseractOCRParser extends AbstractParser implements Initializable {
+public class TesseractOCRParser extends AbstractExternalProcessParser implements Initializable {
     private static final Logger LOG = LoggerFactory.getLogger(TesseractOCRParser.class);
 
     private static volatile boolean HAS_WARNED = false;
@@ -531,12 +532,17 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         ProcessBuilder pb = new ProcessBuilder(cmd);
         setEnv(config, pb);
         Process process = null;
+        String id = null;
         try {
             process = pb.start();
+            id = register(process);
             runOCRProcess(process, config.getTimeout());
         } finally {
             if (process != null) {
                 process.destroyForcibly();
+            }
+            if (id != null) {
+                release(id);
             }
         }
     }
