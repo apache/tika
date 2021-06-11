@@ -334,13 +334,13 @@
     <mockito.version>3.7.7</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <opencsv.version>2.3</opencsv.version>
-    <pdfbox.version>2.0.23</pdfbox.version>
     <objenesis.version>3.2</objenesis.version>
     <openjson.version>1.0.12</openjson.version>
     <opennlp.version>1.9.3</opennlp.version>
     <optimaize.version>0.6</optimaize.version>
     <osgi.core.version>6.0.0</osgi.core.version>
     <parso.version>2.0.13</parso.version>
+    <pdfbox.version>2.0.24</pdfbox.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
     <poi.version>4.1.2</poi.version>
     <rome.version>1.15.0</rome.version>
