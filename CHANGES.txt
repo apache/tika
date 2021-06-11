@@ -15,6 +15,8 @@ Release 2.0.0-ALPHA - 01/13/2021
      * OCR is now triggered automatically for PDFs if tesseract
        is on the user's path see (https://cwiki.apache.org/confluence/display/TIKA/TikaOCR#TikaOCR-disable-ocr)
        for how to disable OCR.
+     * We upgraded from log4j to log4j2 in tika-app, tika-server and anywhere else
+       we used to use log4j.
      * By default, when rendering a page for OCR, the PDFParser does not render glyphs/text.
      * tika-server's "enableFileUrl" has been removed in favor of a FileSystemFetcher.
      * Removed deprecated Metadata keys/properties (TIKA-1974).
