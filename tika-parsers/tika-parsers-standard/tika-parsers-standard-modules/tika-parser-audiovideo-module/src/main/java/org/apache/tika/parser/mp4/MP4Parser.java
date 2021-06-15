@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.mp4;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -36,7 +35,6 @@ import java.util.Set;
 import com.drew.imaging.mp4.Mp4Reader;
 import com.drew.metadata.Directory;
 import com.drew.metadata.MetadataException;
-import com.drew.metadata.Tag;
 import com.drew.metadata.mp4.Mp4BoxHandler;
 import com.drew.metadata.mp4.Mp4Directory;
 import com.drew.metadata.mp4.media.Mp4SoundDirectory;
@@ -203,13 +201,15 @@ public class MP4Parser extends AbstractParser {
         try {
             long numerator = Long.parseLong(bits[0]);
             long denominator = Long.parseLong(bits[1]);
-            durationSeconds = (double)numerator/(double)denominator;
+            if (denominator != 0) {
+                durationSeconds = (double) numerator / (double) denominator;
+                // Get the duration
+                metadata.set(XMPDM.DURATION, DURATION_FORMAT.format(durationSeconds));
+            }
         } catch (NumberFormatException e) {
             //log
             return;
         }
-        // Get the duration
-        metadata.set(XMPDM.DURATION, DURATION_FORMAT.format(durationSeconds));
     }
 
     private void handleBrands(Mp4Directory mp4Directory, Metadata metadata) {

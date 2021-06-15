@@ -80,7 +80,11 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * <p>
  * This uses the MP4Parser project from http://code.google.com/p/mp4parser/
  * to do the underlying parsing
+ * <p>
+ *     This class is deprecated and will be removed in Tika 2.x.
+ * </p>
  */
+@Deprecated
 public class LegacyMP4Parser extends AbstractParser {
     /**
      * Serial version UID

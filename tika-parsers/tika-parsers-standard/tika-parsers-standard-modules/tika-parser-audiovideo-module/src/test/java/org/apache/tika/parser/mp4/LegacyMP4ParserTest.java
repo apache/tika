@@ -18,8 +18,6 @@ package org.apache.tika.parser.mp4;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.Arrays;
-
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
@@ -81,9 +79,6 @@ public class LegacyMP4ParserTest extends TikaTest {
         assertEquals("0.07", metadata.get(XMPDM.DURATION));
 
         assertEquals("iTunes 10.5.3.3", metadata.get(XMP.CREATOR_TOOL));
-
-        assertContains("org.apache.tika.parser.mp4.LegacyMP4Parser",
-                Arrays.asList(metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY)));
 
 
         // Check again by file, rather than stream
