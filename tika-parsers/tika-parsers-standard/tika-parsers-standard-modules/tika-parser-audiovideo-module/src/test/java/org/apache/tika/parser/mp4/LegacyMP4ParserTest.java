@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -35,7 +36,7 @@ import org.apache.tika.sax.BodyContentHandler;
 /**
  * Test case for parsing mp4 files.
  */
-public class MP4ParserTest extends TikaTest {
+public class LegacyMP4ParserTest extends TikaTest {
     /**
      * Test that we can extract information from
      * a M4A MP4 Audio file
@@ -43,7 +44,8 @@ public class MP4ParserTest extends TikaTest {
     @Test
     public void testMP4ParsingAudio() throws Exception {
         Metadata metadata = new Metadata();
-        String content = getText("testMP4.m4a", metadata);
+
+        String content = getText("testMP4.m4a", new LegacyMP4Parser(), metadata);
 
         // Check core properties
         assertEquals("audio/mp4", metadata.get(Metadata.CONTENT_TYPE));
@@ -80,8 +82,9 @@ public class MP4ParserTest extends TikaTest {
 
         assertEquals("iTunes 10.5.3.3", metadata.get(XMP.CREATOR_TOOL));
 
-        assertContains("org.apache.tika.parser.mp4.MP4Parser",
+        assertContains("org.apache.tika.parser.mp4.LegacyMP4Parser",
                 Arrays.asList(metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY)));
+
 
         // Check again by file, rather than stream
         TikaInputStream tstream =
@@ -100,8 +103,14 @@ public class MP4ParserTest extends TikaTest {
     // TODO Test an old QuickTime Video File
     @Test(timeout = 30000)
     public void testInfiniteLoop() throws Exception {
-        XMLResult r = getXML("testMP4_truncated.m4a");
-        assertEquals("audio/mp4", r.metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("M4A", r.metadata.get(XMPDM.AUDIO_COMPRESSOR));
+        //test that a truncated mp4 doesn't cause an infinite loop
+        //TIKA-1931 and TIKA-1924
+        try {
+            XMLResult r = getXML("testMP4_truncated.m4a");
+            assertEquals("audio/mp4", r.metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("M4A", r.metadata.get(XMPDM.AUDIO_COMPRESSOR));
+        } catch (TikaException e) {
+            //java 11
+        }
     }
 }

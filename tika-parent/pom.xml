@@ -328,7 +328,7 @@
     <log4j2.version>2.14.1</log4j2.version>
     <lombok.version>1.18.20</lombok.version>
     <lucene.version>8.8.2</lucene.version>
-    <metadata.extractor.version>2.15.0.1</metadata.extractor.version>
+    <metadata.extractor.version>2.16.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.4</mime4j.version>
     <mockito.version>3.7.7</mockito.version>
