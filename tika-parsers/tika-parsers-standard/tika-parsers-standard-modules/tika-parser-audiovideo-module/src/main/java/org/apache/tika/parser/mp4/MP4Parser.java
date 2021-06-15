@@ -68,19 +68,10 @@ public class MP4Parser extends AbstractParser {
      * Serial version UID
      */
     private static final long serialVersionUID = 84011216792285L;
-    /**
-     * TODO Replace this with a 2dp Duration Property Converter
-     */
-    private static final DecimalFormat DURATION_FORMAT =
-            (DecimalFormat) NumberFormat.getNumberInstance(Locale.ROOT);
-    // Ensure this stays in Sync with the entries in tika-mimetypes.xml
     private static final Map<MediaType, List<String>> typesMap = new HashMap<>();
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.unmodifiableSet(typesMap.keySet());
 
-    static {
-        DURATION_FORMAT.applyPattern("0.0#");
-    }
 
     static {
         // All types should be 4 bytes long, space padded as needed
@@ -204,7 +195,13 @@ public class MP4Parser extends AbstractParser {
             if (denominator != 0) {
                 durationSeconds = (double) numerator / (double) denominator;
                 // Get the duration
-                metadata.set(XMPDM.DURATION, DURATION_FORMAT.format(durationSeconds));
+                //TODO Replace this with a 2dp Duration Property Converter
+                //avoid thread safety issues by creating a new decimal format for every call
+                //threadlocal doesn't play well in long running processes.
+                DecimalFormat df =
+                        (DecimalFormat) NumberFormat.getNumberInstance(Locale.ROOT);
+                df.applyPattern("0.0#");
+                metadata.set(XMPDM.DURATION, df.format(durationSeconds));
             }
         } catch (NumberFormatException e) {
             //log
