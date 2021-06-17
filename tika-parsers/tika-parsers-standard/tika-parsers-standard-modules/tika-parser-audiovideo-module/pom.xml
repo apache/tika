@@ -30,11 +30,6 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.tallison</groupId>
-      <artifactId>isoparser</artifactId>
-      <version>${isoparser.version}</version>
-    </dependency>
-    <dependency>
       <groupId>com.drewnoakes</groupId>
       <artifactId>metadata-extractor</artifactId>
       <version>${metadata.extractor.version}</version>

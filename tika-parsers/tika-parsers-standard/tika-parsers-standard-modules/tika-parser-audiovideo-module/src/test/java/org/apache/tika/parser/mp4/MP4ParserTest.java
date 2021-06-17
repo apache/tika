@@ -19,6 +19,8 @@ package org.apache.tika.parser.mp4;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
@@ -36,6 +38,26 @@ import org.apache.tika.sax.BodyContentHandler;
  * Test case for parsing mp4 files.
  */
 public class MP4ParserTest extends TikaTest {
+
+    Set<String> skipKeysA = new HashSet<>();
+    Set<String> skipKeysB = new HashSet<>();
+
+    /*
+    @Before
+    public void setUp() {
+
+        skipKeysB.add("X-TIKA:Parsed-By");
+        skipKeysA.add("X-TIKA:parse_time_millis");
+        skipKeysB.add("X-TIKA:content_handler");
+        skipKeysA.add("X-TIKA:content_handler");
+        skipKeysB.add("X-TIKA:parse_time_millis");
+        skipKeysB.add("xmpDM:videoCompressor");
+        //skipKeysB.add("xmpDM:audioChannelType");
+        //skipKeysB.add("xmpDM:audioChannelType");
+        skipKeysA.add("X-TIKA:content");
+        skipKeysB.add("X-TIKA:content");
+        skipKeysB.add("xmpDM:copyright");
+    }*/
     /**
      * Test that we can extract information from
      * a M4A MP4 Audio file
@@ -104,4 +126,116 @@ public class MP4ParserTest extends TikaTest {
         assertEquals("audio/mp4", r.metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("M4A", r.metadata.get(XMPDM.AUDIO_COMPRESSOR));
     }
+
+/*
+
+    @Test
+    public void compareMetadata() throws Exception {
+        Path dir = Paths.get("/data/mp4s");
+        processDir(dir);
+
+    }
+
+    private void processDir(Path dir) {
+        for (File f : dir.toFile().listFiles()) {
+            if (f.isDirectory()) {
+                processDir(f.toPath());
+            } else {
+
+                if (! f.getName().contains("MB3EOKALN337SEYQE6WXIGMY5VQ2ZU7M")) {
+                   // continue;
+                }
+                System.out.println(f);
+                processFile(f.toPath());
+                System.out.println("");
+            }
+        }
+    }
+
+    private void processFile(Path p) {
+
+        Metadata a;
+        Metadata b;
+        try {
+            List<Metadata> metadataList = getRecursiveMetadata(p, new LegacyMP4Parser(), true);
+            if (metadataList.size() > 0) {
+                a = metadataList.get(0);
+            } else {
+                System.out.println("a is empty");
+                return;
+            }
+        } catch (AssertionError | Exception e) {
+            e.printStackTrace();
+            return;
+        }
+
+        try {
+            List<Metadata> metadataList = getRecursiveMetadata(p);
+            if (metadataList.size() > 0) {
+                b = metadataList.get(0);
+            } else {
+                System.out.println("b is empty");
+                return;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
+        compare(p, a, b);
+    }
+
+    private void compare(Path p, Metadata a, Metadata b) {
+       /* System.out.println("A");
+        debug(a);
+        System.out.println("B");
+        debug(b);
+        Set<String> aKeys = getKeys(a, skipKeysA);
+        Set<String> bKeys = getKeys(b, skipKeysB);
+        for (String k : aKeys) {
+            if (! bKeys.contains(k)) {
+                System.out.println("not in b: " + k + " : " + a.get(k) + " : " +
+                                p.getFileName().toString());
+            }
+        }
+        for (String k : bKeys) {
+            if (!aKeys.contains(k)) {
+                System.out.println("not in a: " + k + " : " + b.get(k) + " : " +
+                        p.getFileName().toString());
+            }
+        }
+        for (String k : aKeys) {
+            if (! bKeys.contains(k)) {
+                continue;
+            }
+            Set<String> aVals = getVals(a, k);
+            Set<String> bVals = getVals(b, k);
+            for (String v : aVals) {
+                if (!bVals.contains(v)) {
+                    System.out.println("b missing value: " + v + " for key " + k + " in " + p.getFileName().toString());
+                    for (String bVal : bVals) {
+                        System.out.println("\tb has " + bVal);
+                    }
+                }
+            }
+        }
+    }
+
+    private Set<String> getKeys(Metadata m, Set<String> skipFields) {
+        Set<String> keys = new HashSet<>();
+        for (String n : m.names()) {
+            if (! skipFields.contains(n)) {
+                keys.add(n);
+            }
+        }
+        return keys;
+
+    }
+
+    private Set<String> getVals(Metadata m, String k) {
+        Set<String> vals = new HashSet<>();
+        for (String v : m.getValues(k)) {
+            vals.add(v);
+        }
+        return vals;
+    } */
 }

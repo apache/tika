@@ -62,16 +62,17 @@ public interface TikaCoreProperties {
      * Use this to store parse exception information in the Metadata object.
      */
     String TIKA_META_EXCEPTION_PREFIX = TIKA_META_PREFIX + "EXCEPTION" + NAMESPACE_PREFIX_DELIMITER;
+
     //exception in main file
     Property CONTAINER_EXCEPTION =
             Property.internalText(TIKA_META_EXCEPTION_PREFIX + "container_exception");
+
     //exception in an embedded file
     Property EMBEDDED_EXCEPTION =
             Property.internalText(TIKA_META_EXCEPTION_PREFIX + "embedded_exception");
+
     Property WRITE_LIMIT_REACHED =
             Property.internalBoolean(TIKA_META_EXCEPTION_PREFIX + "write_limit_reached");
-    Property EMBEDDED_RESOURCE_LIMIT_REACHED = Property.internalBoolean(
-            TIKA_META_EXCEPTION_PREFIX + "embedded_resource_limit_reached");
     /**
      * Use this to store exceptions caught during a parse that are
      * non-fatal, e.g. if a parser is in lenient mode and more

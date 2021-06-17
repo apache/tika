@@ -39,6 +39,11 @@ import org.apache.tika.sax.XHTMLContentHandler;
 public class TikaUserDataBox extends Box {
 
     private static final String LOCATION_CODE = "\u00A9xyz";
+    private static final String META = "meta";
+    private static final String ILST = "ilst";
+    private static final String MDTA = "mdta";
+    private static final String HDLR = "hdlr";
+    private static final String MDIR = "mdir";//apple metadata itunes reader
     private static final Pattern COORDINATE_PATTERN =
             Pattern.compile("([+-]\\d+\\.\\d+)([+-]\\d+\\.\\d+)");
 
@@ -65,9 +70,13 @@ public class TikaUserDataBox extends Box {
                 int xyzLength = reader.getUInt16();
                 reader.skip(2L);
                 this.coordinateString = reader.getString(xyzLength, "UTF-8");
-            } else if ("meta".equals(kindName)) {
-                reader.getUInt32();
-                reader.getUInt32();
+            } else if (META.equals(kindName)) {
+                reader.getUInt32();//not sure what this is
+                long lengthToStartOfList = reader.getUInt32() - 4;//this is the length to
+                // 'ilst', but the length of the ilist is defined in the 4 bytes before ilist
+                if (lengthToStartOfList < 0 || lengthToStartOfList > Integer.MAX_VALUE) {
+                    return;
+                }
                 String hdlr = reader.getString(4, StandardCharsets.ISO_8859_1);
                 reader.getUInt32();
                 reader.getUInt32();
@@ -76,10 +85,11 @@ public class TikaUserDataBox extends Box {
                 // then the MetaBox is formatted according to QuickTime File Format.
                 // See https://developer.apple.com/library/content/documentation
                 // /QuickTime/QTFF/Metadata/Metadata.html
-                if (hdlr.equals("hdlr") && subtype.equals("mdta")) {
+                if (HDLR.equals(hdlr) && MDTA.equals(subtype)) {
                     isQuickTime = true;
                 }
-                parseUserDataBox(reader, subtype);
+                int read = 16;//bytes read so far
+                parseUserDataBox(reader, subtype, read, (int)lengthToStartOfList);
             } else {
                 if (size < 8L) {
                     return;
@@ -91,26 +101,37 @@ public class TikaUserDataBox extends Box {
 
     }
 
-    private void parseUserDataBox(SequentialReader reader, String handlerType)
-            throws IOException, SAXException {
-        if (! "mdir".equals(handlerType)) {
+    private void parseUserDataBox(SequentialReader reader, String handlerType,
+                                  int read, int lengthToStartOfList)
+            throws IOException {
+        if (!MDIR.equals(handlerType)) {
             return;
         }
-        String mdirType = reader.getString(4, StandardCharsets.ISO_8859_1);
-
-        if ("appl".equals(mdirType)) {
-            reader.getString(10);//not sure what these bytes are
-            long len = reader.getUInt32();
-            if (len >= Integer.MAX_VALUE || len <= 0) {
-                //log
-                return;
-            }
-            String subType = reader.getString(4, StandardCharsets.ISO_8859_1);
-            if ("ilst".equals(subType)) {
-                processIList(reader, len);
-            }
+        if (lengthToStartOfList < read) {
+            return;
         }
+        int toSkip = lengthToStartOfList - read;
+        reader.skip(toSkip);
+        long len = reader.getUInt32();
+        if (len >= Integer.MAX_VALUE || len <= 0) {
+            //log
+            return;
+        }
+        String subType = reader.getString(4, StandardCharsets.ISO_8859_1);
+        //this handles "free" types...not sure if there are others?
+        //will throw IOException if no ilist is found
+        while (! subType.equals(ILST)) {
+            reader.skip(len - 8);
+            len = reader.getUInt32();
+            subType = reader.getString(4, StandardCharsets.ISO_8859_1);
+        }
+        if (ILST.equals(subType)) {
+            processIList(reader, len);
+        }
+
     }
+
+
 
     private void processIList(SequentialReader reader, long totalLen)
             throws IOException {
@@ -217,6 +238,16 @@ public class TikaUserDataBox extends Box {
                 metadata.set(XMPDM.COPYRIGHT, value);
                 xhtml.element("p", value);
                 break;
+            case "keyw" :
+                metadata.set(TikaCoreProperties.SUBJECT, value);
+                xhtml.element("p", value);
+                break;
+            case "\u00A9lyr" :
+                xhtml.element("p", value);
+                break;
+            case "ldes" :
+                metadata.set(TikaCoreProperties.DESCRIPTION, value);
+                xhtml.element("p", value);
             case "xid " :
                 //not sure this is the right use of this key
                 metadata.set(XMP.IDENTIFIER, value);

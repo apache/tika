@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -72,7 +73,8 @@ public class MP4Parser extends AbstractParser {
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.unmodifiableSet(typesMap.keySet());
 
-
+    private static final MediaType APPLICATION_MP4 = MediaType.application("mp4");
+    private static final int MAX_ERROR_MESSAGES = 100;
     static {
         // All types should be 4 bytes long, space padded as needed
         typesMap.put(MediaType.audio("mp4"), Arrays.asList("M4A ", "M4B ", "F4A ", "F4B "));
@@ -112,15 +114,35 @@ public class MP4Parser extends AbstractParser {
             }
             //TODO -- figure out how to get IOExceptions out of boxhandler. Mp4Reader
             //currently swallows IOExceptions.
-            processMp4Directories(mp4Metadata.getDirectoriesOfType(Mp4Directory.class), metadata);
+            Set<String> errorMessages =
+                    processMp4Directories(
+                            mp4Metadata.getDirectoriesOfType(Mp4Directory.class),
+                    metadata);
+
+            for (String m : errorMessages) {
+                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, m);
+            }
             xhtml.endDocument();
         } finally {
             tmp.dispose();
         }
     }
 
-    private void processMp4Directories(Collection<Mp4Directory> mp4Directories, Metadata metadata) {
+    private Set<String> processMp4Directories(Collection<Mp4Directory> mp4Directories,
+                                         Metadata metadata) {
+        Set<String> errorMsgs = new HashSet<>();
         for (Mp4Directory mp4Directory : mp4Directories) {
+            for (String m : mp4Directory.getErrors()) {
+                if (errorMsgs.size() < MAX_ERROR_MESSAGES) {
+                    errorMsgs.add(m);
+                } else {
+                    break;
+                }
+            }
+/*            for (Tag t : mp4Directory.getTags()) {
+                System.out.println(mp4Directory.getClass() + " : " + t.getTagName()
+                                + " : " + mp4Directory.getString(t.getTagType()));
+            }*/
             if (mp4Directory instanceof Mp4SoundDirectory) {
                 processMp4SoundDirectory((Mp4SoundDirectory) mp4Directory, metadata);
             } else if (mp4Directory instanceof Mp4VideoDirectory) {
@@ -129,10 +151,16 @@ public class MP4Parser extends AbstractParser {
                 processActualMp4Directory(mp4Directory, metadata);
             }
         }
+        return errorMsgs;
     }
 
     private void processMp4VideoDirectory(Mp4VideoDirectory mp4Directory, Metadata metadata) {
-        //todo
+        addInt(mp4Directory, metadata, Mp4VideoDirectory.TAG_HEIGHT, Metadata.IMAGE_LENGTH);
+        addInt(mp4Directory, metadata, Mp4VideoDirectory.TAG_WIDTH, Metadata.IMAGE_WIDTH);
+        if (mp4Directory.containsTag(Mp4VideoDirectory.TAG_COMPRESSOR_NAME)) {
+            String compressor = mp4Directory.getString(Mp4VideoDirectory.TAG_COMPRESSOR_NAME);
+            metadata.set(XMPDM.VIDEO_COMPRESSOR, compressor);
+        }
     }
 
     private void processMp4SoundDirectory(Mp4SoundDirectory mp4SoundDirectory,
@@ -142,6 +170,7 @@ public class MP4Parser extends AbstractParser {
 
         try {
             int numChannels = mp4SoundDirectory.getInt(Mp4SoundDirectory.TAG_NUMBER_OF_CHANNELS);
+
             if (numChannels == 1) {
                 metadata.set(XMPDM.AUDIO_CHANNEL_TYPE, "Mono");
             } else if (numChannels == 2) {
@@ -149,6 +178,7 @@ public class MP4Parser extends AbstractParser {
             } else {
                 //??? log
             }
+
         } catch (MetadataException e) {
             //log
         }
@@ -173,7 +203,7 @@ public class MP4Parser extends AbstractParser {
 
         addDouble(mp4Directory, metadata, Mp4Directory.TAG_LATITUDE, TikaCoreProperties.LATITUDE);
         addDouble(mp4Directory, metadata, Mp4Directory.TAG_LONGITUDE, TikaCoreProperties.LONGITUDE);
-
+        addInt(mp4Directory, metadata, Mp4Directory.TAG_TIME_SCALE, XMPDM.AUDIO_SAMPLE_RATE);
     }
 
     private void handleDurationInSeconds(Mp4Directory mp4Directory, Metadata metadata) {
@@ -182,6 +212,15 @@ public class MP4Parser extends AbstractParser {
             return;
         }
         if (! durationInSeconds.contains("/")) {
+            try {
+                double d = Double.parseDouble(durationInSeconds);
+                DecimalFormat df =
+                        (DecimalFormat) NumberFormat.getNumberInstance(Locale.ROOT);
+                df.applyPattern("0.0#");
+                metadata.set(XMPDM.DURATION, df.format(d));
+            } catch (NumberFormatException e) {
+                //swallow
+            }
             return;
         }
         String[] bits = durationInSeconds.split("/");
@@ -229,7 +268,11 @@ public class MP4Parser extends AbstractParser {
             }
         }
         MediaType type = typeHolder.orElse(MediaType.application("mp4"));
-        metadata.set(Metadata.CONTENT_TYPE, type.toString());
+        if (metadata.getValues(Metadata.CONTENT_TYPE) == null) {
+            metadata.set(Metadata.CONTENT_TYPE, type.toString());
+        } else if (! type.equals(APPLICATION_MP4)) { //todo check for specialization?
+            metadata.set(Metadata.CONTENT_TYPE, type.toString());
+        }
         if (type.getType().equals("audio") && ! StringUtils.isBlank(majorBrand)) {
             metadata.set(XMPDM.AUDIO_COMPRESSOR, majorBrand.trim());
         }

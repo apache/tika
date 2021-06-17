@@ -18,6 +18,8 @@ Release 2.0.0-ALPHA - 01/13/2021
      * We upgraded from log4j to log4j2 in tika-app, tika-server and anywhere else
        we used to use log4j.
      * By default, when rendering a page for OCR, the PDFParser does not render glyphs/text.
+     * Most of tika-server's legacy configuration via the commandline has been moved
+       into configuration via a tika-config.xml file.
      * tika-server's "enableFileUrl" has been removed in favor of a FileSystemFetcher.
      * Removed deprecated Metadata keys/properties (TIKA-1974).
      * Removed deprecated PDFPreflightParser (TIKA-3437).
@@ -35,7 +37,7 @@ Release 2.0.0-ALPHA - 01/13/2021
        what has been changed in the config object.
      * We are now using non-shaded versions of xmpcore with namespaces com.adobe.internal.*
        vs com.adobe.*.
-     * We switched the underlying MP4 parser to Drew Noakes metadata-extractor's MP4 parser
+     * We switched the underlying MP4 parser to Drew Noakes' metadata-extractor's MP4 parser
        from sannies' isoparser.
 
    * tika-parsers
