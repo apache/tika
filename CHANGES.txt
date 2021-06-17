@@ -18,9 +18,6 @@ Release 2.0.0-ALPHA - 01/13/2021
      * We upgraded from log4j to log4j2 in tika-app, tika-server and anywhere else
        we used to use log4j.
      * By default, when rendering a page for OCR, the PDFParser does not render glyphs/text.
-     * Most of tika-server's legacy configuration via the commandline has been moved
-       into configuration via a tika-config.xml file.
-     * tika-server's "enableFileUrl" has been removed in favor of a FileSystemFetcher.
      * Removed deprecated Metadata keys/properties (TIKA-1974).
      * Removed deprecated PDFPreflightParser (TIKA-3437).
      * Removed dangerous calls to read an inputstream or convert to bytes
@@ -29,16 +26,6 @@ Release 2.0.0-ALPHA - 01/13/2021
        We have moved away from configuration via .properties files because
        of confusion among users.  This affects the PDFParser, TesseractOCRParser
        and the StringsParser.
-     * In tika-server, for those parsers that can be configured per parse via a config object
-       passed in through the ParseContext, the config object will only update those fields
-       that the user has modified.  The config object will no longer
-       fully reset all settings to the default settings per parse.
-       This has a more intuitive "update the base/configured settings" with
-       what has been changed in the config object.
-     * We are now using non-shaded versions of xmpcore with namespaces com.adobe.internal.*
-       vs com.adobe.*.
-     * We switched the underlying MP4 parser to Drew Noakes' metadata-extractor's MP4 parser
-       from sannies' isoparser.
 
    * tika-parsers
      * The parser modules have been broken into three main modules:
@@ -48,6 +35,10 @@ Release 2.0.0-ALPHA - 01/13/2021
         (for example: envi, gdal, grib, isatab, netcdf).
      * ChmParser was moved to org.apache.tika.parser.microsoft.chm
      * RTFParser was moved to org.apache.tika.parser.microsoft.rtf
+     * We are now using non-shaded versions of xmpcore with namespaces com.adobe.internal.*
+       vs com.adobe.*.
+     * We switched the underlying MP4 parser to Drew Noakes' metadata-extractor's MP4 parser
+       from sannies' isoparser.
 
    * tika-app
 
@@ -58,10 +49,18 @@ Release 2.0.0-ALPHA - 01/13/2021
        will restart on OOM, timeouts, crashes or after parsing a
        large number of files.  When this happens tika-server will restand and not
        receive connections for brief periods.  The less robust, legacy behavior
-       of not forking a process is available with "-noFork"
-
+       of not forking a process is available with "-noFork"=
+     * Most of tika-server's legacy configuration via the commandline has been moved
+       into configuration via a tika-config.xml file.
+     * tika-server's "enableFileUrl" has been removed in favor of a FileSystemFetcher.
      * tika-server's /metadata endpoint requires tika-server-standard to write XMP/rdf output.
        This output is not available in tika-server-core.
+     * In tika-server, for those parsers that can be configured per parse via a config object
+       passed in through the ParseContext, the config object will only update those fields
+       that the user has modified.  The config object will no longer
+       fully reset all settings to the default settings per parse.
+       This has a more intuitive "update the base/configured settings" with
+       what has been changed in the config object.
 
 
 Release 1.27 - ??
