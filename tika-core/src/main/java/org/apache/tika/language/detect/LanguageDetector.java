@@ -50,6 +50,10 @@ public abstract class LanguageDetector {
 
 	private static final ServiceLoader DEFAULT_SERVICE_LOADER = new ServiceLoader();
 
+	//if a user calls detect on a huge string, break it into this size
+	//and add sequentially until hasEnoughText() is true
+	private static final int BUFFER_LENGTH = 4096;
+
 	// True if text is expected to be a mix of languages, and thus higher-resolution
 	// detection must be done to avoid under-sampling the text.
 	protected boolean mixedLanguages = false;
@@ -57,7 +61,7 @@ public abstract class LanguageDetector {
 	// True if the text is expected to be 'short' (typically less than 100 chars), and
 	// thus a different algorithm and/or set of profiles should be used.
 	protected boolean shortText = false;
-	
+
 	public static LanguageDetector getDefaultLanguageDetector() {
 		List<LanguageDetector> detectors = getLanguageDetectors();
 		if (detectors.isEmpty()) {
@@ -183,8 +187,19 @@ public abstract class LanguageDetector {
 	 * @param text Characters to add to current statistics.
 	 */
 	public void addText(CharSequence text) {
-		char[] chars = text.toString().toCharArray();
-		addText(chars, 0, chars.length);
+		int len = text.length();
+		if (len < BUFFER_LENGTH) {
+			char[] chars = text.toString().toCharArray();
+			addText(chars, 0, chars.length);
+			return;
+		}
+		int start = 0;
+		while (! hasEnoughText() && start < len) {
+			int end = Math.min(start + BUFFER_LENGTH, len);
+			char[] chars = text.subSequence(start, end).toString().toCharArray();
+			addText(chars, 0, chars.length);
+			start += BUFFER_LENGTH;
+		}
 	}
 
 	
