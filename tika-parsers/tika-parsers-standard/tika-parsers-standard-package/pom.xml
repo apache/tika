@@ -405,10 +405,18 @@
                     <exclude>NOTICE.txt</exclude>
                     <exclude>CHANGES</exclude>
                     <exclude>README</exclude>
+                    <exclude>META-INF/LICENSE</exclude>
+                    <exclude>META-INF/DEPENDENCIES</exclude>
+                    <exclude>META-INF/MANIFEST.MF</exclude>
+                    <exclude>META-INF/NOTICE</exclude>
                   </excludes>
                 </filter>
               </filters>
               <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
+                  <resource>META-INF/LICENSE</resource>
+                  <file>target/classes/META-INF/LICENSE</file>
+                </transformer>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <manifestEntries>
                     <Automatic-Module-Name>org.apache.tika.parsers</Automatic-Module-Name>
@@ -422,6 +430,9 @@
                 </transformer>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
                   <resource>META-INF/services/org.apache.tika.parser.Parser</resource>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                  <resource>META-INF/services/org.apache.tika.detect.zip.ZipContainerDetector</resource>
                 </transformer>
               </transformers>
             </configuration>

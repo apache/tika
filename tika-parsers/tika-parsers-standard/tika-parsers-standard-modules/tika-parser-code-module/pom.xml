@@ -58,7 +58,7 @@
     <dependency>
       <groupId>org.ow2.asm</groupId>
       <artifactId>asm</artifactId>
-      <version>8.0.1</version>
+      <version>${asm.version}</version>
     </dependency>
 
     <dependency>
