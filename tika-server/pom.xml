@@ -29,7 +29,7 @@
   <url>http://tika.apache.org/</url>
 
   <properties>
-    <cxf.micrometer.version>1.5.12</cxf.micrometer.version>
+    <cxf.micrometer.version>1.7.1</cxf.micrometer.version>
     <micrometer-extras.version>0.2.2</micrometer-extras.version>
   </properties>
 
