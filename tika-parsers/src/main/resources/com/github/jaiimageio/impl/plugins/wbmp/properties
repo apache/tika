@@ -1,0 +1,24 @@
+#
+# $RCSfile: properties,v $
+#
+# Copyright (c) 2005 Sun Microsystems, Inc. All rights reserved.
+#
+# Use is subject to license terms.
+#
+# $Revision: 1.1 $
+# $Date: 2005/02/11 05:01:52 $
+# $State: Exp $
+#
+# Internationalization file for com.github.jaiimageio.impl.plugins.wbmp
+
+WBMPImageReader0=Only one image exists in the stream.
+WBMPImageReader1=Input has not been set.
+WBMPImageReader2=Bad WBMP header.
+WBMPImageWriter0=Output is not an ImageOutputStream.
+WBMPImageWriter1=The image region to be encoded is empty.
+WBMPImageWriter2=Only integral single-band bilevel image is supported.
+WBMPImageWriter3=Output has not been set.
+WBMPImageWriter4=Image is null!
+WBMPMetadata0=The provided metadata format isn't recognized.
+WBMPMetadata1=Metadata is read-only.
+

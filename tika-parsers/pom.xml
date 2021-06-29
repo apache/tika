@@ -962,6 +962,7 @@
         <configuration>
           <excludes>
             <exclude>src/main/java/org/apache/tika/parser/txt/Charset*.java</exclude>
+            <exclude>src/main/resources/com/github/jaiimageio/**</exclude>
             <exclude>src/test/resources/test-documents/**</exclude>
             <exclude>src/test/resources/org/apache/tika/parser/recognition/*.bin</exclude>
             <exclude>src/test/resources/META-INF/services/org.apache.tika.parser.Parser</exclude>
