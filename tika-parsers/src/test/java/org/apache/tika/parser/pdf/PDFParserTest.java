@@ -358,6 +358,7 @@ public class PDFParserTest extends TikaTest {
         try(InputStream stream = getResourceAsStream("/test-documents/testAnnotations.pdf")) {
             content = getText(stream, pdfParser);
         }
+
         content = content.replaceAll("[\\s\u00a0]+", " ");
         assertContains("Here is some text", content);
         assertEquals(-1, content.indexOf("Here is a comment"));
@@ -374,6 +375,18 @@ public class PDFParserTest extends TikaTest {
         assertContains("Here is some text", content);
         assertEquals(-1, content.indexOf("Here is a comment"));
 
+        //test turning off via config
+        InputStream is = getClass().getResourceAsStream(
+                "/org/apache/tika/parser/pdf/tika-skip-annotations-config.xml");
+        assertNotNull(is);
+        TikaConfig tikaConfig = new TikaConfig(is);
+        Parser p = new AutoDetectParser(tikaConfig);
+        try (InputStream stream = getResourceAsStream("/test-documents/testAnnotations.pdf")) {
+            content = getText(stream, p, context);
+        }
+        content = content.replaceAll("[\\s\u00a0]+", " ");
+        assertContains("Here is some text", content);
+        assertEquals(-1, content.indexOf("Here is a comment"));
 
         // TIKA-738: make sure no extra </p> tags
         String xml = getXML("testAnnotations.pdf").xml;

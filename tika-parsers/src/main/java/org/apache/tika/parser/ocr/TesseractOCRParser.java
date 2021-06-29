@@ -33,6 +33,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.parser.AbstractExternalProcessParser;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
@@ -99,7 +100,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  *
  *
  */
-public class TesseractOCRParser extends AbstractParser implements Initializable {
+public class TesseractOCRParser extends AbstractExternalProcessParser implements Initializable {
     private static final Logger LOG = LoggerFactory.getLogger(TesseractOCRParser.class);
 
     private static volatile boolean HAS_WARNED = false;
@@ -530,37 +531,57 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         
         ProcessBuilder pb = new ProcessBuilder(cmd);
         setEnv(config, pb);
-        final Process process = pb.start();
+        Process process = null;
+        String id = null;
+        try {
+            process = pb.start();
+            id = register(process);
+            runOCRProcess(process, config.getTimeout());
+        } finally {
+            if (process != null) {
+                process.destroyForcibly();
+            }
+            if (id != null) {
+                release(id);
+            }
+        }
+    }
 
+    private void runOCRProcess(Process process, int timeout) throws IOException, TikaException {
         process.getOutputStream().close();
         InputStream out = process.getInputStream();
         InputStream err = process.getErrorStream();
+        StringBuilder outBuilder = new StringBuilder();
+        StringBuilder errBuilder = new StringBuilder();
+        Thread outThread = logStream(out, outBuilder);
+        Thread errThread = logStream(err, errBuilder);
+        outThread.start();
+        errThread.start();
 
-        logStream("OCR MSG", out, input);
-        logStream("OCR ERROR", err, input);
-
-        FutureTask<Integer> waitTask = new FutureTask<>(new Callable<Integer>() {
-            public Integer call() throws Exception {
-                return process.waitFor();
-            }
-        });
-
-        Thread waitThread = new Thread(waitTask);
-        waitThread.start();
-
+        int exitValue = Integer.MIN_VALUE;
         try {
-            waitTask.get(config.getTimeout(), TimeUnit.SECONDS);
+            boolean finished = process.waitFor(timeout, TimeUnit.SECONDS);
+            if (!finished) {
+                throw new TikaException("TesseractOCRParser timeout");
+            }
+            exitValue = process.exitValue();
         } catch (InterruptedException e) {
-            waitThread.interrupt();
-            process.destroy();
             Thread.currentThread().interrupt();
             throw new TikaException("TesseractOCRParser interrupted", e);
-        } catch (ExecutionException e) {
-            // should not be thrown
-        } catch (TimeoutException e) {
-            waitThread.interrupt();
-            process.destroy();
-            throw new TikaException("TesseractOCRParser timeout", e);
+        } catch (IllegalThreadStateException e) {
+            //this _should_ never be thrown
+            throw new TikaException("TesseractOCRParser timeout");
+        }
+        if (exitValue > 0) {
+            try {
+                //make sure this thread is actually done
+                errThread.join(1000);
+            } catch (InterruptedException e) {
+                //swallow
+            }
+            throw new TikaException(
+                    "TesseractOCRParser bad exit value " + exitValue + " err msg: " +
+                            errBuilder.toString());
         }
     }
 
@@ -607,24 +628,22 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
      * stream of the given process to not block the process. The stream is closed
      * once fully processed.
      */
-    private void logStream(final String logType, final InputStream stream, final File file) {
-        new Thread() {
-            public void run() {
-                Reader reader = new InputStreamReader(stream, UTF_8);
-                StringBuilder out = new StringBuilder();
-                char[] buffer = new char[1024];
-                try {
-                    for (int n = reader.read(buffer); n != -1; n = reader.read(buffer))
-                        out.append(buffer, 0, n);
-                } catch (IOException e) {
-
-                } finally {
-                    IOUtils.closeQuietly(stream);
+    private Thread logStream(final InputStream stream, final StringBuilder out) {
+        return new Thread(() -> {
+            Reader reader = new InputStreamReader(stream, UTF_8);
+            char[] buffer = new char[1024];
+            try {
+                for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
+                    out.append(buffer, 0, n);
                 }
-
-                LOG.debug("{}", out);
+            } catch (IOException e) {
+                //swallow
+            } finally {
+                IOUtils.closeQuietly(stream);
             }
-        }.start();
+
+            LOG.debug("{}", out);
+        });
     }
 
     static String getTesseractProg() {

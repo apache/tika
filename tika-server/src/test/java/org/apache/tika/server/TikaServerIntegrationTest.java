@@ -637,4 +637,59 @@ public class TikaServerIntegrationTest extends TikaTest {
         assertEquals("Microsoft Office Word", metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
         assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
     }
+
+    /*
+      this is useful for manual tests that spawned tesseract processes are correctly cleaned up
+      fairly often. :(
+
+      java -jar tika-server-1.27-SNAPSHOT.jar -taskTimeoutMillis 20000 -spawnChild
+      -c tika-config-ocr-only.xml -p 9999 -JXmx256m
+
+
+    @Test
+    public void loadTest() throws Exception {
+        List<Thread> threads = new ArrayList<>();
+        //this should tie up tesseract for longer than -taskTimeoutMillis
+        Path largePDF = Paths.get("..../testPDF_childAttachments.pdf");
+        //this should cause an oom
+        Path largeDocx = Paths.get("..../mobydick.docx");
+        for (int t = 0; t < 6; t++) {
+            final int num = t;
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+
+                    Response response = null;
+                    for (int i = 0; i < 10000; i++) {
+                        try {
+                            if (num < 5) {
+                                response = WebClient.create(endPoint + META_PATH).accept("application/json")
+                                        .put(Files.newInputStream(largePDF));
+                            } else if ( num == 5) {
+                                Thread.sleep(8000);
+                                response = WebClient.create(endPoint + META_PATH).accept("application/json")
+                                        .put(Files.newInputStream(largeDocx));
+                            }
+
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            try {
+                                Thread.sleep(1000);
+                            } catch (InterruptedException interruptedException) {
+                                interruptedException.printStackTrace();
+                            }
+                            //oom may or may not cause an exception depending
+                            //on the timing
+                        }
+                    }
+                }
+            });
+            threads.add(thread);
+            thread.start();
+        }
+        for (Thread t : threads) {
+            t.join();
+        }
+    }
+    */
 }

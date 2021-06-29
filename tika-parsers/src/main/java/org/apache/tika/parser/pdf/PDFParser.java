@@ -432,6 +432,7 @@ public class PDFParser extends AbstractParser implements Initializable {
      * If true (the default), text in annotations will be
      * extracted.
      */
+    @Field
     public void setExtractAnnotationText(boolean v) {
         defaultConfig.setExtractAnnotationText(v);
     }

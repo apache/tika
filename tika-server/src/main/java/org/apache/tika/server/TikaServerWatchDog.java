@@ -17,7 +17,6 @@
 
 package org.apache.tika.server;
 
-import org.apache.tika.io.MappedBufferCleaner;
 import org.apache.tika.utils.ProcessUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,9 +27,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.net.BindException;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
-import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
@@ -38,7 +37,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -60,6 +58,9 @@ public class TikaServerWatchDog {
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerWatchDog.class);
     private static final String DEFAULT_CHILD_STATUS_FILE_PREFIX = "tika-server-child-process-mmap-";
 
+    //this is the shutdown hook for the child (forked) process
+    private static Thread SHUTDOWN_HOOK = null;
+
     private Object[] childStatusLock = new Object[0];
     private volatile CHILD_STATUS childStatus = CHILD_STATUS.INITIALIZING;
     private volatile Instant lastPing = null;
@@ -72,23 +73,23 @@ public class TikaServerWatchDog {
         startPingTimer(serverTimeouts);
         try {
             int restarts = 0;
-            childProcess = new ChildProcess(args, restarts, serverTimeouts);
+            childProcess = startChildProcess(args, restarts, serverTimeouts);
             setChildStatus(CHILD_STATUS.RUNNING);
             while (true) {
                 if (!childProcess.ping()) {
-                    LOG.debug("bad ping, initializing");
+                    LOG.info("bad ping. restarting.");
                     restarts++;
-                    setChildStatus(CHILD_STATUS.INITIALIZING);
-                    lastPing = null;
-                    childProcess.close();
-                    LOG.debug("About to restart the child process");
-                    childProcess = new ChildProcess(args, restarts, serverTimeouts);
-                    LOG.info("Successfully restarted child process -- {} restarts so far)", restarts);
-                    setChildStatus(CHILD_STATUS.RUNNING);
                     if (serverTimeouts.getMaxRestarts() > -1 && restarts >= serverTimeouts.getMaxRestarts()) {
                         LOG.warn("hit max restarts: "+restarts+". Stopping now");
                         break;
                     }
+                    setChildStatus(CHILD_STATUS.INITIALIZING);
+                    lastPing = null;
+                    childProcess.close();
+                    LOG.info("About to restart the child process");
+                    childProcess = startChildProcess(args, restarts, serverTimeouts);
+                    LOG.info("Successfully restarted child process -- {} restarts so far)", restarts);
+                    setChildStatus(CHILD_STATUS.RUNNING);
                 }
                 Thread.sleep(serverTimeouts.getPingPulseMillis());
             }
@@ -102,6 +103,28 @@ public class TikaServerWatchDog {
                 childProcess.close();
             }
         }
+    }
+
+    private ChildProcess startChildProcess(String[] args, int restarts,
+                                           ServerTimeouts serverTimeouts) throws Exception {
+        int consecutiveRestarts = 0;
+        //if there's a bind exception, retry for 5 seconds to give the OS
+        //a chance to release the port
+        int maxBind = 5;
+        while (consecutiveRestarts < maxBind) {
+            try {
+                return new ChildProcess(args, restarts, serverTimeouts);
+            } catch (BindException e) {
+                LOG.warn("WatchDog observes bind exception on retry {}. " +
+                        "Will retry {} times.", consecutiveRestarts, maxBind);
+                consecutiveRestarts++;
+                Thread.sleep(1000);
+                if (consecutiveRestarts > maxBind) {
+                    throw e;
+                }
+            }
+        }
+        throw new RuntimeException("Couldn't start child process");
     }
 
     private String[] addIdIfMissing(String[] args) {
@@ -231,7 +254,6 @@ public class TikaServerWatchDog {
     }
 
     private class ChildProcess {
-        private Thread SHUTDOWN_HOOK = null;
 
         private final Process process;
         private final DataOutputStream toChild;
@@ -272,6 +294,9 @@ public class TikaServerWatchDog {
             }
             if (!process.isAlive()) {
                 close();
+                if (process.exitValue() == TikaServerCli.BIND_EXCEPTION) {
+                    throw new BindException("couldn't bind");
+                }
                 throw new RuntimeException("Failed to start child process -- child is not alive");
             }
             if (!Files.exists(childStatusFile)) {
@@ -416,12 +441,12 @@ public class TikaServerWatchDog {
             //redirect stdout to parent stderr to avoid error msgs
             //from maven during build: Corrupted STDOUT by directly writing to native stream in forked
             redirectIO(process.getInputStream(), System.err);
-            if (SHUTDOWN_HOOK != null) {
-                Runtime.getRuntime().removeShutdownHook(SHUTDOWN_HOOK);
-            }
+            Thread oldHook = SHUTDOWN_HOOK;
             SHUTDOWN_HOOK = new Thread(() -> this.close());
             Runtime.getRuntime().addShutdownHook(SHUTDOWN_HOOK);
-
+            if (oldHook != null) {
+                Runtime.getRuntime().removeShutdownHook(oldHook);
+            }
             return process;
         }
     }
@@ -447,16 +472,31 @@ public class TikaServerWatchDog {
     }
 
     private static synchronized void destroyChildForcibly(Process process) {
-        process = process.destroyForcibly();
+
         try {
+            //wait for process to stop itself -- this can help prevent
+            // orphaned processes, e.g.tesseract
+            process.waitFor(10, TimeUnit.SECONDS);
+            process = process.destroyForcibly();
             boolean destroyed = process.waitFor(60, TimeUnit.SECONDS);
             if (! destroyed) {
                 LOG.error("Child process still alive after 60 seconds. " +
                         "Shutting down the parent.");
                 System.exit(1);
             }
+            try {
+                int exitValue = process.exitValue();
+                LOG.info("Forked (child) process shut down with exit value: {}", exitValue);
+            } catch (IllegalThreadStateException e) {
+                LOG.error("Child process still alive when trying to read exit value. " +
+                        "Shutting down the parent.");
+                System.exit(1);
+            }
         } catch (InterruptedException e) {
+            LOG.warn("interrupted exception while trying to destroy the forked process");
             //swallow
+        } finally {
+            process.destroyForcibly();
         }
     }
 
