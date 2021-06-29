@@ -203,7 +203,8 @@
               bcpkix-jdk15on|
               poi|poi-scratchpad|
               poi-ooxml|
-              poi-ooxml-schemas|
+              poi-ooxml-lite|
+              log4j-api|
               commons-math3|
               curvesapi|
               xmlbeans|
@@ -266,6 +267,7 @@
 	      !org.apache.spark.ml.*,
 	      !org.apache.spark.mllib.*,
 	      !org.apache.spark.sql.*,
+              !com.github.javaparser.*,
 	          org.apache.tika.mime,
               org.apache.tika.fork,
               android.util;resolution:=optional,
@@ -287,11 +289,14 @@
               com.parso;resolution:=optional,
               com.sleepycat.je;resolution:=optional,
               com.sun.javadoc;resolution:=optional,
+              com.sun.org.apache.xml.internal.resolver;resolution:=optional,
+              com.sun.org.apache.xml.internal.resolver.tools;resolution:=optional,
               com.sun.xml.bind.marshaller;resolution:=optional,
               com.sun.xml.internal.bind.marshaller;resolution:=optional,
               com.sun.msv.datatype;resolution:=optional,
               com.sun.msv.datatype.xsd;resolution:=optional,
               com.sun.tools.javadoc;resolution:=optional,
+              de.rototor.pdfbox.graphics2d;resolution:=optional,
               edu.mit.ll.mitie;resolution:=optional,
               edu.stanford.nlp.*;resolution:=optional,
               edu.wisc.ssec.mcidas;resolution:=optional,
@@ -324,15 +329,22 @@
               net.didion.jwnl;resolution:=optional,
               net.sf.saxon;resolution:=optional,
               net.sf.saxon.dom;resolution:=optional,
+              net.sf.saxon.lib;resolution:=optional,
+              net.sf.saxon.ma.map;resolution:=optional,
               net.sf.saxon.om;resolution:=optional,
               net.sf.saxon.query;resolution:=optional,
               net.sf.saxon.sxpath;resolution:=optional,
+              net.sf.saxon.trans;resolution:=optional,
+              net.sf.saxon.tree.wrapper;resolution:=optional,
+              net.sf.saxon.type;resolution:=optional,
               net.sf.saxon.value;resolution:=optional,
               org.apache.batik.anim.dom;resolution:=optional,
               org.apache.batik.bridge;resolution:=optional,
+              org.apache.batik.dom;resolution:=optional,
               org.apache.batik.ext.awt;resolution:=optional,
               org.apache.batik.ext.awt.image.renderable;resolution:=optional,
               org.apache.batik.gvt;resolution:=optional,
+              org.apache.batik.svggen;resolution:=optional,
               org.apache.batik.util;resolution:=optional,
               org.apache.cxf.jaxrs.client;resolution:=optional,
               org.apache.cxf.jaxrs.ext.multipart;resolution:=optional,
@@ -349,6 +361,14 @@
               org.apache.commons.vfs2.util;resolution:=optional,
               org.apache.crimson.jaxp;resolution:=optional,
               org.apache.jcp.xml.dsig.internal.dom;resolution:=optional,
+              org.apache.logging.log4j;resolution:=optional,
+              org.apache.logging.log4j.message;resolution:=optional,
+              org.apache.logging.log4j.util;resolution:=optional,
+              org.apache.logging.log4j.util.internal;resolution:=optional,
+              org.apache.maven.model;resolution:=optional,
+              org.apache.maven.plugin;resolution:=optional,
+              org.apache.maven.plugin.logging;resolution:=optional,
+              org.apache.maven.project;resolution:=optional,
               org.apache.pdfbox.debugger;resolution:=optional,
               org.apache.pdfbox.preflight.*;resolution:=optional,
               org.apache.sis;resolution:=optional,
@@ -438,6 +458,7 @@
               org.slf4j.helpers;resolution:=optional,
               org.sqlite;resolution:=optional,
               org.w3c.dom;resolution:=optional,
+              org.w3c.dom.traversal;resolution:=optional,
               org.relaxng.datatype;resolution:=optional,
               org.xml.sax;resolution:=optional,
               org.xml.sax.ext;resolution:=optional,

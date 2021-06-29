@@ -380,7 +380,6 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             throws SAXException, IOException {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.EMBEDDED_RELATIONSHIP_ID, rel);
-
         // Get the name
         String name = part.getPartName().getName();
         metadata.set(

@@ -65,8 +65,6 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import static org.apache.poi.ooxml.extractor.POIXMLExtractorFactory.setThreadPrefersEventExtractors;
-
 /**
  * Figures out the correct {@link OOXMLExtractor} for the supplied document and
  * returns it.
@@ -78,7 +76,7 @@ public class OOXMLExtractorFactory {
     private static POIXMLExtractorFactory EXTRACTOR_FACTORY = new POIXMLExtractorFactory();
 
     static {
-        setThreadPrefersEventExtractors(true);
+        POIXMLExtractorFactory.setAllThreadsPreferEventExtractors(true);
     }
 
     public static void parse(
@@ -176,7 +174,6 @@ public class OOXMLExtractorFactory {
             if (poiExtractor == null) {
                 poiExtractor = EXTRACTOR_FACTORY.create(pkg);
             }
-
             POIXMLDocument document = poiExtractor.getDocument();
             if (poiExtractor instanceof XSSFBEventBasedExcelExtractor) {
                 extractor = new XSSFBExcelExtractorDecorator(context, poiExtractor, locale);
@@ -212,7 +209,6 @@ public class OOXMLExtractorFactory {
             // Get the bulk of the metadata first, so that it's accessible during
             //  parsing if desired by the client (see TIKA-1109)
             extractor.getMetadataExtractor().extract(metadata);
-
             // Extract the text, along with any in-document metadata
             extractor.getXHTML(baseHandler, metadata, context);
         } catch (IllegalArgumentException e) {
@@ -291,7 +287,8 @@ public class OOXMLExtractorFactory {
         //TODO make this static...or find what happened to SUPPORTED_TYPES
         XSLFRelation[] xslfRelations = new XSLFRelation[] {
                 XSLFRelation.MAIN, XSLFRelation.MACRO, XSLFRelation.MACRO_TEMPLATE,
-                XSLFRelation.PRESENTATIONML_TEMPLATE
+                XSLFRelation.PRESENTATIONML,
+                XSLFRelation.PRESENTATIONML_TEMPLATE, XSLFRelation.PRESENTATION_MACRO
         };
 
         for (int i = 0; i < xslfRelations.length; i++) {
