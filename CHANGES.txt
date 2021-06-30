@@ -1,5 +1,9 @@
 Release 1.27 - ???
 
+   * Migrate MP4 parsing to Drew Noakes' metadata-extractor (TIKA-3459).
+     To revert to legacy parser turn off NoakesMP4Parser and turn on MP4Parser
+     via tika-config.xml.
+
    * Prevent rare infinite loop in tika-server's -spawnChild mode
      when restart fails because of failure to bind to the port (TIKA-3441).
 
