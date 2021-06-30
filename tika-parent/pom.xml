@@ -31,7 +31,7 @@
 
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>1.27-SNAPSHOT</version>
+    <version>1.27</version>
     <packaging>pom</packaging>
 
     <name>Apache Tika parent</name>
@@ -605,6 +605,6 @@
         <connection>scm:git:https://github.com/apache/</connection>
         <developerConnection>scm:git:https://github.com/apache/</developerConnection>
         <url>https://github.com/apache/tika</url>
-        <tag>1.22-rc3</tag>
+        <tag>1.27-rc1</tag>
     </scm>
 </project>
