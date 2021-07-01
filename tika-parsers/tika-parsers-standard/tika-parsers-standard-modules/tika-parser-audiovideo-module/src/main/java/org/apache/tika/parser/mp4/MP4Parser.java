@@ -61,8 +61,7 @@ import org.apache.tika.utils.StringUtils;
  * Parser for the MP4 media container format, as well as the older
  * QuickTime format that MP4 is based on.
  * <p>
- * This uses the MP4Parser project from http://code.google.com/p/mp4parser/
- * to do the underlying parsing
+ * This uses Drew Noakes' metadata-extractor: https://github.com/drewnoakes/metadata-extractor
  */
 public class MP4Parser extends AbstractParser {
     /**
@@ -88,8 +87,6 @@ public class MP4Parser extends AbstractParser {
         typesMap.put(MediaType.video("quicktime"), Collections.emptyList());
         typesMap.put(MediaType.application("mp4"), Collections.emptyList());
     }
-
-    private ISO6709Extractor iso6709Extractor = new ISO6709Extractor();
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
