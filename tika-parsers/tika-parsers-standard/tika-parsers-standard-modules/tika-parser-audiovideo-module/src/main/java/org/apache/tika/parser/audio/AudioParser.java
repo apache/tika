@@ -38,6 +38,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
@@ -50,6 +51,10 @@ public class AudioParser extends AbstractParser {
      * Serial version UID
      */
     private static final long serialVersionUID = -6015684081240882695L;
+
+    private static final String UNSUPPORTED_AUDIO_FILE_EXCEPTION = "An " +
+            "UnsupportedAudioFileException was thrown.  This could mean that the underlying " +
+            "parser hit an EndOfFileException or that the file is unsupported. ¯\\_(ツ)_/¯";
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
             new HashSet<>(
@@ -120,6 +125,10 @@ public class AudioParser extends AbstractParser {
             // There is no way to know whether this exception was
             // caused by the document being corrupted or by the format
             // just being unsupported. So we do nothing.
+            // In Java 8, the AIFFReader throws an EOF, but
+            // in Java 11, that EOF is swallowed and an UAFE is thrown.
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    UNSUPPORTED_AUDIO_FILE_EXCEPTION);
         }
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
