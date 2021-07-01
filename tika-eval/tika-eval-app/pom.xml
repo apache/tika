@@ -34,12 +34,6 @@
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-eval-core</artifactId>
       <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>*</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
@@ -59,6 +53,11 @@
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-core</artifactId>
+      <version>${log4j2.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j-impl</artifactId>
       <version>${log4j2.version}</version>
     </dependency>
     <dependency>
@@ -121,8 +120,27 @@
               <createDependencyReducedPom>
                 false
               </createDependencyReducedPom>
-              <!-- TODO: figure out why/fix shade including eval-core's uber jar _and_ the dependency jars -->
-              <!-- <filters> -->
+              <artifactSet>
+                <excludes>
+                  <exclude>org.apache.tika:tika-core:jar:</exclude>
+                  <exclude>org.apache.tika:tika-serialization:jar:</exclude>
+                  <exclude>org.apache.tika:tika-langdetect-opennlp:jar:</exclude>
+                  <exclude>commons-io:commons-io:jar:</exclude>
+                  <exclude>commons-codec:commons-codec:jar:</exclude>
+                  <exclude>org.apache.commons:commons-lang3:jar:</exclude>
+                  <exclude>org.apache.commons:commons-math3:jar:</exclude>
+                  <exclude>org.apache.lucene:lucene-core:jar:</exclude>
+                  <exclude>org.apache.lucene:lucene-analyzers-common:jar:</exclude>
+                  <exclude>org.apache.lucene:lucene-analyzers-icu:jar:</exclude>
+                  <exclude>org.ccil.cowan.tagsoup:tagsoup:jar:</exclude>
+                  <exclude>com.ibm.icu:icu4j:jar:</exclude>
+                  <exclude>com.fasterxml.jackson.core:jackson-core:jar:</exclude>
+                  <exclude>com.fasterxml.jackson.core:jackson-databind:jar:</exclude>
+                  <exclude>com.fasterxml.jackson.core:jackson-annotations:jar:</exclude>
+                  <exclude>org.apache.opennlp:opennlp-tools:jar:</exclude>
+                  <exclude>org.slf4j:slf4j-api:jar:</exclude>
+                </excludes>
+              </artifactSet>
               <filters>
                 <filter>
                   <artifact>*:*</artifact>
