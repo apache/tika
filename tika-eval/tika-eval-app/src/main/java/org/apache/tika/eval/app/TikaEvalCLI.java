@@ -82,7 +82,7 @@ public class TikaEvalCLI {
     }
 
     private void handleProfileFiles(String[] subsetArgs) throws Exception {
-        List<String> argList = Arrays.asList(subsetArgs);
+        List<String> argList = new ArrayList<>(Arrays.asList(subsetArgs));
 
         boolean containsBC = false;
         String inputDir = null;
