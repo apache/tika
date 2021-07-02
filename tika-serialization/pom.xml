@@ -97,7 +97,7 @@
           <dependency>
             <groupId>com.puppycrawl.tools</groupId>
             <artifactId>checkstyle</artifactId>
-            <version>8.41</version>
+            <version>${puppycrawl.version}</version>
           </dependency>
         </dependencies>
         <executions>

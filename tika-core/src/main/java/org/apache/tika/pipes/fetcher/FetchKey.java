@@ -33,7 +33,7 @@ public class FetchKey implements Serializable {
     private String fetchKey;
 
     //this is for serialization...yuck
-    public FetchKey(){
+    public FetchKey() {
 
     }
 

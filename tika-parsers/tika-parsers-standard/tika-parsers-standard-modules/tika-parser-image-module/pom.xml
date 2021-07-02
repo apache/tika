@@ -32,7 +32,7 @@
     <dependency>
       <groupId>com.drewnoakes</groupId>
       <artifactId>metadata-extractor</artifactId>
-      <version>2.16.0</version>
+      <version>${metadata.extractor.version}</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>

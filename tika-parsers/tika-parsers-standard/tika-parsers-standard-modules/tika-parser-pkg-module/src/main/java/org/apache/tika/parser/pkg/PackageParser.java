@@ -311,9 +311,8 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         } finally {
             ais.close();
             tmp.close();
+            xhtml.endDocument();
         }
-
-        xhtml.endDocument();
     }
 
     /**

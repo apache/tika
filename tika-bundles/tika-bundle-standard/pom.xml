@@ -217,7 +217,6 @@
               juniversalchardet|
               vorbis-java-core|
               vorbis-java-tika|
-              isoparser|
               metadata-extractor|
               xmpcore|
               json-simple|
@@ -334,6 +333,20 @@
               org.apache.xml.security.utils;resolution:=optional,
               org.apache.xmlbeans.impl.xpath.saxon;resolution:=optional,
               org.apache.xmlbeans.impl.xquery.saxon;resolution:=optional,
+              org.bouncycastle.asn1.bsi;resolution:=optional,
+              org.bouncycastle.asn1.cmp;resolution:=optional,
+              org.bouncycastle.asn1.cms;resolution:=optional,
+              org.bouncycastle.asn1.cms.ecc;resolution:=optional,
+              org.bouncycastle.asn1.crmf;resolution:=optional,
+              org.bouncycastle.asn1.cryptlib;resolution:=optional,
+              org.bouncycastle.asn1.cryptopro;resolution:=optional,
+              org.bouncycastle.asn1.dvcs;resolution:=optional,
+              org.bouncycastle.asn1.eac;resolution:=optional,
+              org.bouncycastle.asn1.ess;resolution:=optional,
+              org.bouncycastle.asn1.est;resolution:=optional,
+              org.bouncycastle.asn1.sec;resolution:=optional,
+              org.bouncycastle.asn1.smime;resolution:=optional,
+              org.bouncycastle.asn1.tsp;resolution:=optional,
               org.bouncycastle.cert;resolution:=optional,
               org.bouncycastle.cert.jcajce;resolution:=optional,
               org.bouncycastle.cert.ocsp;resolution:=optional,
@@ -364,6 +377,7 @@
               com.microsoft.schemas.office.word;resolution:=optional,
               sun.java2d.cmm.kcms;resolution:=optional,
               sun.misc;resolution:=optional,
+              sun.nio.ch;resolution:=optional,
               com.jmatio.io;resolution:=optional,
               colorspace;resolution:=optional,
               com.sun.jna;resolution:=optional,

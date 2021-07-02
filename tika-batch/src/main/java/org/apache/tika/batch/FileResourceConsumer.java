@@ -66,8 +66,8 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
     //being processed.  It is null if no file is currently being processed.
     //no need for volatile because of lock for checkForStales
     private FileStarted currentFile = null;
-    private static final AtomicInteger numResourcesConsumed = new AtomicInteger(0);
-    private static final AtomicInteger numHandledExceptions = new AtomicInteger(0);
+    private final AtomicInteger numResourcesConsumed = new AtomicInteger(0);
+    private final AtomicInteger numHandledExceptions = new AtomicInteger(0);
     //after this has been set to ACTIVELY_CONSUMING,
     //this should only be set by setEndedState.
     private volatile STATE currentState = STATE.NOT_YET_STARTED;

@@ -290,7 +290,9 @@ public class PipesClient implements Closeable {
             commandLine.add("-Djava.awt.headless=true");
         }
         if (! hasExitOnOOM) {
-            //warn
+            LOG.warn("I notice that you have an exit/crash on OOM. If you run heavy external processes " +
+                    "like tesseract, this setting may result in orphaned processes which could be disastrous" +
+                    " for performance.");
         }
         if (! hasLog4j) {
             commandLine.add("-Dlog4j.configurationFile=classpath:pipes-fork-server-default-log4j2.xml");

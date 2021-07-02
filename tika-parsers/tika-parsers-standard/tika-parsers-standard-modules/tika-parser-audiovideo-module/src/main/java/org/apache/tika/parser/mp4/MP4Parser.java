@@ -18,88 +18,62 @@ package org.apache.tika.parser.mp4;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import org.mp4parser.Box;
-import org.mp4parser.Container;
-import org.mp4parser.IsoFile;
-import org.mp4parser.boxes.apple.AppleAlbumBox;
-import org.mp4parser.boxes.apple.AppleArtist2Box;
-import org.mp4parser.boxes.apple.AppleArtistBox;
-import org.mp4parser.boxes.apple.AppleCommentBox;
-import org.mp4parser.boxes.apple.AppleCompilationBox;
-import org.mp4parser.boxes.apple.AppleDiskNumberBox;
-import org.mp4parser.boxes.apple.AppleEncoderBox;
-import org.mp4parser.boxes.apple.AppleGPSCoordinatesBox;
-import org.mp4parser.boxes.apple.AppleGenreBox;
-import org.mp4parser.boxes.apple.AppleItemListBox;
-import org.mp4parser.boxes.apple.AppleNameBox;
-import org.mp4parser.boxes.apple.AppleRecordingYear2Box;
-import org.mp4parser.boxes.apple.AppleTrackAuthorBox;
-import org.mp4parser.boxes.apple.AppleTrackNumberBox;
-import org.mp4parser.boxes.apple.Utf8AppleDataBox;
-import org.mp4parser.boxes.iso14496.part12.FileTypeBox;
-import org.mp4parser.boxes.iso14496.part12.MetaBox;
-import org.mp4parser.boxes.iso14496.part12.MovieBox;
-import org.mp4parser.boxes.iso14496.part12.MovieHeaderBox;
-import org.mp4parser.boxes.iso14496.part12.SampleDescriptionBox;
-import org.mp4parser.boxes.iso14496.part12.SampleTableBox;
-import org.mp4parser.boxes.iso14496.part12.TrackBox;
-import org.mp4parser.boxes.iso14496.part12.TrackHeaderBox;
-import org.mp4parser.boxes.iso14496.part12.UserDataBox;
-import org.mp4parser.boxes.sampleentry.AudioSampleEntry;
+import com.drew.imaging.mp4.Mp4Reader;
+import com.drew.metadata.Directory;
+import com.drew.metadata.MetadataException;
+import com.drew.metadata.mp4.Mp4BoxHandler;
+import com.drew.metadata.mp4.Mp4Directory;
+import com.drew.metadata.mp4.media.Mp4SoundDirectory;
+import com.drew.metadata.mp4.media.Mp4VideoDirectory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.Field;
+import org.apache.tika.exception.RuntimeSAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * Parser for the MP4 media container format, as well as the older
  * QuickTime format that MP4 is based on.
  * <p>
- * This uses the MP4Parser project from http://code.google.com/p/mp4parser/
- * to do the underlying parsing
+ * This uses Drew Noakes' metadata-extractor: https://github.com/drewnoakes/metadata-extractor
  */
 public class MP4Parser extends AbstractParser {
     /**
      * Serial version UID
      */
     private static final long serialVersionUID = 84011216792285L;
-    /**
-     * TODO Replace this with a 2dp Duration Property Converter
-     */
-    private static final DecimalFormat DURATION_FORMAT =
-            (DecimalFormat) NumberFormat.getNumberInstance(Locale.ROOT);
-    // Ensure this stays in Sync with the entries in tika-mimetypes.xml
     private static final Map<MediaType, List<String>> typesMap = new HashMap<>();
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.unmodifiableSet(typesMap.keySet());
 
-    static {
-        DURATION_FORMAT.applyPattern("0.0#");
-    }
-
+    private static final MediaType APPLICATION_MP4 = MediaType.application("mp4");
+    private static final int MAX_ERROR_MESSAGES = 100;
     static {
         // All types should be 4 bytes long, space padded as needed
         typesMap.put(MediaType.audio("mp4"), Arrays.asList("M4A ", "M4B ", "F4A ", "F4B "));
@@ -114,26 +88,6 @@ public class MP4Parser extends AbstractParser {
         typesMap.put(MediaType.application("mp4"), Collections.emptyList());
     }
 
-    private ISO6709Extractor iso6709Extractor = new ISO6709Extractor();
-
-    private static void addMetadata(Property prop, Metadata m, Utf8AppleDataBox metadata) {
-        if (metadata != null) {
-            m.set(prop, metadata.getValue());
-        }
-    }
-
-    private static <T extends Box> T getOrNull(Container box, Class<T> clazz) {
-        if (box == null) {
-            return null;
-        }
-
-        List<T> boxes = box.getBoxes(clazz);
-        if (boxes.size() == 0) {
-            return null;
-        }
-        return boxes.get(0);
-    }
-
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
@@ -141,228 +95,206 @@ public class MP4Parser extends AbstractParser {
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
-        // The MP4Parser library accepts either a File, or a byte array
-        // As MP4 video files are typically large, always use a file to
-        //  avoid OOMs that may occur with in-memory buffering
         TemporaryResources tmp = new TemporaryResources();
         TikaInputStream tstream = TikaInputStream.get(stream, tmp);
 
-        try (IsoFile isoFile = new IsoFile(tstream.getFile())) {
-
-            // Grab the file type box
-            FileTypeBox fileType = getOrNull(isoFile, FileTypeBox.class);
-            if (fileType != null) {
-                // Identify the type based on the major brand
-                Optional<MediaType> typeHolder = typesMap.entrySet().stream()
-                        .filter(e -> e.getValue().contains(fileType.getMajorBrand())).findFirst()
-                        .map(Map.Entry::getKey);
-
-                if (!typeHolder.isPresent()) {
-                    // If no match for major brand, see if any of the compatible brands match
-                    typeHolder = typesMap.entrySet().stream().filter(e -> e.getValue().stream()
-                            .anyMatch(fileType.getCompatibleBrands()::contains)).findFirst()
-                            .map(Map.Entry::getKey);
-                }
-
-                MediaType type = typeHolder.orElse(MediaType.application("mp4"));
-                metadata.set(Metadata.CONTENT_TYPE, type.toString());
-
-                if (type.getType().equals("audio")) {
-                    metadata.set(XMPDM.AUDIO_COMPRESSOR, fileType.getMajorBrand().trim());
-                }
-            } else {
-                // Some older QuickTime files lack the FileType
-                metadata.set(Metadata.CONTENT_TYPE, "video/quicktime");
-            }
-
-
-            // Get the main MOOV box
-            MovieBox moov = getOrNull(isoFile, MovieBox.class);
-            if (moov == null) {
-                // Bail out
-                return;
-            }
-
+        try (InputStream is = Files.newInputStream(tstream.getPath())) {
 
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             xhtml.startDocument();
-
-            handleMovieHeaderBox(moov, metadata, xhtml);
-            handleTrackBoxes(moov, metadata, xhtml);
-
-            // Get metadata from the User Data Box
-            UserDataBox userData = getOrNull(moov, UserDataBox.class);
-            if (userData != null) {
-                extractGPS(userData, metadata);
-                MetaBox metaBox = getOrNull(userData, MetaBox.class);
-
-                // Check for iTunes Metadata
-                // See http://atomicparsley.sourceforge.net/mpeg-4files.html and
-                //  http://code.google.com/p/mp4v2/wiki/iTunesMetadata for more on these
-                handleApple(metaBox, metadata, xhtml);
-                // TODO Check for other kinds too
+            com.drew.metadata.Metadata mp4Metadata = new com.drew.metadata.Metadata();
+            Mp4BoxHandler boxHandler = new TikaMp4BoxHandler(mp4Metadata, metadata, xhtml);
+            try {
+                Mp4Reader.extract(is, boxHandler);
+            } catch (RuntimeSAXException e) {
+                throw (SAXException) e.getCause();
             }
+            //TODO -- figure out how to get IOExceptions out of boxhandler. Mp4Reader
+            //currently swallows IOExceptions.
+            Set<String> errorMessages =
+                    processMp4Directories(
+                            mp4Metadata.getDirectoriesOfType(Mp4Directory.class),
+                    metadata);
 
-            // All done
+            for (String m : errorMessages) {
+                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, m);
+            }
             xhtml.endDocument();
-
         } finally {
             tmp.dispose();
         }
-
     }
 
-    private void handleTrackBoxes(MovieBox moov, Metadata metadata, XHTMLContentHandler xhtml) {
-
-        // Get some more information from the track header
-        // TODO Decide how to handle multiple tracks
-        List<TrackBox> tb = moov.getBoxes(TrackBox.class);
-        if (tb == null || tb.size() == 0) {
-            return;
-        }
-        TrackBox track = tb.get(0);
-
-        TrackHeaderBox header = track.getTrackHeaderBox();
-        // Get the creation and modification dates
-        metadata.set(TikaCoreProperties.CREATED, header.getCreationTime());
-        metadata.set(TikaCoreProperties.MODIFIED, header.getModificationTime());
-
-        // Get the video with and height
-        metadata.set(Metadata.IMAGE_WIDTH, (int) header.getWidth());
-        metadata.set(Metadata.IMAGE_LENGTH, (int) header.getHeight());
-
-        // Get the sample information
-        SampleTableBox samples = track.getSampleTableBox();
-        if (samples != null) {
-            SampleDescriptionBox sampleDesc = samples.getSampleDescriptionBox();
-            if (sampleDesc != null) {
-                // Look for the first Audio Sample, if present
-                AudioSampleEntry sample = getOrNull(sampleDesc, AudioSampleEntry.class);
-                if (sample != null) {
-                    XMPDM.ChannelTypePropertyConverter
-                            .convertAndSet(metadata, sample.getChannelCount());
-                    //metadata.set(XMPDM.AUDIO_SAMPLE_TYPE, sample.getSampleSize());
-                    // TODO Num -> Type mapping
-                    metadata.set(XMPDM.AUDIO_SAMPLE_RATE, (int) sample.getSampleRate());
-                    //metadata.set(XMPDM.AUDIO_, sample.getSamplesPerPacket());
-                    //metadata.set(XMPDM.AUDIO_, sample.getBytesPerSample());
+    private Set<String> processMp4Directories(Collection<Mp4Directory> mp4Directories,
+                                         Metadata metadata) {
+        Set<String> errorMsgs = new HashSet<>();
+        for (Mp4Directory mp4Directory : mp4Directories) {
+            for (String m : mp4Directory.getErrors()) {
+                if (errorMsgs.size() < MAX_ERROR_MESSAGES) {
+                    errorMsgs.add(m);
+                } else {
+                    break;
                 }
             }
-        }
-    }
-
-    private void handleMovieHeaderBox(MovieBox moov, Metadata metadata, XHTMLContentHandler xhtml) {
-        // Pull out some information from the header box
-        MovieHeaderBox mHeader = getOrNull(moov, MovieHeaderBox.class);
-        if (mHeader == null) {
-            return;
-        }
-        // Get the creation and modification dates
-        metadata.set(TikaCoreProperties.CREATED, mHeader.getCreationTime());
-        metadata.set(TikaCoreProperties.MODIFIED, mHeader.getModificationTime());
-
-        // Get the duration
-        double durationSeconds = ((double) mHeader.getDuration()) / mHeader.getTimescale();
-        metadata.set(XMPDM.DURATION, DURATION_FORMAT.format(durationSeconds));
-
-        // The timescale is normally the sampling rate
-        metadata.set(XMPDM.AUDIO_SAMPLE_RATE, (int) mHeader.getTimescale());
-    }
-
-    private void handleApple(MetaBox metaBox, Metadata metadata, XHTMLContentHandler xhtml)
-            throws SAXException {
-        AppleItemListBox apple = getOrNull(metaBox, AppleItemListBox.class);
-        if (apple == null) {
-            return;
-        }
-        // Title
-        AppleNameBox title = getOrNull(apple, AppleNameBox.class);
-        addMetadata(TikaCoreProperties.TITLE, metadata, title);
-
-        // Artist
-        AppleArtistBox artist = getOrNull(apple, AppleArtistBox.class);
-        addMetadata(TikaCoreProperties.CREATOR, metadata, artist);
-        addMetadata(XMPDM.ARTIST, metadata, artist);
-
-        // Album Artist
-        AppleArtist2Box artist2 = getOrNull(apple, AppleArtist2Box.class);
-        addMetadata(XMPDM.ALBUM_ARTIST, metadata, artist2);
-
-        // Album
-        AppleAlbumBox album = getOrNull(apple, AppleAlbumBox.class);
-        addMetadata(XMPDM.ALBUM, metadata, album);
-
-        // Composer
-        AppleTrackAuthorBox composer = getOrNull(apple, AppleTrackAuthorBox.class);
-        addMetadata(XMPDM.COMPOSER, metadata, composer);
-
-        // Genre
-        AppleGenreBox genre = getOrNull(apple, AppleGenreBox.class);
-        addMetadata(XMPDM.GENRE, metadata, genre);
-
-        // Year
-        AppleRecordingYear2Box year = getOrNull(apple, AppleRecordingYear2Box.class);
-        if (year != null) {
-            metadata.set(XMPDM.RELEASE_DATE, year.getValue());
-        }
-
-        // Track number
-        AppleTrackNumberBox trackNum = getOrNull(apple, AppleTrackNumberBox.class);
-        if (trackNum != null) {
-            metadata.set(XMPDM.TRACK_NUMBER, trackNum.getA());
-            //metadata.set(XMPDM.NUMBER_OF_TRACKS, trackNum.getB()); // TODO
-        }
-
-        // Disc number
-        AppleDiskNumberBox discNum = getOrNull(apple, AppleDiskNumberBox.class);
-        if (discNum != null) {
-            metadata.set(XMPDM.DISC_NUMBER, discNum.getA());
-        }
-
-        // Compilation
-        AppleCompilationBox compilation = getOrNull(apple, AppleCompilationBox.class);
-        if (compilation != null) {
-            metadata.set(XMPDM.COMPILATION, (int) compilation.getValue());
-        }
-
-        // Comment
-        AppleCommentBox comment = getOrNull(apple, AppleCommentBox.class);
-        addMetadata(XMPDM.LOG_COMMENT, metadata, comment);
-
-        // Encoder
-        AppleEncoderBox encoder = getOrNull(apple, AppleEncoderBox.class);
-        if (encoder != null) {
-            metadata.set(XMP.CREATOR_TOOL, encoder.getValue());
-        }
-
-
-        // As text
-        for (Box box : apple.getBoxes()) {
-            if (box instanceof Utf8AppleDataBox) {
-                xhtml.element("p", ((Utf8AppleDataBox) box).getValue());
+/*            for (Tag t : mp4Directory.getTags()) {
+                System.out.println(mp4Directory.getClass() + " : " + t.getTagName()
+                                + " : " + mp4Directory.getString(t.getTagType()));
+            }*/
+            if (mp4Directory instanceof Mp4SoundDirectory) {
+                processMp4SoundDirectory((Mp4SoundDirectory) mp4Directory, metadata);
+            } else if (mp4Directory instanceof Mp4VideoDirectory) {
+                processMp4VideoDirectory((Mp4VideoDirectory) mp4Directory, metadata);
+            } else {
+                processActualMp4Directory(mp4Directory, metadata);
             }
         }
-
+        return errorMsgs;
     }
 
-    /**
-     * Override the maximum record size limit.  NOTE: this
-     * sets a static variable on the IsoFile and affects all files
-     * parsed in this JVM!!!
-     *
-     * @param maxRecordSize
-     */
-    @Field
-    public void setMaxRecordSize(long maxRecordSize) {
-        IsoFile.MAX_RECORD_SIZE_OVERRIDE = maxRecordSize;
+    private void processMp4VideoDirectory(Mp4VideoDirectory mp4Directory, Metadata metadata) {
+        addInt(mp4Directory, metadata, Mp4VideoDirectory.TAG_HEIGHT, Metadata.IMAGE_LENGTH);
+        addInt(mp4Directory, metadata, Mp4VideoDirectory.TAG_WIDTH, Metadata.IMAGE_WIDTH);
+        if (mp4Directory.containsTag(Mp4VideoDirectory.TAG_COMPRESSOR_NAME)) {
+            String compressor = mp4Directory.getString(Mp4VideoDirectory.TAG_COMPRESSOR_NAME);
+            metadata.set(XMPDM.VIDEO_COMPRESSOR, compressor);
+        }
     }
 
-    private void extractGPS(UserDataBox userData, Metadata metadata) {
-        AppleGPSCoordinatesBox coordBox = getOrNull(userData, AppleGPSCoordinatesBox.class);
-        if (coordBox == null) {
+    private void processMp4SoundDirectory(Mp4SoundDirectory mp4SoundDirectory,
+                                        Metadata metadata) {
+        addInt(mp4SoundDirectory, metadata, Mp4SoundDirectory.TAG_AUDIO_SAMPLE_RATE,
+                XMPDM.AUDIO_SAMPLE_RATE);
+
+        try {
+            int numChannels = mp4SoundDirectory.getInt(Mp4SoundDirectory.TAG_NUMBER_OF_CHANNELS);
+
+            if (numChannels == 1) {
+                metadata.set(XMPDM.AUDIO_CHANNEL_TYPE, "Mono");
+            } else if (numChannels == 2) {
+                metadata.set(XMPDM.AUDIO_CHANNEL_TYPE, "Stereo");
+            } else {
+                //??? log
+            }
+
+        } catch (MetadataException e) {
+            //log
+        }
+    }
+
+    private void addInt(Mp4Directory mp4Directory, Metadata metadata, int tag,
+                        Property property) {
+        try {
+            int val = mp4Directory.getInt(tag);
+            metadata.set(property, val);
+        } catch (MetadataException e) {
+            //log
+        }
+    }
+
+    private void processActualMp4Directory(Mp4Directory mp4Directory, Metadata metadata) {
+        addDate(mp4Directory, metadata, Mp4Directory.TAG_CREATION_TIME, TikaCoreProperties.CREATED);
+        addDate(mp4Directory, metadata, Mp4Directory.TAG_MODIFICATION_TIME,
+                TikaCoreProperties.MODIFIED);
+        handleBrands(mp4Directory, metadata);
+        handleDurationInSeconds(mp4Directory, metadata);
+
+        addDouble(mp4Directory, metadata, Mp4Directory.TAG_LATITUDE, TikaCoreProperties.LATITUDE);
+        addDouble(mp4Directory, metadata, Mp4Directory.TAG_LONGITUDE, TikaCoreProperties.LONGITUDE);
+        addInt(mp4Directory, metadata, Mp4Directory.TAG_TIME_SCALE, XMPDM.AUDIO_SAMPLE_RATE);
+    }
+
+    private void handleDurationInSeconds(Mp4Directory mp4Directory, Metadata metadata) {
+        String durationInSeconds = mp4Directory.getString(Mp4Directory.TAG_DURATION_SECONDS);
+        if (durationInSeconds == null) {
             return;
         }
-        String iso6709 = coordBox.getValue();
-        iso6709Extractor.extract(iso6709, metadata);
+        if (! durationInSeconds.contains("/")) {
+            try {
+                double d = Double.parseDouble(durationInSeconds);
+                DecimalFormat df =
+                        (DecimalFormat) NumberFormat.getNumberInstance(Locale.ROOT);
+                df.applyPattern("0.0#");
+                metadata.set(XMPDM.DURATION, df.format(d));
+            } catch (NumberFormatException e) {
+                //swallow
+            }
+            return;
+        }
+        String[] bits = durationInSeconds.split("/");
+        if (bits.length != 2) {
+            return;
+        }
+        double durationSeconds;
+        try {
+            long numerator = Long.parseLong(bits[0]);
+            long denominator = Long.parseLong(bits[1]);
+            if (denominator != 0) {
+                durationSeconds = (double) numerator / (double) denominator;
+                // Get the duration
+                //TODO Replace this with a 2dp Duration Property Converter
+                //avoid thread safety issues by creating a new decimal format for every call
+                //threadlocal doesn't play well in long running processes.
+                DecimalFormat df =
+                        (DecimalFormat) NumberFormat.getNumberInstance(Locale.ROOT);
+                df.applyPattern("0.0#");
+                metadata.set(XMPDM.DURATION, df.format(durationSeconds));
+            }
+        } catch (NumberFormatException e) {
+            //log
+            return;
+        }
+    }
+
+    private void handleBrands(Mp4Directory mp4Directory, Metadata metadata) {
+
+
+        String majorBrand = mp4Directory.getString(Mp4Directory.TAG_MAJOR_BRAND);
+        // Identify the type based on the major brand
+        Optional<MediaType> typeHolder = typesMap.entrySet().stream()
+                .filter(e -> e.getValue().contains(majorBrand)).findFirst()
+                .map(Map.Entry::getKey);
+
+        if (!typeHolder.isPresent()) {
+            String compatibleBrands =
+                    mp4Directory.getString(Mp4Directory.TAG_COMPATIBLE_BRANDS);
+            if (compatibleBrands != null) {
+                // If no match for major brand, see if any of the compatible brands match
+                typeHolder = typesMap.entrySet().stream().filter(e ->
+                        e.getValue().stream().anyMatch(compatibleBrands::contains))
+                        .findFirst().map(Map.Entry::getKey);
+            }
+        }
+        MediaType type = typeHolder.orElse(MediaType.application("mp4"));
+        if (metadata.getValues(Metadata.CONTENT_TYPE) == null) {
+            metadata.set(Metadata.CONTENT_TYPE, type.toString());
+        } else if (! type.equals(APPLICATION_MP4)) { //todo check for specialization?
+            metadata.set(Metadata.CONTENT_TYPE, type.toString());
+        }
+        if (type.getType().equals("audio") && ! StringUtils.isBlank(majorBrand)) {
+            metadata.set(XMPDM.AUDIO_COMPRESSOR, majorBrand.trim());
+        }
+
+    }
+
+    private void addDate(Mp4Directory mp4Directory, Metadata metadata, int tag,
+                         Property property) {
+        Date d = mp4Directory.getDate(tag);
+        if (d == null) {
+            return;
+        }
+        metadata.set(property, d);
+
+    }
+
+    private void addDouble(Directory mp4Directory, Metadata metadata, int tag,
+                           Property property) {
+        try {
+            double val = mp4Directory.getDouble(tag);
+            metadata.set(property, val);
+        } catch (MetadataException e) {
+            //log
+            return;
+        }
+
     }
 }
