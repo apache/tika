@@ -52,8 +52,6 @@ public class ParamTest {
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
             param.save(stream);
             ByteArrayInputStream inStream = new ByteArrayInputStream(stream.toByteArray());
-            stream.close();
-            inStream.close();
             Param<?> loaded = Param.load(inStream);
             assertEquals(param.getName(), loaded.getName());
             assertEquals(param.getTypeString(), loaded.getTypeString());
