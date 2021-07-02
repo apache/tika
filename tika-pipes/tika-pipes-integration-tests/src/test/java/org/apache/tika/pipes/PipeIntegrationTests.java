@@ -50,7 +50,7 @@ import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.FetcherManager;
 import org.apache.tika.pipes.pipesiterator.PipesIterator;
 
-@Ignore("turn these into actual tests")
+@Ignore("turn these into actual tests with mock s3")
 public class PipeIntegrationTests {
 
     private static final Path OUTDIR = Paths.get("");

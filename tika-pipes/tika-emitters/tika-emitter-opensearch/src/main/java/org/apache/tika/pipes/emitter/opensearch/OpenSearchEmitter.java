@@ -19,17 +19,14 @@ package org.apache.tika.pipes.emitter.opensearch;
 import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.client.HttpClientFactory;
+import org.apache.tika.client.TikaClientException;
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -37,18 +34,22 @@ import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.emitter.AbstractEmitter;
-import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
 import org.apache.tika.utils.StringUtils;
 
 
 public class OpenSearchEmitter extends AbstractEmitter implements Initializable {
 
+
+    public enum AttachmentStrategy {
+        SKIP, CONCATENATE_CONTENT, PARENT_CHILD,
+        //anything else?
+    }
+
     private static final Logger LOG = LoggerFactory.getLogger(OpenSearchEmitter.class);
     private AttachmentStrategy attachmentStrategy = AttachmentStrategy.PARENT_CHILD;
-    private String solrCollection;
 
-    private String openSearchUrl;
+    private String openSearchUrl = null;
     private String contentField = "content";
     private String idField = "_id";
     private int commitWithin = 1000;
@@ -66,9 +67,13 @@ public class OpenSearchEmitter extends AbstractEmitter implements Initializable 
             LOG.warn("metadataList is null or empty");
             return;
         }
-        openSearchClient.addDocument(emitKey, metadataList);
+        try {
+            openSearchClient.addDocument(emitKey, metadataList);
+        } catch (TikaClientException e) {
+            throw new TikaEmitterException("failed to add document", e);
+        }
     }
-
+/*
     private void addMetadataAsSolrInputDocuments(String emitKey, List<Metadata> metadataList,
                                                  List<SolrInputDocument> docsToUpdate)
             throws IOException, TikaEmitterException {
@@ -167,7 +172,7 @@ public class OpenSearchEmitter extends AbstractEmitter implements Initializable 
                 }
             }
         }
-    }
+    }*/
 
     /**
      * Options: SKIP, CONCATENATE_CONTENT, PARENT_CHILD. Default is "PARENT_CHILD".
@@ -233,6 +238,7 @@ public class OpenSearchEmitter extends AbstractEmitter implements Initializable 
         this.idField = idField;
     }
 
+    //this is the full url, including the collection, e.g. https://localhost:9200/my-collection
     @Field
     public void setOpenSearchUrl(String openSearchUrl) {
         this.openSearchUrl = openSearchUrl;
@@ -270,30 +276,15 @@ public class OpenSearchEmitter extends AbstractEmitter implements Initializable 
             throw new TikaConfigException("Must specify an open search url!");
         } else {
             openSearchClient =
-                    new OpenSearchClient(openSearchUrl, httpClientFactory.build());
+                    new OpenSearchClient(openSearchUrl, httpClientFactory.build(), attachmentStrategy);
         }
     }
 
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler)
             throws TikaConfigException {
-        mustNotBeEmpty("solrCollection", this.solrCollection);
-        mustNotBeEmpty("urlFieldName", this.idField);
-        if ((this.solrUrls == null || this.solrUrls.isEmpty()) &&
-                (this.solrZkHosts == null || this.solrZkHosts.isEmpty())) {
-            throw new IllegalArgumentException(
-                    "expected either param solrUrls or param solrZkHosts, but neither was specified");
-        }
-        if (this.solrUrls != null && !this.solrUrls.isEmpty() && this.solrZkHosts != null &&
-                !this.solrZkHosts.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "expected either param solrUrls or param solrZkHosts, but both were specified");
-        }
-    }
-
-    public enum AttachmentStrategy {
-        SKIP, CONCATENATE_CONTENT, PARENT_CHILD,
-        //anything else?
+        mustNotBeEmpty("openSearchUrl", this.openSearchUrl);
+        mustNotBeEmpty("idField", this.idField);
     }
 
 }

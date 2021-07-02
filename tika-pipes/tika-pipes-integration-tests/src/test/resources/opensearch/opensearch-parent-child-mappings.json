@@ -1,0 +1,26 @@
+{
+  "settings": {
+    "number_of_shards": 1
+  },
+  "mappings" : {
+    "dynamic": false,
+    "_routing": {
+      "required":true
+    },
+    "properties" : {
+      "content" : { "type" : "text"},
+      "length" : { "type" : "long"},
+      "creators" : { "type" : "text"},
+      "title" : { "type" : "text"},
+      "mime" : { "type" : "keyword"},
+      "tika_exception" : { "type" : "text"},
+      "relation_type":{
+        "type":"join",
+        "eager_global_ordinals":true,
+        "relations":{
+          "container":"embedded"
+        }
+      }
+    }
+  }
+}

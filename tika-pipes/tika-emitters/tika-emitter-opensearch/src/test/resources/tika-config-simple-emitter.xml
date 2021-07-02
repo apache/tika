@@ -30,20 +30,11 @@
     </metadataFilter>
   </metadataFilters>
   <emitters>
-    <emitter class="org.apache.tika.pipes.emitter.solr.SolrEmitter">
+    <emitter class="org.apache.tika.pipes.emitter.opensearch.OpenSearchEmitter">
       <params>
-        <name>solr1</name>
-        <url>http://localhost:8983/solr/tika-test</url>
+        <name>opensearch1</name>
+        <url>http://localhost:9200/tika-test</url>
         <attachmentStrategy>concatenate-content</attachmentStrategy>
-        <contentField>content</contentField>
-        <commitWithin>10</commitWithin>
-      </params>
-    </emitter>
-    <emitter class="org.apache.tika.pipes.emitter.solr.SolrEmitter">
-      <params>
-        <name>solr2</name>
-        <url>http://localhost:8983/solr/tika-test</url>
-        <attachmentStrategy>parent-child</attachmentStrategy>
         <contentField>content</contentField>
         <commitWithin>10</commitWithin>
       </params>

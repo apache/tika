@@ -48,24 +48,30 @@ public class OpenSearchClient {
 
     //this includes the full url and the index, should not end in /
     //e.g. https://localhost:9200/my-index
-    private final String openSearchUrl;
-    private final HttpClient httpClient;
+    protected final String openSearchUrl;
+    protected final HttpClient httpClient;
+    private final OpenSearchEmitter.AttachmentStrategy attachmentStrategy;
 
-    private OpenSearchClient(String openSearchUrl, HttpClient httpClient) {
+    protected OpenSearchClient(String openSearchUrl, HttpClient httpClient,
+                               OpenSearchEmitter.AttachmentStrategy attachmentStrategy) {
         this.openSearchUrl = openSearchUrl;
         this.httpClient = httpClient;
+        this.attachmentStrategy = attachmentStrategy;
     }
 
     public void addDocument(String emitKey, List<Metadata> metadataList) throws IOException,
             TikaClientException {
         StringBuilder sb = new StringBuilder();
         int i = 0;
+        String routing = (attachmentStrategy == OpenSearchEmitter.AttachmentStrategy.PARENT_CHILD) ?
+                emitKey : null;
+
         for (Metadata metadata : metadataList) {
             String id = emitKey;
             if (i > 0) {
                 id += "-" + i;
             }
-            String indexJson = getBulkIndexJson(id, emitKey);
+            String indexJson = getBulkIndexJson(id, routing);
             sb.append(indexJson).append("\n");
             if (i == 0) {
                 sb.append(metadataToJsonContainer(metadata));
@@ -75,9 +81,11 @@ public class OpenSearchClient {
             sb.append("\n");
             i++;
         }
-        //System.out.println(sb.toString());
-        String requestUrl = openSearchUrl + "/bulk?routing=" + URLEncoder
-                .encode(emitKey, StandardCharsets.UTF_8.name());
+        String requestUrl = openSearchUrl + "/_bulk";
+        if (attachmentStrategy == OpenSearchEmitter.AttachmentStrategy.PARENT_CHILD) {
+            requestUrl += "?routing=" + URLEncoder.encode(emitKey, StandardCharsets.UTF_8.name());
+        }
+
         JsonResponse response = postJson(requestUrl, sb.toString());
         if (response.getStatus() != 200) {
             throw new TikaClientException(response.getMsg());
@@ -97,9 +105,11 @@ public class OpenSearchClient {
             jsonGenerator.writeStartObject();
 
             writeMetadata(metadata, jsonGenerator);
-            jsonGenerator.writeStartObject("relation_type");
-            jsonGenerator.writeStringField("name", "embedded");
-            jsonGenerator.writeStringField("parent", emitKey);
+            if (attachmentStrategy == OpenSearchEmitter.AttachmentStrategy.PARENT_CHILD) {
+                jsonGenerator.writeStartObject("relation_type");
+                jsonGenerator.writeStringField("name", "embedded");
+                jsonGenerator.writeStringField("parent", emitKey);
+            }
             //end the relation type object
             jsonGenerator.writeEndObject();
             //end the metadata object
@@ -113,7 +123,9 @@ public class OpenSearchClient {
         try (JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
             jsonGenerator.writeStartObject();
             writeMetadata(metadata, jsonGenerator);
-            jsonGenerator.writeStringField("relation_type", "container");
+            if (attachmentStrategy == OpenSearchEmitter.AttachmentStrategy.PARENT_CHILD) {
+                jsonGenerator.writeStringField("relation_type", "container");
+            }
             jsonGenerator.writeEndObject();
         }
         return writer.toString();
@@ -140,7 +152,7 @@ public class OpenSearchClient {
         StringWriter writer = new StringWriter();
         try (JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
             jsonGenerator.writeStartObject();
-            jsonGenerator.writeStartObject("index");
+            jsonGenerator.writeObjectFieldStart("index");
             jsonGenerator.writeStringField("_id", id);
             if (!StringUtils.isEmpty(routing)) {
                 jsonGenerator.writeStringField("routing", routing);
@@ -152,7 +164,7 @@ public class OpenSearchClient {
         return writer.toString();
     }
 
-    protected JsonResponse postJson(String url, String json) throws IOException {
+    public JsonResponse postJson(String url, String json) throws IOException {
         HttpPost httpRequest = new HttpPost(url);
         ByteArrayEntity entity = new ByteArrayEntity(json.getBytes(StandardCharsets.UTF_8));
         httpRequest.setEntity(entity);
