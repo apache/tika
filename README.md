@@ -22,7 +22,48 @@ To build Tika from source, use the following command in the main directory:
 The build consists of a number of components, including a standalone runnable jar that you can use to try out Tika features. You can run it like this:
 
     java -jar tika-app/target/tika-app-*.jar --help
-    
+
+Maven Dependencies
+==================
+
+Apache Tika provides *Bill of Material* (BOM) artifact to align Tika module versions and simplify version management.
+
+If you use Apache Maven:
+
+```xml
+<project>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+       <groupId>org.apache.tika</groupId>
+       <artifactId>tika-bom</artifactId>
+       <version>1.27</version>
+       <type>pom</type>
+       <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-parsers</artifactId>
+      <!-- version not required since BOM included -->
+    </dependency>
+  </dependencies>
+</project>
+```
+
+For Gradle:
+```kotlin
+dependencies {
+  implementation(platform("org.apache.tika:tika-bom:1.27"))
+
+  // version not required since bom (platform in Gradle terms)
+  implementation("org.apache.tika:tika-parsers")
+}
+```
+
 Contributing via Github
 =======================
 To contribute a patch, follow these instructions (note that installing
