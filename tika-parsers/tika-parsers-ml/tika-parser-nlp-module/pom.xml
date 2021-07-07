@@ -26,6 +26,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>tika-parser-nlp-module</artifactId>
+    <name>Apache Tika natural language process module</name>
 
 
     <dependencies>

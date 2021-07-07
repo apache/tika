@@ -26,6 +26,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-langdetect-optimaize</artifactId>
+  <name>Apache Tika Optimaize langdetect</name>
 
 
   <dependencies>

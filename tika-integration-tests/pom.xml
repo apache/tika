@@ -27,6 +27,8 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-integration-tests</artifactId>
+  <name>Apache Tika integration tests</name>
+
   <packaging>pom</packaging>
 
   <modules>

@@ -27,6 +27,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-parser-news-module</artifactId>
+  <name>Apache Tika news parser module</name>
 
   <dependencies>
     <dependency>

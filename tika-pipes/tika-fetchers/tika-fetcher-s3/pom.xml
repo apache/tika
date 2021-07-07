@@ -26,6 +26,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>tika-fetcher-s3</artifactId>
+    <name>Apache Tika S3 fetcher</name>
 
     <dependencies>
         <dependency>

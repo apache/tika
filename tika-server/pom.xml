@@ -31,7 +31,7 @@
   </parent>
 
   <artifactId>tika-server</artifactId>
-  <name>Apache Tika server</name>
+  <name>Apache Tika server module</name>
   <url>https://tika.apache.org/</url>
 
   <build>

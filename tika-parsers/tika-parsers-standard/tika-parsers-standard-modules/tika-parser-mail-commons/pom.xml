@@ -28,6 +28,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-parser-mail-commons</artifactId>
+  <name>Apache Tika mail commons</name>
 
 
   <dependencies>

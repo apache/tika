@@ -27,6 +27,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-parser-microsoft-module</artifactId>
+  <name>Apache Tika Microsoft parser module</name>
 
   <dependencies>
     <!-- needed for msg files -->

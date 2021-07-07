@@ -25,6 +25,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-server-core</artifactId>
+  <name>Apache Tika server core</name>
 
   <pluginRepositories>
     <pluginRepository>

@@ -28,6 +28,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-pipes-solr-integration-tests</artifactId>
+  <name>Apache Tika Apache Solr integration tests</name>
 
   <dependencies>
     <dependency>

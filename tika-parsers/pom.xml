@@ -28,6 +28,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-parsers</artifactId>
+  <name>Apache Tika parser modules</name>
 
   <packaging>pom</packaging>
   <modules>

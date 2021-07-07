@@ -28,6 +28,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-pipes-opensearch-integration-tests</artifactId>
+  <name>Apache Tika OpenSearch integration tests</name>
 
   <dependencies>
     <dependency>

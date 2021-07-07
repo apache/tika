@@ -27,6 +27,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-parser-text-module</artifactId>
+  <name>Apache Tika text parser module</name>
 
   <dependencies>
     <dependency>

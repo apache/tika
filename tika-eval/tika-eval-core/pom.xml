@@ -26,6 +26,8 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-eval-core</artifactId>
+  <name>Apache Tika eval core</name>
+
 
   <dependencies>
     <dependency>

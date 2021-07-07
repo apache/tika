@@ -27,6 +27,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-parser-code-module</artifactId>
+  <name>Apache Tika code parser module</name>
 
   <dependencies>
     <dependency>

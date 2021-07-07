@@ -29,7 +29,7 @@
   </parent>
 
   <artifactId>tika-eval</artifactId>
-  <name>Apache Tika eval</name>
+  <name>Apache Tika eval module</name>
   <url>https://tika.apache.org/</url>
 
   <packaging>pom</packaging>

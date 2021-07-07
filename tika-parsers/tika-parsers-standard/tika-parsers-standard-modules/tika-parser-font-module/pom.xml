@@ -27,6 +27,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-parser-font-module</artifactId>
+  <name>Apache Tika font parser module</name>
 
 
   <dependencies>

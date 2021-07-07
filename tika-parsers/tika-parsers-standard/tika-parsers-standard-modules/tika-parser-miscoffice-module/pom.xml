@@ -27,6 +27,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-parser-miscoffice-module</artifactId>
+  <name>Apache Tika miscellaneous office format parser module</name>
 
   <dependencies>
     <dependency>

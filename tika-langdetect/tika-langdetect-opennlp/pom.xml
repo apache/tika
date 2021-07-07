@@ -26,6 +26,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-langdetect-opennlp</artifactId>
+  <name>Apache Tika OpenNLP langdetect</name>
 
 
   <dependencies>

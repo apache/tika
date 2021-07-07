@@ -26,6 +26,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-langdetect-lingo24</artifactId>
+  <name>Apache Tika Lingo24 langdetect</name>
 
 
   <dependencies>

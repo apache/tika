@@ -26,6 +26,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-parser-html-commons</artifactId>
+  <name>Apache Tika html commons</name>
 
   <dependencies>
     <dependency>

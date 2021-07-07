@@ -24,6 +24,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-server-client</artifactId>
+  <name>Apache Tika server client</name>
 
   <dependencies>
     <dependency>

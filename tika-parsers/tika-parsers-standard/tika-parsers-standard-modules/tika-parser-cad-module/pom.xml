@@ -27,6 +27,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-parser-cad-module</artifactId>
+  <name>Apache Tika cad parser module</name>
 
 
   <dependencies>

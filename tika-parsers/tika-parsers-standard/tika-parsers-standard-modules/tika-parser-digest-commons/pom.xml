@@ -27,6 +27,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-parser-digest-commons</artifactId>
+  <name>Apache Tika digest commons</name>
 
   <dependencies>
     <dependency>
