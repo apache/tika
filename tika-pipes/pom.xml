@@ -35,7 +35,6 @@
     <module>tika-fetchers</module>
     <module>tika-emitters</module>
     <module>tika-pipes-iterators</module>
-    <module>tika-pipes-integration-tests</module>
   </modules>
 
   <build>
