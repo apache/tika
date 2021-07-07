@@ -103,7 +103,7 @@
       </params>
     </emitter>
   </emitters>
-  <pipesIterator class="org.apache.tika.pipes.pipesiterator.FileSystemPipesIterator">
+  <pipesIterator class="org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator">
     <params>
       <basePath>{PATH_TO_DOCS}</basePath>
       <fetcherName>fsf</fetcherName>

@@ -66,4 +66,19 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+    <plugin>
+      <groupId>org.apache.rat</groupId>
+      <artifactId>apache-rat-plugin</artifactId>
+      <version>${rat.version}</version>
+      <configuration>
+        <excludes>
+          <exclude>src/test/resources/opensearch/*.json</exclude>
+        </excludes>
+    </configuration>
+  </plugin>
+</plugins>
+    </build>
 </project>

@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 import org.junit.Test;
 
 import org.apache.tika.pipes.FetchEmitTuple;
+import org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator;
 
 
 public class FileSystemPipesIteratorTest {

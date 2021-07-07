@@ -16,7 +16,7 @@
   limitations under the License.
 -->
 <properties>
-  <pipesIterator class="org.apache.tika.pipes.pipesiterator.FileSystemPipesIterator">
+  <pipesIterator class="org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator">
     <params>
       <fetcherName>fs1</fetcherName>
       <basePath>/my/base/path1</basePath>

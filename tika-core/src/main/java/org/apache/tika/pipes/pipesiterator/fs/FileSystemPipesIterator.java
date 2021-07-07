@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.pipesiterator;
+package org.apache.tika.pipes.pipesiterator.fs;
 
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -34,6 +34,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
+import org.apache.tika.pipes.pipesiterator.PipesIterator;
 
 public class FileSystemPipesIterator extends PipesIterator implements Initializable {
 

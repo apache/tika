@@ -67,7 +67,7 @@ public class TikaCLITest {
                 "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" +
                 "<params>" + "<name>fse</name>" + "<basePath>" + ASYNC_OUTPUT_DIR.toAbsolutePath() +
                 "</basePath>" + "</params></emitter>" + "</emitters>" + "<pipesIterator " +
-                "class=\"org.apache.tika.pipes.pipesiterator.FileSystemPipesIterator\">" +
+                "class=\"org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator\">" +
                 "<params>" + "<basePath>" + testDataFile.getAbsolutePath() + "</basePath>" +
                 "<fetcherName>fsf</fetcherName>" + "<emitterName>fse</emitterName>" + "</params>" +
                 "</pipesIterator>" + "</properties>";

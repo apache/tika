@@ -20,7 +20,7 @@
 <properties>
   <service-loader initializableProblemHandler="throw"/>
   <pipesIterators>
-    <pipesIterator class="org.apache.tika.pipes.pipesiterator.FileSystemPipesIterator">
+    <pipesIterator class="org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator">
       <params>
         <fetcherName>fs</fetcherName>
         <basePath>fix</basePath>
