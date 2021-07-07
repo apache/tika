@@ -13,9 +13,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-org.apache.tika.language.translate.MicrosoftTranslator
-org.apache.tika.language.translate.GoogleTranslator
-org.apache.tika.language.translate.Lingo24Translator
-org.apache.tika.language.translate.CachedTranslator
-org.apache.tika.language.translate.JoshuaNetworkTranslator
-org.apache.tika.language.translate.RTGTranslator
+org.apache.tika.language.translate.impl.MicrosoftTranslator
+org.apache.tika.language.translate.impl.GoogleTranslator
+org.apache.tika.language.translate.impl.Lingo24Translator
+org.apache.tika.language.translate.impl.CachedTranslator
+org.apache.tika.language.translate.impl.JoshuaNetworkTranslator
+org.apache.tika.language.translate.impl.RTGTranslator

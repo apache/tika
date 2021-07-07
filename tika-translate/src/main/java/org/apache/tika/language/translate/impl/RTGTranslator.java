@@ -16,7 +16,7 @@
  */
 
 
-package org.apache.tika.language.translate;
+package org.apache.tika.language.translate.impl;
 
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import org.apache.cxf.jaxrs.client.WebClient;

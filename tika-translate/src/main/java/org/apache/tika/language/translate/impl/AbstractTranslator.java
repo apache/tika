@@ -14,28 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.language.translate;
+package org.apache.tika.language.translate.impl;
 
-import org.junit.Before;
-import org.junit.Test;
+import java.io.IOException;
 
-import static org.junit.Assert.assertTrue;
+import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
+import org.apache.tika.language.detect.LanguageDetector;
+import org.apache.tika.language.detect.LanguageResult;
+import org.apache.tika.language.translate.Translator;
 
-public class JoshuaNetworkTranslatorTest {
 
-  JoshuaNetworkTranslator translator;
+public abstract class AbstractTranslator implements Translator {
 
-  @Before
-  public void setUp() {
-    translator = new JoshuaNetworkTranslator();
-  }
-
-  @Test
-  public void testSimpleSpanishToEnglishTranslation() throws Exception {
-    String source = "hola";
-    String expected = "hello";
-    String translated = translator.translate(source, "spanish", "english");
-    if (translator.isAvailable()) assertTrue("Translate " + source + " to " + expected + " (was " + translated + ")",
-        expected.equalsIgnoreCase(translated));
-  }
+    protected LanguageResult detectLanguage(String text) throws IOException {
+        LanguageDetector detector = new OptimaizeLangDetector().loadModels();
+        return detector.detect(text);
+	}
 }

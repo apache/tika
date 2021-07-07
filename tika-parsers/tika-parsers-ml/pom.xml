@@ -29,8 +29,8 @@
 
   <artifactId>tika-parsers-ml</artifactId>
 
-  <packaging>pom</packaging>
   <name>Apache Tika machine learning (ml) parsers</name>
+  <packaging>pom</packaging>
 
   <modules>
     <module>tika-parser-nlp-module</module>

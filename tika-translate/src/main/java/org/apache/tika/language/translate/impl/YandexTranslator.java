@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.language.translate;
+package org.apache.tika.language.translate.impl;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;

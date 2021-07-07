@@ -98,7 +98,8 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
                 "<pipes><params><tikaConfig>" +
                 ProcessUtils.escapeCommandLine(TIKA_CONFIG.toAbsolutePath().toString()) +
                 "</tikaConfig><numClients>10</numClients><forkedJvmArgs><arg>-Xmx256m" +
-                "</arg></forkedJvmArgs><timeoutMillis>5000</timeoutMillis>" +
+                "</arg>" + //TODO: need to add logging config here
+                "</forkedJvmArgs><timeoutMillis>5000</timeoutMillis>" +
                 "</params></pipes>" + "</properties>";
 
         String tikaConfigXML = xml1 + xml2;

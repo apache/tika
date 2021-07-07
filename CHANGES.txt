@@ -26,6 +26,8 @@ Release 2.0.0-ALPHA - 01/13/2021
        We have moved away from configuration via .properties files because
        of confusion among users.  This affects the PDFParser, TesseractOCRParser
        and the StringsParser.
+     * Changed namespaces of translator implementations (o.a.t.language.translate.impl) to avoid
+       split-package with tika-core
 
    * tika-parsers
      * The parser modules have been broken into three main modules:

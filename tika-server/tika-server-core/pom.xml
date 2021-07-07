@@ -211,6 +211,8 @@
                   <artifact>*:*</artifact>
                   <excludes>
                     <exclude>module-info.class</exclude>
+                    <exclude>META-INF/versions/9/module-info.class</exclude>
+                    <exclude>META-INF/versions/11/module-info.class</exclude>
                     <exclude>META-INF/*.SF</exclude>
                     <exclude>META-INF/*.DSA</exclude>
                     <exclude>META-INF/*.RSA</exclude>
@@ -219,7 +221,11 @@
                     <exclude>META-INF/DEPENDENCIES</exclude>
                     <exclude>META-INF/LICENSE</exclude>
                     <exclude>META-INF/NOTICE</exclude>
+                    <exclude>META-INF/LICENSE.md</exclude>
+                    <exclude>META-INF/NOTICE.md</exclude>
                     <exclude>META-INF/README</exclude>
+                    <exclude>META-INF/MANIFEST.MF</exclude>
+                    <exclude>about.html</exclude>
                     <exclude>LICENSE.txt</exclude>
                     <exclude>NOTICE.txt</exclude>
                     <exclude>CHANGES</exclude>
@@ -244,6 +250,9 @@
                 <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
                   <resource>META-INF/DEPENDENCIES</resource>
                   <file>target/classes/META-INF/DEPENDENCIES</file>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                  <resource>META-INF/blueprint.handlers</resource>
                 </transformer>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
                   <resource>META-INF/spring.handlers</resource>

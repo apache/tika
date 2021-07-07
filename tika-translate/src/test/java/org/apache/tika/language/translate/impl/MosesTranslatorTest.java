@@ -14,12 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.language.translate;
+package org.apache.tika.language.translate.impl;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
+
+import org.apache.tika.language.translate.impl.MosesTranslator;
 
 public class MosesTranslatorTest {
     MosesTranslator translator;

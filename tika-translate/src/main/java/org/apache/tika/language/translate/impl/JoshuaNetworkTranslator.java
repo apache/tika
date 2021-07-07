@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.language.translate;
+package org.apache.tika.language.translate.impl;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -178,7 +178,7 @@ public class JoshuaNetworkTranslator extends AbstractTranslator {
    * Make an attempt to guess the source language via
    * {@link org.apache.tika.language.translate.AbstractTranslator#detectLanguage(String)} 
    * before making the call to 
-   * {@link org.apache.tika.language.translate.JoshuaNetworkTranslator#translate(String, String, String)}
+   * {@link JoshuaNetworkTranslator#translate(String, String, String)}
    * @see org.apache.tika.language.translate.Translator#translate(java.lang.String, java.lang.String)
    */
   @Override

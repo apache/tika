@@ -104,7 +104,70 @@
               </createDependencyReducedPom>
               <artifactSet>
                 <excludes>
+                  <exclude>org.apache.tika:tika-core:jar:</exclude>
+                  <exclude>org.apache.tika:tika-translate:jar:</exclude>
                   <exclude>org.apache.tika:tika-parsers-standard-package:jar:</exclude>
+                  <exclude>org.apache.tika:tika-serialization:jar:</exclude>
+                  <exclude>org.apache.tika:tika-langdetect-optimaize:jar:</exclude>
+                  <exclude>org.apache.tika:tika-parser-html-commons:jar:</exclude>
+                  <exclude>org.apache.tika:tika-parser-digest-commons:jar:</exclude>
+                  <exclude>org.apache.tika:tika-parser-zip-commons:jar:</exclude>
+                  <exclude>commons-codec:commons-codec:jar:</exclude>
+                  <exclude>org.apache.commons:commons-compress:jar:</exclude>
+                  <exclude>org.apache.commons:commons-csv:jar:</exclude>
+                  <exclude>org.apache.cxf:cxf-core:jar:</exclude>
+                  <exclude>com.fasterxml.woodstox:woodstox-core:jar:</exclude>
+                  <exclude>org.codehaus.woodstox:stax2-api:jar:</exclude>
+                  <exclude>org.apache.ws.xmlschema:xmlschema-core:jar:</exclude>
+                  <exclude>jakarta.ws.rs:jakarta.ws.rs-api:jar:</exclude>
+                  <exclude>jakarta.annotation:jakarta.annotation-api:jar:</exclude>
+                  <exclude>org.bouncycastle:bcmail-jdk15on:jar:</exclude>
+                  <exclude>org.bouncycastle:bcutil-jdk15on:jar:</exclude>
+                  <exclude>org.bouncycastle:bcpkix-jdk15on:jar:</exclude>
+                  <exclude>org.bouncycastle:bcprov-jdk15on:jar:</exclude>
+                  <exclude>de.l3s.boilerpipe:boilerpipe:jar:</exclude>
+                  <exclude>com.optimaize.languagedetector:language-detector:jar:</exclude>
+                  <exclude>net.arnx:jsonic:jar:</exclude>
+                  <exclude>com.intellij:annotations:jar:</exclude>
+                  <exclude>com.google.guava:guava:jar:</exclude>
+                  <exclude>com.google.guava:failureaccess:jar:</exclude>
+                  <exclude>com.google.guava:listenablefuture:jar:</exclude>
+                  <exclude>com.google.code.findbugs:jsr305:jar:</exclude>
+                  <exclude>org.checkerframework:checker-qual:jar:</exclude>
+                  <exclude>com.google.errorprone:error_prone_annotations:jar:</exclude>
+                  <exclude>com.google.j2objc:j2objc-annotations:jar:</exclude>
+                  <exclude>com.memetix:microsoft-translator-java-api:jar:</exclude>
+                  <exclude>com.googlecode.json-simple:json-simple:jar:</exclude>
+                  <exclude>org.glassfish.jaxb:jaxb-runtime</exclude>
+                  <exclude>jakarta.xml.bind:jakarta.xml.bind-api:jar:</exclude>
+                  <exclude>org.glassfish.jaxb:txw2:jar:</exclude>
+                  <exclude>com.sun.istack:istack-commons-runtime:jar:</exclude>
+                  <exclude>com.sun.activation:jakarta.activation:jar:</exclude>
+                  <exclude>com.fasterxml.jackson.core:jackson-core:jar:</exclude>
+                  <exclude>com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:jar:</exclude>
+                  <exclude>com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:jar:</exclude>
+                  <exclude>com.fasterxml.jackson.module:jackson-module-jaxb-annotations:jar:</exclude>
+                  <exclude>com.fasterxml.jackson.core:jackson-annotations:jar:</exclude>
+                  <exclude>com.fasterxml.jackson.core:jackson-databind:jar:</exclude>
+                  <exclude>commons-io:commons-io:jar:</exclude>
+                  <exclude>org.slf4j:jcl-over-slf4j:jar:</exclude>
+                  <exclude>org.slf4j:slf4j-api:jar:</exclude>
+                  <exclude>commons-logging:commons-logging:jar:</exclude>
+                  <exclude>org.apache.cxf:cxf-rt-rs-client:jar:</exclude>
+                  <exclude>org.apache.commons:commons-lang3:jar:</exclude>
+                  <exclude>commons-cli:commons-cli:jar:</exclude>
+                  <exclude>org.apache.cxf:cxf-rt-rs-security-cors:jar:</exclude>
+                  <exclude>org.eclipse.jetty:jetty-io:jar:</exclude>
+                  <exclude>org.eclipse.jetty:jetty-util:jar:</exclude>
+                  <exclude>org.eclipse.jetty:jetty-http:jar:</exclude>
+                  <exclude>org.eclipse.jetty:jetty-security:jar:</exclude>
+                  <exclude>org.eclipse.jetty:jetty-server:jar:</exclude>
+                  <exclude>org.eclipse.jetty:jetty-continuation:jar:</exclude>
+                  <exclude>javax.servlet:javax.servlet-api:jar:</exclude>
+                  <exclude>org.apache.cxf:cxf-rt-transports-http:jar:</exclude>
+                  <exclude>org.apache.cxf:cxf-rt-transports-http-jetty:jar:</exclude>
+                  <exclude>org.apache.cxf:cxf-rt-security:jar:</exclude>
+                  <exclude>org.apache.cxf:cxf-rt-frontend-jaxrs:jar:</exclude>
                 </excludes>
               </artifactSet>
               <filters>
@@ -112,6 +175,7 @@
                   <artifact>*:*</artifact>
                   <excludes>
                     <exclude>module-info.class</exclude>
+                    <exclude>META-INF/versions/9/module-info.class</exclude>
                     <exclude>META-INF/*.SF</exclude>
                     <exclude>META-INF/*.DSA</exclude>
                     <exclude>META-INF/*.RSA</exclude>
@@ -121,6 +185,7 @@
                     <exclude>META-INF/LICENSE</exclude>
                     <exclude>META-INF/NOTICE</exclude>
                     <exclude>META-INF/README</exclude>
+                    <exclude>META-INF/MANIFEST.MF</exclude>
                     <exclude>LICENSE.txt</exclude>
                     <exclude>NOTICE.txt</exclude>
                     <exclude>CHANGES</exclude>

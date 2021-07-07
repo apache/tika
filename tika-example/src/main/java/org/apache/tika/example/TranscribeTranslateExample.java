@@ -22,8 +22,8 @@ import java.nio.file.Paths;
 
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.language.translate.GoogleTranslator;
 import org.apache.tika.language.translate.Translator;
+import org.apache.tika.language.translate.impl.GoogleTranslator;
 
 /**
  * This example demonstrates primitive logic for

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.language.translate;
+package org.apache.tika.language.translate.impl;
 
 import java.io.BufferedReader;
 import java.io.File;

@@ -15,9 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.tika.language.translate;
+package org.apache.tika.language.translate.impl;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.language.translate.impl.YandexTranslator;
+
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;

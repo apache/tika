@@ -40,7 +40,7 @@ public class TranslateResourceTest extends CXFTestBase {
     private static final String TRANSLATE_ALL_PATH = TRANSLATE_PATH + "/all";
     private static final String TRANSLATE_TXT = "This won't translate";
     private static final String LINGO_PATH =
-            "/org.apache.tika.language.translate.Lingo24Translator";
+            "/org.apache.tika.language.translate.impl.Lingo24Translator";
     private static final String SRCDEST = "/es/en";
     private static final String DEST = "/en";
 

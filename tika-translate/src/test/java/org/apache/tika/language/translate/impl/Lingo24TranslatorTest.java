@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.language.translate;
+package org.apache.tika.language.translate.impl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -22,8 +22,10 @@ import static org.junit.Assert.fail;
 
 import org.junit.Before;
 
+import org.apache.tika.language.translate.impl.Lingo24Translator;
+
 /**
- * Test harness for the {@link org.apache.tika.language.translate.Lingo24Translator}.
+ * Test harness for the {@link Lingo24Translator}.
  *
  */
 public class Lingo24TranslatorTest {

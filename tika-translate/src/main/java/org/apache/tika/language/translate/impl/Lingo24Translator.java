@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.language.translate;
+package org.apache.tika.language.translate.impl;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Properties;
+
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -36,53 +37,49 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * An implementation of a REST client to the <a
- * href="https://www.googleapis.com/language/translate/v2">Google Translate v2
- * API</a>. Based on the <a
- * href="http://hayageek.com/google-translate-api-tutorial/">great tutorial</a>
- * from <a href="http://hayageek.com">hayageek.com</a>. Set your API key in
- * translator.google.properties.
- * 
- * 
+ * An implementation of a REST client for the
+ * <a href="https://developer.lingo24.com/premium-machine-translation-api">Premium MT API v1</a>.
+ * You can sign up for an access plan online on the <a href="https://developer.lingo24.com/plans">Lingo24 Developer Portal</a>
+ * and set your Application's User Key in the <code>translator.lingo24.properties</code> file.
  */
-public class GoogleTranslator extends AbstractTranslator {
+public class Lingo24Translator extends AbstractTranslator {
 
-    private static final Logger LOG = LoggerFactory.getLogger(GoogleTranslator.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Lingo24Translator.class);
 
-    private static final String GOOGLE_TRANSLATE_URL_BASE = "https://www.googleapis.com/language/translate/v2";
+    private static final String LINGO24_TRANSLATE_URL_BASE = "https://api.lingo24.com/mt/v1/translate";
 
-    private static final String DEFAULT_KEY = "dummy-secret";
+    private static final String DEFAULT_KEY = "dummy-key";
 
     private WebClient client;
 
-    private String apiKey;
+    private String userKey;
 
     private boolean isAvailable;
 
-    public GoogleTranslator() {
-        this.client = WebClient.create(GOOGLE_TRANSLATE_URL_BASE);
+    public Lingo24Translator() {
+        this.client = WebClient.create(LINGO24_TRANSLATE_URL_BASE);
         this.isAvailable = true;
         Properties config = new Properties();
         try {
-            config.load(GoogleTranslator.class
+            config.load(Lingo24Translator.class
                     .getResourceAsStream(
-                            "translator.google.properties"));
-            this.apiKey = config.getProperty("translator.client-secret");
-            if (this.apiKey.equals(DEFAULT_KEY))
+                            "translator.lingo24.properties"));
+            this.userKey = config.getProperty("translator.user-key");
+            if (this.userKey.equals(DEFAULT_KEY))
                 this.isAvailable = false;
         } catch (Exception e) {
-            LOG.warn("Exception reading config file", e);
+            LOG.warn("Couldn't read config file", e);
             isAvailable = false;
         }
     }
 
     @Override
     public String translate(String text, String sourceLanguage,
-            String targetLanguage) throws TikaException, IOException {
+                            String targetLanguage) throws TikaException, IOException {
         if (!this.isAvailable)
             return text;
         Response response = client.accept(MediaType.APPLICATION_JSON)
-                .query("key", apiKey).query("source", sourceLanguage)
+                .query("user_key", userKey).query("source", sourceLanguage)
                 .query("target", targetLanguage).query("q", text).get();
         BufferedReader reader = new BufferedReader(new InputStreamReader(
                 (InputStream) response.getEntity(), UTF_8));
@@ -94,7 +91,11 @@ public class GoogleTranslator extends AbstractTranslator {
 
         ObjectMapper mapper = new ObjectMapper();
         JsonNode jsonResp = mapper.readTree(responseText.toString());
-        return jsonResp.findValuesAsText("translatedText").get(0);
+        if (jsonResp.findValuesAsText("errors").isEmpty()) {
+            return jsonResp.findValuesAsText("translation").get(0);
+        } else {
+            throw new TikaException(jsonResp.findValue("errors").get(0).asText());
+        }
     }
 
     @Override
@@ -102,7 +103,7 @@ public class GoogleTranslator extends AbstractTranslator {
             throws TikaException, IOException {
         if (!this.isAvailable)
             return text;
-
+        
         String sourceLanguage = detectLanguage(text).getLanguage();
         return translate(text, sourceLanguage, targetLanguage);
     }

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.language.translate;
+package org.apache.tika.language.translate.impl;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -29,7 +29,7 @@ import org.apache.tika.exception.TikaException;
 /**
  * Abstract class used to interact with command line/external Translators.
  *
- * @see org.apache.tika.language.translate.MosesTranslator for an example of extending this class.
+ * @see MosesTranslator for an example of extending this class.
  *
  * @since Tika 1.7
  */

@@ -27,9 +27,9 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-pipes-iterators</artifactId>
-  <packaging>pom</packaging>
   <name>Apache Tika fetch iterators</name>
   <url>https://tika.apache.org/</url>
+  <packaging>pom</packaging>
 
   <!-- see also org.apache.tika.pipes.pipesiterator.fs.FileSystemIterator
        in tika-core if you want a file system directory crawler -->

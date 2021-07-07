@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.language.translate;
+package org.apache.tika.language.translate.impl;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -24,6 +24,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+
+import org.apache.tika.language.translate.impl.CachedTranslator;
+import org.apache.tika.language.translate.impl.GoogleTranslator;
 
 /**
  * Test harness for the {@link CachedTranslator}. Take care to choose your target language carefully

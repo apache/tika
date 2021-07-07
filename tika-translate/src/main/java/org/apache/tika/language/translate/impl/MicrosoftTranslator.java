@@ -15,11 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.tika.language.translate;
+package org.apache.tika.language.translate.impl;
 
 import com.memetix.mst.language.Language;
 import com.memetix.mst.translate.Translate;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.language.translate.Translator;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

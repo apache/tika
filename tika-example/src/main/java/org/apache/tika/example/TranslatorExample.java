@@ -17,7 +17,7 @@
 
 package org.apache.tika.example;
 
-import org.apache.tika.language.translate.MicrosoftTranslator;
+import org.apache.tika.language.translate.impl.MicrosoftTranslator;
 
 public class TranslatorExample {
     public String microsoftTranslateToFrench(String text) {

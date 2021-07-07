@@ -15,13 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.tika.language.translate;
+package org.apache.tika.language.translate.impl;
 
 import java.io.IOException;
 import java.util.HashMap;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.language.detect.LanguageResult;
+import org.apache.tika.language.translate.Translator;
 
 import com.fasterxml.jackson.databind.util.LRUMap;
 

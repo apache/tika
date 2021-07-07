@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -15,50 +15,71 @@
  * limitations under the License.
  */
 
-package org.apache.tika.language.translate;
-
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.Locale;
+package org.apache.tika.language.translate.impl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
+import org.junit.Before;
+
+import org.apache.tika.language.translate.impl.GoogleTranslator;
+
 
 /**
- * Test harness for the {@link RTGTranslator}.
+ * Test harness for the {@link GoogleTranslator}.
  * 
  */
-public class RTGTranslatorTest {
+public class GoogleTranslatorTest  {
 
-	private RTGTranslator translator;
+	private GoogleTranslator translator;
 
+	public GoogleTranslatorTest() {
+
+	}
 
 	@Before
 	public void setUp() {
-		translator = new RTGTranslator();
+		translator = new GoogleTranslator();
 	}
 
-	@Test
 	public void testSimpleTranslate() {
-		String source = "hola señor";
-		String expected = "hello, sir.";
+		String source = "hola senor";
+		String expected = "hello sir";
 
 		String result = null;
 		if (translator.isAvailable()) {
 			try {
-				result = translator.translate(source);
+				result = translator.translate(source, "es", "en");
 				assertNotNull(result);
 				assertEquals("Result: [" + result
 						+ "]: not equal to expected: [" + expected + "]",
-					     expected, result.toLowerCase(Locale.getDefault()));
+						expected, result);
 			} catch (Exception e) {
 				e.printStackTrace();
 				fail(e.getMessage());
 			}
 		}
+	}
+
+	public void testTranslateGuessLanguage() {
+		String source = "bonjour comment vas-tu";
+		String expected = "hello how are you";
+
+		String result = null;
+		if (translator.isAvailable()) {
+			try {
+				result = translator.translate(source, "en");
+				assertNotNull(result);
+				assertEquals("Result: [" + result
+						+ "]: not equal to expected: [" + expected + "]",
+						expected, result);
+			} catch (Exception e) {
+				e.printStackTrace();
+				fail(e.getMessage());
+			}
+		}
+
 	}
 
 }
