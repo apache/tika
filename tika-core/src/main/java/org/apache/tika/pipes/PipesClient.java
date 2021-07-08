@@ -44,7 +44,7 @@ import org.apache.tika.utils.ProcessUtils;
 public class PipesClient implements Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(PipesClient.class);
-
+    private static final int MAX_BYTES_BEFORE_READY = 20000;
     private Process process;
     private final PipesConfigBase pipesConfig;
     private DataOutputStream output;
@@ -232,9 +232,28 @@ public class PipesClient implements Closeable {
         //wait for ready signal
         FutureTask<Integer> futureTask = new FutureTask<>(() -> {
             int b = input.read();
-            if (b != PipesServer.READY) {
-                throw new RuntimeException("Couldn't start server: " + b +
-                        " Make absolutely certain that your logger is not writing to stdout.");
+            int read = 1;
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            while (read < MAX_BYTES_BEFORE_READY && b != PipesServer.READY) {
+                if (b == -1) {
+                    throw new RuntimeException("Couldn't start server: " +
+                            "read EOF before 'ready' byte.\n" +
+                            " Make absolutely certain that your logger is not writing to stdout.");
+                }
+                bos.write(b);
+                b = input.read();
+                read++;
+            }
+            if (read >= MAX_BYTES_BEFORE_READY) {
+                throw new RuntimeException("Couldn't start server: read too many bytes before " +
+                        "'ready' byte.\n" +
+                        " Make absolutely certain that your logger is not writing to stdout.\n" +
+                        " Message read: " + new String(bos.toByteArray(),
+                        StandardCharsets.ISO_8859_1));
+            }
+            if (bos.size() > 0) {
+                LOG.warn("From forked process before start byte: {}",
+                        new String(bos.toByteArray(), StandardCharsets.ISO_8859_1));
             }
             return 1;
         });
