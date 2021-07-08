@@ -40,9 +40,9 @@ Release 2.0.0-ALPHA - 01/13/2021
        image should be processed but can't because the required external dependency is
        not available.  See https://pdfbox.apache.org/2.0/dependencies.html#jai-image-io
        for the non-ASF-2.0-compatible jpeg2000 library.
-     * CompressorParser -- users must add the com.github.luben:zstd-jni to the classpath
-       to process zstd files.  This is an optional library that is no longer bundled
-       in tika-parsers-standard-package.
+     * CompressorParser -- users must add the com.github.luben:zstd-jni dependency to
+       the classpath to process zstd files.  This is an optional library that is no longer bundled
+       in tika-parsers-standard-package because it contains native libs.
      * ChmParser was moved to org.apache.tika.parser.microsoft.chm
      * RTFParser was moved to org.apache.tika.parser.microsoft.rtf
      * We are now using non-shaded versions of xmpcore with namespaces com.adobe.internal.*
@@ -71,10 +71,26 @@ Release 2.0.0-ALPHA - 01/13/2021
        what has been changed in the config object.
 
 
-Release 1.27 - ??
+Release 1.27 - 06/30/2021
+
+   * Migrate MP4 parsing to Drew Noakes' metadata-extractor (TIKA-3459).
+     To revert to legacy parser turn off NoakesMP4Parser and turn on MP4Parser
+     via tika-config.xml.
+
+   * Prevent rare infinite loop in tika-server's -spawnChild mode
+     when restart fails because of failure to bind to the port (TIKA-3441).
+
+   * Improve likelihood that tesseract will not be orphaned on
+     jvm restart in tika-server (TIKA-3441).
+
+   * Deprecate experimental PDFPreflightParser (TIKA-3437).
+
    * Apply encoding detection to zip entry names via Ryan421 (TIKA-3374).
+
    * Add json output for /tika endpoint in tika-server (TIKA-3352).
-   * Tika's OpenNLPDetector now covers 148 languages and language-script pairs (TIKA-3340).
+
+   * Tika's PDFParser should use the underlying file if one is passed in
+     via a TikaInputStream (TIKA-3350)
 
 Release 1.26 - 03/24/2021
 
