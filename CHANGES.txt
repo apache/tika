@@ -40,12 +40,13 @@ Release 2.0.0-ALPHA - 01/13/2021
        image should be processed but can't because the required external dependency is
        not available.  See https://pdfbox.apache.org/2.0/dependencies.html#jai-image-io
        for the non-ASF-2.0-compatible jpeg2000 library.
+     * CompressorParser -- users must add the com.github.luben:zstd-jni to the classpath
+       to process zstd files.  This is an optional library that is no longer bundled
+       in tika-parsers-standard-package.
      * ChmParser was moved to org.apache.tika.parser.microsoft.chm
      * RTFParser was moved to org.apache.tika.parser.microsoft.rtf
      * We are now using non-shaded versions of xmpcore with namespaces com.adobe.internal.*
        vs com.adobe.*.
-     * We switched the underlying MP4 parser to Drew Noakes' metadata-extractor's MP4 parser
-       from sannies' isoparser.
 
    * tika-app
 
