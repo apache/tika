@@ -25,6 +25,7 @@ import static org.junit.Assume.assumeTrue;
 
 import java.io.InputStream;
 import java.util.List;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -360,6 +361,18 @@ public class PDFParserTest extends TikaTest {
         //make sure everything works with regular xml _and_ with recursive
         XMLResult xmlResult = getXML("testPDF_JBIG2.pdf", context);
         assertContains("Norconex", xmlResult.xml);
+    }
+
+    @Test
+    public void testJPEG2000() throws Exception {
+        assumeTrue("can run OCR", canRunOCR());
+        PDFParserConfig config = new PDFParserConfig();
+        config.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.OCR_ONLY);
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        //make sure everything works with regular xml _and_ with recursive
+        XMLResult xmlResult = getXML("testPDF_jpeg2000.pdf", context);
+        assertContains("loan", xmlResult.xml.toLowerCase(Locale.US));
     }
 
     @Test

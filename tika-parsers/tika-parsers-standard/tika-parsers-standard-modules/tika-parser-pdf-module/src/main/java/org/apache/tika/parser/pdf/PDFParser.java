@@ -103,16 +103,13 @@ public class PDFParser extends AbstractParser implements Initializable {
      * @deprecated Supply a {@link PasswordProvider} on the {@link ParseContext} instead
      */
     public static final String PASSWORD = "org.apache.tika.parser.pdf.password";
-    private static final Object[] LOCK = new Object[0];
     private static final MediaType MEDIA_TYPE = MediaType.application("pdf");
     /**
      * Serial version UID
      */
     private static final long serialVersionUID = -752276948656079347L;
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MEDIA_TYPE);
-    private static volatile boolean HAS_WARNED = false;
     private PDFParserConfig defaultConfig = new PDFParserConfig();
-    private InitializableProblemHandler initializableProblemHandler = null;
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -582,24 +579,6 @@ public class PDFParser extends AbstractParser implements Initializable {
     }
 
     @Field
-    void setInitializableProblemHander(String name) {
-        if ("ignore".equals(name)) {
-            setInitializableProblemHandler(InitializableProblemHandler.IGNORE);
-        } else if ("info".equalsIgnoreCase(name)) {
-            setInitializableProblemHandler(InitializableProblemHandler.INFO);
-        } else if ("warn".equalsIgnoreCase(name)) {
-            setInitializableProblemHandler(InitializableProblemHandler.WARN);
-        } else if ("throw".equalsIgnoreCase(name)) {
-            setInitializableProblemHandler(InitializableProblemHandler.THROW);
-        }
-    }
-
-    public void setInitializableProblemHandler(
-            InitializableProblemHandler initializableProblemHandler) {
-        this.initializableProblemHandler = initializableProblemHandler;
-    }
-
-    @Field
     public void setDropThreshold(float dropThreshold) {
         defaultConfig.setDropThreshold(dropThreshold);
     }
@@ -624,42 +603,7 @@ public class PDFParser extends AbstractParser implements Initializable {
     @Override
     public void checkInitialization(InitializableProblemHandler handler)
             throws TikaConfigException {
-        //only check for these libraries once!
-        if (HAS_WARNED) {
-            return;
-        }
-        synchronized (LOCK) {
-            if (HAS_WARNED) {
-                return;
-            }
-            StringBuilder sb = new StringBuilder();
-            try {
-                Class.forName("com.github.jaiimageio.impl.plugins.tiff.TIFFImageWriter");
-            } catch (ClassNotFoundException e) {
-                sb.append("TIFFImageWriter not loaded. tiff files will not be processed\n");
-                sb.append("See https://pdfbox.apache.org/2.0/dependencies.html#jai-image-io\n");
-                sb.append("for optional dependencies.\n");
-
-            }
-
-            try {
-                Class.forName("com.github.jaiimageio.jpeg2000.impl.J2KImageReader");
-            } catch (ClassNotFoundException e) {
-                sb.append("J2KImageReader not loaded. JPEG2000 files will not be processed.\n");
-                sb.append("See https://pdfbox.apache.org/2.0/dependencies.html#jai-image-io\n");
-                sb.append("for optional dependencies.\n");
-            }
-
-            if (sb.length() > 0) {
-                InitializableProblemHandler localInitializableProblemHandler =
-                        (initializableProblemHandler == null) ? handler :
-                                initializableProblemHandler;
-                localInitializableProblemHandler
-                        .handleInitializableProblem("org.apache.tika.parsers.PDFParser",
-                                sb.toString());
-            }
-            HAS_WARNED = true;
-        }
+        //no-op
     }
 
     /**

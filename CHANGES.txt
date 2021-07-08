@@ -35,6 +35,11 @@ Release 2.0.0-ALPHA - 01/13/2021
         Users may now need to add tika-parsers-extended to tika-app and
         tika-server to include parsers that used to be included by default
         (for example: envi, gdal, grib, isatab, netcdf).
+     * PDFParser -- a) see above on OCR. b) This parser no longer warns if the jpeg2000
+       dependency is not included. Tika now relies on PDFBox to log an error if a jpeg2000
+       image should be processed but can't because the required external dependency is
+       not available.  See https://pdfbox.apache.org/2.0/dependencies.html#jai-image-io
+       for the non-ASF-2.0-compatible jpeg2000 library.
      * ChmParser was moved to org.apache.tika.parser.microsoft.chm
      * RTFParser was moved to org.apache.tika.parser.microsoft.rtf
      * We are now using non-shaded versions of xmpcore with namespaces com.adobe.internal.*
