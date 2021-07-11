@@ -36,6 +36,7 @@
 
   <modules>
     <module>tika-parent</module>
+    <module>tika-bom</module>
     <module>tika-core</module>
     <module>tika-serialization</module>
     <module>tika-parsers</module>

@@ -23,6 +23,47 @@ The build consists of a number of components, including a standalone runnable ja
 
     java -jar tika-app/target/tika-app-*.jar --help
 
+Maven Dependencies
+==================
+
+Apache Tika provides *Bill of Material* (BOM) artifact to align Tika module versions and simplify version management.
+
+If you use Apache Maven:
+
+```xml
+<project>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+       <groupId>org.apache.tika</groupId>
+       <artifactId>tika-bom</artifactId>
+       <version>2.0.0-ALPHA</version>
+       <type>pom</type>
+       <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-parsers-classic-package</artifactId>
+      <!-- version not required since BOM included -->
+    </dependency>
+  </dependencies>
+</project>
+```
+
+For Gradle:
+```kotlin
+dependencies {
+  implementation(platform("org.apache.tika:tika-bom:2.0.0-ALPHA"))
+
+  // version not required since bom (platform in Gradle terms)
+  implementation("org.apache.tika:tika-parsers-classic-package")
+}
+```
+
 Optional Dependencies
 =====================
 *TODO*  zstd, jpeg2000
