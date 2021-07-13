@@ -57,7 +57,7 @@ public class TikaPipesOpenSearchTest {
                     .withEnv("discovery.type", "single-node");
 
     private String getOpenSearchImageName() {
-        return "opensearchproject/opensearch:1.0.0-rc1";
+        return "opensearchproject/opensearch:1.0.0";
     }
 
     @Before
