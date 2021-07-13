@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.zip.ZipException;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
@@ -182,7 +181,7 @@ public class EpubParser extends AbstractParser {
         ZipFile zipFile = null;
         try {
             zipFile = new ZipFile(tis.getPath().toFile());
-        } catch (ZipException e) {
+        } catch (IOException e) {
             ParserUtils.recordParserFailure(this, e, metadata);
             trySalvage(tis.getPath(), bodyHandler, xhtml, metadata, context);
             return;
