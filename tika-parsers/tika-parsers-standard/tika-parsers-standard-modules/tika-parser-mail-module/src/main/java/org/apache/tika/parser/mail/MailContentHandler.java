@@ -94,39 +94,38 @@ class MailContentHandler implements ContentHandler {
     //use this pattern to insert space: 10:30 am
     private static final Pattern AM_PM = Pattern.compile("(?i)(\\d)([ap]m)\\b");
 
-    private static final DateFormat[] ALTERNATE_DATE_FORMATS = new DateFormat[]{
+    private static final DateFormatInfo[] ALTERNATE_DATE_FORMATS = new DateFormatInfo[] {
             //note that the string is "cleaned" before processing:
             //1) condense multiple whitespace to single space
             //2) trim()
             //3) strip out commas
             //4) insert space before am/pm
-
-            //May 16 2016 1:32am
-            createDateFormat("MMM dd yy hh:mm a", null),
+            new DateFormatInfo("MMM dd yy hh:mm a"),
 
             //this is a standard pattern handled by mime4j;
             //but mime4j fails with leading whitespace
-            createDateFormat("EEE d MMM yy HH:mm:ss Z", UTC),
+            new DateFormatInfo("EEE d MMM yy HH:mm:ss Z", UTC),
 
-            createDateFormat("EEE d MMM yy HH:mm:ss z", UTC),
+            new DateFormatInfo("EEE d MMM yy HH:mm:ss z", UTC),
 
-            createDateFormat("EEE d MMM yy HH:mm:ss", null),// no timezone
+            new DateFormatInfo("EEE d MMM yy HH:mm:ss", null),// no timezone
 
-            createDateFormat("EEEEE MMM d yy hh:mm a", null),// Sunday, May 15 2016 1:32 PM
+            new DateFormatInfo("EEEEE MMM d yy hh:mm a", null),// Sunday, May 15 2016 1:32 PM
 
             //16 May 2016 at 09:30:32  GMT+1 (Mac Mail TIKA-1970)
-            createDateFormat("d MMM yy 'at' HH:mm:ss z", UTC),   // UTC/Zulu
+            new DateFormatInfo("d MMM yy 'at' HH:mm:ss z", UTC),   // UTC/Zulu
 
-            createDateFormat("yy-MM-dd HH:mm:ss", null),
+            new DateFormatInfo("yy-MM-dd HH:mm:ss", null),
 
-            createDateFormat("MM/dd/yy hh:mm a", null, false),
+            new DateFormatInfo("MM/dd/yy hh:mm a", null, false),
 
             //now dates without times
-            createDateFormat("MMM d yy", MIDDAY, false),
-            createDateFormat("EEE d MMM yy", MIDDAY, false),
-            createDateFormat("d MMM yy", MIDDAY, false),
-            createDateFormat("yy/MM/dd", MIDDAY, false),
-            createDateFormat("MM/dd/yy", MIDDAY, false)};
+            new DateFormatInfo("MMM d yy", MIDDAY, false),
+            new DateFormatInfo("EEE d MMM yy", MIDDAY, false),
+            new DateFormatInfo("d MMM yy", MIDDAY, false),
+            new DateFormatInfo("yy/MM/dd", MIDDAY, false),
+            new DateFormatInfo("MM/dd/yy", MIDDAY, false)};
+
     private final XHTMLContentHandler handler;
     private final Metadata metadata;
     private final ParseContext parseContext;
@@ -155,21 +154,17 @@ class MailContentHandler implements ContentHandler {
         this.detector = detector;
     }
 
-    private static DateFormat createDateFormat(String format, TimeZone timezone) {
-        return createDateFormat(format, timezone, true);
-    }
-
-    private static DateFormat createDateFormat(String format, TimeZone timezone,
-                                               boolean isLenient) {
-        SimpleDateFormat sdf = new SimpleDateFormat(format, new DateFormatSymbols(Locale.US));
-        if (timezone != null) {
-            sdf.setTimeZone(timezone);
+    private static DateFormat createDateFormat(DateFormatInfo dateFormatInfo) {
+        SimpleDateFormat sdf = new SimpleDateFormat(dateFormatInfo.pattern,
+                new DateFormatSymbols(Locale.US));
+        if (dateFormatInfo.timeZone != null) {
+            sdf.setTimeZone(dateFormatInfo.timeZone);
         }
-        sdf.setLenient(isLenient);
+        sdf.setLenient(dateFormatInfo.lenient);
         return sdf;
     }
 
-    private static synchronized Date tryOtherDateFormats(String text) {
+    private static Date tryOtherDateFormats(String text) {
         if (text == null) {
             return null;
         }
@@ -187,8 +182,9 @@ class MailContentHandler implements ContentHandler {
             text = matcher.replaceFirst("$1 $2");
         }
 
-        for (DateFormat format : ALTERNATE_DATE_FORMATS) {
+        for (DateFormatInfo formatInfo : ALTERNATE_DATE_FORMATS) {
             try {
+                DateFormat format = createDateFormat(formatInfo);
                 return format.parse(text);
             } catch (ParseException e) {
                 //continue
@@ -651,6 +647,26 @@ class MailContentHandler implements ContentHandler {
             super(null);
             this.metadata = metadata;
             this.bytes = bytes;
+        }
+    }
+
+    private static class DateFormatInfo {
+        String pattern;
+        TimeZone timeZone;
+        boolean lenient;
+
+        public DateFormatInfo(String pattern) {
+            this(pattern, null, true);
+        }
+
+        public DateFormatInfo(String pattern, TimeZone timeZone) {
+            this(pattern, timeZone, true);
+        }
+
+        public DateFormatInfo(String pattern, TimeZone timeZone, boolean lenient) {
+            this.pattern = pattern;
+            this.timeZone = timeZone;
+            this.lenient = lenient;
         }
     }
 }
