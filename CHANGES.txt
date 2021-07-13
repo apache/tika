@@ -70,6 +70,10 @@ Release 2.0.0-ALPHA - 01/13/2021
        This has a more intuitive "update the base/configured settings" with
        what has been changed in the config object.
 
+  * tika-eval
+    * tika-eval's default profile and comparison reports no longer include tag reports.
+      Users can get the report configs that include tags (*-tags.xml):
+      https://github.com/apache/tika/tree/main/tika-eval/tika-eval-app/src/main/resources
 
 Release 1.27 - 06/30/2021
 
