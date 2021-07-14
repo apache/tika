@@ -32,9 +32,10 @@ Release 2.0.0-ALPHA - 01/13/2021
    * tika-parsers
      * The parser modules have been broken into three main modules:
         tika-parsers-standard, tika-parsers-extended and tika-parsers-ml.
-        Users may now need to add tika-parsers-extended to tika-app and
+        Users may now need to add tika-parsers-extended's
+        tika-parser-scientific-module or tika-parser-sqlite3-module to tika-app and
         tika-server to include parsers that used to be included by default
-        (for example: envi, gdal, grib, isatab, netcdf).
+        (for example: envi, gdal, grib, isatab, netcdf, sqlite3).
      * PDFParser -- a) see above on OCR. b) This parser no longer warns if the jpeg2000
        dependency is not included. Tika now relies on PDFBox to log an error if a jpeg2000
        image should be processed but can't because the required external dependency is
@@ -49,6 +50,7 @@ Release 2.0.0-ALPHA - 01/13/2021
        vs com.adobe.*.
 
    * tika-app
+     * See above on default inclusion of only tika-parsers-standard.
 
    * tika-server
      * tika-server now by default forks a process to isolate the parsing
