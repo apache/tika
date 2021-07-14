@@ -85,11 +85,8 @@ public class WordExtractor extends AbstractPOIFSExtractor {
 
     private final Deque<FormattingUtils.Tag> formattingState = new ArrayDeque<>();
 
-    private final Metadata metadata;
-
     public WordExtractor(ParseContext context, Metadata metadata) {
-        super(context);
-        this.metadata = metadata;
+        super(context, metadata);
     }
 
     private static int countParagraphs(Range... ranges) {
@@ -218,14 +215,16 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             p = pictures.nextUnclaimed();
         }
 
-        // Handle any embeded office documents
+        // Handle any embedded office documents
         try {
+
             DirectoryEntry op = (DirectoryEntry) root.getEntry("ObjectPool");
             for (Entry entry : op) {
                 if (entry.getName().startsWith("_") && entry instanceof DirectoryEntry) {
                     handleEmbeddedOfficeDoc((DirectoryEntry) entry, xhtml);
                 }
             }
+
         } catch (FileNotFoundException e) {
             //swallow
         }
@@ -237,7 +236,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             return;
         }
         for (SavedByEntry sbe : savedByTable.getEntries()) {
-            metadata.add(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, sbe.getSaveLocation());
+            parentMetadata.add(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, sbe.getSaveLocation());
         }
     }
 
@@ -596,9 +595,11 @@ public class WordExtractor extends AbstractPOIFSExtractor {
     protected void parseWord6(DirectoryNode root, XHTMLContentHandler xhtml)
             throws IOException, SAXException {
         Word6Extractor extractor;
-        try (HWPFOldDocument doc = new HWPFOldDocument(root)) {
-            extractor = new Word6Extractor(doc);
-        }
+        //DO NOT put this in a try/autoclose.  This will close the root
+        //which we don't want to do because there may be other
+        //documents in the root.
+        HWPFOldDocument doc = new HWPFOldDocument(root);
+        extractor = new Word6Extractor(doc);
 
         for (String p : extractor.getParagraphText()) {
             xhtml.element("p", p);

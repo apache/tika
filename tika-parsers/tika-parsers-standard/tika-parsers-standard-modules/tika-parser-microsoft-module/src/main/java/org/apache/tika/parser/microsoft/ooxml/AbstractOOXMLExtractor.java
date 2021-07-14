@@ -167,6 +167,9 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             for (PackageRelationship rel : opcPackage
                     .getRelationshipsByType(PackageRelationshipTypes.THUMBNAIL)) {
                 PackagePart tPart = opcPackage.getPart(rel);
+                if (tPart == null) {
+                    continue;
+                }
                 InputStream tStream = tPart.getInputStream();
                 Metadata thumbnailMetadata = new Metadata();
                 String thumbName = tPart.getPartName().getName();
