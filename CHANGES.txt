@@ -1,6 +1,8 @@
-Release 2.0.0 - ???
+Release 2.0.0 - 07/07/2021
 
-  * Cleanup of fetcher integration with tika-server.
+   * Cleanup of fetcher integration with tika-server.
+
+   * Update dependencies.
 
 Release 2.0.0-BETA - 05/19/2021
    
