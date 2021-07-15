@@ -33,6 +33,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,14 +46,18 @@ public class PipesClient implements Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(PipesClient.class);
     private static final int MAX_BYTES_BEFORE_READY = 20000;
+    private static AtomicInteger CLIENT_COUNTER = new AtomicInteger(0);
+
     private Process process;
     private final PipesConfigBase pipesConfig;
     private DataOutputStream output;
     private DataInputStream input;
+    private final int pipesClientId;
     private final ExecutorService executorService = Executors.newFixedThreadPool(1);
 
     public PipesClient(PipesConfigBase pipesConfig) {
         this.pipesConfig = pipesConfig;
+        this.pipesClientId = CLIENT_COUNTER.getAndIncrement();
     }
 
     private int filesProcessed = 0;
@@ -316,6 +321,7 @@ public class PipesClient implements Closeable {
         if (! hasLog4j) {
             commandLine.add("-Dlog4j.configurationFile=classpath:pipes-fork-server-default-log4j2.xml");
         }
+        commandLine.add("-DpipesClientId=" + pipesClientId);
         commandLine.addAll(configArgs);
         commandLine.add("org.apache.tika.pipes.PipesServer");
         commandLine.add(
