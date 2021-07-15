@@ -31,11 +31,6 @@
 
   <dependencies>
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-core</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
       <groupId>com.optimaize.languagedetector</groupId>
       <artifactId>language-detector</artifactId>
       <version>${optimaize.version}</version>

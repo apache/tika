@@ -42,6 +42,14 @@
     <module>tika-transcribe-aws</module>
   </modules>
 
+  <dependencies>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-core</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
   <build>
     <pluginManagement>
       <plugins>

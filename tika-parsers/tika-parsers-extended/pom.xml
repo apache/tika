@@ -35,6 +35,7 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-core</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <!-- test dependencies -->
     <dependency>

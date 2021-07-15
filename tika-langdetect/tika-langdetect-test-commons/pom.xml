@@ -28,13 +28,6 @@
   <artifactId>tika-langdetect-test-commons</artifactId>
   <name>Apache Tika langdetect test commons</name>
 
-  <dependencies>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-core</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-  </dependencies>
   <build>
     <plugins>
       <plugin>

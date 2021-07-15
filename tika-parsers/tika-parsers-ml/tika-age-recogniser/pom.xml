@@ -33,11 +33,6 @@
 
 
   <dependencies>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-core</artifactId>
-      <version>${project.version}</version>
-    </dependency>
     <!-- AgePredictor client for Tika -->
     <dependency>
       <groupId>edu.usc.ir</groupId>

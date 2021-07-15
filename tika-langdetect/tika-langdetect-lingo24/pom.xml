@@ -30,12 +30,6 @@
 
 
   <dependencies>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-core</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-
     <!-- for java 10
       See TIKA-2778 for why we need to do this now.
       May the gods of dependency management fix this in the future.

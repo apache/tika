@@ -35,11 +35,6 @@
     <!--TODO use latest aws version or the one defined in the tika-parent-->
     <dependencies>
         <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>tika-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-transcribe</artifactId>
             <version>${aws.transcribe.version}</version>
