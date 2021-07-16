@@ -286,6 +286,7 @@ public class TikaCLI {
             }
         }
         PipesIterator pipesIterator = PipesIterator.build(Paths.get(tikaConfigPath));
+        long start = System.currentTimeMillis();
         try (AsyncProcessor processor = new AsyncProcessor(Paths.get(tikaConfigPath))) {
             for (FetchEmitTuple t : pipesIterator) {
                 processor.offer(t, 2000);
@@ -298,6 +299,9 @@ public class TikaCLI {
                     break;
                 }
             }
+            long elapsed = System.currentTimeMillis() - start;
+            LOG.info("Successfully finished processing {} files in {} ms",
+                    processor.getTotalProcessed(), elapsed);
         }
     }
 

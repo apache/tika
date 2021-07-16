@@ -16,9 +16,10 @@
  */
 package org.apache.tika.pipes.pipesiterator;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -48,8 +49,9 @@ public class FileSystemPipesIteratorTest {
 
     @Test(timeout = 30000)
     public void testBasic() throws Exception {
-        Path root = Paths.get(".");
-
+        URL url =
+                FileSystemPipesIteratorTest.class.getResource("/test-documents");
+        Path root = Paths.get(url.toURI());
         List<Path> files = listFiles(root);
         Set<String> truthSet = new HashSet<>();
         for (Path p : files) {
@@ -67,6 +69,11 @@ public class FileSystemPipesIteratorTest {
             iteratorSet.add(p.getFetchKey().getFetchKey());
         }
 
-        assertEquals(truthSet, iteratorSet);
+        for (String t : truthSet) {
+            assertTrue("missing in iterator set " + t, iteratorSet.contains(t));
+        }
+        for (String i : iteratorSet) {
+            assertTrue("missing in truth set " + i, truthSet.contains(i));
+        }
     }
 }

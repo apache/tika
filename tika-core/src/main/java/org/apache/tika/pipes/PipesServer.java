@@ -48,7 +48,6 @@ import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.emitter.Emitter;
 import org.apache.tika.pipes.emitter.EmitterManager;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
-import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.FetcherManager;
 import org.apache.tika.sax.BasicContentHandlerFactory;
@@ -72,40 +71,43 @@ public class PipesServer implements Runnable {
     //it looks like the server crashes with exit value 3 on OOM, for example
     public static final int TIMEOUT_EXIT_CODE = 17;
 
-    public static final byte READY = 1;
+    public enum STATUS {
+        READY,
+        CALL,
+        PING,
+        FAILED_TO_START,
+        FETCHER_NOT_FOUND,
+        EMITTER_NOT_FOUND,
+        FETCHER_INITIALIZATION_EXCEPTION,
+        FETCH_EXCEPTION,
+        PARSE_SUCCESS,
+        PARSE_EXCEPTION_NO_EMIT,
+        PARSE_EXCEPTION_EMIT,
+        EMIT_SUCCESS,
+        EMIT_SUCCESS_PARSE_EXCEPTION,
+        EMIT_EXCEPTION,
+        OOM,
+        TIMEOUT,
+        EMPTY_OUTPUT;
 
-    public static final byte CALL = 2;
+        byte getByte() {
+            return (byte) (ordinal() + 1);
+        }
 
-    public static final byte PING = 3;
+        public static STATUS lookup(int val) {
+            int i = val - 1;
+            if (i < 0) {
+                throw new IllegalArgumentException("byte must be > 0");
+            }
+            STATUS[] statuses = STATUS.values();
 
-    public static final byte FAILED_TO_START = 4;
-
-    public static final byte PARSE_SUCCESS = 5;
-
-    /**
-     * This will return the parse exception stack trace
-     */
-    public static final byte PARSE_EXCEPTION_NO_EMIT = 6;
-
-    /**
-     * This will return the metadata list
-     */
-    public static final byte PARSE_EXCEPTION_EMIT = 7;
-
-    public static final byte EMIT_SUCCESS = 8;
-
-    public static final byte EMIT_SUCCESS_PARSE_EXCEPTION = 9;
-
-    public static final byte EMIT_EXCEPTION = 10;
-
-    public static final byte NO_EMITTER_FOUND = 11;
-
-    public static final byte OOM = 12;
-
-    public static final byte TIMEOUT = 13;
-
-    public static final byte EMPTY_OUTPUT = 14;
-
+            if (i >= statuses.length) {
+                throw new IllegalArgumentException("byte with index " +
+                        i + " must be < " + statuses.length);
+            }
+            return statuses[i];
+        }
+    }
 
     private final Object[] lock = new Object[0];
     private final Path tikaConfigPath;
@@ -186,7 +188,7 @@ public class PipesServer implements Runnable {
         } catch (Throwable t) {
             LOG.error("couldn't initialize parser", t);
             try {
-                output.writeByte(FAILED_TO_START);
+                output.writeByte(STATUS.FAILED_TO_START.getByte());
                 output.flush();
             } catch (IOException e) {
                 LOG.warn("couldn't notify of failure to start", e);
@@ -195,16 +197,14 @@ public class PipesServer implements Runnable {
         }
         //main loop
         try {
-            output.write(READY);
-            output.flush();
+            write(STATUS.READY);
             while (true) {
                 int request = input.read();
                 if (request == -1) {
                     exit(1);
-                } else if (request == PING) {
-                    output.writeByte(PING);
-                    output.flush();
-                } else if (request == CALL) {
+                } else if (request == STATUS.PING.getByte()) {
+                    write(STATUS.PING);
+                } else if (request == STATUS.CALL.getByte()) {
                     parseOne();
                 } else {
                     throw new IllegalStateException("Unexpected request");
@@ -238,36 +238,46 @@ public class PipesServer implements Runnable {
     }
 
 
-    private void emit(EmitData emitData, String parseExceptionStack) {
-        Emitter emitter = emitterManager.getEmitter(emitData.getEmitKey().getEmitterName());
-        if (emitter == null) {
-            write(NO_EMITTER_FOUND, new byte[0]);
+    private void emit(String taskId, EmitData emitData, String parseExceptionStack) {
+        Emitter emitter = null;
+
+        try {
+            emitter = emitterManager.getEmitter(emitData.getEmitKey().getEmitterName());
+        } catch (IllegalArgumentException e) {
+            String noEmitterMsg = getNoEmitterMsg(taskId);
+            LOG.warn(noEmitterMsg);
+            write(STATUS.EMITTER_NOT_FOUND, noEmitterMsg);
             return;
         }
         try {
             emitter.emit(emitData.getEmitKey().getEmitKey(), emitData.getMetadataList());
         } catch (IOException | TikaEmitterException e) {
+            LOG.warn("emit exception", e);
             String msg = ExceptionUtils.getStackTrace(e);
             byte[] bytes = msg.getBytes(StandardCharsets.UTF_8);
             //for now, we're hiding the parse exception if there was also an emit exception
-            write(EMIT_EXCEPTION, bytes);
+            write(STATUS.EMIT_EXCEPTION, bytes);
             return;
         }
         if (StringUtils.isBlank(parseExceptionStack)) {
-            write(EMIT_SUCCESS);
+            write(STATUS.EMIT_SUCCESS);
         } else {
-            write(EMIT_SUCCESS_PARSE_EXCEPTION, parseExceptionStack.getBytes(StandardCharsets.UTF_8));
+            write(STATUS.EMIT_SUCCESS_PARSE_EXCEPTION,
+                    parseExceptionStack.getBytes(StandardCharsets.UTF_8));
         }
     }
 
-
-    private void parseOne() throws FetchException {
+    private void parseOne() {
         synchronized (lock) {
             parsing = true;
             since = System.currentTimeMillis();
         }
+        FetchEmitTuple t = null;
         try {
-            actuallyParse();
+            t = readFetchEmitTuple();
+            actuallyParse(t);
+        } catch (OutOfMemoryError e) {
+            handleOOM(t.getId(), e);
         } finally {
             synchronized (lock) {
                 parsing = false;
@@ -276,25 +286,37 @@ public class PipesServer implements Runnable {
         }
     }
 
-    public void actuallyParse() throws FetchException {
-        FetchEmitTuple t = readFetchEmitTuple();
+    private void actuallyParse(FetchEmitTuple t) {
         List<Metadata> metadataList = null;
 
-        Fetcher fetcher = getFetcher(t.getFetchKey().getFetcherName());
+        Fetcher fetcher = null;
+        try {
+            fetcher = fetcherManager.getFetcher(t.getFetchKey().getFetcherName());
+        } catch (IllegalArgumentException e) {
+            String noFetcherMsg = getNoFetcherMsg(t.getFetchKey().getFetcherName());
+            LOG.warn(noFetcherMsg);
+            write(STATUS.FETCHER_NOT_FOUND, noFetcherMsg);
+            return;
+        } catch (IOException | TikaException e) {
+            LOG.warn("Couldn't initialize fetcher for fetch id '" +
+                    t.getId() + "'", e);
+            write(STATUS.FETCHER_INITIALIZATION_EXCEPTION,
+                    ExceptionUtils.getStackTrace(e));
+            return;
+        }
 
         Metadata metadata = new Metadata();
         try (InputStream stream = fetcher.fetch(t.getFetchKey().getFetchKey(), metadata)) {
             metadataList = parseMetadata(t, stream, metadata);
         } catch (SecurityException e) {
+            LOG.error("security exception " + t.getId(), e);
             throw e;
         } catch (TikaException | IOException e) {
-            LOG.warn("fetch exception", e);
-            throw new FetchException(e);
-        } catch (OutOfMemoryError e) {
-            handleOOM(e);
+            LOG.warn("fetch exception " + t.getId(), e);
+            write(STATUS.FETCH_EXCEPTION, ExceptionUtils.getStackTrace(e));
         }
         if (metadataIsEmpty(metadataList)) {
-            write(EMPTY_OUTPUT);
+            write(STATUS.EMPTY_OUTPUT);
             return;
         }
 
@@ -308,33 +330,51 @@ public class PipesServer implements Runnable {
             }
             EmitData emitData = new EmitData(t.getEmitKey(), metadataList);
             if (emitData.getEstimatedSizeBytes() >= maxExtractSizeToReturn) {
-                emit(emitData, stack);
+                emit(t.getId(), emitData, stack);
             } else {
                 write(emitData, stack);
             }
         } else {
-            write(PARSE_EXCEPTION_NO_EMIT, stack.getBytes(StandardCharsets.UTF_8));
+            write(STATUS.PARSE_EXCEPTION_NO_EMIT,
+                    stack.getBytes(StandardCharsets.UTF_8));
         }
 
     }
 
-    private Fetcher getFetcher(String fetcherName) throws FetchException {
-        try {
-            return fetcherManager.getFetcher(fetcherName);
-        } catch (TikaException | IOException e) {
-            LOG.error("can't load fetcher", e);
-            throw new FetchException(e);
+    private String getNoFetcherMsg(String fetcherName) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Fetcher '").append(fetcherName).append("'");
+        sb.append(" not found.");
+        sb.append("\nThe configured FetcherManager supports:");
+        int i = 0;
+        for (String f : fetcherManager.getSupported()) {
+            if (i++ > 0) {
+                sb.append(", ");
+            }
+            sb.append(f);
         }
+        return sb.toString();
     }
 
-    private void handleOOM(OutOfMemoryError oom) {
-        try {
-            output.writeByte(OOM);
-            output.flush();
-        } catch (IOException e) {
-            //swallow at this point
+    private String getNoEmitterMsg(String emitterName) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Emitter '").append(emitterName).append("'");
+        sb.append(" not found.");
+        sb.append("\nThe configured emitterManager supports:");
+        int i = 0;
+        for (String e : emitterManager.getSupported()) {
+            if (i++ > 0) {
+                sb.append(", ");
+            }
+            sb.append(e);
         }
-        LOG.error("oom", oom);
+        return sb.toString();
+    }
+
+
+    private void handleOOM(String taskId, OutOfMemoryError oom) {
+        write(STATUS.OOM);
+        LOG.error("oom: " + taskId, oom);
         exit(1);
     }
 
@@ -347,7 +387,6 @@ public class PipesServer implements Runnable {
                 handlerConfig.getMaxEmbeddedResources(),
                 tikaConfig.getMetadataFilter());
         ParseContext parseContext = new ParseContext();
-        FetchKey fetchKey = fetchEmitTuple.getFetchKey();
         try {
             parser.parse(stream, handler, metadata, parseContext);
         } catch (SAXException e) {
@@ -359,10 +398,6 @@ public class PipesServer implements Runnable {
             throw e;
         } catch (Exception e) {
             LOG.warn("exception: " + fetchEmitTuple.getId(), e);
-        } catch (OutOfMemoryError e) {
-            //TODO, maybe return file type gathered so far and then crash?
-            //LOG.error("oom: " + fetchKey.getFetchKey());
-            throw e;
         }
         return handler.getMetadataList();
     }
@@ -377,9 +412,8 @@ public class PipesServer implements Runnable {
         }
     }
 
-
     private void exit(int exitCode) {
-        LOG.warn("exiting: {}", exitCode);
+        LOG.error("exiting: {}", exitCode);
         System.exit(exitCode);
     }
 
@@ -421,22 +455,28 @@ public class PipesServer implements Runnable {
     }
 
     private void write(EmitData emitData, String stack) {
+        //TODO -- what do we do with the stack?
         try {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bos)) {
                 objectOutputStream.writeObject(emitData);
             }
-            write(PARSE_SUCCESS, bos.toByteArray());
+            write(STATUS.PARSE_SUCCESS, bos.toByteArray());
         } catch (IOException e) {
             LOG.error("problem writing emit data (forking process shutdown?)", e);
             exit(1);
         }
     }
 
-    private void write(byte status, byte[] bytes) {
+    private void write(STATUS status, String msg) {
+        byte[] bytes = msg.getBytes(StandardCharsets.UTF_8);
+        write(status, bytes);
+    }
+
+    private void write(STATUS status, byte[] bytes) {
         try {
             int len = bytes.length;
-            output.write(status);
+            output.write(status.getByte());
             output.writeInt(len);
             output.write(bytes);
             output.flush();
@@ -446,14 +486,13 @@ public class PipesServer implements Runnable {
         }
     }
 
-    private void write(byte status) {
+    private void write(STATUS status) {
         try {
-            output.write(status);
+            output.write(status.getByte());
             output.flush();
         } catch (IOException e) {
             LOG.error("problem writing data (forking process shutdown?)", e);
             exit(1);
         }
     }
-
 }

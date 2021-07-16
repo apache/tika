@@ -22,12 +22,15 @@ public class PipesResult {
 
     public enum STATUS {
         CLIENT_UNAVAILABLE_WITHIN_MS,
+        FETCHER_INITIALIZATION_EXCEPTION,
+        FETCH_EXCEPTION,
+        EMPTY_OUTPUT,
         PARSE_EXCEPTION_NO_EMIT,
         PARSE_EXCEPTION_EMIT, PARSE_SUCCESS,
         OOM, TIMEOUT, UNSPECIFIED_CRASH,
         NO_EMITTER_FOUND,
         EMIT_SUCCESS, EMIT_SUCCESS_PARSE_EXCEPTION, EMIT_EXCEPTION,
-        INTERRUPTED_EXCEPTION
+        INTERRUPTED_EXCEPTION, NO_FETCHER_FOUND;
     }
 
     public static PipesResult CLIENT_UNAVAILABLE_WITHIN_MS =
@@ -36,8 +39,9 @@ public class PipesResult {
     public static PipesResult OOM = new PipesResult(STATUS.OOM);
     public static PipesResult UNSPECIFIED_CRASH = new PipesResult(STATUS.UNSPECIFIED_CRASH);
     public static PipesResult EMIT_SUCCESS = new PipesResult(STATUS.EMIT_SUCCESS);
-    public static PipesResult NO_EMITTER_FOUND = new PipesResult(STATUS.NO_EMITTER_FOUND);
     public static PipesResult INTERRUPTED_EXCEPTION = new PipesResult(STATUS.INTERRUPTED_EXCEPTION);
+    public static PipesResult EMPTY_OUTPUT =
+            new PipesResult(STATUS.EMPTY_OUTPUT);
     private final STATUS status;
     private final EmitData emitData;
     private final String message;

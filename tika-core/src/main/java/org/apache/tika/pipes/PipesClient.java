@@ -16,6 +16,12 @@
  */
 package org.apache.tika.pipes;
 
+import static org.apache.tika.pipes.PipesServer.STATUS.CALL;
+import static org.apache.tika.pipes.PipesServer.STATUS.PING;
+import static org.apache.tika.pipes.PipesServer.STATUS.READY;
+import static org.apache.tika.pipes.PipesServer.STATUS.lookup;
+import static org.apache.tika.pipes.PipesServer.TIMEOUT_EXIT_CODE;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -71,10 +77,10 @@ public class PipesClient implements Closeable {
             return false;
         }
         try {
-            output.write(PipesServer.PING);
+            output.write(PING.getByte());
             output.flush();
             int ping = input.read();
-            if (ping == PipesServer.PING) {
+            if (ping == PING.getByte()) {
                 return true;
             }
         } catch (IOException e) {
@@ -111,7 +117,7 @@ public class PipesClient implements Closeable {
                 objectOutputStream.writeObject(t);
             }
             byte[] bytes = bos.toByteArray();
-            output.write(PipesServer.CALL);
+            output.write(CALL.getByte());
             output.writeInt(bytes.length);
             output.write(bytes);
             output.flush();
@@ -128,7 +134,7 @@ public class PipesClient implements Closeable {
         } catch (ExecutionException e) {
             long elapsed = System.currentTimeMillis() - start;
             destroyWithPause();
-            if (!process.isAlive() && PipesServer.TIMEOUT_EXIT_CODE == process.exitValue()) {
+            if (!process.isAlive() && TIMEOUT_EXIT_CODE == process.exitValue()) {
                 LOG.warn("server timeout: {} in {} ms", t.getId(), elapsed);
                 return PipesResult.TIMEOUT;
             }
@@ -167,34 +173,57 @@ public class PipesClient implements Closeable {
     }
 
     private PipesResult readResults(FetchEmitTuple t, long start) throws IOException {
-        int status = input.read();
+        int statusByte = input.read();
         long millis = System.currentTimeMillis() - start;
+        PipesServer.STATUS status = null;
+        try {
+            status = lookup(statusByte);
+        } catch (IllegalArgumentException e) {
+            throw new IOException("problem reading response from server " + status);
+        }
         switch (status) {
-            case PipesServer.OOM:
+            case OOM:
                 LOG.warn("oom: {} in {} ms", t.getId(), millis);
                 return PipesResult.OOM;
-            case PipesServer.TIMEOUT:
+            case TIMEOUT:
                 LOG.warn("server response timeout: {} in {} ms", t.getId(), millis);
                 return PipesResult.TIMEOUT;
-            case PipesServer.EMIT_EXCEPTION:
+            case EMIT_EXCEPTION:
                 LOG.warn("emit exception: {} in {} ms", t.getId(), millis);
                 return readMessage(PipesResult.STATUS.EMIT_EXCEPTION);
-            case PipesServer.NO_EMITTER_FOUND:
-                LOG.warn("no emitter found: " + t.getId());
-                return PipesResult.NO_EMITTER_FOUND;
-            case PipesServer.PARSE_SUCCESS:
-            case PipesServer.PARSE_EXCEPTION_EMIT:
+            case EMITTER_NOT_FOUND:
+                LOG.warn("emitter not found: {} in {} ms", t.getId(), millis);
+                return readMessage(PipesResult.STATUS.NO_EMITTER_FOUND);
+            case FETCHER_NOT_FOUND:
+                LOG.warn("fetcher not found: {} in {} ms", t.getId(), millis);
+                return readMessage(PipesResult.STATUS.NO_FETCHER_FOUND);
+            case FETCHER_INITIALIZATION_EXCEPTION:
+                LOG.warn("fetcher initialization exception: {} in {} ms", t.getId(), millis);
+                return readMessage(PipesResult.STATUS.FETCHER_INITIALIZATION_EXCEPTION);
+            case FETCH_EXCEPTION:
+                LOG.warn("fetch exception: {} in {} ms", t.getId(), millis);
+                return readMessage(PipesResult.STATUS.FETCH_EXCEPTION);
+            case PARSE_SUCCESS:
+            case PARSE_EXCEPTION_EMIT:
                 LOG.info("parse success: {} in {} ms", t.getId(), millis);
                 return deserializeEmitData();
-            case PipesServer.PARSE_EXCEPTION_NO_EMIT:
+            case PARSE_EXCEPTION_NO_EMIT:
                 return readMessage(PipesResult.STATUS.PARSE_EXCEPTION_NO_EMIT);
-            case PipesServer.EMIT_SUCCESS:
+            case EMIT_SUCCESS:
                 LOG.info("emit success: {} in {} ms", t.getId(), millis);
                 return PipesResult.EMIT_SUCCESS;
-            case PipesServer.EMIT_SUCCESS_PARSE_EXCEPTION:
+            case EMIT_SUCCESS_PARSE_EXCEPTION:
                 return readMessage(PipesResult.STATUS.EMIT_SUCCESS_PARSE_EXCEPTION);
+            case EMPTY_OUTPUT:
+                return PipesResult.EMPTY_OUTPUT;
+            //fall through
+            case READY:
+            case CALL:
+            case PING:
+            case FAILED_TO_START:
+                throw new IOException("Not expecting this status: " + status);
             default :
-                throw new IOException("problem reading response from server " + status);
+                throw new IOException("Need to handle procesing for: " + status);
         }
 
     }
@@ -239,7 +268,7 @@ public class PipesClient implements Closeable {
             int b = input.read();
             int read = 1;
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            while (read < MAX_BYTES_BEFORE_READY && b != PipesServer.READY) {
+            while (read < MAX_BYTES_BEFORE_READY && b != READY.getByte()) {
                 if (b == -1) {
                     throw new RuntimeException("Couldn't start server: " +
                             "read EOF before 'ready' byte.\n" +
@@ -313,7 +342,7 @@ public class PipesClient implements Closeable {
         if (! hasHeadless) {
             commandLine.add("-Djava.awt.headless=true");
         }
-        if (! hasExitOnOOM) {
+        if (hasExitOnOOM) {
             LOG.warn("I notice that you have an exit/crash on OOM. If you run heavy external processes " +
                     "like tesseract, this setting may result in orphaned processes which could be disastrous" +
                     " for performance.");

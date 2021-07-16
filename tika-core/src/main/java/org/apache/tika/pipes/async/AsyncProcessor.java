@@ -28,8 +28,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-
-import org.xml.sax.SAXException;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.pipes.FetchEmitTuple;
@@ -48,6 +47,9 @@ import org.apache.tika.pipes.pipesiterator.PipesIterator;
 public class AsyncProcessor implements Closeable {
 
     static final int PARSER_FUTURE_CODE = 1;
+
+    static final AtomicLong TOTAL_PROCESSED = new AtomicLong(0);
+
     private final ArrayBlockingQueue<FetchEmitTuple> fetchEmitTuples;
     private final ArrayBlockingQueue<EmitData> emitData;
     private final ExecutorCompletionService<Integer> executorCompletionService;
@@ -58,7 +60,7 @@ public class AsyncProcessor implements Closeable {
     private int finished = 0;
     boolean isShuttingDown = false;
 
-    public AsyncProcessor(Path tikaConfigPath) throws TikaException, IOException, SAXException {
+    public AsyncProcessor(Path tikaConfigPath) throws TikaException, IOException {
         this.asyncConfig = AsyncConfig.load(tikaConfigPath);
         this.fetchEmitTuples = new ArrayBlockingQueue<>(asyncConfig.getQueueSize());
         this.emitData = new ArrayBlockingQueue<>(100);
@@ -162,6 +164,10 @@ public class AsyncProcessor implements Closeable {
         executorService.shutdownNow();
     }
 
+    public long getTotalProcessed() {
+        return TOTAL_PROCESSED.get();
+    }
+
     private class FetchEmitWorker implements Callable<Integer> {
 
         private final AsyncConfig asyncConfig;
@@ -175,6 +181,7 @@ public class AsyncProcessor implements Closeable {
             this.fetchEmitTuples = fetchEmitTuples;
             this.emitDataQueue = emitDataQueue;
         }
+
         @Override
         public Integer call() throws Exception {
 
@@ -192,19 +199,11 @@ public class AsyncProcessor implements Closeable {
                         } catch (IOException e) {
                             result = PipesResult.UNSPECIFIED_CRASH;
                         }
-                        switch (result.getStatus()) {
-                            case PARSE_SUCCESS:
-                                //TODO -- add timeout, this currently hangs forever
-                                emitDataQueue.offer(result.getEmitData());
-                                break;
-                            case EMIT_SUCCESS:
-                                break;
-                            case EMIT_EXCEPTION:
-                            case UNSPECIFIED_CRASH:
-                            case OOM:
-                            case TIMEOUT:
-                                break;
+                        if (result.getStatus() == PipesResult.STATUS.PARSE_SUCCESS) {
+                            //TODO -- add timeout, this currently hangs forever
+                            emitDataQueue.offer(result.getEmitData());
                         }
+                        TOTAL_PROCESSED.incrementAndGet();
                     }
                     checkActive();
                 }
