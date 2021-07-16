@@ -255,7 +255,13 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
             if (!finished) {
                 fail("should have completed by now");
             }
-            assertEquals(255, p.exitValue());
+            String os = System.getProperty("os.name");
+            if (os.startsWith("Windows")) {
+                assertEquals(-1, p.exitValue());
+            }
+            else {
+                assertEquals(255, p.exitValue());
+            }
         } finally {
             if (p != null) {
                 p.destroyForcibly();
