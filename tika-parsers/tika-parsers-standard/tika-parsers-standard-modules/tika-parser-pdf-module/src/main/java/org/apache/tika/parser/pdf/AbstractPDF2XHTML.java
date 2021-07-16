@@ -583,12 +583,19 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                     }
                 }
             }
-            if (config.getOcrStrategy()
-                    .equals(PDFParserConfig.OCR_STRATEGY.OCR_AND_TEXT_EXTRACTION)) {
+            if (config.getOcrStrategy() == PDFParserConfig.OCR_STRATEGY.OCR_AND_TEXT_EXTRACTION) {
                 doOCROnCurrentPage(OCR_AND_TEXT_EXTRACTION);
-            } else if (config.getOcrStrategy().equals(PDFParserConfig.OCR_STRATEGY.AUTO)) {
-                //TODO add more sophistication
-                if (totalCharsPerPage < 10 || unmappedUnicodeCharsPerPage > 10) {
+            } else if (config.getOcrStrategy() == PDFParserConfig.OCR_STRATEGY.AUTO) {
+                boolean unmappedExceedsLimit = false;
+                if (totalCharsPerPage > config.getOcrStrategyAuto().getTotalCharsPerPage()) {
+                    // There are enough characters to not have to do OCR.  Check number of unmapped characters
+                    final float percentUnmapped = (float) unmappedUnicodeCharsPerPage / totalCharsPerPage;
+                    final float unmappedCharacterLimit = config.getOcrStrategyAuto().getUnmappedUnicodeCharsPerPage();
+                    unmappedExceedsLimit = (unmappedCharacterLimit < 1)
+                            ? percentUnmapped > unmappedCharacterLimit
+                            : unmappedUnicodeCharsPerPage > unmappedCharacterLimit;
+                }
+                if (totalCharsPerPage <= config.getOcrStrategyAuto().getTotalCharsPerPage() || unmappedExceedsLimit) {
                     doOCROnCurrentPage(AUTO);
                 }
             }
