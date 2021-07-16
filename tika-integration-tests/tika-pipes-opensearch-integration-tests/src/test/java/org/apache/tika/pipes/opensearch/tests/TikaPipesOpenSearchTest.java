@@ -22,6 +22,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.regex.Matcher;
 
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
@@ -138,7 +139,8 @@ public class TikaPipesOpenSearchTest {
                 tikaConfigTemplateXml.replace("{TIKA_CONFIG}", tikaConfigFile.getAbsolutePath())
                         .replace("{ATTACHMENT_STRATEGY}", attachmentStrategy.toString())
                         .replace("{LOG4J_PROPERTIES_FILE}", log4jPropFile.getAbsolutePath())
-                        .replaceAll("\\{PATH_TO_DOCS\\}", testFileFolder.getAbsolutePath());
+                        .replaceAll("\\{PATH_TO_DOCS\\}", 
+                                Matcher.quoteReplacement(testFileFolder.getAbsolutePath()));
 
         res = res.replace("{OPENSEARCH_CONNECTION}", openSearchEndpoint);
 
