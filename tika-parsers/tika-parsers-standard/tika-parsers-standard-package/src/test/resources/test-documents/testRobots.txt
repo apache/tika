@@ -1,0 +1,9 @@
+User-Agent: goodbot
+Disallow:
+
+User-Agent: badbot
+Disallow: /
+
+User-Agent: *
+Disallow: /forbidden/
+Allow: /

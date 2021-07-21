@@ -955,6 +955,11 @@ public class TestMimeTypes {
     }
 
     @Test
+    public void testRobots() throws Exception {
+        assertTypeByData("text/x-robots", "testRobots.txt");
+    }
+
+    @Test
     public void testMessageNews() throws Exception {
         assertTypeByData("message/news", "testMessageNews.txt");
     }
