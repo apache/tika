@@ -1,3 +1,7 @@
+Release 2.0.1 - ???
+
+   * Fix serialization of embedded docs in OpenSearch emitter (TIKA-3490).
+
 Release 2.0.0 - 07/07/2021
 
    * Cleanup of fetcher integration with tika-server.

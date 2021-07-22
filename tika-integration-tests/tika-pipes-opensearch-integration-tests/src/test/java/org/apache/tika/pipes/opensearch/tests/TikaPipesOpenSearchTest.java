@@ -22,6 +22,9 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.regex.Matcher;
 
 import org.apache.commons.io.IOUtils;
@@ -41,9 +44,10 @@ import org.apache.tika.pipes.emitter.opensearch.OpenSearchEmitter;
 
 public class TikaPipesOpenSearchTest {
 
-    private static final String collection = "testcol";
-    private static final File testFileFolder = new File("target", "test-files");
-    private final int numDocs = 42;
+    private static final String COLLECTION = "testcol";
+    private static final File TEST_FILE_FOLDER = new File("target", "test-files");
+    private final int numHtmlDocs = 42;
+    private int numTestDocs = 0;
     protected GenericContainer<?> openSearch;
     private String openSearchHost;
     private int openSearchPort;
@@ -68,7 +72,7 @@ public class TikaPipesOpenSearchTest {
 
     @AfterClass
     public static void tearDown() throws Exception {
-        FileUtils.deleteDirectory(testFileFolder);
+        FileUtils.deleteDirectory(TEST_FILE_FOLDER);
     }
 
     @Test
@@ -94,17 +98,25 @@ public class TikaPipesOpenSearchTest {
         assertTrue(response.getJson().get("acknowledged").asBoolean());
         assertEquals("testcol", response.getJson().get("index").asText());
 
-        runPipes(OpenSearchEmitter.AttachmentStrategy.CONCATENATE_CONTENT);
+        runPipes(OpenSearchEmitter.AttachmentStrategy.SKIP);
         //refresh to make sure the content is searchable
         JsonResponse refresh = client.getJson(openSearchEndpoint + "/_refresh");
 
         String query = "{ \"track_total_hits\": true, \"query\": { \"match\": { \"content\": { " +
-                "\"query\": \"initial\" } } } }";
+                "\"query\": \"happiness\" } } } }";
 
         JsonResponse results = client.postJson(openSearchEndpoint + "/_search", query);
         assertEquals(200, results.getStatus());
+        //assertEquals(numHtmlDocs + numTestDocs,
+          //      results.getJson().get("hits").get("total").get("value").asInt());
 
-        assertEquals(numDocs, results.getJson().get("hits").get("total").get("value").asInt());
+        //now try match all
+        query = "{ \"track_total_hits\": true, \"query\": { \"match_all\": {} } }";
+        results = client.postJson(openSearchEndpoint + "/_search", query);
+        assertEquals(200, results.getStatus());
+        assertEquals(numHtmlDocs + numTestDocs,
+                results.getJson().get("hits").get("total").get("value").asInt());
+
 
     }
 
@@ -140,7 +152,7 @@ public class TikaPipesOpenSearchTest {
                         .replace("{ATTACHMENT_STRATEGY}", attachmentStrategy.toString())
                         .replace("{LOG4J_PROPERTIES_FILE}", log4jPropFile.getAbsolutePath())
                         .replaceAll("\\{PATH_TO_DOCS\\}", 
-                                Matcher.quoteReplacement(testFileFolder.getAbsolutePath()));
+                                Matcher.quoteReplacement(TEST_FILE_FOLDER.getAbsolutePath()));
 
         res = res.replace("{OPENSEARCH_CONNECTION}", openSearchEndpoint);
 
@@ -149,11 +161,11 @@ public class TikaPipesOpenSearchTest {
     }
 
     private void setupOpenSearch(GenericContainer<?> openSearchContainer) throws Exception {
-        createTestHtmlFiles("initial");
+        createTestHtmlFiles("Happiness");
         this.openSearch = openSearchContainer;
         openSearchHost = openSearch.getHost();
         openSearchPort = openSearch.getMappedPort(9200);
-        openSearchEndpoint = "https://" + openSearchHost + ":" + openSearchPort + "/" + collection;
+        openSearchEndpoint = "https://" + openSearchHost + ":" + openSearchPort + "/" + COLLECTION;
         HttpClientFactory httpClientFactory = new HttpClientFactory();
         httpClientFactory.setUserName("admin");
         httpClientFactory.setPassword("admin");
@@ -163,10 +175,17 @@ public class TikaPipesOpenSearchTest {
     }
 
     private void createTestHtmlFiles(String bodyContent) throws Exception {
-        testFileFolder.mkdirs();
-        for (int i = 0; i < numDocs; ++i) {
-            FileUtils.writeStringToFile(new File(testFileFolder, "test-" + i + ".html"),
+        TEST_FILE_FOLDER.mkdirs();
+        for (int i = 0; i < numHtmlDocs; ++i) {
+            FileUtils.writeStringToFile(new File(TEST_FILE_FOLDER, "test-" + i + ".html"),
                     "<html><body>" + bodyContent +  "</body></html>", StandardCharsets.UTF_8);
+        }
+        File testDocuments =
+                Paths.get(TikaPipesOpenSearchTest.class.getResource("/test-documents").toURI()).toFile();
+        for (File f : testDocuments.listFiles()) {
+            Path targ = TEST_FILE_FOLDER.toPath().resolve(f.getName());
+            Files.copy(f.toPath(), targ);
+            numTestDocs++;
         }
     }
 

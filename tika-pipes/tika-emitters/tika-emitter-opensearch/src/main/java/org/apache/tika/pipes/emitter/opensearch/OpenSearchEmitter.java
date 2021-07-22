@@ -19,6 +19,7 @@ package org.apache.tika.pipes.emitter.opensearch;
 import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -68,10 +69,33 @@ public class OpenSearchEmitter extends AbstractEmitter implements Initializable 
             return;
         }
         try {
+            if (attachmentStrategy == AttachmentStrategy.CONCATENATE_CONTENT) {
+                metadataList = concatenate(metadataList);
+            } else if (attachmentStrategy == AttachmentStrategy.SKIP) {
+                metadataList = Collections.singletonList(metadataList.get(0));
+            }
             openSearchClient.addDocument(emitKey, metadataList);
         } catch (TikaClientException e) {
             throw new TikaEmitterException("failed to add document", e);
         }
+    }
+
+    private List<Metadata> concatenate(List<Metadata> metadataList) {
+        if (metadataList.size() == 1) {
+            return metadataList;
+        }
+
+        Metadata ret = metadataList.get(0);
+        StringBuilder content = new StringBuilder();
+        for (Metadata m : metadataList) {
+            String c = m.get(getContentField());
+            if (! StringUtils.isBlank(c)) {
+                content.append(c).append("\n");
+            }
+        }
+        ret.set(getContentField(), content.toString());
+        return Collections.singletonList(ret);
+
     }
 /*
     private void addMetadataAsSolrInputDocuments(String emitKey, List<Metadata> metadataList,

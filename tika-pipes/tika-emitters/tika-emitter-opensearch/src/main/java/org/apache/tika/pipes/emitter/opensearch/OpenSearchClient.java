@@ -74,9 +74,9 @@ public class OpenSearchClient {
             String indexJson = getBulkIndexJson(id, routing);
             sb.append(indexJson).append("\n");
             if (i == 0) {
-                sb.append(metadataToJsonContainer(metadata));
+                sb.append(metadataToJsonContainer(metadata, attachmentStrategy));
             } else {
-                sb.append(metadataToJsonEmbedded(metadata, emitKey));
+                sb.append(metadataToJsonEmbedded(metadata, attachmentStrategy, emitKey));
             }
             sb.append("\n");
             i++;
@@ -99,26 +99,30 @@ public class OpenSearchClient {
         }
     }
 
-    private String metadataToJsonEmbedded(Metadata metadata, String emitKey) throws IOException {
+    protected static String metadataToJsonEmbedded(Metadata metadata,
+                                                   OpenSearchEmitter.AttachmentStrategy attachmentStrategy,
+                                                   String emitKey) throws IOException {
         StringWriter writer = new StringWriter();
         try (JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
             jsonGenerator.writeStartObject();
 
             writeMetadata(metadata, jsonGenerator);
             if (attachmentStrategy == OpenSearchEmitter.AttachmentStrategy.PARENT_CHILD) {
-                jsonGenerator.writeStartObject("relation_type");
+                jsonGenerator.writeObjectFieldStart("relation_type");
                 jsonGenerator.writeStringField("name", "embedded");
                 jsonGenerator.writeStringField("parent", emitKey);
+                //end the relation type object
+                jsonGenerator.writeEndObject();
             }
-            //end the relation type object
-            jsonGenerator.writeEndObject();
             //end the metadata object
             jsonGenerator.writeEndObject();
         }
         return writer.toString();
     }
 
-    private String metadataToJsonContainer(Metadata metadata) throws IOException {
+    protected static String metadataToJsonContainer(Metadata metadata,
+                                                    OpenSearchEmitter.AttachmentStrategy attachmentStrategy)
+            throws IOException {
         StringWriter writer = new StringWriter();
         try (JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
             jsonGenerator.writeStartObject();
@@ -131,7 +135,7 @@ public class OpenSearchClient {
         return writer.toString();
     }
 
-    private void writeMetadata(Metadata metadata, JsonGenerator jsonGenerator) throws IOException {
+    private static void writeMetadata(Metadata metadata, JsonGenerator jsonGenerator) throws IOException {
         //writes the metadata without the start { or the end }
         //to allow for other fields to be added
         for (String n : metadata.names()) {
@@ -139,7 +143,7 @@ public class OpenSearchClient {
             if (vals.length == 1) {
                 jsonGenerator.writeStringField(n, vals[0]);
             } else {
-                jsonGenerator.writeStartArray(n);
+                jsonGenerator.writeArrayFieldStart(n);
                 for (String v : vals) {
                     jsonGenerator.writeString(v);
                 }
