@@ -65,12 +65,11 @@
       <emitMaxEstimatedBytes>100000</emitMaxEstimatedBytes>
       <emitWithinMillis>60000</emitWithinMillis>
       <numEmitters>1</numEmitters>
-      <numClients>1</numClients>
+      <numClients>3</numClients>
       <tikaConfig>{TIKA_CONFIG}</tikaConfig>
       <forkedJvmArgs>
-        <arg>-Xmx1g</arg>
+        <arg>-Xmx512m</arg>
         <arg>-XX:ParallelGCThreads=2</arg>
-        <arg>-XX:+ExitOnOutOfMemoryError</arg>
         <arg>-Dlog4j.configurationFile={LOG4J_PROPERTIES_FILE}</arg>
       </forkedJvmArgs>
       <timeoutMillis>60000</timeoutMillis>
@@ -93,7 +92,6 @@
         <updateStrategy>{UPDATE_STRATEGY}</updateStrategy>
         -->
         <attachmentStrategy>{ATTACHMENT_STRATEGY}</attachmentStrategy>
-        <contentField>content</contentField>
         <commitWithin>10</commitWithin>
         <idField>_id</idField>
         <connectionTimeout>10000</connectionTimeout>
@@ -108,6 +106,7 @@
       <basePath>{PATH_TO_DOCS}</basePath>
       <fetcherName>fsf</fetcherName>
       <emitterName>ose</emitterName>
+      <parseMode>{PARSE_MODE}</parseMode>
     </params>
   </pipesIterator>
 </properties>

@@ -19,7 +19,6 @@ package org.apache.tika.pipes.emitter.opensearch;
 import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -43,7 +42,7 @@ public class OpenSearchEmitter extends AbstractEmitter implements Initializable 
 
 
     public enum AttachmentStrategy {
-        SKIP, CONCATENATE_CONTENT, PARENT_CHILD,
+        SEPARATE_DOCUMENTS, PARENT_CHILD,
         //anything else?
     }
 
@@ -51,7 +50,6 @@ public class OpenSearchEmitter extends AbstractEmitter implements Initializable 
     private AttachmentStrategy attachmentStrategy = AttachmentStrategy.PARENT_CHILD;
 
     private String openSearchUrl = null;
-    private String contentField = "content";
     private String idField = "_id";
     private int commitWithin = 1000;
     private OpenSearchClient openSearchClient;
@@ -69,144 +67,27 @@ public class OpenSearchEmitter extends AbstractEmitter implements Initializable 
             return;
         }
         try {
-            if (attachmentStrategy == AttachmentStrategy.CONCATENATE_CONTENT) {
-                metadataList = concatenate(metadataList);
-            } else if (attachmentStrategy == AttachmentStrategy.SKIP) {
-                metadataList = Collections.singletonList(metadataList.get(0));
-            }
             openSearchClient.addDocument(emitKey, metadataList);
         } catch (TikaClientException e) {
             throw new TikaEmitterException("failed to add document", e);
         }
     }
 
-    private List<Metadata> concatenate(List<Metadata> metadataList) {
-        if (metadataList.size() == 1) {
-            return metadataList;
-        }
-
-        Metadata ret = metadataList.get(0);
-        StringBuilder content = new StringBuilder();
-        for (Metadata m : metadataList) {
-            String c = m.get(getContentField());
-            if (! StringUtils.isBlank(c)) {
-                content.append(c).append("\n");
-            }
-        }
-        ret.set(getContentField(), content.toString());
-        return Collections.singletonList(ret);
-
-    }
-/*
-    private void addMetadataAsSolrInputDocuments(String emitKey, List<Metadata> metadataList,
-                                                 List<SolrInputDocument> docsToUpdate)
-            throws IOException, TikaEmitterException {
-        SolrInputDocument solrInputDocument = new SolrInputDocument();
-        solrInputDocument.setField(idField, emitKey);
-        if (updateStrategy == UpdateStrategy.UPDATE_MUST_EXIST) {
-            solrInputDocument.setField("_version_", 1);
-        } else if (updateStrategy == UpdateStrategy.UPDATE_MUST_NOT_EXIST) {
-            solrInputDocument.setField("_version_", -1);
-        }
-        if (attachmentStrategy == AttachmentStrategy.SKIP || metadataList.size() == 1) {
-            addMetadataToSolrInputDocument(metadataList.get(0), solrInputDocument, updateStrategy);
-        } else if (attachmentStrategy == AttachmentStrategy.CONCATENATE_CONTENT) {
-            //this only handles text for now, not xhtml
-            StringBuilder sb = new StringBuilder();
-            for (Metadata metadata : metadataList) {
-                String content = metadata.get(getContentField());
-                if (content != null) {
-                    sb.append(content).append("\n");
-                }
-            }
-            Metadata parent = metadataList.get(0);
-            parent.set(getContentField(), sb.toString());
-            addMetadataToSolrInputDocument(parent, solrInputDocument, updateStrategy);
-        } else if (attachmentStrategy == AttachmentStrategy.PARENT_CHILD) {
-            addMetadataToSolrInputDocument(metadataList.get(0), solrInputDocument, updateStrategy);
-            for (int i = 1; i < metadataList.size(); i++) {
-                SolrInputDocument childSolrInputDocument = new SolrInputDocument();
-                Metadata m = metadataList.get(i);
-                childSolrInputDocument.setField(idField, UUID.randomUUID().toString());
-                addMetadataToSolrInputDocument(m, childSolrInputDocument, updateStrategy);
-            }
-        } else {
-            throw new IllegalArgumentException(
-                    "I don't yet support this attachment strategy: " + attachmentStrategy);
-        }
-        docsToUpdate.add(solrInputDocument);
-    }
-
-    @Override
-    public void emit(List<? extends EmitData> batch) throws IOException, TikaEmitterException {
-        if (batch == null || batch.size() == 0) {
-            LOG.warn("batch is null or empty");
-            return;
-        }
-        List<SolrInputDocument> docsToUpdate = new ArrayList<>();
-        for (EmitData d : batch) {
-            addMetadataAsSolrInputDocuments(d.getEmitKey().getEmitKey(), d.getMetadataList(),
-                    docsToUpdate);
-        }
-        emitSolrBatch(docsToUpdate);
-    }
-
-    private void emitSolrBatch(List<SolrInputDocument> docsToUpdate)
-            throws IOException, TikaEmitterException {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Emitting solr doc batch: {}", docsToUpdate);
-        }
-        if (!docsToUpdate.isEmpty()) {
-            try {
-                UpdateRequest req = new UpdateRequest();
-                req.add(docsToUpdate);
-                req.setCommitWithin(commitWithin);
-                req.setParam("failOnVersionConflicts", "false");
-                req.process(openSearchClient, solrCollection);
-            } catch (Exception e) {
-                throw new TikaEmitterException("Could not add batch to solr", e);
-            }
-        }
-    }
-
-    private void addMetadataToSolrInputDocument(Metadata metadata,
-                                                SolrInputDocument solrInputDocument,
-                                                UpdateStrategy updateStrategy) {
-        for (String n : metadata.names()) {
-            String[] vals = metadata.getValues(n);
-            if (vals.length == 0) {
-                continue;
-            } else if (vals.length == 1) {
-                if (updateStrategy == UpdateStrategy.ADD) {
-                    solrInputDocument.setField(n, vals[0]);
-                } else {
-                    solrInputDocument.setField(n, new HashMap<String, String>() {{
-                            put("set", vals[0]);
-                        }
-                    });
-                }
-            } else if (vals.length > 1) {
-                if (updateStrategy == UpdateStrategy.ADD) {
-                    solrInputDocument.setField(n, vals);
-                } else {
-                    solrInputDocument.setField(n, new HashMap<String, String[]>() {{
-                            put("set", vals);
-                        }
-                    });
-                }
-            }
-        }
-    }*/
 
     /**
-     * Options: SKIP, CONCATENATE_CONTENT, PARENT_CHILD. Default is "PARENT_CHILD".
-     * If set to "SKIP", this will index only the main file and ignore all info
-     * in the attachments.  If set to "CONCATENATE_CONTENT", this will concatenate the
-     * content extracted from the attachments into the main document and
-     * then index the main document with the concatenated content _and_ the
-     * main document's metadata (metadata from attachments will be thrown away).
-     * If set to "PARENT_CHILD", this will index the attachments as children
-     * of the parent document via OpenSearch's parent-child relationship.
+     * Options: SEPARATE_DOCUMENTS, PARENT_CHILD. Default is "SEPARATE_DOCUMENTS".
+     * All embedded documents are treated as independent documents.
+     * PARENT_CHILD requires a schema to be set up for the relationship type;
+     * all embedded objects (no matter how deeply nested) will have a single
+     * parent of the main container document.
+     *
+     * If you want to concatenate the content of embedded files and ignore
+     * the metadata of embedded files, set
+     * {@link org.apache.tika.pipes.HandlerConfig}'s parseMode to
+     * {@link org.apache.tika.pipes.HandlerConfig.PARSE_MODE#CONCATENATE}
+     * in your {@link org.apache.tika.pipes.FetchEmitTuple} or in the
+     * &lt;parseMode&gt; element in your {@link org.apache.tika.pipes.pipesiterator.PipesIterator}
+     * configuration.
      */
     @Field
     public void setAttachmentStrategy(String attachmentStrategy) {
@@ -222,24 +103,6 @@ public class OpenSearchEmitter extends AbstractEmitter implements Initializable 
     @Field
     public void setSocketTimeout(int socketTimeout) {
         httpClientFactory.setSocketTimeout(socketTimeout);
-    }
-
-    public String getContentField() {
-        return contentField;
-    }
-
-    /**
-     * This is the field _after_ metadata mappings have been applied
-     * that contains the "content" for each metadata object.
-     * <p>
-     * This is the field that is used if {@link #attachmentStrategy}
-     * is {@link AttachmentStrategy#CONCATENATE_CONTENT}.
-     *
-     * @param contentField
-     */
-    @Field
-    public void setContentField(String contentField) {
-        this.contentField = contentField;
     }
 
     public int getCommitWithin() {

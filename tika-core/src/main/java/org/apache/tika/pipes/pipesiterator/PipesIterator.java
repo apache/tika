@@ -70,6 +70,9 @@ public abstract class PipesIterator extends ConfigBase
             FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT;
     private BasicContentHandlerFactory.HANDLER_TYPE handlerType =
             BasicContentHandlerFactory.HANDLER_TYPE.TEXT;
+
+    private HandlerConfig.PARSE_MODE parseMode = HandlerConfig.PARSE_MODE.RMETA;
+
     private int writeLimit = -1;
     private int maxEmbeddedResources = -1;
 
@@ -144,8 +147,17 @@ public abstract class PipesIterator extends ConfigBase
     }
 
     @Field
-    void setMaxEmbeddedResources(int maxEmbeddedResources) {
+    public void setMaxEmbeddedResources(int maxEmbeddedResources) {
         this.maxEmbeddedResources = maxEmbeddedResources;
+    }
+
+    @Field
+    public void setParseMode(String parseModeString) {
+        setParseMode(HandlerConfig.PARSE_MODE.parseMode(parseModeString));
+    }
+
+    public void setParseMode(HandlerConfig.PARSE_MODE parsePARSEMode) {
+        this.parseMode = parsePARSEMode;
     }
 
     public Integer call() throws Exception {
@@ -155,7 +167,7 @@ public abstract class PipesIterator extends ConfigBase
     }
 
     protected HandlerConfig getHandlerConfig() {
-        return new HandlerConfig(handlerType, writeLimit, maxEmbeddedResources);
+        return new HandlerConfig(handlerType, parseMode, writeLimit, maxEmbeddedResources);
     }
 
     protected abstract void enqueue() throws IOException, TimeoutException, InterruptedException;

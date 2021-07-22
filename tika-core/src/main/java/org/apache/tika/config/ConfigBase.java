@@ -372,7 +372,6 @@ public abstract class ConfigBase {
                     } catch (IllegalAccessException | InvocationTargetException e) {
                         throw new TikaConfigException("bad parameter " + setter, e);
                     }
-
                 } else {
                     try {
                         m.invoke(object, value);

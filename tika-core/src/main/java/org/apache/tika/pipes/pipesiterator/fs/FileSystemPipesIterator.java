@@ -104,7 +104,8 @@ public class FileSystemPipesIterator extends PipesIterator implements Initializa
 
             try {
                 tryToAdd(new FetchEmitTuple(relPath, new FetchKey(fetcherName, relPath),
-                        new EmitKey(emitterName, relPath), new Metadata()));
+                        new EmitKey(emitterName, relPath), new Metadata(), getHandlerConfig(),
+                        getOnParseException()));
             } catch (TimeoutException e) {
                 throw new IOException(e);
             } catch (InterruptedException e) {

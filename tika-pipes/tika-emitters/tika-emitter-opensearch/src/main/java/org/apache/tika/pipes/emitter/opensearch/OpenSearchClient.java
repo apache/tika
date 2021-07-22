@@ -113,6 +113,8 @@ public class OpenSearchClient {
                 jsonGenerator.writeStringField("parent", emitKey);
                 //end the relation type object
                 jsonGenerator.writeEndObject();
+            } else if (attachmentStrategy == OpenSearchEmitter.AttachmentStrategy.SEPARATE_DOCUMENTS) {
+                jsonGenerator.writeStringField("parent", emitKey);
             }
             //end the metadata object
             jsonGenerator.writeEndObject();

@@ -26,6 +26,7 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.impl.LBHttpSolrClient;
 import org.apache.solr.common.SolrInputDocument;
 import org.jetbrains.annotations.NotNull;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -35,6 +36,7 @@ import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 import org.testcontainers.utility.DockerImageName;
 
 import org.apache.tika.cli.TikaCLI;
+import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.solr.SolrEmitter;
 
 public abstract class TikaPipesSolrTestBase {
@@ -60,6 +62,11 @@ public abstract class TikaPipesSolrTestBase {
     @Before
     public void setupTest() throws Exception {
         setupSolr(solrContainer);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        FileUtils.deleteDirectory(testFileFolder);
     }
 
     @Test
@@ -120,7 +127,8 @@ public abstract class TikaPipesSolrTestBase {
         String tikaConfigXml =
                 createTikaConfigXml(useZk(), tikaConfigFile, log4jPropFile, tikaConfigTemplateXml,
                         SolrEmitter.UpdateStrategy.ADD,
-                        SolrEmitter.AttachmentStrategy.CONCATENATE_CONTENT);
+                        SolrEmitter.AttachmentStrategy.PARENT_CHILD,
+                        HandlerConfig.PARSE_MODE.CONCATENATE);
         FileUtils.writeStringToFile(tikaConfigFile, tikaConfigXml, StandardCharsets.UTF_8);
 
         TikaCLI.main(new String[]{"-a", "--config=" + tikaConfigFile.getAbsolutePath()});
@@ -142,7 +150,8 @@ public abstract class TikaPipesSolrTestBase {
         tikaConfigXml =
                 createTikaConfigXml(useZk(), tikaConfigFile, log4jPropFile, tikaConfigTemplateXml,
                         SolrEmitter.UpdateStrategy.UPDATE_MUST_EXIST,
-                        SolrEmitter.AttachmentStrategy.CONCATENATE_CONTENT);
+                        SolrEmitter.AttachmentStrategy.PARENT_CHILD,
+                        HandlerConfig.PARSE_MODE.CONCATENATE);
         FileUtils.writeStringToFile(tikaConfigFile, tikaConfigXml, StandardCharsets.UTF_8);
 
         TikaCLI.main(new String[]{"-a", "--config=" + tikaConfigFile.getAbsolutePath()});
@@ -163,13 +172,15 @@ public abstract class TikaPipesSolrTestBase {
     private String createTikaConfigXml(boolean useZk, File tikaConfigFile, File log4jPropFile,
                                        String tikaConfigTemplateXml,
                                        SolrEmitter.UpdateStrategy updateStrategy,
-                                       SolrEmitter.AttachmentStrategy attachmentStrategy) {
+                                       SolrEmitter.AttachmentStrategy attachmentStrategy,
+                                       HandlerConfig.PARSE_MODE parseMode) {
         String res =
                 tikaConfigTemplateXml.replace("{TIKA_CONFIG}", tikaConfigFile.getAbsolutePath())
                         .replace("{UPDATE_STRATEGY}", updateStrategy.toString())
                         .replace("{ATTACHMENT_STRATEGY}", attachmentStrategy.toString())
                         .replace("{LOG4J_PROPERTIES_FILE}", log4jPropFile.getAbsolutePath())
-                        .replace("{PATH_TO_DOCS}", testFileFolder.getAbsolutePath());
+                        .replace("{PATH_TO_DOCS}", testFileFolder.getAbsolutePath())
+                        .replace("{PARSE_MODE}", parseMode.name());
         if (useZk) {
             res = res.replace("{SOLR_CONNECTION}",
                     "<solrZkHosts>\n" + "        <solrZkHost>" + solrHost + ":" + zkPort +

@@ -92,7 +92,6 @@
         <updateStrategy>{UPDATE_STRATEGY}</updateStrategy>
         <solrCollection>testcol</solrCollection>
         <attachmentStrategy>{ATTACHMENT_STRATEGY}</attachmentStrategy>
-        <contentField>content</contentField>
         <commitWithin>10</commitWithin>
         <idField>id</idField>
         <connectionTimeout>10000</connectionTimeout>
@@ -106,7 +105,7 @@
       </params>
     </emitter>
   </emitters>
-  <pipesIterator class="org.apache.tika.pipes.solrtest.SolrPipesIterator">
+  <pipesIterator class="org.apache.tika.pipes.pipesiterator.solr.SolrPipesIterator">
     <params>
       <solrCollection>testcol</solrCollection>
       {SOLR_CONNECTION}
@@ -114,6 +113,7 @@
       <parsingIdField>parsing_id_i</parsingIdField>
       <failCountField>fail_count_i</failCountField>
       <sizeFieldName>size_i</sizeFieldName>
+      <parseMode>{PARSE_MODE}</parseMode>
       <rows>10</rows>
       <fetcherName>fsf</fetcherName>
       <emitterName>se</emitterName>

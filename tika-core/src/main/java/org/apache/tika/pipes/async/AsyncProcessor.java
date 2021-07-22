@@ -48,13 +48,13 @@ public class AsyncProcessor implements Closeable {
 
     static final int PARSER_FUTURE_CODE = 1;
 
-    static final AtomicLong TOTAL_PROCESSED = new AtomicLong(0);
 
     private final ArrayBlockingQueue<FetchEmitTuple> fetchEmitTuples;
     private final ArrayBlockingQueue<EmitData> emitData;
     private final ExecutorCompletionService<Integer> executorCompletionService;
     private final ExecutorService executorService;
     private final AsyncConfig asyncConfig;
+    private final AtomicLong totalProcessed = new AtomicLong(0);
     private int numParserThreadsFinished = 0;
     private boolean addedEmitterSemaphores = false;
     private int finished = 0;
@@ -165,7 +165,7 @@ public class AsyncProcessor implements Closeable {
     }
 
     public long getTotalProcessed() {
-        return TOTAL_PROCESSED.get();
+        return totalProcessed.get();
     }
 
     private class FetchEmitWorker implements Callable<Integer> {
@@ -203,7 +203,7 @@ public class AsyncProcessor implements Closeable {
                             //TODO -- add timeout, this currently hangs forever
                             emitDataQueue.offer(result.getEmitData());
                         }
-                        TOTAL_PROCESSED.incrementAndGet();
+                        totalProcessed.incrementAndGet();
                     }
                     checkActive();
                 }

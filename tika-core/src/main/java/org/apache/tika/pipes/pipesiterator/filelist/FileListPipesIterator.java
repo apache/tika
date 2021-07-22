@@ -29,6 +29,7 @@ import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
@@ -66,7 +67,8 @@ public class FileListPipesIterator extends PipesIterator implements Initializabl
                 if (! line.startsWith("#") && !StringUtils.isBlank(line)) {
                     FetchKey fetchKey = new FetchKey(getFetcherName(), line);
                     EmitKey emitKey = new EmitKey(getEmitterName(), line);
-                    tryToAdd(new FetchEmitTuple(line, fetchKey, emitKey));
+                    tryToAdd(new FetchEmitTuple(line, fetchKey, emitKey,
+                            new Metadata(), getHandlerConfig(), getOnParseException()));
                 }
                 line = reader.readLine();
             }
@@ -83,6 +85,7 @@ public class FileListPipesIterator extends PipesIterator implements Initializabl
     public void setHasHeader(boolean hasHeader) {
         this.hasHeader = hasHeader;
     }
+
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler)
             throws TikaConfigException {
@@ -97,6 +100,4 @@ public class FileListPipesIterator extends PipesIterator implements Initializabl
                     "Must specify an existing file");
         }
     }
-
-
 }

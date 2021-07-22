@@ -1,5 +1,9 @@
 Release 2.0.1 - ???
 
+   * Breaking change in the Solr and OpenSearch emitters. To achieve
+     the SKIP or CONCATENATE attachment strategy, modify the
+     parseMode in the pipesiterators or in the FetchEmitTuple (TIKA-3494).
+
    * Fix serialization of embedded docs in OpenSearch emitter (TIKA-3490).
 
 Release 2.0.0 - 07/07/2021

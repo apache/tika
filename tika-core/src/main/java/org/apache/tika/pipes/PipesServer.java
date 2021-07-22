@@ -28,15 +28,18 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
@@ -51,6 +54,7 @@ import org.apache.tika.pipes.emitter.TikaEmitterException;
 import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.FetcherManager;
 import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.StringUtils;
@@ -116,7 +120,8 @@ public class PipesServer implements Runnable {
     private final long maxExtractSizeToReturn;
     private final long serverParseTimeoutMillis;
     private final long serverWaitTimeoutMillis;
-    private Parser parser;
+    private Parser autoDetectParser;
+    private Parser rMetaParser;
     private TikaConfig tikaConfig;
     private FetcherManager fetcherManager;
     private EmitterManager emitterManager;
@@ -307,7 +312,7 @@ public class PipesServer implements Runnable {
 
         Metadata metadata = new Metadata();
         try (InputStream stream = fetcher.fetch(t.getFetchKey().getFetchKey(), metadata)) {
-            metadataList = parseMetadata(t, stream, metadata);
+            metadataList = parse(t, stream, metadata);
         } catch (SecurityException e) {
             LOG.error("security exception " + t.getId(), e);
             throw e;
@@ -378,17 +383,73 @@ public class PipesServer implements Runnable {
         exit(1);
     }
 
-    private List<Metadata> parseMetadata(FetchEmitTuple fetchEmitTuple, InputStream stream,
-                                         Metadata metadata) {
+    private List<Metadata> parse(FetchEmitTuple fetchEmitTuple, InputStream stream,
+                                 Metadata metadata) {
         HandlerConfig handlerConfig = fetchEmitTuple.getHandlerConfig();
+        if (handlerConfig.getParseMode() == HandlerConfig.PARSE_MODE.RMETA) {
+            return parseRecursive(fetchEmitTuple, handlerConfig, stream, metadata);
+        } else {
+            return parseConcatenated(fetchEmitTuple, handlerConfig, stream, metadata);
+        }
+    }
+
+    private List<Metadata> parseConcatenated(FetchEmitTuple fetchEmitTuple,
+                                             HandlerConfig handlerConfig, InputStream stream,
+                                             Metadata metadata) {
+        ContentHandlerFactory contentHandlerFactory =
+                new BasicContentHandlerFactory(handlerConfig.getType(), handlerConfig.getWriteLimit());
+        ContentHandler handler = contentHandlerFactory.getNewContentHandler();
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(DocumentSelector.class, new DocumentSelector() {
+            final int maxEmbedded = handlerConfig.maxEmbeddedResources;
+            int embedded = 0;
+            @Override
+            public boolean select(Metadata metadata) {
+                if (maxEmbedded < 0) {
+                    return true;
+                }
+                return embedded++ > maxEmbedded;
+            }
+        });
+
+        String containerException = null;
+        try {
+            autoDetectParser.parse(stream, handler, metadata, parseContext);
+        } catch (SAXException e) {
+            containerException = ExceptionUtils.getStackTrace(e);
+            LOG.warn("sax problem:" + fetchEmitTuple.getId(), e);
+        } catch (EncryptedDocumentException e) {
+            containerException = ExceptionUtils.getStackTrace(e);
+            LOG.warn("encrypted document:" + fetchEmitTuple.getId(), e);
+        } catch (SecurityException e) {
+            LOG.warn("security exception:" + fetchEmitTuple.getId(), e);
+            throw e;
+        } catch (Exception e) {
+            containerException = ExceptionUtils.getStackTrace(e);
+            LOG.warn("exception: " + fetchEmitTuple.getId(), e);
+        } finally {
+            metadata.add(TikaCoreProperties.TIKA_CONTENT, handler.toString());
+            if (containerException != null) {
+                metadata.add(TikaCoreProperties.CONTAINER_EXCEPTION, containerException);
+            }
+            try {
+                tikaConfig.getMetadataFilter().filter(metadata);
+            } catch (TikaException e) {
+                LOG.warn("exception mapping metadata", e);
+            }
+        }
+        return Collections.singletonList(metadata);
+    }
+
+    private List<Metadata> parseRecursive(FetchEmitTuple fetchEmitTuple,
+                                          HandlerConfig handlerConfig, InputStream stream,
+                                          Metadata metadata) {
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new BasicContentHandlerFactory(handlerConfig.getType(),
-                    handlerConfig.getWriteLimit()),
-                handlerConfig.getMaxEmbeddedResources(),
-                tikaConfig.getMetadataFilter());
+                new BasicContentHandlerFactory(handlerConfig.getType(), handlerConfig.getWriteLimit()),
+                handlerConfig.getMaxEmbeddedResources(), tikaConfig.getMetadataFilter());
         ParseContext parseContext = new ParseContext();
         try {
-            parser.parse(stream, handler, metadata, parseContext);
+            rMetaParser.parse(stream, handler, metadata, parseContext);
         } catch (SAXException e) {
             LOG.warn("sax problem:" + fetchEmitTuple.getId(), e);
         } catch (EncryptedDocumentException e) {
@@ -443,16 +504,10 @@ public class PipesServer implements Runnable {
         this.tikaConfig = new TikaConfig(tikaConfigPath);
         this.fetcherManager = FetcherManager.load(tikaConfigPath);
         this.emitterManager = EmitterManager.load(tikaConfigPath);
-        Parser autoDetectParser = new AutoDetectParser(this.tikaConfig);
-        this.parser = new RecursiveParserWrapper(autoDetectParser);
-
+        this.autoDetectParser = new AutoDetectParser(this.tikaConfig);
+        this.rMetaParser = new RecursiveParserWrapper(autoDetectParser);
     }
 
-    private static class FetchException extends IOException {
-        FetchException(Throwable t) {
-            super(t);
-        }
-    }
 
     private void write(EmitData emitData, String stack) {
         //TODO -- what do we do with the stack?

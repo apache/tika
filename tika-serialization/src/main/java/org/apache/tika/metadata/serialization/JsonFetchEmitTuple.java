@@ -48,6 +48,7 @@ public class JsonFetchEmitTuple {
     private static final String HANDLER_CONFIG_TYPE = "type";
     private static final String HANDLER_CONFIG_WRITE_LIMIT = "writeLimit";
     private static final String HANDLER_CONFIG_MAX_EMBEDDED_RESOURCES = "maxEmbeddedResources";
+    private static final String HANDLER_CONFIG_PARSE_MODE = "parseMode";
 
 
     public static FetchEmitTuple fromJson(Reader reader) throws IOException {
@@ -127,6 +128,7 @@ public class JsonFetchEmitTuple {
                 BasicContentHandlerFactory.HANDLER_TYPE.TEXT;
         int writeLimit = -1;
         int maxEmbeddedResources = -1;
+        HandlerConfig.PARSE_MODE parseMode = HandlerConfig.PARSE_MODE.RMETA;
         String fieldName = jParser.nextFieldName();
         while (fieldName != null) {
             switch (fieldName) {
@@ -141,13 +143,17 @@ public class JsonFetchEmitTuple {
                 case HANDLER_CONFIG_MAX_EMBEDDED_RESOURCES:
                     maxEmbeddedResources = jParser.nextIntValue(-1);
                     break;
+                case HANDLER_CONFIG_PARSE_MODE:
+                    String modeString = jParser.nextTextValue();
+                    parseMode = HandlerConfig.PARSE_MODE.parseMode(modeString);
+                    break;
                 default:
                     throw new IllegalArgumentException("I regret I don't understand '" + fieldName +
                                                        "' in the context of a handler config");
             }
             fieldName = jParser.nextFieldName();
         }
-        return new HandlerConfig(handlerType, writeLimit, maxEmbeddedResources);
+        return new HandlerConfig(handlerType, parseMode, writeLimit, maxEmbeddedResources);
     }
 
     private static String getValue(JsonParser jParser) throws IOException {
@@ -189,6 +195,8 @@ public class JsonFetchEmitTuple {
             jsonGenerator.writeStartObject();
             jsonGenerator.writeStringField(HANDLER_CONFIG_TYPE,
                     t.getHandlerConfig().getType().name().toLowerCase(Locale.ROOT));
+            jsonGenerator.writeStringField(HANDLER_CONFIG_PARSE_MODE,
+                    t.getHandlerConfig().getParseMode().name().toLowerCase(Locale.ROOT));
             jsonGenerator.writeNumberField(HANDLER_CONFIG_WRITE_LIMIT,
                     t.getHandlerConfig().getWriteLimit());
             jsonGenerator.writeNumberField(HANDLER_CONFIG_MAX_EMBEDDED_RESOURCES,

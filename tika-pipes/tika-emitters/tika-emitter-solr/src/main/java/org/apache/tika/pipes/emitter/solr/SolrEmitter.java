@@ -91,20 +91,9 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
         } else if (updateStrategy == UpdateStrategy.UPDATE_MUST_NOT_EXIST) {
             solrInputDocument.setField("_version_", -1);
         }
-        if (attachmentStrategy == AttachmentStrategy.SKIP || metadataList.size() == 1) {
+        if (metadataList.size() == 1) {
             addMetadataToSolrInputDocument(metadataList.get(0), solrInputDocument, updateStrategy);
-        } else if (attachmentStrategy == AttachmentStrategy.CONCATENATE_CONTENT) {
-            //this only handles text for now, not xhtml
-            StringBuilder sb = new StringBuilder();
-            for (Metadata metadata : metadataList) {
-                String content = metadata.get(getContentField());
-                if (content != null) {
-                    sb.append(content).append("\n");
-                }
-            }
-            Metadata parent = metadataList.get(0);
-            parent.set(getContentField(), sb.toString());
-            addMetadataToSolrInputDocument(parent, solrInputDocument, updateStrategy);
+            docsToUpdate.add(solrInputDocument);
         } else if (attachmentStrategy == AttachmentStrategy.PARENT_CHILD) {
             addMetadataToSolrInputDocument(metadataList.get(0), solrInputDocument, updateStrategy);
             for (int i = 1; i < metadataList.size(); i++) {
@@ -112,12 +101,24 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
                 Metadata m = metadataList.get(i);
                 childSolrInputDocument.setField(idField, UUID.randomUUID().toString());
                 addMetadataToSolrInputDocument(m, childSolrInputDocument, updateStrategy);
+                solrInputDocument.addChildDocument(childSolrInputDocument);
+            }
+            docsToUpdate.add(solrInputDocument);
+        } else if (attachmentStrategy == AttachmentStrategy.SEPARATE_DOCUMENTS) {
+            addMetadataToSolrInputDocument(metadataList.get(0), solrInputDocument, updateStrategy);
+            docsToUpdate.add(solrInputDocument);
+            for (int i = 1; i < metadataList.size(); i++) {
+                SolrInputDocument childSolrInputDocument = new SolrInputDocument();
+                Metadata m = metadataList.get(i);
+                childSolrInputDocument.setField(idField,
+                        solrInputDocument.get(idField) + "-" + UUID.randomUUID().toString());
+                addMetadataToSolrInputDocument(m, childSolrInputDocument, updateStrategy);
+                docsToUpdate.add(childSolrInputDocument);
             }
         } else {
             throw new IllegalArgumentException(
                     "I don't yet support this attachment strategy: " + attachmentStrategy);
         }
-        docsToUpdate.add(solrInputDocument);
     }
 
     @Override
@@ -209,24 +210,6 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
     @Field
     public void setSocketTimeout(int socketTimeout) {
         this.socketTimeout = socketTimeout;
-    }
-
-    public String getContentField() {
-        return contentField;
-    }
-
-    /**
-     * This is the field _after_ metadata mappings have been applied
-     * that contains the "content" for each metadata object.
-     * <p>
-     * This is the field that is used if {@link #attachmentStrategy}
-     * is {@link AttachmentStrategy#CONCATENATE_CONTENT}.
-     *
-     * @param contentField
-     */
-    @Field
-    public void setContentField(String contentField) {
-        this.contentField = contentField;
     }
 
     public int getCommitWithin() {
@@ -326,7 +309,7 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
     }
 
     public enum AttachmentStrategy {
-        SKIP, CONCATENATE_CONTENT, PARENT_CHILD,
+        SEPARATE_DOCUMENTS, PARENT_CHILD,
         //anything else?
     }
 
