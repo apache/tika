@@ -18,12 +18,12 @@ package org.apache.tika.metadata;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * XMP property definition. Each instance of this class defines a single
@@ -36,7 +36,7 @@ import java.util.TreeSet;
  */
 public final class Property implements Comparable<Property> {
 
-    private static final Map<String, Property> properties = new HashMap<>();
+    private static final Map<String, Property> PROPERTIES = new ConcurrentHashMap<>();
     private final String name;
     private final boolean internal;
     private final PropertyType propertyType;
@@ -70,8 +70,8 @@ public final class Property implements Comparable<Property> {
             this.secondaryExtractProperties = null;
 
             // Only store primary properties for lookup, not composites
-            synchronized (properties) {
-                properties.put(name, this);
+            synchronized (PROPERTIES) {
+                PROPERTIES.put(name, this);
             }
         }
     }
@@ -102,7 +102,7 @@ public final class Property implements Comparable<Property> {
      */
     public static PropertyType getPropertyType(String key) {
         PropertyType type = null;
-        Property prop = properties.get(key);
+        Property prop = PROPERTIES.get(key);
         if (prop != null) {
             type = prop.getPropertyType();
         }
@@ -116,16 +116,16 @@ public final class Property implements Comparable<Property> {
      * @return the Property object
      */
     public static Property get(String key) {
-        return properties.get(key);
+        return PROPERTIES.get(key);
     }
 
     public static SortedSet<Property> getProperties(String prefix) {
         SortedSet<Property> set = new TreeSet<>();
         String p = prefix + ":";
-        synchronized (properties) {
-            for (String name : properties.keySet()) {
+        synchronized (PROPERTIES) {
+            for (String name : PROPERTIES.keySet()) {
                 if (name.startsWith(p)) {
-                    set.add(properties.get(name));
+                    set.add(PROPERTIES.get(name));
                 }
             }
         }

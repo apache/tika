@@ -1,5 +1,10 @@
 Release 2.0.1 - ???
 
+   * Add DateNormalizingMetadataFilter let users ensure that all dates
+     emitted to Solr/OpenSearch are in UTC. Users can configure which
+     timezone they'd like to use in cases where the file format does
+     not store a timezone (TIKA-3496).
+
    * Breaking change in the Solr and OpenSearch emitters. To achieve
      the SKIP or CONCATENATE attachment strategy, modify the
      parseMode in the pipesiterators or in the FetchEmitTuple (TIKA-3494).

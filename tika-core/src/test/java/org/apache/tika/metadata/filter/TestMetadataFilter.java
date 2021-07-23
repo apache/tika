@@ -179,4 +179,16 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
         assertNull(metadata.get("author"));
         assertNull(metadata.get("a"));
     }
+
+    @Test
+    public void testDateNormalizingFilter() throws Exception {
+        //test that a Date lacking a timezone, if interpreted as Los Angeles, for example,
+        //yields a UTC string that is properly +7 hours.
+        Metadata m = new Metadata();
+        m.set(TikaCoreProperties.CREATED, "2021-07-23T01:02:24");
+        DateNormalizingMetadataFilter filter = new DateNormalizingMetadataFilter();
+        filter.setDefaultTimeZone("America/Los_Angeles");
+        filter.filter(m);
+        assertEquals("2021-07-23T08:02:24Z", m.get(TikaCoreProperties.CREATED));
+    }
 }
