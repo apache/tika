@@ -16,15 +16,19 @@
  */
 package org.apache.tika.pipes.solr.tests;
 
-import java.io.File;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-
 import org.apache.commons.io.IOUtils;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.impl.LBHttpSolrClient;
 import org.apache.solr.common.SolrInputDocument;
+import org.apache.tika.cli.TikaCLI;
+import org.apache.tika.pipes.HandlerConfig;
+import org.apache.tika.pipes.emitter.solr.SolrEmitter;
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Assert;
@@ -35,9 +39,10 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 import org.testcontainers.utility.DockerImageName;
 
-import org.apache.tika.cli.TikaCLI;
-import org.apache.tika.pipes.HandlerConfig;
-import org.apache.tika.pipes.emitter.solr.SolrEmitter;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 public abstract class TikaPipesSolrTestBase {
 
@@ -74,16 +79,18 @@ public abstract class TikaPipesSolrTestBase {
         runTikaAsyncSolrPipeIteratorFileFetcherSolrEmitter();
     }
 
-    private void createTestHtmlFiles(String bodyContent) throws Exception {
+    private void createTestFiles(String bodyContent) throws Exception {
         testFileFolder.mkdirs();
         for (int i = 0; i < numDocs; ++i) {
             FileUtils.writeStringToFile(new File(testFileFolder, "test-" + i + ".html"),
                     "<html><body>" + bodyContent + "</body></html>", StandardCharsets.UTF_8);
         }
+        FileUtils.copyInputStreamToFile(this.getClass().getResourceAsStream("/embedded/embedded.docx"),
+                new File(testFileFolder, "test-embedded.doc"));
     }
 
     protected void setupSolr(GenericContainer<?> solr) throws Exception {
-        createTestHtmlFiles("initial");
+        createTestFiles("initial");
         this.solr = solr;
         solrHost = solr.getHost();
         solrPort = solr.getMappedPort(8983);
@@ -95,6 +102,7 @@ public abstract class TikaPipesSolrTestBase {
         try (SolrClient solrClient = new LBHttpSolrClient.Builder().withBaseSolrUrls(solrEndpoint)
                 .build()) {
 
+            addSchemaFieldsForNestedDocs(solrEndpoint + "/" + collection);
             for (int i = 0; i < numDocs; ++i) {
                 SolrInputDocument solrDoc = new SolrInputDocument();
                 String filename = "test-" + i + ".html";
@@ -102,7 +110,30 @@ public abstract class TikaPipesSolrTestBase {
                 solrDoc.setField("path", filename);
                 solrClient.add(collection, solrDoc);
             }
+            SolrInputDocument embeddedDoc = new SolrInputDocument();
+            String filename = "test-embedded.doc";
+            embeddedDoc.setField("id", filename);
+            embeddedDoc.setField("path", filename);
+            solrClient.add(collection, embeddedDoc);
             solrClient.commit(collection);
+        }
+    }
+
+    private void addSchemaFieldsForNestedDocs(String solrUrl) throws IOException {
+        try (CloseableHttpClient client = HttpClients.createMinimal()) {
+            HttpPost postAddRoot = new HttpPost(solrUrl + "/schema");
+            postAddRoot.setHeader("Content-Type", "application/json");
+            postAddRoot.setEntity(new StringEntity("{\n" +
+                    "  \"replace-field\":{\n" +
+                    "     \"name\":\"_root_\",\n" +
+                    "     \"type\":\"string\",\n" +
+                    "     \"indexed\":true,\n" +
+                    "     \"stored\":true, \n" +
+                    "     \"docValues\":false \n" +
+                    "  }\n" +
+                    "}"));
+            CloseableHttpResponse resp = client.execute(postAddRoot);
+            Assert.assertEquals(200, resp.getStatusLine().getStatusCode());
         }
     }
 
@@ -128,7 +159,7 @@ public abstract class TikaPipesSolrTestBase {
                 createTikaConfigXml(useZk(), tikaConfigFile, log4jPropFile, tikaConfigTemplateXml,
                         SolrEmitter.UpdateStrategy.ADD,
                         SolrEmitter.AttachmentStrategy.PARENT_CHILD,
-                        HandlerConfig.PARSE_MODE.CONCATENATE);
+                        HandlerConfig.PARSE_MODE.RMETA);
         FileUtils.writeStringToFile(tikaConfigFile, tikaConfigXml, StandardCharsets.UTF_8);
 
         TikaCLI.main(new String[]{"-a", "--config=" + tikaConfigFile.getAbsolutePath()});
@@ -142,16 +173,18 @@ public abstract class TikaPipesSolrTestBase {
             Assert.assertEquals(numDocs,
                     solrClient.query(collection, new SolrQuery("content_s:*initial*")).getResults()
                             .getNumFound());
+            Assert.assertEquals(3,
+                solrClient.query(collection, new SolrQuery("_root_:\"test-embedded.doc\"")).getResults().getNumFound());
         }
 
         // update the documents with "update must exist" and run tika async again with "UPDATE_MUST_EXIST".
         // It should not fail, and docs should be updated.
-        createTestHtmlFiles("updated");
+        createTestFiles("updated");
         tikaConfigXml =
                 createTikaConfigXml(useZk(), tikaConfigFile, log4jPropFile, tikaConfigTemplateXml,
                         SolrEmitter.UpdateStrategy.UPDATE_MUST_EXIST,
                         SolrEmitter.AttachmentStrategy.PARENT_CHILD,
-                        HandlerConfig.PARSE_MODE.CONCATENATE);
+                        HandlerConfig.PARSE_MODE.RMETA);
         FileUtils.writeStringToFile(tikaConfigFile, tikaConfigXml, StandardCharsets.UTF_8);
 
         TikaCLI.main(new String[]{"-a", "--config=" + tikaConfigFile.getAbsolutePath()});
