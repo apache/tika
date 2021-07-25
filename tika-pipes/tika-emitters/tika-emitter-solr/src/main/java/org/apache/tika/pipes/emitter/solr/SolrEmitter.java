@@ -64,6 +64,7 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
     private int connectionTimeout = 10000;
     private int socketTimeout = 60000;
     private SolrClient solrClient;
+
     public SolrEmitter() throws TikaConfigException {
         httpClientFactory = new HttpClientFactory();
     }
@@ -163,7 +164,8 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
                 if (updateStrategy == UpdateStrategy.ADD) {
                     solrInputDocument.setField(n, vals[0]);
                 } else {
-                    solrInputDocument.setField(n, new HashMap<String, String>() {{
+                    solrInputDocument.setField(n, new HashMap<String, String>() {
+                        {
                             put("set", vals[0]);
                         }
                     });
@@ -172,7 +174,8 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
                 if (updateStrategy == UpdateStrategy.ADD) {
                     solrInputDocument.setField(n, vals);
                 } else {
-                    solrInputDocument.setField(n, new HashMap<String, String[]>() {{
+                    solrInputDocument.setField(n, new HashMap<String, String[]>() {
+                        {
                             put("set", vals);
                         }
                     });
@@ -286,7 +289,7 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
         } else {
             solrClient = new LBHttpSolrClient.Builder().withConnectionTimeout(connectionTimeout)
                     .withSocketTimeout(socketTimeout).withHttpClient(httpClientFactory.build())
-                    .withBaseSolrUrls(solrUrls.toArray(new String[]{})).build();
+                    .withBaseSolrUrls(solrUrls.toArray(new String[] {})).build();
         }
     }
 

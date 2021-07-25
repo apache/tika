@@ -56,6 +56,7 @@ public abstract class TikaPipesSolrTestBase {
     private String solrEndpoint;
 
     public abstract boolean useZk();
+
     public abstract String getSolrImageName();
 
     @Rule
@@ -139,7 +140,6 @@ public abstract class TikaPipesSolrTestBase {
 
     /**
      * Runs a test using Solr Pipe Iterator, File Fetcher and Solr Emitter.
-     *
      */
     protected void runTikaAsyncSolrPipeIteratorFileFetcherSolrEmitter()
             throws Exception {
@@ -162,7 +162,7 @@ public abstract class TikaPipesSolrTestBase {
                         HandlerConfig.PARSE_MODE.RMETA);
         FileUtils.writeStringToFile(tikaConfigFile, tikaConfigXml, StandardCharsets.UTF_8);
 
-        TikaCLI.main(new String[]{"-a", "--config=" + tikaConfigFile.getAbsolutePath()});
+        TikaCLI.main(new String[] {"-a", "--config=" + tikaConfigFile.getAbsolutePath()});
 
         try (SolrClient solrClient = new LBHttpSolrClient.Builder().withBaseSolrUrls(solrEndpoint)
                 .build()) {
@@ -174,7 +174,8 @@ public abstract class TikaPipesSolrTestBase {
                     solrClient.query(collection, new SolrQuery("content_s:*initial*")).getResults()
                             .getNumFound());
             Assert.assertEquals(3,
-                solrClient.query(collection, new SolrQuery("_root_:\"test-embedded.doc\"")).getResults().getNumFound());
+                    solrClient.query(collection, new SolrQuery("_root_:\"test-embedded.doc\"")).getResults()
+                            .getNumFound());
         }
 
         // update the documents with "update must exist" and run tika async again with "UPDATE_MUST_EXIST".
@@ -187,7 +188,7 @@ public abstract class TikaPipesSolrTestBase {
                         HandlerConfig.PARSE_MODE.RMETA);
         FileUtils.writeStringToFile(tikaConfigFile, tikaConfigXml, StandardCharsets.UTF_8);
 
-        TikaCLI.main(new String[]{"-a", "--config=" + tikaConfigFile.getAbsolutePath()});
+        TikaCLI.main(new String[] {"-a", "--config=" + tikaConfigFile.getAbsolutePath()});
 
         try (SolrClient solrClient = new LBHttpSolrClient.Builder().withBaseSolrUrls(solrEndpoint)
                 .build()) {
