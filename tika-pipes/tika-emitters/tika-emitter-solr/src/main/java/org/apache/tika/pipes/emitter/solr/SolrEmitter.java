@@ -31,6 +31,9 @@ import org.apache.solr.client.solrj.impl.CloudSolrClient;
 import org.apache.solr.client.solrj.impl.LBHttpSolrClient;
 import org.apache.solr.client.solrj.request.UpdateRequest;
 import org.apache.solr.common.SolrInputDocument;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
@@ -41,8 +44,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.emitter.AbstractEmitter;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 public class SolrEmitter extends AbstractEmitter implements Initializable {
@@ -99,7 +100,8 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
             for (int i = 1; i < metadataList.size(); i++) {
                 SolrInputDocument childSolrInputDocument = new SolrInputDocument();
                 Metadata m = metadataList.get(i);
-                childSolrInputDocument.setField(idField, emitKey + "_" + UUID.randomUUID().toString());
+                childSolrInputDocument
+                        .setField(idField, emitKey + "_" + UUID.randomUUID().toString());
                 addMetadataToSolrInputDocument(m, childSolrInputDocument, updateStrategy);
                 solrInputDocument.addChildDocument(childSolrInputDocument);
             }
@@ -289,7 +291,7 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
         } else {
             solrClient = new LBHttpSolrClient.Builder().withConnectionTimeout(connectionTimeout)
                     .withSocketTimeout(socketTimeout).withHttpClient(httpClientFactory.build())
-                    .withBaseSolrUrls(solrUrls.toArray(new String[] {})).build();
+                    .withBaseSolrUrls(solrUrls.toArray(new String[]{})).build();
         }
     }
 
