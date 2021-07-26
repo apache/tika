@@ -345,6 +345,7 @@
     <pdfbox.version>2.0.24</pdfbox.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
     <poi.version>4.1.2</poi.version>
+    <quartz.version>2.3.2</quartz.version>
     <rome.version>1.15.0</rome.version>
     <sis.version>1.0</sis.version>
     <!-- we'll need to stay on 1.7 until we're java modularized ? -->
