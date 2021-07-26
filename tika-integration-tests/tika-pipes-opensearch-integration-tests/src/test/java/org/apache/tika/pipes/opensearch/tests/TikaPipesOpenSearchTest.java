@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.io.IOUtils;
@@ -63,8 +64,12 @@ public class TikaPipesOpenSearchTest {
                     .withExposedPorts(9200)
                     .withEnv("discovery.type", "single-node");
 
-    private String getOpenSearchImageName() {
+    public String getOpenSearchImageName() {
         return "opensearchproject/opensearch:1.0.0";
+    }
+
+    public String getProtocol() {
+        return "https://";
     }
 
     @Before
@@ -142,8 +147,12 @@ public class TikaPipesOpenSearchTest {
                 results.getJson().get("hits").get("total").get("value").asInt());
         JsonNode source = results.getJson().get("hits").get("hits").get(0).get("_source");
 
-        assertEquals("test_recursive_embedded.docx-9",
-                results.getJson().get("hits").get("hits").get(0).get("_id").asText());
+        Matcher m = Pattern.compile("\\Atest_recursive_embedded" +
+                ".docx_[0-9a-f]{8}-[0-9a-f]{4}-" +
+                "[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\Z").matcher(
+                results.getJson().get("hits").get("hits").get(0).get("_id").asText()
+        );
+        assertTrue("test_recursive_embedded.docx_$guid", m.find());
         assertEquals("test_recursive_embedded.docx",
                 results.getJson().get("hits").get("hits").get(0).get("_routing").asText());
         assertEquals("test_recursive_embedded.docx",
@@ -201,8 +210,13 @@ public class TikaPipesOpenSearchTest {
                 results.getJson().get("hits").get("total").get("value").asInt());
         JsonNode source = results.getJson().get("hits").get("hits").get(0).get("_source");
 
-        assertEquals("test_recursive_embedded.docx-9",
-                results.getJson().get("hits").get("hits").get(0).get("_id").asText());
+        Matcher m = Pattern.compile("\\Atest_recursive_embedded" +
+                ".docx_[0-9a-f]{8}-[0-9a-f]{4}-" +
+                "[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\Z").matcher(
+                results.getJson().get("hits").get("hits").get(0).get("_id").asText()
+        );
+        assertTrue("test_recursive_embedded.docx_$guid", m.find());
+
         assertNull("test_recursive_embedded.docx",
                 results.getJson().get("hits").get("hits").get(0).get("_routing"));
         assertNull("test_recursive_embedded.docx",
@@ -293,7 +307,7 @@ public class TikaPipesOpenSearchTest {
         this.openSearch = openSearchContainer;
         openSearchHost = openSearch.getHost();
         openSearchPort = openSearch.getMappedPort(9200);
-        openSearchEndpointBase = "https://" + openSearchHost + ":" + openSearchPort + "/";
+        openSearchEndpointBase = getProtocol() + openSearchHost + ":" + openSearchPort + "/";
         HttpClientFactory httpClientFactory = new HttpClientFactory();
         httpClientFactory.setUserName("admin");
         httpClientFactory.setPassword("admin");

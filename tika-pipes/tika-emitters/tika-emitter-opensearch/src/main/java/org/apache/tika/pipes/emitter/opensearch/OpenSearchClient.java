@@ -24,6 +24,7 @@ import java.io.StringWriter;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.UUID;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -67,11 +68,11 @@ public class OpenSearchClient {
                 emitKey : null;
 
         for (Metadata metadata : metadataList) {
-            String id = emitKey;
+            StringBuilder id = new StringBuilder(emitKey);
             if (i > 0) {
-                id += "-" + i;
+                id.append("_").append(UUID.randomUUID());
             }
-            String indexJson = getBulkIndexJson(id, routing);
+            String indexJson = getBulkIndexJson(id.toString(), routing);
             sb.append(indexJson).append("\n");
             if (i == 0) {
                 sb.append(metadataToJsonContainer(metadata, attachmentStrategy));

@@ -87,7 +87,7 @@ public abstract class TikaPipesSolrTestBase {
                     "<html><body>" + bodyContent + "</body></html>", StandardCharsets.UTF_8);
         }
         FileUtils.copyInputStreamToFile(this.getClass().getResourceAsStream("/embedded/embedded.docx"),
-                new File(testFileFolder, "test-embedded.doc"));
+                new File(testFileFolder, "test-embedded.docx"));
     }
 
     protected void setupSolr(GenericContainer<?> solr) throws Exception {
@@ -112,7 +112,7 @@ public abstract class TikaPipesSolrTestBase {
                 solrClient.add(collection, solrDoc);
             }
             SolrInputDocument embeddedDoc = new SolrInputDocument();
-            String filename = "test-embedded.doc";
+            String filename = "test-embedded.docx";
             embeddedDoc.setField("id", filename);
             embeddedDoc.setField("path", filename);
             solrClient.add(collection, embeddedDoc);
@@ -161,7 +161,6 @@ public abstract class TikaPipesSolrTestBase {
                         SolrEmitter.AttachmentStrategy.PARENT_CHILD,
                         HandlerConfig.PARSE_MODE.RMETA);
         FileUtils.writeStringToFile(tikaConfigFile, tikaConfigXml, StandardCharsets.UTF_8);
-
         TikaCLI.main(new String[] {"-a", "--config=" + tikaConfigFile.getAbsolutePath()});
 
         try (SolrClient solrClient = new LBHttpSolrClient.Builder().withBaseSolrUrls(solrEndpoint)
@@ -174,9 +173,15 @@ public abstract class TikaPipesSolrTestBase {
                     solrClient.query(collection, new SolrQuery("content_s:*initial*")).getResults()
                             .getNumFound());
             Assert.assertEquals(3,
-                    solrClient.query(collection, new SolrQuery("_root_:\"test-embedded.doc\"")).getResults()
+                    solrClient.query(collection, new SolrQuery("_root_:\"test-embedded.docx\"")).getResults()
                             .getNumFound());
+
+            //clean up test-embedded.docx so that the iterator won't try to update its children
+            //in the next test
+            solrClient.deleteById(collection, "_root_:\"test-embedded.docx\"");
+            solrClient.commit(collection);
         }
+
 
         // update the documents with "update must exist" and run tika async again with "UPDATE_MUST_EXIST".
         // It should not fail, and docs should be updated.

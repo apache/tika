@@ -31,7 +31,7 @@ import org.apache.tika.metadata.filter.FieldNameMappingFilter;
 /**
  * This is meant only for one off development tests with a locally
  * running instance of Solr.  Please add unit tests to the
- * tika-integration-tests/solr-*
+ * tika-integration-tests/tika-pipes-solr-integration-tests
  */
 @Ignore
 public class SolrEmitterDevTest {
