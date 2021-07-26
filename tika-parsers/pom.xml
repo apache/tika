@@ -337,7 +337,7 @@
     <dependency>
       <groupId>com.rometools</groupId>
       <artifactId>rome</artifactId>
-      <version>1.15.0</version>
+      <version>1.16.0</version>
       <exclusions>
         <exclusion>
           <groupId>org.jdom</groupId>
