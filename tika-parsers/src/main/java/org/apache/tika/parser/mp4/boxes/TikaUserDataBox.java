@@ -245,7 +245,8 @@ public class TikaUserDataBox extends Box {
             case "\u00A9lyr" :
                 xhtml.element("p", value);
                 break;
-            case "ldes" :
+            case "ldes" : //intentional fall through
+            case "desc" :
                 metadata.set(TikaCoreProperties.DESCRIPTION, value);
                 xhtml.element("p", value);
             case "xid " :
