@@ -20,12 +20,19 @@ import org.junit.Ignore;
 
 import org.apache.tika.pipes.opensearch.tests.TikaPipesOpenSearchTest;
 
-@Ignore("until we figure out if we're supporting es")
+/**
+ * This is used only for devtesting to figure out when the OpenSearch
+ * emitter no longer works with elasticsearch.  We should not use
+ * &gt; 7.10.x in our unit tests because those versions are not ASL 2.0
+ */
+@Ignore
 public class TikaPipesES7Test extends TikaPipesOpenSearchTest {
 
     @Override
     public String getOpenSearchImageName() {
-        return "docker.elastic.co/elasticsearch/elasticsearch:7.13.4";
+        // versions > 7.10.x are no longer ASL 2.0. We should not
+        // test with non-ASL 2.0 dependencies
+        return "docker.elastic.co/elasticsearch/elasticsearch:7.10.2";
     }
 
     @Override
