@@ -16,14 +16,14 @@
  */
 package org.apache.tika.sax;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -58,7 +58,7 @@ public class XHTMLContentHandlerTest {
         return words.toArray(new String[0]);
     }
 
-    @Before
+    @BeforeEach
     public void setUp() {
         output = new BodyContentHandler();
         xhtml = new XHTMLContentHandler(output, new Metadata());

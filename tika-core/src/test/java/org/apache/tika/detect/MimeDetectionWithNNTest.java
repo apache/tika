@@ -16,14 +16,14 @@
  */
 package org.apache.tika.detect;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -36,7 +36,7 @@ public class MimeDetectionWithNNTest {
     /**
      * @inheritDoc
      */
-    @Before
+    @BeforeEach
     public void setUp() {
         detector = new NNExampleModelDetector();
     }
@@ -107,13 +107,14 @@ public class MimeDetectionWithNNTest {
         try {
             Metadata metadata = new Metadata();
             String mime = this.detector.detect(in, metadata).toString();
-            assertEquals(urlOrFileName + " is not properly detected: detected.", expected, mime);
+            assertEquals(expected, mime,
+                    urlOrFileName + " is not properly detected: detected.");
 
             // Add resource name and test again
             // metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, urlOrFileName);
             mime = this.detector.detect(in, metadata).toString();
-            assertEquals(urlOrFileName + " is not properly detected after adding resource name.",
-                    expected, mime);
+            assertEquals(expected, mime,
+                    urlOrFileName + " is not properly detected after adding resource name.");
         } finally {
             in.close();
         }

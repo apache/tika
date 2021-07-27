@@ -16,13 +16,13 @@
  */
 package org.apache.tika.sax;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 
 import org.apache.commons.io.input.NullInputStream;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
@@ -41,7 +41,7 @@ public class SecureContentHandlerTest {
 
     private SecureContentHandler handler;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         stream = TikaInputStream.get(new NullInputStream(MANY_BYTES));
         handler = new SecureContentHandler(new DefaultHandler(), stream);

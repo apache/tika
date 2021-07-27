@@ -17,9 +17,9 @@
 package org.apache.tika.sax;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -27,7 +27,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Set;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -52,7 +52,7 @@ public class BasicContentHandlerFactoryTest {
 
     //copied from TikaTest in tika-parsers package
     public static void assertNotContains(String needle, String haystack) {
-        assertFalse(needle + " found in:\n" + haystack, haystack.contains(needle));
+        assertFalse(haystack.contains(needle), needle + " found in:\n" + haystack);
     }
 
     public static void assertNotContains(String needle, byte[] hayStack)
@@ -61,7 +61,7 @@ public class BasicContentHandlerFactoryTest {
     }
 
     public static void assertContains(String needle, String haystack) {
-        assertTrue(needle + " not found in:\n" + haystack, haystack.contains(needle));
+        assertTrue(haystack.contains(needle), needle + " not found in:\n" + haystack);
     }
 
     public static void assertContains(String needle, byte[] hayStack)
@@ -275,7 +275,7 @@ public class BasicContentHandlerFactoryTest {
             }
             wlr = true;
         }
-        assertTrue("WriteLimitReached", wlr);
+        assertTrue(wlr, "WriteLimitReached");
     }
 
     //TODO: is there a better way than to repeat this with diff signature?
@@ -290,7 +290,7 @@ public class BasicContentHandlerFactoryTest {
 
             wlr = true;
         }
-        assertTrue("WriteLimitReached", wlr);
+        assertTrue(wlr, "WriteLimitReached");
     }
 
     //Simple mockparser that writes a title

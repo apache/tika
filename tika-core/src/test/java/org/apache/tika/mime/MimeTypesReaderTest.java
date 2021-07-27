@@ -17,10 +17,11 @@
 package org.apache.tika.mime;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -31,9 +32,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executors;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
@@ -70,7 +71,7 @@ public class MimeTypesReaderTest {
     }
 
     @SuppressWarnings("unchecked")
-    @Before
+    @BeforeEach
     public void setUp() throws NoSuchFieldException, SecurityException, IllegalArgumentException,
             IllegalAccessException {
         this.mimeTypes = TikaConfig.getDefaultConfig().getMimeRepository();
@@ -82,7 +83,7 @@ public class MimeTypesReaderTest {
         customMimeTypes = System.getProperty(MimeTypesFactory.CUSTOM_MIMES_SYS_PROP);
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         if (customMimeTypes == null) {
             System.clearProperty(MimeTypesFactory.CUSTOM_MIMES_SYS_PROP);
@@ -98,8 +99,9 @@ public class MimeTypesReaderTest {
         // Check on the type
         MimeType html = mimeTypes.forName("text/html");
         assertTrue(html.hasMagic());
-        assertTrue("There should be at least " + minMatches + " HTML matches, found " +
-                html.getMagics().size(), html.getMagics().size() >= minMatches);
+        assertTrue(html.getMagics().size() >= minMatches,
+                "There should be at least " + minMatches + " HTML matches, found " +
+                html.getMagics().size());
 
         // Check on the overall magics
         List<Magic> htmlMagics = new ArrayList<>();
@@ -109,8 +111,8 @@ public class MimeTypesReaderTest {
             }
         }
 
-        assertTrue("There should be at least " + minMatches + " HTML matches, found " +
-                htmlMagics.size(), htmlMagics.size() >= minMatches);
+        assertTrue(htmlMagics.size() >= minMatches,
+                "There should be at least " + minMatches + " HTML matches, found " + htmlMagics.size());
     }
 
     @Test
@@ -120,8 +122,9 @@ public class MimeTypesReaderTest {
         // Check on the type
         MimeType excel = mimeTypes.forName("application/vnd.ms-excel");
         assertTrue(excel.hasMagic());
-        assertTrue("There should be at least " + minMatches + " Excel matches, found " +
-                excel.getMagics().size(), excel.getMagics().size() >= minMatches);
+        assertTrue(excel.getMagics().size() >= minMatches,
+                "There should be at least " + minMatches + " Excel matches, found " +
+                excel.getMagics().size());
 
         // Check on the overall magics
         List<Magic> excelMagics = new ArrayList<>();
@@ -131,8 +134,9 @@ public class MimeTypesReaderTest {
             }
         }
 
-        assertTrue("There should be at least " + minMatches + " Excel matches, found " +
-                excelMagics.size(), excelMagics.size() >= minMatches);
+        assertTrue(excel.getMagics().size() >= minMatches,
+                "There should be at least " + minMatches + " Excel matches, found " +
+                excelMagics.size());
     }
 
     /**
@@ -181,8 +185,8 @@ public class MimeTypesReaderTest {
         // Parent has several children, for versions 2 through 4
         Set<MediaType> mtBTreeChildren =
                 this.mimeTypes.getMediaTypeRegistry().getChildTypes(mtBTree);
-        assertTrue(mtBTreeChildren.toString(), mtBTreeChildren.size() >= 3);
-        assertTrue(mtBTreeChildren.toString(), mtBTreeChildren.contains(mtBTree4));
+        assertTrue(mtBTreeChildren.size() >= 3, mtBTreeChildren.toString());
+        assertTrue(mtBTreeChildren.contains(mtBTree4), mtBTreeChildren.toString());
 
         // Parent of that has none
         MediaType mtBD = this.mimeTypes.getMediaTypeRegistry().getSupertype(mtBTree);
@@ -346,32 +350,41 @@ public class MimeTypesReaderTest {
 
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testBadMinShouldMatch1() throws Exception {
         System.setProperty(MimeTypesFactory.CUSTOM_MIMES_SYS_PROP,
                 "src/test/resources/org/apache/tika/mime/custom-mimetypes-badMinShouldMatch1.xml");
-        MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes(new CustomClassLoader());
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes(new CustomClassLoader());
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testBadMinShouldMatch2() throws Exception {
         System.setProperty(MimeTypesFactory.CUSTOM_MIMES_SYS_PROP,
                 "src/test/resources/org/apache/tika/mime/custom-mimetypes-badMinShouldMatch2.xml");
-        MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes(new CustomClassLoader());
+        assertThrows(IllegalArgumentException.class, () -> {
+            MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes(new CustomClassLoader());
+        });
     }
 
-    @Test(expected = NumberFormatException.class)
+    @Test
     public void testBadMinShouldMatch3() throws Exception {
         System.setProperty(MimeTypesFactory.CUSTOM_MIMES_SYS_PROP,
                 "src/test/resources/org/apache/tika/mime/custom-mimetypes-badMinShouldMatch3.xml");
-        MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes(new CustomClassLoader());
+        assertThrows(IllegalArgumentException.class, () -> {
+            MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes(new CustomClassLoader());
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testBadMinShouldMatch4() throws Exception {
         System.setProperty(MimeTypesFactory.CUSTOM_MIMES_SYS_PROP,
                 "src/test/resources/org/apache/tika/mime/custom-mimetypes-badMinShouldMatch4.xml");
-        MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes(new CustomClassLoader());
+        assertThrows(IllegalArgumentException.class, () -> {
+            MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes(new CustomClassLoader());
+        });
     }
 
     private static class CustomClassLoader extends ClassLoader {

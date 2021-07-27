@@ -16,13 +16,16 @@
  */
 package org.apache.tika.utils;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 import aQute.bnd.annotation.metatype.Configurable;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Param;
@@ -48,17 +51,17 @@ public class AnnotationUtilsTest {
 
             MyParser bean = new MyParser();
             AnnotationUtils.assignFieldParams(bean, params);
-            Assert.assertEquals(bean.config, 1);
+            assertEquals(bean.config, 1);
         } catch (TikaConfigException e) {
             e.printStackTrace();
-            Assert.fail("Exception Not expected");
+            fail("Exception Not expected");
         }
 
         params.clear();
         try {
             params.put("config", new Param<>("config", "a string value"));
             AnnotationUtils.assignFieldParams(new MyParser(), params);
-            Assert.fail("Exception expected");
+            fail("Exception expected");
         } catch (TikaConfigException e) {
             //expected
         }
@@ -80,11 +83,11 @@ public class AnnotationUtilsTest {
             int val = 100;
             params.put("config", new Param<>("config", val));
             AnnotationUtils.assignFieldParams(bean, params);
-            Assert.assertTrue(bean.config == bean.config2);
-            Assert.assertTrue(bean.config == val);
+            assertTrue(bean.config == bean.config2);
+            assertTrue(bean.config == val);
         } catch (TikaConfigException e) {
             e.printStackTrace();
-            Assert.fail("Exception Not expected");
+            fail("Exception Not expected");
         }
 
     }
@@ -103,16 +106,16 @@ public class AnnotationUtilsTest {
         try {
             MyParser bean = new MyParser();
             AnnotationUtils.assignFieldParams(bean, params);
-            Assert.assertEquals(bean.config, someval);
+            assertEquals(bean.config, someval);
         } catch (TikaConfigException e) {
             e.printStackTrace();
-            Assert.fail("Exception Not expected");
+            fail("Exception Not expected");
         }
 
         params.clear();
         try {
             AnnotationUtils.assignFieldParams(new MyParser(), params);
-            Assert.fail("Exception expected");
+            fail("Exception expected");
         } catch (TikaConfigException e) {
             //expected
         }
@@ -146,18 +149,18 @@ public class AnnotationUtilsTest {
         try {
             Child child = new Child();
             AnnotationUtils.assignFieldParams(child, params);
-            Assert.assertEquals(child.overridden, val);
-            Assert.assertEquals(child.parentField, val);
-            Assert.assertEquals(child.childField, val);
+            assertEquals(child.overridden, val);
+            assertEquals(child.parentField, val);
+            assertEquals(child.childField, val);
         } catch (TikaConfigException e) {
             e.printStackTrace();
-            Assert.fail("Exception Not expected");
+            fail("Exception Not expected");
         }
 
         try {
             params.remove("parentField");
             AnnotationUtils.assignFieldParams(new Child(), params);
-            Assert.fail("Exception expected, parent class field not set");
+            fail("Exception expected, parent class field not set");
         } catch (TikaConfigException e) {
             //expected
         }
@@ -178,17 +181,17 @@ public class AnnotationUtilsTest {
             String val = "someval";
             params.put("field", new Param<>("field", String.class, val));
             AnnotationUtils.assignFieldParams(parser, params);
-            Assert.assertEquals(val, parser.field);
+            assertEquals(val, parser.field);
         } catch (Exception e) {
             e.printStackTrace();
-            Assert.fail("Exception not expected, string is assignable to CharSequence");
+            fail("Exception not expected, string is assignable to CharSequence");
         }
 
         try {
             Date val = new Date();
             params.put("field", new Param<>("field", Date.class, val));
             AnnotationUtils.assignFieldParams(parser, params);
-            Assert.fail("Exception expected, Date is not assignable to CharSequence.");
+            fail("Exception expected, Date is not assignable to CharSequence.");
         } catch (TikaConfigException e) {
             //expected
 

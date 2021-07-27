@@ -17,16 +17,15 @@
 package org.apache.tika.io;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test class for {@code TailStream}.
@@ -90,7 +89,7 @@ public class TailStreamTest {
     @Test
     public void testTailBeforeRead() throws IOException {
         TailStream stream = new TailStream(generateStream(0, 100), 50);
-        assertEquals("Wrong buffer length", 0, stream.getTail().length);
+        assertEquals(0, stream.getTail().length, "Wrong buffer length");
         stream.close();
     }
 
@@ -102,7 +101,7 @@ public class TailStreamTest {
         final int count = 64;
         TailStream stream = new TailStream(generateStream(0, count), 2 * count);
         byte[] data = readStream(stream);
-        assertTrue("Wrong content", Arrays.equals(data, stream.getTail()));
+        assertArrayEquals(data, stream.getTail(), "Wrong buffer length");
         stream.close();
     }
 
@@ -114,8 +113,8 @@ public class TailStreamTest {
         final int count = 128;
         TailStream stream = new TailStream(generateStream(0, 2 * count), count);
         readStream(stream);
-        assertEquals("Wrong buffer", generateText(count, count),
-                new String(stream.getTail(), UTF_8));
+        assertEquals(generateText(count, count), new String(stream.getTail(), UTF_8),
+                "Wrong buffer");
     }
 
     /**
@@ -129,12 +128,12 @@ public class TailStreamTest {
         TailStream stream = new TailStream(generateStream(0, count), tailSize);
         byte[] buf = new byte[bufSize];
         int read = stream.read(buf, 10, 8);
-        assertEquals("Wrong number of bytes read", 8, read);
+        assertEquals(8, read, "Wrong number of bytes read");
         while (read != -1) {
             read = stream.read(buf);
         }
-        assertEquals("Wrong buffer", generateText(count - tailSize, tailSize),
-                new String(stream.getTail(), UTF_8));
+        assertEquals(generateText(count - tailSize, tailSize),
+                new String(stream.getTail(), UTF_8), "Wrong buffer");
         stream.close();
     }
 
@@ -151,8 +150,8 @@ public class TailStreamTest {
         stream.read(buf);
         stream.reset();
         readStream(stream);
-        assertEquals("Wrong buffer", generateText(tailSize, tailSize),
-                new String(stream.getTail(), UTF_8));
+        assertEquals(generateText(tailSize, tailSize),
+                new String(stream.getTail(), UTF_8), "Wrong buffer");
     }
 
     /**
@@ -166,8 +165,8 @@ public class TailStreamTest {
         stream.reset();
         byte[] buf = new byte[count];
         stream.read(buf);
-        assertEquals("Wrong buffer", generateText(count - tailSize, tailSize),
-                new String(stream.getTail(), UTF_8));
+        assertEquals(generateText(count - tailSize, tailSize),
+                new String(stream.getTail(), UTF_8), "Wrong buffer");
         stream.close();
     }
 
@@ -180,9 +179,9 @@ public class TailStreamTest {
         final int count = 1024;
         final int skipCount = 512;
         TailStream stream = new TailStream(generateStream(0, count), tailSize);
-        assertEquals("Wrong skip result", skipCount, stream.skip(skipCount));
-        assertEquals("Wrong buffer", generateText(skipCount - tailSize, tailSize),
-                new String(stream.getTail(), UTF_8));
+        assertEquals(skipCount, stream.skip(skipCount), "Wrong skip result");
+        assertEquals(generateText(skipCount - tailSize, tailSize),
+                new String(stream.getTail(), UTF_8), "Wrong buffer");
         stream.close();
     }
 
@@ -193,8 +192,9 @@ public class TailStreamTest {
     public void testSkipEOS() throws IOException {
         final int count = 128;
         TailStream stream = new TailStream(generateStream(0, count), 2 * count);
-        assertEquals("Wrong skip result", count, stream.skip(2 * count));
-        assertEquals("Wrong buffer", generateText(0, count), new String(stream.getTail(), UTF_8));
+        assertEquals(count, stream.skip(2 * count), "Wrong skip result");
+        assertEquals(generateText(0, count), new String(stream.getTail(), UTF_8),
+                "Wrong buffer");
         stream.close();
     }
 
@@ -206,6 +206,6 @@ public class TailStreamTest {
         final int count = 128;
         TailStream stream = new TailStream(generateStream(0, count), 2 * count);
         readStream(stream);
-        assertEquals("Wrong result", -1, stream.skip(1));
+        assertEquals(-1, stream.skip(1), "Wrong result");
     }
 }

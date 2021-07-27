@@ -16,12 +16,13 @@
  */
 package org.apache.tika.fork;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
-import org.junit.Assert;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -61,7 +62,7 @@ class ForkTestParser extends AbstractParser {
         @Override
         public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
                           ParseContext context) throws IOException, SAXException, TikaException {
-            Assert.assertNotNull(ClassInUnusedPackage.class.getPackage());
+            assertNotNull(ClassInUnusedPackage.class.getPackage());
             super.parse(stream, handler, metadata, context);
         }
     }

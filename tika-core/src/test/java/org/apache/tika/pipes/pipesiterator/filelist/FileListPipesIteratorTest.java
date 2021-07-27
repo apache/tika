@@ -16,15 +16,15 @@
  */
 package org.apache.tika.pipes.pipesiterator.filelist;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.pipes.FetchEmitTuple;

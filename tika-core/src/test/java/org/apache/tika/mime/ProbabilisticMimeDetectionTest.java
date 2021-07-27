@@ -19,8 +19,8 @@ package org.apache.tika.mime;
 import static java.nio.charset.StandardCharsets.UTF_16BE;
 import static java.nio.charset.StandardCharsets.UTF_16LE;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -28,8 +28,8 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -43,7 +43,7 @@ public class ProbabilisticMimeDetectionTest {
     /**
      * @inheritDoc
      */
-    @Before
+    @BeforeEach
     public void setUp() {
         proDetector = new ProbabilisticMimeDetectionSelector();
         this.registry = proDetector.getMediaTypeRegistry();
@@ -142,13 +142,14 @@ public class ProbabilisticMimeDetectionTest {
         try {
             Metadata metadata = new Metadata();
             String mime = this.proDetector.detect(in, metadata).toString();
-            assertEquals(urlOrFileName + " is not properly detected: detected.", expected, mime);
+            assertEquals(expected, mime,
+                    urlOrFileName + " is not properly detected: detected.");
 
             // Add resource name and test again
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, urlOrFileName);
             mime = this.proDetector.detect(in, metadata).toString();
-            assertEquals(urlOrFileName + " is not properly detected after adding resource name.",
-                    expected, mime);
+            assertEquals(expected, mime,
+                    urlOrFileName + " is not properly detected after adding resource name.");
         } finally {
             in.close();
         }

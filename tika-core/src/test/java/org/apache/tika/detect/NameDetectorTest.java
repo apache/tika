@@ -16,16 +16,16 @@
  */
 package org.apache.tika.detect;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -38,7 +38,7 @@ public class NameDetectorTest {
 
     private Detector detector;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         Map<Pattern, MediaType> patterns = new HashMap<>();
         patterns.put(Pattern.compile(".*\\.txt", Pattern.CASE_INSENSITIVE), MediaType.TEXT_PLAIN);

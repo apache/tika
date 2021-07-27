@@ -19,17 +19,17 @@ package org.apache.tika.mime;
 import static java.nio.charset.StandardCharsets.UTF_16BE;
 import static java.nio.charset.StandardCharsets.UTF_16LE;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.Tika;
 import org.apache.tika.config.ServiceLoader;
@@ -47,7 +47,7 @@ public class ProbabilisticMimeDetectionTestWithTika {
     /**
      * @inheritDoc
      */
-    @Before
+    @BeforeEach
     public void setUp() {
         MimeTypes types = MimeTypes.getDefaultMimeTypes();
         ServiceLoader loader = new ServiceLoader();
@@ -157,7 +157,7 @@ public class ProbabilisticMimeDetectionTestWithTika {
 
     private void testStream(String expected, String urlOrFileName, InputStream in)
             throws IOException {
-        assertNotNull("Test stream: [" + urlOrFileName + "] is null!", in);
+        assertNotNull(in, "Test stream: [" + urlOrFileName + "] is null!");
         if (!in.markSupported()) {
             in = new java.io.BufferedInputStream(in);
         }
@@ -165,14 +165,15 @@ public class ProbabilisticMimeDetectionTestWithTika {
             Metadata metadata = new Metadata();
             // String mime = this.proDetector.detect(in, metadata).toString();
             String mime = tika.detect(in, metadata);
-            assertEquals(urlOrFileName + " is not properly detected: detected.", expected, mime);
+            assertEquals(expected, mime,
+                    urlOrFileName + " is not properly detected: detected.");
 
             // Add resource name and test again
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, urlOrFileName);
             // mime = this.proDetector.detect(in, metadata).toString();
             mime = tika.detect(in, metadata);
-            assertEquals(urlOrFileName + " is not properly detected after adding resource name.",
-                    expected, mime);
+            assertEquals(expected, mime,
+                    urlOrFileName + " is not properly detected after adding resource name.");
         } finally {
             in.close();
         }

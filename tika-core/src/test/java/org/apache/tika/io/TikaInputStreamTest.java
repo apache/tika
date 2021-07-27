@@ -17,11 +17,11 @@
 package org.apache.tika.io;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,7 +31,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -46,16 +46,18 @@ public class TikaInputStreamTest {
         assertNull(stream.getOpenContainer());
         assertNull(stream.getInputStreamFactory());
 
-        assertEquals("The file returned by the getFile() method should" +
-                        " be the file used to instantiate a TikaInputStream", path,
-                TikaInputStream.get(stream).getPath());
+        assertEquals(path, TikaInputStream.get(stream).getPath(),
+                "The file returned by the getFile() method should" +
+                                " be the file used to instantiate a TikaInputStream");
 
-        assertEquals("The contents of the TikaInputStream should equal the" +
-                " contents of the underlying file", "Hello, World!", readStream(stream));
+        assertEquals("Hello, World!", readStream(stream),
+                "The contents of the TikaInputStream should equal the" +
+                        " contents of the underlying file");
 
         stream.close();
-        assertTrue("The close() method must not remove the file used to" +
-                " instantiate a TikaInputStream", Files.exists(path));
+        assertTrue(Files.exists(path),
+                "The close() method must not remove the file used to" +
+                " instantiate a TikaInputStream");
 
         Files.delete(path);
     }
@@ -74,16 +76,17 @@ public class TikaInputStreamTest {
         assertNull(stream.getOpenContainer());
         assertNull(stream.getInputStreamFactory());
 
-        assertEquals("The contents of the file returned by the getFile method" +
-                        " should equal the contents of the TikaInputStream", "Hello, World!",
-                readFile(file));
+        assertEquals("Hello, World!", readFile(file),
+                "The contents of the file returned by the getFile method" +
+                        " should equal the contents of the TikaInputStream");
 
-        assertEquals("The contents of the TikaInputStream should not get modified" +
-                " by reading the file first", "Hello, World!", readStream(stream));
+        assertEquals("Hello, World!", readStream(stream),
+                "The contents of the TikaInputStream should not get modified" +
+                        " by reading the file first");
 
         stream.close();
-        assertFalse("The close() method must remove the temporary file created" +
-                " by a TikaInputStream", Files.exists(file));
+        assertFalse(Files.exists(file),
+                "The close() method must remove the temporary file created by a TikaInputStream");
     }
 
     @Test
@@ -93,8 +96,9 @@ public class TikaInputStreamTest {
         assertNull(stream.getOpenContainer());
         assertNotNull(stream.getInputStreamFactory());
 
-        assertEquals("The contents of the TikaInputStream should not get modified" +
-                " by reading the file first", "Hello, World!", readStream(stream));
+        assertEquals("Hello, World!", readStream(stream),
+                "The contents of the TikaInputStream should not get modified" +
+                        " by reading the file first");
         stream.close();
     }
 

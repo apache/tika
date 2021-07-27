@@ -17,7 +17,7 @@
 
 package org.apache.tika;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.FileFilter;
 import java.io.IOException;
@@ -133,16 +133,16 @@ public class MultiThreadedTikaTest extends TikaTest {
         //this currently only checks the basics
         //might want to add more checks
 
-        assertEquals("number of embedded files", extractA.metadataList.size(),
-                extractB.metadataList.size());
+        assertEquals(extractA.metadataList.size(), extractB.metadataList.size(),
+                "number of embedded files");
 
         for (int i = 0; i < extractA.metadataList.size(); i++) {
-            assertEquals("number of metadata elements in attachment: " + i,
-                    extractA.metadataList.get(i).size(), extractB.metadataList.get(i).size());
+            assertEquals(extractA.metadataList.get(i).size(), extractB.metadataList.get(i).size(),
+                    "number of metadata elements in attachment: " + i);
 
-            assertEquals("content in attachment: " + i,
-                    extractA.metadataList.get(i).get(TikaCoreProperties.TIKA_CONTENT),
-                    extractB.metadataList.get(i).get(TikaCoreProperties.TIKA_CONTENT));
+            assertEquals(extractA.metadataList.get(i).get(TikaCoreProperties.TIKA_CONTENT),
+                    extractB.metadataList.get(i).get(TikaCoreProperties.TIKA_CONTENT),
+                    "content in attachment: " + i);
         }
     }
 
@@ -427,8 +427,8 @@ public class MultiThreadedTikaTest extends TikaTest {
                 Metadata metadata = new Metadata();
                 try (TikaInputStream tis = TikaInputStream.get(testFile, metadata)) {
                     MediaType mediaType = detector.detect(tis, metadata);
-                    assertEquals("failed on: " + testFile.getFileName(), truth.get(testFile),
-                            mediaType);
+                    assertEquals(truth.get(testFile), mediaType,
+                            "failed on: " + testFile.getFileName());
                 }
             }
             return 1;

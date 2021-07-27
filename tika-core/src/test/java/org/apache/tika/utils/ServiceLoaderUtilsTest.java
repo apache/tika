@@ -16,7 +16,7 @@
  */
 package org.apache.tika.utils;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Random;
 
 import org.apache.custom.detect.MyCustomDetector;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.EmptyDetector;
@@ -49,8 +49,7 @@ public class ServiceLoaderUtilsTest {
         for (int i = 0; i < 10; i++) {
             Collections.shuffle(shuffled, random);
             ServiceLoaderUtils.sortLoadedClasses(shuffled);
-            assertEquals("failed on iteration " + i, expected, shuffled);
-
+            assertEquals(expected, shuffled, "failed on iteration " + i);
         }
     }
 

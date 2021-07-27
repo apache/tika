@@ -16,17 +16,16 @@
  */
 package org.apache.tika.parser;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.Tika;
@@ -61,8 +60,8 @@ public class ParameterizedParserTest {
     public void testConfigurableParserTypes() throws Exception {
         Metadata md = getMetadata("TIKA-1986-parameterized.xml");
         for (Map.Entry<String, String> entry : expcted.entrySet()) {
-            assertEquals("mismatch for " + entry.getKey(), entry.getValue(),
-                    md.get(entry.getKey()));
+            assertEquals(entry.getValue(),
+                    md.get(entry.getKey()), "mismatch for " + entry.getKey());
         }
     }
 
@@ -70,8 +69,8 @@ public class ParameterizedParserTest {
     public void testConfigurableParserTypesDecorated() throws Exception {
         Metadata md = getMetadata("TIKA-1986-parameterized-decorated.xml");
         for (Map.Entry<String, String> entry : expcted.entrySet()) {
-            assertEquals("mismatch for " + entry.getKey(), entry.getValue(),
-                    md.get(entry.getKey()));
+            assertEquals(entry.getValue(),
+                    md.get(entry.getKey()), "mismatch for " + entry.getKey());
         }
     }
 
@@ -88,26 +87,16 @@ public class ParameterizedParserTest {
 
     @Test
     public void testBadValue() throws Exception {
-        boolean ex = false;
-        try {
-            Metadata m = getMetadata("TIKA-1986-bad-values.xml");
-            fail("should have thrown exception");
-        } catch (TikaConfigException e) {
-            ex = true;
-        }
-        assertTrue("No TikaConfigException", ex);
+        assertThrows(TikaConfigException.class, () -> {
+            getMetadata("TIKA-1986-bad-values.xml");
+        });
     }
 
     @Test
     public void testBadType() throws Exception {
-        boolean ex = false;
-        try {
-            Metadata m = getMetadata("TIKA-1986-bad-types.xml");
-            fail("should have thrown exception");
-        } catch (TikaConfigException e) {
-            ex = true;
-        }
-        assertTrue("No RuntimeException", ex);
+        assertThrows(TikaConfigException.class, () -> {
+            getMetadata("TIKA-1986-bad-types.xml");
+        });
     }
 
     //TODO later -- add a test for a parser that isn't configurable
@@ -115,7 +104,7 @@ public class ParameterizedParserTest {
 
     private Metadata getMetadata(String name) throws TikaException, IOException, SAXException {
         URL url = this.getClass().getResource("/org/apache/tika/config/" + name);
-        assertNotNull("couldn't find: " + name, url);
+        assertNotNull(url, "couldn't find: " + name);
         TikaConfig tikaConfig = new TikaConfig(url);
         Tika tika = new Tika(tikaConfig);
         Metadata metadata = new Metadata();

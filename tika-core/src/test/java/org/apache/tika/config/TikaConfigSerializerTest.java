@@ -21,8 +21,8 @@ package org.apache.tika.config;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 public class TikaConfigSerializerTest extends TikaConfigTest {
 
@@ -50,7 +50,7 @@ public class TikaConfigSerializerTest extends TikaConfigTest {
     }
 
     @Test
-    @Ignore("TODO: executor-service info needs to be stored in TikaConfig for serialization")
+    @Disabled("TODO: executor-service info needs to be stored in TikaConfig for serialization")
     public void testExecutors() throws Exception {
         String xml = loadAndSerialize("TIKA-1762-executors.xml", TikaConfigSerializer.Mode.STATIC);
         assertContains("<executor-service class=\"org.apache.tika.config.DummyExecutor\">" +

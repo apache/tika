@@ -16,13 +16,13 @@
  */
 package org.apache.tika.detect;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.InputStream;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.io.TikaInputStream;
@@ -33,7 +33,7 @@ public class FileCommandDetectorTest {
 
     private static Detector DETECTOR;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws Exception {
         try (InputStream is = TikaConfig.class.getResourceAsStream("FileCommandDetector.xml")) {
             DETECTOR = new TikaConfig(is).getDetector();

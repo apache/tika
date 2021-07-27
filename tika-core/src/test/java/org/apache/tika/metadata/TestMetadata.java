@@ -16,14 +16,12 @@
  */
 package org.apache.tika.metadata;
 
-//JDK imports
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -38,7 +36,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.utils.DateUtils;
 
@@ -377,13 +375,13 @@ public class TestMetadata {
 
         // Set explictly without a timezone
         meta.set(TikaCoreProperties.CREATED, "1970-01-01T00:00:01");
-        assertEquals("should return string without time zone specifier because zone is not known",
-                "1970-01-01T00:00:01", meta.get(TikaCoreProperties.CREATED));
+        assertEquals("1970-01-01T00:00:01", meta.get(TikaCoreProperties.CREATED),
+                "should return string without time zone specifier because zone is not known");
 
         // Now ask DateUtils to format for us without one
         meta.set(TikaCoreProperties.CREATED, DateUtils.formatDateUnknownTimezone(new Date(1000)));
-        assertEquals("should return string without time zone specifier because zone is not known",
-                "1970-01-01T00:00:01", meta.get(TikaCoreProperties.CREATED));
+        assertEquals("1970-01-01T00:00:01", meta.get(TikaCoreProperties.CREATED),
+                "should return string without time zone specifier because zone is not known");
     }
 
     /**

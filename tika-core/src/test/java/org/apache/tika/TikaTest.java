@@ -16,10 +16,10 @@
  */
 package org.apache.tika;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
@@ -71,24 +71,24 @@ public abstract class TikaTest {
             count++;
             i = haystack.indexOf(needle, i + 1);
         }
-        assertEquals("found " + count + " but should have found: " + targetCount, targetCount,
-                count);
+        assertEquals(targetCount, count,
+                "found " + count + " but should have found: " + targetCount);
     }
 
     public static void assertContains(String needle, String haystack) {
-        assertTrue(needle + " not found in:\n" + haystack, haystack.contains(needle));
+        assertTrue(haystack.contains(needle), needle + " not found in:\n" + haystack);
     }
 
     public static <T> void assertContains(T needle, Collection<? extends T> haystack) {
-        assertTrue(needle + " not found in:\n" + haystack, haystack.contains(needle));
+        assertTrue(haystack.contains(needle), needle + " not found in:\n" + haystack);
     }
 
     public static void assertNotContained(String needle, String haystack) {
-        assertFalse(needle + " unexpectedly found in:\n" + haystack, haystack.contains(needle));
+        assertFalse(haystack.contains(needle), needle + " unexpectedly found in:\n" + haystack);
     }
 
     public static <T> void assertNotContained(T needle, Collection<? extends T> haystack) {
-        assertFalse(needle + " unexpectedly found in:\n" + haystack, haystack.contains(needle));
+        assertFalse(haystack.contains(needle), needle + " unexpectedly found in:\n" + haystack);
     }
 
     /**

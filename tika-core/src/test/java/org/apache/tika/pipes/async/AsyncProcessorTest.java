@@ -16,7 +16,7 @@
  */
 package org.apache.tika.pipes.async;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -28,9 +28,9 @@ import java.util.Random;
 import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.FetchEmitTuple;
@@ -68,7 +68,7 @@ public class AsyncProcessorTest {
     private int crash = 0;
 
 
-    @Before
+    @BeforeEach
     public void setUp() throws SQLException, IOException {
         inputDir = Files.createTempDirectory("tika-async-");
         tikaConfigPath = Files.createTempFile("tika-config-", ".xml");
@@ -120,7 +120,7 @@ public class AsyncProcessorTest {
         }
     }
 */
-    @After
+    @AfterEach
     public void tearDown() throws SQLException, IOException {
         Files.delete(tikaConfigPath);
         FileUtils.deleteDirectory(inputDir.toFile());

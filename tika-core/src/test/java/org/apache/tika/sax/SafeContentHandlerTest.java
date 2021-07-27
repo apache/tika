@@ -16,10 +16,10 @@
  */
 package org.apache.tika.sax;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -32,7 +32,7 @@ public class SafeContentHandlerTest {
 
     private ContentHandler safe;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         output = new WriteOutContentHandler();
         safe = new SafeContentHandler(output);

@@ -16,12 +16,13 @@
  */
 package org.apache.tika.config;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.file.Paths;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.emitter.Emitter;
@@ -44,22 +45,28 @@ public class TikaPipesConfigTest extends AbstractTikaConfigTest {
         assertEquals(Paths.get("/my/base/path2"), ((FileSystemFetcher) f2).getBasePath());
     }
 
-    @Test(expected = TikaConfigException.class)
+    @Test
     public void testDuplicateFetchers() throws Exception {
         //can't have two fetchers with the same name
-        FetcherManager.load(getConfigFilePath("fetchers-duplicate-config.xml"));
+        assertThrows(TikaConfigException.class, () -> {
+            FetcherManager.load(getConfigFilePath("fetchers-duplicate-config.xml"));
+        });
     }
 
-    @Test(expected = TikaConfigException.class)
+    @Test
     public void testNoNameFetchers() throws Exception {
         //can't have two fetchers with an empty name
-        FetcherManager.load(getConfigFilePath("fetchers-noname-config.xml"));
+        assertThrows(TikaConfigException.class, () -> {
+            FetcherManager.load(getConfigFilePath("fetchers-noname-config.xml"));
+        });
     }
 
-    @Test(expected = TikaConfigException.class)
+    @Test
     public void testNoBasePathFetchers() throws Exception {
         //can't have an fs fetcher with no basepath specified
-        FetcherManager.load(getConfigFilePath("fetchers-nobasepath-config.xml"));
+        assertThrows(TikaConfigException.class, () -> {
+            FetcherManager.load(getConfigFilePath("fetchers-nobasepath-config.xml"));
+        });
     }
 
     @Test
@@ -72,9 +79,11 @@ public class TikaPipesConfigTest extends AbstractTikaConfigTest {
         assertNotNull(em2);
     }
 
-    @Test(expected = TikaConfigException.class)
+    @Test
     public void testDuplicateEmitters() throws Exception {
-        EmitterManager.load(getConfigFilePath("emitters-duplicate-config.xml"));
+        assertThrows(TikaConfigException.class, () -> {
+            EmitterManager.load(getConfigFilePath("emitters-duplicate-config.xml"));
+        });
     }
 
     @Test
@@ -84,11 +93,12 @@ public class TikaPipesConfigTest extends AbstractTikaConfigTest {
         assertEquals("fs1", it.getFetcherName());
     }
 
-    @Test(expected = TikaConfigException.class)
+    @Test
     public void testMultiplePipesIterators() throws Exception {
-        PipesIterator it =
-                PipesIterator.build(getConfigFilePath("pipes-iterator-multiple-config.xml"));
-        assertEquals("fs1", it.getFetcherName());
+        assertThrows(TikaConfigException.class, () -> {
+            PipesIterator it =
+                    PipesIterator.build(getConfigFilePath("pipes-iterator-multiple-config.xml"));
+            assertEquals("fs1", it.getFetcherName());
+        });
     }
-
 }

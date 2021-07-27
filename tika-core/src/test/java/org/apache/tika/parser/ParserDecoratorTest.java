@@ -16,7 +16,8 @@
  */
 package org.apache.tika.parser;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.util.Arrays;
@@ -25,13 +26,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.BodyContentHandler;
 
 public class ParserDecoratorTest {
+
     @Test
     public void withAndWithoutTypes() {
         Set<MediaType> onlyTxt = Collections.singleton(MediaType.TEXT_PLAIN);
@@ -49,14 +51,14 @@ public class ParserDecoratorTest {
         p = ParserDecorator.withTypes(EmptyParser.INSTANCE, onlyTxt);
         types = p.getSupportedTypes(context);
         assertEquals(1, types.size());
-        assertEquals(types.toString(), true, types.contains(MediaType.TEXT_PLAIN));
+        assertTrue(types.contains(MediaType.TEXT_PLAIN), types.toString());
 
         // With a parser with other types, still just the decorated type
         p = ParserDecorator
                 .withTypes(new DummyParser(onlyOct, new HashMap<>(), ""), onlyTxt);
         types = p.getSupportedTypes(context);
         assertEquals(1, types.size());
-        assertEquals(types.toString(), true, types.contains(MediaType.TEXT_PLAIN));
+        assertTrue(types.contains(MediaType.TEXT_PLAIN), types.toString());
 
 
         // Exclude will remove if there
@@ -68,13 +70,13 @@ public class ParserDecoratorTest {
                 .withoutTypes(new DummyParser(onlyOct, new HashMap<>(), ""), onlyTxt);
         types = p.getSupportedTypes(context);
         assertEquals(1, types.size());
-        assertEquals(types.toString(), true, types.contains(MediaType.OCTET_STREAM));
+        assertTrue(types.contains(MediaType.OCTET_STREAM), types.toString());
 
         p = ParserDecorator
                 .withoutTypes(new DummyParser(both, new HashMap<>(), ""), onlyTxt);
         types = p.getSupportedTypes(context);
         assertEquals(1, types.size());
-        assertEquals(types.toString(), true, types.contains(MediaType.OCTET_STREAM));
+        assertTrue(types.contains(MediaType.OCTET_STREAM), types.toString());
     }
 
     /**
@@ -101,8 +103,8 @@ public class ParserDecoratorTest {
         // Will claim to support the types given, not those on the child parsers
         Set<MediaType> types = p.getSupportedTypes(context);
         assertEquals(2, types.size());
-        assertEquals(types.toString(), true, types.contains(MediaType.TEXT_PLAIN));
-        assertEquals(types.toString(), true, types.contains(MediaType.OCTET_STREAM));
+        assertTrue(types.contains(MediaType.TEXT_PLAIN), types.toString());
+        assertTrue(types.contains(MediaType.OCTET_STREAM), types.toString());
 
         // Parsing will make it to the second one
         metadata = new Metadata();

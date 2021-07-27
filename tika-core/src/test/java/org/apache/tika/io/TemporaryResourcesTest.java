@@ -16,13 +16,13 @@
  */
 package org.apache.tika.io;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class TemporaryResourcesTest {
 
@@ -31,11 +31,10 @@ public class TemporaryResourcesTest {
         Path tempFile;
         try (TemporaryResources tempResources = new TemporaryResources()) {
             tempFile = tempResources.createTempFile();
-            assertTrue("Temp file should exist while TempResources is used",
-                    Files.exists(tempFile));
+            assertTrue(Files.exists(tempFile), "Temp file should exist while TempResources is used");
         }
-        assertTrue("Temp file should not exist after TempResources is closed",
-                Files.notExists(tempFile));
+        assertTrue(Files.notExists(tempFile),
+                "Temp file should not exist after TempResources is closed");
     }
 
 }

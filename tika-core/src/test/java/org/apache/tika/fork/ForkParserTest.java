@@ -16,9 +16,9 @@
  */
 package org.apache.tika.fork;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -42,7 +42,7 @@ import java.util.List;
 import java.util.concurrent.Semaphore;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -203,7 +203,7 @@ public class ForkParserTest extends TikaTest {
                             o, m, c);
             fail("should have thrown IOException");
         } catch (TikaException e) {
-            assertTrue("failed to communicate with forked parser process", true);
+            //failed to communicate with forked parser process"
         }
 
         //test setting very short pulse (10 ms) and a parser that takes at least 1000 ms
@@ -222,7 +222,7 @@ public class ForkParserTest extends TikaTest {
                             o, m, c);
             fail("Should have thrown exception");
         } catch (IOException | TikaException e) {
-            assertTrue("should have thrown IOException lost connection", true);
+            //"should have thrown IOException lost connection"
         }
     }
 

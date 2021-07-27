@@ -16,13 +16,13 @@
  */
 package org.apache.tika.utils;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test case for {@link RegexUtils}.
@@ -63,10 +63,11 @@ public class RegexUtilsTest {
                         "What about www.google.com at http://www.google.de " +
                         "A longer URL could be http://www.sybit.com/solutions/portals.html");
 
-        assertTrue("Url not found!", links.size() == 3);
-        assertEquals("Wrong URL", "http://www.nutch.org/index.html", links.get(0));
-        assertEquals("Wrong URL", "http://www.google.de", links.get(1));
-        assertEquals("Wrong URL", "http://www.sybit.com/solutions/portals.html", links.get(2));
+        assertTrue(links.size() == 3, "Url not found!");
+        assertEquals("http://www.nutch.org/index.html", links.get(0), "Wrong URL");
+        assertEquals("http://www.google.de", links.get(1), "Wrong URL");
+        assertEquals("http://www.sybit.com/solutions/portals.html", links.get(2),
+                "Wrong URL");
     }
 
     /**
@@ -77,8 +78,8 @@ public class RegexUtilsTest {
         List<String> links = RegexUtils.extractLinks("Test with ftp://www.nutch.org is it found? " +
                 "What about www.google.com at ftp://www.google.de");
 
-        assertTrue("Url not found!", links.size() == 2);
-        assertEquals("Wrong URL", "ftp://www.nutch.org", links.get(0));
-        assertEquals("Wrong URL", "ftp://www.google.de", links.get(1));
+        assertTrue(links.size() == 2, "Url not found!");
+        assertEquals("ftp://www.nutch.org", links.get(0), "Wrong URL");
+        assertEquals("ftp://www.google.de", links.get(1), "Wrong URL");
     }
 }

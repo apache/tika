@@ -16,7 +16,8 @@
  */
 package org.apache.tika;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -25,7 +26,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.utils.RereadableInputStream;
 
@@ -85,13 +86,13 @@ public class TestRereadableInputStream {
             for (int pass = 0; pass < NUM_PASSES; pass++) {
                 for (int byteNum = 0; byteNum < testSize; byteNum++) {
                     int byteRead = ris.read();
-                    assertEquals("Pass = " + pass + ", byte num should be " + byteNum + " but is " +
-                            byteRead + ".", byteNum, byteRead);
+                    assertEquals(byteNum, byteRead,
+                            "Pass = " + pass + ", byte num should be " + byteNum + " but is " +
+                                    byteRead + ".");
                 }
                 int eof = ris.read();
-                assertEquals(
-                        "Pass = " + pass + ", byte num should be " + -1 + " but is " + eof + ".",
-                        -1, eof);
+                assertEquals(-1, eof,
+                        "Pass = " + pass + ", byte num should be " + -1 + " but is " + eof + ".");
                 ris.rewind();
             }
         }
@@ -109,8 +110,8 @@ public class TestRereadableInputStream {
             for (int pass = 0; pass < NUM_PASSES; pass++) {
                 for (int byteNum = 0; byteNum < iterations; byteNum++) {
                     int byteRead = ris.read();
-                    assertEquals("Pass = " + pass + ", byte num should be " + byteNum + " but is " +
-                            byteRead + ".", byteNum, byteRead);
+                    assertEquals(byteNum, byteRead,
+                            "Pass = " + pass + ", byte num should be " + byteNum + " but is " + byteRead + ".");
                 }
                 ris.rewind();
                 iterations++;
@@ -126,8 +127,7 @@ public class TestRereadableInputStream {
             ris.rewind();  // rewind before we've done anything
             for (int byteNum = 0; byteNum < 1; byteNum++) {
                 int byteRead = ris.read();
-                assertEquals("Byte num should be " + byteNum + " but is " + byteRead + ".", byteNum,
-                        byteRead);
+                assertEquals(byteNum, byteRead, "Byte num should be " + byteNum + " but is " + byteRead + ".");
             }
         }
     }
@@ -167,13 +167,14 @@ public class TestRereadableInputStream {
         }
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void doReadAfterCloseTest() throws IOException {
-
         TestInputStream tis = createTestInputStream(DEFAULT_TEST_SIZE);
         RereadableInputStream ris = new RereadableInputStream(tis, DEFAULT_TEST_SIZE);
         ris.close();
-        ris.read();
+        assertThrows(IOException.class, () -> {
+            ris.read();
+        });
     }
 
 

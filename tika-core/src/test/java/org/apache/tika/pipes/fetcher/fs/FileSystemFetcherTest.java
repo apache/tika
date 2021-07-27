@@ -16,14 +16,15 @@
  */
 package org.apache.tika.pipes.fetcher.fs;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.InitializableProblemHandler;
 
@@ -44,11 +45,13 @@ public class FileSystemFetcherTest {
         assertFalse(FileSystemFetcher.isDescendant(root, descendant));
     }
 
-    @Test(expected = InvalidPathException.class)
+    @Test
     public void testNullByte() throws Exception {
         FileSystemFetcher f = new FileSystemFetcher();
-        f.setBasePath("bad\u0000path");
-        f.setName("fs");
-        f.checkInitialization(InitializableProblemHandler.IGNORE);
+        assertThrows(InvalidPathException.class, () -> {
+            f.setBasePath("bad\u0000path");
+            f.setName("fs");
+            f.checkInitialization(InitializableProblemHandler.IGNORE);
+        });
     }
 }

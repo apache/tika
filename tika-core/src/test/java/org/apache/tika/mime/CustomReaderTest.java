@@ -16,8 +16,8 @@
  */
 package org.apache.tika.mime;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -25,7 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -56,9 +56,7 @@ public class CustomReaderTest {
         assertEquals(1, reader.ignorePatterns.size());
         assertEquals(another.toString() + ">>*" + hello.getExtension(),
                 reader.ignorePatterns.get(0));
-        assertTrue("Server-side script type not detected", another.isInterpreted());
-
-        //System.out.println( mimeTypes.getMediaTypeRegistry().getTypes() );
+        assertTrue(another.isInterpreted(), "Server-side script type not detected");
     }
 
     static class CustomMimeTypesReader extends MimeTypesReader {

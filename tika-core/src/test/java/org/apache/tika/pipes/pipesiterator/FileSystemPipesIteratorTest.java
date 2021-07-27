@@ -16,7 +16,7 @@
  */
 package org.apache.tika.pipes.pipesiterator;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.net.URL;
@@ -29,7 +29,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator;
@@ -47,7 +48,8 @@ public class FileSystemPipesIteratorTest {
 
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30000)
     public void testBasic() throws Exception {
         URL url =
                 FileSystemPipesIteratorTest.class.getResource("/test-documents");
@@ -70,10 +72,10 @@ public class FileSystemPipesIteratorTest {
         }
 
         for (String t : truthSet) {
-            assertTrue("missing in iterator set " + t, iteratorSet.contains(t));
+            assertTrue(iteratorSet.contains(t), "missing in iterator set " + t);
         }
         for (String i : iteratorSet) {
-            assertTrue("missing in truth set " + i, truthSet.contains(i));
+            assertTrue(truthSet.contains(i), "missing in truth set " + i);
         }
     }
 }
