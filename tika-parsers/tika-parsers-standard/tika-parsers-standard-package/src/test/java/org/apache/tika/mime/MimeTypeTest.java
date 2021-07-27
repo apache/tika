@@ -16,19 +16,19 @@
  */
 package org.apache.tika.mime;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class MimeTypeTest {
 
     private MimeTypes types;
     private MimeType text;
 
-    @Before
+    @BeforeEach
     public void setUp() throws MimeTypeException {
         types = new MimeTypes();
         text = types.forName("text/plain");

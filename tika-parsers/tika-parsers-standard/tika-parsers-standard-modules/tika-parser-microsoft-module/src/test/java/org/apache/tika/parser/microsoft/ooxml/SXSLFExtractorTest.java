@@ -17,9 +17,9 @@
 
 package org.apache.tika.parser.microsoft.ooxml;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.InputStream;
 import java.util.HashMap;
@@ -27,9 +27,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
@@ -50,7 +50,7 @@ public class SXSLFExtractorTest extends TikaTest {
     OfficeParserConfig officeParserConfig = new OfficeParserConfig();
     private ParseContext parseContext;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         parseContext = new ParseContext();
         officeParserConfig.setUseSAXPptxExtractor(true);
@@ -63,7 +63,7 @@ public class SXSLFExtractorTest extends TikaTest {
 
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_various2.pptx", parseContext);
 
-        assertEquals("right number of attachments", 14, metadataList.size());
+        assertEquals(14, metadataList.size(), "right number of attachments");
 
         String mainContent = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
 
@@ -168,8 +168,8 @@ public class SXSLFExtractorTest extends TikaTest {
             try (InputStream input = getResourceAsStream("/test-documents/" + filename)) {
                 AUTO_DETECT_PARSER.parse(input, handler, metadata, parseContext);
 
-                assertEquals("Mime-type checking for " + filename, mimeTypes[i],
-                        metadata.get(Metadata.CONTENT_TYPE));
+                assertEquals(mimeTypes[i], metadata.get(Metadata.CONTENT_TYPE),
+                        "Mime-type checking for " + filename);
                 assertEquals("Attachment Test", metadata.get(TikaCoreProperties.TITLE));
                 assertEquals("Rajiv", metadata.get(TikaCoreProperties.CREATOR));
 
@@ -178,16 +178,16 @@ public class SXSLFExtractorTest extends TikaTest {
                 if (extension.equals("thmx")) {
                     assertEquals("", content);
                 } else {
-                    assertTrue("Text missing for " + filename + "\n" + content,
-                            content.contains("Attachment Test"));
-                    assertTrue("Text missing for " + filename + "\n" + content,
-                            content.contains("This is a test file data with the same content"));
-                    assertTrue("Text missing for " + filename + "\n" + content,
-                            content.contains("content parsing"));
-                    assertTrue("Text missing for " + filename + "\n" + content,
-                            content.contains("Different words to test against"));
-                    assertTrue("Text missing for " + filename + "\n" + content,
-                            content.contains("Mystery"));
+                    assertTrue(content.contains("Attachment Test"),
+                            "Text missing for " + filename + "\n" + content);
+                    assertTrue(content.contains("This is a test file data with the same content"),
+                            "Text missing for " + filename + "\n" + content);
+                    assertTrue(content.contains("content parsing"),
+                            "Text missing for " + filename + "\n" + content);
+                    assertTrue(content.contains("Different words to test against"),
+                            "Text missing for " + filename + "\n" + content);
+                    assertTrue(content.contains("Mystery"),
+                            "Text missing for " + filename + "\n" + content);
                 }
             }
         }
@@ -220,8 +220,8 @@ public class SXSLFExtractorTest extends TikaTest {
             final int currentI = i;
             ContentHandler handler = new BodyContentHandler() {
                 public void startDocument() {
-                    assertEquals("Mime-type checking for " + filename, mimeTypes[currentI],
-                            metadata.get(Metadata.CONTENT_TYPE));
+                    assertEquals(mimeTypes[currentI], metadata.get(Metadata.CONTENT_TYPE),
+                            "Mime-type checking for " + filename);
                     assertEquals("Attachment Test", metadata.get(TikaCoreProperties.TITLE));
                     assertEquals("Rajiv", metadata.get(TikaCoreProperties.CREATOR));
 
@@ -258,8 +258,8 @@ public class SXSLFExtractorTest extends TikaTest {
                 AUTO_DETECT_PARSER.parse(input, handler, metadata, parseContext);
 
                 // Should get the metadata
-                assertEquals("Mime-type checking for " + filename, mimeTypes[i],
-                        metadata.get(Metadata.CONTENT_TYPE));
+                assertEquals(mimeTypes[i], metadata.get(Metadata.CONTENT_TYPE),
+                        "Mime-type checking for " + filename);
 
                 // But that's about it
             }
@@ -336,7 +336,7 @@ public class SXSLFExtractorTest extends TikaTest {
     }
 
     @Test
-    @Ignore("can't tell why this isn't working")
+    @Disabled("can't tell why this isn't working")
     public void testTurningOffMasterContent() throws Exception {
         //now test turning off master content
 
@@ -419,7 +419,7 @@ public class SXSLFExtractorTest extends TikaTest {
 
     // TIKA-997:
     @Test
-    @Ignore("TODO: add in embedded file markup")
+    @Disabled("TODO: add in embedded file markup")
     public void testEmbeddedZipInPPTX() throws Exception {
         String xml = getXML("test_embedded_zip.pptx", parseContext).xml;
         int h = xml.indexOf("<div class=\"embedded\" id=\"slide1_rId3\" />");
@@ -437,7 +437,7 @@ public class SXSLFExtractorTest extends TikaTest {
 
     // TIKA-1032:
     @Test
-    @Ignore("TODO: add in embedded file markup")
+    @Disabled("TODO: add in embedded file markup")
     public void testEmbeddedPPTXTwoSlides() throws Exception {
         String xml = getXML("testPPT_embedded_two_slides.pptx", parseContext).xml;
         assertContains("<div class=\"embedded\" id=\"slide1_rId7\" />", xml);

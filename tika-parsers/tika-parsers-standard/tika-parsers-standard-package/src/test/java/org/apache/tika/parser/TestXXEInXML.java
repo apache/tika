@@ -16,7 +16,7 @@
  */
 package org.apache.tika.parser;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -30,8 +30,8 @@ import javax.xml.parsers.SAXParserFactory;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.config.TikaConfig;
@@ -56,7 +56,7 @@ public class TestXXEInXML extends XMLTestBase {
                     .getBytes(StandardCharsets.UTF_8);
 
     @Test
-    @Ignore("ignore vulnerable tests")
+    @Disabled("ignore vulnerable tests")
     public void testConfirmVulnerable() throws Exception {
         try {
             parse("testXXE.xml", getResourceAsStream("/test-documents/testXXE.xml"),

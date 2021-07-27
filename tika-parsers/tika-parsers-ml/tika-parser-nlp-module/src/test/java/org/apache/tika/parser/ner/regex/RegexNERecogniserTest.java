@@ -16,7 +16,7 @@
  */
 package org.apache.tika.parser.ner.regex;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;

@@ -16,8 +16,9 @@
  */
 package org.apache.tika.parser.odf;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,7 +31,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
@@ -366,47 +367,55 @@ public class ODFParserTest extends TikaTest {
                 "<span>Visit Tika</span></a>", xml);
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testInvalidFromStream() throws Exception {
         try (InputStream is = getResourceAsUrl("/test-documents/testODTnotaZipFile.odt")
                 .openStream()) {
             OpenDocumentParser parser = new OpenDocumentParser();
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            parser.parse(is, handler, metadata, new ParseContext());
+            assertThrows(IOException.class, () -> {
+                parser.parse(is, handler, metadata, new ParseContext());
+            });
         }
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testInvalidFromFile() throws Exception {
-        try (TikaInputStream tis = TikaInputStream
+        try (TikaInputStream is = TikaInputStream
                 .get(getResourceAsUrl("/test-documents/testODTnotaZipFile.odt"))) {
             OpenDocumentParser parser = new OpenDocumentParser();
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            parser.parse(tis, handler, metadata, new ParseContext());
+            assertThrows(IOException.class, () -> {
+                parser.parse(is, handler, metadata, new ParseContext());
+            });
         }
     }
 
-    @Test(expected = EncryptedDocumentException.class)
+    @Test
     public void testEncryptedODTFile() throws Exception {
         //the password to this file is "tika"
         Path p =
                 Paths.get(
                         ODFParserTest.class.getResource(
                                 "/test-documents/testODTEncrypted.odt").toURI());
-        getRecursiveMetadata(p, false);
+        assertThrows(EncryptedDocumentException.class, () -> {
+            getRecursiveMetadata(p, false);
+        });
     }
 
     //this, of course, should throw an EncryptedDocumentException
     //but the file can't be read by Java's ZipInputStream or
     //by commons compress, unless you enable descriptors.
     //https://issues.apache.org/jira/browse/ODFTOOLKIT-402
-    @Test(expected = TikaException.class)
+    @Test
     public void testEncryptedODTStream() throws Exception {
         try (InputStream is = ODFParserTest.class.getResourceAsStream(
                 "/test-documents/testODTEncrypted.odt")) {
-            getRecursiveMetadata(is, false);
+            assertThrows(TikaException.class, () -> {
+                getRecursiveMetadata(is, false);
+            });
         }
     }
 

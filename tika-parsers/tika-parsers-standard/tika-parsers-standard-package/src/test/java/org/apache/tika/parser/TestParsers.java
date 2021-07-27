@@ -16,16 +16,16 @@
  */
 package org.apache.tika.parser;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.MultiThreadedTikaTest;
@@ -44,7 +44,7 @@ public class TestParsers extends MultiThreadedTikaTest {
 
     private Tika tika;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         tc = TikaConfig.getDefaultConfig();
         tika = new Tika(tc);
@@ -71,7 +71,7 @@ public class TestParsers extends MultiThreadedTikaTest {
                 .get(getResourceAsStream("/test-documents/testEXCEL.xls"))) {
             File file = tis.getFile();
             String s1 = tika.parseToString(file);
-            assertTrue("Text does not contain '" + expected + "'", s1.contains(expected));
+            assertTrue(s1.contains(expected), "Text does not contain '" + expected + "'");
             Parser parser = tika.getParser();
             try (InputStream stream = new FileInputStream(file)) {
                 parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
@@ -88,11 +88,12 @@ public class TestParsers extends MultiThreadedTikaTest {
                     .get(getResourceAsStream("/test-documents/testOptionalHyphen." + extension))) {
 
                 String content = tika.parseToString(tis.getFile());
-                assertTrue("optional hyphen was not handled for '" + extension + "' file type: " +
-                        content, content.contains("optionalhyphen") ||
-                        content.contains("optional\u00adhyphen") ||   // soft hyphen
-                        content.contains("optional\u200bhyphen") ||   // zero width space
-                        content.contains("optional\u2027"));          // hyphenation point
+                assertTrue(content.contains("optionalhyphen") ||
+                                        content.contains("optional\u00adhyphen") ||   // soft hyphen
+                                        content.contains("optional\u200bhyphen") ||   // zero width space
+                                        content.contains("optional\u2027"),
+                        "optional hyphen was not handled for '" + extension + "' file type: " +
+                                        content);          // hyphenation point
             }
         }
 
@@ -104,10 +105,10 @@ public class TestParsers extends MultiThreadedTikaTest {
                 .get(getResourceAsStream("/test-documents/" + fileName + "." + extension))) {
             content = tika.parseToString(tis.getFile());
         }
-        assertTrue(extension + ": content=" + content + " did not extract text",
-                content.contains("Here is some text"));
-        assertTrue(extension + ": content=" + content + " did not extract comment",
-                content.contains("Here is a comment"));
+        assertTrue(content.contains("Here is some text"),
+                extension + ": content=" + content + " did not extract text");
+        assertTrue(content.contains("Here is a comment"),
+                extension + ": content=" + content + " did not extract comment");
     }
 
     @Test
@@ -121,7 +122,7 @@ public class TestParsers extends MultiThreadedTikaTest {
 
     //TODO: add a @smoketest tag or something similar to run this occasionally automatically
     @Test
-    @Ignore("ignore for regular builds; run occasionally")
+    @Disabled("disabled for regular builds; run occasionally")
     public void testAllMultiThreaded() throws Exception {
         //this runs against all files in /test-documents
         ParseContext[] contexts = new ParseContext[10];

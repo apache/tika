@@ -23,9 +23,9 @@ import static org.apache.tika.parser.font.AdobeFontMetricParser.MET_FONT_SUB_FAM
 import static org.apache.tika.parser.font.AdobeFontMetricParser.MET_FONT_VERSION;
 import static org.apache.tika.parser.font.AdobeFontMetricParser.MET_FONT_WEIGHT;
 import static org.apache.tika.parser.font.AdobeFontMetricParser.MET_PS_NAME;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
@@ -39,6 +39,7 @@ import org.apache.tika.sax.BodyContentHandler;
  * Test case for parsing various different font files.
  */
 public class FontParsersTest extends TikaTest {
+
     @Test
     public void testAdobeFontMetricParsing() throws Exception {
         ContentHandler handler = new BodyContentHandler();

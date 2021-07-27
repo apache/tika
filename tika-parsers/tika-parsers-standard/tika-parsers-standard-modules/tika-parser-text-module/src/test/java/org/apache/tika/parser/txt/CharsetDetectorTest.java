@@ -16,8 +16,8 @@
  */
 package org.apache.tika.parser.txt;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -26,7 +26,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.nio.file.Files;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 

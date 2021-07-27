@@ -16,11 +16,11 @@
  */
 package org.apache.tika.parser.image;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.InputStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;

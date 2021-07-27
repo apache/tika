@@ -17,10 +17,9 @@
 
 package org.apache.tika.parser.mailcommons;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import static org.junit.Assert.assertEquals;
-
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
@@ -47,10 +46,10 @@ public class MailUtilTest {
         Metadata m = new Metadata();
         MailUtil.setPersonAndEmail(string, Message.MESSAGE_FROM_NAME, Message.MESSAGE_FROM_EMAIL,
                 m);
-        assertEquals(person + " : " + m.get(Message.MESSAGE_FROM_NAME), person,
-                m.get(Message.MESSAGE_FROM_NAME));
-        assertEquals(email + " : " + m.get(Message.MESSAGE_FROM_EMAIL), email,
-                m.get(Message.MESSAGE_FROM_EMAIL));
+        assertEquals(person, m.get(Message.MESSAGE_FROM_NAME),
+                person + " : " + m.get(Message.MESSAGE_FROM_NAME));
+        assertEquals(email, m.get(Message.MESSAGE_FROM_EMAIL),
+                email + " : " + m.get(Message.MESSAGE_FROM_EMAIL));
     }
 
 

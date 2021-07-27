@@ -25,7 +25,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -48,7 +48,8 @@ public class AutoDetectReaderParserTest extends MultiThreadedTikaTest {
         for (int i = 0; i < numThreads; i++) {
             contexts[i] = new ParseContext();
         }
-        FileFilter fileFilter = pathname -> pathname.getName().endsWith(".txt") || pathname.getName().endsWith(".html");
+        FileFilter fileFilter = pathname -> pathname.getName().endsWith(".txt")
+                || pathname.getName().endsWith(".html");
         testMultiThreaded(AUTO_DETECT_PARSER, contexts, numThreads, numIterations, fileFilter);
     }
 

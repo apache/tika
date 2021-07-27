@@ -16,8 +16,8 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.net.URL;
 
@@ -54,7 +54,7 @@ public abstract class AbstractPOIContainerExtractionTest extends TikaTest {
     protected static TikaInputStream getTestFile(String filename) throws Exception {
         URL input =
                 AbstractPOIContainerExtractionTest.class.getResource("/test-documents/" + filename);
-        assertNotNull(filename + " not found", input);
+        assertNotNull(input, filename + " not found");
 
         return TikaInputStream.get(input);
     }

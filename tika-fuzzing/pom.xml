@@ -70,11 +70,7 @@
       <artifactId>tika-parser-digest-commons</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <scope>test</scope>
-    </dependency>
+
     <!-- bring in the mock parser -->
     <dependency>
       <groupId>${project.groupId}</groupId>

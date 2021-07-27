@@ -16,10 +16,11 @@
  */
 package org.apache.tika.parser.microsoft.xml;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.AfterClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.exception.TikaException;
@@ -31,7 +32,7 @@ import org.apache.tika.utils.XMLReaderUtils;
 
 public class XML2003ParserTest extends MultiThreadedTikaTest {
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() throws TikaException {
         XMLReaderUtils.setPoolSize(XMLReaderUtils.DEFAULT_POOL_SIZE);
     }
@@ -62,7 +63,8 @@ public class XML2003ParserTest extends MultiThreadedTikaTest {
 
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60000)
     public void testMultiThreaded() throws Exception {
         XMLReaderUtils.setPoolSize(4);
         int numThreads = XMLReaderUtils.getPoolSize() * 2;

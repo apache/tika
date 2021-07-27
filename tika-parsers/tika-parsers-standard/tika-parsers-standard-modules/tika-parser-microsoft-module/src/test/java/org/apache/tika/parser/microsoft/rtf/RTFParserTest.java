@@ -16,10 +16,10 @@
  */
 package org.apache.tika.parser.microsoft.rtf;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.InputStream;
@@ -28,7 +28,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
@@ -76,7 +76,7 @@ public class RTFParserTest extends TikaTest {
         assertContains("\u5ff5", content);
         assertContains("0 ", content);
         assertContains("abc", content);
-        assertFalse("Doubled character \u5E74", content.contains("\u5E74\u5E74"));
+        assertFalse(content.contains("\u5E74\u5E74"), "Doubled character \u5E74");
     }
 
     @Test

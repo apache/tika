@@ -16,15 +16,16 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
@@ -121,7 +122,7 @@ public class PowerPointParserTest extends TikaTest {
     }
 
     @Test
-    @Ignore("not sure why this isn't working")
+    @Disabled("not sure why this isn't working")
     public void testSkipHeaderFooter() throws Exception {
         //now test turning off header/footer
         OfficeParserConfig config = new OfficeParserConfig();
@@ -157,7 +158,7 @@ public class PowerPointParserTest extends TikaTest {
     }
 
     @Test
-    @Ignore("not working")
+    @Disabled("not working")
     public void testTurningOffMasterFooter() throws Exception {
         //now test turning off master content
         OfficeParserConfig config = new OfficeParserConfig();
@@ -317,9 +318,11 @@ public class PowerPointParserTest extends TikaTest {
                 metadataList.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM));
     }
 
-    @Test(expected = EncryptedDocumentException.class)
+    @Test
     public void testEncrypted() throws Exception {
-        getXML("testPPT_protected_passtika.ppt");
+        assertThrows(EncryptedDocumentException.class, () -> {
+            getXML("testPPT_protected_passtika.ppt");
+        });
     }
 
     @Test
@@ -356,14 +359,14 @@ public class PowerPointParserTest extends TikaTest {
 
     }
 
-    @Ignore("until we add smart text extraction")
+    @Disabled("until we add smart text extraction")
     @Test
     public void testSmartArtText() throws Exception {
         String content = getXML("testPPT_groups.ppt").xml;
         assertContains("smart1", content);
     }
 
-    @Ignore("until we fix hyperlink extraction from text boxes")
+    @Disabled("until we fix hyperlink extraction from text boxes")
     @Test
     public void testHyperlinksInTextBoxes() throws Exception {
         String content = getXML("testPPT_groups.ppt").xml;

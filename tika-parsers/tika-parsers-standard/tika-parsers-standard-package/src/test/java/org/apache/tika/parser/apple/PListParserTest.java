@@ -16,17 +16,18 @@
  */
 package org.apache.tika.parser.apple;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
 public class PListParserTest extends TikaTest {
+
     @Test
     public void testWebArchive() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testWEBARCHIVE.webarchive");

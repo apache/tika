@@ -16,16 +16,16 @@
  */
 package org.apache.tika.parser.microsoft.chm;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
 import java.util.List;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
@@ -33,7 +33,7 @@ import org.apache.tika.exception.TikaException;
 public class TestChmExtractor extends TikaTest {
     private ChmExtractor chmExtractor = null;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         chmExtractor = new ChmExtractor(new ByteArrayInputStream(TestParameters.chmData));
     }
@@ -67,7 +67,7 @@ public class TestChmExtractor extends TikaTest {
             XMLResult r = getXML("testChm_oom.chm");
             fail("should have thrown TikaException");
         } catch (TikaException e) {
-            assertTrue("correct exception thrown", true);
+            assertTrue(true, "correct exception thrown");
         }
     }
 

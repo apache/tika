@@ -16,19 +16,19 @@
  */
 package org.apache.tika.parser.image;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.TimeZone;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.metadata.Metadata;
@@ -49,12 +49,12 @@ public class JpegParserTest {
     //for testing across different time zones.
     //We also appear to have to specify it in the surefire config:
     //<argLine>-Duser.timezone=UTC</argLine>
-    @BeforeClass
+    @BeforeAll
     public static void setDefaultTimeZone() {
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
     }
 
-    @AfterClass
+    @AfterAll
     public static void resetDefaultTimeZone() {
         TimeZone.setDefault(CURR_TIME_ZONE);
     }
@@ -94,12 +94,12 @@ public class JpegParserTest {
 
         // Common tags
         assertEquals("2009-10-02T23:02:49", metadata.get(TikaCoreProperties.MODIFIED));
-        assertEquals("Date/Time Original for when the photo was taken, unspecified time zone",
-                "2009-08-11T09:09:45", metadata.get(TikaCoreProperties.CREATED));
+        assertEquals("2009-08-11T09:09:45", metadata.get(TikaCoreProperties.CREATED),
+                "Date/Time Original for when the photo was taken, unspecified time zone");
         List<String> keywords = Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT));
-        assertTrue("'canon-55-250' expected in " + keywords, keywords.contains("canon-55-250"));
-        assertTrue("'moscow-birds' expected in " + keywords, keywords.contains("moscow-birds"));
-        assertTrue("'serbor' expected in " + keywords, keywords.contains("serbor"));
+        assertTrue(keywords.contains("canon-55-250"), "'canon-55-250' expected in " + keywords);
+        assertTrue(keywords.contains("moscow-birds"), "'moscow-birds' expected in " + keywords);
+        assertTrue(keywords.contains("serbor"), "'serbor' expected in " + keywords);
         assertFalse(keywords.contains("canon-55-250 moscow-birds serbor"));
     }
 
@@ -139,14 +139,13 @@ public class JpegParserTest {
         assertEquals("Inch", metadata.get(Metadata.RESOLUTION_UNIT));
 
         // Common tags
-        assertEquals("Date/Time Original for when the photo was taken, unspecified time zone",
-                "2009-08-11T09:09:45", metadata.get(TikaCoreProperties.CREATED));
-        assertEquals(
+        assertEquals("2009-08-11T09:09:45", metadata.get(TikaCoreProperties.CREATED),
+                "Date/Time Original for when the photo was taken, unspecified time zone");
+        assertEquals("2009-10-02T23:02:49", metadata.get(TikaCoreProperties.MODIFIED),
                 "This image has different Date/Time than Date/Time Original, " +
-                        "so it is probably modification date",
-                "2009-10-02T23:02:49", metadata.get(TikaCoreProperties.MODIFIED));
-        assertEquals("Date/Time Original should be stored in EXIF field too", "2009-08-11T09:09:45",
-                metadata.get(TIFF.ORIGINAL_DATE));
+                        "so it is probably modification date");
+        assertEquals("2009-08-11T09:09:45", metadata.get(TIFF.ORIGINAL_DATE),
+                "Date/Time Original should be stored in EXIF field too");
         assertEquals("canon-55-250", metadata.getValues(TikaCoreProperties.SUBJECT)[0]);
     }
 
@@ -231,7 +230,7 @@ public class JpegParserTest {
                 metadata.get(TikaCoreProperties.DESCRIPTION));
         assertEquals("Some Tourist", metadata.get(TikaCoreProperties.CREATOR));
         List<String> keywords = Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT));
-        assertTrue("got " + keywords, keywords.contains("bird watching"));
+        assertTrue(keywords.contains("bird watching"), "got " + keywords);
     }
 
     @Test
@@ -252,9 +251,8 @@ public class JpegParserTest {
         // but we have to replace them with underscore
         String[] subject = metadata.getValues(TikaCoreProperties.SUBJECT);
         List<String> keywords = Arrays.asList(subject);
-        assertTrue("'coast'" + " not in " + keywords, keywords.contains("coast"));
-        assertTrue("'nature reserve'" + " not in " + keywords,
-                keywords.contains("nature reserve"));
+        assertTrue(keywords.contains("coast"), "'coast'" + " not in " + keywords);
+        assertTrue(keywords.contains("nature reserve"), "'nature reserve'" + " not in " + keywords);
     }
 
     @Test

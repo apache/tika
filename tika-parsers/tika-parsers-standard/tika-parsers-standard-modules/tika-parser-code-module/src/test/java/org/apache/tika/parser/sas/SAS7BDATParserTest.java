@@ -16,14 +16,14 @@
  */
 package org.apache.tika.parser.sas;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.InputStream;
 import java.text.DateFormatSymbols;
 import java.util.Arrays;
 import java.util.Locale;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;

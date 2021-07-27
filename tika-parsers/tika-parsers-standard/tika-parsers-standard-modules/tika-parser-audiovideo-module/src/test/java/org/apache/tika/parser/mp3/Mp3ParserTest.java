@@ -16,12 +16,12 @@
  */
 package org.apache.tika.parser.mp3;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.ByteArrayInputStream;
 
-import org.junit.Assume;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
@@ -40,8 +40,9 @@ public class Mp3ParserTest extends TikaTest {
      * @param expected the expected duration, rounded as seconds
      */
     private static void checkDuration(Metadata metadata, int expected) {
-        assertEquals("Wrong duration", expected,
-                Math.round(Float.parseFloat(metadata.get(XMPDM.DURATION))));
+        assertEquals(expected,
+                Math.round(Float.parseFloat(metadata.get(XMPDM.DURATION))),
+                "wrong duration");
     }
 
     /**
@@ -308,7 +309,7 @@ public class Mp3ParserTest extends TikaTest {
      */
     @Test
     public void testTIKA424() throws Exception {
-        Assume.assumeTrue(
+        assumeTrue(
                 Mp3ParserTest.class.getResourceAsStream("/test-documents/test2.mp3") != null);
 
         Metadata metadata = new Metadata();

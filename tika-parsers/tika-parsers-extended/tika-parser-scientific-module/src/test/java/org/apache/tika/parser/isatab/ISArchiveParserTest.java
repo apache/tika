@@ -17,11 +17,11 @@
 
 package org.apache.tika.parser.isatab;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.InputStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.metadata.Metadata;
@@ -48,22 +48,23 @@ public class ISArchiveParserTest {
         }
 
         // INVESTIGATION
-        assertEquals("Invalid Investigation Identifier", "BII-I-1",
-                metadata.get("Investigation Identifier"));
-        assertEquals("Invalid Investigation Title",
-                "Growth control of the eukaryote cell: a systems biology study in yeast",
-                metadata.get("Investigation Title"));
+        assertEquals("BII-I-1", metadata.get("Investigation Identifier"),
+                "Invalid Investigation Identifier");
+        assertEquals("Growth control of the eukaryote cell: a systems biology study in yeast",
+                metadata.get("Investigation Title"),
+                "Invalid Investigation Title");
 
         // INVESTIGATION PUBLICATIONS
-        assertEquals("Invalid Investigation PubMed ID", "17439666",
-                metadata.get("Investigation PubMed ID"));
-        assertEquals("Invalid Investigation Publication DOI", "doi:10.1186/jbiol54",
-                metadata.get("Investigation Publication DOI"));
+        assertEquals("17439666", metadata.get("Investigation PubMed ID"),
+                "Invalid Investigation PubMed ID");
+        assertEquals("doi:10.1186/jbiol54",
+                metadata.get("Investigation Publication DOI"),
+                "Invalid Investigation Publication DOI");
 
         // INVESTIGATION CONTACTS
-        assertEquals("Invalid Investigation Person Last Name", "Oliver",
-                metadata.get("Investigation Person Last Name"));
-        assertEquals("Invalid Investigation Person First Name", "Stephen",
-                metadata.get("Investigation Person First Name"));
+        assertEquals( "Oliver", metadata.get("Investigation Person Last Name"),
+                "Invalid Investigation Person Last Name");
+        assertEquals("Stephen", metadata.get("Investigation Person First Name"),
+                "Invalid Investigation Person First Name");
     }
 }

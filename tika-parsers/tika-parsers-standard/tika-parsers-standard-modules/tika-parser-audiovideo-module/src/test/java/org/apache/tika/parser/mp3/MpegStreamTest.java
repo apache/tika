@@ -17,18 +17,18 @@
 package org.apache.tika.parser.mp3;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test class for {@code MpegStream}.
@@ -69,7 +69,7 @@ public class MpegStreamTest {
         out.write(b4);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         if (stream != null) {
             stream.close();
@@ -86,11 +86,11 @@ public class MpegStreamTest {
         ByteArrayInputStream in = new ByteArrayInputStream(bos.toByteArray());
         stream = new MpegStream(in);
         AudioFrame header = stream.nextFrame();
-        assertNotNull("No header found", header);
-        assertEquals("Wrong MPEG version", AudioFrame.MPEG_V2, header.getVersionCode());
-        assertEquals("Wrong layer", AudioFrame.LAYER_3, header.getLayer());
-        assertEquals("Wrong bit rate", 80000, header.getBitRate());
-        assertEquals("Wrong sample rate", 24000, header.getSampleRate());
+        assertNotNull(header, "No header found");
+        assertEquals(AudioFrame.MPEG_V2, header.getVersionCode(), "Wrong MPEG version");
+        assertEquals(AudioFrame.LAYER_3, header.getLayer(), "Wrong layer");
+        assertEquals(80000, header.getBitRate(), "Wrong bit rate");
+        assertEquals(24000, header.getSampleRate(), "Wrong sample rate");
     }
 
     /**
@@ -136,7 +136,7 @@ public class MpegStreamTest {
         bos.write(0x96);
         ByteArrayInputStream in = new ByteArrayInputStream(bos.toByteArray());
         stream = new MpegStream(in);
-        assertNull("Got a frame", stream.nextFrame());
+        assertNull(stream.nextFrame(), "Got a frame");
     }
 
     /**
@@ -148,6 +148,6 @@ public class MpegStreamTest {
         bos.write("This is a test".getBytes(UTF_8));
         ByteArrayInputStream in = new ByteArrayInputStream(bos.toByteArray());
         stream = new MpegStream(in);
-        assertFalse("Wrong result", stream.skipFrame());
+        assertFalse(stream.skipFrame(), "Wrong result");
     }
 }

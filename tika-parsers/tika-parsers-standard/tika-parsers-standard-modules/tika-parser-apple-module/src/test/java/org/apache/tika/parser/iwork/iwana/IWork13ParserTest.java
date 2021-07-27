@@ -16,12 +16,12 @@
  */
 package org.apache.tika.parser.iwork.iwana;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.InputStream;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
@@ -38,7 +38,7 @@ public class IWork13ParserTest extends TikaTest {
     private IWork13PackageParser iWorkParser;
     private ParseContext parseContext;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         iWorkParser = new IWork13PackageParser();
         parseContext = new ParseContext();

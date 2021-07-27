@@ -17,10 +17,10 @@
 package org.apache.tika.parser.microsoft;
 
 import static org.apache.tika.parser.microsoft.AbstractPOIContainerExtractionTest.getTestFile;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
@@ -50,7 +50,7 @@ public class OldExcelParserTest extends TikaTest {
 
     // Disabled, until we can get the POI code to tell us the version
     @Test
-    @Ignore
+    @Disabled
     public void testMetadata() throws Exception {
         TikaInputStream stream = getTestFile(file);
 

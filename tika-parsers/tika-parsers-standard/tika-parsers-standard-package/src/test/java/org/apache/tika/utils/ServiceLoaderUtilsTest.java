@@ -17,16 +17,17 @@
 
 package org.apache.tika.utils;
 
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.Parser;
 
 public class ServiceLoaderUtilsTest extends TikaTest {
+
     @Test
     public void testOrdering() throws Exception {
         //make sure that non Tika parsers come last

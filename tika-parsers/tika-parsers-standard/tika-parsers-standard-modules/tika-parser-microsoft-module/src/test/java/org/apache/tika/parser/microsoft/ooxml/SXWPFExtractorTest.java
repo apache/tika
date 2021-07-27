@@ -18,9 +18,9 @@
 package org.apache.tika.parser.microsoft.ooxml;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -31,8 +31,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
@@ -52,7 +52,7 @@ public class SXWPFExtractorTest extends TikaTest {
 
     private ParseContext parseContext;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         parseContext = new ParseContext();
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
@@ -255,12 +255,12 @@ public class SXWPFExtractorTest extends TikaTest {
         xml = result.xml;
 
         // Images 2-4 (there is no 1!)
-        assertTrue("Image not found in:\n" + xml,
-                xml.contains("<img src=\"embedded:image2.png\" alt=\"A description...\" />"));
-        assertTrue("Image not found in:\n" + xml,
-                xml.contains("<img src=\"embedded:image3.jpeg\" alt=\"A description...\" />"));
-        assertTrue("Image not found in:\n" + xml,
-                xml.contains("<img src=\"embedded:image4.png\" alt=\"A description...\" />"));
+        assertTrue(xml.contains("<img src=\"embedded:image2.png\" alt=\"A description...\" />"),
+                "Image not found in:\n" + xml);
+        assertTrue(xml.contains("<img src=\"embedded:image3.jpeg\" alt=\"A description...\" />"),
+                "Image not found in:\n" + xml);
+        assertTrue(xml.contains("<img src=\"embedded:image4.png\" alt=\"A description...\" />"),
+                "Image not found in:\n" + xml);
 
         // Text too
         assertTrue(xml.contains("<p>The end!</p>"));
@@ -275,7 +275,7 @@ public class SXWPFExtractorTest extends TikaTest {
         // Make sure bold text arrived as single
         // contiguous string even though Word parser
         // handled this as 3 character runs
-        assertTrue("Bold text wasn't contiguous: " + xml, xml.contains("F<b>oob</b>a<b>r</b>"));
+        assertTrue(xml.contains("F<b>oob</b>a<b>r</b>"), "Bold text wasn't contiguous: " + xml);
 
         // TIKA-692: test document containing multiple
         // character runs within a bold tag:
@@ -284,7 +284,7 @@ public class SXWPFExtractorTest extends TikaTest {
         // Make sure bold text arrived as single
         // contiguous string even though Word parser
         // handled this as 3 character runs
-        assertTrue("Bold text wasn't contiguous: " + xml, xml.contains("F<b>oob</b>a<b>r</b>"));
+        assertTrue(xml.contains("F<b>oob</b>a<b>r</b>"), "Bold text wasn't contiguous: " + xml);
     }
 
     /**
@@ -335,8 +335,7 @@ public class SXWPFExtractorTest extends TikaTest {
     @Test
     public void testNullHeaders() throws Exception {
         XMLResult xmlResult = getXML("NullHeader.docx", parseContext);
-        assertEquals("Should have found some text", false, xmlResult.xml.isEmpty());
-
+        assertEquals(false, xmlResult.xml.isEmpty(), "Should have found some text");
     }
 
     @Test

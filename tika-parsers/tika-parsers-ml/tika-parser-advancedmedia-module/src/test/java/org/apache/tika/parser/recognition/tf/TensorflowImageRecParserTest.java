@@ -17,15 +17,16 @@
 
 package org.apache.tika.parser.recognition.tf;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.metadata.Metadata;
@@ -33,7 +34,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.recognition.RecognisedObject;
 
 
-@Ignore
+@Disabled
 public class TensorflowImageRecParserTest {
 
     @Test
@@ -44,7 +45,7 @@ public class TensorflowImageRecParserTest {
                 .getResourceAsStream("test-documents/testJPEG.jpg")) {
             List<RecognisedObject> objects = recogniser
                     .recognise(stream, new DefaultHandler(), new Metadata(), new ParseContext());
-            Assert.assertTrue(5 == objects.size());
+            assertTrue(5 == objects.size());
             Set<String> objectLabels = new HashSet<>();
             for (RecognisedObject object : objects) {
                 objectLabels.add(object.getLabel());
@@ -52,7 +53,7 @@ public class TensorflowImageRecParserTest {
             System.out.println(objectLabels);
             String[] expected = {"Egyptian cat", "tabby, tabby cat"};
             for (String label : expected) {
-                Assert.assertTrue(label + " is expected", objectLabels.contains(label));
+                assertTrue(objectLabels.contains(label), label + " is expected");
             }
         }
     }

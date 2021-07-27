@@ -16,11 +16,11 @@
  */
 package org.apache.tika.parser.microsoft.chm;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests public methods of the DirectoryListingEntry class
@@ -30,7 +30,7 @@ import org.junit.Test;
 public class TestDirectoryListingEntry {
     private DirectoryListingEntry dle = null;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         dle = new DirectoryListingEntry(TestParameters.nameLength, TestParameters.entryName,
                 TestParameters.entryType, TestParameters.offset, TestParameters.length);

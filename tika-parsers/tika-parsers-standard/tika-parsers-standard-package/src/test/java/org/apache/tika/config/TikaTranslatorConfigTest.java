@@ -16,10 +16,11 @@
  */
 package org.apache.tika.config;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.language.translate.DefaultTranslator;
@@ -31,6 +32,7 @@ import org.apache.tika.language.translate.EmptyTranslator;
  * full set of translators
  */
 public class TikaTranslatorConfigTest extends AbstractTikaConfigTest {
+
     @Test
     public void testDefaultBehaviour() throws Exception {
         TikaConfig config = TikaConfig.getDefaultConfig();
@@ -62,13 +64,10 @@ public class TikaTranslatorConfigTest extends AbstractTikaConfigTest {
      * Currently, Translators don't support Composites, so
      * if multiple translators are given, throw a TikaConfigException
      */
-    @Test(expected = TikaConfigException.class)
+    @Test
     public void testRequestsMultiple() throws Exception {
-        TikaConfig config = getConfig("TIKA-1702-translator-empty-default.xml");
-        assertNotNull(config.getParser());
-        assertNotNull(config.getDetector());
-        assertNotNull(config.getTranslator());
-
-        assertEquals(EmptyTranslator.class, config.getTranslator().getClass());
+        assertThrows(TikaConfigException.class, () -> {
+            TikaConfig config = getConfig("TIKA-1702-translator-empty-default.xml");
+        });
     }
 }

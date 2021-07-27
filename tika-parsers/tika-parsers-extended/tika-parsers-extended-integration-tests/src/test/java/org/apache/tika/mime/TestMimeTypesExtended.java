@@ -16,14 +16,14 @@
  */
 package org.apache.tika.mime;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.io.TikaInputStream;
@@ -33,7 +33,7 @@ public class TestMimeTypesExtended {
 
     MimeTypes repo;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         TikaConfig config = TikaConfig.getDefaultConfig();
         repo = config.getMimeRepository();
@@ -47,7 +47,7 @@ public class TestMimeTypesExtended {
     private void assertTypeByData(String expected, String filename) throws IOException {
         try (InputStream stream = TikaInputStream.get(TestMimeTypesExtended.class
                 .getResourceAsStream("/test-documents/" + filename))) {
-            assertNotNull("Test file not found: " + filename, stream);
+            assertNotNull(stream, "Test file not found: " + filename);
             Metadata metadata = new Metadata();
             assertEquals(expected, repo.detect(stream, metadata).toString());
         }

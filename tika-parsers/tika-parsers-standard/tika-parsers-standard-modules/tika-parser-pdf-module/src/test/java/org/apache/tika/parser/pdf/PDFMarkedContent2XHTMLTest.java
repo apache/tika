@@ -16,12 +16,12 @@
  */
 package org.apache.tika.parser.pdf;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
@@ -33,7 +33,7 @@ public class PDFMarkedContent2XHTMLTest extends TikaTest {
 
     static ParseContext MARKUP_CONTEXT = new ParseContext();
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() {
         PDFParserConfig config = new PDFParserConfig();
         config.setExtractMarkedContent(true);

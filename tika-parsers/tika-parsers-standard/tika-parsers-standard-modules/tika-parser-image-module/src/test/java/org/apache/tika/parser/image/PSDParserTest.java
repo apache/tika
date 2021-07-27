@@ -16,11 +16,12 @@
  */
 package org.apache.tika.parser.image;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.InputStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;
@@ -76,11 +77,13 @@ public class PSDParserTest extends TikaTest {
                 metadata.get(XMPMM.HISTORY_EVENT_INSTANCEID));
     }
 
-    @Test(expected = TikaException.class)
+    @Test
     public void testMaxLength() throws Exception {
         TikaConfig config = new TikaConfig(getResourceAsStream("tika-config-TIKA-3243.xml"));
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/x-psd");
-        getXML("testPSD_xmp.psd", config.getParser(), metadata);
+        assertThrows(TikaException.class, () -> {
+            getXML("testPSD_xmp.psd", config.getParser(), metadata);
+        });
     }
 }

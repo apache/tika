@@ -16,13 +16,14 @@
  */
 package org.apache.tika.parser.mp4;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
@@ -120,7 +121,8 @@ public class MP4ParserTest extends TikaTest {
 
     // TODO Test a MP4 Video file
     // TODO Test an old QuickTime Video File
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30000)
     public void testInfiniteLoop() throws Exception {
         XMLResult r = getXML("testMP4_truncated.m4a");
         assertEquals("audio/mp4", r.metadata.get(Metadata.CONTENT_TYPE));

@@ -17,17 +17,16 @@
 
 package org.apache.tika.parser.pkg;
 
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
@@ -77,8 +76,8 @@ public class PackageParserTest extends TikaTest {
             }
         }
         for (MediaType mediaType : currentSpecializations) {
-            assertTrue("missing: " + mediaType,
-                    PackageParser.PACKAGE_SPECIALIZATIONS.contains(mediaType));
+            assertTrue(PackageParser.PACKAGE_SPECIALIZATIONS.contains(mediaType),
+                    "missing: " + mediaType);
         }
         assertEquals(currentSpecializations.size(), PackageParser.PACKAGE_SPECIALIZATIONS.size());
     }

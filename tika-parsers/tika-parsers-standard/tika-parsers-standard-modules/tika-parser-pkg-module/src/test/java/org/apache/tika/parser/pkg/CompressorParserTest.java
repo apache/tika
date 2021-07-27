@@ -18,15 +18,16 @@
 package org.apache.tika.parser.pkg;
 
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.detect.zip.CompressorConstants;
@@ -39,7 +40,7 @@ public class CompressorParserTest extends TikaTest {
     //be detected.
     private static Set<MediaType> NOT_COVERED = new HashSet();
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() {
         NOT_COVERED.add(MediaType.application("x-lz4-block"));
         NOT_COVERED.add(MediaType.application("x-snappy-raw"));
@@ -71,20 +72,22 @@ public class CompressorParserTest extends TikaTest {
         }
     }
 
-    @Test(expected = TikaException.class)
+    @Test
     public void testQuineXHTML() throws Exception {
         //Anti-virus can surreptitiously remove this file
-        Assume.assumeTrue(
+        assumeTrue(
                 CompressorParserTest.class.getResourceAsStream("/test-documents/quine.gz") != null);
 
         //https://blog.matthewbarber.io/2019/07/22/how-to-make-compressed-file-quines
-        getXML("quine.gz");
+        assertThrows(TikaException.class, () -> {
+            getXML("quine.gz");
+        });
     }
 
     @Test
     public void testQuineRecursive() throws Exception {
         //Anti-virus can surreptitiously remove this file
-        Assume.assumeTrue(
+        assumeTrue(
                 CompressorParserTest.class.getResourceAsStream("/test-documents/quine.gz") != null);
         //https://blog.matthewbarber.io/2019/07/22/how-to-make-compressed-file-quines
         getRecursiveMetadata("quine.gz");

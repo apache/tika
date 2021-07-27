@@ -16,9 +16,10 @@
  */
 package org.apache.tika.parser;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -34,7 +35,7 @@ import java.util.Random;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
@@ -76,7 +77,7 @@ public class BouncyCastleDigestingParserTest extends TikaTest {
             XMLResult xml = getXML("test_recursive_embedded.docx",
                     new DigestingParser(AUTO_DETECT_PARSER,
                             new BouncyCastleDigester(UNLIMITED, algo)), m);
-            assertEquals(algo, expected.get(algo), m.get(P + algo));
+            assertEquals(expected.get(algo), m.get(P + algo));
         }
 
     }
@@ -106,7 +107,7 @@ public class BouncyCastleDigestingParserTest extends TikaTest {
                 new DigestingParser(AUTO_DETECT_PARSER, new BouncyCastleDigester(UNLIMITED,
                         "MD5,SHA256,SHA384,SHA512,SHA3-512,SHA1:32")), m);
         for (String algo : new String[]{"MD5", "SHA256", "SHA384", "SHA512", "SHA3-512", "SHA1"}) {
-            assertEquals(algo, expected.get(algo), m.get(P + algo));
+            assertEquals(expected.get(algo), m.get(P + algo));
         }
 
         assertNull(m.get(P + "MD2"));
@@ -122,16 +123,20 @@ public class BouncyCastleDigestingParserTest extends TikaTest {
         assertEquals(expectedMD5, m.get(P + "MD5"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testNegativeMaxMarkLength() throws Exception {
-        getXML("test_recursive_embedded.docx",
-                new DigestingParser(AUTO_DETECT_PARSER, new BouncyCastleDigester(-1, "MD5")));
+        assertThrows(IllegalArgumentException.class, () -> {
+            getXML("test_recursive_embedded.docx",
+                    new DigestingParser(AUTO_DETECT_PARSER, new BouncyCastleDigester(-1, "MD5")));
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testUnrecognizedEncodingOptions() throws Exception {
-        getXML("test_recursive_embedded.docx", new DigestingParser(AUTO_DETECT_PARSER,
-                new BouncyCastleDigester(100000, "MD5:33")));
+        assertThrows(IllegalArgumentException.class, () -> {
+            getXML("test_recursive_embedded.docx", new DigestingParser(AUTO_DETECT_PARSER,
+                    new BouncyCastleDigester(100000, "MD5:33")));
+        });
     }
 
     @Test
@@ -214,9 +219,10 @@ public class BouncyCastleDigestingParserTest extends TikaTest {
             assertNotNull("truth", truthValue);
             assertNotNull("result (fileLength=" + fileLength + ", markLimit=" + markLimit + ")",
                     resultValue);
-            assertEquals("fileLength(" + fileLength + ") markLimit(" + markLimit +
-                    ") useTikaInputStream(" + useTikaInputStream + ") " + "algorithm(" + algo +
-                    ") seed(" + SEED + ")", truthValue, resultValue);
+            assertEquals(truthValue, resultValue,
+                    "fileLength(" + fileLength + ") markLimit(" + markLimit +
+                            ") useTikaInputStream(" + useTikaInputStream + ") " + "algorithm(" + algo +
+                            ") seed(" + SEED + ")");
         }
 
     }

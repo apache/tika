@@ -17,15 +17,16 @@
 
 package org.apache.tika.parser.recognition.tf;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.metadata.Metadata;
@@ -33,7 +34,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.recognition.RecognisedObject;
 
 
-@Ignore
+@Disabled
 public class TensorflowVideoRecParserTest {
 
     @Test
@@ -45,12 +46,12 @@ public class TensorflowVideoRecParserTest {
             List<RecognisedObject> objects = recogniser
                     .recognise(stream, new DefaultHandler(), new Metadata(), new ParseContext());
 
-            Assert.assertTrue(objects.size() > 0);
+            assertTrue(objects.size() > 0);
             Set<String> objectLabels = new HashSet<>();
             for (RecognisedObject object : objects) {
                 objectLabels.add(object.getLabel());
             }
-            Assert.assertTrue(objectLabels.size() > 0);
+            assertTrue(objectLabels.size() > 0);
         }
     }
 }

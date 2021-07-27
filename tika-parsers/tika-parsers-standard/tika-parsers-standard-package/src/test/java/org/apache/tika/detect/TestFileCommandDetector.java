@@ -16,13 +16,13 @@
  */
 package org.apache.tika.detect;
 
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.File;
 import java.io.FileFilter;
 import java.util.Random;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.utils.XMLReaderUtils;

@@ -16,11 +16,11 @@
  */
 package org.apache.tika.parser.pkg;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.InputStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.metadata.Metadata;
@@ -30,6 +30,7 @@ import org.apache.tika.sax.BodyContentHandler;
  * Test case for parsing zlib compressed
  */
 public class ZlibParserTest extends AbstractPkgTest {
+
     @Test
     public void testZlibParsing() throws Exception {
         ContentHandler handler = new BodyContentHandler();

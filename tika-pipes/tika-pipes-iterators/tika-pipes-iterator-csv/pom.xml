@@ -43,11 +43,6 @@
       <artifactId>commons-csv</artifactId>
       <version>${commons.csv.version}</version>
     </dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
   <build>
     <plugins>

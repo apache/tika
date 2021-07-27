@@ -16,16 +16,17 @@
  */
 package org.apache.tika.parser;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.xml.sax.SAXParseException;
 
 import org.apache.tika.exception.TikaException;
@@ -77,13 +78,14 @@ public class TestXMLEntityExpansion extends XMLTestBase {
             }
             ex = true;
         }
-        assertTrue("should have had an exception", ex);
+        assertTrue(ex, "should have had an exception");
     }
 
     //Set a reasonable amount of time as the timeout
     //Make sure that the test apparatus actually works.
-    @Ignore
-    @Test(timeout = 20000)
+    @Disabled
+    @Test
+    @Timeout(20000)
     public void testVulnerableParser() throws Exception {
         byte[] bytes = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><document>blah</document>"
                 .getBytes(StandardCharsets.UTF_8);
@@ -104,7 +106,8 @@ public class TestXMLEntityExpansion extends XMLTestBase {
 
     }
 
-    @Test(timeout = 30000)//
+    @Test
+    @Timeout(30000)
     public void testProtectedXML() throws Exception {
         byte[] bytes = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><document>blah</document>"
                 .getBytes(StandardCharsets.UTF_8);

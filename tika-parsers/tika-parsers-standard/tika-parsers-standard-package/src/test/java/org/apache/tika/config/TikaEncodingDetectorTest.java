@@ -17,9 +17,10 @@
 
 package org.apache.tika.config;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -29,7 +30,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.Tika;
 import org.apache.tika.detect.CompositeEncodingDetector;
@@ -155,11 +156,13 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
 
     }
 
-    @Test(expected = TikaConfigException.class)
+    @Test
     public void testNonDetectingDetectorParamsBadCharset() throws Exception {
         try (InputStream is = getResourceAsStream(
                 "/org/apache/tika/config/TIKA-2273-non-detecting-params-bad-charset.xml")) {
-            TikaConfig tikaConfig = new TikaConfig(is);
+            assertThrows(TikaConfigException.class, () -> {
+                TikaConfig tikaConfig = new TikaConfig(is);
+            });
         }
     }
 
@@ -214,14 +217,17 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
             for (EncodingDetector childEncodingDetector :
                     ((CompositeEncodingDetector) encodingDetector).getDetectors()) {
                 if (childEncodingDetector instanceof HtmlEncodingDetector) {
-                    assertEquals(childParser.getClass().toString(), 64000,
-                            ((HtmlEncodingDetector) childEncodingDetector).getMarkLimit());
+                    assertEquals(64000,
+                            ((HtmlEncodingDetector) childEncodingDetector).getMarkLimit(),
+                            childParser.getClass().toString());
                 } else if (childEncodingDetector instanceof UniversalEncodingDetector) {
-                    assertEquals(childParser.getClass().toString(), 64001,
-                            ((UniversalEncodingDetector) childEncodingDetector).getMarkLimit());
+                    assertEquals(64001,
+                            ((UniversalEncodingDetector) childEncodingDetector).getMarkLimit(),
+                            childParser.getClass().toString());
                 } else if (childEncodingDetector instanceof Icu4jEncodingDetector) {
-                    assertEquals(childParser.getClass().toString(), 64002,
-                            ((Icu4jEncodingDetector) childEncodingDetector).getMarkLimit());
+                    assertEquals(64002,
+                            ((Icu4jEncodingDetector) childEncodingDetector).getMarkLimit(),
+                            childParser.getClass().toString());
                 }
             }
         }

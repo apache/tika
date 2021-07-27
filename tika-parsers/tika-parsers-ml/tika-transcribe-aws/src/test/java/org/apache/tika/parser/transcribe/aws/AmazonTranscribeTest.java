@@ -19,9 +19,9 @@ package org.apache.tika.parser.transcribe.aws;
 import java.io.InputStream;
 
 import com.amazonaws.services.transcribe.model.LanguageCode;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
@@ -35,12 +35,12 @@ import org.apache.tika.parser.Parser;
  * 1) Tests that transcribe functions properly when it is given just a filepath.
  * 2) Both audio (mp3) and video (mp4) files are used in these tests.
  */
-@Ignore("Ignore until finalize AmazonTrancsribe Interface & build Tika")
+@Disabled("Ignore until finalize AmazonTrancsribe Interface & build Tika")
 public class AmazonTranscribeTest extends TikaTest {
 
     static Parser PARSER;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws Exception {
         try (InputStream is = AmazonTranscribeTest.class
                 .getResourceAsStream("tika-config-aws-transcribe.xml")) {

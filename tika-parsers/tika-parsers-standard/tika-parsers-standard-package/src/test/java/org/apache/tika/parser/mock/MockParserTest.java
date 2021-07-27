@@ -17,9 +17,9 @@
 package org.apache.tika.parser.mock;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -27,7 +27,7 @@ import java.io.InputStream;
 import java.io.PrintStream;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
@@ -108,7 +108,7 @@ public class MockParserTest extends TikaTest {
         long elapsed = System.currentTimeMillis() - start;
         //should sleep for at least 3000
         boolean enoughTimeHasElapsed = elapsed > 2000;
-        assertTrue("not enough time has not elapsed: " + elapsed, enoughTimeHasElapsed);
+        assertTrue(enoughTimeHasElapsed, "not enough time has not elapsed: " + elapsed);
         assertMockParser(m);
     }
 
@@ -122,7 +122,7 @@ public class MockParserTest extends TikaTest {
         long elapsed = System.currentTimeMillis() - start;
         //should sleep for at least 3000
         boolean enoughTimeHasElapsed = elapsed > 2000;
-        assertTrue("not enough time has elapsed: " + elapsed, enoughTimeHasElapsed);
+        assertTrue(enoughTimeHasElapsed, "not enough time has elapsed: " + elapsed);
         assertMockParser(m);
     }
 
@@ -168,7 +168,7 @@ public class MockParserTest extends TikaTest {
         }
         long elapsed = System.currentTimeMillis() - start;
         boolean shortEnough = elapsed < 2000;//the xml file specifies 3000
-        assertTrue("elapsed (" + elapsed + " millis) was not short enough", shortEnough);
+        assertTrue(shortEnough, "elapsed (" + elapsed + " millis) was not short enough");
     }
 
     @Test
@@ -191,7 +191,7 @@ public class MockParserTest extends TikaTest {
         }
         long elapsed = System.currentTimeMillis() - start;
         boolean longEnough = elapsed >= 3000;//the xml file specifies 3000, this sleeps 1000
-        assertTrue("elapsed (" + elapsed + " millis) was not long enough", longEnough);
+        assertTrue(longEnough, "elapsed (" + elapsed + " millis) was not long enough");
     }
 
     private void assertThrowable(String path, Metadata m, Class<? extends Throwable> expected,
@@ -223,7 +223,7 @@ public class MockParserTest extends TikaTest {
                 break;
             }
         }
-        assertTrue("mock parser should have been called", parsedByMock);
+        assertTrue(parsedByMock, "mock parser should have been called");
     }
 
     private class ParserRunnable implements Runnable {

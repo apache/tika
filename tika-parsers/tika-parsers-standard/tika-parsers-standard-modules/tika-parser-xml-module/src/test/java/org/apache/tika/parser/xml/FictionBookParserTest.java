@@ -20,7 +20,7 @@ import static org.apache.tika.TikaTest.assertContains;
 
 import java.io.InputStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.metadata.Metadata;

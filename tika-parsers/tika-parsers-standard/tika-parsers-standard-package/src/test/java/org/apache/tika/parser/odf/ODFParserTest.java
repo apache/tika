@@ -16,13 +16,13 @@
  */
 package org.apache.tika.parser.odf;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.util.List;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.TikaTest;
@@ -37,7 +37,7 @@ import org.apache.tika.parser.Parser;
 public class ODFParserTest extends TikaTest {
     private static Parser MACRO_PARSER;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws IOException, TikaException, SAXException {
         MACRO_PARSER = new AutoDetectParser(
                 new TikaConfig(ODFParserTest.class.getResourceAsStream("tika-config-macros.xml")));

@@ -18,13 +18,13 @@ package org.apache.tika.parser.txt;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -190,7 +190,7 @@ public class TXTParserTest extends TikaTest {
         };
         Metadata metadata = new Metadata();
         parser.parse(new ByteArrayInputStream(input), handler, metadata, new ParseContext());
-        assertEquals(msg, expected, handler.toString());
+        assertEquals(expected, handler.toString(), msg);
     }
 
     /**

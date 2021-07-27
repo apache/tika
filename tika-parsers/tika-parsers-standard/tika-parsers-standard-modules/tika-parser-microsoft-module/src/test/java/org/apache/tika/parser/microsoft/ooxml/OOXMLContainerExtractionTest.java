@@ -16,14 +16,14 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.Tika;
 import org.apache.tika.detect.microsoft.POIFSContainerDetector;
@@ -40,7 +40,7 @@ import org.apache.tika.parser.microsoft.AbstractPOIContainerExtractionTest;
 public class OOXMLContainerExtractionTest extends AbstractPOIContainerExtractionTest {
     private ContainerExtractor extractor;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         Tika tika = new Tika();
         extractor = new ParserContainerExtractor(tika.getParser(), tika.getDetector());
@@ -318,7 +318,7 @@ public class OOXMLContainerExtractionTest extends AbstractPOIContainerExtraction
                 }
                 assertNull(m.get(TikaCoreProperties.EMBEDDED_EXCEPTION));
             }
-            assertTrue("didn't find chart in " + suffix, found);
+            assertTrue(found, "didn't find chart in " + suffix);
         }
     }
 }

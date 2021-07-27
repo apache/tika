@@ -17,8 +17,9 @@
 package org.apache.tika.parser.microsoft.chm;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -35,7 +36,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.MultiThreadedTikaTest;
@@ -205,9 +206,11 @@ public class TestChmExtraction extends MultiThreadedTikaTest {
         }
     }
 
-    @Test(expected = TikaException.class)
-    public void testOOM() throws Exception {
-        getXML("testChm_oom.chm");
+    @Test
+    public void testOOM() {
+        assertThrows(TikaException.class, () -> {
+            getXML("testChm_oom.chm");
+        });
     }
 
     @Test

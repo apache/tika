@@ -16,8 +16,8 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
@@ -31,8 +31,8 @@ import java.util.Random;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.io.IOUtils;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
@@ -77,7 +77,7 @@ public class TruncatedOOXMLTest extends TikaTest {
     }
 
     @Test
-    @Ignore("for dev/debugging only")
+    @Disabled("for dev/debugging only")
     public void listStreams() throws Exception {
         File tstDir = new File(getResourceAsUri("/test-documents"));
         for (File f : tstDir.listFiles()) {

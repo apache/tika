@@ -16,12 +16,12 @@
  */
 package org.apache.tika.parser.feed;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.InputStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.metadata.Metadata;
@@ -30,6 +30,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 
 public class FeedParserTest {
+
     @Test
     public void testRSSParser() throws Exception {
         // These RSS files should have basically the same contents,
@@ -44,7 +45,7 @@ public class FeedParserTest {
                 new FeedParser().parse(input, handler, metadata, context);
 
                 String content = handler.toString();
-                assertFalse(content == null);
+                assertNotNull(content);
 
                 assertEquals("Sample RSS File for Junit test",
                         metadata.get(TikaCoreProperties.DESCRIPTION));
@@ -67,7 +68,7 @@ public class FeedParserTest {
             new FeedParser().parse(input, handler, metadata, context);
 
             String content = handler.toString();
-            assertFalse(content == null);
+            assertNotNull(content);
 
             assertEquals("Sample Atom File for Junit test",
                     metadata.get(TikaCoreProperties.DESCRIPTION));

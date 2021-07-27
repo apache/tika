@@ -16,9 +16,9 @@
  */
 package org.apache.tika.parser.fork;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,8 +28,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -201,7 +201,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
     }
 
     @Test
-    @Ignore("use for development/one off testing.  This is a beast and takes enormous " +
+    @Disabled("use for development/one off testing.  This is a beast and takes enormous " +
             "resources and time")
     public void smokeTest() throws Exception {
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(tika.getParser());

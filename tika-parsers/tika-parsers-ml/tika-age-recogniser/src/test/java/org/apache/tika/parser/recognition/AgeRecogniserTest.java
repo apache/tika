@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.recognition;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -24,8 +25,7 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 
 import edu.usc.irds.agepredictor.authorage.AgePredicterLocal;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
@@ -71,13 +71,14 @@ public class AgeRecogniserTest extends TikaTest {
             Metadata md = new Metadata();
             tika.parse(bis, md);
 
-            Assert.assertArrayEquals("Age Parser not invoked.",
-                    new String[]{CompositeParser.class.getCanonicalName(),
+            assertArrayEquals(new String[]{CompositeParser.class.getCanonicalName(),
                             AgeRecogniser.class.getCanonicalName()},
-                    md.getValues(TikaCoreProperties.TIKA_PARSED_BY));
-            Assert.assertArrayEquals("Wrong age predicted.",
+                    md.getValues(TikaCoreProperties.TIKA_PARSED_BY),
+                    "Age Parser not invoked.");
+            assertArrayEquals(
                     new String[]{Double.toString(TEST_AGE)},
-                    md.getValues(AgeRecogniser.MD_KEY_ESTIMATED_AGE));
+                    md.getValues(AgeRecogniser.MD_KEY_ESTIMATED_AGE),
+                    "Wrong age predicted.");
         }
     }
 

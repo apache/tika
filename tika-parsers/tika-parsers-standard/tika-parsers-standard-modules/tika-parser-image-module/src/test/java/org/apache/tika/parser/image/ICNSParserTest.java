@@ -18,7 +18,7 @@ package org.apache.tika.parser.image;
 
 import java.io.InputStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.metadata.Metadata;
@@ -29,6 +29,7 @@ import org.apache.tika.parser.Parser;
  * Test class for the ICNSParser
  */
 public class ICNSParserTest {
+
     private final Parser parser = new ICNSParser();
 
     /**

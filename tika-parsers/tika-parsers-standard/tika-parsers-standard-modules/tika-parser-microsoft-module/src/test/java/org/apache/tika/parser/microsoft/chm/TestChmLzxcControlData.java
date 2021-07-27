@@ -17,12 +17,12 @@
 package org.apache.tika.parser.microsoft.chm;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests all public methods of ChmLzxcControlData block
@@ -30,7 +30,7 @@ import org.junit.Test;
 public class TestChmLzxcControlData {
     private ChmLzxcControlData chmLzxcControlData = null;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         byte[] data = TestParameters.chmData;
         /* Creates and parses itsf header */

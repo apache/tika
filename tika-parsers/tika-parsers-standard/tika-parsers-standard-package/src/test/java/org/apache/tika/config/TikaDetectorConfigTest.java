@@ -16,12 +16,12 @@
  */
 package org.apache.tika.config;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.DefaultDetector;
@@ -39,6 +39,7 @@ import org.apache.tika.parser.microsoft.pst.OutlookPSTParser;
  * full set of detectors
  */
 public class TikaDetectorConfigTest extends AbstractTikaConfigTest {
+
     @Test
     public void testDetectorExcludeFromDefault() throws Exception {
         TikaConfig config = getConfig("TIKA-1702-detector-exclude.xml");
@@ -99,10 +100,10 @@ public class TikaDetectorConfigTest extends AbstractTikaConfigTest {
 
 
         // Check that both detectors have a mimetypes with entries
-        assertTrue("Not enough mime types: " + configWX.getMediaTypeRegistry().getTypes().size(),
-                configWX.getMediaTypeRegistry().getTypes().size() > 100);
-        assertTrue("Not enough mime types: " + configCL.getMediaTypeRegistry().getTypes().size(),
-                configCL.getMediaTypeRegistry().getTypes().size() > 100);
+        assertTrue(configWX.getMediaTypeRegistry().getTypes().size() > 100,
+                "Not enough mime types: " + configWX.getMediaTypeRegistry().getTypes().size());
+        assertTrue(configCL.getMediaTypeRegistry().getTypes().size() > 100,
+                "Not enough mime types: " + configCL.getMediaTypeRegistry().getTypes().size());
 
 
         // Now check they detect PST files correctly
@@ -139,10 +140,10 @@ public class TikaDetectorConfigTest extends AbstractTikaConfigTest {
             }
         }
         if (shouldHavePOIFS) {
-            assertTrue("Should have the POIFSContainerDetector", hasPOIFS);
+            assertTrue(hasPOIFS, "Should have the POIFSContainerDetector");
         }
         if (shouldHaveZip) {
-            assertTrue("Should have the ZipContainerDetector", hasZip);
+            assertTrue(hasZip, "Should have the ZipContainerDetector");
         }
     }
 }

@@ -17,10 +17,12 @@
 package org.apache.tika.parser.microsoft.ooxml;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -43,11 +45,11 @@ import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 
 import org.apache.poi.util.LocaleUtil;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
@@ -55,6 +57,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -75,18 +78,18 @@ public class OOXMLParserTest extends TikaTest {
 
     private static Locale USER_LOCALE = null;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() {
         USER_LOCALE = LocaleUtil.getUserLocale();
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() {
         LocaleUtil.setUserLocale(USER_LOCALE);
         Locale.setDefault(USER_LOCALE);
     }
 
-    @Before
+    @BeforeEach
     public void beforeEach() {
         LocaleUtil.setUserLocale(Locale.US);
         Locale.setDefault(Locale.US);
@@ -182,7 +185,7 @@ public class OOXMLParserTest extends TikaTest {
     }
 
     @Test
-    @Ignore("OOXML-Strict not currently supported by POI, see #57699")
+    @Disabled("OOXML-Strict not currently supported by POI, see #57699")
     public void testExcelStrict() throws Exception {
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
@@ -232,8 +235,8 @@ public class OOXMLParserTest extends TikaTest {
             ParseContext context = new ParseContext();
             String content = getText(filename, metadata, context);
 
-            assertEquals("Mime-type checking for " + filename, mimeTypes[i],
-                    metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals(mimeTypes[i], metadata.get(Metadata.CONTENT_TYPE),
+                    "Mime-type checking for " + filename);
             assertEquals("Attachment Test", metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Rajiv", metadata.get(TikaCoreProperties.CREATOR));
 
@@ -241,16 +244,16 @@ public class OOXMLParserTest extends TikaTest {
             if (extension.equals("thmx")) {
                 assertEquals("", content);
             } else {
-                assertTrue("Text missing for " + filename + "\n" + content,
-                        content.contains("Attachment Test"));
-                assertTrue("Text missing for " + filename + "\n" + content,
-                        content.contains("This is a test file data with the same content"));
-                assertTrue("Text missing for " + filename + "\n" + content,
-                        content.contains("content parsing"));
-                assertTrue("Text missing for " + filename + "\n" + content,
-                        content.contains("Different words to test against"));
-                assertTrue("Text missing for " + filename + "\n" + content,
-                        content.contains("Mystery"));
+                assertTrue(content.contains("Attachment Test"),
+                        "Text missing for " + filename + "\n" + content);
+                assertTrue(content.contains("This is a test file data with the same content"),
+                        "Text missing for " + filename + "\n" + content);
+                assertTrue(content.contains("content parsing"),
+                        "Text missing for " + filename + "\n" + content);
+                assertTrue(content.contains("Different words to test against"),
+                        "Text missing for " + filename + "\n" + content);
+                assertTrue(content.contains("Mystery"),
+                        "Text missing for " + filename + "\n" + content);
             }
         }
 
@@ -283,8 +286,8 @@ public class OOXMLParserTest extends TikaTest {
             final int currentI = i;
             ContentHandler handler = new BodyContentHandler() {
                 public void startDocument() {
-                    assertEquals("Mime-type checking for " + filename, mimeTypes[currentI],
-                            metadata.get(Metadata.CONTENT_TYPE));
+                    assertEquals(mimeTypes[currentI], metadata.get(Metadata.CONTENT_TYPE),
+                            "Mime-type checking for " + filename);
                     assertEquals("Attachment Test", metadata.get(TikaCoreProperties.TITLE));
                     assertEquals("Rajiv", metadata.get(TikaCoreProperties.CREATOR));
 
@@ -318,8 +321,8 @@ public class OOXMLParserTest extends TikaTest {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
             getXML(filename, metadata);
             // Should get the metadata
-            assertEquals("Mime-type checking for " + filename, mimeTypes[i],
-                    metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals(mimeTypes[i], metadata.get(Metadata.CONTENT_TYPE),
+                    "Mime-type checking for " + filename);
 
 
         }
@@ -394,12 +397,12 @@ public class OOXMLParserTest extends TikaTest {
         xml = result.xml;
 
         // Images 2-4 (there is no 1!)
-        assertTrue("Image not found in:\n" + xml,
-                xml.contains("<img src=\"embedded:image2.png\" alt=\"A description...\" />"));
-        assertTrue("Image not found in:\n" + xml,
-                xml.contains("<img src=\"embedded:image3.jpeg\" alt=\"A description...\" />"));
-        assertTrue("Image not found in:\n" + xml,
-                xml.contains("<img src=\"embedded:image4.png\" alt=\"A description...\" />"));
+        assertTrue(xml.contains("<img src=\"embedded:image2.png\" alt=\"A description...\" />"),
+                "Image not found in:\n" + xml);
+        assertTrue(xml.contains("<img src=\"embedded:image3.jpeg\" alt=\"A description...\" />"),
+                "Image not found in:\n" + xml);
+        assertTrue(xml.contains("<img src=\"embedded:image4.png\" alt=\"A description...\" />"),
+                "Image not found in:\n" + xml);
 
         // Text too
         assertTrue(xml.contains("<p>The end!</p>"));
@@ -411,7 +414,7 @@ public class OOXMLParserTest extends TikaTest {
         // Make sure bold text arrived as single
         // contiguous string even though Word parser
         // handled this as 3 character runs
-        assertTrue("Bold text wasn't contiguous: " + xml, xml.contains("F<b>oob</b>a<b>r</b>"));
+        assertTrue(xml.contains("F<b>oob</b>a<b>r</b>"), "Bold text wasn't contiguous: " + xml);
 
         // TIKA-692: test document containing multiple
         // character runs within a bold tag:
@@ -420,7 +423,7 @@ public class OOXMLParserTest extends TikaTest {
         // Make sure bold text arrived as single
         // contiguous string even though Word parser
         // handled this as 3 character runs
-        assertTrue("Bold text wasn't contiguous: " + xml, xml.contains("F<b>oob</b>a<b>r</b>"));
+        assertTrue(xml.contains("F<b>oob</b>a<b>r</b>"), "Bold text wasn't contiguous: " + xml);
     }
 
     /**
@@ -439,7 +442,7 @@ public class OOXMLParserTest extends TikaTest {
     }
 
     @Test
-    @Ignore("need to add links in xhtml")
+    @Disabled("need to add links in xhtml")
     public void testPicturesInVariousPlaces() throws Exception {
         //test that images are actually extracted from
         //headers, footers, comments, endnotes, footnotes
@@ -502,8 +505,8 @@ public class OOXMLParserTest extends TikaTest {
      */
     @Test
     public void testNullHeaders() throws Exception {
-
-        assertEquals("Should have found some text", false, getXML("NullHeader.docx").xml.isEmpty());
+        assertFalse(getXML("NullHeader.docx").xml.isEmpty(),
+                "Should have found some text");
     }
 
     @Test
@@ -700,7 +703,7 @@ public class OOXMLParserTest extends TikaTest {
     }
 
     @Test
-    @Ignore("can't tell why this isn't working")
+    @Disabled("can't tell why this isn't working")
     public void testTurningOffMasterContent() throws Exception {
         //now test turning off master content
 
@@ -1708,13 +1711,15 @@ public class OOXMLParserTest extends TikaTest {
 
     }
 
-    @Test(expected = org.apache.tika.exception.TikaException.class)
+    @Test
     public void testTruncatedSAXDocx() throws Exception {
         ParseContext pc = new ParseContext();
         OfficeParserConfig c = new OfficeParserConfig();
         c.setUseSAXDocxExtractor(true);
         pc.set(OfficeParserConfig.class, c);
-        getRecursiveMetadata("testWORD_truncated.docx", pc);
+        assertThrows(TikaException.class, () -> {
+            getRecursiveMetadata("testWORD_truncated.docx", pc);
+        });
     }
 
     @Test

@@ -16,12 +16,12 @@
  */
 package org.apache.tika.parser.mail;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.InputStream;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
@@ -40,7 +40,7 @@ public class MboxParserTest extends TikaTest {
     private TypeDetector typeDetector;
     private MboxParser mboxParser;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         typeDetector = new TypeDetector();
         autoDetectParser = new AutoDetectParser(typeDetector);

@@ -18,7 +18,7 @@
 package org.apache.tika.parser.pkg;
 
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -30,8 +30,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
@@ -120,7 +120,7 @@ public class CompositeZipContainerDetectorTest extends TikaTest {
         }
     */
 
-    @Ignore("for offline testing")
+    @Disabled("for offline testing")
     @Test
     public void timeDetection() throws Exception {
         TikaConfig config = TikaConfig.getDefaultConfig();
@@ -163,7 +163,7 @@ public class CompositeZipContainerDetectorTest extends TikaTest {
     }
 
     @Test
-    @Ignore("to be used for offline timing tests")
+    @Disabled("to be used for offline timing tests")
     public void timeParsing() throws Exception {
         TikaConfig config = TikaConfig.getDefaultConfig();
         Detector detector = config.getDetector();

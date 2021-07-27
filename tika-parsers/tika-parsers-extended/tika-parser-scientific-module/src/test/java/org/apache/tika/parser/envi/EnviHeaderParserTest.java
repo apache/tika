@@ -18,16 +18,16 @@
 package org.apache.tika.parser.envi;
 
 import static org.apache.tika.TikaTest.assertContains;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -43,14 +43,14 @@ public class EnviHeaderParserTest {
     private ToXMLContentHandler handler;
     private Metadata metadata;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         setParser(new EnviHeaderParser());
         setHandler(new ToXMLContentHandler());
         setMetadata(new Metadata());
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         setParser(null);
         setHandler(null);
@@ -62,7 +62,7 @@ public class EnviHeaderParserTest {
 
         try (InputStream stream = EnviHeaderParser.class
                 .getResourceAsStream("/test-documents/envi_test_header.hdr")) {
-            assertNotNull("Test ENVI file 'envi_test_header.hdr' not found", stream);
+            assertNotNull(stream, "Test ENVI file 'envi_test_header.hdr' not found");
             parser.parse(stream, handler, metadata, new ParseContext());
         }
 
@@ -93,7 +93,7 @@ public class EnviHeaderParserTest {
 
         try (InputStream stream = EnviHeaderParser.class
                 .getResourceAsStream("/test-documents/ang20150420t182050_corr_v1e_img.hdr")) {
-            assertNotNull("Test ENVI file 'ang20150420t182050_corr_v1e_img.hdr' not found", stream);
+            assertNotNull(stream, "Test ENVI file 'ang20150420t182050_corr_v1e_img.hdr' not found");
             parser.parse(stream, handler, metadata, new ParseContext());
         }
 

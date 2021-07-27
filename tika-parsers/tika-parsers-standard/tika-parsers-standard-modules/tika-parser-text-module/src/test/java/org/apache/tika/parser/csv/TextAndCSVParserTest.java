@@ -16,9 +16,9 @@
  */
 package org.apache.tika.parser.csv;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -27,8 +27,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.io.ByteOrderMark;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
@@ -66,7 +66,7 @@ public class TextAndCSVParserTest extends TikaTest {
 
     private static Parser PARSER;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws Exception {
 
         try (InputStream is = Thread.currentThread().getContextClassLoader()

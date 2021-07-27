@@ -16,17 +16,18 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
 public class PowerPointParserTest extends TikaTest {
+
     @Test
     public void testEmbeddedPDF() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.ppt");

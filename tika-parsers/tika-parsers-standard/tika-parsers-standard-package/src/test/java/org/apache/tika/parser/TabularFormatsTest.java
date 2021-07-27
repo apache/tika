@@ -17,8 +17,8 @@
 package org.apache.tika.parser;
 
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.text.DateFormatSymbols;
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -174,8 +174,8 @@ public class TabularFormatsTest extends TikaTest {
         String[] cells = toCells(hRow, isTH);
 
         // Check we got the right number
-        assertEquals("Wrong number of cells in header row " + hRow, columnLabels.length,
-                cells.length);
+        assertEquals(columnLabels.length, cells.length,
+                "Wrong number of cells in header row " + hRow);
 
         // Check we got the right stuff
         for (int i = 0; i < cells.length; i++) {
@@ -207,14 +207,15 @@ public class TabularFormatsTest extends TikaTest {
 
         // Check we got the right number of rows
         for (int cn = 0; cn < table.length; cn++) {
-            assertEquals("Wrong number of rows found compared to column " + (cn + 1),
-                    table[cn].length, rows.length);
+            assertEquals(table[cn].length, rows.length,
+                    "Wrong number of rows found compared to column " + (cn + 1));
         }
 
         // Check each row's values
         for (int rn = 0; rn < rows.length; rn++) {
             String[] cells = toCells(rows[rn], false);
-            assertEquals("Wrong number of values in row " + (rn + 1), table.length, cells.length);
+            assertEquals(table.length, cells.length,
+                    "Wrong number of values in row " + (rn + 1));
 
             for (int cn = 0; cn < table.length; cn++) {
                 String val = cells[cn];
@@ -233,9 +234,9 @@ public class TabularFormatsTest extends TikaTest {
                 String error = "Wrong text in row " + (rn + 1) + " and column " + (cn + 1) + " - " +
                         table[cn][rn] + " vs " + val;
                 if (table[cn][rn] instanceof String) {
-                    assertEquals(error, table[cn][rn], val);
+                    assertEquals(table[cn][rn], val, error);
                 } else {
-                    assertTrue(error, ((Pattern) table[cn][rn]).matcher(val).matches());
+                    assertTrue(((Pattern) table[cn][rn]).matcher(val).matches(), error);
                 }
             }
         }
@@ -305,7 +306,7 @@ public class TabularFormatsTest extends TikaTest {
                 if (val instanceof String) {
                     assertContains((String) val, xml);
                 } else if (val instanceof Pattern) {
-                    assertTrue("Not matched: " + val, ((Pattern) val).matcher(xml).find());
+                    assertTrue(((Pattern) val).matcher(xml).find(), "Not matched: " + val);
                 }
             }
         }

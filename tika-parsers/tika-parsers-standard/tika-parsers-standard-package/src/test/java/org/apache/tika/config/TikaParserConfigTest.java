@@ -16,14 +16,14 @@
  */
 package org.apache.tika.config;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.List;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.CompositeParser;
@@ -40,6 +40,7 @@ import org.apache.tika.parser.xml.XMLParser;
  * full set of parsers
  */
 public class TikaParserConfigTest extends AbstractTikaConfigTest {
+
     @Test
     public void testMimeExcludeInclude() throws Exception {
         TikaConfig config = getConfig("TIKA-1558-exclude.xml");
@@ -144,7 +145,7 @@ public class TikaParserConfigTest extends AbstractTikaConfigTest {
                 break;
             }
         }
-        assertTrue("Default config should include an XMLParser.", hasXML);
+        assertTrue(hasXML, "Default config should include an XMLParser.");
 
         // This custom TikaConfig should exclude XMLParser and all of its subclasses.
         config = getConfig("TIKA-1558-excludesub.xml");

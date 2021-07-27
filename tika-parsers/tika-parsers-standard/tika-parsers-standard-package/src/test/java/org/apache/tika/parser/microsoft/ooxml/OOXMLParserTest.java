@@ -18,8 +18,8 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import java.util.List;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
@@ -60,8 +60,8 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("Hello World", pdfMetadata2.get(TikaCoreProperties.TIKA_CONTENT));
     }
 
-    @Ignore("TODO figure out why this doesn't work")
-    @Test(expected = org.apache.tika.exception.TikaException.class)
+    @Disabled("TODO figure out why this doesn't work")
+    @Test//(expected = org.apache.tika.exception.TikaException.class)
     public void testCorruptedZip() throws Exception {
         //TIKA_2446
         getRecursiveMetadata("testZIP_corrupted_oom.zip");

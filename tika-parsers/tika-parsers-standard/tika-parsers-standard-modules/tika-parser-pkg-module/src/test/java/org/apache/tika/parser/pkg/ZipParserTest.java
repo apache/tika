@@ -16,17 +16,18 @@
  */
 package org.apache.tika.parser.pkg;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.InputStream;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
-import org.junit.Assume;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -79,7 +80,7 @@ public class ZipParserTest extends AbstractPkgTest {
         }
         for (String mod : tracker.modifiedAts) {
             assertNotNull(mod);
-            assertTrue("Modified at " + mod, mod.startsWith("20"));
+            assertTrue(mod.startsWith("20"), "Modified at " + mod);
         }
     }
 
@@ -118,7 +119,7 @@ public class ZipParserTest extends AbstractPkgTest {
     @Test
     public void testQuineRecursiveParserWrapper() throws Exception {
         //Anti-virus can surreptitiously remove this file
-        Assume.assumeTrue(
+        assumeTrue(
                 ZipParserTest.class.getResourceAsStream("/test-documents/droste.zip") != null);
         //received permission from author via dm
         //2019-07-25 to include
@@ -128,12 +129,14 @@ public class ZipParserTest extends AbstractPkgTest {
         getRecursiveMetadata("droste.zip");
     }
 
-    @Test(expected = TikaException.class)
-    public void testQuine() throws Exception {
+    @Test
+    public void testQuine() {
         //Anti-virus can surreptitiously remove this file
-        Assume.assumeTrue(
+        assumeTrue(
                 ZipParserTest.class.getResourceAsStream("/test-documents/droste.zip") != null);
-        getXML("droste.zip");
+        assertThrows(TikaException.class, () -> {
+            getXML("droste.zip");
+        });
     }
 
     @Test

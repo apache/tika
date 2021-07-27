@@ -16,7 +16,7 @@
  */
 package org.apache.tika.parser.ner;
 
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -24,7 +24,7 @@ import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashSet;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;

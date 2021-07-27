@@ -16,12 +16,12 @@
  */
 package org.apache.tika.parser.pdf;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
 import java.util.Arrays;
@@ -37,10 +37,10 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.pdfbox.rendering.ImageType;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.Tika;
@@ -75,14 +75,14 @@ public class PDFParserTest extends TikaTest {
 
     public static Level PDFBOX_LOG_LEVEL = Level.INFO;
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         //remember default logging level, but turn off for PDFParserTest
         PDFBOX_LOG_LEVEL = Logger.getLogger("org.apache.pdfbox").getLevel();
         Logger.getLogger("org.apache.pdfbox").setLevel(Level.OFF);
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() {
         //return to regular logging level
         Logger.getLogger("org.apache.pdfbox").setLevel(PDFBOX_LOG_LEVEL);
@@ -123,10 +123,9 @@ public class PDFParserTest extends TikaTest {
         assertContains("incubator", xml);
         assertContains("Apache Software Foundation", xml);
         // testing how the end of one paragraph is separated from start of the next one
-        assertTrue("should have word boundary after headline",
-                !xml.contains("ToolkitApache"));
-        assertTrue("should have word boundary between paragraphs",
-                !xml.contains("libraries.Apache"));
+        assertTrue(!xml.contains("ToolkitApache"), "should have word boundary after headline");
+        assertTrue(!xml.contains("libraries.Apache"),
+                "should have word boundary between paragraphs");
     }
 
     @Test
@@ -233,11 +232,11 @@ public class PDFParserTest extends TikaTest {
         } catch (EncryptedDocumentException e) {
             ex = true;
         }
-        assertTrue("encryption exception", ex);
+        assertTrue(ex, "encryption exception");
         assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("true", metadata.get("pdf:encrypted"));
         //pdf:encrypted, X-Parsed-By and Content-Type
-        assertEquals("very little metadata should be parsed", 3, metadata.names().length);
+        assertEquals(3, metadata.names().length, "very little metadata should be parsed");
         assertEquals(0, handler.toString().length());
     }
 
@@ -587,7 +586,7 @@ public class PDFParserTest extends TikaTest {
         assertEquals("true", m.get(PDF.HAS_XMP));
         assertEquals("true", m.get(PDF.HAS_ACROFORM_FIELDS));
         assertEquals("false", m.get(PDF.HAS_XFA));
-        assertTrue("found", (result.xml.contains("<li>aTextField: TIKA-1226</li>")));
+        assertContains("<li>aTextField: TIKA-1226</li>", result.xml);
     }
 
     @Test
@@ -642,14 +641,14 @@ public class PDFParserTest extends TikaTest {
                     break;
                 }
             }
-            assertTrue("dc:format ::" + e.getValue(), foundDC);
+            assertTrue(foundDC, "dc:format ::" + e.getValue());
             String extensionVersionTruth = pdfExtensionVersions.get(e.getKey());
             if (extensionVersionTruth != null) {
-                assertEquals("pdf:PDFExtensionVersion :: " + extensionVersionTruth,
-                        extensionVersionTruth, r.metadata.get("pdf:PDFExtensionVersion"));
+                assertEquals(extensionVersionTruth, r.metadata.get("pdf:PDFExtensionVersion"),
+                        "pdf:PDFExtensionVersion :: " + extensionVersionTruth);
             }
-            assertEquals("pdf:PDFVersion", pdfVersions.get(e.getKey()),
-                    r.metadata.get("pdf:PDFVersion"));
+            assertEquals(pdfVersions.get(e.getKey()),
+                    r.metadata.get("pdf:PDFVersion"), "pdf:PDFVersion");
         }
         //now test full 11.x
         XMLResult r = getXML("testPDF_Version.11.x.PDFA-1b.pdf");
@@ -658,11 +657,11 @@ public class PDFParserTest extends TikaTest {
         for (String hit : new String[]{"application/pdf; version=1.7",
                 "application/pdf; version=\"A-1b\"",
                 "application/pdf; version=\"1.7 Adobe Extension Level 8\""}) {
-            assertTrue(hit, versions.contains(hit));
+            assertTrue(versions.contains(hit), hit);
         }
 
-        assertEquals("pdfaid:conformance", r.metadata.get("pdfaid:conformance"), "B");
-        assertEquals("pdfaid:part", r.metadata.get("pdfaid:part"), "1");
+        assertEquals(r.metadata.get("pdfaid:conformance"), "B", "pdfaid:conformance");
+        assertEquals(r.metadata.get("pdfaid:part"), "1", "pdfaid:part");
     }
 
     @Test
@@ -785,10 +784,10 @@ public class PDFParserTest extends TikaTest {
     @Test //TIKA-1376
     public void testEmbeddedFileNameExtraction() throws Exception {
         List<Metadata> metadatas = getRecursiveMetadata("testPDF_multiFormatEmbFiles.pdf");
-        assertEquals("metadata size", 5, metadatas.size());
+        assertEquals(5, metadatas.size());
         Metadata firstAttachment = metadatas.get(1);
-        assertEquals("attachment file name", "Test.txt",
-                firstAttachment.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("Test.txt", firstAttachment.get(TikaCoreProperties.RESOURCE_NAME_KEY),
+                "attachment file name");
     }
 
     @Test //TIKA-1427
@@ -1036,7 +1035,7 @@ public class PDFParserTest extends TikaTest {
             tikaEx = true;
         }
         String content = handler.toString();
-        assertTrue("Should have thrown exception", tikaEx);
+        assertTrue(tikaEx, "Should have thrown exception");
         assertEquals(1, m.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING).length);
         assertContains("Unknown dir", m.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
         assertContains("1309.61", content);
@@ -1055,7 +1054,7 @@ public class PDFParserTest extends TikaTest {
             tikaEx = true;
         }
         content = handler.toString();
-        assertTrue("Should have thrown exception", tikaEx);
+        assertTrue(tikaEx, "Should have thrown exception");
         assertEquals(0, m.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING).length);
         assertNotContained("1309.61", content);
     }
@@ -1179,11 +1178,11 @@ public class PDFParserTest extends TikaTest {
             String text = getText(is, parser, context);
             noEx = true;
         } catch (Exception e) {
-            assertEquals("Not the right exception: " + path, expected, e.getClass());
+            assertEquals(expected, e.getClass(), "Not the right exception: " + path);
         } finally {
             IOUtils.closeQuietly(is);
         }
-        assertFalse(path + " should have thrown exception", noEx);
+        assertFalse(noEx, path + " should have thrown exception");
     }
 
     @Test
@@ -1248,7 +1247,7 @@ public class PDFParserTest extends TikaTest {
     }
 
     @Test //TIKA-3041
-    @Ignore("turn back on if we add file from PDFBOX-52")
+    @Disabled("turn back on if we add file from PDFBOX-52")
     public void testPDFBox52() throws Exception {
         PDFParserConfig config = new PDFParserConfig();
         config.setExtractInlineImages(true);

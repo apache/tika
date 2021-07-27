@@ -16,9 +16,9 @@
  */
 package org.apache.tika.parser.iwork;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test class for the <code>AutoPageNumberUtils</code> helper class.

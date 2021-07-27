@@ -16,15 +16,15 @@
  */
 package org.apache.tika.parser.pkg;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.InputStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -77,7 +77,7 @@ public class RarParserTest extends AbstractPkgTest {
         }
         for (String mod : tracker.modifiedAts) {
             assertNotNull(mod);
-            assertTrue("Modified at " + mod, mod.startsWith("20"));
+            assertTrue(mod.startsWith("20"), "Modified at " + mod);
         }
 
         // Should have filenames in the content string

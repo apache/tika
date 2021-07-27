@@ -17,15 +17,15 @@
 
 package org.apache.tika.parser.microsoft;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -107,7 +107,7 @@ public class JackcessParserTest extends TikaTest {
         } catch (EncryptedDocumentException e) {
             ex = true;
         }
-        assertTrue("failed to throw encrypted document exception for wrong password", ex);
+        assertTrue(ex, "failed to throw encrypted document exception for wrong password");
 
         //now try null
         c.set(PasswordProvider.class, metadata -> null);
@@ -119,7 +119,7 @@ public class JackcessParserTest extends TikaTest {
         } catch (EncryptedDocumentException e) {
             ex = true;
         }
-        assertTrue("failed to throw encrypted document exception for null password", ex);
+        assertTrue(ex, "failed to throw encrypted document exception for null password");
 
 
         //now try missing password provider
@@ -131,8 +131,8 @@ public class JackcessParserTest extends TikaTest {
         } catch (EncryptedDocumentException e) {
             ex = true;
         }
-        assertTrue("failed to throw encrypted document exception for missing password provider",
-                ex);
+        assertTrue(ex,
+                "failed to throw encrypted document exception for missing password provider");
 
         //now try password on file that doesn't need a password
         c = new ParseContext();
@@ -143,8 +143,8 @@ public class JackcessParserTest extends TikaTest {
         } catch (EncryptedDocumentException e) {
             ex = true;
         }
-        assertFalse("shouldn't have thrown encrypted document exception for " +
-                "opening unencrypted file that doesn't need passowrd", ex);
+        assertFalse(ex, "shouldn't have thrown encrypted document exception for " +
+                        "opening unencrypted file that doesn't need passowrd");
         assertContains("red and brown", content);
     }
 

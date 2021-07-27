@@ -16,14 +16,12 @@
  */
 package org.apache.tika.mime;
 
-// Junit imports
-
 import static java.nio.charset.StandardCharsets.UTF_16BE;
 import static java.nio.charset.StandardCharsets.UTF_16LE;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -31,8 +29,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
@@ -50,7 +48,7 @@ public class TestMimeTypes {
     private MimeTypes repo;
     private URL u;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         TikaConfig config = TikaConfig.getDefaultConfig();
         repo = config.getMimeRepository();
@@ -1262,7 +1260,7 @@ public class TestMimeTypes {
     private void assertType(String expected, String filename) throws Exception {
         try (InputStream stream = TikaInputStream
                 .get(TestMimeTypes.class.getResourceAsStream("/test-documents/" + filename))) {
-            assertNotNull("Test file not found: " + filename, stream);
+            assertNotNull(stream, "Test file not found: " + filename);
             Metadata metadata = new Metadata();
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
             assertEquals(expected, repo.detect(stream, metadata).toString());
@@ -1278,7 +1276,7 @@ public class TestMimeTypes {
     private void assertTypeByData(String expected, String filename) throws IOException {
         try (InputStream stream = TikaInputStream
                 .get(TestMimeTypes.class.getResourceAsStream("/test-documents/" + filename))) {
-            assertNotNull("Test file not found: " + filename, stream);
+            assertNotNull(stream, "Test file not found: " + filename);
             Metadata metadata = new Metadata();
             assertEquals(expected, repo.detect(stream, metadata).toString());
         }
@@ -1309,7 +1307,7 @@ public class TestMimeTypes {
     private MediaType getTypeByNameAndData(String filename) throws IOException {
         try (InputStream stream = TikaInputStream
                 .get(TestMimeTypes.class.getResourceAsStream("/test-documents/" + filename))) {
-            assertNotNull("Test document not found: " + filename, stream);
+            assertNotNull(stream, "Test document not found: " + filename);
             Metadata metadata = new Metadata();
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
             return repo.detect(stream, metadata);

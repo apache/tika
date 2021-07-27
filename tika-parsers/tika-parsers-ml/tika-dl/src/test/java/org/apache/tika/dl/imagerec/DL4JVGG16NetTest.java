@@ -16,12 +16,12 @@
  */
 package org.apache.tika.dl.imagerec;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.InputStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
@@ -37,12 +37,12 @@ public class DL4JVGG16NetTest {
         } catch (Exception e) {
             if (e.getMessage() != null && (e.getMessage().contains("Connection refused") ||
                     e.getMessage().contains("connect timed out"))) {
-                assumeTrue("skipping test because of connection issue", false);
+                assumeTrue(false, "skipping test because of connection issue");
             }
             throw e;
         }
 
-        assumeTrue("something went wrong loading tika config", config != null);
+        assumeTrue(false, "something went wrong loading tika config");
         Tika tika = new Tika(config);
         Metadata md = new Metadata();
         try (InputStream is = getClass().getResourceAsStream("lion.jpg")) {

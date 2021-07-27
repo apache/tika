@@ -42,19 +42,6 @@
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
-    <!-- test dependencies -->
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.tika</groupId>
-      <artifactId>tika-core</artifactId>
-      <version>${project.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
   <modules>
     <module>tika-parser-html-commons</module>

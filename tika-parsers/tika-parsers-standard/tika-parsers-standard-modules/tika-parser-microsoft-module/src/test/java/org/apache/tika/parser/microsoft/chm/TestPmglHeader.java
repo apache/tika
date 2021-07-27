@@ -17,16 +17,16 @@
 package org.apache.tika.parser.microsoft.chm;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class TestPmglHeader {
     ChmPmglHeader chmPmglHeader = null;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         byte[] data = TestParameters.chmData;
         chmPmglHeader = new ChmPmglHeader();

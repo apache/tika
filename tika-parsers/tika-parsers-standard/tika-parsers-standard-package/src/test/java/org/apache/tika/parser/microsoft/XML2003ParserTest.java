@@ -17,12 +17,12 @@
 
 package org.apache.tika.parser.microsoft;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
@@ -30,6 +30,7 @@ import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 
 public class XML2003ParserTest extends TikaTest {
+
     @Test
     public void testBasicWord() throws Exception {
         List<Metadata> list = getRecursiveMetadata("testWORD2003.xml");

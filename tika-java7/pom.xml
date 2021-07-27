@@ -91,11 +91,6 @@
       <artifactId>bndlib</artifactId>
       <scope>provided</scope>
     </dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
 
   <description>Java-7 reliant components, including FileTypeDetector implementations</description>

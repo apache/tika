@@ -16,6 +16,9 @@
  */
 package org.apache.tika.parser.recognition;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -24,9 +27,7 @@ import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.cxf.jaxrs.client.WebClient;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -66,7 +67,7 @@ public class ObjectRecognitionParserTest {
     @Test
     public void jpegTFObjRecTest() throws IOException, TikaException, SAXException {
         TensorflowImageRecParser p = new TensorflowImageRecParser();
-        Assume.assumeTrue(p.isAvailable());
+        assumeTrue(p.isAvailable());
         try (InputStream stream = loader.getResourceAsStream(CONFIG_FILE_OBJ_REC)) {
             assert stream != null;
             Tika tika = new Tika(new TikaConfig(stream));
@@ -80,8 +81,8 @@ public class ObjectRecognitionParserTest {
                         .join(metadata.getValues(ObjectRecognitionParser.MD_KEY_OBJ_REC), " ");
                 for (String expectedObject : expectedObjects) {
                     String message = "'" + expectedObject + "' must have been detected";
-                    Assert.assertTrue(message, text.contains(expectedObject));
-                    Assert.assertTrue(message, metaValues.contains(expectedObject));
+                    assertTrue(text.contains(expectedObject), message);
+                    assertTrue(metaValues.contains(expectedObject), message);
                 }
             }
         }
@@ -97,7 +98,7 @@ public class ObjectRecognitionParserTest {
             available = status == 200;
         } catch (Exception ignore) {
         }
-        Assume.assumeTrue(available);
+        assumeTrue(available);
         String[] expectedObjects = {"Egyptian cat", "tabby, tabby cat"};
         doRecognize(CONFIG_REST_FILE_OBJ_REC, CAT_IMAGE_JPEG,
                 ObjectRecognitionParser.MD_KEY_OBJ_REC, expectedObjects);
@@ -113,7 +114,7 @@ public class ObjectRecognitionParserTest {
             available = status == 200;
         } catch (Exception ignore) {
         }
-        Assume.assumeTrue(available);
+        assumeTrue(available);
         String[] expectedObjects = {"Egyptian cat", "tabby, tabby cat"};
         doRecognize(CONFIG_REST_FILE_OBJ_REC, CAT_IMAGE_PNG, ObjectRecognitionParser.MD_KEY_OBJ_REC,
                 expectedObjects);
@@ -129,7 +130,7 @@ public class ObjectRecognitionParserTest {
             available = status == 200;
         } catch (Exception ignore) {
         }
-        Assume.assumeTrue(available);
+        assumeTrue(available);
         String[] expectedObjects = {"Egyptian cat"};
         doRecognize(CONFIG_REST_FILE_OBJ_REC, CAT_IMAGE_GIF, ObjectRecognitionParser.MD_KEY_OBJ_REC,
                 expectedObjects);
@@ -145,7 +146,7 @@ public class ObjectRecognitionParserTest {
             available = status == 200;
         } catch (Exception ignore) {
         }
-        Assume.assumeTrue(available);
+        assumeTrue(available);
         String[] expectedCaption = {"a baseball player holding a bat on a field"};
         doRecognize(CONFIG_REST_FILE_IM2TXT, BASEBALL_IMAGE_JPEG,
                 ObjectRecognitionParser.MD_KEY_IMG_CAP, expectedCaption);
@@ -161,7 +162,7 @@ public class ObjectRecognitionParserTest {
             available = status == 200;
         } catch (Exception ignore) {
         }
-        Assume.assumeTrue(available);
+        assumeTrue(available);
         String[] expectedCaption = {"a baseball player holding a bat on a field"};
         doRecognize(CONFIG_REST_FILE_IM2TXT, BASEBALL_IMAGE_PNG,
                 ObjectRecognitionParser.MD_KEY_IMG_CAP, expectedCaption);
@@ -177,7 +178,7 @@ public class ObjectRecognitionParserTest {
             available = status == 200;
         } catch (Exception ignore) {
         }
-        Assume.assumeTrue(available);
+        assumeTrue(available);
         String[] expectedCaption = {"a baseball player pitching a ball on top of a field"};
         doRecognize(CONFIG_REST_FILE_IM2TXT, BASEBALL_IMAGE_GIF,
                 ObjectRecognitionParser.MD_KEY_IMG_CAP, expectedCaption);
@@ -196,8 +197,8 @@ public class ObjectRecognitionParserTest {
                 LOG.info("MetaValues = {}", metaValues);
                 for (String expectedObject : expectedObjects) {
                     String message = "'" + expectedObject + "' must have been detected";
-                    Assert.assertTrue(message, text.contains(expectedObject));
-                    Assert.assertTrue(message, metaValues.contains(expectedObject));
+                    assertTrue(text.contains(expectedObject), message);
+                    assertTrue(metaValues.contains(expectedObject), message);
                 }
             }
         }

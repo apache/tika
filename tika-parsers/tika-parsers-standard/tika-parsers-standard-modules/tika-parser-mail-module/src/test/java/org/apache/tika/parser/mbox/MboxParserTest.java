@@ -16,14 +16,14 @@
  */
 package org.apache.tika.parser.mbox;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
@@ -42,7 +42,7 @@ public class MboxParserTest extends TikaTest {
     private TypeDetector typeDetector;
     private MboxParser mboxParser;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         typeDetector = new TypeDetector();
         autoDetectParser = new AutoDetectParser(typeDetector);
@@ -68,7 +68,7 @@ public class MboxParserTest extends TikaTest {
         assertEquals("application/mbox", metadata.get(Metadata.CONTENT_TYPE));
 
         Map<Integer, Metadata> mailsMetadata = mboxParser.getTrackingMetadata();
-        assertEquals("Nb. Of mails", 2, mailsMetadata.size());
+        assertEquals(2, mailsMetadata.size(), "Nb. Of mails");
 
         Metadata mail1 = mailsMetadata.get(0);
         assertEquals("message/rfc822", mail1.get(Metadata.CONTENT_TYPE));
@@ -91,7 +91,7 @@ public class MboxParserTest extends TikaTest {
         }
 
         assertContains("Test content", handler.toString());
-        assertEquals("Nb. Of mails", 1, mboxParser.getTrackingMetadata().size());
+        assertEquals(1, mboxParser.getTrackingMetadata().size(), "Nb. Of mails");
 
         Metadata mailMetadata = mboxParser.getTrackingMetadata().get(0);
 
@@ -112,7 +112,7 @@ public class MboxParserTest extends TikaTest {
             mboxParser.parse(stream, handler, metadata, recursingContext);
         }
 
-        assertEquals("Nb. Of mails", 1, mboxParser.getTrackingMetadata().size());
+        assertEquals(1, mboxParser.getTrackingMetadata().size(), "Nb. Of mails");
 
         Metadata mailMetadata = mboxParser.getTrackingMetadata().get(0);
         assertEquals("from xxx by xxx with xxx; date", mailMetadata.get("MboxParser-received"));
@@ -140,7 +140,7 @@ public class MboxParserTest extends TikaTest {
             mboxParser.parse(stream, handler, metadata, recursingContext);
         }
 
-        assertEquals("Nb. Of mails", 3, mboxParser.getTrackingMetadata().size());
+        assertEquals(3, mboxParser.getTrackingMetadata().size(), "Nb. Of mails");
 
         Metadata firstMail = mboxParser.getTrackingMetadata().get(0);
         assertEquals("Re: question about when shuffle/sort start working",

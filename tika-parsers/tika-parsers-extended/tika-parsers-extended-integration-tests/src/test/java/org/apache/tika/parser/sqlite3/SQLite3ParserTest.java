@@ -17,7 +17,7 @@
 package org.apache.tika.parser.sqlite3;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
@@ -47,6 +47,7 @@ import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
 
 public class SQLite3ParserTest extends TikaTest {
+
     private final static String TEST_FILE_NAME = "testSqlite3b.db";
     private final static String TEST_FILE1 = "/test-documents/" + TEST_FILE_NAME;
 

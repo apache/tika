@@ -16,11 +16,10 @@
  */
 package org.apache.tika.parser.image;
 
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.GregorianCalendar;
@@ -35,7 +34,7 @@ import com.drew.metadata.Tag;
 import com.drew.metadata.exif.ExifIFD0Directory;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.drew.metadata.jpeg.JpegCommentDirectory;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import org.apache.tika.metadata.Metadata;
@@ -82,8 +81,8 @@ public class ImageMetadataExtractorTest {
         Metadata metadata = new Metadata();
 
         new ImageMetadataExtractor.ExifHandler().handle(exif, metadata);
-        assertEquals("Should be ISO date without time zone", "2000-01-01T00:00:00",
-                metadata.get(TikaCoreProperties.CREATED));
+        assertEquals("2000-01-01T00:00:00", metadata.get(TikaCoreProperties.CREATED),
+                "Should be ISO date without time zone");
     }
 
     @Test
@@ -98,8 +97,8 @@ public class ImageMetadataExtractorTest {
         Metadata metadata = new Metadata();
 
         new ImageMetadataExtractor.ExifHandler().handle(exif, metadata);
-        assertEquals("Should try EXIF Date/Time if Original is not set", "1999-01-01T00:00:00",
-                metadata.get(TikaCoreProperties.CREATED));
+        assertEquals("1999-01-01T00:00:00", metadata.get(TikaCoreProperties.CREATED),
+                "Should try EXIF Date/Time if Original is not set");
     }
 
     @Test
@@ -110,8 +109,8 @@ public class ImageMetadataExtractorTest {
         Metadata metadata = new Metadata();
 
         new ImageMetadataExtractor.ExifHandler().handle(exif, metadata);
-        assertEquals("Parsing should proceed without date", null,
-                metadata.get(TikaCoreProperties.CREATED));
+        assertNull(metadata.get(TikaCoreProperties.CREATED),
+                "Parsing should proceed without date");
     }
 
     @Test
@@ -131,8 +130,8 @@ public class ImageMetadataExtractorTest {
         Metadata metadata = new Metadata();
         new ImageMetadataExtractor.CopyUnknownFieldsHandler().handle(d, metadata);
         assertEquals("t1", metadata.get("Image Description"));
-        assertNull("keywords should be excluded from bulk copy because it is a defined field",
-                metadata.get(TikaCoreProperties.SUBJECT));
+        assertNull(metadata.get(TikaCoreProperties.SUBJECT),
+                "keywords should be excluded from bulk copy because it is a defined field");
         assertNull(metadata.get(TikaCoreProperties.DESCRIPTION));
     }
 

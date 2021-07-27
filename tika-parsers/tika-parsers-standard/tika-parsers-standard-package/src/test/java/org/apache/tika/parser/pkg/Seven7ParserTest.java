@@ -16,15 +16,15 @@
  */
 package org.apache.tika.parser.pkg;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
 import javax.crypto.Cipher;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -49,8 +49,8 @@ public class Seven7ParserTest extends AbstractPkgTest {
         Metadata metadata = new Metadata();
 
         // Ensure 7zip is a parsable format
-        assertTrue("No 7zip parser found",
-                AUTO_DETECT_PARSER.getSupportedTypes(recursingContext).contains(TYPE_7ZIP));
+        assertTrue(AUTO_DETECT_PARSER.getSupportedTypes(recursingContext).contains(TYPE_7ZIP),
+                "No 7zip parser found");
 
         // Parse
         String content = getText("test-documents.7z", metadata);
@@ -92,7 +92,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
             ex = true;
         }
 
-        assertTrue("test no password", ex);
+        assertTrue(ex, "test no password");
 
         // No password, will fail with EncryptedDocumentException
         ex = false;
@@ -106,7 +106,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
             ex = false;
         }
 
-        assertTrue("test no password for full encrypted 7z", ex);
+        assertTrue(ex, "test no password for full encrypted 7z");
 
         ex = false;
 
@@ -125,7 +125,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
             // "(do you have the JCE  Unlimited Strength Jurisdiction Policy Files installed?")
             ex = true;
         }
-        assertTrue("TikaException for bad password", ex);
+        assertTrue(ex, "TikaException for bad password");
         // Will be empty
         assertEquals("", handler.toString());
 
@@ -161,7 +161,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
             } catch (TikaException e) {
                 ioe = true;
             }
-            assertTrue("IOException because JCE was not installed", ioe);
+            assertTrue(ioe, "IOException because JCE was not installed");
         }
     }
 }

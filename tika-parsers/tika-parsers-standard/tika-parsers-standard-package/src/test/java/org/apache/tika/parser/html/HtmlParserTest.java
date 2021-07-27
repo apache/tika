@@ -16,14 +16,14 @@
  */
 package org.apache.tika.parser.html;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
@@ -33,6 +33,7 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
 
 public class HtmlParserTest extends TikaTest {
+
     @Test
     public void testDataURI() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testHTML_embedded_img.html");

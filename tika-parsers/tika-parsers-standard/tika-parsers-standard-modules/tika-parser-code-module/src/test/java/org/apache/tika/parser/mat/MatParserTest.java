@@ -16,11 +16,11 @@
  */
 package org.apache.tika.parser.mat;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.InputStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
@@ -32,6 +32,7 @@ import org.apache.tika.sax.ToXMLContentHandler;
  * Test cases to exercise the {@link MatParser}.
  */
 public class MatParserTest extends TikaTest {
+
     @Test
     public void testParser() throws Exception {
 

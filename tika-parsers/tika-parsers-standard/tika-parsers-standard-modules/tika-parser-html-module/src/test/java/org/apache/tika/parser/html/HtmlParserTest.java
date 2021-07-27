@@ -19,10 +19,10 @@ package org.apache.tika.parser.html;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -54,8 +54,8 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.ccil.cowan.tagsoup.HTMLSchema;
 import org.ccil.cowan.tagsoup.Schema;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.Locator;
@@ -120,26 +120,26 @@ public class HtmlParserTest extends TikaTest {
         assertEquals("test-anchor", name.toString());
 
         String content = body.toString();
-        assertTrue("Did not contain expected text:" + "Test Indexation Html",
-                content.contains("Test Indexation Html"));
-        assertTrue("Did not contain expected text:" + "Indexation du fichier",
-                content.contains("Indexation du fichier"));
+        assertTrue(content.contains("Test Indexation Html"),
+                "Did not contain expected text:" + "Test Indexation Html");
+        assertTrue(content.contains("Indexation du fichier"),
+                "Did not contain expected text:" + "Indexation du fichier");
     }
 
     @Test
-    @Ignore("The file 'testXHTML_utf8.html' is not available for testing")
+    @Disabled("The file 'testXHTML_utf8.html' is not available for testing")
     public void XtestParseUTF8() throws IOException, SAXException, TikaException {
         String path = "/test-documents/testXHTML_utf8.html";
         Metadata metadata = new Metadata();
         String content = new Tika().parseToString(getResourceAsStream(path), metadata);
 
-        assertTrue("Did not contain expected text:" + "Title : Tilte with UTF-8 chars √∂√§√•",
-                content.contains("Title : Tilte with UTF-8 chars √∂√§√•"));
+        assertTrue(content.contains("Title : Tilte with UTF-8 chars √∂√§√•"),
+                "Did not contain expected text:" + "Title : Tilte with UTF-8 chars √∂√§√•");
 
-        assertTrue("Did not contain expected text:" + "Content with UTF-8 chars",
-                content.contains("Content with UTF-8 chars"));
+        assertTrue(content.contains("Content with UTF-8 chars"),
+                "Did not contain expected text:" + "Content with UTF-8 chars");
 
-        assertTrue("Did not contain expected text:" + "√•√§√∂", content.contains("√•√§√∂"));
+        assertTrue(content.contains("√•√§√∂"), "Did not contain expected text:" + "√•√§√∂");
     }
 
     @Test
@@ -587,9 +587,10 @@ public class HtmlParserTest extends TikaTest {
         String result = sw.toString();
 
         // <object> tag should exist with fully resolved URLs
-        assertTrue("<object> tag not correctly found in:\n" + result, Pattern.matches(
-                "(?s).*<object data=\"http://domain.com/object.data\".*<param .* name=\"name\" value=\"value\"/>.*</object>.*$",
-                result));
+        assertTrue(Pattern.matches(
+                        "(?s).*<object data=\"http://domain.com/object.data\".*<param .* name=\"name\" value=\"value\"/>.*</object>.*$",
+                        result),
+                "<object> tag not correctly found in:\n" + result);
     }
 
     /**
@@ -757,12 +758,11 @@ public class HtmlParserTest extends TikaTest {
         new HtmlParser().parse(getResourceAsStream(path), bpch, metadata, new ParseContext());
 
         String content = sw.toString();
-        assertTrue("Has empty table elements",
-                content.contains("<body><table><tr><td><table><tr><td>"));
-        assertTrue("Has empty a element",
-                content.contains("<a shape=\"rect\" href=\"Main.php\"/>"));
-        assertTrue("Has real content", content.contains("<p>This is the real meat"));
-        assertTrue("Ends with appropriate HTML", content.endsWith("</p></body></html>"));
+        assertTrue(content.contains("<body><table><tr><td><table><tr><td>"),
+                "Has empty table elements");
+        assertTrue(content.contains("<a shape=\"rect\" href=\"Main.php\"/>"), "Has empty a element");
+        assertTrue(content.contains("<p>This is the real meat"), "Has real content");
+        assertTrue(content.endsWith("</p></body></html>"), "Ends with appropriate HTML");
         assertFalse(content.contains("boilerplate"));
         assertFalse(content.contains("footer"));
     }
@@ -839,8 +839,8 @@ public class HtmlParserTest extends TikaTest {
                         metadata, new ParseContext());
 
         assertEquals("fr", metadata.get(Metadata.CONTENT_LANGUAGE));
-        assertTrue("Missing HTML lang attribute",
-                Pattern.matches("(?s)<html[^>]* lang=\"fr\".*", sw.toString()));
+        assertTrue(Pattern.matches("(?s)<html[^>]* lang=\"fr\".*", sw.toString()),
+                "Missing HTML lang attribute");
     }
 
     /**
@@ -936,7 +936,7 @@ public class HtmlParserTest extends TikaTest {
         for (int i = 1; i <= 4; i++) {
             String fileName = "/test-documents/testHTMLNoisyMetaEncoding_" + i + ".html";
             String content = tika.parseToString(getResourceAsStream(fileName));
-            assertTrue("testing: " + fileName, content.contains(hit));
+            assertTrue(content.contains(hit), "testing: " + fileName);
         }
     }
 
@@ -1214,7 +1214,7 @@ public class HtmlParserTest extends TikaTest {
     }
 
     @Test
-    @Ignore("until we fix TIKA-1896")
+    @Disabled("until we fix TIKA-1896")
     public void testBadScript() throws Exception {
         String xml = getXML("testHTMLBadScript.html").xml;
         assertContains("This is a test", xml);
@@ -1273,7 +1273,7 @@ public class HtmlParserTest extends TikaTest {
         List<Path> tmp = new ArrayList<>();
         Map<Path, String> encodings = new ConcurrentHashMap<>();
         File[] testDocArray = testDocs.toFile().listFiles();
-        assertNotNull("no test docs??", testDocArray);
+        assertNotNull(testDocArray, "no test docs??");
         for (File file : testDocArray) {
             if (file.getName().endsWith(".txt") || file.getName().endsWith(".html")) {
                 String encoding = getEncoding(detector, file.toPath());
@@ -1366,9 +1366,9 @@ public class HtmlParserTest extends TikaTest {
                 }
                 String detectedEncoding = getEncoding(detector, p);
                 String trueEncoding = encodings.get(p);
-                assertEquals("detector class=" + detector.getClass() + " : file=" + p.toString(),
-                        trueEncoding, detectedEncoding);
-
+                assertEquals(trueEncoding, detectedEncoding,
+                        "detector class=" + detector.getClass() + " : file=" + p.toString()
+                );
             }
             return DONE;
         }

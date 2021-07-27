@@ -16,12 +16,12 @@
  */
 package org.apache.tika.parser.pdf;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.InputStream;
 import java.util.List;
@@ -29,9 +29,9 @@ import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
@@ -70,14 +70,14 @@ public class PDFParserTest extends TikaTest {
         return hasTesseract;
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         //remember default logging level, but turn off for PDFParserTest
         PDFBOX_LOG_LEVEL = Logger.getLogger("org.apache.pdfbox").getLevel();
         Logger.getLogger("org.apache.pdfbox").setLevel(Level.OFF);
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() {
         //return to regular logging level
         Logger.getLogger("org.apache.pdfbox").setLevel(PDFBOX_LOG_LEVEL);
@@ -145,18 +145,18 @@ public class PDFParserTest extends TikaTest {
     public void testOSSpecificEmbeddedFileExtraction() throws Exception {
         List<Metadata> metadatas =
                 getRecursiveMetadata("testPDF_multiFormatEmbFiles.pdf", NO_OCR());
-        assertEquals("metadata size", 5, metadatas.size());
+        assertEquals(5, metadatas.size(), "metadata size");
 
-        assertEquals("file name", "Test.txt",
+        assertEquals("Test.txt",
                 metadatas.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertContains("os specific", metadatas.get(1).get(TikaCoreProperties.TIKA_CONTENT));
-        assertEquals("file name", "TestMac.txt",
+        assertEquals("TestMac.txt",
                 metadatas.get(2).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertContains("mac embedded", metadatas.get(2).get(TikaCoreProperties.TIKA_CONTENT));
-        assertEquals("file name", "TestDos.txt",
+        assertEquals("TestDos.txt",
                 metadatas.get(3).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertContains("dos embedded", metadatas.get(3).get(TikaCoreProperties.TIKA_CONTENT));
-        assertEquals("file name", "TestUnix.txt",
+        assertEquals("TestUnix.txt",
                 metadatas.get(4).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertContains("unix embedded", metadatas.get(4).get(TikaCoreProperties.TIKA_CONTENT));
 
@@ -237,7 +237,7 @@ public class PDFParserTest extends TikaTest {
 
     @Test
     public void testEmbeddedDocsWithOCROnly() throws Exception {
-        assumeTrue("can run OCR", canRunOCR());
+        assumeTrue(canRunOCR(), "can run OCR");
         //test default is "auto"
         assertEquals(PDFParserConfig.OCR_STRATEGY.AUTO, new PDFParserConfig().getOcrStrategy());
         testStrategy(null);
@@ -342,8 +342,8 @@ public class PDFParserTest extends TikaTest {
                 fail("Exception: " + metadatas.get(1).get(key));
             }
         }
-        assertEquals("Invalid height.", "91", metadatas.get(1).get("height"));
-        assertEquals("Invalid width.", "352", metadatas.get(1).get("width"));
+        assertEquals("91", metadatas.get(1).get("height"));
+        assertEquals("352", metadatas.get(1).get("width"));
 
         assertNull(metadatas.get(0).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals("image0.jb2", metadatas.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
@@ -353,7 +353,7 @@ public class PDFParserTest extends TikaTest {
 
     @Test
     public void testJBIG2OCROnly() throws Exception {
-        assumeTrue("can run OCR", canRunOCR());
+        assumeTrue(canRunOCR(), "can run OCR");
         PDFParserConfig config = new PDFParserConfig();
         config.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.OCR_ONLY);
         ParseContext context = new ParseContext();
@@ -365,7 +365,7 @@ public class PDFParserTest extends TikaTest {
 
     @Test
     public void testJPEG2000() throws Exception {
-        assumeTrue("can run OCR", canRunOCR());
+        assumeTrue(canRunOCR(), "can run OCR");
         PDFParserConfig config = new PDFParserConfig();
         config.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.OCR_ONLY);
         ParseContext context = new ParseContext();
@@ -377,7 +377,7 @@ public class PDFParserTest extends TikaTest {
 
     @Test
     public void testOCRAutoMode() throws Exception {
-        assumeTrue("can run OCR", canRunOCR());
+        assumeTrue(canRunOCR(), "can run OCR");
 
         //default
         assertContains("Happy New Year", getXML("testOCR.pdf").xml);
@@ -396,7 +396,7 @@ public class PDFParserTest extends TikaTest {
 
     @Test
     public void testOCRNoText() throws Exception {
-        assumeTrue("can run OCR", canRunOCR());
+        assumeTrue(canRunOCR(), "can run OCR");
         PDFParserConfig config = new PDFParserConfig();
         config.setOcrRenderingStrategy(PDFParserConfig.OCR_RENDERING_STRATEGY.ALL);
         config.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.OCR_ONLY);
@@ -419,7 +419,7 @@ public class PDFParserTest extends TikaTest {
         //TIKA-2970 -- make sure that configurations set on the TesseractOCRParser
         //make it through to when the TesseractOCRParser is called via
         //the PDFParser
-        assumeTrue("can run OCR", canRunOCR());
+        assumeTrue(canRunOCR(), "can run OCR");
 
         //via the config, tesseract should skip this file because it is too large
         try (InputStream is = getResourceAsStream(

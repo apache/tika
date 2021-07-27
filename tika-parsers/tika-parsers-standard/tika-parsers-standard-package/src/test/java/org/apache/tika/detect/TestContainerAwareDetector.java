@@ -16,9 +16,9 @@
  */
 package org.apache.tika.detect;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -29,9 +29,9 @@ import java.util.Objects;
 import java.util.Random;
 
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
-import org.junit.After;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.Tika;
@@ -59,7 +59,7 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
     private final StreamingZipContainerDetector streamingZipDetector =
             new StreamingZipContainerDetector();
 
-    @After
+    @AfterEach
     public void tearDown() throws TikaException {
         //make sure to reset pool size because it is being randomly resized during the tests
         XMLReaderUtils.setPoolSize(10);
@@ -104,8 +104,8 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
             if (mediaTypeRegistry.isSpecializationOf(expected, MediaType.APPLICATION_ZIP) &&
                     !expected.toString().contains("tika-ooxml-protected")) {
 
-                assertEquals("streaming zip detector failed", expected,
-                        streamingZipDetector.detect(stream, m));
+                assertEquals(expected, streamingZipDetector.detect(stream, m),
+                        "streaming zip detector failed");
             }
         }
     }
@@ -378,7 +378,7 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
     }
 
     @Test
-    @Ignore("TODO -- fix this")
+    @Disabled("TODO -- fix this")
     public void testDetectIWork2013() throws Exception {
         assertTypeByData("testKeynote2013.key",
                 IWork13PackageParser.IWork13DocumentType.KEYNOTE13.getType().toString());

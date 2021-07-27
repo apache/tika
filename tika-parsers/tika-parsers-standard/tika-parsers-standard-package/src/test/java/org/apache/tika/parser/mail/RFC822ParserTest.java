@@ -16,15 +16,15 @@
  */
 package org.apache.tika.parser.mail;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.InputStream;
 import java.util.List;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
@@ -46,11 +46,11 @@ public class RFC822ParserTest extends TikaTest {
     private static InputStream getStream(String name) {
         InputStream stream =
                 Thread.currentThread().getContextClassLoader().getResourceAsStream(name);
-        assertNotNull("Test file not found " + name, stream);
+        assertNotNull(stream, "Test file not found " + name);
         return stream;
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws Exception {
 
         try (InputStream is = getStream(

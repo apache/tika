@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -44,7 +44,7 @@ public abstract class AbstractPkgTest extends TikaTest {
 
     protected EmbeddedTrackingParser tracker;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         tracker = new EmbeddedTrackingParser();
         trackingContext = new ParseContext();

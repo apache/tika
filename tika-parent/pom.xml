@@ -323,6 +323,7 @@
     <jna.version>5.8.0</jna.version>
     <joda.time.version>2.10.10</joda.time.version>
     <json.simple.version>1.1.1</json.simple.version>
+    <junit5.version>5.8.0-M1</junit5.version>
     <juniversalchardet.version>1.0.3</juniversalchardet.version>
     <junrar.version>7.4.0</junrar.version>
     <libpst.version>0.9.3</libpst.version>
@@ -366,6 +367,27 @@
     <zstd.version>1.5.0-2</zstd.version>
   </properties>
 
+  <dependencies>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <version>${junit5.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>${junit5.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- after we migrate everything to junit5, we can get rid of this -->
+    <dependency>
+      <groupId>org.junit.vintage</groupId>
+      <artifactId>junit-vintage-engine</artifactId>
+      <version>${junit5.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
   <dependencyManagement>
     <dependencies>
       <dependency>
@@ -377,12 +399,6 @@
         <groupId>org.apache.felix</groupId>
         <artifactId>org.apache.felix.scr.annotations</artifactId>
         <version>1.12.0</version>
-      </dependency>
-      <dependency>
-        <groupId>junit</groupId>
-        <artifactId>junit</artifactId>
-        <version>4.13.2</version>
-        <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
@@ -448,11 +464,7 @@
         <configuration>
           <fail>false</fail>
           <excludeCoordinates>
-            <coordinate>
-              <groupId>junit</groupId>
-              <artifactId>junit</artifactId>
-              <version>4.13.1</version>
-            </coordinate>
+<!--            <coordinate>            </coordinate> -->
           </excludeCoordinates>
         </configuration>
         <executions>

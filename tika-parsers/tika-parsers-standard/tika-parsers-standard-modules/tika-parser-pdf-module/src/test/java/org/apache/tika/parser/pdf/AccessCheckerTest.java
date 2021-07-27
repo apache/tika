@@ -16,10 +16,9 @@
  */
 package org.apache.tika.parser.pdf;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import static org.junit.Assert.assertTrue;
-
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.exception.AccessPermissionException;
 import org.apache.tika.metadata.AccessPermissions;
@@ -30,19 +29,16 @@ public class AccessCheckerTest {
 
     @Test
     public void testLegacy() throws AccessPermissionException {
-
+        //test that there are no thrown exceptions
         Metadata m = getMetadata(false, false);
         //legacy behavior; don't bother checking
         AccessChecker checker = new AccessChecker();
         checker.check(m);
-        assertTrue("no exception", true);
 
         m = getMetadata(false, true);
-        assertTrue("no exception", true);
         checker.check(m);
 
         m = getMetadata(true, true);
-        assertTrue("no exception", true);
         checker.check(m);
     }
 
@@ -59,7 +55,7 @@ public class AccessCheckerTest {
         } catch (AccessPermissionException e) {
             ex = true;
         }
-        assertTrue("correct exception with no extraction, no extract for accessibility", ex);
+        assertTrue(ex, "correct exception with no extraction, no extract for accessibility");
         ex = false;
         try {
             //document allows extraction for accessibility
@@ -69,7 +65,7 @@ public class AccessCheckerTest {
             //but application is not an accessibility application
             ex = true;
         }
-        assertTrue("correct exception with no extraction, no extract for accessibility", ex);
+        assertTrue(ex, "correct exception with no extraction, no extract for accessibility");
     }
 
     @Test
@@ -78,7 +74,7 @@ public class AccessCheckerTest {
         //allow accessibility
         AccessChecker checker = new AccessChecker(true);
         checker.check(m);
-        assertTrue("no exception", true);
+        assertTrue(true, "no exception");
         boolean ex = false;
         try {
             m = getMetadata(false, false);
@@ -86,7 +82,7 @@ public class AccessCheckerTest {
         } catch (AccessPermissionException e) {
             ex = true;
         }
-        assertTrue("correct exception", ex);
+        assertTrue(ex, "correct exception");
     }
 
     @Test
@@ -95,14 +91,14 @@ public class AccessCheckerTest {
         //allow accessibility
         AccessChecker checker = new AccessChecker(true);
         checker.check(m);
-        assertTrue("no exception", true);
+        assertTrue(true, "no exception");
 
         //don't extract for accessibility
         checker = new AccessChecker(false);
         //if extract content is allowed, the checker shouldn't
         //check the value of extract for accessibility
         checker.check(m);
-        assertTrue("no exception", true);
+        assertTrue(true, "no exception");
 
     }
 
@@ -116,7 +112,7 @@ public class AccessCheckerTest {
         } catch (PropertyTypeException e) {
             ex = true;
         }
-        assertTrue("can't add multiple values", ex);
+        assertTrue(ex, "can't add multiple values");
 
         m = new Metadata();
         ex = false;
@@ -126,7 +122,7 @@ public class AccessCheckerTest {
         } catch (PropertyTypeException e) {
             ex = true;
         }
-        assertTrue("can't add multiple values", ex);
+        assertTrue(ex, "can't add multiple values");
     }
 
     private Metadata getMetadata(boolean allowExtraction, boolean allowExtractionForAccessibility) {

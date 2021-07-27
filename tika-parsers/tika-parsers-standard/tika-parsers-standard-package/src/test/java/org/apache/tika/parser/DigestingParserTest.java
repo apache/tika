@@ -16,10 +16,10 @@
  */
 package org.apache.tika.parser;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.Random;
 
 import org.apache.commons.codec.digest.DigestUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
@@ -77,7 +77,7 @@ public class DigestingParserTest extends TikaTest {
             XMLResult xml = getXML("test_recursive_embedded.docx",
                     new DigestingParser(AUTO_DETECT_PARSER, new CommonsDigester(UNLIMITED, algo)),
                     m);
-            assertEquals(algo.toString(), expected.get(algo), m.get(P + algo.toString()));
+            assertEquals(expected.get(algo), m.get(P + algo.toString()), algo.toString());
         }
 
     }
@@ -108,7 +108,7 @@ public class DigestingParserTest extends TikaTest {
                 CommonsDigester.DigestAlgorithm.MD5, CommonsDigester.DigestAlgorithm.SHA1,
                 CommonsDigester.DigestAlgorithm.SHA256, CommonsDigester.DigestAlgorithm.SHA384,
                 CommonsDigester.DigestAlgorithm.SHA512}) {
-            assertEquals(algo.toString(), expected.get(algo), m.get(P + algo.toString()));
+            assertEquals(expected.get(algo), m.get(P + algo.toString()), algo.toString());
         }
 
         assertNull(m.get(P + CommonsDigester.DigestAlgorithm.MD2.toString()));
@@ -135,7 +135,7 @@ public class DigestingParserTest extends TikaTest {
         } catch (IllegalArgumentException e) {
             ex = true;
         }
-        assertTrue("Exception not thrown", ex);
+        assertTrue(ex, "Exception not thrown");
     }
 
     @Test
@@ -224,12 +224,13 @@ public class DigestingParserTest extends TikaTest {
         for (CommonsDigester.DigestAlgorithm algo : algos) {
             String truthValue = truth.get(P + algo.name());
             String resultValue = result.get(P + algo.name());
-            assertNotNull("truth", truthValue);
-            assertNotNull("result (fileLength=" + fileLength + ", markLimit=" + markLimit + ")",
-                    resultValue);
-            assertEquals("fileLength(" + fileLength + ") markLimit(" + markLimit +
-                    ") useTikaInputStream(" + useTikaInputStream + ") " + "algorithm(" +
-                    algo.name() + ") seed(" + SEED + ")", truthValue, resultValue);
+            assertNotNull(truthValue, "truth");
+            assertNotNull(resultValue,
+                    "result (fileLength=" + fileLength + ", markLimit=" + markLimit + ")");
+            assertEquals(truthValue, resultValue,
+                    "fileLength(" + fileLength + ") markLimit(" + markLimit +
+                            ") useTikaInputStream(" + useTikaInputStream + ") " + "algorithm(" +
+                            algo.name() + ") seed(" + SEED + ")");
         }
 
     }

@@ -16,10 +16,10 @@
  */
 package org.apache.tika.parser.microsoft.rtf;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -27,8 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.FilenameUtils;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
@@ -41,6 +40,7 @@ import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 
 public class RTFParserTest extends TikaTest {
+
     // TIKA-1010
     @Test
     public void testEmbeddedMonster() throws Exception {
@@ -80,7 +80,7 @@ public class RTFParserTest extends TikaTest {
             assertNotNull(metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
             //necessary to getName() because MSOffice extractor includes
             //directory: _1457338524/HW.txt
-            Assert.assertEquals("filename equals ", p.fileName,
+            assertEquals(p.fileName,
                     FilenameUtils.getName(metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH)));
 
             assertEquals(p.mimeType, metadata.get(Metadata.CONTENT_TYPE));

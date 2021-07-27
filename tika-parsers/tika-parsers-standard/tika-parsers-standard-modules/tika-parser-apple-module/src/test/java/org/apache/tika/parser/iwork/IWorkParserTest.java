@@ -16,15 +16,15 @@
  */
 package org.apache.tika.parser.iwork;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
@@ -40,7 +40,7 @@ public class IWorkParserTest extends TikaTest {
 
     private IWorkPackageParser iWorkParser;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         iWorkParser = new IWorkPackageParser();
     }
@@ -66,18 +66,18 @@ public class IWorkParserTest extends TikaTest {
 
         // Make sure enough keys came through
         // (Exact numbers will vary based on composites)
-        assertTrue("Insufficient metadata found " + metadata.size(), metadata.size() >= 6);
+        assertTrue(metadata.size() >= 6, "Insufficient metadata found " + metadata.size());
         List<String> metadataKeys = Arrays.asList(metadata.names());
-        assertTrue("Metadata not found in " + metadataKeys,
-                metadataKeys.contains(Metadata.CONTENT_TYPE));
-        assertTrue("Metadata not found in " + metadataKeys,
-                metadataKeys.contains(Office.SLIDE_COUNT.getName()));
+        assertTrue(metadataKeys.contains(Metadata.CONTENT_TYPE),
+                "Metadata not found in " + metadataKeys);
+        assertTrue(metadataKeys.contains(Office.SLIDE_COUNT.getName()),
+                "Metadata not found in " + metadataKeys);
 //        assertTrue("Metadata not found in " + metadataKeys,
 //        metadataKeys.contains(Office.SLIDE_COUNT.getName()));
-        assertTrue("Metadata not found in " + metadataKeys,
-                metadataKeys.contains(TikaCoreProperties.CREATOR.getName()));
-        assertTrue("Metadata not found in " + metadataKeys,
-                metadataKeys.contains(TikaCoreProperties.TITLE.getName()));
+        assertTrue(metadataKeys.contains(TikaCoreProperties.CREATOR.getName()),
+                "Metadata not found in " + metadataKeys);
+        assertTrue(metadataKeys.contains(TikaCoreProperties.TITLE.getName()),
+                "Metadata not found in " + metadataKeys);
 
         // Check the metadata values
         assertEquals("application/vnd.apple.keynote", metadata.get(Metadata.CONTENT_TYPE));
@@ -145,20 +145,20 @@ public class IWorkParserTest extends TikaTest {
         String content = getText("testPages.pages", iWorkParser, metadata);
         // Make sure enough keys came through
         // (Exact numbers will vary based on composites)
-        assertTrue("Insufficient metadata found " + metadata.size(), metadata.size() >= 50);
+        assertTrue(metadata.size() >= 50, "Insufficient metadata found " + metadata.size());
         List<String> metadataKeys = Arrays.asList(metadata.names());
-        assertTrue("Metadata not found in " + metadataKeys,
-                metadataKeys.contains(Metadata.CONTENT_TYPE));
-        assertTrue("Metadata not found in " + metadataKeys,
-                metadataKeys.contains(Office.PAGE_COUNT.getName()));
-        assertTrue("Metadata not found in " + metadataKeys,
-                metadataKeys.contains(TikaCoreProperties.CREATOR.getName()));
-        assertTrue("Metadata not found in " + metadataKeys,
-                metadataKeys.contains(TikaCoreProperties.TITLE.getName()));
-        assertTrue("Metadata not found in " + metadataKeys,
-                metadataKeys.contains(TikaCoreProperties.MODIFIED.getName()));
-        assertTrue("Metadata not found in " + metadataKeys,
-                metadataKeys.contains(TikaCoreProperties.LANGUAGE.getName()));
+        assertTrue(metadataKeys.contains(Metadata.CONTENT_TYPE),
+                "Metadata not found in " + metadataKeys);
+        assertTrue(metadataKeys.contains(Office.PAGE_COUNT.getName()),
+                "Metadata not found in " + metadataKeys);
+        assertTrue(metadataKeys.contains(TikaCoreProperties.CREATOR.getName()),
+                "Metadata not found in " + metadataKeys);
+        assertTrue(metadataKeys.contains(TikaCoreProperties.TITLE.getName()),
+                "Metadata not found in " + metadataKeys);
+        assertTrue(metadataKeys.contains(TikaCoreProperties.MODIFIED.getName()),
+                "Metadata not found in " + metadataKeys);
+        assertTrue(metadataKeys.contains(TikaCoreProperties.LANGUAGE.getName()),
+                "Metadata not found in " + metadataKeys);
 
         // Check the metadata values
         assertEquals("application/vnd.apple.pages", metadata.get(Metadata.CONTENT_TYPE));
@@ -206,20 +206,20 @@ public class IWorkParserTest extends TikaTest {
 
         // Make sure enough keys came through
         // (Exact numbers will vary based on composites)
-        assertTrue("Insufficient metadata found " + metadata.size(), metadata.size() >= 8);
+        assertTrue(metadata.size() >= 8, "Insufficient metadata found " + metadata.size());
         List<String> metadataKeys = Arrays.asList(metadata.names());
-        assertTrue("Metadata not found in " + metadataKeys,
-                metadataKeys.contains(Metadata.CONTENT_TYPE));
-        assertTrue("Metadata not found in " + metadataKeys,
-                metadataKeys.contains(Office.PAGE_COUNT.getName()));
-        assertTrue("Metadata not found in " + metadataKeys,
-                metadataKeys.contains(TikaCoreProperties.CREATOR.getName()));
-        assertTrue("Metadata not found in " + metadataKeys,
-                metadataKeys.contains(TikaCoreProperties.COMMENTS.getName()));
-        assertTrue("Metadata not found in " + metadataKeys,
-                metadataKeys.contains(TikaCoreProperties.TITLE.getName()));
-        assertTrue("Metadata not found in " + metadataKeys,
-                metadataKeys.contains(TikaCoreProperties.TITLE.getName()));
+        assertTrue(metadataKeys.contains(Metadata.CONTENT_TYPE),
+                "Metadata not found in " + metadataKeys);
+        assertTrue(metadataKeys.contains(Office.PAGE_COUNT.getName()),
+                "Metadata not found in " + metadataKeys);
+        assertTrue(metadataKeys.contains(TikaCoreProperties.CREATOR.getName()),
+                "Metadata not found in " + metadataKeys);
+        assertTrue(metadataKeys.contains(TikaCoreProperties.COMMENTS.getName()),
+                "Metadata not found in " + metadataKeys);
+        assertTrue(metadataKeys.contains(TikaCoreProperties.TITLE.getName()),
+                "Metadata not found in " + metadataKeys);
+        assertTrue(metadataKeys.contains(TikaCoreProperties.TITLE.getName()),
+                "Metadata not found in " + metadataKeys);
 
         // Check the metadata values
         assertEquals("2", metadata.get(Office.PAGE_COUNT));

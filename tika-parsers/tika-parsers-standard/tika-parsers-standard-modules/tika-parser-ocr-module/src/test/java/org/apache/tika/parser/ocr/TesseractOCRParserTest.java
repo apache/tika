@@ -16,11 +16,11 @@
  */
 package org.apache.tika.parser.ocr;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.File;
 import java.io.InputStream;
@@ -30,8 +30,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
@@ -63,7 +62,7 @@ public class TesseractOCRParserTest extends TikaTest {
 
     @Test
     public void testInterwordSpacing() throws Exception {
-        assumeTrue("can run OCR", canRun());
+        assumeTrue(canRun(), "can run OCR");
 
         //default
         String xml = getXML("testOCR_spacing.png", getMetadata(MediaType.image("png"))).xml;
@@ -101,7 +100,7 @@ public class TesseractOCRParserTest extends TikaTest {
 
     @Test
     public void confirmMultiPageTiffHandling() throws Exception {
-        assumeTrue("can run OCR", canRun());
+        assumeTrue(canRun(), "can run OCR");
         //tesseract should handle multipage tiffs by itself
         //let's confirm that
         String xml = getXML("testTIFF_multipage.tif", getMetadata(MediaType.image("tiff"))).xml;
@@ -110,7 +109,7 @@ public class TesseractOCRParserTest extends TikaTest {
 
     @Test
     public void confirmRuntimeSkipOCR() throws Exception {
-        assumeTrue("can run OCR", canRun());
+        assumeTrue(canRun(), "can run OCR");
         TesseractOCRConfig config = new TesseractOCRConfig();
         config.setSkipOcr(true);
         ParseContext context = new ParseContext();
@@ -167,11 +166,11 @@ public class TesseractOCRParserTest extends TikaTest {
 
             TesseractOCRConfig tesseractOCRConfig =
                     ((TesseractOCRParser) tesseractOCRParser).getDefaultConfig();
-            Assert.assertEquals(241, tesseractOCRConfig.getTimeoutSeconds());
-            Assert.assertEquals(TesseractOCRConfig.OUTPUT_TYPE.HOCR,
+            assertEquals(241, tesseractOCRConfig.getTimeoutSeconds());
+            assertEquals(TesseractOCRConfig.OUTPUT_TYPE.HOCR,
                     tesseractOCRConfig.getOutputType());
-            Assert.assertEquals("ceb", tesseractOCRConfig.getLanguage());
-            Assert.assertEquals(false, tesseractOCRConfig.isApplyRotation());
+            assertEquals("ceb", tesseractOCRConfig.getLanguage());
+            assertEquals(false, tesseractOCRConfig.isApplyRotation());
 //            assertContains("myspecial", tesseractOCRConfig.getTesseractPath());
         }
     }
@@ -216,10 +215,10 @@ public class TesseractOCRParserTest extends TikaTest {
             assertNotNull(tesseractOCRParser);
             TesseractOCRConfig tesseractOCRConfig =
                     ((TesseractOCRParser) tesseractOCRParser).getDefaultConfig();
-            Assert.assertEquals("0.75",
+            assertEquals("0.75",
                     tesseractOCRConfig.getOtherTesseractConfig().get("textord_initialx_ile"));
 
-            Assert.assertEquals("0.15625",
+            assertEquals("0.15625",
                     tesseractOCRConfig.getOtherTesseractConfig().get("textord_noise_hfract"));
         }
     }

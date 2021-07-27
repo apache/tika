@@ -17,9 +17,8 @@
 
 package org.apache.tika.parser.html;
 
-
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -29,8 +28,8 @@ import java.io.SequenceInputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.html.charsetdetector.StandardHtmlEncodingDetector;
@@ -39,7 +38,7 @@ import org.apache.tika.parser.html.charsetdetector.charsets.ReplacementCharset;
 public class StandardHtmlEncodingDetectorTest {
     private Metadata metadata = new Metadata();
 
-    @Before
+    @BeforeEach
     public void setUp() {
         this.metadata = new Metadata();
     }
@@ -347,7 +346,8 @@ public class StandardHtmlEncodingDetectorTest {
         final Charset contentsCharset = (charset == null) ? StandardCharsets.UTF_8 : charset;
         InputStream inStream = new ByteArrayInputStream(html.getBytes(contentsCharset));
         final Charset detected = detectCharset(inStream);
-        assertEquals(html + " should be detected as " + charset, charset, detected);
+        assertEquals(charset, detected,
+                html + " should be detected as " + charset);
     }
 
     private void assertCharset(InputStream inStream, Charset charset) throws IOException {

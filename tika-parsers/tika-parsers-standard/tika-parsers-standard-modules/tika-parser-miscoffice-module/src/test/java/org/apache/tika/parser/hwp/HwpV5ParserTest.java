@@ -16,10 +16,10 @@
  */
 package org.apache.tika.parser.hwp;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.apache.commons.io.filefilter.RegexFileFilter;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.metadata.Metadata;

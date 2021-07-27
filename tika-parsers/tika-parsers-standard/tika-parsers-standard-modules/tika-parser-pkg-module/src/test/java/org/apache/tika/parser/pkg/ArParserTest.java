@@ -17,13 +17,13 @@
 
 package org.apache.tika.parser.pkg;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.metadata.Metadata;
@@ -52,7 +52,7 @@ public class ArParserTest extends AbstractPkgTest {
         assertEquals("testTXT.txt", tracker.filenames.get(0));
 
         String modifiedAt = tracker.modifiedAts.get(0);
-        assertTrue("Modified at " + modifiedAt, modifiedAt.startsWith("201"));
+        assertTrue(modifiedAt.startsWith("201"), "Modified at " + modifiedAt);
 
         for (String type : tracker.mediatypes) {
             assertNull(type);
@@ -72,7 +72,7 @@ public class ArParserTest extends AbstractPkgTest {
         assertEquals("testAU.au", tracker.filenames.get(0));
 
         modifiedAt = tracker.modifiedAts.get(0);
-        assertTrue("Modified at " + modifiedAt, modifiedAt.startsWith("201"));
+        assertTrue(modifiedAt.startsWith("201"), "Modified at " + modifiedAt);
 
         for (String type : tracker.mediatypes) {
             assertNull(type);

@@ -17,14 +17,14 @@
 package org.apache.tika.parser.strings;
 
 import static org.apache.tika.parser.strings.StringsParser.getStringsProg;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.config.Initializable;
@@ -68,7 +68,7 @@ public class StringsParserTest {
 
         // Content
         for (String word : content) {
-            assertTrue("can't find " + word, handler.toString().contains(word));
+            assertTrue(handler.toString().contains(word), "can't find " + word);
         }
 
         // Metadata

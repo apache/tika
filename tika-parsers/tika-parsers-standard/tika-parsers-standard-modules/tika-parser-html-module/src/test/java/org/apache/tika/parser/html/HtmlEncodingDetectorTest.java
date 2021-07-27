@@ -18,7 +18,7 @@
 package org.apache.tika.parser.html;
 
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -26,8 +26,8 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
 
@@ -39,7 +39,7 @@ public class HtmlEncodingDetectorTest {
     }
 
     @Test
-    @Ignore("can we can prove this harms detection")
+    @Disabled("can we can prove this harms detection")
     public void utf16() throws IOException {
         // According to the specification 'If charset is a UTF-16 encoding,
         // then set charset to UTF-8.'
@@ -59,7 +59,7 @@ public class HtmlEncodingDetectorTest {
     }
 
     @Test
-    @Ignore("until we do a full parse")
+    @Disabled("until we do a full parse")
     public void insideTag() throws IOException {
         assertWindows1252("<meta name='description'" +
                 "content='If I write charset=UTF-8 here, it doesnt mean the page is in UTF-8'/>" +
@@ -67,7 +67,7 @@ public class HtmlEncodingDetectorTest {
     }
 
     @Test
-    @Ignore("until we do a full parse")
+    @Disabled("until we do a full parse")
     public void missingAttribute() throws IOException {
         assertWindows1252("<meta content='charset=UTF-8'>" + // missing http-equiv attribute
                 "<meta charset='WINDOWS-1252'>" // valid declaration
@@ -75,7 +75,7 @@ public class HtmlEncodingDetectorTest {
     }
 
     @Test
-    @Ignore("until we do a full parse")
+    @Disabled("until we do a full parse")
     public void insideSpecialTag() throws IOException {
         // Content inside <?, <!, and </ should be ignored
         for (byte b : "?!/".getBytes(StandardCharsets.US_ASCII))
@@ -86,7 +86,7 @@ public class HtmlEncodingDetectorTest {
     }
 
     @Test
-    @Ignore("until we can prove this harms detection")
+    @Disabled("until we can prove this harms detection")
     public void spaceBeforeTag() throws IOException {
         assertWindows1252("< meta charset='UTF-8'>" + // invalid charset declaration
                 "<meta charset='WINDOWS-1252'>" // real charset declaration
@@ -101,7 +101,7 @@ public class HtmlEncodingDetectorTest {
     }
 
     @Test
-    @Ignore("until we can prove this harms detection")
+    @Disabled("until we can prove this harms detection")
     public void unmatchedQuote() throws IOException {
         assertWindows1252("<meta http-equiv='content-type' content='charset=\"UTF-8'>" +
                 // invalid charset declaration
@@ -111,7 +111,7 @@ public class HtmlEncodingDetectorTest {
 
 
     @Test
-    @Ignore("until we do a full parse")
+    @Disabled("until we do a full parse")
     public void withCompactComment() throws IOException {
         // <!--> is a valid comment
         assertWindows1252("<!--" + // start comment
@@ -127,7 +127,8 @@ public class HtmlEncodingDetectorTest {
     }
 
     private void assertCharset(String html, Charset charset) throws IOException {
-        assertEquals(html + " should be detected as " + charset, charset, detectCharset(html));
+        assertEquals(charset, detectCharset(html),
+                html + " should be detected as " + charset);
     }
 
     private Charset detectCharset(String test) throws IOException {
