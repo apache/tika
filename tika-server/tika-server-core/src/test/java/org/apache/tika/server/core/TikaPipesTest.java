@@ -31,6 +31,7 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import javax.ws.rs.core.Response;
@@ -73,6 +74,7 @@ public class TikaPipesTest extends CXFTestBase {
     private static Path TMP_DIR;
     private static Path TMP_OUTPUT_DIR;
     private static Path TMP_OUTPUT_FILE;
+    private static Path TIKA_PIPES_LOG4j2_PATH;
     private static Path TMP_NPE_OUTPUT_FILE;
     private static Path TIKA_CONFIG_PATH;
     private static String TIKA_CONFIG_XML;
@@ -100,7 +102,9 @@ public class TikaPipesTest extends CXFTestBase {
                     inputDir.resolve(mockFile));
         }
         TIKA_CONFIG_PATH = Files.createTempFile(TMP_DIR, "tika-pipes-", ".xml");
-
+        TIKA_PIPES_LOG4j2_PATH = Files.createTempFile(TMP_DIR, "log4j2-", ".xml");
+        Files.copy(TikaPipesTest.class.getResourceAsStream("/log4j2.xml"), TIKA_PIPES_LOG4j2_PATH,
+                StandardCopyOption.REPLACE_EXISTING);
         TIKA_CONFIG_XML =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" +
                         "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" +
@@ -114,8 +118,12 @@ public class TikaPipesTest extends CXFTestBase {
                         "</emitter>" +
                         "</emitters>" + "<pipes><params><tikaConfig>" +
                 ProcessUtils.escapeCommandLine(TIKA_CONFIG_PATH.toAbsolutePath().toString()) +
-                        "</tikaConfig><numClients>10</numClients><forkedJvmArgs><arg>-Xmx256m" +
-                        "</arg></forkedJvmArgs>" +
+                        "</tikaConfig><numClients>10</numClients>" +
+                        "<forkedJvmArgs>" +
+                        "<arg>-Xmx256m</arg>" +
+                        "<arg>-Dlog4j.configurationFile=file:" +
+                        ProcessUtils.escapeCommandLine(TIKA_PIPES_LOG4j2_PATH.toAbsolutePath().toString()) + "</arg>" +
+                        "</forkedJvmArgs>" +
                         "</params></pipes>" + "</properties>";
         Files.write(TIKA_CONFIG_PATH, TIKA_CONFIG_XML.getBytes(StandardCharsets.UTF_8));
     }

@@ -203,7 +203,6 @@ public class PipesClient implements Closeable {
                 LOG.warn("fetch exception: {} in {} ms", t.getId(), millis);
                 return readMessage(PipesResult.STATUS.FETCH_EXCEPTION);
             case PARSE_SUCCESS:
-            case PARSE_EXCEPTION_EMIT:
                 LOG.info("parse success: {} in {} ms", t.getId(), millis);
                 return deserializeEmitData();
             case PARSE_EXCEPTION_NO_EMIT:

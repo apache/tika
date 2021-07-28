@@ -86,7 +86,6 @@ public class PipesServer implements Runnable {
         FETCH_EXCEPTION,
         PARSE_SUCCESS,
         PARSE_EXCEPTION_NO_EMIT,
-        PARSE_EXCEPTION_EMIT,
         EMIT_SUCCESS,
         EMIT_SUCCESS_PARSE_EXCEPTION,
         EMIT_EXCEPTION,
