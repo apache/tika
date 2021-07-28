@@ -16,16 +16,16 @@
  */
 package org.apache.tika.server.client;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
-@Ignore("turn into actual unit test")
+@Disabled("turn into actual unit test")
 public class TestBasic {
 
     @Test

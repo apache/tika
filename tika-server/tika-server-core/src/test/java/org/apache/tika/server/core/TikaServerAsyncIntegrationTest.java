@@ -18,8 +18,8 @@ package org.apache.tika.server.core;
 
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,11 +36,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FileUtils;
 import org.apache.cxf.jaxrs.client.WebClient;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +52,7 @@ import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.utils.ProcessUtils;
 
-@Ignore("useful for development...need to turn it into a real unit test")
+@Disabled("useful for development...need to turn it into a real unit test")
 public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerAsyncIntegrationTest.class);
@@ -73,7 +73,7 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
             "system_exit.xml"
     };
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpBeforeClass() throws Exception {
         TMP_DIR = Files.createTempDirectory("tika-emitter-test-");
         Path inputDir = TMP_DIR.resolve("input");
@@ -125,12 +125,12 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
         FileUtils.write(TIKA_CONFIG.toFile(), TIKA_CONFIG_XML, UTF_8);
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDownAfterClass() throws Exception {
         FileUtils.deleteDirectory(TMP_DIR.toFile());
     }
 
-    @Before
+    @BeforeEach
     public void setUpEachTest() throws Exception {
         for (String problemFile : FILES) {
             Path targ = TMP_OUTPUT_DIR.resolve(problemFile + ".json");

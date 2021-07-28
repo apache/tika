@@ -31,10 +31,10 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.io.FileUtils;
 import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.jaxrs.client.WebClient;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,7 +62,7 @@ public class IntegrationTestBase extends TikaTest {
     static Path STREAMS_DIR;
     private SecurityManager existingSecurityManager = null;
 
-    @BeforeClass
+    @BeforeAll
     public static void staticSetup() throws Exception {
         LogUtils.setLoggerClass(NullWebClientLogger.class);
         LOG_FILE = Files.createTempFile("tika-server-integration", ".xml");
@@ -72,13 +72,13 @@ public class IntegrationTestBase extends TikaTest {
         STREAMS_DIR = Files.createTempDirectory("tika-server-integration");
     }
 
-    @AfterClass
+    @AfterAll
     public static void staticTearDown() throws Exception {
         Files.delete(LOG_FILE);
         FileUtils.deleteDirectory(STREAMS_DIR.toFile());
     }
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         existingSecurityManager = System.getSecurityManager();
 /*        System.setSecurityManager(new SecurityManager() {
@@ -98,7 +98,7 @@ public class IntegrationTestBase extends TikaTest {
         });*/
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         System.setSecurityManager(existingSecurityManager);
     }

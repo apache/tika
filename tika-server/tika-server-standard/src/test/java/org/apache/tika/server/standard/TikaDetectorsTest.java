@@ -17,8 +17,8 @@
 
 package org.apache.tika.server.standard;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
 import java.util.List;
@@ -30,7 +30,7 @@ import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.gagravarr.tika.OggDetector;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.detect.microsoft.POIFSContainerDetector;
 import org.apache.tika.detect.zip.DefaultZipContainerDetector;

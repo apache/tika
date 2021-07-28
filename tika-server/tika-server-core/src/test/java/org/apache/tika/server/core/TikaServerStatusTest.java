@@ -16,8 +16,8 @@
  */
 package org.apache.tika.server.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -30,7 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.server.core.resource.TikaServerStatus;
 import org.apache.tika.server.core.writer.JSONObjWriter;

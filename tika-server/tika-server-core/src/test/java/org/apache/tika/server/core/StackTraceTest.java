@@ -17,8 +17,8 @@
 package org.apache.tika.server.core;
 
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -30,8 +30,7 @@ import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.server.core.resource.DetectorResource;
 import org.apache.tika.server.core.resource.MetadataResource;
@@ -91,8 +90,8 @@ public class StackTraceTest extends CXFTestBase {
                     .header("Content-Disposition",
                             "attachment; filename=" + TEST_PASSWORD_PROTECTED)
                     .put(ClassLoader.getSystemResourceAsStream(TEST_PASSWORD_PROTECTED));
-            assertNotNull("null response: " + path, response);
-            assertEquals("unprocessable: " + path, UNPROCESSEABLE, response.getStatus());
+            assertNotNull(response, "null response: " + path);
+            assertEquals(UNPROCESSEABLE, response.getStatus(), "unprocessable: " + path);
             String msg = getStringFromInputStream((InputStream) response.getEntity());
             assertContains("org.apache.tika.exception.EncryptedDocumentException", msg);
         }
@@ -110,8 +109,8 @@ public class StackTraceTest extends CXFTestBase {
             }
             Response response = WebClient.create(endPoint + path).accept(accept)
                     .put(ClassLoader.getSystemResourceAsStream(TEST_NULL));
-            assertNotNull("null response: " + path, response);
-            assertEquals("unprocessable: " + path, UNPROCESSEABLE, response.getStatus());
+            assertNotNull(response);
+            assertEquals(UNPROCESSEABLE, response.getStatus(), "unprocessable: " + path);
             String msg = getStringFromInputStream((InputStream) response.getEntity());
             assertContains("Caused by: java.lang.NullPointerException: null pointer message", msg);
         }
@@ -128,10 +127,10 @@ public class StackTraceTest extends CXFTestBase {
                     .put(ClassLoader.getSystemResourceAsStream("test-documents/testDigilite.fdf"));
             if (path.equals("/unpack")) {
                 //"NO CONTENT"
-                assertEquals("bad type: " + path, 204, response.getStatus());
+                assertEquals(204, response.getStatus(), "bad type: " + path);
             } else {
-                assertEquals("bad type: " + path, 200, response.getStatus());
-                assertNotNull("null response: " + path, response);
+                assertEquals(200, response.getStatus(), "bad type: " + path);
+                assertNotNull(response, "null response: " + path);
             }
         }
     }
@@ -148,7 +147,7 @@ public class StackTraceTest extends CXFTestBase {
         Response response =
                 WebClient.create(endPoint + "/meta" + "/Author").type("application/mock+xml")
                         .accept(MediaType.TEXT_PLAIN).put(copy(stream, 100));
-        Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         String msg = getStringFromInputStream((InputStream) response.getEntity());
         assertEquals("Failed to get metadata field Author", msg);
     }

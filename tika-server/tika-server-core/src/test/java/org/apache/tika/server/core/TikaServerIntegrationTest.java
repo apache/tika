@@ -17,8 +17,8 @@
 package org.apache.tika.server.core;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -35,9 +35,10 @@ import javax.ws.rs.core.Response;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.cxf.jaxrs.client.WebClient;
-import org.junit.After;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +50,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerIntegrationTest.class);
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         //wait just a bit for the servers to shutdown
         Thread.sleep(500);
@@ -220,7 +221,8 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60000)
     public void testTimeout() throws Exception {
 
         Process p = null;
@@ -301,7 +303,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    @Ignore("This works, but prints too much junk to the console.  " +
+    @Disabled("This works, but prints too much junk to the console.  " +
             "Figure out how to gobble/redirect.")
     public void testStaticStdErrOutBasic() throws Exception {
         Process p = null;
@@ -326,7 +328,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
     }
 
 
-    @Ignore("TODO needs to write dynamic config file w logfile location")
+    @Disabled("TODO needs to write dynamic config file w logfile location")
     @Test
     public void testStdErrOutLogging() throws Exception {
         final AtomicInteger i = new AtomicInteger();
@@ -357,7 +359,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
 
 
     @Test
-    @Ignore("turn this into a real test")
+    @Disabled("turn this into a real test")
     public void testMaxFiles() throws Exception {
         //this isn't a real regression test yet.
         //Can watch logs at least for confirmation of behavior

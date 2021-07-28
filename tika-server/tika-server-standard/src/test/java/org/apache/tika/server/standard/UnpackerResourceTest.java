@@ -17,10 +17,11 @@
 
 package org.apache.tika.server.standard;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -32,8 +33,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.junit.Assume;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.server.core.CXFTestBase;
@@ -223,7 +223,7 @@ public class UnpackerResourceTest extends CXFTestBase {
 
     @Test
     public void testPDFRenderOCR() throws Exception {
-        Assume.assumeTrue(new TesseractOCRParser().hasTesseract());
+        assumeTrue(new TesseractOCRParser().hasTesseract());
 
         Response response = WebClient.create(CXFTestBase.endPoint + ALL_PATH)
                 .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "ocrStrategy", "ocr_only")

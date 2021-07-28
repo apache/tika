@@ -18,10 +18,10 @@ package org.apache.tika.server.core;
 
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,11 +36,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FileUtils;
 import org.apache.cxf.jaxrs.client.WebClient;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,7 +66,7 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
             new String[]{"hello_world.xml", "heavy_hang_30000.xml", "fake_oom.xml",
                     "system_exit.xml", "null_pointer.xml"};
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpBeforeClass() throws Exception {
         TMP_DIR = Files.createTempDirectory("tika-emitter-test-");
         Path inputDir = TMP_DIR.resolve("input");
@@ -112,17 +112,17 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
 
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDownAfterClass() throws Exception {
         FileUtils.deleteDirectory(TMP_DIR.toFile());
     }
 
-    @After
+    @AfterEach
     public void tear() throws Exception {
         Thread.sleep(500);
     }
 
-    @Before
+    @BeforeEach
     public void setUpEachTest() throws Exception {
 
         for (String problemFile : FILES) {

@@ -18,8 +18,8 @@
 package org.apache.tika.server.standard;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -38,9 +38,7 @@ import org.apache.cxf.helpers.IOUtils;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -54,6 +52,7 @@ import org.apache.tika.server.standard.resource.XMPMetadataResource;
 import org.apache.tika.server.standard.writer.XMPMessageBodyWriter;
 
 public class MetadataResourceTest extends CXFTestBase {
+
     private static final String META_PATH = "/meta";
 
     @Override
@@ -94,8 +93,7 @@ public class MetadataResourceTest extends CXFTestBase {
 
         assertNotNull(metadata.get(TikaCoreProperties.CREATOR.getName()));
         assertEquals("Maxim Valyanskiy", metadata.get(TikaCoreProperties.CREATOR.getName()));
-        assertEquals("X-TIKA:digest:MD5", "f8be45c34e8919eedba48cc8d207fbf0",
-                metadata.get("X-TIKA:digest:MD5"));
+        assertEquals("f8be45c34e8919eedba48cc8d207fbf0", metadata.get("X-TIKA:digest:MD5"), "X-TIKA:digest:MD5");
     }
 
     @Test
@@ -167,7 +165,7 @@ public class MetadataResourceTest extends CXFTestBase {
                 WebClient.create(endPoint + META_PATH + "/xxx").type("application/msword")
                         .accept(MediaType.APPLICATION_JSON)
                         .put(ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
-        Assert.assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
+        assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
     }
 
     @Test
@@ -178,11 +176,10 @@ public class MetadataResourceTest extends CXFTestBase {
         Response response =
                 WebClient.create(endPoint + META_PATH + "/Author").type("application/msword")
                         .accept(MediaType.TEXT_PLAIN).put(copy(stream, 8000));
-        Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
     }
 
     @Test
-    @Ignore("TODO: add back in xmp handler")
     public void testGetField_Author_TEXT_Partial_Found() throws Exception {
 
         InputStream stream = ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC);
@@ -191,7 +188,7 @@ public class MetadataResourceTest extends CXFTestBase {
                 WebClient.create(endPoint + META_PATH + "/" + TikaCoreProperties.CREATOR.getName())
                         .type("application/msword").accept(MediaType.TEXT_PLAIN)
                         .put(copy(stream, 12000));
-        Assert.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         String s = IOUtils.readStringFromStream((InputStream) response.getEntity());
         assertEquals("Maxim Valyanskiy", s);
     }
@@ -205,7 +202,7 @@ public class MetadataResourceTest extends CXFTestBase {
                 WebClient.create(endPoint + META_PATH + "/" + TikaCoreProperties.CREATOR.getName())
                         .type("application/msword").accept(MediaType.APPLICATION_JSON)
                         .put(copy(stream, 12000));
-        Assert.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         Metadata metadata = JsonMetadata
                 .fromJson(new InputStreamReader((InputStream) response.getEntity(), UTF_8));
         assertEquals("Maxim Valyanskiy", metadata.get(TikaCoreProperties.CREATOR));
@@ -213,7 +210,6 @@ public class MetadataResourceTest extends CXFTestBase {
     }
 
     @Test
-    @Ignore("TODO: until we can reintegrate xmpwriter")
     public void testGetField_Author_XMP_Partial_Found() throws Exception {
 
         InputStream stream = ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC);
@@ -221,7 +217,7 @@ public class MetadataResourceTest extends CXFTestBase {
         Response response =
                 WebClient.create(endPoint + META_PATH + "/dc:creator").type("application/msword")
                         .accept("application/rdf+xml").put(copy(stream, 12000));
-        Assert.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         String s = IOUtils.readStringFromStream((InputStream) response.getEntity());
         assertContains("<rdf:li>Maxim Valyanskiy</rdf:li>", s);
     }

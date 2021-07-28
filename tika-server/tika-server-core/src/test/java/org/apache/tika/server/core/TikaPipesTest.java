@@ -16,11 +16,11 @@
  */
 package org.apache.tika.server.core;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -42,10 +42,10 @@ import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaConfigException;
@@ -83,7 +83,7 @@ public class TikaPipesTest extends CXFTestBase {
 
     private static String[] VALUE_ARRAY = new String[]{"my-value-1", "my-value-2", "my-value-3"};
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpBeforeClass() throws Exception {
         TMP_DIR = Files.createTempDirectory("tika-pipes-test-");
         Path inputDir = TMP_DIR.resolve("input");
@@ -120,12 +120,12 @@ public class TikaPipesTest extends CXFTestBase {
         Files.write(TIKA_CONFIG_PATH, TIKA_CONFIG_XML.getBytes(StandardCharsets.UTF_8));
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDownAfterClass() throws Exception {
         FileUtils.deleteDirectory(TMP_DIR.toFile());
     }
 
-    @Before
+    @BeforeEach
     public void setUpEachTest() throws Exception {
         if (Files.exists(TMP_OUTPUT_FILE)) {
             Files.delete(TMP_OUTPUT_FILE);
