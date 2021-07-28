@@ -41,12 +41,6 @@
   </description>
   <url>https://tika.apache.org/</url>
 
-  <properties>
-    <!-- some conflict with slf4j with 4.12.0
-        causes failure in testForkParser -->
-    <pax.exam.version>4.11.0</pax.exam.version>
-  </properties>
-
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>

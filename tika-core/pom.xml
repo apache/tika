@@ -74,11 +74,10 @@
       <version>${guava.version}</version>
       <scope>test</scope>
     </dependency>
-    <!-- versions &gt; 0.4.0 require java > 8 -->
     <dependency>
       <groupId>com.martensigwart</groupId>
       <artifactId>fakeload</artifactId>
-      <version>0.4.0</version>
+      <version>${fakeload.version}</version>
       <exclusions>
         <exclusion>
           <groupId>com.google.code.findbugs</groupId>
