@@ -44,7 +44,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.pipes.async.AsyncConfig;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.utils.ProcessUtils;
 
@@ -101,8 +100,8 @@ public class PipesClient implements Closeable {
         if (! ping()) {
             restart();
         }
-        if (pipesConfig.getMaxFilesProcessed() > 0 &&
-                filesProcessed >= pipesConfig.getMaxFilesProcessed()) {
+        if (pipesConfig.getMaxFilesProcessedPerProcess() > 0 &&
+                filesProcessed >= pipesConfig.getMaxFilesProcessedPerProcess()) {
             LOG.info("restarting server after hitting max files: " + filesProcessed);
             restart();
         }
@@ -356,13 +355,7 @@ public class PipesClient implements Closeable {
         commandLine.add(
                 ProcessUtils.escapeCommandLine(pipesConfig.getTikaConfig().toAbsolutePath().toString()));
 
-        //turn off emit batching
-        String maxForEmitBatchBytes = "0";
-        if (pipesConfig instanceof AsyncConfig) {
-            maxForEmitBatchBytes =
-                    Long.toString(((AsyncConfig)pipesConfig).getMaxForEmitBatchBytes());
-        }
-        commandLine.add(maxForEmitBatchBytes);
+        commandLine.add(Long.toString(pipesConfig.getMaxForEmitBatchBytes()));
         commandLine.add(Long.toString(pipesConfig.getTimeoutMillis()));
         commandLine.add(Long.toString(pipesConfig.getShutdownClientAfterMillis()));
         LOG.debug("commandline: " + commandLine);

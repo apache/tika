@@ -117,7 +117,10 @@ public class PipesServer implements Runnable {
     private final Path tikaConfigPath;
     private final DataInputStream input;
     private final DataOutputStream output;
-    private final long maxExtractSizeToReturn;
+    //if an extract is larger than this value, emit it directly;
+    //if it is smaller than this value, write it back to the
+    //PipesClient so that it can cache the extracts and then batch emit.
+    private final long maxForEmitBatchBytes;
     private final long serverParseTimeoutMillis;
     private final long serverWaitTimeoutMillis;
     private Parser autoDetectParser;
@@ -128,17 +131,15 @@ public class PipesServer implements Runnable {
     private volatile boolean parsing;
     private volatile long since;
 
-    //logging is fussy...the logging frameworks grab stderr and stdout
-    //before we can redirect.  slf4j complains on stderr, log4j2 unconfigured writes to stdout
-    //We can add logging later but it has to be done carefully...
+
     public PipesServer(Path tikaConfigPath, InputStream in, PrintStream out,
-                       long maxExtractSizeToReturn,
+                       long maxForEmitBatchBytes,
                        long serverParseTimeoutMillis, long serverWaitTimeoutMillis)
             throws IOException, TikaException, SAXException {
         this.tikaConfigPath = tikaConfigPath;
         this.input = new DataInputStream(in);
         this.output = new DataOutputStream(out);
-        this.maxExtractSizeToReturn = maxExtractSizeToReturn;
+        this.maxForEmitBatchBytes = maxForEmitBatchBytes;
         this.serverParseTimeoutMillis = serverParseTimeoutMillis;
         this.serverWaitTimeoutMillis = serverWaitTimeoutMillis;
         this.parsing = false;
@@ -334,14 +335,14 @@ public class PipesServer implements Runnable {
                 t.setEmitKey(emitKey);
             }
             EmitData emitData = new EmitData(t.getEmitKey(), metadataList);
-            if (emitData.getEstimatedSizeBytes() >= maxExtractSizeToReturn) {
+            if (maxForEmitBatchBytes >= 0 && emitData.getEstimatedSizeBytes() >= maxForEmitBatchBytes) {
                 emit(t.getId(), emitData, stack);
             } else {
-                write(emitData, stack);
+                //ignore the stack, it is stored in the emit data
+                write(emitData);
             }
         } else {
-            write(STATUS.PARSE_EXCEPTION_NO_EMIT,
-                    stack.getBytes(StandardCharsets.UTF_8));
+            write(STATUS.PARSE_EXCEPTION_NO_EMIT, stack);
         }
 
     }
@@ -509,8 +510,7 @@ public class PipesServer implements Runnable {
     }
 
 
-    private void write(EmitData emitData, String stack) {
-        //TODO -- what do we do with the stack?
+    private void write(EmitData emitData) {
         try {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bos)) {
