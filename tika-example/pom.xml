@@ -160,7 +160,13 @@
         </exclusion>
       </exclusions>
     </dependency>
-
+    <!-- after we migrate everything to junit5, we can get rid of this -->
+    <dependency>
+      <groupId>org.junit.vintage</groupId>
+      <artifactId>junit-vintage-engine</artifactId>
+      <version>${junit5.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <description>This module contains examples of how to use Apache Tika.</description>

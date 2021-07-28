@@ -35,4 +35,13 @@
   <modules>
     <module>tika-bundle-standard</module>
   </modules>
+  <dependencies>
+    <!-- after we migrate everything to junit5, we can get rid of this -->
+    <dependency>
+      <groupId>org.junit.vintage</groupId>
+      <artifactId>junit-vintage-engine</artifactId>
+      <version>${junit5.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
 </project>
