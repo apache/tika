@@ -292,7 +292,7 @@
     <commons.compress.version>1.21</commons.compress.version>
     <commons.csv.version>1.8</commons.csv.version>
     <commons.exec.version>1.3</commons.exec.version>
-    <commons.io.version>2.10.0</commons.io.version>
+    <commons.io.version>2.11.0</commons.io.version>
     <commons.lang3.version>3.12.0</commons.lang3.version>
     <commons.logging.version>1.2</commons.logging.version>
     <commons.math3.version>3.6.1</commons.math3.version>
@@ -352,7 +352,7 @@
     <!-- we'll need to stay on 1.7 until we're java modularized ? -->
     <slf4j.version>1.7.31</slf4j.version>
     <solrj.version>8.9.0</solrj.version>
-    <spring.version>5.3.8</spring.version>
+    <spring.version>5.3.9</spring.version>
     <sqlite.version>3.36.0.1</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
     <test.containers.version>1.15.2</test.containers.version>
