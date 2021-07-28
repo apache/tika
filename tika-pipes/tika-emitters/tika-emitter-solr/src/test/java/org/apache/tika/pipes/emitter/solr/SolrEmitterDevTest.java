@@ -21,8 +21,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -33,7 +33,7 @@ import org.apache.tika.metadata.filter.FieldNameMappingFilter;
  * running instance of Solr.  Please add unit tests to the
  * tika-integration-tests/tika-pipes-solr-integration-tests
  */
-@Ignore
+@Disabled
 public class SolrEmitterDevTest {
 
     @Test

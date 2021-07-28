@@ -16,7 +16,7 @@
  */
 package org.apache.tika.pipes.fetcher.http;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -25,14 +25,14 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.zip.GZIPInputStream;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.fetcher.FetcherManager;
 
-@Ignore("requires network connectivity")
+@Disabled("requires network connectivity")
 public class HttpFetcherTest {
 
     @Test

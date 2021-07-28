@@ -23,14 +23,14 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.FetcherManager;
 
-@Ignore("write actual unit tests")
+@Disabled("write actual unit tests")
 public class TestS3Fetcher {
     private static final String FETCH_STRING = "";
     private final Path outputFile = Paths.get("");

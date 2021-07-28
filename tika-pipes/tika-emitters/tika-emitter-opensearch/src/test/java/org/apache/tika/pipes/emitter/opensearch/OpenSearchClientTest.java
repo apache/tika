@@ -16,7 +16,7 @@
  */
 package org.apache.tika.pipes.emitter.opensearch;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;

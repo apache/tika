@@ -16,7 +16,8 @@
  */
 
 import static org.apache.tika.pipes.pipesiterator.PipesIterator.COMPLETED_SEMAPHORE;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -30,7 +31,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.pipesiterator.csv.CSVPipesIterator;
@@ -83,16 +84,18 @@ public class TestCSVPipesIterator {
         }
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testBadFetchKeyCol() throws Exception {
         Path p = get("test-simple.csv");
         CSVPipesIterator it = new CSVPipesIterator();
         it.setFetcherName("fs");
         it.setCsvPath(p);
-        it.setFetchKeyColumn("fetchKeyDoesntExist");
-        for (FetchEmitTuple t : it) {
+        assertThrows(RuntimeException.class, () -> {
+            it.setFetchKeyColumn("fetchKeyDoesntExist");
+            for (FetchEmitTuple t : it) {
 
-        }
+            }
+        });
     }
 
     private Path get(String testFileName) throws Exception {

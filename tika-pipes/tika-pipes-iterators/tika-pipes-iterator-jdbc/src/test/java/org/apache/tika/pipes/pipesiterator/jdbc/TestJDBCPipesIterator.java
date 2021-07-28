@@ -16,9 +16,9 @@
  */
 package org.apache.tika.pipes.pipesiterator.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -39,9 +39,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.pipesiterator.PipesIterator;
@@ -54,7 +54,7 @@ public class TestJDBCPipesIterator {
     static Connection CONNECTION;
     static Path DB_DIR;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws Exception {
         DB_DIR = Files.createTempDirectory("tika-jdbc-pipesiterator-test-");
 
@@ -79,7 +79,7 @@ public class TestJDBCPipesIterator {
         }
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() throws Exception {
         CONNECTION.close();
         FileUtils.deleteDirectory(DB_DIR.toFile());
