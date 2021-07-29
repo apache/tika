@@ -194,6 +194,7 @@ public class AsyncProcessor implements Closeable {
                         return PARSER_FUTURE_CODE;
                     } else {
                         PipesResult result = null;
+                        long start = System.currentTimeMillis();
                         try {
                             result = pipesClient.process(t);
                         } catch (IOException e) {
@@ -203,6 +204,8 @@ public class AsyncProcessor implements Closeable {
                             //TODO -- add timeout, this currently hangs forever
                             emitDataQueue.offer(result.getEmitData());
                         }
+                        long elapsed = System.currentTimeMillis() - start;
+                        asyncConfig.getPipesReporter().report(t, result, elapsed);
                         totalProcessed.incrementAndGet();
                     }
                     checkActive();

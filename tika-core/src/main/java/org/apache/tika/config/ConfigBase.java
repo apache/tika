@@ -198,7 +198,33 @@ public abstract class ConfigBase {
             Node child = children.item(i);
             if ("params".equals(child.getLocalName())) {
                 params = child.getChildNodes();
-                break;
+            } else if (child.getNodeType() == 1 && ! child.getLocalName().equals(exceptNodeName)) {
+                String itemName = child.getLocalName();
+                String setter = "set" + itemName.substring(0, 1).toUpperCase(Locale.US) +
+                        itemName.substring(1);
+                Class itemClass = null;
+                Method setterMethod = null;
+                for (Method method : object.getClass().getMethods()) {
+                    if (setter.equals(method.getName())) {
+                        Class<?>[] classes = method.getParameterTypes();
+                        if (classes.length == 1) {
+                            itemClass = classes[0];
+                            setterMethod = method;
+                            break;
+                        }
+                    }
+                }
+                if (itemClass == null) {
+                    throw new TikaConfigException("Couldn't find setter '" +
+                            setter + "' for " + itemName);
+                }
+                Object item = buildClass(child, itemName, itemClass);
+                setParams(itemClass.cast(item), child, new HashSet<>());
+                try {
+                    setterMethod.invoke(object, item);
+                } catch (IllegalAccessException | InvocationTargetException e) {
+                    throw new TikaConfigException("problem creating " + itemName, e);
+                }
             }
         }
         if (params != null) {

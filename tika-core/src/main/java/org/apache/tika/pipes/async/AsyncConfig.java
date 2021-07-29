@@ -23,6 +23,7 @@ import java.nio.file.Path;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.PipesConfigBase;
+import org.apache.tika.pipes.PipesReporter;
 
 public class AsyncConfig extends PipesConfigBase {
 
@@ -31,6 +32,8 @@ public class AsyncConfig extends PipesConfigBase {
 
     private int queueSize = 10000;
     private int numEmitters = 1;
+
+    private PipesReporter pipesReporter = PipesReporter.NO_OP_REPORTER;
 
     public static AsyncConfig load(Path p) throws IOException, TikaConfigException {
         AsyncConfig asyncConfig = new AsyncConfig();
@@ -95,5 +98,13 @@ public class AsyncConfig extends PipesConfigBase {
      */
     public int getNumEmitters() {
         return numEmitters;
+    }
+
+    public PipesReporter getPipesReporter() {
+        return pipesReporter;
+    }
+
+    public void setPipesReporter(PipesReporter pipesReporter) {
+        this.pipesReporter = pipesReporter;
     }
 }
