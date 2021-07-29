@@ -70,7 +70,7 @@ public class OpenSearchClient {
         for (Metadata metadata : metadataList) {
             StringBuilder id = new StringBuilder(emitKey);
             if (i > 0) {
-                id.append("_").append(UUID.randomUUID());
+                id.append("-").append(UUID.randomUUID());
             }
             String indexJson = getBulkIndexJson(id.toString(), routing);
             sb.append(indexJson).append("\n");

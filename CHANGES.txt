@@ -1,5 +1,12 @@
 Release 2.0.1 - ???
 
+   * Fix serialization of embedded docs in OpenSearch emitter
+     and fix embedded documents not being indexed in some use
+     cases in the Solr emitter (TIKA-3490).
+
+   * Add pipesClientId system property to PipesServer so that each
+     forked process can log to its own logger (TIKA-3480).
+
    * Add DateNormalizingMetadataFilter let users ensure that all dates
      emitted to Solr/OpenSearch are in UTC. Users can configure which
      timezone they'd like to use in cases where the file format does
@@ -8,8 +15,6 @@ Release 2.0.1 - ???
    * Breaking change in the Solr and OpenSearch emitters. To achieve
      the SKIP or CONCATENATE attachment strategy, modify the
      parseMode in the pipesiterators or in the FetchEmitTuple (TIKA-3494).
-
-   * Fix serialization of embedded docs in OpenSearch emitter (TIKA-3490).
 
 Release 2.0.0 - 07/07/2021
 

@@ -101,7 +101,7 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
                 SolrInputDocument childSolrInputDocument = new SolrInputDocument();
                 Metadata m = metadataList.get(i);
                 childSolrInputDocument
-                        .setField(idField, emitKey + "_" + UUID.randomUUID().toString());
+                        .setField(idField, emitKey + "-" + UUID.randomUUID().toString());
                 addMetadataToSolrInputDocument(m, childSolrInputDocument, updateStrategy);
                 solrInputDocument.addChildDocument(childSolrInputDocument);
             }
@@ -113,7 +113,7 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
                 SolrInputDocument childSolrInputDocument = new SolrInputDocument();
                 Metadata m = metadataList.get(i);
                 childSolrInputDocument.setField(idField,
-                        solrInputDocument.get(idField) + "-" + UUID.randomUUID().toString());
+                        solrInputDocument.get(idField).getValue() + "-" + UUID.randomUUID().toString());
                 addMetadataToSolrInputDocument(m, childSolrInputDocument, updateStrategy);
                 docsToUpdate.add(childSolrInputDocument);
             }

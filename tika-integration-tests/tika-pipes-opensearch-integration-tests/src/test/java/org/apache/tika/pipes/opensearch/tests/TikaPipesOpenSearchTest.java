@@ -148,7 +148,7 @@ public class TikaPipesOpenSearchTest {
         JsonNode source = results.getJson().get("hits").get("hits").get(0).get("_source");
 
         Matcher m = Pattern.compile("\\Atest_recursive_embedded" +
-                ".docx_[0-9a-f]{8}-[0-9a-f]{4}-" +
+                ".docx-[0-9a-f]{8}-[0-9a-f]{4}-" +
                 "[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\Z").matcher(
                 results.getJson().get("hits").get("hits").get(0).get("_id").asText()
         );
@@ -211,11 +211,11 @@ public class TikaPipesOpenSearchTest {
         JsonNode source = results.getJson().get("hits").get("hits").get(0).get("_source");
 
         Matcher m = Pattern.compile("\\Atest_recursive_embedded" +
-                ".docx_[0-9a-f]{8}-[0-9a-f]{4}-" +
+                ".docx-[0-9a-f]{8}-[0-9a-f]{4}-" +
                 "[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\Z").matcher(
                 results.getJson().get("hits").get("hits").get(0).get("_id").asText()
         );
-        assertTrue("test_recursive_embedded.docx_$guid", m.find());
+        assertTrue("test_recursive_embedded.docx-$guid", m.find());
 
         assertNull("test_recursive_embedded.docx",
                 results.getJson().get("hits").get("hits").get(0).get("_routing"));
