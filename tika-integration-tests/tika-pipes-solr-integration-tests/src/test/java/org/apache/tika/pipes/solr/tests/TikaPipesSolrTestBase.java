@@ -16,6 +16,8 @@
  */
 package org.apache.tika.pipes.solr.tests;
 
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,11 +37,12 @@ import org.apache.tika.cli.TikaCLI;
 import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.solr.SolrEmitter;
 import org.jetbrains.annotations.NotNull;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 import org.testcontainers.utility.DockerImageName;
@@ -59,6 +62,11 @@ public abstract class TikaPipesSolrTestBase {
 
     public abstract String getSolrImageName();
 
+
+    public boolean handlesParentChild() {
+        return true;
+    }
+
     @Rule
     public GenericContainer<?> solrContainer =
             new GenericContainer<>(DockerImageName.parse(getSolrImageName())).withExposedPorts(8983,
@@ -70,13 +78,13 @@ public abstract class TikaPipesSolrTestBase {
         setupSolr(solrContainer);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         FileUtils.deleteDirectory(testFileFolder);
     }
 
     @Test
-    public void testFetchIteratorWithSolrUrls() throws Exception {
+    public void testPipesIteratorWithSolrUrls() throws Exception {
         runTikaAsyncSolrPipeIteratorFileFetcherSolrEmitter();
     }
 
@@ -172,10 +180,11 @@ public abstract class TikaPipesSolrTestBase {
             Assert.assertEquals(numDocs,
                     solrClient.query(collection, new SolrQuery("content_s:*initial*")).getResults()
                             .getNumFound());
-            Assert.assertEquals(3,
-                    solrClient.query(collection, new SolrQuery("_root_:\"test-embedded.docx\"")).getResults()
-                            .getNumFound());
-
+            if(handlesParentChild()) {
+                Assert.assertEquals(3,
+                        solrClient.query(collection, new SolrQuery("_root_:\"test-embedded.docx\""))
+                                .getResults().getNumFound());
+            }
             //clean up test-embedded.docx so that the iterator won't try to update its children
             //in the next test
             solrClient.deleteById(collection, "_root_:\"test-embedded.docx\"");

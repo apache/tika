@@ -46,6 +46,7 @@ public class OpenSearchEmitter extends AbstractEmitter implements Initializable 
         //anything else?
     }
 
+    public static String DEFAULT_EMBEDDED_FILE_FIELD_NAME = "embedded";
     private static final Logger LOG = LoggerFactory.getLogger(OpenSearchEmitter.class);
     private AttachmentStrategy attachmentStrategy = AttachmentStrategy.PARENT_CHILD;
 
@@ -54,6 +55,7 @@ public class OpenSearchEmitter extends AbstractEmitter implements Initializable 
     private int commitWithin = 1000;
     private OpenSearchClient openSearchClient;
     private final HttpClientFactory httpClientFactory;
+    private String embeddedFileFieldName = DEFAULT_EMBEDDED_FILE_FIELD_NAME;
 
     public OpenSearchEmitter() throws TikaConfigException {
         httpClientFactory = new HttpClientFactory();
@@ -157,13 +159,29 @@ public class OpenSearchEmitter extends AbstractEmitter implements Initializable 
         httpClientFactory.setProxyPort(proxyPort);
     }
 
+    /**
+     * If using the {@link AttachmentStrategy#PARENT_CHILD}, this is the field name
+     * used to store the child documents.  Note that we artificially flatten all embedded
+     * documents, no matter how nested in the container document, into direct children
+     * of the root document.
+     *
+     * @param embeddedFileFieldName
+     */
+    @Field
+    public void setEmbeddedFileFieldName(String embeddedFileFieldName) {
+        this.embeddedFileFieldName = embeddedFileFieldName;
+    }
+
+
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         if (StringUtils.isBlank(openSearchUrl)) {
             throw new TikaConfigException("Must specify an open search url!");
         } else {
             openSearchClient =
-                    new OpenSearchClient(openSearchUrl, httpClientFactory.build(), attachmentStrategy);
+                    new OpenSearchClient(openSearchUrl,
+                            httpClientFactory.build(), attachmentStrategy,
+                            embeddedFileFieldName);
         }
     }
 

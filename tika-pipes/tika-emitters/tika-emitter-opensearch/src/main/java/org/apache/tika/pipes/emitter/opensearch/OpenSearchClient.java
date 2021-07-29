@@ -52,12 +52,14 @@ public class OpenSearchClient {
     protected final String openSearchUrl;
     protected final HttpClient httpClient;
     private final OpenSearchEmitter.AttachmentStrategy attachmentStrategy;
-
+    private final String embeddedFileFieldName;
     protected OpenSearchClient(String openSearchUrl, HttpClient httpClient,
-                               OpenSearchEmitter.AttachmentStrategy attachmentStrategy) {
+                               OpenSearchEmitter.AttachmentStrategy attachmentStrategy,
+                               String embeddedFileFieldName) {
         this.openSearchUrl = openSearchUrl;
         this.httpClient = httpClient;
         this.attachmentStrategy = attachmentStrategy;
+        this.embeddedFileFieldName = embeddedFileFieldName;
     }
 
     public void addDocument(String emitKey, List<Metadata> metadataList) throws IOException,
@@ -77,7 +79,8 @@ public class OpenSearchClient {
             if (i == 0) {
                 sb.append(metadataToJsonContainer(metadata, attachmentStrategy));
             } else {
-                sb.append(metadataToJsonEmbedded(metadata, attachmentStrategy, emitKey));
+                sb.append(metadataToJsonEmbedded(metadata, attachmentStrategy,
+                        emitKey, embeddedFileFieldName));
             }
             sb.append("\n");
             i++;
@@ -102,7 +105,7 @@ public class OpenSearchClient {
 
     protected static String metadataToJsonEmbedded(Metadata metadata,
                                                    OpenSearchEmitter.AttachmentStrategy attachmentStrategy,
-                                                   String emitKey) throws IOException {
+                                                   String emitKey, String embeddedFileFieldName) throws IOException {
         StringWriter writer = new StringWriter();
         try (JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
             jsonGenerator.writeStartObject();
@@ -110,7 +113,7 @@ public class OpenSearchClient {
             writeMetadata(metadata, jsonGenerator);
             if (attachmentStrategy == OpenSearchEmitter.AttachmentStrategy.PARENT_CHILD) {
                 jsonGenerator.writeObjectFieldStart("relation_type");
-                jsonGenerator.writeStringField("name", "embedded");
+                jsonGenerator.writeStringField("name", embeddedFileFieldName);
                 jsonGenerator.writeStringField("parent", emitKey);
                 //end the relation type object
                 jsonGenerator.writeEndObject();

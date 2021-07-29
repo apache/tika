@@ -43,8 +43,9 @@ import org.apache.tika.pipes.emitter.opensearch.OpenSearchEmitter;
 public class OpenSearchTestClient extends OpenSearchClient {
 
     protected OpenSearchTestClient(String openSearchUrl, HttpClient httpClient,
-                                   OpenSearchEmitter.AttachmentStrategy attachmentStrategy) {
-        super(openSearchUrl, httpClient, attachmentStrategy);
+                                   OpenSearchEmitter.AttachmentStrategy attachmentStrategy,
+                                   String embeddedFileFieldName) {
+        super(openSearchUrl, httpClient, attachmentStrategy, embeddedFileFieldName);
     }
 
     protected JsonResponse putJson(String url, String json) throws IOException {

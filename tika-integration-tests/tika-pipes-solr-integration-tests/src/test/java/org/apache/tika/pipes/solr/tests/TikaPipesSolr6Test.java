@@ -28,4 +28,10 @@ public class TikaPipesSolr6Test extends TikaPipesSolrTestBase {
         return "solr:6";
     }
 
+    @Override
+    public boolean handlesParentChild() {
+        //Solr 6 didn't automatically set _root_ with the parent-child indexing,
+        //apparently
+        return false;
+    }
 }

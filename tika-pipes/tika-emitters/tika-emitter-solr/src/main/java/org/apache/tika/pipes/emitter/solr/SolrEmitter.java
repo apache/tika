@@ -48,6 +48,7 @@ import org.apache.tika.pipes.emitter.TikaEmitterException;
 
 public class SolrEmitter extends AbstractEmitter implements Initializable {
 
+    public static String DEFAULT_EMBEDDED_FILE_FIELD_NAME = "embedded";
     private static final Logger LOG = LoggerFactory.getLogger(SolrEmitter.class);
     private final HttpClientFactory httpClientFactory;
     private AttachmentStrategy attachmentStrategy = AttachmentStrategy.PARENT_CHILD;
@@ -59,12 +60,12 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
     private List<String> solrUrls;
     private List<String> solrZkHosts;
     private String solrZkChroot;
-    private String contentField = "content";
     private String idField = "id";
     private int commitWithin = 1000;
     private int connectionTimeout = 10000;
     private int socketTimeout = 60000;
     private SolrClient solrClient;
+    private String embeddedFileFieldName = DEFAULT_EMBEDDED_FILE_FIELD_NAME;
 
     public SolrEmitter() throws TikaConfigException {
         httpClientFactory = new HttpClientFactory();
@@ -97,14 +98,16 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
             docsToUpdate.add(solrInputDocument);
         } else if (attachmentStrategy == AttachmentStrategy.PARENT_CHILD) {
             addMetadataToSolrInputDocument(metadataList.get(0), solrInputDocument, updateStrategy);
+            List<SolrInputDocument> children = new ArrayList<>();
             for (int i = 1; i < metadataList.size(); i++) {
                 SolrInputDocument childSolrInputDocument = new SolrInputDocument();
                 Metadata m = metadataList.get(i);
                 childSolrInputDocument
                         .setField(idField, emitKey + "-" + UUID.randomUUID().toString());
                 addMetadataToSolrInputDocument(m, childSolrInputDocument, updateStrategy);
-                solrInputDocument.addChildDocument(childSolrInputDocument);
+                children.add(childSolrInputDocument);
             }
+            solrInputDocument.setField(embeddedFileFieldName, children);
             docsToUpdate.add(solrInputDocument);
         } else if (attachmentStrategy == AttachmentStrategy.SEPARATE_DOCUMENTS) {
             addMetadataToSolrInputDocument(metadataList.get(0), solrInputDocument, updateStrategy);
@@ -280,6 +283,19 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
     @Field
     public void setProxyPort(int proxyPort) {
         httpClientFactory.setProxyPort(proxyPort);
+    }
+
+    /**
+     * If using the {@link AttachmentStrategy#PARENT_CHILD}, this is the field name
+     * used to store the child documents.  Note that we artificially flatten all embedded
+     * documents, no matter how nested in the container document, into direct children
+     * of the root document.
+     *
+     * @param embeddedFileFieldName
+     */
+    @Field
+    public void setEmbeddedFileFieldName(String embeddedFileFieldName) {
+        this.embeddedFileFieldName = embeddedFileFieldName;
     }
 
     @Override

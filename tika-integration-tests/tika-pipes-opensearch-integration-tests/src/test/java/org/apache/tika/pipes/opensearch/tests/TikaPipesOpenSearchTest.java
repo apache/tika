@@ -313,7 +313,9 @@ public class TikaPipesOpenSearchTest {
         httpClientFactory.setPassword("admin");
         //attachment strategy is not used here...TODO clean this up
         client = new OpenSearchTestClient(openSearchEndpointBase,
-                httpClientFactory.build(), OpenSearchEmitter.AttachmentStrategy.SEPARATE_DOCUMENTS);
+                httpClientFactory.build(),
+                OpenSearchEmitter.AttachmentStrategy.SEPARATE_DOCUMENTS,
+                OpenSearchEmitter.DEFAULT_EMBEDDED_FILE_FIELD_NAME);
     }
 
     private void createTestHtmlFiles(String bodyContent, int numHtmlDocs) throws Exception {
