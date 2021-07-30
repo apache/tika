@@ -23,14 +23,11 @@ The build consists of a number of components, including a standalone runnable ja
 
     java -jar tika-app/target/tika-app-*.jar --help
 
-Optional Dependencies
+Migrating to 2.x
 =====================
-*TODO*  zstd, jpeg2000
+The initial 2.x release notes are available in the [archives](https://archive.apache.org/dist/tika/2.0.0/CHANGES-2.0.0.txt).
 
-
-Breaking Issues in Tika 2.0.0
-==============================
-*TODO*
+See our [wiki](https://cwiki.apache.org/confluence/display/TIKA/Migrating+to+Tika+2.0.0) for the latest.
 
 Contributing via Github
 =======================
