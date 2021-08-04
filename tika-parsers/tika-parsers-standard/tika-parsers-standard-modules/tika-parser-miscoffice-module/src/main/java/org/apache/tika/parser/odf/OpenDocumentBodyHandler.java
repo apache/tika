@@ -61,6 +61,8 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
     protected static final char[] TAB = new char[]{'\t'};
     private static final String BINARY_DATA = "binary-data";
     private static final Attributes EMPTY_ATTRIBUTES = new AttributesImpl();
+    private static final NullListStyle NULL_LIST_STYLE = new NullListStyle();
+
     /**
      * Mappings between ODF tag names and XHTML tag names
      * (including attributes). All other tag names/attributes are ignored
@@ -219,18 +221,20 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
     }
 
     private void startList(String name) throws SAXException {
-        String elementName = "ul";
-        if (name != null) {
-            ListStyle style = listStyleMap.get(name);
-            elementName = style != null ? style.getTag() : "ul";
-            listStyleStack.push(style);
+        ListStyle style = null;
+        if (name == null || ! listStyleMap.containsKey(name)) {
+            style = NULL_LIST_STYLE;
+        } else {
+            style = listStyleMap.get(name);
         }
+        String elementName = style.getTag();
+        listStyleStack.push(style);
         handler.startElement(XHTML, elementName, elementName, EMPTY_ATTRIBUTES);
     }
 
     private void endList() throws SAXException {
         String elementName = "ul";
-        if (!listStyleStack.isEmpty()) {
+        if (! listStyleStack.isEmpty()) {
             ListStyle style = listStyleStack.pop();
             elementName = style != null ? style.getTag() : "ul";
         }
@@ -426,13 +430,13 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
                 handler.characters(SPACE, 0, 1);
             } else if ("annotation".equals(localName)) {
                 closeStyleTags();
-                handler.startElement(XHTML, "span", "p", ANNOTATION_ATTRIBUTES);
+                handler.startElement(XHTML, "p", "p", ANNOTATION_ATTRIBUTES);
             } else if ("note".equals(localName)) {
                 closeStyleTags();
-                handler.startElement(XHTML, "span", "p", NOTE_ATTRIBUTES);
+                handler.startElement(XHTML, "p", "p", NOTE_ATTRIBUTES);
             } else if ("notes".equals(localName)) {
                 closeStyleTags();
-                handler.startElement(XHTML, "span", "p", NOTES_ATTRIBUTES);
+                handler.startElement(XHTML, "p", "p", NOTES_ATTRIBUTES);
             } else {
                 super.startElement(namespaceURI, localName, qName, attrs);
             }
@@ -471,6 +475,7 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
             // to incoming handler
             if (TEXT_NS.equals(namespaceURI) && "h".equals(localName)) {
                 final String el = headingStack.pop();
+                closeStyleTags();
                 handler.endElement(namespaceURI, el, el);
             } else if (TEXT_NS.equals(namespaceURI) && "list".equals(localName)) {
                 endList();
@@ -482,7 +487,10 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
             } else if ("annotation".equals(localName) || "note".equals(localName) ||
                     "notes".equals(localName)) {
                 closeStyleTags();
-                handler.endElement(namespaceURI, localName, localName);
+                handler.endElement(namespaceURI, "p", "p");
+            } else if ("a".equals(localName)) {
+                closeStyleTags();
+                super.endElement(namespaceURI, localName, qName);
             } else {
                 super.endElement(namespaceURI, localName, qName);
             }
@@ -554,9 +562,19 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
 
     private static class ListStyle implements Style {
         public boolean ordered;
-
         public String getTag() {
             return ordered ? "ol" : "ul";
+        }
+    }
+
+    private static class NullListStyle extends ListStyle {
+        NullListStyle() {
+            ordered = false;
+        }
+
+        @Override
+        public String getTag() {
+            return "ul";
         }
     }
 

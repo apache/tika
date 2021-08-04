@@ -1,5 +1,7 @@
 Release 2.0.1 - ???
 
+   * Fix markup ordering errors in xhtml output for ODT files (TIKA-2242).
+
    * Fix serialization of embedded docs in OpenSearch emitter
      and fix embedded documents not being indexed in some use
      cases in the Solr emitter (TIKA-3490).

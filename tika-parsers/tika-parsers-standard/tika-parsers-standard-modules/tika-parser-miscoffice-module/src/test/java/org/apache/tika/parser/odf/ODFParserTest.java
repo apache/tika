@@ -19,9 +19,12 @@ package org.apache.tika.parser.odf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -33,6 +36,7 @@ import java.util.concurrent.Future;
 
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -47,6 +51,7 @@ import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.utils.XMLReaderUtils;
 
 public class ODFParserTest extends TikaTest {
     /**
@@ -348,8 +353,8 @@ public class ODFParserTest extends TikaTest {
         //not allowed in html: <p> <annotation> <p> this is an annotation </p> </annotation> </p>
         String xml = getXML("testODTStyles3.odt").xml;
         assertContains(
-                "<p><b>WOUTERS Rolf</b><span class=\"annotation\"> Beschermde persoon is " +
-                        "overleden </annotation>",
+                "<p><b>WOUTERS Rolf</b><p class=\"annotation\"> Beschermde persoon is " +
+                        "overleden </p>",
                 xml);
     }
 
@@ -455,4 +460,34 @@ public class ODFParserTest extends TikaTest {
             executorService.shutdownNow();
         }
     }
+
+    @Test
+    public void testODTXHTMLIsParseable() throws Exception {
+        //for all OpenDocument files, make sure that the
+        //output from the parse is parseable xhtml
+        int filesTested = 0;
+        for (Path p : getAllTestFiles()) {
+            String fileName = p.getFileName().toString();
+            if (fileName.endsWith(".odt") || fileName.endsWith("odp") || fileName.endsWith("odf") ||
+                    fileName.endsWith(".ods")) {
+
+                XMLResult xmlResult = null;
+                try (InputStream is = TikaInputStream.get(p)) {
+                    xmlResult = getXML(is, AUTO_DETECT_PARSER, new Metadata());
+                } catch (Exception e) {
+                    continue;
+                }
+                try {
+                    //just make sure this doesn't throw any exceptions
+                    XMLReaderUtils.parseSAX(new ByteArrayInputStream(xmlResult.xml.getBytes(StandardCharsets.UTF_8)),
+                            new DefaultHandler(), new ParseContext());
+                    filesTested++;
+                } catch (Exception e) {
+                    fail(p.getFileName().toString(), e);
+                }
+            }
+        }
+        assertTrue(filesTested > 10);
+    }
+
 }
