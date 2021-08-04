@@ -113,6 +113,7 @@ public class PipesServer implements Runnable {
     }
 
     private final Object[] lock = new Object[0];
+    private long checkForTimeoutMs = 1000;
     private final Path tikaConfigPath;
     private final DataInputStream input;
     private final DataOutputStream output;
@@ -147,22 +148,25 @@ public class PipesServer implements Runnable {
 
 
     public static void main(String[] args) throws Exception {
-        Path tikaConfig = Paths.get(args[0]);
-        long maxForEmitBatchBytes = Long.parseLong(args[1]);
-        long serverParseTimeoutMillis = Long.parseLong(args[2]);
-        long serverWaitTimeoutMillis = Long.parseLong(args[3]);
+        try {
+            Path tikaConfig = Paths.get(args[0]);
+            long maxForEmitBatchBytes = Long.parseLong(args[1]);
+            long serverParseTimeoutMillis = Long.parseLong(args[2]);
+            long serverWaitTimeoutMillis = Long.parseLong(args[3]);
 
-        PipesServer server =
-                new PipesServer(tikaConfig, System.in, System.out,
-                        maxForEmitBatchBytes, serverParseTimeoutMillis,
-                serverWaitTimeoutMillis);
-        System.setIn(new ByteArrayInputStream(new byte[0]));
-        System.setOut(System.err);
-        Thread watchdog = new Thread(server, "Tika Watchdog");
-        watchdog.setDaemon(true);
-        watchdog.start();
+            PipesServer server =
+                    new PipesServer(tikaConfig, System.in, System.out, maxForEmitBatchBytes,
+                            serverParseTimeoutMillis, serverWaitTimeoutMillis);
+            System.setIn(new ByteArrayInputStream(new byte[0]));
+            System.setOut(System.err);
+            Thread watchdog = new Thread(server, "Tika Watchdog");
+            watchdog.setDaemon(true);
+            watchdog.start();
 
-        server.processRequests();
+            server.processRequests();
+        } finally {
+            LOG.info("server shutting down");
+        }
     }
 
     public void run() {
@@ -175,11 +179,11 @@ public class PipesServer implements Runnable {
                         exit(TIMEOUT_EXIT_CODE);
                     } else if (!parsing && serverWaitTimeoutMillis > 0 &&
                             elapsed > serverWaitTimeoutMillis) {
-                        LOG.debug("closing down from inactivity");
+                        LOG.info("closing down from inactivity");
                         exit(0);
                     }
                 }
-                Thread.sleep(100);
+                Thread.sleep(checkForTimeoutMs);
             }
         } catch (InterruptedException e) {
             //swallow
@@ -189,7 +193,11 @@ public class PipesServer implements Runnable {
     public void processRequests() {
         //initialize
         try {
+            long start = System.currentTimeMillis();
             initializeParser();
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("timer -- initialize parser: {} ms", System.currentTimeMillis() - start);
+            }
         } catch (Throwable t) {
             t.printStackTrace();
             LOG.error("couldn't initialize parser", t);
@@ -204,14 +212,23 @@ public class PipesServer implements Runnable {
         //main loop
         try {
             write(STATUS.READY);
+            long start = System.currentTimeMillis();
             while (true) {
                 int request = input.read();
                 if (request == -1) {
                     exit(1);
                 } else if (request == STATUS.PING.getByte()) {
+                    if (LOG.isTraceEnabled()) {
+                        LOG.trace("timer -- ping: {} ms", System.currentTimeMillis() - start);
+                    }
                     write(STATUS.PING);
+                    start = System.currentTimeMillis();
                 } else if (request == STATUS.CALL.getByte()) {
                     parseOne();
+                    if (LOG.isTraceEnabled()) {
+                        LOG.trace("timer -- parse one: {} ms", System.currentTimeMillis() - start);
+                    }
+                    start = System.currentTimeMillis();
                 } else {
                     throw new IllegalStateException("Unexpected request");
                 }
@@ -280,8 +297,16 @@ public class PipesServer implements Runnable {
         }
         FetchEmitTuple t = null;
         try {
+            long start = System.currentTimeMillis();
             t = readFetchEmitTuple();
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("timer -- read fetchEmitTuple: {} ms", System.currentTimeMillis() - start);
+            }
+            start = System.currentTimeMillis();
             actuallyParse(t);
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("timer -- actually parsed: {} ms", System.currentTimeMillis() - start);
+            }
         } catch (OutOfMemoryError e) {
             handleOOM(t.getId(), e);
         } finally {
@@ -294,7 +319,7 @@ public class PipesServer implements Runnable {
 
     private void actuallyParse(FetchEmitTuple t) {
         List<Metadata> metadataList = null;
-
+        long start = System.currentTimeMillis();
         Fetcher fetcher = null;
         try {
             fetcher = fetcherManager.getFetcher(t.getFetchKey().getFetcherName());
@@ -310,7 +335,11 @@ public class PipesServer implements Runnable {
                     ExceptionUtils.getStackTrace(e));
             return;
         }
-
+        if (LOG.isTraceEnabled()) {
+            long elapsed = System.currentTimeMillis() - start;
+            LOG.trace("timer -- got fetcher: {}ms", elapsed);
+        }
+        start = System.currentTimeMillis();
         Metadata metadata = new Metadata();
         try (InputStream stream = fetcher.fetch(t.getFetchKey().getFetchKey(), metadata)) {
             metadataList = parse(t, stream, metadata);
@@ -321,11 +350,14 @@ public class PipesServer implements Runnable {
             LOG.warn("fetch exception " + t.getId(), e);
             write(STATUS.FETCH_EXCEPTION, ExceptionUtils.getStackTrace(e));
         }
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("timer -- to parse: {} ms", System.currentTimeMillis() - start);
+        }
         if (metadataIsEmpty(metadataList)) {
             write(STATUS.EMPTY_OUTPUT);
             return;
         }
-
+        start = System.currentTimeMillis();
         String stack = getContainerStacktrace(t, metadataList);
         if (StringUtils.isBlank(stack) || t.getOnParseException() == FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT) {
             injectUserMetadata(t.getMetadata(), metadataList);
@@ -337,9 +369,15 @@ public class PipesServer implements Runnable {
             EmitData emitData = new EmitData(t.getEmitKey(), metadataList);
             if (maxForEmitBatchBytes >= 0 && emitData.getEstimatedSizeBytes() >= maxForEmitBatchBytes) {
                 emit(t.getId(), emitData, stack);
+                if (LOG.isTraceEnabled()) {
+                    LOG.trace("timer -- emitted: {} ms", System.currentTimeMillis() - start);
+                }
             } else {
                 //ignore the stack, it is stored in the emit data
                 write(emitData);
+                if (LOG.isTraceEnabled()) {
+                    LOG.trace("timer -- to write data: {} ms", System.currentTimeMillis() - start);
+                }
             }
         } else {
             write(STATUS.PARSE_EXCEPTION_NO_EMIT, stack);
@@ -414,6 +452,7 @@ public class PipesServer implements Runnable {
         });
 
         String containerException = null;
+        long start = System.currentTimeMillis();
         try {
             autoDetectParser.parse(stream, handler, metadata, parseContext);
         } catch (SAXException e) {
@@ -438,6 +477,9 @@ public class PipesServer implements Runnable {
             } catch (TikaException e) {
                 LOG.warn("exception mapping metadata", e);
             }
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("timer -- parse only time: {} ms", System.currentTimeMillis() - start);
+            }
         }
         return Collections.singletonList(metadata);
     }
@@ -449,6 +491,7 @@ public class PipesServer implements Runnable {
                 new BasicContentHandlerFactory(handlerConfig.getType(), handlerConfig.getWriteLimit()),
                 handlerConfig.getMaxEmbeddedResources(), tikaConfig.getMetadataFilter());
         ParseContext parseContext = new ParseContext();
+        long start = System.currentTimeMillis();
         try {
             rMetaParser.parse(stream, handler, metadata, parseContext);
         } catch (SAXException e) {
@@ -460,6 +503,10 @@ public class PipesServer implements Runnable {
             throw e;
         } catch (Exception e) {
             LOG.warn("exception: " + fetchEmitTuple.getId(), e);
+        } finally {
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("timer -- parse only time: {} ms", System.currentTimeMillis() - start);
+            }
         }
         return handler.getMetadataList();
     }
@@ -475,7 +522,11 @@ public class PipesServer implements Runnable {
     }
 
     private void exit(int exitCode) {
-        LOG.error("exiting: {}", exitCode);
+        if (exitCode != 0) {
+            LOG.error("exiting: {}", exitCode);
+        } else {
+            LOG.info("exiting: {}", exitCode);
+        }
         System.exit(exitCode);
     }
 

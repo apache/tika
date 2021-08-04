@@ -30,6 +30,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.PipesClient;
@@ -48,6 +51,7 @@ public class AsyncProcessor implements Closeable {
 
     static final int PARSER_FUTURE_CODE = 1;
 
+    private static final Logger LOG = LoggerFactory.getLogger(AsyncProcessor.class);
 
     private final ArrayBlockingQueue<FetchEmitTuple> fetchEmitTuples;
     private final ArrayBlockingQueue<EmitData> emitData;
@@ -55,6 +59,7 @@ public class AsyncProcessor implements Closeable {
     private final ExecutorService executorService;
     private final AsyncConfig asyncConfig;
     private final AtomicLong totalProcessed = new AtomicLong(0);
+    private static long MAX_OFFER_WAIT_MS = 120000;
     private int numParserThreadsFinished = 0;
     private boolean addedEmitterSemaphores = false;
     private int finished = 0;
@@ -129,8 +134,12 @@ public class AsyncProcessor implements Closeable {
 
     public void finished() throws InterruptedException {
         for (int i = 0; i < asyncConfig.getNumClients(); i++) {
-            //can hang forever
-            fetchEmitTuples.offer(PipesIterator.COMPLETED_SEMAPHORE);
+            boolean offered = fetchEmitTuples.offer(PipesIterator.COMPLETED_SEMAPHORE,
+                    MAX_OFFER_WAIT_MS, TimeUnit.MILLISECONDS);
+            if (! offered) {
+                throw new RuntimeException("Couldn't offer completed semaphore within " +
+                        MAX_OFFER_WAIT_MS + " ms");
+            }
         }
     }
 
@@ -151,8 +160,17 @@ public class AsyncProcessor implements Closeable {
         }
         if (numParserThreadsFinished == asyncConfig.getNumClients() && ! addedEmitterSemaphores) {
             for (int i = 0; i < asyncConfig.getNumEmitters(); i++) {
-                //can hang forever
-                emitData.offer(AsyncEmitter.EMIT_DATA_STOP_SEMAPHORE);
+                try {
+                    boolean offered = emitData.offer(AsyncEmitter.EMIT_DATA_STOP_SEMAPHORE,
+                            MAX_OFFER_WAIT_MS,
+                            TimeUnit.MILLISECONDS);
+                    if (! offered) {
+                        throw new RuntimeException("Couldn't offer emit data stop semaphore " +
+                                "within " + MAX_OFFER_WAIT_MS + " ms");
+                    }
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
             }
             addedEmitterSemaphores = true;
         }
@@ -190,7 +208,13 @@ public class AsyncProcessor implements Closeable {
                     FetchEmitTuple t = fetchEmitTuples.poll(1, TimeUnit.SECONDS);
                     if (t == null) {
                         //skip
+                        if (LOG.isTraceEnabled()) {
+                            LOG.trace("null fetch emit tuple");
+                        }
                     } else if (t == PipesIterator.COMPLETED_SEMAPHORE) {
+                        if (LOG.isTraceEnabled()) {
+                            LOG.trace("hit completed semaphore");
+                        }
                         return PARSER_FUTURE_CODE;
                     } else {
                         PipesResult result = null;
@@ -200,9 +224,23 @@ public class AsyncProcessor implements Closeable {
                         } catch (IOException e) {
                             result = PipesResult.UNSPECIFIED_CRASH;
                         }
+                        if (LOG.isTraceEnabled()) {
+                            LOG.trace("timer -- pipes client process: {} ms",
+                                    System.currentTimeMillis() - start);
+                        }
+                        long offerStart = System.currentTimeMillis();
                         if (result.getStatus() == PipesResult.STATUS.PARSE_SUCCESS) {
-                            //TODO -- add timeout, this currently hangs forever
-                            emitDataQueue.offer(result.getEmitData());
+                            boolean offered = emitDataQueue.offer(result.getEmitData(),
+                                    MAX_OFFER_WAIT_MS,
+                                    TimeUnit.MILLISECONDS);
+                            if (! offered) {
+                                throw new RuntimeException("Couldn't offer emit data to queue " +
+                                        "within " + MAX_OFFER_WAIT_MS + " ms");
+                            }
+                        }
+                        if (LOG.isTraceEnabled()) {
+                            LOG.trace("timer -- offered: {} ms",
+                                    System.currentTimeMillis() - offerStart);
                         }
                         long elapsed = System.currentTimeMillis() - start;
                         asyncConfig.getPipesReporter().report(t, result, elapsed);

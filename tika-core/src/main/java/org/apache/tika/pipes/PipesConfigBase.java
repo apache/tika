@@ -19,6 +19,7 @@ package org.apache.tika.pipes;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.tika.config.ConfigBase;
@@ -92,11 +93,14 @@ public class PipesConfigBase extends ConfigBase {
     }
 
     public List<String> getForkedJvmArgs() {
-        return forkedJvmArgs;
+        //defensive copy
+        List<String> ret = new ArrayList<>();
+        ret.addAll(forkedJvmArgs);
+        return ret;
     }
 
     public void setForkedJvmArgs(List<String> jvmArgs) {
-        this.forkedJvmArgs = jvmArgs;
+        this.forkedJvmArgs = Collections.unmodifiableList(jvmArgs);
     }
 
     /**

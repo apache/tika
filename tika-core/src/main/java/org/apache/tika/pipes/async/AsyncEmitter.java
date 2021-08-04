@@ -76,7 +76,8 @@ public class AsyncEmitter implements Callable<Integer> {
             } else {
                 LOG.trace("Nothing on the async queue");
             }
-            LOG.debug("cache size: ({}) bytes and count: {}", cache.estimatedSize, cache.size);
+            LOG.debug("cache size: ({}) bytes and extract count: {}", cache.estimatedSize,
+                    cache.size);
             long elapsed = ChronoUnit.MILLIS.between(lastEmitted, Instant.now());
             if (elapsed > asyncConfig.getEmitWithinMillis()) {
                 LOG.debug("{} elapsed > {}, going to emitAll", elapsed, asyncConfig.getEmitWithinMillis());
