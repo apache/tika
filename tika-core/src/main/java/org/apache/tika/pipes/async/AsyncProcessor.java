@@ -180,6 +180,7 @@ public class AsyncProcessor implements Closeable {
     @Override
     public void close() throws IOException {
         executorService.shutdownNow();
+        asyncConfig.getPipesReporter().close();
     }
 
     public long getTotalProcessed() {
