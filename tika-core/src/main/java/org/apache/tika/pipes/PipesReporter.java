@@ -16,9 +16,13 @@
  */
 package org.apache.tika.pipes;
 
-public abstract class PipesReporter {
+import java.io.Closeable;
+import java.io.IOException;
+
+public abstract class PipesReporter implements Closeable {
 
     public static PipesReporter NO_OP_REPORTER = new PipesReporter() {
+
         @Override
         public void report(FetchEmitTuple t, PipesResult result, long elapsed) {
 
@@ -26,4 +30,13 @@ public abstract class PipesReporter {
     };
 
     public abstract void report(FetchEmitTuple t, PipesResult result, long elapsed);
+
+    /**
+     * No-op implementation.  Override for custom behavior
+     * @throws IOException
+     */
+    @Override
+    public void close() throws IOException {
+        //no-op
+    }
 }
