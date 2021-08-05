@@ -25,8 +25,10 @@ public class PipesResult {
         FETCHER_INITIALIZATION_EXCEPTION,
         FETCH_EXCEPTION,
         EMPTY_OUTPUT,
-        PARSE_EXCEPTION_NO_EMIT,
-        PARSE_EXCEPTION_EMIT, PARSE_SUCCESS,
+        PARSE_EXCEPTION_NO_EMIT, //within the pipes server
+        PARSE_EXCEPTION_EMIT, //within the pipes server
+        PARSE_SUCCESS, //when passed back to the async processor for emit
+        PARSE_SUCCESS_WITH_EXCEPTION,//when passed back to the async processor for emit
         OOM, TIMEOUT, UNSPECIFIED_CRASH,
         NO_EMITTER_FOUND,
         EMIT_SUCCESS, EMIT_SUCCESS_PARSE_EXCEPTION, EMIT_EXCEPTION,
@@ -60,8 +62,22 @@ public class PipesResult {
         this(status, null, message);
     }
 
+    /**
+     * This assumes parse success with no parse exception
+     * @param emitData
+     */
     public PipesResult(EmitData emitData) {
         this(STATUS.PARSE_SUCCESS, emitData, null);
+    }
+
+    /**
+     * This assumes that the message is a stack trace (container
+     * parse exception).
+     * @param emitData
+     * @param message
+     */
+    public PipesResult(EmitData emitData, String message) {
+        this(STATUS.PARSE_SUCCESS_WITH_EXCEPTION, emitData, message);
     }
 
     public STATUS getStatus() {

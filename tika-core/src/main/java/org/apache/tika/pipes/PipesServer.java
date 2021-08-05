@@ -466,7 +466,7 @@ public class PipesServer implements Runnable {
             throw e;
         } catch (Exception e) {
             containerException = ExceptionUtils.getStackTrace(e);
-            LOG.warn("exception: " + fetchEmitTuple.getId(), e);
+            LOG.warn("parse exception: " + fetchEmitTuple.getId(), e);
         } finally {
             metadata.add(TikaCoreProperties.TIKA_CONTENT, handler.toString());
             if (containerException != null) {
@@ -502,7 +502,7 @@ public class PipesServer implements Runnable {
             LOG.warn("security exception:" + fetchEmitTuple.getId(), e);
             throw e;
         } catch (Exception e) {
-            LOG.warn("exception: " + fetchEmitTuple.getId(), e);
+            LOG.warn("parse exception: " + fetchEmitTuple.getId(), e);
         } finally {
             if (LOG.isTraceEnabled()) {
                 LOG.trace("timer -- parse only time: {} ms", System.currentTimeMillis() - start);

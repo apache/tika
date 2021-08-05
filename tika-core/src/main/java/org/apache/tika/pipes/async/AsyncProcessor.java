@@ -230,7 +230,8 @@ public class AsyncProcessor implements Closeable {
                                     System.currentTimeMillis() - start);
                         }
                         long offerStart = System.currentTimeMillis();
-                        if (result.getStatus() == PipesResult.STATUS.PARSE_SUCCESS) {
+                        if (result.getStatus() == PipesResult.STATUS.PARSE_SUCCESS ||
+                                result.getStatus() == PipesResult.STATUS.PARSE_SUCCESS_WITH_EXCEPTION) {
                             boolean offered = emitDataQueue.offer(result.getEmitData(),
                                     MAX_OFFER_WAIT_MS,
                                     TimeUnit.MILLISECONDS);

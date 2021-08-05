@@ -103,6 +103,7 @@ public class PipesResource {
             case EMIT_EXCEPTION:
                 return returnEmitException(pipesResult.getMessage());
             case PARSE_SUCCESS:
+            case PARSE_SUCCESS_WITH_EXCEPTION:
                 throw new IllegalArgumentException("Should have emitted in forked process?!");
             case EMIT_SUCCESS:
                 return returnSuccess();
