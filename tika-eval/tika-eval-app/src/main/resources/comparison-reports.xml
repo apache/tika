@@ -808,6 +808,51 @@
         </sql>
     </report>
 
+    <report reportName="DiceQuintiles"
+            reportFilename="content/dice_quintiles.xlsx"
+            format="xlsx"
+            includeSql="true">
+        <sql>
+            SELECT
+            case
+            when dice_coefficient &lt; 0.20 then '0&lt;0.20%'
+            when dice_coefficient &lt; 0.40 then '20%&lt;40%'
+            when dice_coefficient &lt; 0.60 then '40%&lt;60%'
+            when dice_coefficient &lt; 0.80 then '60%&lt;80%'
+            when dice_coefficient &lt; 1.01 then '80%-100%'
+            else 'other'
+            end as  range,
+            COUNT(*) AS COUNT,
+            FROM   content_comparisons cc
+            join contents_a ca on cc.id = ca.id
+            join contents_b cb on cc.id = cb.id
+            where ca.num_tokens > 10 or cb.num_tokens > 10
+            GROUP  BY  range
+        </sql>
+    </report>
+
+    <report reportName="OverlapQuintiles"
+            reportFilename="content/overlap_quintiles.xlsx"
+            format="xlsx"
+            includeSql="true">
+        <sql>
+            SELECT
+            case
+            when overlap &lt; 0.20 then '0&lt;0.20%'
+            when overlap &lt; 0.40 then '20%&lt;40%'
+            when overlap &lt; 0.60 then '40%&lt;60%'
+            when overlap &lt; 0.80 then '60%&lt;80%'
+            when overlap &lt; 1.01 then '80%-100%'
+            else 'other'
+            end as  range,
+            COUNT(*) AS COUNT,
+            FROM   content_comparisons cc
+            join contents_a ca on cc.id = ca.id
+            join contents_b cb on cc.id = cb.id
+            where ca.num_tokens > 10 or cb.num_tokens > 10
+            GROUP  BY  range
+        </sql>
+    </report>
     <report reportName="contentDiffsWExceptions"
             reportFilename="content/content_diffs_with_exceptions.xlsx"
             format="xlsx"
