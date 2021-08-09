@@ -44,8 +44,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.utils.ProcessUtils;
+import org.apache.tika.utils.StringUtils;
 
 public class PipesClient implements Closeable {
 
@@ -220,6 +222,7 @@ public class PipesClient implements Closeable {
                 LOG.warn("pipesClientId={} fetch exception: {} in {} ms", pipesClientId, t.getId(), millis);
                 return readMessage(PipesResult.STATUS.FETCH_EXCEPTION);
             case PARSE_SUCCESS:
+                //there may have been a parse exception, but the parse didn't crash
                 LOG.info("pipesClientId={} parse success: {} in {} ms", pipesClientId, t.getId(), millis);
                 return deserializeEmitData();
             case PARSE_EXCEPTION_NO_EMIT:
@@ -257,13 +260,29 @@ public class PipesClient implements Closeable {
         input.readFully(bytes);
         try (ObjectInputStream objectInputStream =
                      new ObjectInputStream(new ByteArrayInputStream(bytes))) {
-            return new PipesResult((EmitData)objectInputStream.readObject());
+            EmitData emitData = (EmitData)objectInputStream.readObject();
+
+            String stack = getStack(emitData);
+            if (StringUtils.isBlank(stack)) {
+                return new PipesResult(emitData);
+            } else {
+                return new PipesResult(
+                        emitData, stack);
+            }
         } catch (ClassNotFoundException e) {
             LOG.error("class not found exception deserializing data", e);
             //this should be catastrophic
             throw new RuntimeException(e);
         }
 
+    }
+
+    private String getStack(EmitData emitData) {
+        if (emitData.getMetadataList() == null ||
+                emitData.getMetadataList().size() < 1) {
+            return StringUtils.EMPTY;
+        }
+        return emitData.getMetadataList().get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION);
     }
 
     private void restart() throws IOException {
