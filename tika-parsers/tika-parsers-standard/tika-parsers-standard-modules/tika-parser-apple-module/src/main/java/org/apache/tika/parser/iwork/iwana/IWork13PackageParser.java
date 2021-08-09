@@ -148,6 +148,7 @@ public class IWork13PackageParser extends AbstractParser {
                 // TODO Decode the snappy stream, and check for the Message Type
                 // =     2 (TN::SheetArchive), it is a numbers file;
                 // = 10000 (TP::DocumentArchive), that's a pages file
+                return UNKNOWN13.getType();
             }
 
             // Unknown

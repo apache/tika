@@ -30,7 +30,6 @@ import java.util.Random;
 
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.MultiThreadedTikaTest;
@@ -378,7 +377,6 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
     }
 
     @Test
-    @Disabled("TODO -- fix this")
     public void testDetectIWork2013() throws Exception {
         assertTypeByData("testKeynote2013.key",
                 IWork13PackageParser.IWork13DocumentType.KEYNOTE13.getType().toString());

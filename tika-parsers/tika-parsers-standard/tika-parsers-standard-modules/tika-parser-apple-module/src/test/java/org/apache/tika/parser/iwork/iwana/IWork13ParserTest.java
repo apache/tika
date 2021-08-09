@@ -69,7 +69,9 @@ public class IWork13ParserTest extends TikaTest {
         // Currently parsing is a no-op, and we can't get the type without
         //  decoding the Snappy stream
         // TODO Test properly when a full Parser is added
-        assertEquals(0, metadata.size());
+        assertEquals(
+                IWork13PackageParser.IWork13DocumentType.UNKNOWN13.getType().toString(),
+                metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("", handler.toString());
     }
 
@@ -83,7 +85,9 @@ public class IWork13ParserTest extends TikaTest {
         // Currently parsing is a no-op, and we can't get the type without
         //  decoding the Snappy stream
         // TODO Test properly when a full Parser is added
-        assertEquals(0, metadata.size());
+        assertEquals(
+                IWork13PackageParser.IWork13DocumentType.UNKNOWN13.getType().toString(),
+                metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("", handler.toString());
     }
 }
