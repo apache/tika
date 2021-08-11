@@ -43,7 +43,7 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-parser-sqlite3-module</artifactId>
+      <artifactId>tika-parser-sqlite3-package</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>

@@ -17,7 +17,8 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <parent>
     <artifactId>tika-parsers-extended</artifactId>
     <groupId>org.apache.tika</groupId>
@@ -27,7 +28,6 @@
 
   <artifactId>tika-parser-scientific-module</artifactId>
   <name>Apache Tika scientific parser module</name>
-  <packaging>pom</packaging>
 
   <dependencies>
     <!-- needed by AutoDetectReader in EnviHeaderParser -->
@@ -35,26 +35,31 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-parser-text-module</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.sis.core</groupId>
       <artifactId>sis-utility</artifactId>
       <version>${sis.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.sis.storage</groupId>
       <artifactId>sis-netcdf</artifactId>
       <version>${sis.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.sis.core</groupId>
       <artifactId>sis-metadata</artifactId>
       <version>${sis.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.opengis</groupId>
       <artifactId>geoapi</artifactId>
       <version>${geoapi.version}</version>
+      <scope>provided</scope>
     </dependency>
     <!-- edu.ucar dependencies -->
     <dependency>
@@ -102,6 +107,7 @@
           <artifactId>slf4j-api</artifactId>
         </exclusion>
       </exclusions>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.quartz-scheduler</groupId>
@@ -113,6 +119,7 @@
           <artifactId>slf4j-api</artifactId>
         </exclusion>
       </exclusions>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
@@ -132,26 +139,31 @@
           <artifactId>httpcore</artifactId>
         </exclusion>
       </exclusions>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpcore</artifactId>
       <version>${httpcore.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
       <version>${commons.codec.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.jdom</groupId>
       <artifactId>jdom2</artifactId>
       <version>2.0.6</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
       <version>${guava.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>edu.ucar</groupId>
@@ -179,6 +191,7 @@
           <artifactId>slf4j-api</artifactId>
         </exclusion>
       </exclusions>
+      <scope>provided</scope>
     </dependency>
     <!-- TIKA-3095: Required for grib -->
     <dependency>
@@ -190,6 +203,7 @@
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-csv</artifactId>
       <version>${commons.csv.version}</version>
+      <scope>provided</scope>
     </dependency>
     <!-- for java 10
 See TIKA-2778 for why we need to do this now.
@@ -199,6 +213,7 @@ May the gods of dependency management fix this in the future.
       <groupId>org.glassfish.jaxb</groupId>
       <artifactId>jaxb-runtime</artifactId>
       <version>${jaxb.version}</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 
@@ -215,7 +230,24 @@ May the gods of dependency management fix this in the future.
           </excludes>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifestEntries>
+              <Automatic-Module-Name>org.apache.tika.parser.scientific.module</Automatic-Module-Name>
+            </manifestEntries>
+          </archive>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>test-jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
-
   </build>
 </project>
