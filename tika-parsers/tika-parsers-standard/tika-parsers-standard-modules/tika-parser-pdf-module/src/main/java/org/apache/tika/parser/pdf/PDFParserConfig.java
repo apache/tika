@@ -105,7 +105,7 @@ public class PDFParserConfig implements Serializable {
 
     private OCRStrategyAuto ocrStrategyAuto = OCR_STRATEGY_AUTO_BETTER;
 
-    private OCR_RENDERING_STRATEGY ocrRenderingStrategy = OCR_RENDERING_STRATEGY.NO_TEXT;
+    private OCR_RENDERING_STRATEGY ocrRenderingStrategy = OCR_RENDERING_STRATEGY.ALL;
 
     private int ocrDPI = 300;
     private ImageType ocrImageType = ImageType.GRAY;

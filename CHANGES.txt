@@ -7,6 +7,8 @@ Release 2.0.1 - ???
    * Tika app writes UTF-8 when an encoding is not specified; the legacy behavior
      was UTF-8 on Mac OS, but System default on other OSs (TIKA-3515).
 
+   * Change the default rendering strategy for PDFs from NO_TEXT to ALL (TIKA-3520).
+
    Other changes:
    * Fix markup ordering errors in xhtml output for ODT files (TIKA-2242).
 
