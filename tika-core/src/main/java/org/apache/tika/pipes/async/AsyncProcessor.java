@@ -50,6 +50,7 @@ import org.apache.tika.pipes.pipesiterator.PipesIterator;
 public class AsyncProcessor implements Closeable {
 
     static final int PARSER_FUTURE_CODE = 1;
+    static final int WATCHER_FUTURE_CODE = 3;
 
     private static final Logger LOG = LoggerFactory.getLogger(AsyncProcessor.class);
 
@@ -60,9 +61,9 @@ public class AsyncProcessor implements Closeable {
     private final AsyncConfig asyncConfig;
     private final AtomicLong totalProcessed = new AtomicLong(0);
     private static long MAX_OFFER_WAIT_MS = 120000;
-    private int numParserThreadsFinished = 0;
+    private volatile int numParserThreadsFinished = 0;
+    private volatile int numEmitterThreadsFinished = 0;
     private boolean addedEmitterSemaphores = false;
-    private int finished = 0;
     boolean isShuttingDown = false;
 
     public AsyncProcessor(Path tikaConfigPath) throws TikaException, IOException {
@@ -70,10 +71,19 @@ public class AsyncProcessor implements Closeable {
         this.fetchEmitTuples = new ArrayBlockingQueue<>(asyncConfig.getQueueSize());
         this.emitData = new ArrayBlockingQueue<>(100);
         this.executorService = Executors.newFixedThreadPool(
-                asyncConfig.getNumClients() + asyncConfig.getNumEmitters());
+                asyncConfig.getNumClients() + asyncConfig.getNumEmitters() + 1);
         this.executorCompletionService =
                 new ExecutorCompletionService<>(executorService);
-
+        this.executorCompletionService.submit(() -> {
+            while (true) {
+                try {
+                    Thread.sleep(500);
+                    checkActive();
+                } catch (InterruptedException e) {
+                    return WATCHER_FUTURE_CODE;
+                }
+            }
+        });
 
         for (int i = 0; i < asyncConfig.getNumClients(); i++) {
             executorCompletionService.submit(new FetchEmitWorker(asyncConfig, fetchEmitTuples,
@@ -143,20 +153,31 @@ public class AsyncProcessor implements Closeable {
         }
     }
 
-    public boolean checkActive() {
+    public synchronized boolean checkActive() {
 
         Future<Integer> future = executorCompletionService.poll();
         if (future != null) {
             try {
                 Integer i = future.get();
-                if (i == PARSER_FUTURE_CODE) {
-                    numParserThreadsFinished++;
+                switch (i) {
+                    case PARSER_FUTURE_CODE :
+                        numParserThreadsFinished++;
+                        LOG.debug("fetchEmitWorker finished, total {}", numParserThreadsFinished);
+                        break;
+                    case AsyncEmitter.EMITTER_FUTURE_CODE :
+                        numEmitterThreadsFinished++;
+                        LOG.debug("emitter thread finished, total {}", numEmitterThreadsFinished);
+                        break;
+                    case WATCHER_FUTURE_CODE :
+                        LOG.debug("watcher thread finished");
+                        break;
+                    default :
+                        throw new IllegalArgumentException("Don't recognize this future code: " + i);
                 }
             } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
                 throw new RuntimeException(e);
             }
-            finished++;
         }
         if (numParserThreadsFinished == asyncConfig.getNumClients() && ! addedEmitterSemaphores) {
             for (int i = 0; i < asyncConfig.getNumEmitters(); i++) {
@@ -174,7 +195,8 @@ public class AsyncProcessor implements Closeable {
             }
             addedEmitterSemaphores = true;
         }
-        return finished != (asyncConfig.getNumClients() + asyncConfig.getNumEmitters());
+        return !(numParserThreadsFinished == asyncConfig.getNumClients() &&
+                numEmitterThreadsFinished == asyncConfig.getNumEmitters());
     }
 
     @Override
@@ -248,7 +270,6 @@ public class AsyncProcessor implements Closeable {
                         asyncConfig.getPipesReporter().report(t, result, elapsed);
                         totalProcessed.incrementAndGet();
                     }
-                    checkActive();
                 }
             }
         }
