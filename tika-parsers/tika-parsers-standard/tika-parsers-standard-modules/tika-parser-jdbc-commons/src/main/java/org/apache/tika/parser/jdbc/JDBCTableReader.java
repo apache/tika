@@ -38,14 +38,11 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.detect.Detector;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Database;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 
@@ -311,18 +308,4 @@ public class JDBCTableReader {
     public String getTableName() {
         return tableName;
     }
-
-
-    protected TikaConfig getTikaConfig() {
-        return embeddedDocumentUtil.getTikaConfig();
-    }
-
-    protected Detector getDetector() {
-        return embeddedDocumentUtil.getDetector();
-    }
-
-    protected MimeTypes getMimeTypes() {
-        return embeddedDocumentUtil.getMimeTypes();
-    }
-
 }

@@ -32,7 +32,7 @@ import org.apache.tika.mime.MimeTypes;
 @Ignore("Fix mimetype.getExtension to work with these and then we can get rid of MimeUtil")
 public class MimeUtilTest {
 
-    private final TikaConfig config = TikaConfig.getDefaultConfig();
+    private final TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
 
     @Test
     public void testBasic() throws Exception {
@@ -56,7 +56,6 @@ public class MimeUtilTest {
     }
 
     private void assertResult(String contentType, String expected) throws MimeTypeException {
-        TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
         MimeTypes r = tikaConfig.getMimeRepository();
         MimeType mt = r.forName(contentType);
 

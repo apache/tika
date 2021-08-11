@@ -61,13 +61,9 @@ public class ISATabUtils {
                                           String studyFileName)
             throws IOException, TikaException, SAXException {
 
-        TikaConfig tikaConfig = context.get(TikaConfig.class);
-        if (tikaConfig == null) {
-            tikaConfig = TikaConfig.getDefaultConfig();
-        }
         // Automatically detect the character encoding
         try (AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(stream),
-                metadata, tikaConfig.getEncodingDetector())) {
+                metadata)) {
             extractMetadata(reader, metadata, studyFileName);
         }
     }

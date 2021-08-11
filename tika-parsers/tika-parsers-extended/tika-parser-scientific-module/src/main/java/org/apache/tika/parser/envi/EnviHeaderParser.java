@@ -31,7 +31,6 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
@@ -75,11 +74,6 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
 
         // The following code was taken from the TXTParser
         // Automatically detect the character encoding
-
-        TikaConfig tikaConfig = context.get(TikaConfig.class);
-        if (tikaConfig == null) {
-            tikaConfig = TikaConfig.getDefaultConfig();
-        }
         try (AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(stream),
                 metadata, getEncodingDetector(context))) {
             Charset charset = reader.getCharset();

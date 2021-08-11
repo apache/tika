@@ -23,7 +23,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
@@ -40,19 +40,19 @@ import org.apache.tika.metadata.TikaCoreProperties;
  */
 public class TestParsers extends MultiThreadedTikaTest {
 
-    private TikaConfig tc;
+    private static TikaConfig TIKA_CONFIG;
 
-    private Tika tika;
+    private static Tika TIKA;
 
-    @BeforeEach
-    public void setUp() throws Exception {
-        tc = TikaConfig.getDefaultConfig();
-        tika = new Tika(tc);
+    @BeforeAll
+    public static void setUp() throws Exception {
+        TIKA_CONFIG = TikaConfig.getDefaultConfig();
+        TIKA = new Tika(TIKA_CONFIG);
     }
 
     @Test
     public void testWORDxtraction() throws Exception {
-        Parser parser = tika.getParser();
+        Parser parser = TIKA.getParser();
         Metadata metadata = new Metadata();
         try (TikaInputStream tis = TikaInputStream
                 .get(getResourceAsStream("/test-documents/testWORD.doc"))) {
@@ -70,9 +70,9 @@ public class TestParsers extends MultiThreadedTikaTest {
         try (TikaInputStream tis = TikaInputStream
                 .get(getResourceAsStream("/test-documents/testEXCEL.xls"))) {
             File file = tis.getFile();
-            String s1 = tika.parseToString(file);
+            String s1 = TIKA.parseToString(file);
             assertTrue(s1.contains(expected), "Text does not contain '" + expected + "'");
-            Parser parser = tika.getParser();
+            Parser parser = TIKA.getParser();
             try (InputStream stream = new FileInputStream(file)) {
                 parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
             }
@@ -87,7 +87,7 @@ public class TestParsers extends MultiThreadedTikaTest {
             try (TikaInputStream tis = TikaInputStream
                     .get(getResourceAsStream("/test-documents/testOptionalHyphen." + extension))) {
 
-                String content = tika.parseToString(tis.getFile());
+                String content = TIKA.parseToString(tis.getFile());
                 assertTrue(content.contains("optionalhyphen") ||
                                         content.contains("optional\u00adhyphen") ||   // soft hyphen
                                         content.contains("optional\u200bhyphen") ||   // zero width space
@@ -103,7 +103,7 @@ public class TestParsers extends MultiThreadedTikaTest {
         String content = null;
         try (TikaInputStream tis = TikaInputStream
                 .get(getResourceAsStream("/test-documents/" + fileName + "." + extension))) {
-            content = tika.parseToString(tis.getFile());
+            content = TIKA.parseToString(tis.getFile());
         }
         assertTrue(content.contains("Here is some text"),
                 extension + ": content=" + content + " did not extract text");

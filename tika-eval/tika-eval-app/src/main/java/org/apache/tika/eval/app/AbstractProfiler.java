@@ -121,8 +121,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     int maxContentLength = 10000000;
     int maxContentLengthForLangId = 50000;
     int maxTokens = 200000;
-    //TODO: allow configuration
-    //private TikaConfig config = TikaConfig.getDefaultConfig();
+
     CompositeTextStatsCalculator compositeTextStatsCalculator;
     private String lastExtractExtension = null;
 

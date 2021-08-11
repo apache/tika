@@ -138,7 +138,6 @@ public class ExtractComparer extends AbstractProfiler {
     }
 
     //need to parameterize?
-    private final TikaConfig config = TikaConfig.getDefaultConfig();
     private final Path inputDir;
     private final Path extractsA;
     private final Path extractsB;
