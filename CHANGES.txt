@@ -1,5 +1,11 @@
 Release 2.0.1 - ???
+   MAJOR CHANGES in 2.0.1
 
+   * Improved packaging for tika-parsers-extended. Use the tika-parser-scientific-package and
+     tika-parser-sqlite3-package artifacts if you want fat jars with dependencies. (TIKA-3510)
+
+
+   Other changes:
    * Fix markup ordering errors in xhtml output for ODT files (TIKA-2242).
 
    * Fix serialization of embedded docs in OpenSearch emitter

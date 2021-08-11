@@ -101,8 +101,8 @@
                       <fileset dir="${basedir}">
                         <include name="CHANGES.txt" />
                         <include name="target/*-src.zip*" />
-                        <include name="tika-parsers/tika-parsers-extended/tika-parser-scientific-module/target/tika-parser-scientific-module-${project.version}.jar*" />
-                        <include name="tika-parsers/tika-parsers-extended/tika-parser-sqlite3-module/target/tika-parser-sqlite3-module-${project.version}.jar*" />
+                        <include name="tika-parsers/tika-parsers-extended/tika-parser-scientific-package/target/tika-parser-scientific-package-${project.version}.jar*" />
+                        <include name="tika-parsers/tika-parsers-extended/tika-parser-sqlite3-package/target/tika-parser-sqlite3-package-${project.version}.jar*" />
                         <include name="tika-app/target/tika-app-${project.version}.jar*" />
                         <include name="tika-server/tika-server-standard/target/tika-server-standard-${project.version}.jar*" />
                         <include name="tika-server/tika-server-standard/target/tika-server-standard-${project.version}-bin.tgz*" />
