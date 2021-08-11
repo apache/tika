@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import edu.usc.irds.agepredictor.authorage.AgePredicterLocal;
 import org.junit.jupiter.api.Test;
@@ -64,7 +64,7 @@ public class AgeRecogniserTest extends TikaTest {
         //test config is added to resources directory
         try (InputStream is = getResourceAsStream(CONFIG_FILE);
                 InputStream bis = new ByteArrayInputStream(
-                        TEST_TEXT.getBytes(Charset.defaultCharset()))) {
+                        TEST_TEXT.getBytes(StandardCharsets.UTF_8))) {
             TikaConfig config = new TikaConfig(is);
             Tika tika = new Tika(config);
 

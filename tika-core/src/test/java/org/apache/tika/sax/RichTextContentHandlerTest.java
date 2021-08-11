@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
-import java.nio.charset.Charset;
 
 import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.AttributesImpl;
@@ -41,7 +40,7 @@ public class RichTextContentHandlerTest {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(new RichTextContentHandler(
-                new OutputStreamWriter(buffer, Charset.defaultCharset())), new Metadata());
+                new OutputStreamWriter(buffer, UTF_8)), new Metadata());
         xhtml.startDocument();
         AttributesImpl attributes = new AttributesImpl();
         attributes.addAttribute("", "", "name", "", "value");
@@ -59,7 +58,7 @@ public class RichTextContentHandlerTest {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(new RichTextContentHandler(
-                new OutputStreamWriter(buffer, Charset.defaultCharset())), new Metadata());
+                new OutputStreamWriter(buffer, UTF_8)), new Metadata());
         xhtml.startDocument();
         AttributesImpl attributes = new AttributesImpl();
         attributes.addAttribute("", "", "alt", "", "value");

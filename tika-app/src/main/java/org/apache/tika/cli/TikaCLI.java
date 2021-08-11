@@ -35,7 +35,6 @@ import java.io.Writer;
 import java.lang.reflect.Field;
 import java.net.URI;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -319,11 +318,8 @@ public class TikaCLI {
             throws UnsupportedEncodingException {
         if (encoding != null) {
             return new OutputStreamWriter(output, encoding);
-        } else if (System.getProperty("os.name").toLowerCase(Locale.ROOT).startsWith("mac os x")) {
-            // TIKA-324: Override the default encoding on Mac OS X
-            return new OutputStreamWriter(output, UTF_8);
         } else {
-            return new OutputStreamWriter(output, Charset.defaultCharset());
+            return new OutputStreamWriter(output, UTF_8);
         }
     }
 

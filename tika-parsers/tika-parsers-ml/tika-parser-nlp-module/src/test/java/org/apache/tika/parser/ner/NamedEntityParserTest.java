@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
 
@@ -52,7 +52,7 @@ public class NamedEntityParserTest extends TikaTest {
                     " located in Los Angeles . USC's football team is called by name Trojans." +
                     " Mr. John McKay was a head coach of the team from 1960 - 1975";
             Metadata md = new Metadata();
-            tika.parse(new ByteArrayInputStream(text.getBytes(Charset.defaultCharset())), md);
+            tika.parse(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)), md);
 
             HashSet<String> set = new HashSet<>(
                     Arrays.asList(md.getValues(TikaCoreProperties.TIKA_PARSED_BY)));
@@ -87,7 +87,7 @@ public class NamedEntityParserTest extends TikaTest {
             String text = "University of Southern California (USC), is located in Los Angeles ." +
                     " Campus is busy from monday to saturday";
             Metadata md = new Metadata();
-            tika.parse(new ByteArrayInputStream(text.getBytes(Charset.defaultCharset())), md);
+            tika.parse(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)), md);
             HashSet<String> keys = new HashSet<>(Arrays.asList(md.names()));
             assumeTrue(keys.contains("NER_WEEK_DAY"));
             assumeTrue(keys.contains("NER_LOCATION"));

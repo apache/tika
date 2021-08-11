@@ -85,7 +85,9 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
      * the given output stream using the default encoding.
      *
      * @param stream output stream
+     * @deprecated -- please use {@link WriteOutContentHandler#WriteOutContentHandler(Writer)}
      */
+    @Deprecated
     public WriteOutContentHandler(OutputStream stream) {
         this(new OutputStreamWriter(stream, Charset.defaultCharset()));
     }

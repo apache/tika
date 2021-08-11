@@ -66,6 +66,7 @@ public class ToTextContentHandler extends DefaultHandler {
      * the given output stream using the platform default encoding.
      *
      * @param stream output stream
+     * @deprecated use {@link ToTextContentHandler#ToTextContentHandler(Writer)}
      */
     public ToTextContentHandler(OutputStream stream) {
         this(new OutputStreamWriter(stream, Charset.defaultCharset()));

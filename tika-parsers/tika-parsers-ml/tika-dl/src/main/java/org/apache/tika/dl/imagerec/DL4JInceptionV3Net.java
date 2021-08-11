@@ -24,7 +24,6 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -179,7 +178,7 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
             FileUtils.copyURLToFile(uri.toURL(), cacheFile, 5000, 60000);
             //restore the success flag again
             FileUtils.write(successFlag, "CopiedAt:" + System.currentTimeMillis(),
-                    Charset.defaultCharset());
+                    StandardCharsets.UTF_8);
         }
         return cacheFile;
     }
