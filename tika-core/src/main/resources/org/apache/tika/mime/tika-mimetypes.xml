@@ -1943,7 +1943,22 @@
     </magic>
     <sub-class-of type="text/plain"/>
   </mime-type>
-
+  <mime-type type="text/x-robots">
+    <!-- robots.txt file -->
+    <!-- draft: https://datatracker.ietf.org/doc/html/draft-koster-rep -->
+    <!-- should have a higher priority than rfc822 - TIKA-3489 -->
+    <magic priority="55">
+      <match minShouldMatch="2">
+        <match value="user-agent:" type="stringignorecase" offset="0"/>
+        <match value="sitemap:" type="stringignorecase" offset="0"/>
+        <match value="\nuser-agent:" type="stringignorecase" offset="0:1000"/>
+        <match value="\nallow:" type="stringignorecase" offset="0:1000"/>
+        <match value="\ndisallow:" type="stringignorecase" offset="0:1000"/>
+        <match value="\nsitemap:" type="stringignorecase" offset="0:1000"/>
+      </match>
+    </magic>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
   <mime-type type="application/vnd.ms-tnef">
     <alias type="application/ms-tnef" />
     <magic priority="50">

@@ -22,6 +22,7 @@ import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -963,6 +964,11 @@ public class TestMimeTypes {
         //embedded xhtml and img
         assertTypeDetection("testEML_embedded_xhtml_and_img.eml", "message/rfc822");
 
+    }
+
+    @Test
+    public void testRobots() throws Exception {
+        assertTypeByData("text/x-robots", "testRobots.txt");
     }
 
     @Test
