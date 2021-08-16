@@ -100,7 +100,17 @@ public class FileSystemFetcher extends AbstractFetcher implements Initializable 
             throws TikaConfigException {
         if (basePath == null || basePath.toString().trim().length() == 0) {
             throw new TikaConfigException("'basePath' must be specified");
+        } else if (basePath.toString().startsWith("http://")) {
+            throw new TikaConfigException("FileSystemFetcher only works with local file systems. " +
+                    " Please use the tika-fetcher-http module for http calls");
+        } else if (basePath.toString().startsWith("ftp://")) {
+            throw new TikaConfigException("FileSystemFetcher only works with local file systems. " +
+                    " Please consider contributing an ftp fetcher module");
+        } else if (basePath.startsWith("s3://")) {
+            throw new TikaConfigException("FileSystemFetcher only works with local file systems. " +
+                    " Please use the tika-fetcher-s3 module");
         }
+
         if (basePath.toAbsolutePath().toString().contains("\u0000")) {
             throw new TikaConfigException(
                     "base path must not contain \u0000. " + "Seriously, what were you thinking?");
