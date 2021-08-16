@@ -33,13 +33,11 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-parser-jdbc-commons</artifactId>
       <version>${project.version}</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.xerial</groupId>
       <artifactId>sqlite-jdbc</artifactId>
       <version>${sqlite.version}</version>
-      <scope>provided</scope>
     </dependency>
   </dependencies>
   <build>
