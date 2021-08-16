@@ -61,4 +61,57 @@
        <match>\s*([A-Za-z0-9/ \(\)]+\S{1})\s+:\s+([A-Za-z0-9\(\)\[\] \:\-\.]+)\s*</match>
      </metadata>
   </parser>
+  <parser>
+     <check>
+       <command>sox --version</command>
+       <error-codes>126,127</error-codes>
+     </check>
+     <command>env FOO=${OUTPUT} sox --info ${INPUT}</command>
+     <mime-types>
+       <mime-type>audio/3gpp</mime-type>
+       <mime-type>audio/3gpp2</mime-type>
+       <mime-type>audio/aac</mime-type>
+       <mime-type>audio/ac3</mime-type>
+       <mime-type>audio/basic</mime-type>
+       <mime-type>audio/L24</mime-type>
+       <mime-type>audio/mid</mime-type>
+       <mime-type>audio/mpeg</mime-type>
+       <mime-type>audio/mpeg3</mime-type>
+       <mime-type>audio/x-mpeg-3</mime-type>
+       <mime-type>audio/mpeg4-generic</mime-type>
+       <mime-type>audio/mp4</mime-type>
+       <mime-type>audio/mp3</mime-type>
+       <mime-type>audio/x-aiff</mime-type>
+       <mime-type>audio/PCMA</mime-type>
+       <mime-type>audio/PCMA-WB</mime-type>
+       <mime-type>audio/PCMU</mime-type>
+       <mime-type>audio/PCMU-WB</mime-type>
+       <mime-type>audio/ogg</mime-type>
+       <mime-type>audio/vorbis</mime-type>
+       <mime-type>audio/vnd.wav</mime-type>
+       <mime-type>audio/vnd.wave</mime-type>
+       <mime-type>audio/vnd.rn-realaudio</mime-type>
+       <mime-type>audio/wav</mime-type>
+       <mime-type>audio/wave</mime-type>
+       <mime-type>audio/x-wav</mime-type>
+     </mime-types>
+     <metadata>
+       <!-- Channels       : 1 -->
+       <match key="xmpDM:audioChannelType">\s*Channels.*:\s+(\d+)\s*</match>
+       <!-- Sample Rate    : 44100 -->
+       <match key="xmpDM:audioSampleRate">\s*Sample Rate.*:\s+(\d+)\s*</match>
+       <!-- Precision      : 16-bit -->
+       <match key="xmpDM:audioSampleType">\s*Precision.*:\s+([\d\w-]+)\s*</match>
+       <!-- Duration       : 00:00:02.50 = 110298 samples = 187.582 CDDA sectors -->
+       <match key="xmpDM:duration">\s*Duration.*:\s+([\d:\.]+)\s*</match>
+       <!-- File Size      : 221k -->
+       <match key="File Size">\s*File Size.*:\s+([\d\w]+)\s*</match>
+       <!-- Bit Rate       : 706k -->
+       <match key="xmpDM:fileDataRate">\s*Bit Rate.*:\s+([\d\w]+)\s*</match>
+       <!-- Sample Encoding: 16-bit Signed Integer PCM -->
+       <match key="Sample Encoding">\s*Sample Encoding.*:\s+(.*)\s*</match>
+       <!--  Comment        : 'Comment=Processed by SoX' -->
+       <match key="xmpDM:logComment">\s*Comment.*:\s+(.*)\s*</match>
+     </metadata>
+  </parser>
 </external-parsers>
