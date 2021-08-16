@@ -1,5 +1,6 @@
-Release 2.0.1 - ???
-   MAJOR CHANGES in 2.0.1
+Release 2.1.0 - ???
+
+   MAJOR CHANGES in 2.1.0
 
    * Improved packaging for tika-parsers-extended. Use the tika-parser-scientific-package and
      tika-parser-sqlite3-package artifacts if you want fat jars with dependencies. (TIKA-3510)
@@ -10,6 +11,8 @@ Release 2.0.1 - ???
    * Change the default rendering strategy for PDFs from NO_TEXT to ALL (TIKA-3520).
 
    Other changes:
+   * Add tika-pipes support for Google Cloud Storage (TIKA-3524).
+
    * Fix markup ordering errors in xhtml output for ODT files (TIKA-2242).
 
    * Fix serialization of embedded docs in OpenSearch emitter
