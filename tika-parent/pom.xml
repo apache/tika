@@ -354,6 +354,7 @@
     <poi.version>4.1.2</poi.version>
     <quartz.version>2.3.2</quartz.version>
     <rome.version>1.16.0</rome.version>
+    <scm.version>1.11.3</scm.version>
     <sis.version>1.0</sis.version>
     <!-- we'll need to stay on 1.7 until we're java modularized ? -->
     <slf4j.version>1.7.32</slf4j.version>
@@ -556,10 +557,12 @@
           <dependency>
             <groupId>org.apache.maven.scm</groupId>
             <artifactId>maven-scm-provider-gitexe</artifactId>
+            <version>${scm.version}</version>
           </dependency>
           <dependency>
             <groupId>org.apache.maven.scm</groupId>
             <artifactId>maven-scm-api</artifactId>
+            <version>${scm.version}</version>
           </dependency>
         </dependencies>
       </plugin>
