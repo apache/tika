@@ -153,21 +153,31 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
 
             return sb.toString();
         } else {
-            String name = getName();
-            /*
-             * getName() may return a name with a suffix 'rtl' or 'ltr'. This cannot
-             * be used to open a charset (e.g. IBM424_rtl). The ending '_rtl' or 'ltr'
-             * should be stripped off before creating the string.
-             */
-            int startSuffix =
-                    !name.contains("_rtl") ? name.indexOf("_ltr") : name.indexOf("_rtl");
-            if (startSuffix > 0) {
-                name = name.substring(0, startSuffix);
-            }
+            String name = getNormalizedName();
             result = new String(fRawInput, name);
         }
         return result;
 
+    }
+
+    /**
+     * strips e.g. _rtl, _ltr off of charset names so that they can be used as a charset.
+     *
+     * @return
+     */
+    public String getNormalizedName() {
+        String name = getName();
+        /*
+         * getName() may return a name with a suffix 'rtl' or 'ltr'. This cannot
+         * be used to open a charset (e.g. IBM424_rtl). The ending '_rtl' or '_ltr'
+         * should be stripped off before creating the string.
+         */
+        int startSuffix =
+                !name.contains("_rtl") ? name.indexOf("_ltr") : name.indexOf("_rtl");
+        if (startSuffix > 0) {
+            name = name.substring(0, startSuffix);
+        }
+        return name;
     }
 
     /**
