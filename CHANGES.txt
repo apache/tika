@@ -1,4 +1,4 @@
-Release 2.1.0 - ???
+Release 2.1.0 - 08/17/2021
 
    MAJOR CHANGES in 2.1.0
 
@@ -11,6 +11,8 @@ Release 2.1.0 - ???
    * Change the default rendering strategy for PDFs from NO_TEXT to ALL (TIKA-3520).
 
    Other changes:
+   * Fixed bug in Icu4j's encoding detector where it would return non-standard
+     names for charsets, e.g. IBM424_rtl is now returned as IBM424 (TIKA-3516).
 
    * Add a simple UrlFetcher in tika-core as a basic alternative
      to tika-fetcher-http (TIKA-3527).
