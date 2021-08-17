@@ -1,6 +1,6 @@
 Release 2.1.0 - 08/17/2021
 
-   MAJOR CHANGES in 2.1.0
+   MAJOR CHANGES in 2.1.0:
 
    * Improved packaging for tika-parsers-extended. Use the tika-parser-scientific-package and
      tika-parser-sqlite3-package artifacts if you want fat jars with dependencies. (TIKA-3510)
