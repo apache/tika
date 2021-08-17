@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.io.PrintStream;
 
 import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
@@ -134,6 +135,7 @@ public class MockParserTest extends TikaTest {
     }
 
     @Test
+    @Disabled("maven doesn't like this one; occasionally crashes the forked jvm")
     public void testRealOOM() throws Exception {
         //Note: we're not actually testing the diff between fake and real oom
         //i.e. by creating a forked process and setting different -Xmx or
