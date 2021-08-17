@@ -11,6 +11,10 @@ Release 2.1.0 - ???
    * Change the default rendering strategy for PDFs from NO_TEXT to ALL (TIKA-3520).
 
    Other changes:
+
+   * Add a simple UrlFetcher in tika-core as a basic alternative
+     to tika-fetcher-http (TIKA-3527).
+
    * Add tika-pipes support for Google Cloud Storage (TIKA-3524).
 
    * Fix markup ordering errors in xhtml output for ODT files (TIKA-2242).
