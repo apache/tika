@@ -41,7 +41,7 @@ public class UrlFetcher extends AbstractFetcher {
                     "Please review the life decisions that led you to requesting " +
                     "a URL with this character in it.");
         }
-        if (fetchKey.toLowerCase(Locale.US).startsWith("file:")) {
+        if (fetchKey.toLowerCase(Locale.US).trim().startsWith("file:")) {
             throw new IllegalArgumentException(
                     "The UrlFetcher does not fetch from file shares; " +
                     "please use the FileSystemFetcher");
