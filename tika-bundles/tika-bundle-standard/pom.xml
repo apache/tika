@@ -24,12 +24,12 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-bundles</artifactId>
-    <version>2.1.0</version>
+    <version>2.1.1-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>tika-bundle-standard</artifactId>
-  <version>2.1.0</version>
+  <version>2.1.1-SNAPSHOT</version>
   <packaging>bundle</packaging>
   <name>Apache Tika OSGi standard bundle</name>
 
