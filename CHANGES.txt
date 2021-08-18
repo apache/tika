@@ -11,6 +11,10 @@ Release 2.1.0 - 08/17/2021
    * Change the default rendering strategy for PDFs from NO_TEXT to ALL (TIKA-3520).
 
    Other changes:
+
+   * Fixed bug that pointed to the wrong tessdata directory if the user specified
+     a tesseract path but not also a tessdata path (TIKA-3518).
+
    * Fixed bug in Icu4j's encoding detector where it would return non-standard
      names for charsets, e.g. IBM424_rtl is now returned as IBM424 (TIKA-3516).
 
