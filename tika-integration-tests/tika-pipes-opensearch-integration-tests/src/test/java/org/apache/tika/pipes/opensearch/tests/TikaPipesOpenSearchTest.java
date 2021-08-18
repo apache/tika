@@ -26,6 +26,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -62,6 +64,7 @@ public class TikaPipesOpenSearchTest {
     public GenericContainer<?> openSearchContainer =
             new GenericContainer<>(DockerImageName.parse(getOpenSearchImageName()))
                     .withExposedPorts(9200)
+                    .withStartupTimeout(Duration.of(180, ChronoUnit.SECONDS))
                     .withEnv("discovery.type", "single-node");
 
     public String getOpenSearchImageName() {
