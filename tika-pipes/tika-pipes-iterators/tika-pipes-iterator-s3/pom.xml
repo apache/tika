@@ -28,7 +28,7 @@
 
   <artifactId>tika-pipes-iterator-s3</artifactId>
 
-  <name>Apache Tika Fetch Iterator - S3</name>
+  <name>Apache Tika Pipes Iterator - S3</name>
   <url>https://tika.apache.org/</url>
 
   <dependencies>

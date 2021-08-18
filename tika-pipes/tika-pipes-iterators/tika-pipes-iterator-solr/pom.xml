@@ -28,7 +28,7 @@
 
   <artifactId>tika-pipes-iterator-solr</artifactId>
 
-  <name>Apache Tika Fetch Iterator - Solr</name>
+  <name>Apache Tika Pipes Iterator - Solr</name>
   <url>https://tika.apache.org/</url>
 
   <dependencies>

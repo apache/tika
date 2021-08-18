@@ -28,7 +28,7 @@
 
   <artifactId>tika-pipes-iterator-csv</artifactId>
 
-  <name>Apache Tika Fetch Iterator - CSV</name>
+  <name>Apache Tika Pipes Iterator - CSV</name>
   <url>https://tika.apache.org/</url>
 
   <dependencies>

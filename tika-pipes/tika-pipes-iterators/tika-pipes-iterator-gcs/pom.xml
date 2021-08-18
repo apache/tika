@@ -28,7 +28,7 @@
 
   <artifactId>tika-pipes-iterator-gcs</artifactId>
 
-  <name>Apache Tika Fetch Iterator - Google Cloud Storage</name>
+  <name>Apache Tika Pipes Iterator - Google Cloud Storage</name>
   <url>https://tika.apache.org/</url>
 
   <dependencies>

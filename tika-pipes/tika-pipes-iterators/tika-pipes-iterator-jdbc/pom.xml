@@ -28,7 +28,7 @@
 
   <artifactId>tika-pipes-iterator-jdbc</artifactId>
 
-  <name>Apache Tika Fetch Iterator - jdbc</name>
+  <name>Apache Tika Pipes Iterator - JDBC</name>
   <url>https://tika.apache.org/</url>
 
   <dependencies>
