@@ -155,7 +155,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
             env.put(TESSDATA_PREFIX, getTessdataPath());
         } else if (!StringUtils.isBlank(getTesseractPath())) {
             //adding tessdata is required for at least >= 4.x
-            env.put(TESSDATA_PREFIX, getTesseractPath() + File.separator + "tessdata");
+            env.put(TESSDATA_PREFIX, getTesseractPath() + "tessdata");
         }
     }
 
