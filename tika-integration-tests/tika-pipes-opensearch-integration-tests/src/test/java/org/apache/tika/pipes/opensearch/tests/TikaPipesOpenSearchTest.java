@@ -83,6 +83,7 @@ public class TikaPipesOpenSearchTest {
     @After
     public void tearDown() throws Exception {
         FileUtils.deleteDirectory(TEST_FILE_FOLDER);
+        openSearchContainer.close();
     }
 
     @Test
