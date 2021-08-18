@@ -630,7 +630,7 @@
         <artifactId>ossindex-maven-plugin</artifactId>
         <version>3.1.0</version>
         <configuration>
-          <fail>true</fail>
+          <fail>false</fail>
           <excludeCoordinates>
 <!--            <coordinate>            </coordinate> -->
           </excludeCoordinates>
