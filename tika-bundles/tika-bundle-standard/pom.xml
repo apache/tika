@@ -59,47 +59,11 @@
       <artifactId>pax-exam-junit4</artifactId>
       <version>${pax.exam.version}</version>
       <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.ops4j.base</groupId>
-          <artifactId>ops4j-base-store</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.ops4j.base</groupId>
-          <artifactId>ops4j-base-lang</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>junit</groupId>
-          <artifactId>junit</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.ops4j.pax.exam</groupId>
       <artifactId>pax-exam-container-native</artifactId>
       <version>${pax.exam.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.ops4j.base</groupId>
-          <artifactId>ops4j-base-util-property</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.ops4j.base</groupId>
-          <artifactId>ops4j-base-lang</artifactId>
-        </exclusion>
-      </exclusions>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.ops4j.base</groupId>
-      <artifactId>ops4j-base-util-property</artifactId>
-      <version>1.5.1</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.ops4j.base</groupId>
-      <artifactId>ops4j-base-lang</artifactId>
-      <version>1.5.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>

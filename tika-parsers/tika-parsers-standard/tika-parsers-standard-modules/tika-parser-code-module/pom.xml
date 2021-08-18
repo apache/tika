@@ -39,12 +39,6 @@
       <groupId>org.codelibs</groupId>
       <artifactId>jhighlight</artifactId>
       <version>${jhighlight.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-io</groupId>
-          <artifactId>commons-io</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.ccil.cowan.tagsoup</groupId>
@@ -66,27 +60,11 @@
       <groupId>com.epam</groupId>
       <artifactId>parso</artifactId>
       <version>${parso.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-api</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.tallison</groupId>
       <artifactId>jmatio</artifactId>
       <version>1.5</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-api</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
     </dependency>
   </dependencies>
 

@@ -47,12 +47,6 @@
       <groupId>org.apache.cxf</groupId>
       <artifactId>cxf-rt-rs-client</artifactId>
       <version>${cxf.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.glassfish.jaxb</groupId>
-          <artifactId>jaxb-runtime</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
 
     <!-- Test dependencies -->

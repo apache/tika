@@ -34,19 +34,6 @@
       <groupId>com.optimaize.languagedetector</groupId>
       <artifactId>language-detector</artifactId>
       <version>${optimaize.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>com.google.guava</groupId>
-          <artifactId>guava</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <!-- exclude and then add back in to avoid
-         conflicts with edu.ucar:cdm in tika-parsers -->
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>${guava.version}</version>
     </dependency>
 
     <!-- test dependencies -->
