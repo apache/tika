@@ -25,6 +25,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import javax.ws.rs.core.Response;
 
@@ -61,6 +62,7 @@ public class IntegrationTestBase extends TikaTest {
     static Path LOG_FILE;
     static Path STREAMS_DIR;
     private SecurityManager existingSecurityManager = null;
+    protected Process process = null;
 
     @BeforeAll
     public static void staticSetup() throws Exception {
@@ -101,9 +103,16 @@ public class IntegrationTestBase extends TikaTest {
     @AfterEach
     public void tearDown() throws Exception {
         System.setSecurityManager(existingSecurityManager);
+        if (process != null) {
+            process.destroyForcibly();
+            process.waitFor(30, TimeUnit.SECONDS);
+            if (process.isAlive()) {
+                throw new RuntimeException("process still alive!");
+            }
+        }
     }
 
-    public Process startProcess(String[] extraArgs) throws IOException {
+    public void startProcess(String[] extraArgs) throws IOException {
         String[] base = new String[]{"java", "-cp", System.getProperty("java.class.path"),
                 "org.apache.tika.server.core.TikaServerCli",};
         List<String> args = new ArrayList<>(Arrays.asList(base));
@@ -113,7 +122,7 @@ public class IntegrationTestBase extends TikaTest {
 //        pb.redirectInput(Files.createTempFile(STREAMS_DIR, "tika-stream-out", ".log").toFile());
         //      pb.redirectError(Files.createTempFile(STREAMS_DIR,
         //      "tika-stream-err", ".log").toFile());
-        return pb.start();
+        process = pb.start();
     }
 
     void awaitServerStartup() throws Exception {
