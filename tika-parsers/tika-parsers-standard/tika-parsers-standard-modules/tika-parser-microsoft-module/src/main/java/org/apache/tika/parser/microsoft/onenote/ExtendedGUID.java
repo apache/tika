@@ -19,7 +19,7 @@ package org.apache.tika.parser.microsoft.onenote;
 import java.util.Locale;
 import java.util.Objects;
 
-class ExtendedGUID implements Comparable<ExtendedGUID> {
+public class ExtendedGUID implements Comparable<ExtendedGUID> {
     GUID guid;
     long n;
 
