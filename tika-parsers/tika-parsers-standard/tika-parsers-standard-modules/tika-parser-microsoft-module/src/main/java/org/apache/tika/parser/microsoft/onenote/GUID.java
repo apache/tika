@@ -23,7 +23,7 @@ import java.util.Locale;
 
 import org.apache.tika.utils.StringUtils;
 
-class GUID implements Comparable<GUID> {
+public class GUID implements Comparable<GUID> {
     int[] guid;
 
     public GUID(int[] guid) {
@@ -34,7 +34,7 @@ class GUID implements Comparable<GUID> {
      * Converts a GUID of format: {AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE} (in bytes) to a GUID
      * object.
      *
-     * @param guid The bytes that contai  string in UTF-16 format of {AAAAAAAA-BBBB-CCCC-DDDD
+     * @param guid The bytes that contains string in UTF-16 format of {AAAAAAAA-BBBB-CCCC-DDDD
      *             -EEEEEEEEEEEE}
      * @return GUID object parsed from guid bytes.
      */
