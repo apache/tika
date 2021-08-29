@@ -122,46 +122,47 @@ public class ObjectGroupDataElementData extends DataElementData
             {
                 if (node instanceof IntermediateNodeObject)
                 {
+                    IntermediateNodeObject intermediateNodeObject = (IntermediateNodeObject)node; 
                     ObjectGroupDataElementData data = new ObjectGroupDataElementData();
-                    data.ObjectGroupDeclarations.ObjectDeclarationList.Add(this.CreateObjectDeclare(node));
-                    data.ObjectGroupData.ObjectGroupObjectDataList.Add(this.CreateObjectData((IntermediateNodeObject)node));
+                    data.ObjectGroupDeclarations.ObjectDeclarationList.add(this.CreateObjectDeclare(node));
+                    data.ObjectGroupData.ObjectGroupObjectDataList.add(this.CreateObjectData((IntermediateNodeObject)node));
 
-                    dataElements.Add(new DataElement(DataElementType.ObjectGroupDataElementData, data));
+                    dataElements.add(new DataElement(DataElementType.ObjectGroupDataElementData, data));
 
-                    foreach (LeafNodeObject child in (node as IntermediateNodeObject).IntermediateNodeObjectList)
+                    for (LeafNodeObject child : intermediateNodeObject.IntermediateNodeObjectList)
                     {
-                        this.TravelNodeObject(child, ref dataElements);
+                        this.TravelNodeObject(child, dataElements);
                     }
                 }
-                else if (node is LeafNodeObject)
+                else if (node instanceof LeafNodeObject)
                 {
-                    LeafNodeObject intermediateNode = node as LeafNodeObject;
+                    LeafNodeObject intermediateNode = (LeafNodeObject)node;
 
                     ObjectGroupDataElementData data = new ObjectGroupDataElementData();
-                    data.ObjectGroupDeclarations.ObjectDeclarationList.Add(this.CreateObjectDeclare(node));
-                    data.ObjectGroupData.ObjectGroupObjectDataList.Add(this.CreateObjectData(intermediateNode));
+                    data.ObjectGroupDeclarations.ObjectDeclarationList.add(this.CreateObjectDeclare(node));
+                    data.ObjectGroupData.ObjectGroupObjectDataList.add(this.CreateObjectData(intermediateNode));
 
                     if (intermediateNode.DataNodeObjectData != null)
                     {
-                        data.ObjectGroupDeclarations.ObjectDeclarationList.Add(this.CreateObjectDeclare(intermediateNode.DataNodeObjectData));
-                        data.ObjectGroupData.ObjectGroupObjectDataList.Add(this.CreateObjectData(intermediateNode.DataNodeObjectData));
-                        dataElements.Add(new DataElement(DataElementType.ObjectGroupDataElementData, data));
+                        data.ObjectGroupDeclarations.ObjectDeclarationList.add(this.CreateObjectDeclare(intermediateNode.DataNodeObjectData));
+                        data.ObjectGroupData.ObjectGroupObjectDataList.add(this.CreateObjectData(intermediateNode.DataNodeObjectData));
+                        dataElements.add(new DataElement(DataElementType.ObjectGroupDataElementData, data));
                         return;
                     }
 
                     if (intermediateNode.DataNodeObjectData == null && intermediateNode.IntermediateNodeObjectList != null)
                     {
-                        dataElements.Add(new DataElement(DataElementType.ObjectGroupDataElementData, data));
+                        dataElements.add(new DataElement(DataElementType.ObjectGroupDataElementData, data));
 
-                        foreach (LeafNodeObject child in intermediateNode.IntermediateNodeObjectList)
+                        for (LeafNodeObject child : intermediateNode.IntermediateNodeObjectList)
                         {
-                            this.TravelNodeObject(child, ref dataElements);
+                            this.TravelNodeObject(child, dataElements);
                         }
 
                         return;
                     }
                    
-                    throw new System.InvalidOperationException("The DataNodeObjectData and IntermediateNodeObjectList properties in LeafNodeObjectData type cannot be null in the same time.");
+                    throw new RuntimeException("The DataNodeObjectData and IntermediateNodeObjectList properties in LeafNodeObjectData type cannot be null in the same time.");
                 }
             }
 
@@ -175,10 +176,10 @@ public class ObjectGroupDataElementData extends DataElementData
                 ObjectGroupObjectDeclare objectGroupObjectDeclare = new ObjectGroupObjectDeclare();
 
                 objectGroupObjectDeclare.ObjectExtendedGUID = node.ExGuid;
-                objectGroupObjectDeclare.ObjectPartitionID = new Compact64bitInt(1u);
-                objectGroupObjectDeclare.CellReferencesCount = new Compact64bitInt(0u);
-                objectGroupObjectDeclare.ObjectReferencesCount = new Compact64bitInt(0u);
-                objectGroupObjectDeclare.ObjectDataSize = new Compact64bitInt((long)node.GetContent().Count);
+                objectGroupObjectDeclare.ObjectPartitionID = new Compact64bitInt(1);
+                objectGroupObjectDeclare.CellReferencesCount = new Compact64bitInt(0);
+                objectGroupObjectDeclare.ObjectReferencesCount = new Compact64bitInt(0);
+                objectGroupObjectDeclare.ObjectDataSize = new Compact64bitInt(node.GetContent().size());
 
                 return objectGroupObjectDeclare;
             }
@@ -193,10 +194,10 @@ public class ObjectGroupDataElementData extends DataElementData
                 ObjectGroupObjectDeclare objectGroupObjectDeclare = new ObjectGroupObjectDeclare();
 
                 objectGroupObjectDeclare.ObjectExtendedGUID = node.ExGuid;
-                objectGroupObjectDeclare.ObjectPartitionID = new Compact64bitInt(1u);
-                objectGroupObjectDeclare.CellReferencesCount = new Compact64bitInt(0u);
-                objectGroupObjectDeclare.ObjectReferencesCount = new Compact64bitInt(1u);
-                objectGroupObjectDeclare.ObjectDataSize = new Compact64bitInt((long)node.ObjectData.LongLength);
+                objectGroupObjectDeclare.ObjectPartitionID = new Compact64bitInt(1);
+                objectGroupObjectDeclare.CellReferencesCount = new Compact64bitInt(0);
+                objectGroupObjectDeclare.ObjectReferencesCount = new Compact64bitInt(1);
+                objectGroupObjectDeclare.ObjectDataSize = new Compact64bitInt(node.ObjectData.length);
 
                 return objectGroupObjectDeclare;
             }
@@ -210,12 +211,12 @@ public class ObjectGroupDataElementData extends DataElementData
             {
                 ObjectGroupObjectData objectData = new ObjectGroupObjectData();
 
-                objectData.CellIDArray = new CellIDArray(0u, null);
+                objectData.cellIDArray = new CellIDArray(0, null);
 
                 List<ExGuid> extendedGuidList = new ArrayList<ExGuid>();
-                foreach (LeafNodeObject child in node.IntermediateNodeObjectList)
+                for (LeafNodeObject child : node.IntermediateNodeObjectList)
                 {
-                    extendedGuidList.Add(child.ExGuid);
+                    extendedGuidList.add(child.ExGuid);
                 }
 
                 objectData.ObjectExGUIDArray = new ExGUIDArray(extendedGuidList);
@@ -233,18 +234,18 @@ public class ObjectGroupDataElementData extends DataElementData
             {
                 ObjectGroupObjectData objectData = new ObjectGroupObjectData();
 
-                objectData.CellIDArray = new CellIDArray(0u, null);
+                objectData.cellIDArray = new CellIDArray(0, null);
                 List<ExGuid> extendedGuidList = new ArrayList<ExGuid>();
 
                 if (node.DataNodeObjectData != null)
                 {
-                    extendedGuidList.Add(node.DataNodeObjectData.ExGuid);
+                    extendedGuidList.add(node.DataNodeObjectData.ExGuid);
                 }
                 else if (node.IntermediateNodeObjectList != null)
                 {
-                    foreach (LeafNodeObject child in node.IntermediateNodeObjectList)
+                    for (LeafNodeObject child : node.IntermediateNodeObjectList)
                     {
-                        extendedGuidList.Add(child.ExGuid);
+                        extendedGuidList.add(child.ExGuid);
                     }
                 }
 
@@ -262,9 +263,9 @@ public class ObjectGroupDataElementData extends DataElementData
             private ObjectGroupObjectData CreateObjectData(DataNodeObjectData node)
             {
                 ObjectGroupObjectData objectData = new ObjectGroupObjectData();
-                objectData.CellIDArray = new CellIDArray(0u, null);
-                objectData.ObjectExGUIDArray = new ExGUIDArray(new ArrayList<ExGuid>());
-                objectData.Data = new BinaryItem(node.ObjectData);
+                objectData.cellIDArray = new CellIDArray(0, null);
+                objectData.ObjectExGUIDArray = new ExGUIDArray(new ArrayList<>());
+                objectData.Data = new BinaryItem(ByteUtil.toListOfByte(node.ObjectData));
                 return objectData;
             }
         }

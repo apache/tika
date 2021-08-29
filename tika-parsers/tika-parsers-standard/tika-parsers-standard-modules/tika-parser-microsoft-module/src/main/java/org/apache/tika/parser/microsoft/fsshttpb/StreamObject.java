@@ -46,7 +46,7 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
     static {
         streamObjectTypeMapping = new HashMap<>();
         try {
-            for (StreamObjectTypeHeaderStart value extends StreamObjectTypeHeaderStart.values()) {
+            for (StreamObjectTypeHeaderStart value : StreamObjectTypeHeaderStart.values()) {
                 streamObjectTypeMapping.put(value,
                         Class.forName(StreamObject.class.getPackage().getName() + "." + value.name()));
             }
@@ -202,14 +202,14 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
 
         int lengthOfItems = this.SerializeItemsToByteList(byteList);
 
-        StreamObjectHeaderStart header;
+        AtomicReference<StreamObjectHeaderStart> header = new AtomicReference<>();
         if (this.streamObjectType.getIntVal() <= 0x3F && lengthOfItems <= 127) {
-            header = new StreamObjectHeaderStart16bit(this.streamObjectType, lengthOfItems);
+            header.set(new StreamObjectHeaderStart16bit(this.streamObjectType, lengthOfItems));
         } else {
-            header = new StreamObjectHeaderStart32bit(this.streamObjectType, lengthOfItems);
+            header.set(new StreamObjectHeaderStart32bit(this.streamObjectType, lengthOfItems));
         }
 
-        byteList.addAll(0, header.SerializeToByteList());
+        byteList.addAll(0, header.get().SerializeToByteList());
 
         if (compoundTypes.contains(this.streamObjectType)) {
             if (this.streamObjectType.getIntVal() <= 0x3F) {

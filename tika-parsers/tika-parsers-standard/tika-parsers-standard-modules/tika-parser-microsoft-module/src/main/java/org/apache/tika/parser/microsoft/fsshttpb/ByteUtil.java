@@ -1,5 +1,6 @@
 package org.apache.tika.parser.microsoft.fsshttpb;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public final class ByteUtil {
@@ -9,5 +10,13 @@ public final class ByteUtil {
             res[i] = bytes.get(i);
         }
         return res;
+    }
+
+    public static List<Byte> toListOfByte(byte[] bytes) {
+        List<Byte> listOfByte = new ArrayList<>();
+        for (byte b : bytes) {
+            listOfByte.add(b);
+        }
+        return listOfByte;
     }
 }

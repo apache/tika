@@ -20,7 +20,7 @@ public class DataElement extends StreamObject {
             dataElementDataTypeMapping = new HashMap<>();
             for (DataElementType value : DataElementType.values()) {
                 dataElementDataTypeMapping.put(value,
-                        Class.forName("org.apache.tika.parser.microsoft.fsshttpb." + value.name()));
+                        Class.forName(DataElement.class.getPackage().getName() + "." + value.name()));
             }
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("Could not initialize data element types", e);

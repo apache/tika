@@ -77,7 +77,7 @@ public class SerialNumber extends BasicObject {
         int type = bitField.ReadInt32(8);
 
         if (type == 0) {
-            this.guid = GuidUtil.emptyGuid()
+            this.guid = GuidUtil.emptyGuid();
             this.type = 0;
 
             return 1;

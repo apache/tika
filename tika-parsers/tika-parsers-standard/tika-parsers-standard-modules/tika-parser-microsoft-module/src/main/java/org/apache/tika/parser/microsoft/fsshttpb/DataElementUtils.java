@@ -8,8 +8,6 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.poi.openxml4j.exceptions.InvalidOperationException;
-import org.apache.tika.parser.microsoft.onenote.GUID;
-import sun.security.x509.SerialNumber;
 
 public class DataElementUtils {
     public static final UUID RootExGuid = UUID.fromString("84DEFAB9-AAA3-4A0D-A3A8-520C77AC7073");
@@ -18,25 +16,31 @@ public class DataElementUtils {
 
     /**
      * This method is used to build a list of data elements to represent a file.
-     * @param fileContent The file content in byte array form.
-     * @param storageIndexExGuid  Reference set to the storage index ex guid.
+     *
+     * @param fileContent        The file content in byte array form.
+     * @param storageIndexExGuid Reference set to the storage index ex guid.
      * @return List of DataElement objects that are stored in the file content.
      */
     public static List<DataElement> BuildDataElements(byte[] fileContent, AtomicReference<ExGuid> storageIndexExGuid) {
         List<ExGuid> objectDataExGuidList = new ArrayList<>();
         AtomicReference<ExGuid> rootNodeObjectExGuid = new AtomicReference<>();
-        List<DataElement> dataElementList = CreateObjectGroupDataElement(fileContent, rootNodeObjectExGuid, objectDataExGuidList);
+        List<DataElement> dataElementList =
+                CreateObjectGroupDataElement(fileContent, rootNodeObjectExGuid, objectDataExGuidList);
 
         ExGuid baseRevisionID = new ExGuid(0, GuidUtil.emptyGuid());
         Map<ExGuid, ExGuid> revisionMapping = new HashMap<>();
         AtomicReference<ExGuid> currentRevisionID = new AtomicReference<>();
-        dataElementList.add(CreateRevisionManifestDataElement(rootNodeObjectExGuid.get(), baseRevisionID, objectDataExGuidList, revisionMapping, currentRevisionID));
+        dataElementList.add(
+                CreateRevisionManifestDataElement(rootNodeObjectExGuid.get(), baseRevisionID, objectDataExGuidList,
+                        revisionMapping, currentRevisionID));
 
         Map<CellID, ExGuid> cellIDMapping = new HashMap<>();
         dataElementList.add(CreateCellMainifestDataElement(currentRevisionID.get(), cellIDMapping));
 
         dataElementList.add(CreateStorageManifestDataElement(cellIDMapping));
-        dataElementList.add(CreateStorageIndexDataElement(dataElementList.get(dataElementList.size() - 1).dataElementExGuid, cellIDMapping, revisionMapping));
+        dataElementList.add(
+                CreateStorageIndexDataElement(dataElementList.get(dataElementList.size() - 1).dataElementExGuid,
+                        cellIDMapping, revisionMapping));
 
         storageIndexExGuid.set(dataElementList.get(dataElementList.size() - 1).dataElementExGuid);
         return dataElementList;
@@ -44,13 +48,15 @@ public class DataElementUtils {
 
     /**
      * This method is used to create object group data/blob element list.
-     * @param fileContent The file content in byte array format.
-     * @param rootNodeExGuid Output parameter to represent the root node extended GUID.
+     *
+     * @param fileContent          The file content in byte array format.
+     * @param rootNodeExGuid       Output parameter to represent the root node extended GUID.
      * @param objectDataExGuidList Input/Output parameter to represent the list of extended GUID for the data object data.
      * @return Return the list of data element which will represent the file content.
      */
-    public static List<DataElement> CreateObjectGroupDataElement(byte[] fileContent, AtomicReference<ExGuid> rootNodeExGuid, List<ExGuid> objectDataExGuidList)
-    {
+    public static List<DataElement> CreateObjectGroupDataElement(byte[] fileContent,
+                                                                 AtomicReference<ExGuid> rootNodeExGuid,
+                                                                 List<ExGuid> objectDataExGuidList) {
         NodeObject rootNode = new IntermediateNodeObject.RootNodeObjectBuilder().Build(fileContent);
 
         // Storage the root object node ExGuid
@@ -58,18 +64,19 @@ public class DataElementUtils {
         List<DataElement> elements = new ObjectGroupDataElementData.Builder().Build(rootNode);
         elements.stream()
                 .filter(element -> element.dataElementType == DataElementType.ObjectGroupDataElementData)
-                        .forEach(element -> objectDataExGuidList.add(element.dataElementExGuid));
+                .forEach(element -> objectDataExGuidList.add(element.dataElementExGuid));
 
         return elements;
     }
 
     /**
      * This method is used to create the revision manifest data element.
-     * @param rootObjectExGuid Specify the root node object extended GUID.
-     * @param baseRevisionID Specify the base revision Id.
+     *
+     * @param rootObjectExGuid               Specify the root node object extended GUID.
+     * @param baseRevisionID                 Specify the base revision Id.
      * @param refferenceObjectDataExGuidList Specify the reference object data extended list.
-     * @param currentRevisionID Input/output parameter to represent the mapping of revision manifest.
-     * @param currentRevisionID Output parameter to represent the revision GUID.
+     * @param currentRevisionID              Input/output parameter to represent the mapping of revision manifest.
+     * @param currentRevisionID              Output parameter to represent the revision GUID.
      * @return Return the revision manifest data element.
      */
     public static DataElement CreateRevisionManifestDataElement(ExGuid rootObjectExGuid,
@@ -78,60 +85,62 @@ public class DataElementUtils {
                                                                 Map<ExGuid, ExGuid> revisionMapping,
                                                                 AtomicReference<ExGuid> currentRevisionID) {
         RevisionManifestDataElementData data = new RevisionManifestDataElementData();
-        data.RevisionManifest.RevisionID = new ExGuid(1u, UUID.randomUUID());
+        data.RevisionManifest.RevisionID = new ExGuid(1, UUID.randomUUID());
         data.RevisionManifest.BaseRevisionID = new ExGuid(baseRevisionID);
 
         // Set the root object data ExGuid
-        data.RevisionManifestRootDeclareList.Add(new RevisionManifestRootDeclare() { RootExGuid = new ExGuid(2u, RootExGuid), ObjectExGuid = new ExGuid(rootObjectExGuid) });
+        RevisionManifestRootDeclare revisionManifestRootDeclare = new RevisionManifestRootDeclare();
+        revisionManifestRootDeclare.RootExGuid = new ExGuid(2, RootExGuid);
+        revisionManifestRootDeclare.ObjectExGuid = new ExGuid(rootObjectExGuid);
+        data.RevisionManifestRootDeclareList.add(revisionManifestRootDeclare);
 
         // Set all the reference object data
-        if (refferenceObjectDataExGuidList != null)
-        {
-            foreach (ExGuid dataGuid in refferenceObjectDataExGuidList)
-            {
-                data.RevisionManifestObjectGroupReferencesList.Add(new RevisionManifestObjectGroupReferences(dataGuid));
+        if (refferenceObjectDataExGuidList != null) {
+            for (ExGuid dataGuid : refferenceObjectDataExGuidList) {
+                data.RevisionManifestObjectGroupReferencesList.add(new RevisionManifestObjectGroupReferences(dataGuid));
             }
         }
 
         DataElement dataElement = new DataElement(DataElementType.RevisionManifestDataElementData, data);
-        revisionMapping.Add(data.RevisionManifest.RevisionID, dataElement.DataElementExGuid);
-        currentRevisionID = data.RevisionManifest.RevisionID;
+        revisionMapping.put(data.RevisionManifest.RevisionID, dataElement.dataElementExGuid);
+        currentRevisionID.set(data.RevisionManifest.RevisionID);
         return dataElement;
     }
 
     /**
      * This method is used to create the cell manifest data element.
-     * @param revisionId Specify the revision GUID.
+     *
+     * @param revisionId    Specify the revision GUID.
      * @param cellIDMapping Input/output parameter to represent the mapping of cell manifest.
      * @return Return the cell manifest data element.
      */
-    public static DataElement CreateCellMainifestDataElement(ExGuid revisionId, Map<CellID, ExGuid> cellIDMapping)
-    {
+    public static DataElement CreateCellMainifestDataElement(ExGuid revisionId, Map<CellID, ExGuid> cellIDMapping) {
         CellManifestDataElementData data = new CellManifestDataElementData();
-        data.CellManifestCurrentRevision = new CellManifestCurrentRevision() { CellManifestCurrentRevisionExGuid = new ExGuid(revisionId) };
+        data.cellManifestCurrentRevision = new CellManifestCurrentRevision();
+        data.cellManifestCurrentRevision.cellManifestCurrentRevisionExGuid = new ExGuid(revisionId);
         DataElement dataElement = new DataElement(DataElementType.CellManifestDataElementData, data);
 
-        CellID cellID = new CellID(new ExGuid(1u, RootExGuid), new ExGuid(1u, CellSecondExGuid));
-        cellIDMapping.Add(cellID, dataElement.DataElementExGuid);
+        CellID cellID = new CellID(new ExGuid(1, RootExGuid), new ExGuid(1, CellSecondExGuid));
+        cellIDMapping.put(cellID, dataElement.dataElementExGuid);
         return dataElement;
     }
 
     /**
      * This method is used to create the storage manifest data element.
+     *
      * @param cellIDMapping Specify the mapping of cell manifest.
      * @return The storage manifest data element.
      */
-    public static DataElement CreateStorageManifestDataElement(Map<CellID, ExGuid> cellIDMapping)
-    {
+    public static DataElement CreateStorageManifestDataElement(Map<CellID, ExGuid> cellIDMapping) {
         StorageManifestDataElementData data = new StorageManifestDataElementData();
-        data.StorageManifestSchemaGUID = new StorageManifestSchemaGUID() { GUID = SchemaGuid };
+        data.storageManifestSchemaGUID = new StorageManifestSchemaGUID();
+        data.storageManifestSchemaGUID.guid = SchemaGuid;
 
-        foreach (KeyValuePair<CellID, ExGuid> kv in cellIDMapping)
-        {
+        for (Map.Entry<CellID, ExGuid> kv : cellIDMapping.entrySet()) {
             StorageManifestRootDeclare manifestRootDeclare = new StorageManifestRootDeclare();
-            manifestRootDeclare.RootExGuid = new ExGuid(2u, RootExGuid);
-            manifestRootDeclare.CellID = new CellID(kv.Key);
-            data.StorageManifestRootDeclareList.Add(manifestRootDeclare);
+            manifestRootDeclare.RootExGUID = new ExGuid(2, RootExGuid);
+            manifestRootDeclare.cellID = new CellID(kv.getKey());
+            data.StorageManifestRootDeclareList.add(manifestRootDeclare);
         }
 
         return new DataElement(DataElementType.StorageManifestDataElementData, data);
@@ -139,35 +148,37 @@ public class DataElementUtils {
 
     /**
      * This method is used to create the storage index data element.
-     * @param manifestExGuid Specify the storage manifest data element extended GUID.
-     * @param cellIDMappings Specify the mapping of cell manifest.
+     *
+     * @param manifestExGuid     Specify the storage manifest data element extended GUID.
+     * @param cellIDMappings     Specify the mapping of cell manifest.
      * @param revisionIDMappings Specify the mapping of revision manifest.
      * @return The storage index data element.
      */
-    public static DataElement CreateStorageIndexDataElement(ExGuid manifestExGuid, Map<CellID, ExGuid> cellIDMappings, Map<ExGuid, ExGuid> revisionIDMappings)
-    {
+    public static DataElement CreateStorageIndexDataElement(ExGuid manifestExGuid, Map<CellID, ExGuid> cellIDMappings,
+                                                            Map<ExGuid, ExGuid> revisionIDMappings) {
         StorageIndexDataElementData data = new StorageIndexDataElementData();
 
         data.StorageIndexManifestMapping = new StorageIndexManifestMapping();
         data.StorageIndexManifestMapping.ManifestMappingExGuid = new ExGuid(manifestExGuid);
-        data.StorageIndexManifestMapping.ManifestMappingSerialNumber = new SerialNumber(System.UUID.randomUUID(), SequenceNumberGenerator.GetCurrentSerialNumber());
+        data.StorageIndexManifestMapping.ManifestMappingSerialNumber =
+                new SerialNumber(UUID.randomUUID(), SequenceNumberGenerator.GetCurrentSerialNumber());
 
-        foreach (KeyValuePair<CellID, ExGuid> kv in cellIDMappings)
-        {
+        for (Map.Entry<CellID, ExGuid> kv : cellIDMappings.entrySet()) {
             StorageIndexCellMapping cellMapping = new StorageIndexCellMapping();
-            cellMapping.CellID = kv.Key;
-            cellMapping.CellMappingExGuid = kv.Value;
-            cellMapping.CellMappingSerialNumber = new SerialNumber(System.UUID.randomUUID(), SequenceNumberGenerator.GetCurrentSerialNumber());
-            data.StorageIndexCellMappingList.Add(cellMapping);
+            cellMapping.CellID = kv.getKey();
+            cellMapping.CellMappingExGuid = kv.getValue();
+            cellMapping.CellMappingSerialNumber =
+                    new SerialNumber(UUID.randomUUID(), SequenceNumberGenerator.GetCurrentSerialNumber());
+            data.StorageIndexCellMappingList.add(cellMapping);
         }
 
-        foreach (KeyValuePair<ExGuid, ExGuid> kv in revisionIDMappings)
-        {
+        for (Map.Entry<ExGuid, ExGuid> kv : revisionIDMappings.entrySet()) {
             StorageIndexRevisionMapping revisionMapping = new StorageIndexRevisionMapping();
-            revisionMapping.RevisionExGuid = kv.Key;
-            revisionMapping.RevisionMappingExGuid = kv.Value;
-            revisionMapping.RevisionMappingSerialNumber = new SerialNumber(UUID.randomUUID(), SequenceNumberGenerator.GetCurrentSerialNumber());
-            data.StorageIndexRevisionMappingList.Add(revisionMapping);
+            revisionMapping.RevisionExGuid = kv.getKey();
+            revisionMapping.RevisionMappingExGuid = kv.getValue();
+            revisionMapping.RevisionMappingSerialNumber =
+                    new SerialNumber(UUID.randomUUID(), SequenceNumberGenerator.GetCurrentSerialNumber());
+            data.StorageIndexRevisionMappingList.add(revisionMapping);
         }
 
         return new DataElement(DataElementType.StorageIndexDataElementData, data);
@@ -180,21 +191,26 @@ public class DataElementUtils {
     /// <param name="storageIndexExGuid">Specify the storage index extended GUID.</param>
     /// <param name="rootExGuid">Output parameter to represent the root node object.</param>
     /// <returns>Return the list of object group data elements.</returns>
-    public static List<ObjectGroupDataElementData> GetDataObjectDataElementData(List<DataElement> dataElements, ExGuid storageIndexExGuid, AtomicReference<ExGuid> rootExGuid)
-    {
+    public static List<ObjectGroupDataElementData> GetDataObjectDataElementData(List<DataElement> dataElements,
+                                                                                ExGuid storageIndexExGuid,
+                                                                                AtomicReference<ExGuid> rootExGuid) {
         AtomicReference<ExGuid> manifestMappingGuid = new AtomicReference<>();
         AtomicReference<HashMap<CellID, ExGuid>> cellIDMappings = new AtomicReference<>();
         AtomicReference<HashMap<ExGuid, ExGuid>> revisionIDMappings = new AtomicReference<>();
-        AnalyzeStorageIndexDataElement(dataElements, storageIndexExGuid, manifestMappingGuid, cellIDMappings, revisionIDMappings);
-        StorageManifestDataElementData manifestData = GetStorageManifestDataElementData(dataElements, manifestMappingGuid);
-        if (manifestData == null)
-        {
-            throw new InvalidOperationException("Cannot find the storage manifest data element with ExGuid " + manifestMappingGuid.GUID.ToString());
+        AnalyzeStorageIndexDataElement(dataElements, storageIndexExGuid, manifestMappingGuid, cellIDMappings,
+                revisionIDMappings);
+        StorageManifestDataElementData manifestData =
+                GetStorageManifestDataElementData(dataElements, manifestMappingGuid.get());
+        if (manifestData == null) {
+            throw new InvalidOperationException("Cannot find the storage manifest data element with ExGuid " +
+                    manifestMappingGuid.get().guid.toString());
         }
 
-        CellManifestDataElementData cellData = GetCellManifestDataElementData(dataElements, manifestData, cellIDMappings);
-        RevisionManifestDataElementData revisionData = GetRevisionManifestDataElementData(dataElements, cellData, revisionIDMappings);
-        return GetDataObjectDataElementData(dataElements, revisionData, out rootExGuid);
+        CellManifestDataElementData cellData =
+                GetCellManifestDataElementData(dataElements, manifestData, cellIDMappings.get());
+        RevisionManifestDataElementData revisionData =
+                GetRevisionManifestDataElementData(dataElements, cellData, revisionIDMappings.get());
+        return GetDataObjectDataElementData(dataElements, revisionData, rootExGuid);
     }
 
     /// <summary>
@@ -203,66 +219,66 @@ public class DataElementUtils {
     /// <param name="dataElements">Specify the data elements list.</param>
     /// <param name="storageIndexExGuid">Specify the storage index extended GUID.</param>
     /// <returns>If the data elements start with the specified storage index extended GUID are complete, return true. Otherwise return false.</returns>
-    public static boolean TryAnalyzeWhetherFullDataElementList(List<DataElement> dataElements, ExGuid storageIndexExGuid)
-    {
-        ExGuid manifestMappingGuid;
-        HashMap<CellID, ExGuid> cellIDMappings;
-        HashMap<ExGuid, ExGuid> revisionIDMappings;
-        if (!AnalyzeStorageIndexDataElement(dataElements, storageIndexExGuid, out manifestMappingGuid, out cellIDMappings, out revisionIDMappings))
-        {
+    public static boolean TryAnalyzeWhetherFullDataElementList(List<DataElement> dataElements,
+                                                               ExGuid storageIndexExGuid) {
+        AtomicReference<ExGuid> manifestMappingGuid = new AtomicReference<>();
+        AtomicReference<HashMap<CellID, ExGuid>> cellIDMappings = new AtomicReference<>();
+        AtomicReference<HashMap<ExGuid, ExGuid>> revisionIDMappings = new AtomicReference<>();
+        if (!AnalyzeStorageIndexDataElement(dataElements, storageIndexExGuid, manifestMappingGuid, cellIDMappings,
+                revisionIDMappings)) {
             return false;
         }
 
-        if (cellIDMappings.Count == 0)
-        {
+        if (cellIDMappings.get().size() == 0) {
             return false;
         }
 
-        if (revisionIDMappings.Count == 0)
-        {
+        if (revisionIDMappings.get().size() == 0) {
             return false;
         }
 
-        StorageManifestDataElementData manifestData = GetStorageManifestDataElementData(dataElements, manifestMappingGuid);
-        if (manifestData == null)
-        {
+        StorageManifestDataElementData manifestData =
+                GetStorageManifestDataElementData(dataElements, manifestMappingGuid.get());
+        if (manifestData == null) {
             return false;
         }
 
-        foreach (StorageManifestRootDeclare kv in manifestData.StorageManifestRootDeclareList)
-        {
-            if (!cellIDMappings.ContainsKey(kv.CellID))
-            {
-                throw new InvalidOperationException(String.format("Cannot fin the Cell ID %s in the cell id mapping", kv.CellID.ToString()));
+        for (StorageManifestRootDeclare kv : manifestData.StorageManifestRootDeclareList) {
+            if (!cellIDMappings.get().containsKey(kv.cellID)) {
+                throw new InvalidOperationException(
+                        String.format("Cannot find the Cell ID %s in the cell id mapping", kv.cellID.toString()));
             }
 
-            ExGuid cellMappingID = cellIDMappings[kv.CellID];
-            DataElement dataElement = dataElements.Find(element => element.DataElementExtendedGUID.Equals(cellMappingID));
-            if (dataElement == null)
-            {
+            ExGuid cellMappingID = cellIDMappings.get().get(kv.cellID);
+            DataElement dataElement =
+                    dataElements.stream().filter(element -> element.dataElementExGuid.equals(cellMappingID)).findAny()
+                            .orElse(null);
+            if (dataElement == null) {
                 return false;
             }
 
-            CellManifestDataElementData cellData = dataElement.GetData<CellManifestDataElementData>();
-            ExGuid currentRevisionExGuid = cellData.CellManifestCurrentRevision.CellManifestCurrentRevisionExtendedGUID;
-            if (!revisionIDMappings.ContainsKey(currentRevisionExGuid))
-            {
-                throw new InvalidOperationException(String.format("Cannot find the revision id %s in the revisionMapping", currentRevisionExGuid.ToString()));
+            CellManifestDataElementData cellData = dataElement.GetData(CellManifestDataElementData.class);
+            ExGuid currentRevisionExGuid = cellData.cellManifestCurrentRevision.cellManifestCurrentRevisionExGuid;
+            if (!revisionIDMappings.get().containsKey(currentRevisionExGuid)) {
+                throw new InvalidOperationException(
+                        String.format("Cannot find the revision id %s in the revisionMapping",
+                                currentRevisionExGuid.toString()));
             }
 
-            ExGuid revisionMapping = revisionIDMappings[currentRevisionExGuid];
-            dataElement = dataElements.Find(element => element.DataElementExtendedGUID.Equals(revisionMapping));
-            if (dataElement == null)
-            {
+            ExGuid revisionMapping = revisionIDMappings.get().get(currentRevisionExGuid);
+            dataElement =
+                    dataElements.stream().filter(element -> element.dataElementExGuid.equals(revisionMapping)).findAny()
+                            .orElse(null);
+            if (dataElement == null) {
                 return false;
             }
 
-            RevisionManifestDataElementData revisionData = dataElement.GetData<RevisionManifestDataElementData>();
-            foreach (RevisionManifestObjectGroupReferences reference in revisionData.RevisionManifestObjectGroupReferencesList)
-            {
-                dataElement = dataElements.Find(element => element.DataElementExtendedGUID.Equals(reference.ObjectGroupExtendedGUID));
-                if (dataElement == null)
-                {
+            RevisionManifestDataElementData revisionData = dataElement.GetData(RevisionManifestDataElementData.class);
+            for (RevisionManifestObjectGroupReferences reference : revisionData.RevisionManifestObjectGroupReferencesList) {
+                dataElement = dataElements.stream()
+                        .filter(element -> element.dataElementExGuid.equals(reference.ObjectGroupExtendedGUID))
+                        .findAny().orElse(null);
+                if (dataElement == null) {
                     return false;
                 }
             }
@@ -277,24 +293,27 @@ public class DataElementUtils {
     /// <param name="dataElements">Specify the data elements list.</param>
     /// <param name="storageIndexExGuid">Specify the storage index extended GUID.</param>
     /// <returns>If the data elements confirms to the schema defined in the MS-FSSHTTPD returns true, otherwise false.</returns>
-    public static boolean TryAnalyzeWhetherConfirmSchema(List<DataElement> dataElements, ExGuid storageIndexExGuid)
-    {
-        DataElement storageIndexDataElement = dataElements.Find(element => element.DataElementExtendedGUID.Equals(storageIndexExGuid));
-        if (storageIndexExGuid == null)
-        {
+    public static boolean TryAnalyzeWhetherConfirmSchema(List<DataElement> dataElements, ExGuid storageIndexExGuid) {
+        DataElement storageIndexDataElement =
+                dataElements.stream().filter(element -> element.dataElementExGuid.equals(storageIndexExGuid)).findAny()
+                        .orElse(null);
+        if (storageIndexExGuid == null) {
             return false;
         }
 
-        StorageIndexDataElementData storageIndexData = storageIndexDataElement.GetData<StorageIndexDataElementData>();
-        ExGuid manifestMappingGuid = storageIndexData.StorageIndexManifestMapping.ManifestMappingExtendedGUID;
+        StorageIndexDataElementData storageIndexData =
+                storageIndexDataElement.GetData(StorageIndexDataElementData.class);
+        ExGuid manifestMappingGuid = storageIndexData.StorageIndexManifestMapping.ManifestMappingExGuid;
 
-        DataElement storageManifestDataElement = dataElements.Find(element => element.DataElementExtendedGUID.Equals(manifestMappingGuid));
-        if (storageManifestDataElement == null)
-        {
+        DataElement storageManifestDataElement =
+                dataElements.stream().filter(element -> element.dataElementExGuid.equals(manifestMappingGuid)).findAny()
+                        .orElse(null);
+        if (storageManifestDataElement == null) {
             return false;
         }
 
-        return SchemaGuid.Equals(storageManifestDataElement.GetData<StorageManifestDataElementData>().StorageManifestSchemaGUID.GUID);
+        return SchemaGuid.equals(storageManifestDataElement.GetData(
+                StorageManifestDataElementData.class).storageManifestSchemaGUID.guid);
     }
 
     /// <summary>
@@ -311,31 +330,30 @@ public class DataElementUtils {
             ExGuid storageIndexExGuid,
             AtomicReference<ExGuid> manifestMappingGuid,
             AtomicReference<HashMap<CellID, ExGuid>> cellIDMappings,
-            AtomicReference<HashMap<ExGuid, ExGuid> >revisionIDMappings)
-    {
+            AtomicReference<HashMap<ExGuid, ExGuid>> revisionIDMappings) {
         manifestMappingGuid.set(null);
         cellIDMappings.set(null);
         revisionIDMappings.set(null);
 
-        if (storageIndexExGuid == null)
-        {
+        if (storageIndexExGuid == null) {
             return false;
         }
 
-        DataElement storageIndexDataElement = dataElements.stream().filter(element -> element.dataElementExGuid.equals(storageIndexExGuid)).findAny().orElse(null);
-        StorageIndexDataElementData storageIndexData = storageIndexDataElement.GetData<StorageIndexDataElementData>();
-        manifestMappingGuid = storageIndexData.StorageIndexManifestMapping.ManifestMappingExtendedGUID;
+        DataElement storageIndexDataElement =
+                dataElements.stream().filter(element -> element.dataElementExGuid.equals(storageIndexExGuid)).findAny()
+                        .orElse(null);
+        StorageIndexDataElementData storageIndexData =
+                storageIndexDataElement.GetData(StorageIndexDataElementData.class);
+        manifestMappingGuid.set(storageIndexData.StorageIndexManifestMapping.ManifestMappingExGuid);
 
-        cellIDMappings = new HashMap<CellID, ExGuid>();
-        foreach (StorageIndexCellMapping kv in storageIndexData.StorageIndexCellMappingList)
-        {
-            cellIDMappings.Add(kv.CellID, kv.CellMappingExtendedGUID);
+        cellIDMappings.set(new HashMap<>());
+        for (StorageIndexCellMapping kv : storageIndexData.StorageIndexCellMappingList) {
+            cellIDMappings.get().put(kv.CellID, kv.CellMappingExGuid);
         }
 
-        revisionIDMappings = new HashMap<ExGuid, ExGuid>();
-        foreach (StorageIndexRevisionMapping kv in storageIndexData.StorageIndexRevisionMappingList)
-        {
-            revisionIDMappings.Add(kv.RevisionExtendedGUID, kv.RevisionMappingExtendedGUID);
+        revisionIDMappings.set(new HashMap<>());
+        for (StorageIndexRevisionMapping kv : storageIndexData.StorageIndexRevisionMappingList) {
+            revisionIDMappings.get().put(kv.RevisionExGuid, kv.RevisionMappingExGuid);
         }
 
         return true;
@@ -347,15 +365,16 @@ public class DataElementUtils {
     /// <param name="dataElements">Specify the data element list.</param>
     /// <param name="manifestMapping">Specify the manifest mapping GUID.</param>
     /// <returns>Return the storage manifest data element.</returns>
-    public static StorageManifestDataElementData GetStorageManifestDataElementData(List<DataElement> dataElements, ExGuid manifestMapping)
-    {
-        DataElement storageManifestDataElement = dataElements.Find(element => element.DataElementExtendedGUID.Equals(manifestMapping));
-        if (storageManifestDataElement == null)
-        {
+    public static StorageManifestDataElementData GetStorageManifestDataElementData(List<DataElement> dataElements,
+                                                                                   ExGuid manifestMapping) {
+        DataElement storageManifestDataElement =
+                dataElements.stream().filter(element -> element.dataElementExGuid.equals(manifestMapping)).findAny()
+                        .orElse(null);
+        if (storageManifestDataElement == null) {
             return null;
         }
 
-        return storageManifestDataElement.GetData<StorageManifestDataElementData>();
+        return storageManifestDataElement.GetData(StorageManifestDataElementData.class);
     }
 
     /// <summary>
@@ -365,28 +384,29 @@ public class DataElementUtils {
     /// <param name="manifestDataElementData">Specify the manifest data element.</param>
     /// <param name="cellIDMappings">Specify mapping of cell id.</param>
     /// <returns>Return the cell manifest data element.</returns>
-    public static CellManifestDataElementData GetCellManifestDataElementData(List<DataElement> dataElements, StorageManifestDataElementData manifestDataElementData, HashMap<CellID, ExGuid> cellIDMappings)
-    {
-        CellID cellID = new CellID(new ExGuid(1u, RootExGuid), new ExGuid(1u, CellSecondExGuid));
+    public static CellManifestDataElementData GetCellManifestDataElementData(List<DataElement> dataElements,
+                                                                             StorageManifestDataElementData manifestDataElementData,
+                                                                             HashMap<CellID, ExGuid> cellIDMappings) {
+        CellID cellID = new CellID(new ExGuid(1, RootExGuid), new ExGuid(1, CellSecondExGuid));
 
-        foreach (StorageManifestRootDeclare kv in manifestDataElementData.StorageManifestRootDeclareList)
-        {
-            if (kv.RootExtendedGUID.Equals(new ExGuid(2u, RootExGuid)) && kv.CellID.Equals(cellID))
-            {
-                if (!cellIDMappings.ContainsKey(kv.CellID))
-                {
-                    throw new InvalidOperationException(String.format("Cannot fin the Cell ID %s in the cell id mapping", cellID.ToString()));
+        for (StorageManifestRootDeclare kv : manifestDataElementData.StorageManifestRootDeclareList) {
+            if (kv.RootExGUID.equals(new ExGuid(2, RootExGuid)) && kv.cellID.equals(cellID)) {
+                if (!cellIDMappings.containsKey(kv.cellID)) {
+                    throw new InvalidOperationException(
+                            String.format("Cannot fin the Cell ID %s in the cell id mapping", cellID));
                 }
 
-                ExGuid cellMappingID = cellIDMappings[kv.CellID];
+                ExGuid cellMappingID = cellIDMappings.get(kv.cellID);
 
-                DataElement dataElement = dataElements.Find(element => element.DataElementExtendedGUID.Equals(cellMappingID));
-                if (dataElement == null)
-                {
-                    throw new InvalidOperationException("Cannot find the  cell data element with ExGuid " + cellMappingID.GUID.ToString());
+                DataElement dataElement =
+                        dataElements.stream().filter(element -> element.dataElementExGuid.equals(cellMappingID))
+                                .findAny().orElse(null);
+                if (dataElement == null) {
+                    throw new InvalidOperationException(
+                            "Cannot find the  cell data element with ExGuid " + cellMappingID.guid.toString());
                 }
 
-                return dataElement.GetData<CellManifestDataElementData>();
+                return dataElement.GetData(CellManifestDataElementData.class);
             }
         }
 
@@ -400,24 +420,27 @@ public class DataElementUtils {
     /// <param name="cellData">Specify the cell data element.</param>
     /// <param name="revisionIDMappings">Specify mapping of revision id.</param>
     /// <returns>Return the revision manifest data element.</returns>
-    public static RevisionManifestDataElementData GetRevisionManifestDataElementData(List<DataElement> dataElements, CellManifestDataElementData cellData, HashMap<ExGuid, ExGuid> revisionIDMappings)
-    {
-        ExGuid currentRevisionExGuid = cellData.CellManifestCurrentRevision.CellManifestCurrentRevisionExtendedGUID;
+    public static RevisionManifestDataElementData GetRevisionManifestDataElementData(List<DataElement> dataElements,
+                                                                                     CellManifestDataElementData cellData,
+                                                                                     HashMap<ExGuid, ExGuid> revisionIDMappings) {
+        ExGuid currentRevisionExGuid = cellData.cellManifestCurrentRevision.cellManifestCurrentRevisionExGuid;
 
-        if (!revisionIDMappings.ContainsKey(currentRevisionExGuid))
-        {
-            throw new InvalidOperationException(String.format("Cannot find the revision id %s in the revisionMapping", currentRevisionExGuid.ToString()));
+        if (!revisionIDMappings.containsKey(currentRevisionExGuid)) {
+            throw new InvalidOperationException(String.format("Cannot find the revision id %s in the revisionMapping",
+                    currentRevisionExGuid.toString()));
         }
 
-        ExGuid revisionMapping = revisionIDMappings[currentRevisionExGuid];
+        ExGuid revisionMapping = revisionIDMappings.get(currentRevisionExGuid);
 
-        DataElement dataElement = dataElements.Find(element => element.DataElementExtendedGUID.Equals(revisionMapping));
-        if (dataElement == null)
-        {
-            throw new InvalidOperationException("Cannot find the revision data element with ExGuid " + revisionMapping.GUID.ToString());
+        DataElement dataElement =
+                dataElements.stream().filter(element -> element.dataElementExGuid.equals(revisionMapping)).findAny()
+                        .orElse(null);
+        if (dataElement == null) {
+            throw new InvalidOperationException(
+                    "Cannot find the revision data element with ExGuid " + revisionMapping.guid);
         }
 
-        return dataElement.GetData<RevisionManifestDataElementData>();
+        return dataElement.GetData(RevisionManifestDataElementData.class);
     }
 
     /// <summary>
@@ -427,30 +450,30 @@ public class DataElementUtils {
     /// <param name="revisionData">Specify the revision data.</param>
     /// <param name="rootExGuid">Specify the root node object extended GUID.</param>
     /// <returns>Return the list of object group data element.</returns>
-    public static List<ObjectGroupDataElementData> GetDataObjectDataElementData(List<DataElement> dataElements, RevisionManifestDataElementData revisionData, out ExGuid rootExGuid)
-    {
+    public static List<ObjectGroupDataElementData> GetDataObjectDataElementData(List<DataElement> dataElements,
+                                                                                RevisionManifestDataElementData revisionData,
+                                                                                AtomicReference<ExGuid> rootExGuid) {
         rootExGuid = null;
 
-        foreach (RevisionManifestRootDeclare kv in revisionData.RevisionManifestRootDeclareList)
-        {
-            if (kv.RootExtendedGUID.Equals(new ExGuid(2u, RootExGuid)))
-            {
-                rootExGuid = kv.ObjectExtendedGUID;
+        for (RevisionManifestRootDeclare kv : revisionData.RevisionManifestRootDeclareList) {
+            if (kv.RootExGuid.equals(new ExGuid(2, RootExGuid))) {
+                rootExGuid.set(kv.ObjectExGuid);
                 break;
             }
         }
 
-        List<ObjectGroupDataElementData> dataList = new ArrayList<ObjectGroupDataElementData>();
+        List<ObjectGroupDataElementData> dataList = new ArrayList<>();
 
-        foreach (RevisionManifestObjectGroupReferences kv in revisionData.RevisionManifestObjectGroupReferencesList)
-        {
-            DataElement dataElement = dataElements.Find(element => element.DataElementExtendedGUID.Equals(kv.ObjectGroupExtendedGUID));
-            if (dataElement == null)
-            {
-                throw new InvalidOperationException("Cannot find the object group data element with ExGuid " + kv.ObjectGroupExtendedGUID.GUID.ToString());
+        for (RevisionManifestObjectGroupReferences kv : revisionData.RevisionManifestObjectGroupReferencesList) {
+            DataElement dataElement = dataElements.stream()
+                    .filter(element -> element.dataElementExGuid.equals(kv.ObjectGroupExtendedGUID)).findAny()
+                    .orElse(null);
+            if (dataElement == null) {
+                throw new InvalidOperationException("Cannot find the object group data element with ExGuid " +
+                        kv.ObjectGroupExtendedGUID.guid.toString());
             }
 
-            dataList.Add(dataElement.GetData<ObjectGroupDataElementData>());
+            dataList.add(dataElement.GetData(ObjectGroupDataElementData.class));
         }
 
         return dataList;
