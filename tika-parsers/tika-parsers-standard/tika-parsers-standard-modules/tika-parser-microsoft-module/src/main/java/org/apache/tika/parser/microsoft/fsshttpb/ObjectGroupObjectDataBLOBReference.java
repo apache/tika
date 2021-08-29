@@ -12,10 +12,10 @@ import java.util.concurrent.atomic.AtomicInteger;
         /// Initializes a new instance of the ObjectGroupObjectDataBLOBReference class.
         /// </summary>
         public ObjectGroupObjectDataBLOBReference()
-            : base(StreamObjectTypeHeaderStart.ObjectGroupObjectDataBLOBReference)
         {
+            super(StreamObjectTypeHeaderStart.ObjectGroupObjectDataBLOBReference);
             this.ObjectExtendedGUIDArray = new ExGUIDArray();
-            this.CellIDArray = new CellIDArray();
+            this.cellIDArray = new CellIDArray();
             this.BLOBExtendedGUID = new ExGuid();
         }
 
@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
         /// <summary>
         /// Gets or sets a cell ID array that specifies the cell references.
         /// </summary>
-        public CellIDArray CellIDArray;
+        public CellIDArray cellIDArray;
 
         /// <summary>
         /// Gets or sets an extended GUID that specifies the object data BLOB.
@@ -43,9 +43,9 @@ import java.util.concurrent.atomic.AtomicInteger;
         @Override protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems)
         {
             AtomicInteger index = new AtomicInteger(currentIndex.get());
-            this.ObjectExtendedGUIDArray = BasicObject.Parse<ExGUIDArray>(byteArray, ref index);
-            this.CellIDArray = BasicObject.Parse<CellIDArray>(byteArray, ref index);
-            this.BLOBExtendedGUID = BasicObject.Parse<ExGuid>(byteArray, ref index);
+            this.ObjectExtendedGUIDArray = BasicObject.parse(byteArray, index, ExGUIDArray.class);
+            this.cellIDArray = BasicObject.parse(byteArray, index, CellIDArray.class);
+            this.BLOBExtendedGUID = BasicObject.parse(byteArray, index, ExGuid.class);
 
             if (index.get() - currentIndex.get() !=lengthOfItems)
             {
@@ -64,7 +64,7 @@ import java.util.concurrent.atomic.AtomicInteger;
         {
             int itemsIndex = byteList.size();
             byteList.addAll(this.ObjectExtendedGUIDArray.SerializeToByteList());
-            byteList.addAll(CellIDArray.SerializeToByteList());
+            byteList.addAll(cellIDArray.SerializeToByteList());
             byteList.addAll(this.BLOBExtendedGUID.SerializeToByteList());
             return byteList.size() - itemsIndex;
         }

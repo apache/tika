@@ -12,8 +12,8 @@ import java.util.concurrent.atomic.AtomicInteger;
         /// Initializes a new instance of the ObjectGroupMetadata class.
         /// </summary>
         public ObjectGroupMetadata()
-            : base(StreamObjectTypeHeaderStart.ObjectGroupMetadata)
         {
+            super(StreamObjectTypeHeaderStart.ObjectGroupMetadata);
         }
 
         /// <summary>
@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
         @Override protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems)
         {
             AtomicInteger index = new AtomicInteger(currentIndex.get());
-            this.ObjectChangeFrequency = BasicObject.Parse<Compact64bitInt>(byteArray, ref index);
+            this.ObjectChangeFrequency = BasicObject.parse(byteArray, index, Compact64bitInt.class);
 
             if (index.get() - currentIndex.get() !=lengthOfItems)
             {
@@ -54,6 +54,6 @@ import java.util.concurrent.atomic.AtomicInteger;
         {
             List<Byte> tmpList = this.ObjectChangeFrequency.SerializeToByteList();
             byteList.addAll(tmpList);
-            return tmpList.Count;
+            return tmpList.size();
         }
     }

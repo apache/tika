@@ -3,6 +3,7 @@ package org.apache.tika.parser.microsoft.fsshttpb;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /// <summary>
     /// Object Metadata Declaration
@@ -13,9 +14,9 @@ import java.util.concurrent.atomic.AtomicInteger;
         /// Initializes a new instance of the ObjectGroupMetadataDeclarations class.
         /// </summary>
         public ObjectGroupMetadataDeclarations()
-            : base(StreamObjectTypeHeaderStart.ObjectGroupMetadataDeclarations)
         {
-            this.ObjectGroupMetadataList = new ArrayList<ObjectGroupMetadata>();
+            super(StreamObjectTypeHeaderStart.ObjectGroupMetadataDeclarations);
+            this.ObjectGroupMetadataList = new ArrayList<>();
         }
 
         /// <summary>
@@ -32,7 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
         {
             if (this.ObjectGroupMetadataList != null)
             {
-                foreach (ObjectGroupMetadata objectGroupMetadata in this.ObjectGroupMetadataList)
+                for (ObjectGroupMetadata objectGroupMetadata : this.ObjectGroupMetadataList)
                 {
                     byteList.addAll(objectGroupMetadata.SerializeToByteList());
                 }
@@ -55,20 +56,20 @@ import java.util.concurrent.atomic.AtomicInteger;
             }
 
             AtomicInteger index = new AtomicInteger(currentIndex.get());
-            int headerLength = 0;
-            StreamObjectHeaderStart header;
-            this.ObjectGroupMetadataList = new ArrayList<ObjectGroupMetadata>();
+            int headerLength;
+            AtomicReference<StreamObjectHeaderStart> header = new AtomicReference<>();
+            this.ObjectGroupMetadataList = new ArrayList<>();
 
-            while ((headerLength = StreamObjectHeaderStart.TryParse(byteArray, index, out header)) != 0)
+            while ((headerLength = StreamObjectHeaderStart.TryParse(byteArray, index.get(), header)) != 0)
             {
-                index += headerLength;
-                if (header.Type == StreamObjectTypeHeaderStart.ObjectGroupMetadata)
+                index.addAndGet(headerLength);
+                if (header.get().type == StreamObjectTypeHeaderStart.ObjectGroupMetadata)
                 {
-                    this.ObjectGroupMetadataList.Add(StreamObject.ParseStreamObject(header, byteArray, ref index) as ObjectGroupMetadata);
+                    this.ObjectGroupMetadataList.add((ObjectGroupMetadata)StreamObject.ParseStreamObject(header.get(), byteArray, index));
                 }
                 else
                 {
-                    throw new StreamObjectParseErrorException(index.get(),  "ObjectGroupDeclarations", "Failed to parse ObjectGroupMetadataDeclarations, expect the inner object type ObjectGroupMetadata, but actual type value is " + header.Type, null);
+                    throw new StreamObjectParseErrorException(index.get(),  "ObjectGroupDeclarations", "Failed to parse ObjectGroupMetadataDeclarations, expect the inner object type ObjectGroupMetadata, but actual type value is " + header.get().type, null);
                 }
             }
 

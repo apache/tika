@@ -12,8 +12,8 @@ import java.util.concurrent.atomic.AtomicInteger;
         /// Initializes a new instance of the ObjectGroupObjectBLOBDataDeclaration class.
         /// </summary>
         public ObjectGroupObjectBLOBDataDeclaration()
-            : base(StreamObjectTypeHeaderStart.ObjectGroupObjectBLOBDataDeclaration)
         {
+            super(StreamObjectTypeHeaderStart.ObjectGroupObjectBLOBDataDeclaration);
             this.ObjectExGUID = new ExGuid();
             this.ObjectDataBLOBExGUID = new ExGuid();
             this.ObjectPartitionID = new Compact64bitInt();
@@ -63,11 +63,11 @@ import java.util.concurrent.atomic.AtomicInteger;
         {
             AtomicInteger index = new AtomicInteger(currentIndex.get());
 
-            this.ObjectExGUID = BasicObject.Parse<ExGuid>(byteArray, ref index);
-            this.ObjectDataBLOBExGUID = BasicObject.Parse<ExGuid>(byteArray, ref index);
-            this.ObjectPartitionID = BasicObject.Parse<Compact64bitInt>(byteArray, ref index);
-            this.ObjectReferencesCount = BasicObject.Parse<Compact64bitInt>(byteArray, ref index);
-            this.CellReferencesCount = BasicObject.Parse<Compact64bitInt>(byteArray, ref index);
+            this.ObjectExGUID = BasicObject.parse(byteArray, index, ExGuid.class);
+            this.ObjectDataBLOBExGUID = BasicObject.parse(byteArray, index, ExGuid.class);
+            this.ObjectPartitionID = BasicObject.parse(byteArray, index, Compact64bitInt.class);
+            this.ObjectReferencesCount = BasicObject.parse(byteArray, index, Compact64bitInt.class);
+            this.CellReferencesCount = BasicObject.parse(byteArray, index, Compact64bitInt.class);
 
             if (index.get() - currentIndex.get() !=lengthOfItems)
             {
