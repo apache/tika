@@ -30,7 +30,6 @@ import com.rometools.rome.io.FeedException;
 import com.rometools.rome.io.SyndFeedInput;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
