@@ -34,12 +34,6 @@
       <groupId>com.rometools</groupId>
       <artifactId>rome</artifactId>
       <version>${rome.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.jdom</groupId>
-          <artifactId>jdom2</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>

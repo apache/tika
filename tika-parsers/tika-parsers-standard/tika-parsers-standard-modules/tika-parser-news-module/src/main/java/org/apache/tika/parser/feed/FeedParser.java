@@ -30,6 +30,7 @@ import com.rometools.rome.io.FeedException;
 import com.rometools.rome.io.SyndFeedInput;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
@@ -39,7 +40,6 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * Feed parser.
@@ -85,8 +85,10 @@ public class FeedParser extends AbstractParser {
                       ParseContext context) throws IOException, SAXException, TikaException {
         // set the encoding?
         try {
+            SyndFeedInput input = new SyndFeedInput();
+            input.setAllowDoctypes(false);
             SyndFeed feed =
-                    new SyndFeedInput().build(XMLReaderUtils.buildDOM(new CloseShieldInputStream(stream)));
+                    input.build(new InputSource(new CloseShieldInputStream(stream)));
 
             String title = stripTags(feed.getTitleEx());
             String description = stripTags(feed.getDescriptionEx());
