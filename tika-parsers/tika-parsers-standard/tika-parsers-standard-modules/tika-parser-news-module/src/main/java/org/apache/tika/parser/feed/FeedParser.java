@@ -40,6 +40,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * Feed parser.
@@ -86,7 +87,7 @@ public class FeedParser extends AbstractParser {
         // set the encoding?
         try {
             SyndFeed feed =
-                    new SyndFeedInput().build(new InputSource(new CloseShieldInputStream(stream)));
+                    new SyndFeedInput().build(XMLReaderUtils.buildDOM(new CloseShieldInputStream(stream)));
 
             String title = stripTags(feed.getTitleEx());
             String description = stripTags(feed.getDescriptionEx());

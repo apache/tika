@@ -34,11 +34,12 @@
       <groupId>com.rometools</groupId>
       <artifactId>rome</artifactId>
       <version>${rome.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.jdom</groupId>
-      <artifactId>jdom2</artifactId>
-      <version>${jdom2.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.jdom</groupId>
+          <artifactId>jdom2</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
