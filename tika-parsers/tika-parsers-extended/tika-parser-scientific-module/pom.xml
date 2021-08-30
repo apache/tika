@@ -60,11 +60,23 @@
       <groupId>edu.ucar</groupId>
       <artifactId>netcdf4</artifactId>
       <version>${netcdf-java.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>net.sf.ehcache</groupId>
+          <artifactId>ehcache-core</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>edu.ucar</groupId>
       <artifactId>grib</artifactId>
       <version>${netcdf-java.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.jsoup</groupId>
+          <artifactId>jsoup</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <!-- TIKA-3095: Required for grib -->
     <dependency>

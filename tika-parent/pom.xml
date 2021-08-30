@@ -326,7 +326,6 @@
     <jna.version>5.8.0</jna.version>
     <joda.time.version>2.10.10</joda.time.version>
     <json.simple.version>1.1.1</json.simple.version>
-    <jsoup.version>1.14.2</jsoup.version>
     <junit4.version>4.13.2</junit4.version>
     <junit5.version>5.8.0-M1</junit5.version>
     <juniversalchardet.version>1.0.3</juniversalchardet.version>
@@ -548,11 +547,6 @@
         <groupId>org.bouncycastle</groupId>
         <artifactId>bcprov-jdk15on</artifactId>
         <version>${bouncycastle.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.jsoup</groupId>
-        <artifactId>jsoup</artifactId>
-        <version>${jsoup.version}</version>
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
