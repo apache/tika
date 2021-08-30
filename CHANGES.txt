@@ -1,3 +1,10 @@
+Release 2.1.1 - ???
+
+   * Exclude dependency on jdom2 in rome-tools in FeedParser (TIKA-3488).
+
+   * Exclude dependencies on jsoup and ehcache in ucar grib/cdm (TIKA-3003).
+
+
 Release 2.1.0 - 08/18/2021
 
    MAJOR CHANGES in 2.1.0:
