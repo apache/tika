@@ -40,11 +40,12 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
+import org.apache.tika.pipes.fetcher.RangeFetcher;
 
 /**
  * Based on Apache httpclient
  */
-public class HttpFetcher extends AbstractFetcher implements Initializable {
+public class HttpFetcher extends AbstractFetcher implements Initializable, RangeFetcher {
 
     Logger LOG = LoggerFactory.getLogger(HttpFetcher.class);
     private HttpClientFactory httpClientFactory;
@@ -60,6 +61,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable {
         return get(get);
     }
 
+    @Override
     public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata)
             throws IOException, TikaException {
         HttpGet get = new HttpGet(fetchKey);
