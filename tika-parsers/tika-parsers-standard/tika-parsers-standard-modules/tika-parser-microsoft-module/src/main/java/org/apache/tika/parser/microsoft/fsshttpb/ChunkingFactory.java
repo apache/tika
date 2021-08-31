@@ -7,13 +7,11 @@ import org.apache.poi.openxml4j.exceptions.InvalidOperationException;
 /// <summary>
 /// This class is used to create instance of AbstractChunking.
 /// </summary>
-public class ChunkingFactory
-{
+public class ChunkingFactory {
     /// <summary>
     /// Prevents a default instance of the ChunkingFactory class from being created
     /// </summary>
-    private ChunkingFactory()
-    {
+    private ChunkingFactory() {
     }
 
     /// <summary>
@@ -21,14 +19,10 @@ public class ChunkingFactory
     /// </summary>
     /// <param name="fileContent">The content of the file.</param>
     /// <returns>The instance of AbstractChunking.</returns>
-    public static AbstractChunking CreateChunkingInstance(byte[] fileContent)
-    {
-        if (ZipHeader.IsFileHeader(fileContent, 0))
-        {
+    public static AbstractChunking CreateChunkingInstance(byte[] fileContent) {
+        if (ZipHeader.IsFileHeader(fileContent, 0)) {
             return new ZipFilesChunking(fileContent);
-        }
-        else
-        {
+        } else {
             return new RDCAnalysisChunking(fileContent);
         }
     }
@@ -38,8 +32,7 @@ public class ChunkingFactory
     /// </summary>
     /// <param name="nodeObject">Specify the root node object.</param>
     /// <returns>The instance of AbstractChunking.</returns>
-    public static AbstractChunking CreateChunkingInstance(IntermediateNodeObject nodeObject)
-    {
+    public static AbstractChunking CreateChunkingInstance(IntermediateNodeObject nodeObject) {
         byte[] fileContent = ByteUtil.toByteArray(nodeObject.GetContent());
 
 //        if (EditorsTableUtils.IsEditorsTableHeader(fileContent))
@@ -47,12 +40,9 @@ public class ChunkingFactory
 //            return null;
 //        }
 
-        if (ZipHeader.IsFileHeader(fileContent, 0))
-        {
+        if (ZipHeader.IsFileHeader(fileContent, 0)) {
             return new ZipFilesChunking(fileContent);
-        }
-        else
-        {
+        } else {
             // For SharePoint Server 2013 compatible SUTs, always using the RDC Chunking method in the current test suite involved file resources.
 //            if (SharedContext.Current.CellStorageVersionType.MinorVersion >= 2)
 //            {
@@ -63,20 +53,17 @@ public class ChunkingFactory
             AbstractChunking returnChunking = new SimpleChunking(fileContent);
 
             List<LeafNodeObject> nodes = returnChunking.Chunking();
-            if (nodeObject.IntermediateNodeObjectList.size() == nodes.size())
-            {
+            if (nodeObject.IntermediateNodeObjectList.size() == nodes.size()) {
                 boolean isDataSizeMatching = true;
-                for (int i = 0; i < nodes.size(); i++)
-                {
-                    if (nodeObject.IntermediateNodeObjectList.get(i).DataSize.DataSize != nodes.get(i).DataSize.DataSize)
-                    {
+                for (int i = 0; i < nodes.size(); i++) {
+                    if (nodeObject.IntermediateNodeObjectList.get(i).DataSize.DataSize !=
+                            nodes.get(i).DataSize.DataSize) {
                         isDataSizeMatching = false;
                         break;
                     }
                 }
 
-                if (isDataSizeMatching)
-                {
+                if (isDataSizeMatching) {
                     return returnChunking;
                 }
             }
@@ -92,11 +79,9 @@ public class ChunkingFactory
     /// <param name="fileContent">The content of the file.</param>
     /// <param name="chunkingMethod">The type of chunking methods.</param>
     /// <returns>The instance of AbstractChunking.</returns>
-    public static AbstractChunking CreateChunkingInstance(byte[] fileContent, ChunkingMethod chunkingMethod)
-    {
+    public static AbstractChunking CreateChunkingInstance(byte[] fileContent, ChunkingMethod chunkingMethod) {
         AbstractChunking chunking;
-        switch (chunkingMethod)
-        {
+        switch (chunkingMethod) {
             case RDCAnalysis:
                 chunking = new RDCAnalysisChunking(fileContent);
                 break;
