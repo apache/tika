@@ -31,6 +31,8 @@ public class FetchKey implements Serializable {
 
     private String fetcherName;
     private String fetchKey;
+    private long rangeStart = -1;
+    private long rangeEnd = -1;
 
     //this is for serialization...yuck
     public FetchKey() {
@@ -38,8 +40,14 @@ public class FetchKey implements Serializable {
     }
 
     public FetchKey(String fetcherName, String fetchKey) {
+        this(fetcherName, fetchKey, -1, -1);
+    }
+
+    public FetchKey(String fetcherName, String fetchKey, long rangeStart, long rangeEnd) {
         this.fetcherName = fetcherName;
         this.fetchKey = fetchKey;
+        this.rangeStart = rangeStart;
+        this.rangeEnd = rangeEnd;
     }
 
     public String getFetcherName() {
@@ -50,10 +58,16 @@ public class FetchKey implements Serializable {
         return fetchKey;
     }
 
-    @Override
-    public String toString() {
-        return "FetcherKeyPair{" + "fetcherName='" + fetcherName + '\'' + ", fetchKey='" +
-                fetchKey + '\'' + '}';
+    public boolean hasRange() {
+        return rangeStart > -1 && rangeEnd > -1;
+    }
+
+    public long getRangeStart() {
+        return rangeStart;
+    }
+
+    public long getRangeEnd() {
+        return rangeEnd;
     }
 
     @Override
@@ -64,19 +78,20 @@ public class FetchKey implements Serializable {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
-        FetchKey fetchKey = (FetchKey) o;
-
-        if (!Objects.equals(fetcherName, fetchKey.fetcherName)) {
-            return false;
-        }
-        return Objects.equals(this.fetchKey, fetchKey.fetchKey);
+        FetchKey fetchKey1 = (FetchKey) o;
+        return rangeStart == fetchKey1.rangeStart && rangeEnd == fetchKey1.rangeEnd &&
+                Objects.equals(fetcherName, fetchKey1.fetcherName) &&
+                Objects.equals(fetchKey, fetchKey1.fetchKey);
     }
 
     @Override
     public int hashCode() {
-        int result = fetcherName != null ? fetcherName.hashCode() : 0;
-        result = 31 * result + (fetchKey != null ? fetchKey.hashCode() : 0);
-        return result;
+        return Objects.hash(fetcherName, fetchKey, rangeStart, rangeEnd);
+    }
+
+    @Override
+    public String toString() {
+        return "FetchKey{" + "fetcherName='" + fetcherName + '\'' + ", fetchKey='" + fetchKey +
+                '\'' + ", rangeStart=" + rangeStart + ", rangeEnd=" + rangeEnd + '}';
     }
 }

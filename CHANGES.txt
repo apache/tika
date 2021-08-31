@@ -1,6 +1,7 @@
 Release 2.1.1 - ???
 
-   * Exclude dependency on jdom2 in rome-tools in FeedParser (TIKA-3488).
+   * Add optional fetch ranges to FetchEmitTuple to allow range fetching from,
+        e.g. http or s3 (TIKA-3542).
 
    * Exclude dependencies on jsoup and ehcache in ucar grib/cdm (TIKA-3003).
 

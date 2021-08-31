@@ -40,6 +40,8 @@ public class JsonFetchEmitTuple {
     public static final String ID = "id";
     public static final String FETCHER = "fetcher";
     public static final String FETCHKEY = "fetchKey";
+    public static final String FETCH_RANGE_START = "fetchRangeStart";
+    public static final String FETCH_RANGE_END = "fetchRangeEnd";
     public static final String EMITTER = "emitter";
     public static final String EMITKEY = "emitKey";
     public static final String METADATAKEY = "metadata";
@@ -72,6 +74,9 @@ public class JsonFetchEmitTuple {
         String fetchKey = null;
         String emitterName = null;
         String emitKey = null;
+        long fetchRangeStart = -1l;
+        long fetchRangeEnd = -1l;
+
         FetchEmitTuple.ON_PARSE_EXCEPTION onParseException =
                 FetchEmitTuple.DEFAULT_ON_PARSE_EXCEPTION;
         HandlerConfig handlerConfig = HandlerConfig.DEFAULT_HANDLER_CONFIG;
@@ -108,13 +113,17 @@ public class JsonFetchEmitTuple {
                 }
             } else if (HANDLER_CONFIG.equals(name)) {
                 handlerConfig = getHandlerConfig(jParser);
+            } else if (FETCH_RANGE_START.equals(name)) {
+                fetchRangeStart = getLong(jParser);
+            } else if (FETCH_RANGE_END.equals(name)) {
+                fetchRangeEnd = getLong(jParser);
             }
             token = jParser.nextToken();
         }
         if (id == null) {
             id = fetchKey;
         }
-        return new FetchEmitTuple(id, new FetchKey(fetcherName, fetchKey),
+        return new FetchEmitTuple(id, new FetchKey(fetcherName, fetchKey, fetchRangeStart, fetchRangeEnd),
                 new EmitKey(emitterName, emitKey), metadata, handlerConfig, onParseException);
     }
 
@@ -164,6 +173,14 @@ public class JsonFetchEmitTuple {
         return jParser.getValueAsString();
     }
 
+    private static long getLong(JsonParser jParser) throws IOException {
+        JsonToken token = jParser.nextToken();
+        if (token != JsonToken.VALUE_NUMBER_INT) {
+            throw new IOException("required value long, but see: " + token.name());
+        }
+        return jParser.getValueAsLong();
+    }
+
     public static String toJson(FetchEmitTuple t) throws IOException {
         StringWriter writer = new StringWriter();
         toJson(t, writer);
@@ -182,6 +199,10 @@ public class JsonFetchEmitTuple {
         jsonGenerator.writeStringField(ID, t.getId());
         jsonGenerator.writeStringField(FETCHER, t.getFetchKey().getFetcherName());
         jsonGenerator.writeStringField(FETCHKEY, t.getFetchKey().getFetchKey());
+        if (t.getFetchKey().hasRange()) {
+            jsonGenerator.writeNumberField(FETCH_RANGE_START, t.getFetchKey().getRangeStart());
+            jsonGenerator.writeNumberField(FETCH_RANGE_END, t.getFetchKey().getRangeEnd());
+        }
         jsonGenerator.writeStringField(EMITTER, t.getEmitKey().getEmitterName());
         if (!StringUtils.isBlank(t.getEmitKey().getEmitKey())) {
             jsonGenerator.writeStringField(EMITKEY, t.getEmitKey().getEmitKey());

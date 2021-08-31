@@ -54,4 +54,27 @@ public class JsonFetchEmitTupleTest {
         FetchEmitTuple deserialized = JsonFetchEmitTuple.fromJson(reader);
         assertEquals(t, deserialized);
     }
+
+    @Test
+    public void testFetchRange() throws Exception {
+        Metadata m = new Metadata();
+        m.add("m1", "v1");
+        m.add("m1", "v1");
+        m.add("m2", "v2");
+        m.add("m2", "v3");
+        m.add("m3", "v4");
+
+        FetchEmitTuple t = new FetchEmitTuple("my_id",
+                new FetchKey("my_fetcher", "fetchKey1", 10, 1000),
+                new EmitKey("my_emitter", "emitKey1"), m,
+                new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.XML,
+                        HandlerConfig.PARSE_MODE.CONCATENATE,
+                        10000,10),
+                FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
+        StringWriter writer = new StringWriter();
+        JsonFetchEmitTuple.toJson(t, writer);
+        Reader reader = new StringReader(writer.toString());
+        FetchEmitTuple deserialized = JsonFetchEmitTuple.fromJson(reader);
+        assertEquals(t, deserialized);
+    }
 }
