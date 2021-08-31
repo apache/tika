@@ -67,7 +67,7 @@ public class RDCAnalysisChunking extends AbstractChunking {
 
                 long end = Math.min(n + horizon, chunkEndMax);
                 for (long i = n - horizon; i < end; i++) {
-                    if (i != n && hashValues[(int)n].intValue() <= hashValues[(int)i].intValue()) {
+                    if (i != n && hashValues[(int) n].intValue() <= hashValues[(int) i].intValue()) {
                         isBoundary = false;
                         break;
                     }
@@ -138,7 +138,7 @@ public class RDCAnalysisChunking extends AbstractChunking {
         int shiftAmount = this.GetShiftAmount(hashWindowSize);
         int i = 0;
 
-        int[] lookupTableSigned =
+        int[] lookupTable =
                 {
                         0x5e3f7c48, 0x796a0d2b, 0xbecd4e32, 0x6f16159c,
                         0x687312bc, 0x12a6f30a, 0x8fca2662, 0x79b83d14,
@@ -206,19 +206,13 @@ public class RDCAnalysisChunking extends AbstractChunking {
                         0x2c9b1705, 0xcb536a69, 0xb2800f00, 0x111313fc
                 };
 
-        UInteger[] lookupTable = new UInteger[lookupTableSigned.length];
-        for (int j = 0; j < lookupTableSigned.length; ++j) {
-            lookupTable[j] = uint(lookupTableSigned[j]);
-        }
-
         while (i < this.FileContent.length) {
             UInteger hashValue = i == 0 ? uint(0) : hashValues[i - 1];
-            int trailingEdgeData = i < hashWindowSize ? ubyte(0).intValue() : ubyte(this.FileContent[i - hashWindowSize]).intValue();
+            int trailingEdgeData =
+                    i < hashWindowSize ? ubyte(0).intValue() : ubyte(this.FileContent[i - hashWindowSize]).intValue();
             int leadingEdgeData = ubyte(this.FileContent[i]).intValue();
-            UInteger val = hashValue.xor(lookupTable[trailingEdgeData]).xor(lookupTable[leadingEdgeData]);
-            UInteger val2 = val.leftShift(2);
-            UInteger val3 = val.rightShift(Integer.SIZE - shiftAmount);
-            hashValues[i] = val2.inclusiveOr(val3);
+            UInteger val = hashValue.xor(uint(lookupTable[trailingEdgeData])).xor(uint(lookupTable[leadingEdgeData]));
+            hashValues[i] = val.leftShift(2).inclusiveOr(val.rightShift(Integer.SIZE - shiftAmount));
             i++;
         }
 

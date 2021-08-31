@@ -57,7 +57,7 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
                 streamObjectTypeMapping.put(value,
                         Class.forName(className));
             } catch (ClassNotFoundException e) {
-             //   LOGGER.info("Missing {}", className);
+                //   LOGGER.info("Missing {}", className);
             }
         }
     }

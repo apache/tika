@@ -30,7 +30,7 @@ public class DataElement extends StreamObject {
                 dataElementDataTypeMapping.put(value,
                         Class.forName(className));
             } catch (ClassNotFoundException e) {
-          //      LOGGER.info("Could not find class {}", className);
+                //      LOGGER.info("Could not find class {}", className);
             }
         }
     }
