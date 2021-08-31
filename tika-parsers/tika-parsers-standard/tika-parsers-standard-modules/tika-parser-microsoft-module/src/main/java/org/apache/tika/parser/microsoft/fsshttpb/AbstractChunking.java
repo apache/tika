@@ -8,17 +8,12 @@ import java.util.List;
     public abstract class AbstractChunking
     {
         /// <summary>
-        /// The file content that contains the data.
-        /// </summary>
-        private byte[] fileContent;
-
-        /// <summary>
         /// Initializes a new instance of the AbstractChunking class.
         /// </summary>
         /// <param name="fileContent">The content of the file.</param>
         protected AbstractChunking(byte[] fileContent)
         {
-            this.fileContent = fileContent;
+            this.FileContent = fileContent;
         }
 
         /// <summary>

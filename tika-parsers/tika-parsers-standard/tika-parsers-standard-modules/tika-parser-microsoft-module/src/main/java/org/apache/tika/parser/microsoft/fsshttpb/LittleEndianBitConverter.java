@@ -18,7 +18,7 @@ package org.apache.tika.parser.microsoft.fsshttpb;
         /// <param name="array">Specify an array of bytes.</param>
         /// <param name="index">Specify the starting position.</param>
         /// <returns>Returns a 16-bit unsigned integer formed by two bytes beginning at startIndex.</returns>
-        public static short ToUInt16(Byte[] array, int index)
+        public static short ToUInt16(byte[] array, int index)
         {
             CheckByteArgument(array, index, 2);
             return (short)ConvertFromBytes(array, index, 2);
