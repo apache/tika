@@ -9,7 +9,7 @@ public interface IFSSHTTPBSerializable {
 
     /**
      * Serialize to byte list.
-]     * @return The byte list.
+     * @return The byte list.
      */
     List<Byte> SerializeToByteList();
 }

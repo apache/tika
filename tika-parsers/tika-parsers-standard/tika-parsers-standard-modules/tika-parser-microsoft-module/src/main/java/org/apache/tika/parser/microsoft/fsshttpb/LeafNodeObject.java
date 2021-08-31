@@ -33,9 +33,7 @@ public class LeafNodeObject extends NodeObject {
         List<Byte> content = new ArrayList<Byte>();
 
         if (this.DataNodeObjectData != null) {
-            for (byte b : this.DataNodeObjectData.ObjectData) {
-                content.add(b);
-            }
+            ByteUtil.appendByteArrayToListOfByte(content, this.DataNodeObjectData.ObjectData);
         } else if (this.IntermediateNodeObjectList != null) {
             for (LeafNodeObject intermediateNode : this.IntermediateNodeObjectList) {
                 content.addAll(intermediateNode.GetContent());

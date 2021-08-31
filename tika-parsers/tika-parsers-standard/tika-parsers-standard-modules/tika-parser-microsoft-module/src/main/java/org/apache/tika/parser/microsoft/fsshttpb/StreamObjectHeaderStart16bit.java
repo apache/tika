@@ -53,9 +53,7 @@ import java.util.List;
             bitField.AppendUInit32(this.type.getIntVal(), 6);
             bitField.AppendInit32(this.length, 7);
             List<Byte> result = new ArrayList<>();
-            for (byte b : bitField.getBytes()) {
-                result.add(b);
-            }
+            ByteUtil.appendByteArrayToListOfByte(result, bitField.getBytes());
             return result;
         }
 
@@ -65,8 +63,7 @@ import java.util.List;
         /// <returns>Return the ushort value.</returns>
         public short ToUint16()
         {
-            List<Byte> bytes = this.SerializeToByteList();
-            return LittleEndianBitConverter.ToUInt16(bytes.toArray(new Byte[0]), 0);
+            return LittleEndianBitConverter.ToUInt16(ByteUtil.toByteArray(this.SerializeToByteList()), 0);
         }
 
         /// <summary>

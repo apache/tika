@@ -51,7 +51,7 @@ public class StreamObjectHeaderEnd16bit extends StreamObjectHeaderEnd {
     /// <returns>Return StreamObjectHeaderEnd8bit value represented by unsigned short integer.</returns>
     public short ToUint16() {
         List<Byte> bytes = this.SerializeToByteList();
-        return LittleEndianBitConverter.ToUInt16(bytes.toArray(new Byte[0]), 0);
+        return LittleEndianBitConverter.ToUInt16(ByteUtil.toByteArray(bytes), 0);
     }
 
     /// <summary>

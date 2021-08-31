@@ -19,4 +19,10 @@ public final class ByteUtil {
         }
         return listOfByte;
     }
+
+    public static void appendByteArrayToListOfByte(List<Byte> byteList, byte[] byteArrayToAdd) {
+        for (byte b : byteArrayToAdd) {
+            byteList.add(b);
+        }
+    }
 }

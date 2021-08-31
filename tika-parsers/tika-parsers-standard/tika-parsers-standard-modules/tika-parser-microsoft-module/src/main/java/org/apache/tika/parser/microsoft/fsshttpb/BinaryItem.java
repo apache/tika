@@ -8,17 +8,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class BinaryItem extends BasicObject
     {
         /// <summary>
-        /// A byte stream that specifies the data for the item.
-        /// </summary>
-        private java.util.List<Byte> content = null;
-
-        /// <summary>
         /// Initializes a new instance of the BinaryItem class.
         /// </summary>
         public BinaryItem()
         {
             this.Length = new Compact64bitInt();
-            this.content = new ArrayList<>();
+            this.Content = new ArrayList<>();
         }
 
         /// <summary>
@@ -27,8 +22,9 @@ public class BinaryItem extends BasicObject
         /// <param name="content">Specify the binary content.</param>
         public BinaryItem(Collection<Byte> content)
         {
-            this.content = new ArrayList<>();
-            this.content.addAll(content);
+            this.Length = new Compact64bitInt();
+            this.Content = new ArrayList<>();
+            this.Content.addAll(content);
             this.Length.setDecodedValue(this.Content.size());
         }
 
@@ -49,11 +45,11 @@ public class BinaryItem extends BasicObject
         @Override
         public List<Byte> SerializeToByteList()
         {
-            this.Length.setDecodedValue(this.content.size());
+            this.Length.setDecodedValue(this.Content.size());
 
             List<Byte> result = new ArrayList<>();
             result.addAll(this.Length.SerializeToByteList());
-            result.addAll(this.content);
+            result.addAll(this.Content);
 
             return result;
         }

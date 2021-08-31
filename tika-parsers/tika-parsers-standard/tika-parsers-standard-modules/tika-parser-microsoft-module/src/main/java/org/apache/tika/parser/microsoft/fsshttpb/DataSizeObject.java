@@ -47,9 +47,7 @@ import java.util.concurrent.atomic.AtomicInteger;
         @Override
         protected int SerializeItemsToByteList(List<Byte> byteList)
         {
-            for (byte b : LittleEndianBitConverter.GetBytes(this.DataSize)) {
-                byteList.add(b);
-            }
+            ByteUtil.appendByteArrayToListOfByte(byteList, LittleEndianBitConverter.GetBytes(this.DataSize));
             return 8;
         }
     }

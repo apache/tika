@@ -6,7 +6,13 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class DataElement extends StreamObject {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DataElement.class);
+
     /// <summary>
     /// Data Element Data Type Mapping
     /// </summary>
@@ -16,14 +22,16 @@ public class DataElement extends StreamObject {
     /// Initializes static members of the DataElement class
     /// </summary>
     static {
-        try {
-            dataElementDataTypeMapping = new HashMap<>();
-            for (DataElementType value : DataElementType.values()) {
+        dataElementDataTypeMapping = new HashMap<>();
+        for (DataElementType value : DataElementType.values()) {
+            String className = DataElement.class.getPackage().getName() + "." + value.name();
+
+            try {
                 dataElementDataTypeMapping.put(value,
-                        Class.forName(DataElement.class.getPackage().getName() + "." + value.name()));
+                        Class.forName(className));
+            } catch (ClassNotFoundException e) {
+          //      LOGGER.info("Could not find class {}", className);
             }
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Could not initialize data element types", e);
         }
     }
 

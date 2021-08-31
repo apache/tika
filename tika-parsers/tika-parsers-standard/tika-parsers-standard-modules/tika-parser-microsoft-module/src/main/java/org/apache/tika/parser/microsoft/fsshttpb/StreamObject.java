@@ -10,7 +10,13 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public abstract class StreamObject implements IFSSHTTPBSerializable {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(StreamObject.class);
+
     /// <summary>
     /// Hash set contains the StreamObjectTypeHeaderStart type.
     /// </summary>
@@ -45,13 +51,14 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
 
     static {
         streamObjectTypeMapping = new HashMap<>();
-        try {
-            for (StreamObjectTypeHeaderStart value : StreamObjectTypeHeaderStart.values()) {
+        for (StreamObjectTypeHeaderStart value : StreamObjectTypeHeaderStart.values()) {
+            String className = StreamObject.class.getPackage().getName() + "." + value.name();
+            try {
                 streamObjectTypeMapping.put(value,
-                        Class.forName(StreamObject.class.getPackage().getName() + "." + value.name()));
+                        Class.forName(className));
+            } catch (ClassNotFoundException e) {
+             //   LOGGER.info("Missing {}", className);
             }
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Could not find class for enum", e);
         }
     }
 
