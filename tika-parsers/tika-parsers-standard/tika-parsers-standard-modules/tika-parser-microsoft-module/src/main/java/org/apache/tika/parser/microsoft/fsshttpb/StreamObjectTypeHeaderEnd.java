@@ -4,129 +4,129 @@ import java.util.HashMap;
 import java.util.Map;
 
 public enum StreamObjectTypeHeaderEnd {
-    /// <summary>
-    /// Data Element
-    /// </summary>
+    /**
+     * Data Element
+     */
     DataElement(0x01),
 
-    /// <summary>
-    /// The Knowledge
-    /// </summary>
+    /**
+     * The Knowledge
+     */
     Knowledge(0x10),
 
-    /// <summary>
-    /// Cell Knowledge
-    /// </summary>
+    /**
+     * Cell Knowledge
+     */
     CellKnowledge(0x14),
 
-    /// <summary>
-    /// Data Element Package
-    /// </summary>
+    /**
+     * Data Element Package
+     */
     DataElementPackage(0x15),
 
-    /// <summary>
-    /// Object Group Declarations
-    /// </summary>
+    /**
+     * Object Group Declarations
+     */
     ObjectGroupDeclarations(0x1D),
 
-    /// <summary>
-    /// Object Group Data
-    /// </summary>
+    /**
+     * Object Group Data
+     */
     ObjectGroupData(0x1E),
 
-    /// <summary>
-    /// Intermediate Node End
-    /// </summary>
+    /**
+     * Intermediate Node End
+     */
     IntermediateNodeEnd(0x1F), // Defined in MS-FSSHTTPD
 
-    /// <summary>
-    /// Root Node End
-    /// </summary>
+    /**
+     * Root Node End
+     */
     RootNodeEnd(0x20), // Defined in MS-FSSHTTPD
 
-    /// <summary>
-    /// Waterline Knowledge
-    /// </summary>
+    /**
+     * Waterline Knowledge
+     */
     WaterlineKnowledge(0x29),
 
-    /// <summary>
-    /// Content Tag Knowledge
-    /// </summary>
+    /**
+     * Content Tag Knowledge
+     */
     ContentTagKnowledge(0x2D),
 
-    /// <summary>
-    /// The Request
-    /// </summary>
+    /**
+     * The Request
+     */
     Request(0x040),
 
-    /// <summary>
-    /// Sub Response
-    /// </summary>
+    /**
+     * Sub Response
+     */
     SubResponse(0x041),
 
-    /// <summary>
-    /// Sub Request
-    /// </summary>
+    /**
+     * Sub Request
+     */
     SubRequest(0x042),
 
-    /// <summary>
-    /// Read Access Response
-    /// </summary>
+    /**
+     * Read Access Response
+     */
     ReadAccessResponse(0x043),
 
-    /// <summary>
-    /// Specialized Knowledge
-    /// </summary>
+    /**
+     * Specialized Knowledge
+     */
     SpecializedKnowledge(0x044),
 
-    /// <summary>
-    /// Write Access Response
-    /// </summary>
+    /**
+     * Write Access Response
+     */
     WriteAccessResponse(0x046),
 
-    /// <summary>
-    /// Query Changes Filter
-    /// </summary>
+    /**
+     * Query Changes Filter
+     */
     QueryChangesFilter(0x047),
 
-    /// <summary>
-    /// The Error type
-    /// </summary>
+    /**
+     * The Error type
+     */
     Error(0x04D),
 
-    /// <summary>
-    /// Query Changes Request
-    /// </summary>
+    /**
+     * Query Changes Request
+     */
     QueryChangesRequest(0x051),
 
-    /// <summary>
-    /// User Agent
-    /// </summary>
+    /**
+     * User Agent
+     */
     UserAgent(0x05D),
 
-    /// <summary>
-    /// The Response
-    /// </summary>
+    /**
+     * The Response
+     */
     Response(0x062),
 
-    /// <summary>
-    /// Fragment Knowledge
-    /// </summary>
+    /**
+     * Fragment Knowledge
+     */
     FragmentKnowledge(0x06B),
 
-    /// <summary>
-    /// Object Group Metadata Declarations, new added in MOSS2013.
-    /// </summary>
+    /**
+     * Object Group Metadata Declarations, new added in MOSS2013.
+     */
     ObjectGroupMetadataDeclarations(0x79),
 
-    /// <summary>
-    /// Target PartitionId, new added in MOSS2013.
-    /// </summary>
+    /**
+     * Target PartitionId, new added in MOSS2013.
+     */
     TargetPartitionId(0x083),
 
-    /// <summary>
-    /// User Agent Client and Platform
-    /// </summary>
+    /**
+     * User Agent Client and Platform
+     */
     UserAgentClientandPlatform(0x8B);
 
     private final int intVal;

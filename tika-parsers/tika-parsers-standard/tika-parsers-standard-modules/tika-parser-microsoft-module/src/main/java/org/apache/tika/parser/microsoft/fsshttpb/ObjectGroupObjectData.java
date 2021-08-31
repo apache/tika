@@ -1,15 +1,15 @@
 package org.apache.tika.parser.microsoft.fsshttpb;
-/// <summary>
-/// object data
-/// </summary>
+/**
+ * object data
+ */
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ObjectGroupObjectData extends StreamObject {
-    /// <summary>
-    /// Initializes a new instance of the ObjectGroupObjectData class.
-    /// </summary>
+    /**
+     * Initializes a new instance of the ObjectGroupObjectData class.
+     */
     public ObjectGroupObjectData() {
         super(StreamObjectTypeHeaderStart.ObjectGroupObjectData);
         this.ObjectExGUIDArray = new ExGUIDArray();
@@ -17,27 +17,28 @@ public class ObjectGroupObjectData extends StreamObject {
         this.Data = new BinaryItem();
     }
 
-    /// <summary>
-    /// Gets or sets an extended GUID array that specifies the object group.
-    /// </summary>
+    /**
+     * Gets or sets an extended GUID array that specifies the object group.
+     */
     public ExGUIDArray ObjectExGUIDArray;
 
-    /// <summary>
-    /// Gets or sets a cell ID array that specifies the object group.
-    /// </summary>
+    /**
+     * Gets or sets a cell ID array that specifies the object group.
+     */
     public CellIDArray cellIDArray;
 
-    /// <summary>
-    /// Gets or sets a byte stream that specifies the binary data which is opaque to this protocol.
-    /// </summary>
+    /**
+     * Gets or sets a byte stream that specifies the binary data which is opaque to this protocol.
+     */
     public BinaryItem Data;
 
-    /// <summary>
-    /// Used to de-serialize the element.
-    /// </summary>
-    /// <param name="byteArray">A Byte array</param>
-    /// <param name="currentIndex">Start position</param>
-    /// <param name="lengthOfItems">The length of the items</param>
+    /**
+     * Used to de-serialize the element.
+     *
+     * @param byteArray     A Byte array
+     * @param currentIndex  Start position
+     * @param lengthOfItems The length of the items
+     */
     @Override
     protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
@@ -53,11 +54,12 @@ public class ObjectGroupObjectData extends StreamObject {
         currentIndex.set(index.get());
     }
 
-    /// <summary>
-    /// Used to convert the element into a byte List
-    /// </summary>
-    /// <param name="byteList">A Byte list</param>
-    /// <returns>The number of the element</returns>
+    /**
+     * Used to convert the element into a byte List
+     *
+     * @param byteList A Byte list
+     * @return The number of the element
+     */
     @Override
     protected int SerializeItemsToByteList(List<Byte> byteList) {
         int itemsIndex = byteList.size();

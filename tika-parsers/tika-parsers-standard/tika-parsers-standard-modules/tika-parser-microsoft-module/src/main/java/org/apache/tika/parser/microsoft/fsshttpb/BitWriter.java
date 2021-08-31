@@ -6,28 +6,29 @@ import java.util.List;
 import java.util.UUID;
 
 public class BitWriter {
-    /// <summary>
-    /// A byte buffer will contain all the written byte.
-    /// </summary>
-    private byte[] bytes;
+    /**
+     * A byte buffer will contain all the written byte.
+     */
+    private final byte[] bytes;
 
-    /// <summary>
-    /// An offset which is used to keep trace for the current write position in bit, staring with 0.
-    /// </summary>
+    /**
+     * An offset which is used to keep trace for the current write position in bit, staring with 0.
+     */
     private int bitOffset;
 
-    /// <summary>
-    /// Initializes a new instance of the BitWriter class with specified buffer size in byte.
-    /// </summary>
-    /// <param name="bufferSize">Specify the buffer byte size.</param>
+    /**
+     * Initializes a new instance of the BitWriter class with specified buffer size in byte.
+     *
+     * @param bufferSize Specify the buffer byte size.
+     */
     public BitWriter(int bufferSize) {
         this.bytes = new byte[bufferSize];
         this.bitOffset = 0;
     }
 
-    /// <summary>
-    /// Gets a copy byte array which contains the current written byte.
-    /// </summary>
+    /**
+     * Gets a copy byte array which contains the current written byte.
+     */
     public byte[] getBytes() {
         if (this.bitOffset % 8 != 0) {
             throw new RuntimeException(
@@ -35,8 +36,7 @@ public class BitWriter {
         }
 
         int retByteLength = this.bitOffset / 8;
-        byte[] retByteArray = Arrays.copyOfRange(this.bytes, 0, retByteLength);
-        return retByteArray;
+        return Arrays.copyOfRange(this.bytes, 0, retByteLength);
     }
 
     public List<Byte> getByteList() {
@@ -48,49 +48,54 @@ public class BitWriter {
         return byteList;
     }
 
-    /// <summary>
-    /// Append a specified Unit64 type value into the buffer with the specified bit length.
-    /// </summary>
-    /// <param name="value">Specify the value which needs to be appended.</param>
-    /// <param name="length">Specify the bit length which the value will occupy in the buffer.</param>
+    /**
+     * Append a specified Unit64 type value into the buffer with the specified bit length.
+     *
+     * @param value  Specify the value which needs to be appended.
+     * @param length Specify the bit length which the value will occupy in the buffer.
+     */
     public void AppendUInt64(long value, int length) {
         byte[] convertedBytes = LittleEndianBitConverter.GetBytes(value);
         this.SetBytes(convertedBytes, length);
     }
 
-    /// <summary>
-    /// Append a specified Unit32 type value into the buffer with the specified bit length.
-    /// </summary>
-    /// <param name="value">Specify the value which needs to be appended.</param>
-    /// <param name="length">Specify the bit length which the value will occupy in the buffer.</param>
+    /**
+     * Append a specified Unit32 type value into the buffer with the specified bit length.
+     *
+     * @param value  Specify the value which needs to be appended.
+     * @param length Specify the bit length which the value will occupy in the buffer.
+     */
     public void AppendUInit32(int value, int length) {
         byte[] convertedBytes = LittleEndianBitConverter.GetBytes(value);
         this.SetBytes(convertedBytes, length);
     }
 
-    /// <summary>
-    /// Append a specified Init32 type value into the buffer with the specified bit length.
-    /// </summary>
-    /// <param name="value">Specify the value which needs to be appended.</param>
-    /// <param name="length">Specify the bit length which the value will occupy in the buffer.</param>
+    /**
+     * Append a specified Init32 type value into the buffer with the specified bit length.
+     *
+     * @param value  Specify the value which needs to be appended.
+     * @param length Specify the bit length which the value will occupy in the buffer.
+     */
     public void AppendInit32(int value, int length) {
         byte[] convertedBytes = LittleEndianBitConverter.GetBytes(value);
         this.SetBytes(convertedBytes, length);
     }
 
-    /// <summary>
-    /// Append a specified GUID value into the buffer.
-    /// </summary>
-    /// <param name="value">Specify the GUID value.</param>
+    /**
+     * Append a specified GUID value into the buffer.
+     *
+     * @param value Specify the GUID value.
+     */
     public void AppendGUID(UUID value) {
         this.SetBytes(UuidUtils.asBytes(value), 128);
     }
 
-    /// <summary>
-    /// Write the specified byte array into the buffer from the current position with the specified bit length.
-    /// </summary>
-    /// <param name="needWrittenBytes">Specify the needed written byte array.</param>
-    /// <param name="length">Specify the bit length which the byte array will occupy in the buffer.</param>
+    /**
+     * Write the specified byte array into the buffer from the current position with the specified bit length.
+     *
+     * @param needWrittenBytes Specify the needed written byte array.
+     * @param length           Specify the bit length which the byte array will occupy in the buffer.
+     */
     private void SetBytes(byte[] needWrittenBytes, int length) {
         for (int i = 0; i < length; i++) {
             if (Bit.IsBitSet(needWrittenBytes, i)) {

@@ -2,66 +2,67 @@ package org.apache.tika.parser.microsoft.fsshttpb;
 
 import java.util.List;
 
-/// <summary>
-/// A 9-byte encoding of values in the range 0x0002000000000000 through 0xFFFFFFFFFFFFFFFF
-/// </summary>
+/**
+ * A 9-byte encoding of values in the range 0x0002000000000000 through 0xFFFFFFFFFFFFFFFF
+ */
 public class Compact64bitInt extends BasicObject {
-    /// <summary>
-    /// Specify the type value for compact uint zero type value.
-    /// </summary>
+    /**
+     * Specify the type value for compact uint zero type value.
+     */
     public static final int CompactUintNullType = 0;
 
-    /// <summary>
-    /// Specify the type value for compact uint 7 bits type value.
-    /// </summary>
+    /**
+     * Specify the type value for compact uint 7 bits type value.
+     */
     public static final int CompactUint7bitType = 1;
 
-    /// <summary>
-    /// Specify the type value for compact uint 14 bits type value.
-    /// </summary>
+    /**
+     * Specify the type value for compact uint 14 bits type value.
+     */
     public static final int CompactUint14bitType = 2;
 
-    /// <summary>
-    /// Specify the type value for compact uint 21 bits type value.
-    /// </summary>
+    /**
+     * Specify the type value for compact uint 21 bits type value.
+     */
     public static final int CompactUint21bitType = 4;
 
-    /// <summary>
-    /// Specify the type value for compact uint 28 bits type value.
-    /// </summary>
+    /**
+     * Specify the type value for compact uint 28 bits type value.
+     */
     public static final int CompactUint28bitType = 8;
 
-    /// <summary>
-    /// Specify the type value for compact uint 35 bits type value.
-    /// </summary>
+    /**
+     * Specify the type value for compact uint 35 bits type value.
+     */
     public static final int CompactUint35bitType = 16;
 
-    /// <summary>
-    /// Specify the type value for compact uint 42 bits type value.
-    /// </summary>
+    /**
+     * Specify the type value for compact uint 42 bits type value.
+     */
     public static final int CompactUint42bitType = 32;
 
-    /// <summary>
-    /// Specify the type value for compact uint 49 bits type value.
-    /// </summary>
+    /**
+     * Specify the type value for compact uint 49 bits type value.
+     */
     public static final int CompactUint49bitType = 64;
 
-    /// <summary>
-    /// Specify the type value for compact uint 64 bits type value.
-    /// </summary>
+    /**
+     * Specify the type value for compact uint 64 bits type value.
+     */
     public static final int CompactUint64bitType = 128;
 
-    /// <summary>
-    /// Initializes a new instance of the Compact64bitInt class with specified value.
-    /// </summary>
-    /// <param name="decodedValue">Decoded value</param>
+    /**
+     * Initializes a new instance of the Compact64bitInt class with specified value.
+     *
+     * @param decodedValue Decoded value
+     */
     public Compact64bitInt(long decodedValue) {
         this.decodedValue = decodedValue;
     }
 
-    /// <summary>
-    /// Initializes a new instance of the Compact64bitInt class, this is the default constructor.
-    /// </summary>
+    /**
+     * Initializes a new instance of the Compact64bitInt class, this is the default constructor.
+     */
     public Compact64bitInt() {
         this.decodedValue = 0;
     }
@@ -70,10 +71,11 @@ public class Compact64bitInt extends BasicObject {
     private long decodedValue;
 
 
-    /// <summary>
-    /// This method is used to convert the element of Compact64bitInt basic object into a byte List.
-    /// </summary>
-    /// <returns>Return the byte list which store the byte information of Compact64bitInt.</returns>
+    /**
+     * This method is used to convert the element of Compact64bitInt basic object into a byte List.
+     *
+     * @return Return the byte list which store the byte information of Compact64bitInt.
+     */
     @Override
     public List<Byte> SerializeToByteList() {
         BitWriter bitWriter = new BitWriter(9);
@@ -108,12 +110,13 @@ public class Compact64bitInt extends BasicObject {
         return bitWriter.getByteList();
     }
 
-    /// <summary>
-    /// This method is used to deserialize the Compact64bitInt basic object from the specified byte array and start index.
-    /// </summary>
-    /// <param name="byteArray">Specify the byte array.</param>
-    /// <param name="startIndex">Specify the start index from the byte array.</param>
-    /// <returns>Return the length in byte of the Compact64bitInt basic object.</returns>
+    /**
+     * This method is used to deserialize the Compact64bitInt basic object from the specified byte array and start index.
+     *
+     * @param byteArray  Specify the byte array.
+     * @param startIndex Specify the start index from the byte array.
+     * @return Return the length in byte of the Compact64bitInt basic object.
+     */
     @Override
     protected int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) // return the length consumed
     {

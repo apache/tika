@@ -9,18 +9,19 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.poi.openxml4j.exceptions.InvalidOperationException;
 
 public class IntermediateNodeObject extends NodeObject {
-    /// <summary>
-    /// Initializes a new instance of the IntermediateNodeObject class.
-    /// </summary>
+    /**
+     * Initializes a new instance of the IntermediateNodeObject class.
+     */
     public IntermediateNodeObject() {
         super(StreamObjectTypeHeaderStart.IntermediateNodeObject);
         this.IntermediateNodeObjectList = new ArrayList<>();
     }
 
-    /// <summary>
-    /// Get all the content which is represented by the root node object.
-    /// </summary>
-    /// <returns>Return the byte list of root node object content.</returns>
+    /**
+     * Get all the content which is represented by the root node object.
+     *
+     * @return Return the byte list of root node object content.
+     */
     @Override
     public List<Byte> GetContent() {
         List<Byte> content = new ArrayList<Byte>();
@@ -32,12 +33,13 @@ public class IntermediateNodeObject extends NodeObject {
         return content;
     }
 
-    /// <summary>
-    /// Used to de-serialize the element.
-    /// </summary>
-    /// <param name="byteArray">A Byte array</param>
-    /// <param name="currentIndex">Start position</param>
-    /// <param name="lengthOfItems">The length of the items</param>
+    /**
+     * Used to de-serialize the element.
+     *
+     * @param byteArray     A Byte array
+     * @param currentIndex  Start position
+     * @param lengthOfItems The length of the items
+     */
     @Override
     protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
@@ -52,11 +54,12 @@ public class IntermediateNodeObject extends NodeObject {
         currentIndex.set(index.get());
     }
 
-    /// <summary>
-    /// Used to convert the element into a byte List.
-    /// </summary>
-    /// <param name="byteList">A Byte list</param>
-    /// <returns>The Byte list</returns>
+    /**
+     * Used to convert the element into a byte List.
+     *
+     * @param byteList A Byte list
+     * @return The Byte list
+     */
     @Override
     protected int SerializeItemsToByteList(List<Byte> byteList) {
         byteList.addAll(this.Signature.SerializeToByteList());
@@ -64,16 +67,17 @@ public class IntermediateNodeObject extends NodeObject {
         return 0;
     }
 
-    /// <summary>
-    /// The class is used to build a root node object.
-    /// </summary>
+    /**
+     * The class is used to build a root node object.
+     */
     public static class RootNodeObjectBuilder {
-        /// <summary>
-        /// This method is used to build a root node object from an data element list with the specified storage index extended GUID.
-        /// </summary>
-        /// <param name="dataElements">Specify the data element list.</param>
-        /// <param name="storageIndexExGuid">Specify the storage index extended GUID.</param>
-        /// <returns>Return a root node object build from the data element list.</returns>
+        /**
+         * This method is used to build a root node object from an data element list with the specified storage index extended GUID.
+         *
+         * @param dataElements       Specify the data element list.
+         * @param storageIndexExGuid Specify the storage index extended GUID.
+         * @return Return a root node object build from the data element list.
+         */
         public IntermediateNodeObject BuildFromListOfDataElements(List<DataElement> dataElements,
                                                                   ExGuid storageIndexExGuid) {
             if (DataElementUtils.TryAnalyzeWhetherFullDataElementList(dataElements, storageIndexExGuid)
@@ -101,11 +105,12 @@ public class IntermediateNodeObject extends NodeObject {
             return null;
         }
 
-        /// <summary>
-        /// This method is used to build a root node object from a byte array.
-        /// </summary>
-        /// <param name="fileContent">Specify the byte array.</param>
-        /// <returns>Return a root node object build from the byte array.</returns>
+        /**
+         * This method is used to build a root node object from a byte array
+         *
+         * @param fileContent Specify the byte array.
+         * @return Return a root node object build from the byte array.
+         */
         public IntermediateNodeObject Build(byte[] fileContent) {
             IntermediateNodeObject rootNode = new IntermediateNodeObject();
             rootNode.Signature = new SignatureObject();
@@ -116,12 +121,13 @@ public class IntermediateNodeObject extends NodeObject {
             return rootNode;
         }
 
-        /// <summary>
-        /// This method is used to build a root node object from an object group data element list with the specified root extended GUID.
-        /// </summary>
-        /// <param name="objectGroupList">Specify the object group data element list.</param>
-        /// <param name="rootExGuid">Specify the root extended GUID.</param>
-        /// <returns>Return a root node object build from the object group data element list.</returns>
+        /**
+         * This method is used to build a root node object from an object group data element list with the specified root extended GUID
+         *
+         * @param objectGroupList Specify the object group data element list.
+         * @param rootExGuid      Specify the root extended GUID.
+         * @return Return a root node object build from the object group data element list.
+         */
         private IntermediateNodeObject BuildFromListOfObjectGroupDataElementData(
                 List<ObjectGroupDataElementData> objectGroupList, ExGuid rootExGuid) {
             AtomicReference<ObjectGroupObjectDeclare> rootDeclare = new AtomicReference<>();
@@ -188,14 +194,15 @@ public class IntermediateNodeObject extends NodeObject {
             return rootNode.get();
         }
 
-        /// <summary>
-        /// This method is used to find the object group data element using the specified extended GUID.
-        /// </summary>
-        /// <param name="objectGroupList">Specify the object group data element list.</param>
-        /// <param name="extendedGuid">Specify the extended GUID.</param>
-        /// <param name="declare">Specify the output of ObjectGroupObjectDeclare.</param>
-        /// <returns>Return the object group data element if found.</returns>
-        /// <exception cref="InvalidOperationException">If not found, throw the InvalidOperationException exception.</exception>
+        /**
+         * This method is used to find the object group data element using the specified extended GUID
+         *
+         * @param objectGroupList Specify the object group data element list.
+         * @param extendedGuid    Specify the extended GUID.
+         * @param declare         Specify the output of ObjectGroupObjectDeclare.
+         * @return Return the object group data element if found.
+         */
+
         private ObjectGroupObjectData FindByExGuid(List<ObjectGroupDataElementData> objectGroupList,
                                                    ExGuid extendedGuid,
                                                    AtomicReference<ObjectGroupObjectDeclare> declare) {

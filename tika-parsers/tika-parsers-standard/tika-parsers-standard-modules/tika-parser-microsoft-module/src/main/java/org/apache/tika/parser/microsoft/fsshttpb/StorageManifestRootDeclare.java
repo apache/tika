@@ -1,34 +1,36 @@
-package org.apache.tika.parser.microsoft.fsshttpb;/// <summary>
+package org.apache.tika.parser.microsoft.fsshttpb;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/// Specifies one or more storage manifest root declare.
-/// </summary>
+/**
+ * Specifies one or more storage manifest root declare.
+ */
 public class StorageManifestRootDeclare extends StreamObject {
-    /// <summary>
-    /// Initializes a new instance of the StorageManifestRootDeclare class.
-    /// </summary>
+    /**
+     * Initializes a new instance of the StorageManifestRootDeclare class.
+     */
     public StorageManifestRootDeclare() {
         super(StreamObjectTypeHeaderStart.StorageManifestRootDeclare);
     }
 
-    /// <summary>
-    /// Gets or sets the root storage manifest.
-    /// </summary>
+    /**
+     * Gets or sets the root storage manifest.
+     */
     public ExGuid RootExGUID;
 
-    /// <summary>
-    /// Gets or sets the cell identifier.
-    /// </summary>
+    /**
+     * Gets or sets the cell identifier.
+     */
     public CellID cellID;
 
-    /// <summary>
-    /// Used to de-serialize the items.
-    /// </summary>
-    /// <param name="byteArray">Byte array</param>
-    /// <param name="currentIndex">Start position</param>
-    /// <param name="lengthOfItems">The length of items</param>
+    /**
+     * Used to de-serialize the items.
+     *
+     * @param byteArray     Byte array
+     * @param currentIndex  Start position
+     * @param lengthOfItems The length of items
+     */
     @Override
     protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
@@ -43,11 +45,12 @@ public class StorageManifestRootDeclare extends StreamObject {
         currentIndex.set(index.get());
     }
 
-    /// <summary>
-    /// Used to convert the element into a byte List.
-    /// </summary>
-    /// <param name="byteList">A Byte list</param>
-    /// <returns>The length of list</returns>
+    /**
+     * Used to convert the element into a byte List.
+     *
+     * @param byteList A Byte list
+     * @return The length of list
+     */
     @Override
     protected int SerializeItemsToByteList(List<Byte> byteList) {
         int itemsIndex = byteList.size();

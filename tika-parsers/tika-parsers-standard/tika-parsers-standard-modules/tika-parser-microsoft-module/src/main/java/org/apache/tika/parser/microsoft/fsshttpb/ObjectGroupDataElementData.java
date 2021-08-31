@@ -6,9 +6,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class ObjectGroupDataElementData extends DataElementData {
-    /// <summary>
-    /// Initializes a new instance of the ObjectGroupDataElementData class.
-    /// </summary>
+    /**
+     * Initializes a new instance of the ObjectGroupDataElementData class.
+     */
     public ObjectGroupDataElementData() {
         this.ObjectGroupDeclarations = new ObjectGroupDeclarations();
 
@@ -20,30 +20,31 @@ public class ObjectGroupDataElementData extends DataElementData {
         this.ObjectGroupData = new ObjectGroupData();
     }
 
-    /// <summary>
-    ///  Gets or sets an optional data element hash for the object data group.
-    /// </summary>
+    /**
+     * Gets or sets an optional data element hash for the object data group.
+     */
     public DataElementHash DataElementHash;
 
-    /// <summary>
-    /// Gets or sets an optional array of object declarations that specifies the object.
-    /// </summary>
+    /**
+     * Gets or sets an optional array of object declarations that specifies the object.
+     */
     public ObjectGroupDeclarations ObjectGroupDeclarations;
 
-    /// <summary>
-    /// Gets or sets an object metadata declaration. If no object metadata exists, this field must be omitted.
-    /// </summary>
+    /**
+     * Gets or sets an object metadata declaration. If no object metadata exists, this field must be omitted.
+     */
     public ObjectGroupMetadataDeclarations ObjectMetadataDeclaration;
 
-    /// <summary>
-    /// Gets or sets an object group data.
-    /// </summary>
+    /**
+     * Gets or sets an object group data.
+     */
     public ObjectGroupData ObjectGroupData;
 
-    /// <summary>
-    /// Used to convert the element into a byte List.
-    /// </summary>
-    /// <returns>A Byte list</returns>
+    /**
+     * Used to convert the element into a byte List.
+     *
+     * @return A Byte list
+     */
     @Override
     public List<Byte> SerializeToByteList() {
         List<Byte> result = new ArrayList<>();
@@ -61,12 +62,13 @@ public class ObjectGroupDataElementData extends DataElementData {
         return result;
     }
 
-    /// <summary>
-    /// Used to return the length of this element.
-    /// </summary>
-    /// <param name="byteArray">A Byte array</param>
-    /// <param name="startIndex">Start position</param>
-    /// <returns>The length of the element</returns>
+    /**
+     * Used to return the length of this element.
+     *
+     * @param byteArray  A Byte array
+     * @param startIndex Start position
+     * @return The length of the element
+     */
     @Override
     public int DeserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex) {
         AtomicInteger index = new AtomicInteger(startIndex);
@@ -90,26 +92,28 @@ public class ObjectGroupDataElementData extends DataElementData {
         return index.get() - startIndex;
     }
 
-    /// <summary>
-    /// The internal class for build a list of DataElement from an node object.
-    /// </summary>
+    /**
+     * The internal class for build a list of DataElement from an node object.
+     */
     public static class Builder {
-        /// <summary>
-        /// This method is used to build  a list of DataElement from an node object.
-        /// </summary>
-        /// <param name="node">Specify the node object.</param>
-        /// <returns>Return the list of data elements build from the specified node object.</returns>
+        /**
+         * This method is used to build  a list of DataElement from an node object
+         *
+         * @param node Specify the node object.
+         * @return Return the list of data elements build from the specified node object.
+         */
         public List<DataElement> Build(NodeObject node) {
             List<DataElement> dataElements = new ArrayList<>();
             this.TravelNodeObject(node, dataElements);
             return dataElements;
         }
 
-        /// <summary>
-        /// This method is used to travel the node tree and build the ObjectGroupDataElementData and the extra data element list.
-        /// </summary>
-        /// <param name="node">Specify the object node.</param>
-        /// <param name="dataElements">Specify the list of data elements.</param>
+        /**
+         * This method is used to travel the node tree and build the ObjectGroupDataElementData and the extra data element list
+         *
+         * @param node         Specify the object node.
+         * @param dataElements Specify the list of data elements.
+         */
         private void TravelNodeObject(NodeObject node, List<DataElement> dataElements) {
             if (node instanceof IntermediateNodeObject) {
                 IntermediateNodeObject intermediateNodeObject = (IntermediateNodeObject) node;
@@ -155,11 +159,12 @@ public class ObjectGroupDataElementData extends DataElementData {
             }
         }
 
-        /// <summary>
-        /// This method is used to create ObjectGroupObjectDeclare instance from a node object.
-        /// </summary>
-        /// <param name="node">Specify the node object.</param>
-        /// <returns>Return the ObjectGroupObjectDeclare instance.</returns>
+        /**
+         * This method is used to create ObjectGroupObjectDeclare instance from a node object
+         *
+         * @param node Specify the node object.
+         * @return Return the ObjectGroupObjectDeclare instance.
+         */
         private ObjectGroupObjectDeclare CreateObjectDeclare(NodeObject node) {
             ObjectGroupObjectDeclare objectGroupObjectDeclare = new ObjectGroupObjectDeclare();
 
@@ -172,11 +177,12 @@ public class ObjectGroupDataElementData extends DataElementData {
             return objectGroupObjectDeclare;
         }
 
-        /// <summary>
-        /// This method is used to create ObjectGroupObjectDeclare instance from a data node object.
-        /// </summary>
-        /// <param name="node">Specify the node object.</param>
-        /// <returns>Return the ObjectGroupObjectDeclare instance.</returns>
+        /**
+         * This method is used to create ObjectGroupObjectDeclare instance from a data node object
+         *
+         * @param node Specify the node object.
+         * @return Return the ObjectGroupObjectDeclare instance.
+         */
         private ObjectGroupObjectDeclare CreateObjectDeclare(DataNodeObjectData node) {
             ObjectGroupObjectDeclare objectGroupObjectDeclare = new ObjectGroupObjectDeclare();
 
@@ -189,11 +195,12 @@ public class ObjectGroupDataElementData extends DataElementData {
             return objectGroupObjectDeclare;
         }
 
-        /// <summary>
-        /// This method is used to create ObjectGroupObjectData instance from a root node object.
-        /// </summary>
-        /// <param name="node">Specify the node object.</param>
-        /// <returns>Return the ObjectGroupObjectData instance.</returns>
+        /**
+         * This method is used to create ObjectGroupObjectData instance from a root node object
+         *
+         * @param node Specify the node object.
+         * @return Return the ObjectGroupObjectData instance.
+         */
         private ObjectGroupObjectData CreateObjectData(IntermediateNodeObject node) {
             ObjectGroupObjectData objectData = new ObjectGroupObjectData();
 
@@ -210,11 +217,12 @@ public class ObjectGroupDataElementData extends DataElementData {
             return objectData;
         }
 
-        /// <summary>
-        /// This method is used to create ObjectGroupObjectData instance from a intermediate node object.
-        /// </summary>
-        /// <param name="node">Specify the node object.</param>
-        /// <returns>Return the ObjectGroupObjectData instance.</returns>
+        /**
+         * This method is used to create ObjectGroupObjectData instance from a intermediate node object
+         *
+         * @param node Specify the node object.
+         * @return Return the ObjectGroupObjectData instance.
+         */
         private ObjectGroupObjectData CreateObjectData(LeafNodeObject node) {
             ObjectGroupObjectData objectData = new ObjectGroupObjectData();
 
@@ -235,11 +243,12 @@ public class ObjectGroupDataElementData extends DataElementData {
             return objectData;
         }
 
-        /// <summary>
-        /// This method is used to create ObjectGroupObjectData instance from a data node object.
-        /// </summary>
-        /// <param name="node">Specify the node object.</param>
-        /// <returns>Return the ObjectGroupObjectData instance.</returns>
+        /**
+         * This method is used to create ObjectGroupObjectData instance from a data node object
+         *
+         * @param node Specify the node object.
+         * @return Return the ObjectGroupObjectData instance.
+         */
         private ObjectGroupObjectData CreateObjectData(DataNodeObjectData node) {
             ObjectGroupObjectData objectData = new ObjectGroupObjectData();
             objectData.cellIDArray = new CellIDArray(0, null);

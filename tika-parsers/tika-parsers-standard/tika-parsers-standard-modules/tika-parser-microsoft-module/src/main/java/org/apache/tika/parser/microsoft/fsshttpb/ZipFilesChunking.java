@@ -7,22 +7,24 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.codec.digest.DigestUtils;
 
-/// <summary>
-/// This class is used to process zip file chunking.
-/// </summary>
+/**
+ * This class is used to process zip file chunking
+ */
 public class ZipFilesChunking extends AbstractChunking {
-    /// <summary>
-    /// Initializes a new instance of the ZipFilesChunking class
-    /// </summary>
-    /// <param name="fileContent">The content of the file.</param>
+    /**
+     * Initializes a new instance of the ZipFilesChunking class
+     *
+     * @param fileContent The content of the file.
+     */
     public ZipFilesChunking(byte[] fileContent) {
         super(fileContent);
     }
 
-    /// <summary>
-    /// This method is used to chunk the file data.
-    /// </summary>
-    /// <returns>A list of LeafNodeObjectData.</returns>
+    /**
+     * This method is used to chunk the file data.
+     *
+     * @return A list of LeafNodeObjectData.
+     */
     @Override
     public List<LeafNodeObject> Chunking() {
         java.util.List<LeafNodeObject> list = new ArrayList<>();
@@ -72,11 +74,12 @@ public class ZipFilesChunking extends AbstractChunking {
         return list;
     }
 
-    /// <summary>
-    /// Convert chunk data to LeafNodeObjectData from byte array.
-    /// </summary>
-    /// <param name="chunkData">A byte array that contains the data.</param>
-    /// <returns>A list of LeafNodeObjectData.</returns>
+    /**
+     * Convert chunk data to LeafNodeObjectData from byte array.
+     *
+     * @param chunkData A byte array that contains the data.
+     * @return A list of LeafNodeObjectData.
+     */
     private List<LeafNodeObject> GetSubChunkList(byte[] chunkData) {
         List<LeafNodeObject> subChunkList = new ArrayList<LeafNodeObject>();
         int index = 0;
@@ -91,13 +94,14 @@ public class ZipFilesChunking extends AbstractChunking {
         return subChunkList;
     }
 
-    /// <summary>
-    /// This method is used to analyze the zip file header.
-    /// </summary>
-    /// <param name="content">Specify the zip content.</param>
-    /// <param name="index">Specify the start position.</param>
-    /// <param name="dataFileSignature">Specify the output value for the data file signature.</param>
-    /// <returns>Return the data file content.</returns>
+    /**
+     * This method is used to analyze the zip file header.
+     *
+     * @param content           Specify the zip content.
+     * @param index             Specify the start position.
+     * @param dataFileSignature Specify the output value for the data file signature.
+     * @return Return the data file content.
+     */
     private byte[] AnalyzeFileHeader(byte[] content, int index, AtomicReference<byte[]> dataFileSignature) {
         int crc32 = BitConverter.toInt32(content, index + 14);
         int compressedSize = BitConverter.toInt32(content, index + 18);
@@ -115,23 +119,25 @@ public class ZipFilesChunking extends AbstractChunking {
         return Arrays.copyOfRange(content, index, headerLength);
     }
 
-    /// <summary>
-    /// This method is used to get the compressed size value from the data file signature.
-    /// </summary>
-    /// <param name="dataFileSignature">Specify the signature of the zip file content.</param>
-    /// <returns>Return the compressed size value.</returns>
+    /**
+     * This method is used to get the compressed size value from the data file signature.
+     *
+     * @param dataFileSignature Specify the signature of the zip file content.
+     * @return Return the compressed size value.
+     */
     private long GetCompressedSize(byte[] dataFileSignature) {
         BitReader reader = new BitReader(dataFileSignature, 0);
         reader.ReadUInt32(32);
         return reader.ReadUInt64(64);
     }
 
-    /// <summary>
-    /// Get the signature for single chunk.
-    /// </summary>
-    /// <param name="header">The data of file header.</param>
-    /// <param name="dataFile">The data of data file.</param>
-    /// <returns>An instance of SignatureObject.</returns>
+    /**
+     * Get the signature for single chunk.
+     *
+     * @param header   The data of file header.
+     * @param dataFile The data of data file.
+     * @return An instance of SignatureObject.
+     */
     private SignatureObject GetSingleChunkSignature(byte[] header, byte[] dataFile) {
         byte[] headerSignature = DigestUtils.sha1(header);
 
@@ -152,15 +158,16 @@ public class ZipFilesChunking extends AbstractChunking {
 
         SignatureObject signature = new SignatureObject();
         signature.SignatureData = new BinaryItem(singleSignature);
-
+//              }
         return signature;
     }
 
-    /// <summary>
-    /// Get signature with SHA1 algorithm.
-    /// </summary>
-    /// <param name="array">The input data.</param>
-    /// <returns>An instance of SignatureObject.</returns>
+    /**
+     * Get signature with SHA1 algorithm.
+     *
+     * @param array The input data.
+     * @return An instance of SignatureObject.
+     */
     private SignatureObject GetSHA1Signature(byte[] array) {
         byte[] temp = DigestUtils.sha1(array);
 
@@ -169,11 +176,12 @@ public class ZipFilesChunking extends AbstractChunking {
         return signature;
     }
 
-    /// <summary>
-    /// Get the signature for data file.
-    /// </summary>
-    /// <param name="array">The input data.</param>
-    /// <returns>An instance of SignatureObject.</returns>
+    /**
+     * Get the signature for data file.
+     *
+     * @param array The input data.
+     * @return An instance of SignatureObject.
+     */
     private SignatureObject GetDataFileSignature(byte[] array) {
         SignatureObject signature = new SignatureObject();
         signature.SignatureData = new BinaryItem(ByteUtil.toListOfByte(array));
@@ -181,10 +189,11 @@ public class ZipFilesChunking extends AbstractChunking {
         return signature;
     }
 
-    /// <summary>
-    /// Get the signature for sub chunk.
-    /// </summary>
-    /// <returns>An instance of SignatureObject.</returns>
+    /**
+     * Get the signature for sub chunk.
+     *
+     * @return An instance of SignatureObject.
+     */
     private SignatureObject GetSubChunkSignature() {
         // In current, it has no idea about how to compute the signature for sub chunk.
         throw new RuntimeException("The Get sub chunk signature method is not implemented.");

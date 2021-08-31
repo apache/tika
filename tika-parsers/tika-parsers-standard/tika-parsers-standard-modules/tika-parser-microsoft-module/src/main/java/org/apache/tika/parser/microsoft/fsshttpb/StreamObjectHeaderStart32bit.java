@@ -3,15 +3,16 @@ package org.apache.tika.parser.microsoft.fsshttpb;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/// <summary>
-/// An 32-bit header for a compound object would indicate the start of a stream object
-/// </summary>
+/**
+ * An 32-bit header for a compound object would indicate the start of a stream object
+ */
 public class StreamObjectHeaderStart32bit extends StreamObjectHeaderStart {
-    /// <summary>
-    /// Initializes a new instance of the StreamObjectHeaderStart32bit class with specified type and length.
-    /// </summary>
-    /// <param name="type">Specify the type of the StreamObjectHeaderStart32bit.</param>
-    /// <param name="length">Specify the length of the StreamObjectHeaderStart32bit.</param>
+    /**
+     * Initializes a new instance of the StreamObjectHeaderStart32bit class with specified type and length.
+     *
+     * @param type   Specify the type of the StreamObjectHeaderStart32bit.
+     * @param length Specify the length of the StreamObjectHeaderStart32bit.
+     */
     public StreamObjectHeaderStart32bit(StreamObjectTypeHeaderStart type, int length) {
         this.headerType = StreamObjectHeaderStart.StreamObjectHeaderStart32bit;
         this.type = type;
@@ -26,31 +27,33 @@ public class StreamObjectHeaderStart32bit extends StreamObjectHeaderStart {
         }
     }
 
-    /// <summary>
-    /// Initializes a new instance of the StreamObjectHeaderStart32bit class, this is the default constructor.
-    /// </summary>
+    /**
+     * Initializes a new instance of the StreamObjectHeaderStart32bit class, this is the default constructor.
+     */
     public StreamObjectHeaderStart32bit() {
     }
 
-    /// <summary>
-    /// Initializes a new instance of the StreamObjectHeaderStart32bit class with specified type.
-    /// </summary>
-    /// <param name="streamObjectTypeHeaderStart">Specify the type of the StreamObjectHeaderStart32bit.</param>
+    /**
+     * Initializes a new instance of the StreamObjectHeaderStart32bit class with specified type.
+     *
+     * @param streamObjectTypeHeaderStart Specify the type of the StreamObjectHeaderStart32bit.
+     */
     public StreamObjectHeaderStart32bit(StreamObjectTypeHeaderStart streamObjectTypeHeaderStart) {
         this.type = streamObjectTypeHeaderStart;
     }
 
-    /// <summary>
-    /// Gets or sets an optional compact uint64 that specifies the length in bytes for additional data (if any).
-    /// This field MUST be specified if the Length field contains 32767 and MUST NOT be specified if the Length field
-    /// contains any other value than 32767.
-    /// </summary>
+    /**
+     * Gets or sets an optional compact uint64 that specifies the length in bytes for additional data (if any).
+     * This field MUST be specified if the Length field contains 32767 and MUST NOT be specified if the Length field
+     * contains any other value than 32767.
+     */
     public Compact64bitInt largeLength;
 
-    /// <summary>
-    /// This method is used to convert the element of StreamObjectHeaderStart32bit basic object into a byte List.
-    /// </summary>
-    /// <returns>Return the byte list which store the byte information of StreamObjectHeaderStart32bit.</returns>
+    /**
+     * This method is used to convert the element of StreamObjectHeaderStart32bit basic object into a byte List.
+     *
+     * @return Return the byte list which store the byte information of StreamObjectHeaderStart32bit.
+     */
     @Override
     public List<Byte> SerializeToByteList() {
         BitWriter bitFieldWriter = new BitWriter(4);
@@ -68,12 +71,13 @@ public class StreamObjectHeaderStart32bit extends StreamObjectHeaderStart {
         return listByte;
     }
 
-    /// <summary>
-    /// This method is used to deserialize the StreamObjectHeaderStart32bit basic object from the specified byte array and start index.
-    /// </summary>
-    /// <param name="byteArray">Specify the byte array.</param>
-    /// <param name="startIndex">Specify the start index from the byte array.</param>
-    /// <returns>Return the length in byte of the StreamObjectHeaderStart32bit basic object.</returns>
+    /**
+     * This method is used to deserialize the StreamObjectHeaderStart32bit basic object from the specified byte array and start index.
+     *
+     * @param byteArray  Specify the byte array.
+     * @param startIndex Specify the start index from the byte array.
+     * @return Return the length in byte of the StreamObjectHeaderStart32bit basic object.
+     */
     @Override
     protected int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         BitReader bitReader = new BitReader(byteArray, startIndex);

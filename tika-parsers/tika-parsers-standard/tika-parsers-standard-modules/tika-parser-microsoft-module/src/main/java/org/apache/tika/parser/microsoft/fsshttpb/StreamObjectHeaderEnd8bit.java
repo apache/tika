@@ -2,14 +2,15 @@ package org.apache.tika.parser.microsoft.fsshttpb;
 
 import java.util.List;
 
-/// <summary>
-/// An 8-bit header for a compound object would indicate the end of a stream object
-/// </summary>
+/**
+ * An 8-bit header for a compound object would indicate the end of a stream object
+ */
 public class StreamObjectHeaderEnd8bit extends StreamObjectHeaderEnd {
-    /// <summary>
-    /// Initializes a new instance of the StreamObjectHeaderEnd8bit class with the specified type value.
-    /// </summary>
-    /// <param name="type">Specify the integer value of the type.</param>
+    /**
+     * Initializes a new instance of the StreamObjectHeaderEnd8bit class with the specified type value.
+     *
+     * @param type Specify the integer value of the type.
+     */
     public StreamObjectHeaderEnd8bit(int type) {
 
         this.type = StreamObjectTypeHeaderEnd.fromIntVal(type);
@@ -20,24 +21,26 @@ public class StreamObjectHeaderEnd8bit extends StreamObjectHeaderEnd {
 
     }
 
-    /// <summary>
-    /// Initializes a new instance of the StreamObjectHeaderEnd8bit class, this is the default constructor.
-    /// </summary>
+    /**
+     * Initializes a new instance of the StreamObjectHeaderEnd8bit class, this is the default constructor.
+     */
     public StreamObjectHeaderEnd8bit() {
     }
 
-    /// <summary>
-    /// Initializes a new instance of the StreamObjectHeaderEnd8bit class with the specified type value.
-    /// </summary>
-    /// <param name="type">Specify the value of the type.</param>
+    /**
+     * Initializes a new instance of the StreamObjectHeaderEnd8bit class with the specified type value.
+     *
+     * @param type Specify the value of the type.
+     */
     public StreamObjectHeaderEnd8bit(StreamObjectTypeHeaderEnd type) {
         this(type.getIntVal());
     }
 
-    /// <summary>
-    /// This method is used to convert the element of StreamObjectHeaderEnd8bit basic object into a byte List.
-    /// </summary>
-    /// <returns>Return the byte list which store the byte information of StreamObjectHeaderEnd8bit.</returns>
+    /**
+     * This method is used to convert the element of StreamObjectHeaderEnd8bit basic object into a byte List.
+     *
+     * @return Return the byte list which store the byte information of StreamObjectHeaderEnd8bit.
+     */
     @Override
     public List<Byte> SerializeToByteList() {
         BitWriter bitFieldWriter = new BitWriter(1);
@@ -46,10 +49,11 @@ public class StreamObjectHeaderEnd8bit extends StreamObjectHeaderEnd {
         return bitFieldWriter.getByteList();
     }
 
-    /// <summary>
-    /// This method is used to get the byte value of the 8bit stream object header End.
-    /// </summary>
-    /// <returns>Return StreamObjectHeaderEnd8bit value represented by byte.</returns>
+    /**
+     * This method is used to get the byte value of the 8bit stream object header End.
+     *
+     * @return Return StreamObjectHeaderEnd8bit value represented by byte.
+     */
     public byte ToByte() {
         List<Byte> bytes = this.SerializeToByteList();
 
@@ -60,12 +64,13 @@ public class StreamObjectHeaderEnd8bit extends StreamObjectHeaderEnd {
         return bytes.get(0);
     }
 
-    /// <summary>
-    /// This method is used to deserialize the StreamObjectHeaderEnd8bit basic object from the specified byte array and start index.
-    /// </summary>
-    /// <param name="byteArray">Specify the byte array.</param>
-    /// <param name="startIndex">Specify the start index from the byte array.</param>
-    /// <returns>Return the length in byte of the StreamObjectHeaderEnd8bit basic object.</returns>
+    /**
+     * This method is used to deserialize the StreamObjectHeaderEnd8bit basic object from the specified byte array and start index.
+     *
+     * @param byteArray  Specify the byte array.
+     * @param startIndex Specify the start index from the byte array.
+     * @return Return the length in byte of the StreamObjectHeaderEnd8bit basic object.
+     */
     @Override
     protected int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         BitReader reader = new BitReader(byteArray, startIndex);

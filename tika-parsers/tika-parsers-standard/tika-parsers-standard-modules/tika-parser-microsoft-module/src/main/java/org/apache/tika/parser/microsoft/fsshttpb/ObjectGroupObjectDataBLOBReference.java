@@ -3,13 +3,13 @@ package org.apache.tika.parser.microsoft.fsshttpb;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/// <summary>
-/// object data BLOB reference
-/// </summary>
+/**
+ * object data BLOB reference
+ */
 public class ObjectGroupObjectDataBLOBReference extends StreamObject {
-    /// <summary>
-    /// Initializes a new instance of the ObjectGroupObjectDataBLOBReference class.
-    /// </summary>
+    /**
+     * Initializes a new instance of the ObjectGroupObjectDataBLOBReference class.
+     */
     public ObjectGroupObjectDataBLOBReference() {
         super(StreamObjectTypeHeaderStart.ObjectGroupObjectDataBLOBReference);
         this.ObjectExtendedGUIDArray = new ExGUIDArray();
@@ -17,27 +17,28 @@ public class ObjectGroupObjectDataBLOBReference extends StreamObject {
         this.BLOBExtendedGUID = new ExGuid();
     }
 
-    /// <summary>
-    /// Gets or sets an extended GUID array that specifies the object references.
-    /// </summary>
+    /**
+     * Gets or sets an extended GUID array that specifies the object references.
+     */
     public ExGUIDArray ObjectExtendedGUIDArray;
 
-    /// <summary>
-    /// Gets or sets a cell ID array that specifies the cell references.
-    /// </summary>
+    /**
+     * Gets or sets a cell ID array that specifies the cell references.
+     */
     public CellIDArray cellIDArray;
 
-    /// <summary>
-    /// Gets or sets an extended GUID that specifies the object data BLOB.
-    /// </summary>
+    /**
+     * Gets or sets an extended GUID that specifies the object data BLOB.
+     */
     public ExGuid BLOBExtendedGUID;
 
-    /// <summary>
-    /// Used to de-serialize the element.
-    /// </summary>
-    /// <param name="byteArray">A Byte array</param>
-    /// <param name="currentIndex">Start position</param>
-    /// <param name="lengthOfItems">The length of the items</param>
+    /**
+     * Used to de-serialize the element.
+     *
+     * @param byteArray     A Byte array
+     * @param currentIndex  Start position
+     * @param lengthOfItems The length of the items
+     */
     @Override
     protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
@@ -53,11 +54,12 @@ public class ObjectGroupObjectDataBLOBReference extends StreamObject {
         currentIndex.set(index.get());
     }
 
-    /// <summary>
-    /// Used to convert the element into a byte List.
-    /// </summary>
-    /// <param name="byteList">A Byte list</param>
-    /// <returns>The number of the elements</returns>
+    /**
+     * Used to convert the element into a byte List.
+     *
+     * @param byteList A Byte list
+     * @return The number of the elements
+     */
     @Override
     protected int SerializeItemsToByteList(List<Byte> byteList) {
         int itemsIndex = byteList.size();

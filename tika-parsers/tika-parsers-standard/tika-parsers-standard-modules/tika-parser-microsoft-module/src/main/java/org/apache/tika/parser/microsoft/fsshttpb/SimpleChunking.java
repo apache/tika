@@ -7,18 +7,20 @@ import java.util.List;
 import org.apache.commons.codec.digest.DigestUtils;
 
 public class SimpleChunking extends AbstractChunking {
-    /// <summary>
-    /// Initializes a new instance of the SimpleChunking class
-    /// </summary>
-    /// <param name="fileContent">The content of the file.</param>
+    /**
+     * Initializes a new instance of the SimpleChunking class
+     *
+     * @param fileContent The content of the file.
+     */
     public SimpleChunking(byte[] fileContent) {
         super(fileContent);
     }
 
-    /// <summary>
-    /// This method is used to chunk the file data.
-    /// </summary>
-    /// <returns>A list of LeafNodeObjectData.</returns>
+    /**
+     * This method is used to chunk the file data.
+     *
+     * @return A list of LeafNodeObjectData.
+     */
     @Override
     public List<LeafNodeObject> Chunking() {
         int maxChunkSize = 1 * 1024 * 1024;
@@ -44,11 +46,12 @@ public class SimpleChunking extends AbstractChunking {
         return list;
     }
 
-    /// <summary>
-    /// Get signature for the chunk.
-    /// </summary>
-    /// <param name="array">The data of the chunk.</param>
-    /// <returns>The signature instance.</returns>
+    /**
+     * Get signature for the chunk.
+     *
+     * @param array The data of the chunk.
+     * @return The signature instance.
+     */
     private SignatureObject GetSignature(byte[] array) {
         if (this.FileContent.length <= 250 * 1024 * 1024) {
             byte[] temp = DigestUtils.sha1(array);

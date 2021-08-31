@@ -4,29 +4,30 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class RevisionManifest extends StreamObject {
-    /// <summary>
-    /// Initializes a new instance of the RevisionManifest class.
-    /// </summary>
+    /**
+     * Initializes a new instance of the RevisionManifest class.
+     */
     public RevisionManifest() {
         super(StreamObjectTypeHeaderStart.RevisionManifest);
     }
 
-    /// <summary>
-    /// Gets or sets an extended GUID that specifies the revision identifier represented by this data element.
-    /// </summary>
+    /**
+     * Gets or sets an extended GUID that specifies the revision identifier represented by this data element.
+     */
     public ExGuid RevisionID;
 
-    /// <summary>
-    /// Gets or sets an extended GUID that specifies the revision identifier of a base revision that could contain additional information for this revision.
-    /// </summary>
+    /**
+     * Gets or sets an extended GUID that specifies the revision identifier of a base revision that could contain additional information for this revision.
+     */
     public ExGuid BaseRevisionID;
 
-    /// <summary>
-    /// Used to de-serialize the element.
-    /// </summary>
-    /// <param name="byteArray">A Byte array</param>
-    /// <param name="currentIndex">Start position</param>
-    /// <param name="lengthOfItems">The length of the items</param>
+    /**
+     * Used to de-serialize the element.
+     *
+     * @param byteArray     A Byte array
+     * @param currentIndex  Start position
+     * @param lengthOfItems The length of the items
+     */
     @Override
     protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
@@ -41,11 +42,12 @@ public class RevisionManifest extends StreamObject {
         currentIndex.set(index.get());
     }
 
-    /// <summary>
-    /// Used to convert the element into a byte List.
-    /// </summary>
-    /// <param name="byteList">A Byte list</param>
-    /// <returns>The length of list</returns>
+    /**
+     * Used to convert the element into a byte List.
+     *
+     * @param byteList A Byte list
+     * @return The length of list
+     */
     @Override
     protected int SerializeItemsToByteList(List<Byte> byteList) {
         int itemsIndex = byteList.size();

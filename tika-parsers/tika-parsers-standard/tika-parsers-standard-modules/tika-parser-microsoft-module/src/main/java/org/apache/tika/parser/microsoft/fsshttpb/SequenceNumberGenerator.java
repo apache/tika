@@ -3,35 +3,36 @@ package org.apache.tika.parser.microsoft.fsshttpb;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class SequenceNumberGenerator {
-    /// <summary>
-    /// Specify the max token value.
-    /// </summary>
+    /**
+     * Specify the max token value.
+     */
     public static final double MAXTOKENVALUE = 4294967295.0;
 
-    /// <summary>
-    /// Specify the max sub request ID.
-    /// </summary>
+    /**
+     * Specify the max sub request ID.
+     */
     public static final int MAXSUBREQUSTID = 0xFFFFFFFF;
 
-    /// <summary>
-    /// Specify the current token value.
-    /// </summary>
+    /**
+     * Specify the current token value.
+     */
     private static final AtomicLong token = new AtomicLong(0L);
 
-    /// <summary>
-    /// Specify the current token value.
-    /// </summary>
+    /**
+     * Specify the current token value.
+     */
     private static final AtomicLong subRequestID = new AtomicLong(0);
 
-    /// <summary>
-    /// Specify the current serialNumber value.
-    /// </summary>
+    /**
+     * Specify the current serialNumber value.
+     */
     private static final AtomicLong serialNumber = new AtomicLong(1);
 
-    /// <summary>
-    /// This method is used to get the current token value and atomic adding the token by 1.
-    /// </summary>
-    /// <returns>Returns the current token value.</returns>
+    /**
+     * This method is used to get the current token value and atomic adding the token by 1.
+     *
+     * @return Returns the current token value.
+     */
     public static int getCurrentToken() {
         long currentToken = token.incrementAndGet();
 
@@ -43,10 +44,11 @@ public class SequenceNumberGenerator {
         return (int) currentToken;
     }
 
-    /// <summary>
-    /// This method is used to get the current sub request ID and atomic adding the token by 1.
-    /// </summary>
-    /// <returns>Returns the current sub request ID.</returns>
+    /**
+     * This method is used to get the current sub request ID and atomic adding the token by 1.
+     *
+     * @return Returns the current sub request ID.
+     */
     public static int getCurrentFSSHTTPBSubRequestID() {
         // Thread safety increase the token by 1.
         long currentID = subRequestID.incrementAndGet();
@@ -59,10 +61,11 @@ public class SequenceNumberGenerator {
         return (int) currentID;
     }
 
-    /// <summary>
-    /// This method is used to get the current serial number and atomic adding the token by 1.
-    /// </summary>
-    /// <returns>Return the current serial number.</returns>
+    /**
+     * This method is used to get the current serial number and atomic adding the token by 1.
+     *
+     * @return Return the current serial number.
+     */
     public static int GetCurrentSerialNumber() {
         // Thread safety increase the token by 1.
         long currentID = serialNumber.incrementAndGet();

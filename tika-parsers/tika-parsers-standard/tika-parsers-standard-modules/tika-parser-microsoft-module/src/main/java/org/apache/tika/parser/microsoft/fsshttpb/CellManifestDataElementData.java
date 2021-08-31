@@ -3,28 +3,29 @@ package org.apache.tika.parser.microsoft.fsshttpb;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/// <summary>
-/// Cell manifest data element
-/// </summary>
+/**
+ * Cell manifest data element
+ */
 public class CellManifestDataElementData extends DataElementData {
-    /// <summary>
-    /// Initializes a new instance of the CellManifestDataElementData class.
-    /// </summary>
+    /**
+     * Initializes a new instance of the CellManifestDataElementData class.
+     */
     public CellManifestDataElementData() {
         this.cellManifestCurrentRevision = new CellManifestCurrentRevision();
     }
 
-    /// <summary>
-    /// Gets or sets a Cell Manifest Current Revision.
-    /// </summary>
+    /**
+     * Gets or sets a Cell Manifest Current Revision.
+     */
     public CellManifestCurrentRevision cellManifestCurrentRevision;
 
-    /// <summary>
-    /// Used to return the length of this element.
-    /// </summary>
-    /// <param name="byteArray">A Byte array</param>
-    /// <param name="startIndex">Start position</param>
-    /// <returns>The element length</returns>
+    /**
+     * Used to return the length of this element.
+     *
+     * @param byteArray  A Byte array
+     * @param startIndex Start position
+     * @return The element length
+     */
     @Override
     public int DeserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex) {
         AtomicInteger index = new AtomicInteger(startIndex);
@@ -32,10 +33,11 @@ public class CellManifestDataElementData extends DataElementData {
         return index.get() - startIndex;
     }
 
-    /// <summary>
-    /// Used to convert the element into a byte List.
-    /// </summary>
-    /// <returns>The Byte list</returns>
+    /**
+     * Used to convert the element into a byte List.
+     *
+     * @return The Byte list
+     */
     @Override
     public List<Byte> SerializeToByteList() {
         return this.cellManifestCurrentRevision.SerializeToByteList();

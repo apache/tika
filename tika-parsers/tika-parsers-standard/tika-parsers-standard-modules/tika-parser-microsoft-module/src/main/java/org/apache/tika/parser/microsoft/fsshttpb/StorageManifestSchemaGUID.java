@@ -5,29 +5,30 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/// <summary>
-/// Specifies a storage manifest schema GUID.
-/// </summary>
+/**
+ * Specifies a storage manifest schema GUID
+ */
 public class StorageManifestSchemaGUID extends StreamObject {
-    /// <summary>
-    /// Initializes a new instance of the StorageManifestSchemaGUID class.
-    /// </summary>
+    /**
+     * Initializes a new instance of the StorageManifestSchemaGUID class.
+     */
     public StorageManifestSchemaGUID() {
         super(StreamObjectTypeHeaderStart.StorageManifestSchemaGUID);
         // this.GUID = DataElementExGuids.StorageManifestGUID;
     }
 
-    /// <summary>
-    /// Gets or sets the schema GUID.
-    /// </summary>
+    /**
+     * Gets or sets the schema GUID.
+     */
     public UUID guid;
 
-    /// <summary>
-    /// Used to de-serialize the items.
-    /// </summary>
-    /// <param name="byteArray">Byte array</param>
-    /// <param name="currentIndex">Start position</param>
-    /// <param name="lengthOfItems">The length of the items</param>
+    /**
+     * Used to de-serialize the items.
+     *
+     * @param byteArray     Byte array
+     * @param currentIndex  Start position
+     * @param lengthOfItems The length of the items
+     */
     @Override
     protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
@@ -43,11 +44,12 @@ public class StorageManifestSchemaGUID extends StreamObject {
         currentIndex.set(index.get());
     }
 
-    /// <summary>
-    /// Used to convert the element into a byte List.
-    /// </summary>
-    /// <param name="byteList">A Byte list</param>
-    /// <returns>A constant value 16</returns>
+    /**
+     * Used to convert the element into a byte List.
+     *
+     * @param byteList A Byte list
+     * @return A constant value 16
+     */
     @Override
     protected int SerializeItemsToByteList(List<Byte> byteList) {
         byteList.addAll(ByteUtil.toListOfByte(this.guid.toString().getBytes()));

@@ -6,77 +6,80 @@ import java.util.UUID;
 import org.apache.poi.openxml4j.exceptions.InvalidOperationException;
 
 public class ExGuid extends BasicObject {
-    /// <summary>
-    /// Specify the extended GUID null type value.
-    /// </summary>
+    /**
+     * Specify the extended GUID null type value.
+     */
     public static final int ExtendedGUIDNullType = 0;
 
-    /// <summary>
-    /// Specify the extended GUID 5 Bit int type value.
-    /// </summary>
+    /**
+     * Specify the extended GUID 5 Bit int type value.
+     */
     public static final int ExtendedGUID5BitUintType = 4;
 
-    /// <summary>
-    /// Specify the extended GUID 10 Bit int type value.
-    /// </summary>
+    /**
+     * Specify the extended GUID 10 Bit int type value.
+     */
     public static final int ExtendedGUID10BitUintType = 32;
 
-    /// <summary>
-    /// Specify the extended GUID 17 Bit int type value.
-    /// </summary>
+    /**
+     * Specify the extended GUID 17 Bit int type value.
+     */
     public static final int ExtendedGUID17BitUintType = 64;
 
-    /// <summary>
-    /// Specify the extended GUID 32 Bit int type value.
-    /// </summary>
+    /**
+     * Specify the extended GUID 32 Bit int type value.
+     */
     public static final int ExtendedGUID32BitUintType = 128;
 
-    /// <summary>
-    /// Initializes a new instance of the ExGuid class with specified value.
-    /// </summary>
-    /// <param name="value">Specify the ExGUID Value.</param>
-    /// <param name="identifier">Specify the ExGUID GUID value.</param>
+    /**
+     * Initializes a new instance of the ExGuid class with specified value.
+     *
+     * @param value      Specify the ExGUID Value.
+     * @param identifier Specify the ExGUID GUID value.
+     */
     public ExGuid(int value, UUID identifier) {
         this.value = value;
         this.guid = identifier;
     }
 
-    /// <summary>
-    /// Initializes a new instance of the ExGuid class, this is the copy constructor.
-    /// </summary>
-    /// <param name="guid2">Specify the ExGuid instance where copies from.</param>
+    /**
+     * Initializes a new instance of the ExGuid class, this is the copy constructor.
+     *
+     * @param guid2 Specify the ExGuid instance where copies from.
+     */
     public ExGuid(ExGuid guid2) {
         this.value = guid2.value;
         this.guid = guid2.guid;
         this.type = guid2.type;
     }
 
-    /// <summary>
-    /// Initializes a new instance of the ExGuid class, this is a default constructor.
-    /// </summary>
+    /**
+     * Initializes a new instance of the ExGuid class, this is a default constructor.
+     */
     public ExGuid() {
         this.guid = GuidUtil.emptyGuid();
     }
 
-    /// <summary>
-    /// Gets or sets an unsigned integer that specifies the type.
-    /// </summary>
+    /**
+     * Gets or sets an unsigned integer that specifies the type.
+     */
     public int type;
 
-    /// <summary>
-    /// Gets or sets an unsigned integer that specifies the value.
-    /// </summary>
+    /**
+     * Gets or sets an unsigned integer that specifies the value.
+     */
     public int value;
 
-    /// <summary>
-    /// Gets or sets a GUID that specifies the item. MUST NOT be "{00000000-0000-0000-0000-000000000000}".
-    /// </summary>
+    /**
+     * Gets or sets a GUID that specifies the item. MUST NOT be "{00000000-0000-0000-0000-000000000000}".
+     */
     public UUID guid;
 
-    /// <summary>
-    /// This method is used to convert the element of ExGuid basic object into a byte List.
-    /// </summary>
-    /// <returns>Return the byte list which store the byte information of ExGuid.</returns>
+    /**
+     * This method is used to convert the element of ExGuid basic object into a byte List.
+     *
+     * @return Return the byte list which store the byte information of ExGuid.
+     */
     @Override
     public List<Byte> SerializeToByteList() {
         BitWriter bitWriter = new BitWriter(21);
@@ -104,11 +107,12 @@ public class ExGuid extends BasicObject {
         return bitWriter.getByteList();
     }
 
-    /// <summary>
-    /// Override the Equals method.
-    /// </summary>
-    /// <param name="obj">Specify the object.</param>
-    /// <returns>Return true if equals, otherwise return false.</returns>
+    /**
+     * Override the Equals method.
+     *
+     * @param obj Specify the object.
+     * @return Return true if equals, otherwise return false.
+     */
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof ExGuid) {
@@ -121,21 +125,23 @@ public class ExGuid extends BasicObject {
         return false;
     }
 
-    /// <summary>
-    /// Override the GetHashCode.
-    /// </summary>
-    /// <returns>Return the hash value.</returns>
+    /**
+     * Override the GetHashCode.
+     *
+     * @return Return the hash value.
+     */
     @Override
     public int hashCode() {
         return this.guid.hashCode() + new Integer(this.value).hashCode();
     }
 
-    /// <summary>
-    /// This method is used to deserialize the ExGuid basic object from the specified byte array and start index.
-    /// </summary>
-    /// <param name="byteArray">Specify the byte array.</param>
-    /// <param name="startIndex">Specify the start index from the byte array.</param>
-    /// <returns>Return the length in byte of the ExGuid basic object.</returns>
+    /**
+     * This method is used to deserialize the ExGuid basic object from the specified byte array and start index.
+     *
+     * @param byteArray  Specify the byte array.
+     * @param startIndex Specify the start index from the byte array.
+     * @return Return the length in byte of the ExGuid basic object.
+     */
     @Override
     protected int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         BitReader bitReader = new BitReader(byteArray, startIndex);

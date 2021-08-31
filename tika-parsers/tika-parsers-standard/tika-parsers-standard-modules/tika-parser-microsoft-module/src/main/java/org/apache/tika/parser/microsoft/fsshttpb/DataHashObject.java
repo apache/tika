@@ -5,18 +5,18 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DataHashObject extends StreamObject {
-    /// <summary>
-    /// Initializes a new instance of the DataHashObject class.
-    /// </summary>
+    /**
+     * Initializes a new instance of the DataHashObject class.
+     */
     public DataHashObject() {
         super(StreamObjectTypeHeaderStart.DataHashObject);
         this.Data = new BinaryItem();
     }
 
-    /// <summary>
-    ///  Gets or sets a binary item as specified in [MS-FSSHTTPB] section 2.2.1.3 that specifies a value that is unique to the file data represented by this root node object.
-    ///  The value of this item depends on the file chunking algorithm used, as specified in section 2.4.
-    /// </summary>
+    /**
+     * Gets or sets a binary item as specified in [MS-FSSHTTPB] section 2.2.1.3 that specifies a value that is unique to the file data represented by this root node object.
+     * The value of this item depends on the file chunking algorithm used, as specified in section 2.4.
+     */
     public BinaryItem Data;
 
     @Override
@@ -44,12 +44,13 @@ public class DataHashObject extends StreamObject {
                 '}';
     }
 
-    /// <summary>
-    /// Used to de-serialize the element.
-    /// </summary>
-    /// <param name="byteArray">A Byte array</param>
-    /// <param name="currentIndex">Start position</param>
-    /// <param name="lengthOfItems">The length of the items</param>
+    /**
+     * Used to de-serialize the element.
+     *
+     * @param byteArray     A Byte array
+     * @param currentIndex  Start position
+     * @param lengthOfItems The length of the items
+     */
     @Override
     protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
@@ -64,11 +65,12 @@ public class DataHashObject extends StreamObject {
         currentIndex.set(index.get());
     }
 
-    /// <summary>
-    /// Used to convert the element into a byte List.
-    /// </summary>
-    /// <param name="byteList">A Byte list</param>
-    /// <returns>The number of elements</returns>
+    /**
+     * Used to convert the element into a byte List.
+     *
+     * @param byteList A Byte list
+     * @return The number of elements
+     */
     @Override
     protected int SerializeItemsToByteList(List<Byte> byteList) {
         int length = byteList.size();
