@@ -3,412 +3,412 @@ package org.apache.tika.parser.microsoft.fsshttpb;
 import java.util.HashMap;
 import java.util.Map;
 
-/// <summary>
-/// The enumeration of the stream object type header start
-/// </summary>
+/**
+ * The enumeration of the stream object type header start
+ */
 public enum StreamObjectTypeHeaderStart {
-    /// <summary>
-    /// ErrorStringSupplementalInfo type in the ResponseError
-    /// </summary>
+    /**
+     * ErrorStringSupplementalInfo type in the ResponseError
+     */
     ErrorStringSupplementalInfo(0x4E),
 
-    /// <summary>
-    /// Data Element
-    /// </summary>
+    /**
+     * Data Element
+     */
     DataElement(0x01),
 
-    /// <summary>
-    /// Object Data BLOB
-    /// </summary>
+    /**
+     * Object Data BLOB
+     */
     ObjectDataBLOB(0x02),
 
-    /// <summary>
-    /// Waterline Knowledge Entry
-    /// </summary>
+    /**
+     * Waterline Knowledge Entry
+     */
     WaterlineKnowledgeEntry(0x04),
 
-    /// <summary>
-    /// Object Group Object BLOB Data Declaration
-    /// </summary>
+    /**
+     * Object Group Object BLOB Data Declaration
+     */
     ObjectGroupObjectBLOBDataDeclaration(0x05),
 
-    /// <summary>
-    /// Data Element Hash
-    /// </summary>
+    /**
+     * Data Element Hash
+     */
     DataElementHash(0x06),
 
-    /// <summary>
-    /// Storage Manifest Root Declare
-    /// </summary>
+    /**
+     * Storage Manifest Root Declare
+     */
     StorageManifestRootDeclare(0x07),
 
-    /// <summary>
-    /// Revision Manifest Root Declare
-    /// </summary>
+    /**
+     * Revision Manifest Root Declare
+     */
     RevisionManifestRootDeclare(0x0A),
 
-    /// <summary>
-    /// Cell Manifest Current Revision
-    /// </summary>
+    /**
+     * Cell Manifest Current Revision
+     */
     CellManifestCurrentRevision(0x0B),
 
-    /// <summary>
-    /// Storage Manifest Schema GUID
-    /// </summary>
+    /**
+     * Storage Manifest Schema GUID
+     */
     StorageManifestSchemaGUID(0x0C),
 
-    /// <summary>
-    /// Storage Index Revision Mapping
-    /// </summary>
+    /**
+     * Storage Index Revision Mapping
+     */
     StorageIndexRevisionMapping(0x0D),
 
-    /// <summary>
-    /// Storage Index Cell Mapping
-    /// </summary>
+    /**
+     * Storage Index Cell Mapping
+     */
     StorageIndexCellMapping(0x0E),
 
-    /// <summary>
-    /// Cell Knowledge Range
-    /// </summary>
+    /**
+     * Cell Knowledge Range
+     */
     CellKnowledgeRange(0x0F),
 
-    /// <summary>
-    /// The Knowledge
-    /// </summary>
+    /**
+     * The Knowledge
+     */
     Knowledge(0x10),
 
-    /// <summary>
-    /// Storage Index Manifest Mapping
-    /// </summary>
+    /**
+     * Storage Index Manifest Mapping
+     */
     StorageIndexManifestMapping(0x11),
 
-    /// <summary>
-    /// Cell Knowledge
-    /// </summary>
+    /**
+     * Cell Knowledge
+     */
     CellKnowledge(0x14),
 
-    /// <summary>
-    /// Data Element Package
-    /// </summary>
+    /**
+     * Data Element Package
+     */
     DataElementPackage(0x15),
 
-    /// <summary>
-    /// Object Group Object Data
-    /// </summary>
+    /**
+     * Object Group Object Data
+     */
     ObjectGroupObjectData(0x16),
 
-    /// <summary>
-    /// Cell Knowledge Entry
-    /// </summary>
+    /**
+     * Cell Knowledge Entry
+     */
     CellKnowledgeEntry(0x17),
 
-    /// <summary>
-    /// Object Group Object Declare
-    /// </summary>
+    /**
+     * Object Group Object Declare
+     */
     ObjectGroupObjectDeclare(0x18),
 
-    /// <summary>
-    /// Revision Manifest Object Group References
-    /// </summary>
+    /**
+     * Revision Manifest Object Group References
+     */
     RevisionManifestObjectGroupReferences(0x19),
 
-    /// <summary>
-    /// Revision Manifest
-    /// </summary>
+    /**
+     * Revision Manifest
+     */
     RevisionManifest(0x1A),
 
-    /// <summary>
-    /// Object Group Object Data BLOB Reference
-    /// </summary>
+    /**
+     * Object Group Object Data BLOB Reference
+     */
     ObjectGroupObjectDataBLOBReference(0x1C),
 
-    /// <summary>
-    /// Object Group Declarations
-    /// </summary>
+    /**
+     * Object Group Declarations
+     */
     ObjectGroupDeclarations(0x1D),
 
-    /// <summary>
-    /// Object Group Data
-    /// </summary>
+    /**
+     * Object Group Data
+     */
     ObjectGroupData(0x1E),
 
-    /// <summary>
-    /// Intermediate Node Object
-    /// </summary>
+    /**
+     * Intermediate Node Object
+     */
     LeafNodeObject(0x1F), // Defined in MS-FSSHTTPD
 
-    /// <summary>
-    /// Root Node Object
-    /// </summary>
+    /**
+     * Root Node Object
+     */
     IntermediateNodeObject(0x20), // Defined in MS-FSSHTTPD
 
-    /// <summary>
-    /// Signature Object
-    /// </summary>
+    /**
+     * Signature Object
+     */
     SignatureObject(0x21), // Defined in MS-FSSHTTPD
 
-    /// <summary>
-    /// Data Size Object
-    /// </summary>
+    /**
+     * Data Size Object
+     */
     DataSizeObject(0x22), // Defined in MS-FSSHTTPD
 
-    /// <summary>
-    /// Data Hash Object
-    /// </summary>
+    /**
+     * Data Hash Object
+     */
     DataHashObject(0x2F), // Defined in MS-FSSHTTPD
 
-    /// <summary>
-    /// Waterline Knowledge
-    /// </summary>
+    /**
+     * Waterline Knowledge
+     */
     WaterlineKnowledge(0x29),
 
-    /// <summary>
-    /// Content Tag Knowledge
-    /// </summary>
+    /**
+     * Content Tag Knowledge
+     */
     ContentTagKnowledge(0x2D),
 
-    /// <summary>
-    /// Content Tag Knowledge Entry
-    /// </summary>
+    /**
+     * Content Tag Knowledge Entry
+     */
     ContentTagKnowledgeEntry(0x2E),
 
-    /// <summary>
-    /// Query Changes Versioning
-    /// </summary>
+    /**
+     * Query Changes Versioning
+     */
     QueryChangesVersioning(0x30),
-    /// <summary>
-    /// The Request
-    /// </summary>
+    /**
+     * The Request
+     */
     Request(0x040),
 
-    /// <summary>
-    /// FSSHTTPB Sub Response
-    /// </summary>
+    /**
+     * FSSHTTPB Sub Response
+     */
     FsshttpbSubResponse(0x041),
 
-    /// <summary>
-    /// Sub Request
-    /// </summary>
+    /**
+     * Sub Request
+     */
     SubRequest(0x042),
 
-    /// <summary>
-    /// Read Access Response
-    /// </summary>
+    /**
+     * Read Access Response
+     */
     ReadAccessResponse(0x043),
 
-    /// <summary>
-    /// Specialized Knowledge
-    /// </summary>
+    /**
+     * Specialized Knowledge
+     */
     SpecializedKnowledge(0x044),
 
-    /// <summary>
-    /// PutChanges Response SerialNumber ReassignAll
-    /// </summary>
+    /**
+     * PutChanges Response SerialNumber ReassignAll
+     */
     PutChangesResponseSerialNumberReassignAll(0x045),
 
-    /// <summary>
-    /// Write Access Response
-    /// </summary>
+    /**
+     * Write Access Response
+     */
     WriteAccessResponse(0x046),
 
-    /// <summary>
-    /// Query Changes Filter
-    /// </summary>
+    /**
+     * Query Changes Filter
+     */
     QueryChangesFilter(0x047),
 
-    /// <summary>
-    /// Win32 Error
-    /// </summary>
+    /**
+     * Win32 Error
+     */
     Win32Error(0x049),
 
-    /// <summary>
-    /// Protocol Error
-    /// </summary>
+    /**
+     * Protocol Error
+     */
     ProtocolError(0x04B),
 
-    /// <summary>
-    /// Response Error
-    /// </summary>
+    /**
+     * Response Error
+     */
     ResponseError(0x04D),
 
-    /// <summary>
-    /// User Agent version
-    /// </summary>
+    /**
+     * User Agent version
+     */
     UserAgentversion(0x04F),
 
-    /// <summary>
-    /// QueryChanges Filter Schema Specific
-    /// </summary>
+    /**
+     * QueryChanges Filter Schema Specific
+     */
     QueryChangesFilterSchemaSpecific(0x050),
 
-    /// <summary>
-    /// QueryChanges Request
-    /// </summary>
+    /**
+     * QueryChanges Request
+     */
     QueryChangesRequest(0x051),
 
-    /// <summary>
-    /// HRESULT Error
-    /// </summary>
+    /**
+     * HRESULT Error
+     */
     HRESULTError(0x052),
 
-    /// <summary>
-    /// PutChanges Response SerialNumberReassign
-    /// </summary>
+    /**
+     * PutChanges Response SerialNumberReassign
+     */
     PutChangesResponseSerialNumberReassign(0x053),
 
-    /// <summary>
-    /// QueryChanges Filter DataElement IDs
-    /// </summary>
+    /**
+     * QueryChanges Filter DataElement IDs
+     */
     QueryChangesFilterDataElementIDs(0x054),
 
-    /// <summary>
-    /// User Agent GUID
-    /// </summary>
+    /**
+     * User Agent GUID
+     */
     UserAgentGUID(0x055),
 
-    /// <summary>
-    /// QueryChanges Filter Data Element Type
-    /// </summary>
+    /**
+     * QueryChanges Filter Data Element Type
+     */
     QueryChangesFilterDataElementType(0x057),
 
-    /// <summary>
-    /// Query Changes Data Constraint
-    /// </summary>
+    /**
+     * Query Changes Data Constraint
+     */
     QueryChangesDataConstraint(0x059),
 
-    /// <summary>
-    /// PutChanges Request
-    /// </summary>
+    /**
+     * PutChanges Request
+     */
     PutChangesRequest(0x05A),
 
-    /// <summary>
-    /// Query Changes Request Arguments
-    /// </summary>
+    /**
+     * Query Changes Request Arguments
+     */
     QueryChangesRequestArguments(0x05B),
 
-    /// <summary>
-    /// Query Changes Filter Cell ID
-    /// </summary>
+    /**
+     * Query Changes Filter Cell ID
+     */
     QueryChangesFilterCellID(0x05C),
 
-    /// <summary>
-    /// User Agent
-    /// </summary>
+    /**
+     * User Agent
+     */
     UserAgent(0x05D),
 
-    /// <summary>
-    /// Query Changes Response
-    /// </summary>
+    /**
+     * Query Changes Response
+     */
     QueryChangesResponse(0x05F),
 
-    /// <summary>
-    /// Query Changes Filter Hierarchy
-    /// </summary>
+    /**
+     * Query Changes Filter Hierarchy
+     */
     QueryChangesFilterHierarchy(0x060),
 
-    /// <summary>
-    /// The Response
-    /// </summary>
+    /**
+     * The Response
+     */
     FsshttpbResponse(0x062),
 
-    /// <summary>
-    /// Query Data Element Request
-    /// </summary>
+    /**
+     * Query Data Element Request
+     */
     QueryDataElementRequest(0x065),
 
-    /// <summary>
-    /// Cell Error
-    /// </summary>
+    /**
+     * Cell Error
+     */
     CellError(0x066),
 
-    /// <summary>
-    /// Query Changes Filter Flags
-    /// </summary>
+    /**
+     * Query Changes Filter Flags
+     */
     QueryChangesFilterFlags(0x068),
 
-    /// <summary>
-    /// Data Element Fragment
-    /// </summary>
+    /**
+     * Data Element Fragment
+     */
     DataElementFragment(0x06A),
 
-    /// <summary>
-    /// Fragment Knowledge
-    /// </summary>
+    /**
+     * Fragment Knowledge
+     */
     FragmentKnowledge(0x06B),
 
-    /// <summary>
-    /// Fragment Knowledge Entry
-    /// </summary>
+    /**
+     * Fragment Knowledge Entry
+     */
     FragmentKnowledgeEntry(0x06C),
 
-    /// <summary>
-    /// Object Group Metadata Declarations
-    /// </summary>
+    /**
+     * Object Group Metadata Declarations
+     */
     ObjectGroupMetadataDeclarations(0x79),
 
-    /// <summary>
-    /// Object Group Metadata
-    /// </summary>
+    /**
+     * Object Group Metadata
+     */
     ObjectGroupMetadata(0x78),
 
-    /// <summary>
-    /// Allocate Extended GUID Range Request
-    /// </summary>
+    /**
+     * Allocate Extended GUID Range Request
+     */
     AllocateExtendedGUIDRangeRequest(0x080),
 
-    /// <summary>
-    /// Allocate Extended GUID Range Response
-    /// </summary>
+    /**
+     * Allocate Extended GUID Range Response
+     */
     AllocateExtendedGUIDRangeResponse(0x081),
 
-    /// <summary>
-    /// Request Hash Options
-    /// </summary>
+    /**
+     * Request Hash Options
+     */
     RequestHashOptions(0x088),
 
-    /// <summary>
-    /// Target Partition Id
-    /// </summary>
+    /**
+     * Target Partition Id
+     */
     TargetPartitionId(0x083),
 
-    /// <summary>
-    /// Put Changes Response
-    /// </summary>
+    /**
+     * Put Changes Response
+     */
     PutChangesResponse(0x087),
 
-    /// <summary>
-    /// Diagnostic Request Option Output
-    /// </summary>
+    /**
+     * Diagnostic Request Option Output
+     */
     DiagnosticRequestOptionOutput(0x089),
 
-    /// <summary>
-    /// Diagnostic Request Option Input
-    /// </summary>
+    /**
+     * Diagnostic Request Option Input
+     */
     DiagnosticRequestOptionInput(0x08A),
 
-    /// <summary>
-    /// Additional Flags
-    /// </summary>
+    /**
+     * Additional Flags
+     */
     AdditionalFlags(0x86),
 
-    /// <summary>
-    /// Put changes lock id
-    /// </summary>
+    /**
+     * Put changes lock id
+     */
     PutChangesLockId(0x85),
 
-    /// <summary>
-    /// Version Token Knowledge
-    /// </summary>
+    /**
+     * Version Token Knowledge
+     */
     VersionTokenKnowledge(0x8C),
 
-    /// <summary>
-    /// Cell Roundtrip Options
-    /// </summary>
+    /**
+     * Cell Roundtrip Options
+     */
     CellRoundtripOptions(0x8D),
 
-    /// <summary>
-    /// File Hash
-    /// </summary>
+    /**
+     * File Hash
+     */
     FileHash(0x8E);
 
     private final int intVal;

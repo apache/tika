@@ -5,34 +5,35 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-/// <summary>
-/// Object Data
-/// </summary>
+/**
+ * Object Data
+ */
 public class ObjectGroupData extends StreamObject {
-    /// <summary>
-    /// Initializes a new instance of the ObjectGroupData class.
-    /// </summary>
+    /**
+     * Initializes a new instance of the ObjectGroupData class.
+     */
     public ObjectGroupData() {
         super(StreamObjectTypeHeaderStart.ObjectGroupData);
         this.ObjectGroupObjectDataList = new ArrayList<ObjectGroupObjectData>();
         this.ObjectGroupObjectDataBLOBReferenceList = new ArrayList<ObjectGroupObjectDataBLOBReference>();
     }
 
-    /// <summary>
-    /// Gets or sets a list of Object Data.
-    /// </summary>
+    /**
+     * Gets or sets a list of Object Data.
+     */
     public List<ObjectGroupObjectData> ObjectGroupObjectDataList;
 
-    /// <summary>
-    /// Gets or sets a list of object data BLOB references that specifies the object.
-    /// </summary>
+    /**
+     * Gets or sets a list of object data BLOB references that specifies the object.
+     */
     public List<ObjectGroupObjectDataBLOBReference> ObjectGroupObjectDataBLOBReferenceList;
 
-    /// <summary>
-    /// Used to convert the element into a byte List
-    /// </summary>
-    /// <param name="byteList">A Byte list</param>
-    /// <returns>A constant value 0</returns>
+    /**
+     * Used to convert the element into a byte List
+     *
+     * @param byteList A Byte list
+     * @return A constant value 0
+     */
     @Override
     protected int SerializeItemsToByteList(List<Byte> byteList) {
         if (this.ObjectGroupObjectDataList != null) {
@@ -50,12 +51,13 @@ public class ObjectGroupData extends StreamObject {
         return 0;
     }
 
-    /// <summary>
-    /// Used to de-serialize the element.
-    /// </summary>
-    /// <param name="byteArray">A Byte array</param>
-    /// <param name="currentIndex">Start position</param>
-    /// <param name="lengthOfItems">The length of the items</param>
+    /**
+     * Used to de-serialize the element.
+     *
+     * @param byteArray     A Byte array
+     * @param currentIndex  Start position
+     * @param lengthOfItems The length of the items
+     */
     @Override
     protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
         if (lengthOfItems != 0) {

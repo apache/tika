@@ -4,29 +4,30 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class StorageIndexManifestMapping extends StreamObject {
-    /// <summary>
-    /// Initializes a new instance of the StorageIndexManifestMapping class.
-    /// </summary>
+    /**
+     * Initializes a new instance of the StorageIndexManifestMapping class.
+     */
     public StorageIndexManifestMapping() {
         super(StreamObjectTypeHeaderStart.StorageIndexManifestMapping);
     }
 
-    /// <summary>
-    /// Gets or sets the extended GUID of the manifest mapping.
-    /// </summary>
+    /**
+     * Gets or sets the extended GUID of the manifest mapping.
+     */
     public ExGuid ManifestMappingExGuid;
 
-    /// <summary>
-    /// Gets or sets the serial number of the manifest mapping.
-    /// </summary>
+    /**
+     * Gets or sets the serial number of the manifest mapping.
+     */
     public SerialNumber ManifestMappingSerialNumber;
 
-    /// <summary>
-    /// Used to Deserialize the items.
-    /// </summary>
-    /// <param name="byteArray">Byte array</param>
-    /// <param name="currentIndex">Start position</param>
-    /// <param name="lengthOfItems">The length of the items</param>
+    /**
+     * Used to Deserialize the items.
+     *
+     * @param byteArray     Byte array
+     * @param currentIndex  Start position
+     * @param lengthOfItems The length of the items
+     */
     @Override
     protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
@@ -41,11 +42,12 @@ public class StorageIndexManifestMapping extends StreamObject {
         currentIndex.set(index.get());
     }
 
-    /// <summary>
-    /// Used to convert the element into a byte List.
-    /// </summary>
-    /// <param name="byteList">A Byte list</param>
-    /// <returns>The length of list</returns>
+    /**
+     * Used to convert the element into a byte List.
+     *
+     * @param byteList A Byte list
+     * @return The length of list
+     */
     @Override
     protected int SerializeItemsToByteList(List<Byte> byteList) {
         int itemsIndex = byteList.size();

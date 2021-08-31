@@ -4,24 +4,25 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class CellManifestCurrentRevision extends StreamObject {
-    /// <summary>
-    /// Initializes a new instance of the CellManifestCurrentRevision class.
-    /// </summary>
+    /**
+     * Initializes a new instance of the CellManifestCurrentRevision class.
+     */
     public CellManifestCurrentRevision() {
         super(StreamObjectTypeHeaderStart.CellManifestCurrentRevision);
     }
 
-    /// <summary>
-    /// Gets or sets a 16-bit stream object header that specifies a cell manifest current revision.
-    /// </summary>
+    /**
+     * Gets or sets a 16-bit stream object header that specifies a cell manifest current revision.
+     */
     public ExGuid cellManifestCurrentRevisionExGuid;
 
-    /// <summary>
-    /// Used to de-serialize the element.
-    /// </summary>
-    /// <param name="byteArray">A Byte array</param>
-    /// <param name="currentIndex">Start position</param>
-    /// <param name="lengthOfItems">The length of the items</param>
+    /**
+     * Used to de-serialize the element.
+     *
+     * @param byteArray     A Byte array
+     * @param currentIndex  Start position
+     * @param lengthOfItems The length of the items
+     */
     @Override
     protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
@@ -35,11 +36,12 @@ public class CellManifestCurrentRevision extends StreamObject {
         currentIndex.set(index.get());
     }
 
-    /// <summary>
-    /// Used to convert the element into a byte List.
-    /// </summary>
-    /// <param name="byteList">A Byte list</param>
-    /// <returns>The number of elements actually contained in the list.</returns>
+    /**
+     * Used to convert the element into a byte List.
+     *
+     * @param byteList A Byte list
+     * @return The number of elements actually contained in the list.
+     */
     @Override
     protected int SerializeItemsToByteList(List<Byte> byteList) {
         List<Byte> tmpList = this.cellManifestCurrentRevisionExGuid.SerializeToByteList();

@@ -6,29 +6,30 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class StorageManifestDataElementData extends DataElementData {
-    /// <summary>
-    /// Initializes a new instance of the StorageManifestDataElementData class.
-    /// </summary>
+    /**
+     * Initializes a new instance of the StorageManifestDataElementData class.
+     */
     public StorageManifestDataElementData() {
         // Storage Manifest
         this.storageManifestSchemaGUID = new StorageManifestSchemaGUID();
         this.StorageManifestRootDeclareList = new ArrayList<>();
     }
 
-    /// <summary>
-    /// Gets or sets storage manifest schema GUID.
-    /// </summary>
+    /**
+     * Gets or sets storage manifest schema GUID.
+     */
     public StorageManifestSchemaGUID storageManifestSchemaGUID;
 
-    /// <summary>
-    /// Gets or sets storage manifest root declare.
-    /// </summary>
+    /**
+     * Gets or sets storage manifest root declare.
+     */
     public List<StorageManifestRootDeclare> StorageManifestRootDeclareList;
 
-    /// <summary>
-    /// Used to convert the element into a byte List.
-    /// </summary>
-    /// <returns>A Byte list</returns>
+    /**
+     * Used to convert the element into a byte List.
+     *
+     * @return A Byte list
+     */
     @Override
     public List<Byte> SerializeToByteList() {
         List<Byte> byteList = new ArrayList<Byte>();
@@ -43,12 +44,13 @@ public class StorageManifestDataElementData extends DataElementData {
         return byteList;
     }
 
-    /// <summary>
-    /// Used to de-serialize data element.
-    /// </summary>
-    /// <param name="byteArray">Byte array</param>
-    /// <param name="startIndex">Start position</param>
-    /// <returns>The length of the array</returns>
+    /**
+     * Used to de-serialize data element.
+     *
+     * @param byteArray  Byte array
+     * @param startIndex Start position
+     * @return The length of the array
+     */
     @Override
     public int DeserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex) {
         AtomicInteger index = new AtomicInteger(startIndex);

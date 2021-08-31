@@ -5,10 +5,11 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ExGUIDArray extends BasicObject {
-    /// <summary>
-    /// Initializes a new instance of the ExGUIDArray class with specified value.
-    /// </summary>
-    /// <param name="content">Specify the list of ExGuid contents.</param>
+    /**
+     * Initializes a new instance of the ExGUIDArray class with specified value.
+     *
+     * @param content Specify the list of ExGuid contents.
+     */
     public ExGUIDArray(List<ExGuid> content) {
         this();
         this.Content = new ArrayList<>();
@@ -21,30 +22,31 @@ public class ExGUIDArray extends BasicObject {
         this.Count.setDecodedValue(this.Content.size());
     }
 
-    /// <summary>
-    /// Initializes a new instance of the ExGUIDArray class, this is copy constructor.
-    /// </summary>
-    /// <param name="extendGuidArray">Specify the ExGUIDArray where copies from.</param>
+    /**
+     * Initializes a new instance of the ExGUIDArray class, this is copy constructor.
+     *
+     * @param extendGuidArray Specify the ExGUIDArray where copies from.
+     */
     public ExGUIDArray(ExGUIDArray extendGuidArray) {
         this(extendGuidArray.Content);
     }
 
-    /// <summary>
-    /// Initializes a new instance of the ExGUIDArray class, this is the default constructor.
-    /// </summary>
+    /**
+     * Initializes a new instance of the ExGUIDArray class, this is the default constructor.
+     */
     public ExGUIDArray() {
         this.Count = new Compact64bitInt();
         this.Content = new ArrayList<>();
     }
 
-    /// <summary>
-    /// Gets or sets a compact unsigned 64-bit integer that specifies the count extended GUIDs in the array.
-    /// </summary>
+    /**
+     * Gets or sets a compact unsigned 64-bit integer that specifies the count extended GUIDs in the array.
+     */
     public Compact64bitInt Count;
 
-    /// <summary>
-    /// Gets or sets an extended GUID array
-    /// </summary>
+    /**
+     * Gets or sets an extended GUID array
+     */
     public List<ExGuid> Content;
 
     public java.util.List<ExGuid> getContent() {
@@ -56,10 +58,11 @@ public class ExGUIDArray extends BasicObject {
         this.Count.setDecodedValue(this.Content.size());
     }
 
-    /// <summary>
-    /// This method is used to convert the element of ExGUIDArray basic object into a byte List.
-    /// </summary>
-    /// <returns>Return the byte list which store the byte information of ExGUIDArray.</returns>
+    /**
+     * This method is used to convert the element of ExGUIDArray basic object into a byte List.
+     *
+     * @return Return the byte list which store the byte information of ExGUIDArray.
+     */
     @Override
     public List<Byte> SerializeToByteList() {
         this.Count.setDecodedValue(this.Content.size());
@@ -73,12 +76,13 @@ public class ExGUIDArray extends BasicObject {
         return result;
     }
 
-    /// <summary>
-    /// This method is used to deserialize the ExGUIDArray basic object from the specified byte array and start index.
-    /// </summary>
-    /// <param name="byteArray">Specify the byte array.</param>
-    /// <param name="startIndex">Specify the start index from the byte array.</param>
-    /// <returns>Return the length in byte of the ExGUIDArray basic object.</returns>
+    /**
+     * This method is used to deserialize the ExGUIDArray basic object from the specified byte array and start index.
+     *
+     * @param byteArray  Specify the byte array.
+     * @param startIndex Specify the start index from the byte array.
+     * @return Return the length in byte of the ExGUIDArray basic object.
+     */
     @Override
     protected int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) // return the length consumed
     {

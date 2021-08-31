@@ -1,18 +1,18 @@
 package org.apache.tika.parser.microsoft.fsshttpb;
 
 public enum ChunkingMethod {
-    /// <summary>
-    /// File data is passed to the Zip algorithm chunking method.
-    /// </summary>
+    /**
+     * File data is passed to the Zip algorithm chunking method.
+     */
     ZipAlgorithm,
 
-    /// <summary>
-    /// File data is passed to the RDC Analysis chunking method.
-    /// </summary>
+    /**
+     * File data is passed to the RDC Analysis chunking method.
+     */
     RDCAnalysis,
 
-    /// <summary>
-    /// File data is passed to the Simple algorithm chunking method.
-    /// </summary>
+    /**
+     * File data is passed to the Simple algorithm chunking method.
+     */
     SimpleAlgorithm
 }

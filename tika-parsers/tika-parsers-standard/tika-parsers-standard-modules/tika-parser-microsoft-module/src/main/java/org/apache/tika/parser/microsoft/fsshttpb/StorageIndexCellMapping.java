@@ -3,38 +3,39 @@ package org.apache.tika.parser.microsoft.fsshttpb;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/// <summary>
-/// Specifies the storage index cell mappings (with cell identifier, cell mapping extended GUID, and cell mapping serial number).
-/// </summary>
+/**
+ * Specifies the storage index cell mappings (with cell identifier, cell mapping extended GUID, and cell mapping serial number)
+ */
 public class StorageIndexCellMapping extends StreamObject {
-    /// <summary>
-    /// Initializes a new instance of the StorageIndexCellMapping class.
-    /// </summary>
+    /**
+     * Initializes a new instance of the StorageIndexCellMapping class.
+     */
     public StorageIndexCellMapping() {
         super(StreamObjectTypeHeaderStart.StorageIndexCellMapping);
     }
 
-    /// <summary>
-    /// Gets or sets the cell identifier.
-    /// </summary>
+    /**
+     * Gets or sets the cell identifier.
+     */
     public CellID CellID;
 
-    /// <summary>
-    /// Gets or sets the extended GUID of the cell mapping.
-    /// </summary>
+    /**
+     * Gets or sets the extended GUID of the cell mapping.
+     */
     public ExGuid CellMappingExGuid;
 
-    /// <summary>
-    /// Gets or sets the serial number of the cell mapping.
-    /// </summary>
+    /**
+     * Gets or sets the serial number of the cell mapping.
+     */
     public SerialNumber CellMappingSerialNumber;
 
-    /// <summary>
-    /// Used to de-serialize the items.
-    /// </summary>
-    /// <param name="byteArray">A Byte array</param>
-    /// <param name="currentIndex">Start position</param>
-    /// <param name="lengthOfItems">The length of the items</param>
+    /**
+     * Used to de-serialize the items.
+     *
+     * @param byteArray     A Byte array
+     * @param currentIndex  Start position
+     * @param lengthOfItems The length of the items
+     */
     @Override
     protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
@@ -50,11 +51,12 @@ public class StorageIndexCellMapping extends StreamObject {
         currentIndex.set(index.get());
     }
 
-    /// <summary>
-    /// Used to convert the element into a byte List.
-    /// </summary>
-    /// <param name="byteList">A Byte list</param>
-    /// <returns>The length of list</returns>
+    /**
+     * Used to convert the element into a byte List.
+     *
+     * @param byteList A Byte list
+     * @return The length of list
+     */
     @Override
     protected int SerializeItemsToByteList(List<Byte> byteList) {
         int itemsIndex = byteList.size();

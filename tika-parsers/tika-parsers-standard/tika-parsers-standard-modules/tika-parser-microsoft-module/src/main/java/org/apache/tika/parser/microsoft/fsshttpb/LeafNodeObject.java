@@ -7,27 +7,28 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class LeafNodeObject extends NodeObject {
-    /// <summary>
-    /// Initializes a new instance of the LeafNodeObjectData class.
-    /// </summary>
+    /**
+     * Initializes a new instance of the LeafNodeObjectData class.
+     */
     public LeafNodeObject() {
         super(StreamObjectTypeHeaderStart.LeafNodeObject);
     }
 
-    /// <summary>
-    /// Gets or sets the data node object.
-    /// </summary>
+    /**
+     * Gets or sets the data node object.
+     */
     public DataNodeObjectData DataNodeObjectData;
 
-    /// <summary>
-    /// Gets or sets the data hash.
-    /// </summary>
+    /**
+     * Gets or sets the data hash.
+     */
     public DataHashObject DataHash;
 
-    /// <summary>
-    /// Get all the content which is represented by the intermediate node object.
-    /// </summary>
-    /// <returns>Return the byte list of intermediate node object content.</returns>
+    /**
+     * Get all the content which is represented by the intermediate node object.
+     *
+     * @return Return the byte list of intermediate node object content.
+     */
     @Override
     public List<Byte> GetContent() {
         List<Byte> content = new ArrayList<Byte>();
@@ -46,12 +47,13 @@ public class LeafNodeObject extends NodeObject {
         return content;
     }
 
-    /// <summary>
-    /// Used to de-serialize the element.
-    /// </summary>
-    /// <param name="byteArray">A Byte array</param>
-    /// <param name="currentIndex">Start position</param>
-    /// <param name="lengthOfItems">The length of the items</param>
+    /**
+     * Used to de-serialize the element.
+     *
+     * @param byteArray     A Byte array
+     * @param currentIndex  Start position
+     * @param lengthOfItems The length of the items
+     */
     @Override
     protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
@@ -74,11 +76,12 @@ public class LeafNodeObject extends NodeObject {
         currentIndex.set(index.get());
     }
 
-    /// <summary>
-    /// Used to convert the element into a byte List.
-    /// </summary>
-    /// <param name="byteList">A Byte list</param>
-    /// <returns>A constant value</returns>
+    /**
+     * Used to convert the element into a byte List.
+     *
+     * @param byteList A Byte list
+     * @return A constant value
+     */
     @Override
     protected int SerializeItemsToByteList(List<Byte> byteList) {
         byteList.addAll(this.Signature.SerializeToByteList());
@@ -86,17 +89,18 @@ public class LeafNodeObject extends NodeObject {
         return 0;
     }
 
-    /// <summary>
-    /// The class is used to build a intermediate node object.
-    /// </summary>
+    /**
+     * The class is used to build a intermediate node object.
+     */
     public static class IntermediateNodeObjectBuilder {
-        /// <summary>
-        /// This method is used to build intermediate node object from an list of object group data element.
-        /// </summary>
-        /// <param name="objectGroupList">Specify the list of object group data elements.</param>
-        /// <param name="dataObj">Specify the object group object.</param>
-        /// <param name="intermediateGuid">Specify the intermediate extended GUID.</param>
-        /// <returns>Return the intermediate node object.</returns>
+        /**
+         * This method is used to build intermediate node object from an list of object group data element
+         *
+         * @param objectGroupList  Specify the list of object group data elements.
+         * @param dataObj          Specify the object group object.
+         * @param intermediateGuid Specify the intermediate extended GUID.
+         * @return Return the intermediate node object.
+         */
         public LeafNodeObject Build(List<ObjectGroupDataElementData> objectGroupList, ObjectGroupObjectData dataObj,
                                     ExGuid intermediateGuid) {
             AtomicReference<LeafNodeObject> node = new AtomicReference<>();
@@ -176,12 +180,13 @@ public class LeafNodeObject extends NodeObject {
             return node.get();
         }
 
-        /// <summary>
-        /// This method is used to build intermediate node object from a byte array with a signature.
-        /// </summary>
-        /// <param name="array">Specify the byte array.</param>
-        /// <param name="signature">Specify the signature.</param>
-        /// <returns>Return the intermediate node object.</returns>
+        /**
+         * This method is used to build intermediate node object from a byte array with a signature
+         *
+         * @param array     Specify the byte array.
+         * @param signature Specify the signature.
+         * @return Return the intermediate node object.
+         */
         public LeafNodeObject Build(byte[] array, SignatureObject signature) {
             LeafNodeObject nodeObject = new LeafNodeObject();
             nodeObject.DataSize = new DataSizeObject();
@@ -197,14 +202,15 @@ public class LeafNodeObject extends NodeObject {
             return nodeObject;
         }
 
-        /// <summary>
-        /// This method is used to find the object group data element using the specified extended GUID.
-        /// </summary>
-        /// <param name="objectGroupList">Specify the object group data element list.</param>
-        /// <param name="extendedGuid">Specify the extended GUID.</param>
-        /// <param name="declare">Specify the output of ObjectGroupObjectDeclare.</param>
-        /// <returns>Return the object group data element if found.</returns>
-        /// <exception cref="RuntimeException">If not found, throw the RuntimeException exception.</exception>
+        /**
+         * This method is used to find the object group data element using the specified extended GUID
+         *
+         * @param objectGroupList Specify the object group data element list.
+         * @param extendedGuid    Specify the extended GUID.
+         * @param declare         Specify the output of ObjectGroupObjectDeclare.
+         * @return Return the object group data element if found.
+         */
+
         private ObjectGroupObjectData FindByExGuid(List<ObjectGroupDataElementData> objectGroupList,
                                                    ExGuid extendedGuid,
                                                    AtomicReference<ObjectGroupObjectDeclare> declare) {

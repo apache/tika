@@ -5,20 +5,23 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class CellID extends BasicObject {
-    /// <summary>
-/// Initializes a new instance of the CellID class with specified ExGuids.
-/// </summary>
-/// <param name="extendGuid1">Specify the first ExGuid.</param>
-/// <param name="extendGuid2">Specify the second ExGuid.</param>
+    /**
+     * Initializes a new instance of the CellID class with specified ExGuids.
+     *
+     * @param extendGuid1 Specify the first ExGuid.
+     * @param extendGuid2 Specify the second ExGuid.
+     */
     public CellID(ExGuid extendGuid1, ExGuid extendGuid2) {
         this.ExtendGUID1 = extendGuid1;
         this.ExtendGUID2 = extendGuid2;
     }
 
-    /// <summary>
-/// Initializes a new instance of the CellID class, this is the copy constructor.
-/// </summary>
-/// <param name="cellId">Specify the CellID.</param>
+    /**
+     * Initializes a new instance of the CellID class, this is the copy constructor.
+     *
+     * @param cellId Specify the CellID.
+     */
+
     public CellID(CellID cellId) {
         if (cellId.ExtendGUID1 != null) {
             this.ExtendGUID1 = new ExGuid(cellId.ExtendGUID1);
@@ -29,26 +32,27 @@ public class CellID extends BasicObject {
         }
     }
 
-    /// <summary>
-/// Initializes a new instance of the CellID class, this is default constructor.
-/// </summary>
+    /**
+     * Initializes a new instance of the CellID class, this is default constructor.
+     */
     public CellID() {
     }
 
-    /// <summary>
-/// Gets or sets an extended GUID that specifies the first cell identifier.
-/// </summary>
+    /**
+     * Gets or sets an extended GUID that specifies the first cell identifier.
+     */
     public ExGuid ExtendGUID1;
 
-    /// <summary>
-/// Gets or sets an extended GUID that specifies the second cell identifier.
-/// </summary>
+    /**
+     * Gets or sets an extended GUID that specifies the second cell identifier.
+     */
     public ExGuid ExtendGUID2;
 
-    /// <summary>
-/// This method is used to convert the element of CellID basic object into a byte List.
-/// </summary>
-/// <returns>Return the byte list which store the byte information of CellID.</returns>
+    /**
+     * This method is used to convert the element of CellID basic object into a byte List.
+     *
+     * @return Return the byte list which store the byte information of CellID.
+     */
     @Override
     public List<Byte> SerializeToByteList() {
         java.util.List<Byte> byteList = new ArrayList<>();
@@ -57,11 +61,12 @@ public class CellID extends BasicObject {
         return byteList;
     }
 
-    /// <summary>
-/// Override the Equals method.
-/// </summary>
-/// <param name="obj">Specify the object.</param>
-/// <returns>Return true if equals, otherwise return false.</returns>
+    /**
+     * Override the Equals method.
+     *
+     * @param obj Specify the object.
+     * @return Return true if equals, otherwise return false.
+     */
     @Override
     public boolean equals(Object obj) {
         CellID another = (CellID) obj;
@@ -78,21 +83,23 @@ public class CellID extends BasicObject {
         return false;
     }
 
-    /// <summary>
-/// Override the GetHashCode.
-/// </summary>
-/// <returns>Return the hash value.</returns>
+    /**
+     * Override the GetHashCode.
+     *
+     * @return Return the hash value.
+     */
     @Override
     public int hashCode() {
         return this.ExtendGUID1.hashCode() + this.ExtendGUID2.hashCode();
     }
 
-    /// <summary>
-/// This method is used to deserialize the CellID basic object from the specified byte array and start index.
-/// </summary>
-/// <param name="byteArray">Specify the byte array.</param>
-/// <param name="startIndex">Specify the start index from the byte array.</param>
-/// <returns>Return the length in byte of the CellID basic object.</returns>
+    /**
+     * This method is used to deserialize the CellID basic object from the specified byte array and start index.
+     *
+     * @param byteArray  Specify the byte array.
+     * @param startIndex Specify the start index from the byte array.
+     * @return Return the length in byte of the CellID basic object.
+     */
     @Override
     protected int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         AtomicInteger index = new AtomicInteger(startIndex);

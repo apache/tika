@@ -4,50 +4,53 @@ import java.util.List;
 import java.util.UUID;
 
 public class SerialNumber extends BasicObject {
-    /// <summary>
-    /// Initializes a new instance of the SerialNumber class with specified values.
-    /// </summary>
-    /// <param name="identifier">Specify the Guid value of the serialNumber.</param>
-    /// <param name="value">Specify the value of the serialNumber.</param>
+    /**
+     * Initializes a new instance of the SerialNumber class with specified values.
+     *
+     * @param identifier Specify the Guid value of the serialNumber.
+     * @param value      Specify the value of the serialNumber.
+     */
     public SerialNumber(UUID identifier, long value) {
         this.guid = identifier;
         this.value = value;
     }
 
-    /// <summary>
-    /// Initializes a new instance of the SerialNumber class, this is the copy constructor.
-    /// </summary>
-    /// <param name="sn">Specify the serial number where copy from.</param>
+    /**
+     * Initializes a new instance of the SerialNumber class, this is the copy constructor.
+     *
+     * @param sn Specify the serial number where copy from.
+     */
     public SerialNumber(SerialNumber sn) {
         this.guid = sn.guid;
         this.value = sn.value;
     }
 
-    /// <summary>
-    /// Initializes a new instance of the SerialNumber class, this is default contractor
-    /// </summary>
+    /**
+     * Initializes a new instance of the SerialNumber class, this is default contractor
+     */
     public SerialNumber() {
     }
 
-    /// <summary>
-    /// Gets or sets a value which indicate the SerialNumber type.
-    /// </summary>
+    /**
+     * Gets or sets a value which indicate the SerialNumber type.
+     */
     public int type;
 
-    /// <summary>
-    /// Gets or sets a GUID that specifies the item.
-    /// </summary>
+    /**
+     * Gets or sets a GUID that specifies the item.
+     */
     public UUID guid;
 
-    /// <summary>
-    /// Gets or sets an unsigned integer that specifies the value of the serial number.
-    /// </summary>
+    /**
+     * Gets or sets an unsigned integer that specifies the value of the serial number.
+     */
     public long value;
 
-    /// <summary>
-    /// This method is used to convert the element of SerialNumber basic object into a byte List.
-    /// </summary>
-    /// <returns>Return the byte list which store the byte information of SerialNumber.</returns>
+    /**
+     * This method is used to convert the element of SerialNumber basic object into a byte List.
+     *
+     * @return Return the byte list which store the byte information of SerialNumber.
+     */
     @Override
     public List<Byte> SerializeToByteList() {
         BitWriter bitWriter = null;
@@ -64,12 +67,13 @@ public class SerialNumber extends BasicObject {
         return bitWriter.getByteList();
     }
 
-    /// <summary>
-    /// This method is used to deserialize the SerialNumber basic object from the specified byte array and start index.
-    /// </summary>
-    /// <param name="byteArray">Specify the byte array.</param>
-    /// <param name="startIndex">Specify the start index from the byte array.</param>
-    /// <returns>Return the length in byte of the SerialNumber basic object.</returns>
+    /**
+     * This method is used to deserialize the SerialNumber basic object from the specified byte array and start index.
+     *
+     * @param byteArray  Specify the byte array.
+     * @param startIndex Specify the start index from the byte array.
+     * @return Return the length in byte of the SerialNumber basic object.
+     */
     @Override
     protected int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) // return the length consumed
     {

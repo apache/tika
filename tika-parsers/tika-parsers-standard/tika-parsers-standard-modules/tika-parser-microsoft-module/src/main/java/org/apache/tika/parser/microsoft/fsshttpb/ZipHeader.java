@@ -1,28 +1,29 @@
 package org.apache.tika.parser.microsoft.fsshttpb;
-/// <summary>
-/// This class is used to check is this a zip file header.
-/// </summary>
+/**
+ * This class is used to check is this a zip file header
+ */
 
 import java.util.Arrays;
 
 public class ZipHeader {
-    /// <summary>
-    /// The file header in zip.
-    /// </summary>
+    /**
+     * The file header in zip.
+     */
     public static final byte[] LocalFileHeader = new byte[] {0x50, 0x4b, 0x03, 0x04};
 
-    /// <summary>
-    /// Prevents a default instance of the ZipHeader class from being created
-    /// </summary>
+    /**
+     * Prevents a default instance of the ZipHeader class from being created
+     */
     private ZipHeader() {
     }
 
-    /// <summary>
-    /// Check the input data is a local file header.
-    /// </summary>
-    /// <param name="byteArray">The content of a file.</param>
-    /// <param name="index">The index where to start.</param>
-    /// <returns>True if the input data is a local file header, otherwise false.</returns>
+    /**
+     * Check the input data is a local file header.
+     *
+     * @param byteArray The content of a file.
+     * @param index     The index where to start.
+     * @return True if the input data is a local file header, otherwise false.
+     */
     public static boolean IsFileHeader(byte[] byteArray, int index) {
         if (Arrays.equals(LocalFileHeader, Arrays.copyOfRange(byteArray, index, 4))) {
             return true;

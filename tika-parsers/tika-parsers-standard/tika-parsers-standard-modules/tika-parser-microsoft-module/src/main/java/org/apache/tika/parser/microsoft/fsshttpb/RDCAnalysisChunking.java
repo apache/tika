@@ -11,29 +11,31 @@ import org.joou.UInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/// <summary>
-/// This class is used to process RDC analysis chunking.
-/// </summary>
+/**
+ * This class is used to process RDC analysis chunking
+ */
 public class RDCAnalysisChunking extends AbstractChunking {
     private static final Logger LOGGER = LoggerFactory.getLogger(RDCAnalysisChunking.class);
 
-    /// <summary>
-    /// The max chunk size in RDC analysis chunking.
-    /// </summary>
+    /**
+     * The max chunk size in RDC analysis chunking.
+     */
     private int maxChunkSize = 65535;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="RDCAnalysisChunking"/> class
-    /// </summary>
-    /// <param name="fileContent">The content of the file.</param>
+    /**
+     * Initializes a new instance of the <see cref="RDCAnalysisChunking"/> class
+     *
+     * @param fileContent The content of the file.
+     */
     public RDCAnalysisChunking(byte[] fileContent) {
         super(fileContent);
     }
 
-    /// <summary>
-    /// This method is used to chunk the file data.
-    /// </summary>
-    /// <returns>A list of LeafNodeObjectData.</returns>
+    /**
+     * This method is used to chunk the file data.
+     *
+     * @return A list of LeafNodeObjectData.
+     */
     @Override
     public List<LeafNodeObject> Chunking() {
         int horizon = 16384;
@@ -102,12 +104,13 @@ public class RDCAnalysisChunking extends AbstractChunking {
         return list;
     }
 
-    /// <summary>
-    /// Get a chunk with the input bytes.
-    /// </summary>
-    /// <param name="chunkStart">The start index of the chunk.</param>
-    /// <param name="chunkEnd">The end index of the chunk.</param>
-    /// <returns>An LeafNodeObjectData which contains a chunk.</returns>
+    /**
+     * Get a chunk with the input bytes.
+     *
+     * @param chunkStart The start index of the chunk.
+     * @param chunkEnd   The end index of the chunk.
+     * @return An LeafNodeObjectData which contains a chunk.
+     */
     private LeafNodeObject GetChunk(long chunkStart, long chunkEnd) {
         if (chunkEnd <= chunkStart || (chunkEnd - chunkStart > this.maxChunkSize) || chunkStart > Integer.MAX_VALUE) {
             throw new RuntimeException("ChunkStart out of range");
@@ -128,10 +131,11 @@ public class RDCAnalysisChunking extends AbstractChunking {
         return new LeafNodeObject.IntermediateNodeObjectBuilder().Build(temp, signature);
     }
 
-    /// <summary>
-    /// Compute the hash value with the file content.
-    /// </summary>
-    /// <returns>The array of hash value.</returns>
+    /**
+     * Compute the hash value with the file content.
+     *
+     * @return The array of hash value.
+     */
     private UInteger[] GetHashValues() {
         int hashWindowSize = 48;
         UInteger[] hashValues = new UInteger[this.FileContent.length];
@@ -219,11 +223,12 @@ public class RDCAnalysisChunking extends AbstractChunking {
         return hashValues;
     }
 
-    /// <summary>
-    /// Get the shift amount value.
-    /// </summary>
-    /// <param name="hashWindowSize">The value of hash window size.</param>
-    /// <returns>The value of shift amount.</returns>
+    /**
+     * Get the shift amount value.
+     *
+     * @param hashWindowSize The value of hash window size.
+     * @return The value of shift amount.
+     */
     private int GetShiftAmount(int hashWindowSize) {
         int shiftAmount = 1;
         int i = 32;

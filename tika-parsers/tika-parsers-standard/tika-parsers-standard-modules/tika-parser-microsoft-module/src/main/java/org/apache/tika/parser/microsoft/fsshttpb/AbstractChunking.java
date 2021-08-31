@@ -2,26 +2,28 @@ package org.apache.tika.parser.microsoft.fsshttpb;
 
 import java.util.List;
 
-/// <summary>
-/// This class specifies the base class for file chunking.
-/// </summary>
+/**
+ * This class specifies the base class for file chunking
+ */
 public abstract class AbstractChunking {
-    /// <summary>
-    /// Initializes a new instance of the AbstractChunking class.
-    /// </summary>
-    /// <param name="fileContent">The content of the file.</param>
+    /**
+     * Initializes a new instance of the AbstractChunking class.
+     *
+     * @param fileContent The content of the file.
+     */
     protected AbstractChunking(byte[] fileContent) {
         this.FileContent = fileContent;
     }
 
-    /// <summary>
-    /// Gets or sets the file content.
-    /// </summary>
+    /**
+     * Gets or sets the file content.
+     */
     protected byte[] FileContent;
 
-    /// <summary>
-    /// This method is used to chunk the file data.
-    /// </summary>
-    /// <returns>A list of LeafNodeObjectData.</returns>
+    /**
+     * This method is used to chunk the file data.
+     *
+     * @return A list of LeafNodeObjectData.
+     */
     public abstract List<LeafNodeObject> Chunking();
 }

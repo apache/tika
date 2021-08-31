@@ -6,36 +6,37 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class RevisionManifestDataElementData extends DataElementData {
-    /// <summary>
-    /// Initializes a new instance of the RevisionManifestDataElementData class.
-    /// </summary>
+    /**
+     * Initializes a new instance of the RevisionManifestDataElementData class.
+     */
     public RevisionManifestDataElementData() {
         this.RevisionManifest = new RevisionManifest();
         this.RevisionManifestRootDeclareList = new ArrayList<>();
         this.RevisionManifestObjectGroupReferencesList = new ArrayList<>();
     }
 
-    /// <summary>
-    /// Gets or sets a 16-bit stream object header that specifies a revision manifest.
-    /// </summary>
+    /**
+     * Gets or sets a 16-bit stream object header that specifies a revision manifest.
+     */
     public RevisionManifest RevisionManifest;
 
-    /// <summary>
-    /// Gets or sets  a revision manifest root declare, each followed by root and object extended GUIDs.
-    /// </summary>
+    /**
+     * Gets or sets  a revision manifest root declare, each followed by root and object extended GUIDs.
+     */
     public List<RevisionManifestRootDeclare> RevisionManifestRootDeclareList;
 
-    /// <summary>
-    /// Gets or sets  a list of revision manifest object group references, each followed by object group extended GUIDs.
-    /// </summary>
+    /**
+     * Gets or sets  a list of revision manifest object group references, each followed by object group extended GUIDs.
+     */
     public List<RevisionManifestObjectGroupReferences> RevisionManifestObjectGroupReferencesList;
 
-    /// <summary>
-    /// Used to return the length of this element.
-    /// </summary>
-    /// <param name="byteArray">A Byte list</param>
-    /// <param name="startIndex">Start position</param>
-    /// <returns>The length of the element</returns>
+    /**
+     * Used to return the length of this element.
+     *
+     * @param byteArray  A Byte list
+     * @param startIndex Start position
+     * @return The length of the element
+     */
     @Override
     public int DeserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex) {
         AtomicInteger index = new AtomicInteger(startIndex);
@@ -65,10 +66,11 @@ public class RevisionManifestDataElementData extends DataElementData {
         return index.get() - startIndex;
     }
 
-    /// <summary>
-    /// Used to convert the element into a byte List.
-    /// </summary>
-    /// <returns>A Byte list</returns>
+    /**
+     * Used to convert the element into a byte List.
+     *
+     * @return A Byte list
+     */
     @Override
     public List<Byte> SerializeToByteList() {
         List<Byte> byteList = new ArrayList<>();

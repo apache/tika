@@ -1,16 +1,18 @@
-package org.apache.tika.parser.microsoft.fsshttpb;    /// <summary>
+package org.apache.tika.parser.microsoft.fsshttpb;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/// An 16-bit header for a compound object would indicate the start of a stream object
-/// </summary>
+/**
+ * An 16-bit header for a compound object would indicate the start of a stream object
+ */
 public class StreamObjectHeaderStart16bit extends StreamObjectHeaderStart {
-    /// <summary>
-    /// Initializes a new instance of the StreamObjectHeaderStart16bit class with specified type and length.
-    /// </summary>
-    /// <param name="type">Specify the type of the StreamObjectHeaderStart16bit.</param>
-    /// <param name="length">Specify the length of the StreamObjectHeaderStart16bit.</param>
+    /**
+     * Initializes a new instance of the StreamObjectHeaderStart16bit class with specified type and length.
+     *
+     * @param type   Specify the type of the StreamObjectHeaderStart16bit.
+     * @param length Specify the length of the StreamObjectHeaderStart16bit.
+     */
     public StreamObjectHeaderStart16bit(StreamObjectTypeHeaderStart type, int length) {
         if (this.length > 127) {
             throw new RuntimeException(
@@ -23,24 +25,26 @@ public class StreamObjectHeaderStart16bit extends StreamObjectHeaderStart {
         this.length = length;
     }
 
-    /// <summary>
-    /// Initializes a new instance of the StreamObjectHeaderStart16bit class with specified type.
-    /// </summary>
-    /// <param name="type">Specify the type of the StreamObjectHeaderStart16bit.</param>
+    /**
+     * Initializes a new instance of the StreamObjectHeaderStart16bit class with specified type.
+     *
+     * @param type Specify the type of the StreamObjectHeaderStart16bit.
+     */
     public StreamObjectHeaderStart16bit(StreamObjectTypeHeaderStart type) {
         this(type, 0);
     }
 
-    /// <summary>
-    /// Initializes a new instance of the StreamObjectHeaderStart16bit class, this is the default constructor.
-    /// </summary>
+    /**
+     * Initializes a new instance of the StreamObjectHeaderStart16bit class, this is the default constructor.
+     */
     public StreamObjectHeaderStart16bit() {
     }
 
-    /// <summary>
-    /// This method is used to convert the element of StreamObjectHeaderStart16bit basic object into a byte List.
-    /// </summary>
-    /// <returns>Return the byte list which store the byte information of StreamObjectHeaderStart16bit.</returns>
+    /**
+     * This method is used to convert the element of StreamObjectHeaderStart16bit basic object into a byte List.
+     *
+     * @return Return the byte list which store the byte information of StreamObjectHeaderStart16bit.
+     */
     @Override
     public List<Byte> SerializeToByteList() {
         BitWriter bitField = new BitWriter(2);
@@ -53,20 +57,22 @@ public class StreamObjectHeaderStart16bit extends StreamObjectHeaderStart {
         return result;
     }
 
-    /// <summary>
-    /// This method is used to get the Uint16 value of the 16bit stream object header.
-    /// </summary>
-    /// <returns>Return the ushort value.</returns>
+    /**
+     * This method is used to get the Uint16 value of the 16bit stream object header.
+     *
+     * @return Return the ushort value.
+     */
     public short ToUint16() {
         return LittleEndianBitConverter.ToUInt16(ByteUtil.toByteArray(this.SerializeToByteList()), 0);
     }
 
-    /// <summary>
-    /// This method is used to deserialize the StreamObjectHeaderStart16bit basic object from the specified byte array and start index.
-    /// </summary>
-    /// <param name="byteArray">Specify the byte array.</param>
-    /// <param name="startIndex">Specify the start index from the byte array.</param>
-    /// <returns>Return the length in byte of the StreamObjectHeaderStart16bit basic object.</returns>
+    /**
+     * This method is used to deserialize the StreamObjectHeaderStart16bit basic object from the specified byte array and start index.
+     *
+     * @param byteArray  Specify the byte array.
+     * @param startIndex Specify the start index from the byte array.
+     * @return Return the length in byte of the StreamObjectHeaderStart16bit basic object.
+     */
     @Override
     protected int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         BitReader bitReader = new BitReader(byteArray, startIndex);

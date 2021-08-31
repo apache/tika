@@ -6,34 +6,35 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class StorageIndexDataElementData extends DataElementData {
-    /// <summary>
-    /// Initializes a new instance of the StorageIndexDataElementData class.
-    /// </summary>
+    /**
+     * Initializes a new instance of the StorageIndexDataElementData class.
+     */
     public StorageIndexDataElementData() {
         this.StorageIndexManifestMapping = new StorageIndexManifestMapping();
         this.StorageIndexCellMappingList = new ArrayList<>();
         this.StorageIndexRevisionMappingList = new ArrayList<>();
     }
 
-    /// <summary>
-    /// Gets or sets the storage index manifest mappings (with manifest mapping extended GUID and serial number).
-    /// </summary>
+    /**
+     * Gets or sets the storage index manifest mappings (with manifest mapping extended GUID and serial number).
+     */
     public StorageIndexManifestMapping StorageIndexManifestMapping;
 
-    /// <summary>
-    /// Gets or sets  storage index manifest mappings.
-    /// </summary>
+    /**
+     * Gets or sets  storage index manifest mappings.
+     */
     public List<StorageIndexCellMapping> StorageIndexCellMappingList;
 
-    /// <summary>
-    /// Gets or sets the list of storage index revision mappings (with revision and revision mapping extended GUIDs, and revision mapping serial number).
-    /// </summary>
+    /**
+     * Gets or sets the list of storage index revision mappings (with revision and revision mapping extended GUIDs, and revision mapping serial number).
+     */
     public List<StorageIndexRevisionMapping> StorageIndexRevisionMappingList;
 
-    /// <summary>
-    /// Used to convert the element into a byte List.
-    /// </summary>
-    /// <returns>A Byte list</returns>
+    /**
+     * Used to convert the element into a byte List.
+     *
+     * @return A Byte list
+     */
     @Override
     public List<Byte> SerializeToByteList() {
         List<Byte> byteList = new ArrayList<>();
@@ -58,12 +59,13 @@ public class StorageIndexDataElementData extends DataElementData {
         return byteList;
     }
 
-    /// <summary>
-    /// Used to de-serialize the data element.
-    /// </summary>
-    /// <param name="byteArray">Byte array</param>
-    /// <param name="startIndex">Start position</param>
-    /// <returns>The length of the element</returns>
+    /**
+     * Used to de-serialize the data element.
+     *
+     * @param byteArray  Byte array
+     * @param startIndex Start position
+     * @return The length of the element
+     */
     @Override
     public int DeserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex) {
         AtomicInteger index = new AtomicInteger(startIndex);

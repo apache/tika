@@ -2,14 +2,15 @@ package org.apache.tika.parser.microsoft.fsshttpb;
 
 import java.util.List;
 
-/// <summary>
-/// An 16-bit header for a compound object would indicate the end of a stream object
-/// </summary>
+/**
+ * An 16-bit header for a compound object would indicate the end of a stream object
+ */
 public class StreamObjectHeaderEnd16bit extends StreamObjectHeaderEnd {
-    /// <summary>
-    /// Initializes a new instance of the StreamObjectHeaderEnd16bit class with the specified type value.
-    /// </summary>
-    /// <param name="type">Specify the integer value of the type.</param>
+    /**
+     * Initializes a new instance of the StreamObjectHeaderEnd16bit class with the specified type value.
+     *
+     * @param type Specify the integer value of the type.
+     */
     public StreamObjectHeaderEnd16bit(int type) {
         this.type = StreamObjectTypeHeaderEnd.fromIntVal(type);
         if (this.type == null) {
@@ -19,24 +20,26 @@ public class StreamObjectHeaderEnd16bit extends StreamObjectHeaderEnd {
 
     }
 
-    /// <summary>
-    /// Initializes a new instance of the StreamObjectHeaderEnd16bit class with the specified type value.
-    /// </summary>
-    /// <param name="headerType">Specify the value of the type.</param>
+    /**
+     * Initializes a new instance of the StreamObjectHeaderEnd16bit class with the specified type value.
+     *
+     * @param headerType Specify the value of the type.
+     */
     public StreamObjectHeaderEnd16bit(StreamObjectTypeHeaderEnd headerType) {
         this.type = headerType;
     }
 
-    /// <summary>
-    /// Initializes a new instance of the StreamObjectHeaderEnd16bit class, this is the default constructor.
-    /// </summary>
+    /**
+     * Initializes a new instance of the StreamObjectHeaderEnd16bit class, this is the default constructor.
+     */
     public StreamObjectHeaderEnd16bit() {
     }
 
-    /// <summary>
-    /// This method is used to convert the element of StreamObjectHeaderEnd16bit basic object into a byte List.
-    /// </summary>
-    /// <returns>Return the byte list which store the byte information of StreamObjectHeaderEnd16bit.</returns>
+    /**
+     * This method is used to convert the element of StreamObjectHeaderEnd16bit basic object into a byte List.
+     *
+     * @return Return the byte list which store the byte information of StreamObjectHeaderEnd16bit.
+     */
     @Override
     public List<Byte> SerializeToByteList() {
         BitWriter bitFieldWriter = new BitWriter(2);
@@ -45,21 +48,23 @@ public class StreamObjectHeaderEnd16bit extends StreamObjectHeaderEnd {
         return bitFieldWriter.getByteList();
     }
 
-    /// <summary>
-    /// This method is used to get the byte value of the 16-bit stream object header End.
-    /// </summary>
-    /// <returns>Return StreamObjectHeaderEnd8bit value represented by unsigned short integer.</returns>
+    /**
+     * This method is used to get the byte value of the 16-bit stream object header End.
+     *
+     * @return Return StreamObjectHeaderEnd8bit value represented by unsigned short integer.
+     */
     public short ToUint16() {
         List<Byte> bytes = this.SerializeToByteList();
         return LittleEndianBitConverter.ToUInt16(ByteUtil.toByteArray(bytes), 0);
     }
 
-    /// <summary>
-    /// This method is used to deserialize the StreamObjectHeaderEnd16bit basic object from the specified byte array and start index.
-    /// </summary>
-    /// <param name="byteArray">Specify the byte array.</param>
-    /// <param name="startIndex">Specify the start index from the byte array.</param>
-    /// <returns>Return the length in byte of the StreamObjectHeaderEnd16bit basic object.</returns>
+    /**
+     * This method is used to deserialize the StreamObjectHeaderEnd16bit basic object from the specified byte array and start index.
+     *
+     * @param byteArray  Specify the byte array.
+     * @param startIndex Specify the start index from the byte array.
+     * @return Return the length in byte of the StreamObjectHeaderEnd16bit basic object.
+     */
     @Override
     protected int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         BitReader reader = new BitReader(byteArray, startIndex);

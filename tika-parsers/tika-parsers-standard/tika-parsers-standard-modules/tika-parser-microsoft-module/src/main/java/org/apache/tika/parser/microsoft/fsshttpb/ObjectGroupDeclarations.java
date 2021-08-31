@@ -5,35 +5,36 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-/// <summary>
-/// Object Group Declarations
-/// </summary>
+/**
+ * Object Group Declarations
+ */
 public class ObjectGroupDeclarations extends StreamObject {
-    /// <summary>
-    /// Initializes a new instance of the ObjectGroupDeclarations class.
-    /// </summary>
+    /**
+     * Initializes a new instance of the ObjectGroupDeclarations class.
+     */
     public ObjectGroupDeclarations() {
         super(StreamObjectTypeHeaderStart.ObjectGroupDeclarations);
         this.ObjectDeclarationList = new ArrayList<>();
         this.ObjectGroupObjectBLOBDataDeclarationList = new ArrayList<>();
     }
 
-    /// <summary>
-    /// Gets or sets a list of declarations that specifies the object.
-    /// </summary>
+    /**
+     * Gets or sets a list of declarations that specifies the object.
+     */
     public List<ObjectGroupObjectDeclare> ObjectDeclarationList;
 
-    /// <summary>
-    /// Gets or sets a list of object data BLOB declarations that specifies the object.
-    /// </summary>
+    /**
+     * Gets or sets a list of object data BLOB declarations that specifies the object.
+     */
     public List<ObjectGroupObjectBLOBDataDeclaration> ObjectGroupObjectBLOBDataDeclarationList;
 
-    /// <summary>
-    /// Used to de-serialize the element.
-    /// </summary>
-    /// <param name="byteArray">A Byte array</param>
-    /// <param name="currentIndex">Start position</param>
-    /// <param name="lengthOfItems">The length of the items</param>
+    /**
+     * Used to de-serialize the element.
+     *
+     * @param byteArray     A Byte array
+     * @param currentIndex  Start position
+     * @param lengthOfItems The length of the items
+     */
     @Override
     protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
         if (lengthOfItems != 0) {
@@ -66,11 +67,12 @@ public class ObjectGroupDeclarations extends StreamObject {
         currentIndex.set(index.get());
     }
 
-    /// <summary>
-    /// Used to convert the element into a byte List
-    /// </summary>
-    /// <param name="byteList">The Byte list</param>
-    /// <returns>A constant value 0</returns>
+    /**
+     * Used to convert the element into a byte List
+     *
+     * @param byteList The Byte list
+     * @return A constant value 0
+     */
     @Override
     protected int SerializeItemsToByteList(List<Byte> byteList) {
         if (this.ObjectDeclarationList != null) {

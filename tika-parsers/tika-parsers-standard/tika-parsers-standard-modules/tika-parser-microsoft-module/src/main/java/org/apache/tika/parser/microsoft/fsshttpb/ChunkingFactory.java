@@ -4,21 +4,22 @@ import java.util.List;
 
 import org.apache.poi.openxml4j.exceptions.InvalidOperationException;
 
-/// <summary>
-/// This class is used to create instance of AbstractChunking.
-/// </summary>
+/**
+ * This class is used to create instance of AbstractChunking.
+ */
 public class ChunkingFactory {
-    /// <summary>
-    /// Prevents a default instance of the ChunkingFactory class from being created
-    /// </summary>
+    /**
+     * Prevents a default instance of the ChunkingFactory class from being created
+     */
     private ChunkingFactory() {
     }
 
-    /// <summary>
-    /// This method is used to create the instance of AbstractChunking.
-    /// </summary>
-    /// <param name="fileContent">The content of the file.</param>
-    /// <returns>The instance of AbstractChunking.</returns>
+    /**
+     * This method is used to create the instance of AbstractChunking.
+     *
+     * @param fileContent The content of the file.
+     * @return The instance of AbstractChunking.
+     */
     public static AbstractChunking CreateChunkingInstance(byte[] fileContent) {
         if (ZipHeader.IsFileHeader(fileContent, 0)) {
             return new ZipFilesChunking(fileContent);
@@ -27,11 +28,13 @@ public class ChunkingFactory {
         }
     }
 
-    /// <summary>
-    /// This method is used to create the instance of AbstractChunking.
-    /// </summary>
-    /// <param name="nodeObject">Specify the root node object.</param>
-    /// <returns>The instance of AbstractChunking.</returns>
+    /**
+     * This method is used to create the instance of AbstractChunking.
+     *
+     * @param nodeObject Specify the root node object.
+     * @return The instance of AbstractChunking.
+     */
+
     public static AbstractChunking CreateChunkingInstance(IntermediateNodeObject nodeObject) {
         byte[] fileContent = ByteUtil.toByteArray(nodeObject.GetContent());
 
@@ -73,12 +76,13 @@ public class ChunkingFactory {
         }
     }
 
-    /// <summary>
-    /// This method is used to create the instance of AbstractChunking.
-    /// </summary>
-    /// <param name="fileContent">The content of the file.</param>
-    /// <param name="chunkingMethod">The type of chunking methods.</param>
-    /// <returns>The instance of AbstractChunking.</returns>
+    /**
+     * This method is used to create the instance of AbstractChunking.
+     *
+     * @param fileContent    The content of the file.
+     * @param chunkingMethod The type of chunking methods.
+     * @return The instance of AbstractChunking.
+     */
     public static AbstractChunking CreateChunkingInstance(byte[] fileContent, ChunkingMethod chunkingMethod) {
         AbstractChunking chunking;
         switch (chunkingMethod) {

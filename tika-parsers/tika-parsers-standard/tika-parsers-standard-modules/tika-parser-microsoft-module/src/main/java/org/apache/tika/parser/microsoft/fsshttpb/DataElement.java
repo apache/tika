@@ -13,14 +13,14 @@ public class DataElement extends StreamObject {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DataElement.class);
 
-    /// <summary>
-    /// Data Element Data Type Mapping
-    /// </summary>
-    private static Map<DataElementType, Class> dataElementDataTypeMapping = null;
+    /**
+     * Data Element Data Type Mapping
+     */
+    private static Map<DataElementType, Class> dataElementDataTypeMapping;
 
-    /// <summary>
-    /// Initializes static members of the DataElement class
-    /// </summary>
+    /**
+     *  Initializes static members of the DataElement class
+     */
     static {
         dataElementDataTypeMapping = new HashMap<>();
         for (DataElementType value : DataElementType.values()) {
@@ -35,11 +35,19 @@ public class DataElement extends StreamObject {
         }
     }
 
-    /// <summary>
-    /// Initializes a new instance of the DataElement class.
-    /// </summary>
-    /// <param name="type">data element type</param>
-    /// <param name="data">Specifies the data of the element.</param>
+    /**
+     * Initializes a new instance of the DataElement class.
+     *
+     * @param type data
+     *             element type
+     *             *
+     * @param data Specifies
+     *             the data
+     *             of the
+     *             element .
+     */
+
+
     public DataElement(DataElementType type, DataElementData data) {
         super(StreamObjectTypeHeaderStart.DataElement);
         if (!dataElementDataTypeMapping.containsKey(type)) {
@@ -52,38 +60,39 @@ public class DataElement extends StreamObject {
         this.serialNumber = new SerialNumber(UUID.randomUUID(), SequenceNumberGenerator.GetCurrentSerialNumber());
     }
 
-    /// <summary>
-    /// Initializes a new instance of the DataElement class.
-    /// </summary>
+    /**
+     * Initializes a new instance of the DataElement class.
+     */
     public DataElement() {
         super(StreamObjectTypeHeaderStart.DataElement);
     }
 
-    /// <summary>
-    /// Gets or sets an extended GUID that specifies the data element.
-    /// </summary>
+    /**
+     * Gets or sets an extended GUID that specifies the data element.
+     */
     public ExGuid dataElementExGuid;
 
-    /// <summary>
-    /// Gets or sets a serial number that specifies the data element.
-    /// </summary>
+    /**
+     * Gets or sets a serial number that specifies the data element.
+     */
     public SerialNumber serialNumber;
 
-    /// <summary>
-    /// Gets or sets a compact unsigned 64-bit integer that specifies the value of the storage index data element type.
-    /// </summary>
+    /**
+     * Gets or sets a compact unsigned 64-bit integer that specifies the value of the storage index data element type.
+     */
     public DataElementType dataElementType;
 
-    /// <summary>
-    /// Gets or sets a data element fragment.
-    /// </summary>
+    /**
+     * Gets or sets a data element fragment.
+     */
     public DataElementData data;
 
-    /// <summary>
-    /// Used to get data.
-    /// </summary>
-    /// <typeparam name="T">Type of element</typeparam>
-    /// <returns>Data of the element</returns>
+    /**
+     * Used to get data.
+     *
+     * @return Data of
+     * the element
+     */
     public <T extends DataElementData> T GetData(Class<T> clazz) {
         if (this.data.getClass().equals(clazz)) {
             return (T) this.data;
@@ -94,12 +103,17 @@ public class DataElement extends StreamObject {
         }
     }
 
-    /// <summary>
-    /// Used to de-serialize the element.
-    /// </summary>
-    /// <param name="byteArray">A Byte array</param>
-    /// <param name="currentIndex">Start position</param>
-    /// <param name="lengthOfItems">The length of the items</param>
+    /**
+     * Used to de-serialize the element.
+     *
+     * @param byteArray     A
+     *                      Byte array
+     * @param currentIndex  Start
+     *                      position
+     * @param lengthOfItems The
+     *                      length of
+     *                      the items
+     */
     @Override
     protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
@@ -139,11 +153,12 @@ public class DataElement extends StreamObject {
         currentIndex.set(index.get());
     }
 
-    /// <summary>
-    /// Used to convert the element into a byte List.
-    /// </summary>
-    /// <param name="byteList">A Byte list</param>
-    /// <returns>The element length</returns>
+    /**
+     * Used to convert the element into a byte List.
+     *
+     * @param byteList A Byte list
+     * @return The element length
+     */
     @Override
     protected int SerializeItemsToByteList(List<Byte> byteList) {
         int startIndex = byteList.size();

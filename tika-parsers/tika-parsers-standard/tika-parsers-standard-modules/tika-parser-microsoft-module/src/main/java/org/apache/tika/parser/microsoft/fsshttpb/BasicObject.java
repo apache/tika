@@ -9,11 +9,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 public abstract class BasicObject implements IFSSHTTPBSerializable {
     /**
      * Used to parse byte array to special object.
+     *
+     * @param byteArray The byte array contains raw data.
+     * @param index     The index special where to start.
+     * @return The instance of target object.
      */
-    /// <typeparam name="T">The type of target object.</typeparam>
-    /// <param name="byteArray">The byte array contains raw data.</param>
-    /// <param name="index">The index special where to start.</param>
-    /// <returns>The instance of target object.</returns>
     public static <T extends BasicObject> T parse(byte[] byteArray, AtomicInteger index, Class<T> clazz) {
         try {
             T fsshttpbObject = clazz.newInstance();
@@ -25,12 +25,13 @@ public abstract class BasicObject implements IFSSHTTPBSerializable {
         }
     }
 
-    /// <summary>
-    /// Used to return the length of this element.
-    /// </summary>
-    /// <param name="byteArray">The byte list.</param>
-    /// <param name="startIndex">The start position.</param>
-    /// <returns>The element length.</returns>
+    /**
+     * Used to return the length of this element.
+     *
+     * @param byteArray  The byte list.
+     * @param startIndex The start position.
+     * @return The element length.
+     */
     public int DeserializeFromByteArray(byte[] byteArray, int startIndex) {
         int length = this.DoDeserializeFromByteArray(byteArray, startIndex);
 
@@ -42,17 +43,19 @@ public abstract class BasicObject implements IFSSHTTPBSerializable {
         return length;
     }
 
-    /// <summary>
-    /// Used to serialize item to byte list.
-    /// </summary>
-    /// <returns>The byte list.</returns>
+    /**
+     * Used to serialize item to byte list.
+     *
+     * @return The byte list.
+     */
     public abstract List<Byte> SerializeToByteList();
 
-    /// <summary>
-    /// Used to return the length of this element.
-    /// </summary>
-    /// <param name="byteArray">The byte list.</param>
-    /// <param name="startIndex">The start position.</param>
-    /// <returns>The element length</returns>
+    /**
+     * Used to return the length of this element.
+     *
+     * @param byteArray  The byte list.
+     * @param startIndex The start position.
+     * @return The element length
+     */
     protected abstract int DoDeserializeFromByteArray(byte[] byteArray, int startIndex);
 }

@@ -184,13 +184,14 @@ public class DataElementUtils {
         return new DataElement(DataElementType.StorageIndexDataElementData, data);
     }
 
-    /// <summary>
-    /// This method is used to get the list of object group data element from a list of data element.
-    /// </summary>
-    /// <param name="dataElements">Specify the data element list.</param>
-    /// <param name="storageIndexExGuid">Specify the storage index extended GUID.</param>
-    /// <param name="rootExGuid">Output parameter to represent the root node object.</param>
-    /// <returns>Return the list of object group data elements.</returns>
+    /**
+     * This method is used to get the list of object group data element from a list of data element.
+     *
+     * @param dataElements       Specify the data element list.
+     * @param storageIndexExGuid Specify the storage index extended GUID.
+     * @param rootExGuid         Output parameter to represent the root node object.
+     * @return Return the list of object group data elements.
+     */
     public static List<ObjectGroupDataElementData> GetDataObjectDataElementData(List<DataElement> dataElements,
                                                                                 ExGuid storageIndexExGuid,
                                                                                 AtomicReference<ExGuid> rootExGuid) {
@@ -213,12 +214,13 @@ public class DataElementUtils {
         return GetDataObjectDataElementData(dataElements, revisionData, rootExGuid);
     }
 
-    /// <summary>
-    /// This method is used to try to analyze the returned whether data elements are complete.
-    /// </summary>
-    /// <param name="dataElements">Specify the data elements list.</param>
-    /// <param name="storageIndexExGuid">Specify the storage index extended GUID.</param>
-    /// <returns>If the data elements start with the specified storage index extended GUID are complete, return true. Otherwise return false.</returns>
+    /**
+     * This method is used to try to analyze the returned whether data elements are complete.
+     *
+     * @param dataElements       Specify the data elements list.
+     * @param storageIndexExGuid Specify the storage index extended GUID.
+     * @return If the data elements start with the specified storage index extended GUID are complete, return true. Otherwise return false.
+     */
     public static boolean TryAnalyzeWhetherFullDataElementList(List<DataElement> dataElements,
                                                                ExGuid storageIndexExGuid) {
         AtomicReference<ExGuid> manifestMappingGuid = new AtomicReference<>();
@@ -287,12 +289,13 @@ public class DataElementUtils {
         return true;
     }
 
-    /// <summary>
-    /// This method is used to analyze whether the data elements are confirmed to the schema defined in MS-FSSHTTPD. 
-    /// </summary>
-    /// <param name="dataElements">Specify the data elements list.</param>
-    /// <param name="storageIndexExGuid">Specify the storage index extended GUID.</param>
-    /// <returns>If the data elements confirms to the schema defined in the MS-FSSHTTPD returns true, otherwise false.</returns>
+    /**
+     * This method is used to analyze whether the data elements are confirmed to the schema defined in MS-FSSHTTPD.
+     *
+     * @param dataElements       Specify the data elements list.
+     * @param storageIndexExGuid Specify the storage index extended GUID.
+     * @return If the data elements confirms to the schema defined in the MS-FSSHTTPD returns true, otherwise false.
+     */
     public static boolean TryAnalyzeWhetherConfirmSchema(List<DataElement> dataElements, ExGuid storageIndexExGuid) {
         DataElement storageIndexDataElement =
                 dataElements.stream().filter(element -> element.dataElementExGuid.equals(storageIndexExGuid)).findAny()
@@ -316,15 +319,16 @@ public class DataElementUtils {
                 StorageManifestDataElementData.class).storageManifestSchemaGUID.guid);
     }
 
-    /// <summary>
-    /// This method is used to analyze the storage index data element to get all the mappings. 
-    /// </summary>
-    /// <param name="dataElements">Specify the data element list.</param>
-    /// <param name="storageIndexExGuid">Specify the storage index extended GUID.</param>
-    /// <param name="manifestMappingGuid">Output parameter to represent the storage manifest mapping GUID.</param>
-    /// <param name="cellIDMappings">Output parameter to represent the mapping of cell id.</param>
-    /// <param name="revisionIDMappings">Output parameter to represent the revision id.</param>
-    /// <returns>Return true if analyze the storage index succeeds, otherwise return false.</returns>
+    /**
+     * This method is used to analyze the storage index data element to get all the mappings.
+     *
+     * @param dataElements        Specify the data element list.
+     * @param storageIndexExGuid  Specify the storage index extended GUID.
+     * @param manifestMappingGuid Output parameter to represent the storage manifest mapping GUID.
+     * @param cellIDMappings      Output parameter to represent the mapping of cell id.
+     * @param revisionIDMappings  Output parameter to represent the revision id.
+     * @return Return true if analyze the storage index succeeds, otherwise return false.
+     */
     public static boolean AnalyzeStorageIndexDataElement(
             List<DataElement> dataElements,
             ExGuid storageIndexExGuid,
@@ -359,12 +363,13 @@ public class DataElementUtils {
         return true;
     }
 
-    /// <summary>
-    /// This method is used to get storage manifest data element from a list of data element.
-    /// </summary>
-    /// <param name="dataElements">Specify the data element list.</param>
-    /// <param name="manifestMapping">Specify the manifest mapping GUID.</param>
-    /// <returns>Return the storage manifest data element.</returns>
+    /**
+     * This method is used to get storage manifest data element from a list of data element.
+     *
+     * @param dataElements    Specify the data element list.
+     * @param manifestMapping Specify the manifest mapping GUID.
+     * @return Return the storage manifest data element.
+     */
     public static StorageManifestDataElementData GetStorageManifestDataElementData(List<DataElement> dataElements,
                                                                                    ExGuid manifestMapping) {
         DataElement storageManifestDataElement =
@@ -377,13 +382,14 @@ public class DataElementUtils {
         return storageManifestDataElement.GetData(StorageManifestDataElementData.class);
     }
 
-    /// <summary>
-    /// This method is used to get cell manifest data element from a list of data element.
-    /// </summary>
-    /// <param name="dataElements">Specify the data element list.</param>
-    /// <param name="manifestDataElementData">Specify the manifest data element.</param>
-    /// <param name="cellIDMappings">Specify mapping of cell id.</param>
-    /// <returns>Return the cell manifest data element.</returns>
+    /**
+     * This method is used to get cell manifest data element from a list of data element.
+     *
+     * @param dataElements            Specify the data element list.
+     * @param manifestDataElementData Specify the manifest data element.
+     * @param cellIDMappings          Specify mapping of cell id.
+     * @return Return the cell manifest data element.
+     */
     public static CellManifestDataElementData GetCellManifestDataElementData(List<DataElement> dataElements,
                                                                              StorageManifestDataElementData manifestDataElementData,
                                                                              HashMap<CellID, ExGuid> cellIDMappings) {
@@ -413,13 +419,14 @@ public class DataElementUtils {
         throw new InvalidOperationException("Cannot find the CellManifestDataElement");
     }
 
-    /// <summary>
-    /// This method is used to get revision manifest data element from a list of data element.
-    /// </summary>
-    /// <param name="dataElements">Specify the data element list.</param>
-    /// <param name="cellData">Specify the cell data element.</param>
-    /// <param name="revisionIDMappings">Specify mapping of revision id.</param>
-    /// <returns>Return the revision manifest data element.</returns>
+    /**
+     * This method is used to get revision manifest data element from a list of data element.
+     *
+     * @param dataElements       Specify the data element list.
+     * @param cellData           Specify the cell data element.
+     * @param revisionIDMappings Specify mapping of revision id.
+     * @return Return the revision manifest data element.
+     */
     public static RevisionManifestDataElementData GetRevisionManifestDataElementData(List<DataElement> dataElements,
                                                                                      CellManifestDataElementData cellData,
                                                                                      HashMap<ExGuid, ExGuid> revisionIDMappings) {
@@ -443,13 +450,14 @@ public class DataElementUtils {
         return dataElement.GetData(RevisionManifestDataElementData.class);
     }
 
-    /// <summary>
-    /// This method is used to get a list of object group data element from a list of data element.
-    /// </summary>
-    /// <param name="dataElements">Specify the data element list.</param>
-    /// <param name="revisionData">Specify the revision data.</param>
-    /// <param name="rootExGuid">Specify the root node object extended GUID.</param>
-    /// <returns>Return the list of object group data element.</returns>
+    /**
+     * This method is used to get a list of object group data element from a list of data element.
+     *
+     * @param dataElements Specify the data element list.
+     * @param revisionData Specify the revision data.
+     * @param rootExGuid   Specify the root node object extended GUID.
+     * @return Return the list of object group data element.
+     */
     public static List<ObjectGroupDataElementData> GetDataObjectDataElementData(List<DataElement> dataElements,
                                                                                 RevisionManifestDataElementData revisionData,
                                                                                 AtomicReference<ExGuid> rootExGuid) {

@@ -5,20 +5,22 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class CellIDArray extends BasicObject {
-    /// <summary>
-    /// Initializes a new instance of the CellIDArray class.
-    /// </summary>
-    /// <param name="count">Specify the number of CellID in the CellID array.</param>
-    /// <param name="content">Specify the list of CellID.</param>
+    /**
+     * Initializes a new instance of the CellIDArray class.
+     *
+     * @param count   Specify the number of CellID in the CellID array.
+     * @param content Specify the list of CellID.
+     */
     public CellIDArray(long count, java.util.List<CellID> content) {
         this.Count = count;
         this.Content = content;
     }
 
-    /// <summary>
-    /// Initializes a new instance of the CellIDArray class, this is copy constructor.
-    /// </summary>
-    /// <param name="cellIdArray">Specify the CellIDArray.</param>
+    /**
+     * Initializes a new instance of the CellIDArray class, this is copy constructor.
+     *
+     * @param cellIdArray Specify the CellIDArray.
+     */
     public CellIDArray(CellIDArray cellIdArray) {
         this.Count = cellIdArray.Count;
         if (cellIdArray.Content != null) {
@@ -28,27 +30,28 @@ public class CellIDArray extends BasicObject {
         }
     }
 
-    /// <summary>
-    /// Initializes a new instance of the CellIDArray class, this is default constructor.
-    /// </summary>
+    /**
+     * Initializes a new instance of the CellIDArray class, this is default constructor.
+     */
     public CellIDArray() {
         this.Content = new ArrayList<CellID>();
     }
 
-    /// <summary>
-    /// Gets or sets a compact unsigned 64-bit integer that specifies the count of cell IDs in the array.
-    /// </summary>
+    /**
+     * Gets or sets a compact unsigned 64-bit integer that specifies the count of cell IDs in the array.
+     */
     public long Count;
 
-    /// <summary>
-    /// Gets or sets a cell ID list that specifies a list of cells.
-    /// </summary>
+    /**
+     * Gets or sets a cell ID list that specifies a list of cells.
+     */
     public List<CellID> Content;
 
-    /// <summary>
-    /// This method is used to convert the element of CellIDArray basic object into a byte List.
-    /// </summary>
-    /// <returns>Return the byte list which store the byte information of CellIDArray.</returns>
+    /**
+     * This method is used to convert the element of CellIDArray basic object into a byte List.
+     *
+     * @return Return the byte list which store the byte information of CellIDArray.
+     */
     @Override
     public List<Byte> SerializeToByteList() {
         List<Byte> byteList = new ArrayList<Byte>();
@@ -62,12 +65,13 @@ public class CellIDArray extends BasicObject {
         return byteList;
     }
 
-    /// <summary>
-    /// This method is used to deserialize the CellIDArray basic object from the specified byte array and start index.
-    /// </summary>
-    /// <param name="byteArray">Specify the byte array.</param>
-    /// <param name="startIndex">Specify the start index from the byte array.</param>
-    /// <returns>Return the length in byte of the CellIDArray basic object.</returns>
+    /**
+     * This method is used to deserialize the CellIDArray basic object from the specified byte array and start index.
+     *
+     * @param byteArray  Specify the byte array.
+     * @param startIndex Specify the start index from the byte array.
+     * @return Return the length in byte of the CellIDArray basic object.
+     */
     @Override
     protected int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         AtomicInteger index = new AtomicInteger(startIndex);

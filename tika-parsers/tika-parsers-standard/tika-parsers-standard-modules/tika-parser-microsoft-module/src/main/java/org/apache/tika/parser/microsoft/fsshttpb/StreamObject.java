@@ -17,9 +17,9 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StreamObject.class);
 
-    /// <summary>
-    /// Hash set contains the StreamObjectTypeHeaderStart type.
-    /// </summary>
+    /**
+     * Hash set contains the StreamObjectTypeHeaderStart type.
+     */
     private static Set<StreamObjectTypeHeaderStart> compoundTypes = new HashSet<>(Arrays.asList(
             StreamObjectTypeHeaderStart.DataElement,
             StreamObjectTypeHeaderStart.Knowledge,
@@ -44,9 +44,9 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
             StreamObjectTypeHeaderStart.IntermediateNodeObject,
             StreamObjectTypeHeaderStart.TargetPartitionId));
 
-    /// <summary>
-    /// The dictionary of StreamObjectTypeHeaderStart and type.
-    /// </summary>
+    /**
+     * The dictionary of StreamObjectTypeHeaderStart and type.
+     */
     private static Map<StreamObjectTypeHeaderStart, Class> streamObjectTypeMapping;
 
     static {
@@ -62,55 +62,56 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
         }
     }
 
-    /// <summary>
-    /// Initializes a new instance of the StreamObject class.
-    /// </summary>
-    /// <param name="streamObjectType">The instance of StreamObjectTypeHeaderStart.</param>
+    /**
+     * Initializes a new instance of the StreamObject class.
+     *
+     * @param streamObjectType The instance of StreamObjectTypeHeaderStart.
+     */
     protected StreamObject(StreamObjectTypeHeaderStart streamObjectType) {
         this.streamObjectType = streamObjectType;
     }
 
-    /// <summary>
-    /// Gets the StreamObjectTypeHeaderStart
-    /// </summary>
+    /**
+     * Gets the StreamObjectTypeHeaderStart
+     */
     public static Set<StreamObjectTypeHeaderStart> getCompoundTypes() {
         return compoundTypes;
     }
 
-    /// <summary>
-    /// Gets the StreamObjectTypeMapping
-    /// </summary>
+    /**
+     * Gets the StreamObjectTypeMapping
+     */
     public static Map<StreamObjectTypeHeaderStart, Class> getStreamObjectTypeMapping() {
         return streamObjectTypeMapping;
     }
 
-    /// <summary>
-    /// Gets the StreamObjectTypeHeaderStart.
-    /// </summary>
+    /**
+     * Gets the StreamObjectTypeHeaderStart.
+     */
     private StreamObjectTypeHeaderStart streamObjectType;
 
-    /// <summary>
-    /// Gets the length of items.
-    /// </summary>
+    /**
+     * Gets the length of items.
+     */
     private int lengthOfItems;
 
-    /// <summary>
-    /// Gets or sets the stream object header start.
-    /// </summary>
+    /**
+     * Gets or sets the stream object header start.
+     */
     private StreamObjectHeaderStart streamObjectHeaderStart;
 
-    /// <summary>
-    /// Gets or sets the stream object header end.
-    /// </summary>
+    /**
+     * Gets or sets the stream object header end.
+     */
     StreamObjectHeaderEnd streamObjectHeaderEnd;
 
-    /// <summary>
-    /// Get current stream object.
-    /// </summary>
-    /// <typeparam name="T">The type of target object.</typeparam>
-    /// <param name="byteArray">The byte array which contains message.</param>
-    /// <param name="index">The position where to start.</param>
-    /// <returns>The current object instance.</returns>
+    /**
+     * Get current stream object.
+     *
+     * @param byteArray The byte array which contains message.
+     * @param index     The position where to start.
+     * @return The current object instance.
+     */
     public static <T extends StreamObject> T GetCurrent(byte[] byteArray, AtomicInteger index, Class<T> clazz) {
         AtomicInteger tmpIndex = new AtomicInteger(index.get());
         int length;
@@ -139,13 +140,14 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
         return (T) streamObject;
     }
 
-    /// <summary>
-    /// Parse stream object from byte array.
-    /// </summary>
-    /// <param name="header">The instance of StreamObjectHeaderStart.</param>
-    /// <param name="byteArray">The byte array.</param>
-    /// <param name="index">The position where to start.</param>
-    /// <returns>The instance of StreamObject.</returns>
+    /**
+     * Parse stream object from byte array.
+     *
+     * @param header    The instance of StreamObjectHeaderStart.
+     * @param byteArray The byte array.
+     * @param index     The position where to start.
+     * @return The instance of StreamObject.
+     */
     public static StreamObject ParseStreamObject(StreamObjectHeaderStart header, byte[] byteArray,
                                                  AtomicInteger index) {
         if (streamObjectTypeMapping.keySet().contains(header.type)) {
@@ -170,14 +172,15 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
                 header.type.getIntVal()), null);
     }
 
-    /// <summary>
-    /// Try to get current object, true will returned if success.
-    /// </summary>
-    /// <typeparam name="T">The type of target object.</typeparam>
-    /// <param name="byteArray">The byte array.</param>
-    /// <param name="index">The position where to start.</param>
-    /// <param name="streamObject">The instance that want to get.</param>
-    /// <returns>The result of whether get success.</returns>
+    /**
+     * Try to get current object, true will returned if success.
+     *
+     * @param byteArray    The byte array.
+     * @param index        The position where to start.
+     * @param streamObject The instance that want to get.
+     * @return The result of whether get success.
+     */
+
     public static <T extends StreamObject> boolean TryGetCurrent(byte[] byteArray, AtomicInteger index,
                                                                  AtomicReference<T> streamObject, Class<T> clazz) {
         AtomicInteger tmpIndex = new AtomicInteger(index.get());
@@ -200,10 +203,11 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
         return true;
     }
 
-    /// <summary>
-    /// Serialize item to byte list.
-    /// </summary>
-    /// <returns>The byte list.</returns>
+    /**
+     * Serialize item to byte list.
+     *
+     * @return The byte list.
+     */
     public List<Byte> SerializeToByteList() {
         List<Byte> byteList = new ArrayList<>();
 
@@ -230,13 +234,14 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
         return byteList;
     }
 
-    /// <summary>
-    /// Used to return the length of this element.
-    /// </summary>
-    /// <param name="header">Then instance of StreamObjectHeaderStart.</param>
-    /// <param name="byteArray">The byte list</param>
-    /// <param name="startIndex">The position where to start.</param>
-    /// <returns>The element length</returns>
+    /**
+     * Used to return the length of this element.
+     *
+     * @param header     Then instance of StreamObjectHeaderStart.
+     * @param byteArray  The byte list
+     * @param startIndex The position where to start.
+     * @return The element length
+     */
     public int DeserializeFromByteArray(StreamObjectHeaderStart header, byte[] byteArray, int startIndex) {
         this.streamObjectType = header.type;
         this.lengthOfItems = header.length;
@@ -278,19 +283,21 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
         return index.get() - startIndex;
     }
 
-    /// <summary>
-    /// Serialize items to byte list.
-    /// </summary>
-    /// <param name="byteList">The byte list need to serialized.</param>
-    /// <returns>The length in bytes for additional data if the current stream object has, otherwise return 0.</returns>
+    /**
+     * Serialize items to byte list.
+     *
+     * @param byteList The byte list need to serialized.
+     * @return The length in bytes for additional data if the current stream object has, otherwise return 0.
+     */
     protected abstract int SerializeItemsToByteList(List<Byte> byteList);
 
-    /// <summary>
-    /// De-serialize items from byte array.
-    /// </summary>
-    /// <param name="byteArray">The byte array which contains response message.</param>
-    /// <param name="currentIndex">The index special where to start.</param>
-    /// <param name="lengthOfItems">The length of items.</param>
+    /**
+     * De-serialize items from byte array.
+     *
+     * @param byteArray     The byte array which contains response message.
+     * @param currentIndex  The index special where to start.
+     * @param lengthOfItems The length of items.
+     */
     protected abstract void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                           int lengthOfItems);
 }

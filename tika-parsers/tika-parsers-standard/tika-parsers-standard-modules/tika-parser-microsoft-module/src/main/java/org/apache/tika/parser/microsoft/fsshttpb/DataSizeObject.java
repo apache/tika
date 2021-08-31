@@ -3,28 +3,29 @@ package org.apache.tika.parser.microsoft.fsshttpb;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/// <summary>
-/// Data Size Object
-/// </summary>
+/**
+ * Data Size Object
+ */
 public class DataSizeObject extends StreamObject {
-    /// <summary>
-    /// Initializes a new instance of the DataSizeObject class.
-    /// </summary>
+    /**
+     * Initializes a new instance of the DataSizeObject class.
+     */
     public DataSizeObject() {
         super(StreamObjectTypeHeaderStart.DataSizeObject);
     }
 
-    /// <summary>
-    /// Gets or sets an unsigned 64-bit integer that specifies the size of the file data represented by this root node object.
-    /// </summary>
+    /**
+     * Gets or sets an unsigned 64-bit integer that specifies the size of the file data represented by this root node object.
+     */
     public long DataSize;
 
-    /// <summary>
-    /// Used to de-serialize the element.
-    /// </summary>
-    /// <param name="byteArray">A Byte array</param>
-    /// <param name="currentIndex">Start position</param>
-    /// <param name="lengthOfItems">The length of the items</param>
+    /**
+     * Used to de-serialize the element.
+     *
+     * @param byteArray     A Byte array
+     * @param currentIndex  Start position
+     * @param lengthOfItems The length of the items
+     */
     @Override
     protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
         if (lengthOfItems != 8) {
@@ -36,11 +37,12 @@ public class DataSizeObject extends StreamObject {
         currentIndex.addAndGet(8);
     }
 
-    /// <summary>
-    /// Used to convert the element into a byte List.
-    /// </summary>
-    /// <param name="byteList">A Byte list</param>
-    /// <returns>A constant value 8</returns>
+    /**
+     * Used to convert the element into a byte List.
+     *
+     * @param byteList A Byte list
+     * @return A constant value 8
+     */
     @Override
     protected int SerializeItemsToByteList(List<Byte> byteList) {
         ByteUtil.appendByteArrayToListOfByte(byteList, LittleEndianBitConverter.GetBytes(this.DataSize));
