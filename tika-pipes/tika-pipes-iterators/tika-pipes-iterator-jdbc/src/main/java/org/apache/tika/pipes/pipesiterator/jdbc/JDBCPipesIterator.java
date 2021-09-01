@@ -90,6 +90,16 @@ public class JDBCPipesIterator extends PipesIterator implements Initializable {
     }
 
     @Field
+    public void setFetchKeyRangeStartColumn(String fetchKeyRangeStartColumn) {
+        this.fetchKeyRangeStartColumn = fetchKeyRangeStartColumn;
+    }
+
+    @Field
+    public void setFetchKeyRangeEndColumn(String fetchKeyRangeEndColumn) {
+        this.fetchKeyRangeEndColumn = fetchKeyRangeEndColumn;
+    }
+
+    @Field
     public void setEmitKeyColumn(String fetchKeyColumn) {
         this.emitKeyColumn = fetchKeyColumn;
     }
