@@ -108,6 +108,13 @@ public class FileSystemEmitter extends AbstractEmitter implements StreamEmitter 
         this.fileExtension = fileExtension;
     }
 
+    /**
+     * What to do if the target file already exists.  NOTE: if more than one
+     * thread is trying write to the same file and {@link ON_EXISTS#REPLACE} is chosen,
+     * you still might get a {@link FileAlreadyExistsException}.
+     *
+     * @param onExists
+     */
     @Field
     public void setOnExists(String onExists) {
         switch (onExists) {
