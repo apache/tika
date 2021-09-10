@@ -27,6 +27,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -42,12 +43,15 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.ZeroByteFileException;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.external.CompositeExternalParser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.utils.ParserUtils;
 
 public class AutoDetectParserTest extends TikaTest {
     // Easy to read constants for the MIME types:
@@ -394,6 +398,29 @@ public class AutoDetectParserTest extends TikaTest {
             }
             assertEquals(mimes[i], m.get(Metadata.CONTENT_TYPE));
         }
+    }
+
+    @Test
+    public void testExternalParserIsLoaded() {
+        Parser p = find((CompositeParser) AUTO_DETECT_PARSER, CompositeExternalParser.class);
+        assertNotNull(p);
+    }
+
+    //This is not the complete/correct way to look for parsers within another parser
+    //However, it is good enough for this unit test for now.
+    private Parser find(CompositeParser parser, Class clazz) {
+        for (Parser child : parser.getAllComponentParsers()) {
+            if (child.getClass().equals(clazz)) {
+                return child;
+            }
+            if (child instanceof CompositeParser) {
+                Parser p = find((CompositeParser) child, clazz);
+                if (p != null) {
+                    return p;
+                }
+            }
+        }
+        return null;
     }
 
     /**
