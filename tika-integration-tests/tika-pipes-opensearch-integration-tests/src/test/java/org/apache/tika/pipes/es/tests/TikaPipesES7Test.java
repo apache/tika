@@ -16,8 +16,16 @@
  */
 package org.apache.tika.pipes.es.tests;
 
-import org.junit.Ignore;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Ignore;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.utility.DockerImageName;
+
+import org.apache.tika.pipes.opensearch.tests.TikaPipesOpenSearchBase;
 import org.apache.tika.pipes.opensearch.tests.TikaPipesOpenSearchTest;
 
 /**
@@ -26,17 +34,22 @@ import org.apache.tika.pipes.opensearch.tests.TikaPipesOpenSearchTest;
  * &gt; 7.10.x in our unit tests because those versions are not ASL 2.0
  */
 @Ignore
-public class TikaPipesES7Test extends TikaPipesOpenSearchTest {
+public class TikaPipesES7Test extends TikaPipesOpenSearchBase {
 
-    @Override
-    public String getOpenSearchImageName() {
-        // versions > 7.10.x are no longer ASL 2.0. We should not
-        // test with non-ASL 2.0 dependencies
-        return "docker.elastic.co/elasticsearch/elasticsearch:7.10.2";
-    }
+    // versions > 7.10.x are no longer ASL 2.0. We should not
+    // test with non-ASL 2.0 dependencies
+    private static final String DOCKER_IMAGE_NAME = "docker.elastic" +
+            ".co/elasticsearch/elasticsearch:7.10.2";
 
-    @Override
-    public String getProtocol() {
-        return "http://";
+    @ClassRule
+    public static GenericContainer<?> OPEN_SEARCH_CONTAINER =
+            new GenericContainer<>(DockerImageName.parse(DOCKER_IMAGE_NAME))
+                    .withExposedPorts(9200)
+                    .withStartupTimeout(Duration.of(180, ChronoUnit.SECONDS))
+                    .withEnv("discovery.type", "single-node");
+
+    @BeforeClass
+    public static void setupTest() throws Exception {
+        setupOpenSearch(OPEN_SEARCH_CONTAINER, "http://");
     }
 }

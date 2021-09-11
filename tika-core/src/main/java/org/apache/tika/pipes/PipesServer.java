@@ -51,8 +51,10 @@ import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.emitter.Emitter;
 import org.apache.tika.pipes.emitter.EmitterManager;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
+import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.FetcherManager;
+import org.apache.tika.pipes.fetcher.RangeFetcher;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
@@ -318,46 +320,36 @@ public class PipesServer implements Runnable {
     }
 
     private void actuallyParse(FetchEmitTuple t) {
-        List<Metadata> metadataList = null;
+
         long start = System.currentTimeMillis();
-        Fetcher fetcher = null;
-        try {
-            fetcher = fetcherManager.getFetcher(t.getFetchKey().getFetcherName());
-        } catch (IllegalArgumentException e) {
-            String noFetcherMsg = getNoFetcherMsg(t.getFetchKey().getFetcherName());
-            LOG.warn(noFetcherMsg);
-            write(STATUS.FETCHER_NOT_FOUND, noFetcherMsg);
-            return;
-        } catch (IOException | TikaException e) {
-            LOG.warn("Couldn't initialize fetcher for fetch id '" +
-                    t.getId() + "'", e);
-            write(STATUS.FETCHER_INITIALIZATION_EXCEPTION,
-                    ExceptionUtils.getStackTrace(e));
+        Fetcher fetcher = getFetcher(t);
+        if (fetcher == null) {
+            //rely on proper logging/exception handling in getFetcher
             return;
         }
+
         if (LOG.isTraceEnabled()) {
             long elapsed = System.currentTimeMillis() - start;
             LOG.trace("timer -- got fetcher: {}ms", elapsed);
         }
+
         start = System.currentTimeMillis();
-        Metadata metadata = new Metadata();
-        try (InputStream stream = fetcher.fetch(t.getFetchKey().getFetchKey(), metadata)) {
-            metadataList = parse(t, stream, metadata);
-        } catch (SecurityException e) {
-            LOG.error("security exception " + t.getId(), e);
-            throw e;
-        } catch (TikaException | IOException e) {
-            LOG.warn("fetch exception " + t.getId(), e);
-            write(STATUS.FETCH_EXCEPTION, ExceptionUtils.getStackTrace(e));
-        }
+        List<Metadata> metadataList = parseIt(t, fetcher);
+
         if (LOG.isTraceEnabled()) {
             LOG.trace("timer -- to parse: {} ms", System.currentTimeMillis() - start);
         }
+
         if (metadataIsEmpty(metadataList)) {
             write(STATUS.EMPTY_OUTPUT);
             return;
         }
-        start = System.currentTimeMillis();
+
+        emitIt(t, metadataList);
+    }
+
+    private void emitIt(FetchEmitTuple t, List<Metadata> metadataList) {
+        long start = System.currentTimeMillis();
         String stack = getContainerStacktrace(t, metadataList);
         if (StringUtils.isBlank(stack) || t.getOnParseException() == FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT) {
             injectUserMetadata(t.getMetadata(), metadataList);
@@ -382,7 +374,56 @@ public class PipesServer implements Runnable {
         } else {
             write(STATUS.PARSE_EXCEPTION_NO_EMIT, stack);
         }
+    }
 
+    private Fetcher getFetcher(FetchEmitTuple t) {
+        try {
+            return fetcherManager.getFetcher(t.getFetchKey().getFetcherName());
+        } catch (IllegalArgumentException e) {
+            String noFetcherMsg = getNoFetcherMsg(t.getFetchKey().getFetcherName());
+            LOG.warn(noFetcherMsg);
+            write(STATUS.FETCHER_NOT_FOUND, noFetcherMsg);
+            return null;
+        } catch (IOException | TikaException e) {
+            LOG.warn("Couldn't initialize fetcher for fetch id '" +
+                    t.getId() + "'", e);
+            write(STATUS.FETCHER_INITIALIZATION_EXCEPTION,
+                    ExceptionUtils.getStackTrace(e));
+            return null;
+        }
+    }
+
+    private List<Metadata> parseIt(FetchEmitTuple t, Fetcher fetcher) {
+        FetchKey fetchKey = t.getFetchKey();
+        if (fetchKey.hasRange()) {
+            if (! (fetcher instanceof RangeFetcher)) {
+                throw new IllegalArgumentException(
+                        "fetch key has a range, but the fetcher is not a range fetcher");
+            }
+            Metadata metadata = new Metadata();
+            try (InputStream stream = ((RangeFetcher)fetcher).fetch(fetchKey.getFetchKey(),
+                    fetchKey.getRangeStart(), fetchKey.getRangeEnd(), metadata)) {
+                return parse(t, stream, metadata);
+            } catch (SecurityException e) {
+                LOG.error("security exception " + t.getId(), e);
+                throw e;
+            } catch (TikaException | IOException e) {
+                LOG.warn("fetch exception " + t.getId(), e);
+                write(STATUS.FETCH_EXCEPTION, ExceptionUtils.getStackTrace(e));
+            }
+        } else {
+            Metadata metadata = new Metadata();
+            try (InputStream stream = fetcher.fetch(t.getFetchKey().getFetchKey(), metadata)) {
+                return parse(t, stream, metadata);
+            } catch (SecurityException e) {
+                LOG.error("security exception " + t.getId(), e);
+                throw e;
+            } catch (TikaException | IOException e) {
+                LOG.warn("fetch exception " + t.getId(), e);
+                write(STATUS.FETCH_EXCEPTION, ExceptionUtils.getStackTrace(e));
+            }
+        }
+        return null;
     }
 
     private String getNoFetcherMsg(String fetcherName) {

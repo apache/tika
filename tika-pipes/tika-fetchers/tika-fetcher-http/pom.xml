@@ -21,7 +21,7 @@
   <parent>
     <artifactId>tika-fetchers</artifactId>
     <groupId>org.apache.tika</groupId>
-    <version>2.1.0-SNAPSHOT</version>
+    <version>2.1.1-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
@@ -32,6 +32,7 @@
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-slf4j-impl</artifactId>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -43,6 +44,13 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-httpclient-commons</artifactId>
       <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-core</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 
@@ -110,4 +118,8 @@
       </plugin>
     </plugins>
   </build>
+
+  <scm>
+    <tag>2.1.0-rc2</tag>
+  </scm>
 </project>

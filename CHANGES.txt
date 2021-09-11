@@ -1,5 +1,16 @@
-Release 2.0.1 - ???
-   MAJOR CHANGES in 2.0.1
+Release 2.1.1 - ???
+
+   * Improve robustness and features of the httpfetcher (TIKA-3543)
+   
+   * Add optional fetch ranges to FetchEmitTuple to allow range fetching from,
+        e.g. http or s3 (TIKA-3542).
+
+   * Exclude dependencies on jsoup and ehcache in ucar grib/cdm (TIKA-3003).
+
+
+Release 2.1.0 - 08/18/2021
+
+   MAJOR CHANGES in 2.1.0:
 
    * Improved packaging for tika-parsers-extended. Use the tika-parser-scientific-package and
      tika-parser-sqlite3-package artifacts if you want fat jars with dependencies. (TIKA-3510)
@@ -10,6 +21,18 @@ Release 2.0.1 - ???
    * Change the default rendering strategy for PDFs from NO_TEXT to ALL (TIKA-3520).
 
    Other changes:
+
+   * Fixed bug that pointed to the wrong tessdata directory if the user specified
+     a tesseract path but not also a tessdata path (TIKA-3518).
+
+   * Fixed bug in Icu4j's encoding detector where it would return non-standard
+     names for charsets, e.g. IBM424_rtl is now returned as IBM424 (TIKA-3516).
+
+   * Add a simple UrlFetcher in tika-core as a basic alternative
+     to tika-fetcher-http (TIKA-3527).
+
+   * Add tika-pipes support for Google Cloud Storage (TIKA-3524).
+
    * Fix markup ordering errors in xhtml output for ODT files (TIKA-2242).
 
    * Fix serialization of embedded docs in OpenSearch emitter

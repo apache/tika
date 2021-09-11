@@ -109,7 +109,7 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
             s3Client = AmazonS3ClientBuilder.standard().withRegion(region).withCredentials(provider)
                     .build();
         } catch (AmazonClientException e) {
-            throw new TikaConfigException("can't initialize s3 pipesiterator");
+            throw new TikaConfigException("can't initialize s3 pipesiterator", e);
         }
     }
 

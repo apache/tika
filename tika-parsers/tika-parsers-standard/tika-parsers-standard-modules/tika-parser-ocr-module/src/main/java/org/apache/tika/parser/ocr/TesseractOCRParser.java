@@ -91,6 +91,8 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
     public static final Property IMAGE_ROTATION = Property.externalRealSeq(TESS_META + "rotation");
     public static final Property IMAGE_MAGICK =
             Property.externalBooleanSeq(TESS_META + "image_magick_processed");
+    private static final String TESSDATA_PREFIX = "TESSDATA_PREFIX";
+
     private static final String OCR = "ocr-";
     private static final Logger LOG = LoggerFactory.getLogger(TesseractOCRParser.class);
     private static final Object[] LOCK = new Object[0];
@@ -147,13 +149,13 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
     }
 
     private void setEnv(ProcessBuilder pb) {
-        String tessdataPrefix = "TESSDATA_PREFIX";
         Map<String, String> env = pb.environment();
 
         if (!StringUtils.isBlank(getTessdataPath())) {
-            env.put(tessdataPrefix, getTessdataPath());
+            env.put(TESSDATA_PREFIX, getTessdataPath());
         } else if (!StringUtils.isBlank(getTesseractPath())) {
-            env.put(tessdataPrefix, getTesseractPath());
+            //adding tessdata is required for at least >= 4.x
+            env.put(TESSDATA_PREFIX, getTesseractPath() + "tessdata");
         }
     }
 
@@ -535,7 +537,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
      * Set the path to the Tesseract executable's directory, needed if it is not on system path.
      * <p>
      * Note that if you set this value, it is highly recommended that you also
-     * set the path to the 'tessdata' folder using {@link #setTessdataPath}.
+     * set the path to (and including) the 'tessdata' folder using {@link #setTessdataPath}.
      * </p>
      */
     @Field
@@ -556,6 +558,8 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
      * some cases (such
      * as on Windows), this folder is found in the Tesseract installation, but in other cases
      * (such as when Tesseract is built from source), it may be located elsewhere.
+     * <p/>
+     * Make sure to include the 'tessdata' folder in this path: '/blah/de/blah/tessdata'
      */
     @Field
     public void setTessdataPath(String tessdataPath) {

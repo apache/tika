@@ -71,6 +71,8 @@ public class JDBCPipesIterator extends PipesIterator implements Initializable {
 
     private String idColumn;
     private String fetchKeyColumn;
+    private String fetchKeyRangeStartColumn;
+    private String fetchKeyRangeEndColumn;
     private String emitKeyColumn;
     private String connection;
     private String select;
@@ -85,6 +87,16 @@ public class JDBCPipesIterator extends PipesIterator implements Initializable {
     @Field
     public void setFetchKeyColumn(String fetchKeyColumn) {
         this.fetchKeyColumn = fetchKeyColumn;
+    }
+
+    @Field
+    public void setFetchKeyRangeStartColumn(String fetchKeyRangeStartColumn) {
+        this.fetchKeyRangeStartColumn = fetchKeyRangeStartColumn;
+    }
+
+    @Field
+    public void setFetchKeyRangeEndColumn(String fetchKeyRangeEndColumn) {
+        this.fetchKeyRangeEndColumn = fetchKeyRangeEndColumn;
     }
 
     @Field
@@ -168,9 +180,12 @@ public class JDBCPipesIterator extends PipesIterator implements Initializable {
             throws SQLException, TimeoutException, InterruptedException {
         Metadata metadata = new Metadata();
         String fetchKey = "";
+        long fetchStartRange = -1l;
+        long fetchEndRange = -1l;
         String emitKey = "";
         String id = "";
         for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
+
             if (i == fetchEmitKeyIndices.fetchKeyIndex) {
                 fetchKey = getString(i, rs);
                 if (fetchKey == null) {
@@ -195,13 +210,21 @@ public class JDBCPipesIterator extends PipesIterator implements Initializable {
                 id = (id == null) ? "" : id;
                 continue;
             }
+            if (i == fetchEmitKeyIndices.fetchStartRangeIndex) {
+                fetchStartRange = getLong(i, rs);
+                continue;
+            }
+            if (i == fetchEmitKeyIndices.fetchEndRangeIndex) {
+                fetchEndRange = getLong(i, rs);
+                continue;
+            }
             String val = getString(i, rs);
             if (val != null) {
                 metadata.set(headers.get(i - 1), val);
             }
         }
 
-        tryToAdd(new FetchEmitTuple(id, new FetchKey(fetcherName, fetchKey),
+        tryToAdd(new FetchEmitTuple(id, new FetchKey(fetcherName, fetchKey, fetchStartRange, fetchEndRange),
                 new EmitKey(emitterName, emitKey), metadata, handlerConfig, getOnParseException()));
     }
 
@@ -225,26 +248,43 @@ public class JDBCPipesIterator extends PipesIterator implements Initializable {
         return val;
     }
 
+    private long getLong(int i, ResultSet rs) throws SQLException {
+        long val = rs.getLong(i);
+        if (rs.wasNull()) {
+            return -1l;
+        }
+        return val;
+    }
+
 
     private FetchEmitKeyIndices loadHeaders(ResultSetMetaData metaData, List<String> headers)
             throws SQLException {
         int idIndex = -1;
         int fetchKeyIndex = -1;
+        int fetchKeyStartRangeIndex = -1;
+        int fetchKeyEndRangeIndex = -1;
         int emitKeyIndex = -1;
         for (int i = 1; i <= metaData.getColumnCount(); i++) {
-            if (metaData.getColumnLabel(i).equalsIgnoreCase(fetchKeyColumn)) {
+            String colLabel = metaData.getColumnLabel(i);
+            if (colLabel.equalsIgnoreCase(fetchKeyColumn)) {
                 fetchKeyIndex = i;
             }
-            if (metaData.getColumnLabel(i).equalsIgnoreCase(emitKeyColumn)) {
+            if (colLabel.equalsIgnoreCase(fetchKeyRangeStartColumn)) {
+                fetchKeyStartRangeIndex = i;
+            }
+            if (colLabel.equalsIgnoreCase(fetchKeyRangeEndColumn)) {
+                fetchKeyEndRangeIndex = i;
+            }
+            if (colLabel.equalsIgnoreCase(emitKeyColumn)) {
                 emitKeyIndex = i;
             }
-            if (metaData.getColumnLabel(i).equalsIgnoreCase(idColumn)) {
+            if (colLabel.equalsIgnoreCase(idColumn)) {
                 idIndex = i;
             }
-
             headers.add(metaData.getColumnLabel(i));
         }
-        return new FetchEmitKeyIndices(idIndex, fetchKeyIndex, emitKeyIndex);
+        return new FetchEmitKeyIndices(idIndex, fetchKeyIndex,
+                fetchKeyStartRangeIndex, fetchKeyEndRangeIndex, emitKeyIndex);
     }
 
     @Override
@@ -262,16 +302,23 @@ public class JDBCPipesIterator extends PipesIterator implements Initializable {
         super.checkInitialization(problemHandler);
         mustNotBeEmpty("connection", this.connection);
         mustNotBeEmpty("select", this.select);
-        mustNotBeEmpty("emitterName", this.getEmitterName());
-        mustNotBeEmpty("emitKeyColumn", this.emitKeyColumn);
 
         if (StringUtils.isBlank(getFetcherName()) && !StringUtils.isBlank(fetchKeyColumn)) {
             throw new TikaConfigException(
                     "If you specify a 'fetchKeyColumn', you must specify a 'fetcherName'");
         }
 
+        if (StringUtils.isBlank(getEmitterName()) && !StringUtils.isBlank(emitKeyColumn)) {
+            throw new TikaConfigException(
+                    "If you specify an 'emitKeyColumn', you must specify an 'emitterName'");
+        }
+
+        if (StringUtils.isBlank(getEmitterName()) && StringUtils.isBlank(getFetcherName())) {
+            LOGGER.warn("no fetcher or emitter specified?!");
+        }
+
         if (StringUtils.isEmpty(fetchKeyColumn)) {
-            LOGGER.info("no fetch key column has been specified");
+            LOGGER.warn("no fetch key column has been specified");
         }
 
     }
@@ -279,16 +326,24 @@ public class JDBCPipesIterator extends PipesIterator implements Initializable {
     private static class FetchEmitKeyIndices {
         private final int idIndex;
         private final int fetchKeyIndex;
+        private final int fetchStartRangeIndex;
+        private final int fetchEndRangeIndex;
         private final int emitKeyIndex;
 
-        public FetchEmitKeyIndices(int idIndex, int fetchKeyIndex, int emitKeyIndex) {
+        public FetchEmitKeyIndices(int idIndex, int fetchKeyIndex,
+                                   int fetchStartRangeIndex, int fetchEndRangeIndex,
+                                   int emitKeyIndex) {
             this.idIndex = idIndex;
             this.fetchKeyIndex = fetchKeyIndex;
+            this.fetchStartRangeIndex = fetchStartRangeIndex;
+            this.fetchEndRangeIndex = fetchEndRangeIndex;
             this.emitKeyIndex = emitKeyIndex;
         }
 
         public boolean shouldSkip(int index) {
-            return idIndex == index || fetchKeyIndex == index || emitKeyIndex == index;
+            return idIndex == index || fetchKeyIndex == index ||
+                    fetchStartRangeIndex == index || fetchEndRangeIndex == index ||
+                    emitKeyIndex == index;
         }
     }
 }

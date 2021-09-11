@@ -85,8 +85,10 @@ public class FeedParser extends AbstractParser {
                       ParseContext context) throws IOException, SAXException, TikaException {
         // set the encoding?
         try {
+            SyndFeedInput input = new SyndFeedInput();
+            input.setAllowDoctypes(false);
             SyndFeed feed =
-                    new SyndFeedInput().build(new InputSource(new CloseShieldInputStream(stream)));
+                    input.build(new InputSource(new CloseShieldInputStream(stream)));
 
             String title = stripTags(feed.getTitleEx());
             String description = stripTags(feed.getDescriptionEx());

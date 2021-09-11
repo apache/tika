@@ -66,7 +66,7 @@ public class TikaServerStatusTest extends CXFTestBase {
         assertEquals("OPERATING", root.get("status").asText());
         assertEquals(0, root.get("files_processed").intValue());
         long millis = root.get("millis_since_last_parse_started").longValue();
-        assertTrue(millis > 0 && millis < 360000);
+        assertTrue(millis >= 0 && millis < 360000);
         assertEquals(SERVER_ID, root.get("server_id").asText());
     }
 }

@@ -47,6 +47,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.external.CompositeExternalParser;
 import org.apache.tika.sax.BodyContentHandler;
 
 public class AutoDetectParserTest extends TikaTest {
@@ -394,6 +395,29 @@ public class AutoDetectParserTest extends TikaTest {
             }
             assertEquals(mimes[i], m.get(Metadata.CONTENT_TYPE));
         }
+    }
+
+    @Test
+    public void testExternalParserIsLoaded() {
+        Parser p = find((CompositeParser) AUTO_DETECT_PARSER, CompositeExternalParser.class);
+        assertNotNull(p);
+    }
+
+    //This is not the complete/correct way to look for parsers within another parser
+    //However, it is good enough for this unit test for now.
+    private Parser find(CompositeParser parser, Class clazz) {
+        for (Parser child : parser.getAllComponentParsers()) {
+            if (child.getClass().equals(clazz)) {
+                return child;
+            }
+            if (child instanceof CompositeParser) {
+                Parser p = find((CompositeParser) child, clazz);
+                if (p != null) {
+                    return p;
+                }
+            }
+        }
+        return null;
     }
 
     /**

@@ -21,7 +21,7 @@
   <parent>
     <artifactId>tika-parsers-standard-modules</artifactId>
     <groupId>org.apache.tika</groupId>
-    <version>2.1.0-SNAPSHOT</version>
+    <version>2.1.1-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
@@ -39,12 +39,6 @@
       <groupId>org.codelibs</groupId>
       <artifactId>jhighlight</artifactId>
       <version>${jhighlight.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-io</groupId>
-          <artifactId>commons-io</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.ccil.cowan.tagsoup</groupId>
@@ -66,27 +60,11 @@
       <groupId>com.epam</groupId>
       <artifactId>parso</artifactId>
       <version>${parso.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-api</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.tallison</groupId>
       <artifactId>jmatio</artifactId>
       <version>1.5</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-api</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
     </dependency>
   </dependencies>
 
@@ -112,4 +90,8 @@
       </plugin>
     </plugins>
   </build>
+
+  <scm>
+    <tag>2.1.0-rc2</tag>
+  </scm>
 </project>

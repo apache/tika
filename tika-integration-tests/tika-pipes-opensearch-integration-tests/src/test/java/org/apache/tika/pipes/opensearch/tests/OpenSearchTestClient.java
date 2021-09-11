@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.ByteArrayEntity;
@@ -95,6 +96,33 @@ public class OpenSearchTestClient extends OpenSearchClient {
 
         //try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
 
+        HttpResponse response = null;
+        try {
+            response = httpClient.execute(httpRequest);
+            int status = response.getStatusLine().getStatusCode();
+            if (status == 200) {
+                try (Reader reader = new BufferedReader(
+                        new InputStreamReader(response.getEntity().getContent(),
+                                StandardCharsets.UTF_8))) {
+                    ObjectMapper mapper = new ObjectMapper();
+                    JsonNode node = mapper.readTree(reader);
+                    return new JsonResponse(200, node);
+                }
+            } else {
+                return new JsonResponse(status,
+                        new String(EntityUtils.toByteArray(response.getEntity()),
+                                StandardCharsets.UTF_8));
+            }
+        } finally {
+            if (response != null && response instanceof CloseableHttpResponse) {
+                ((CloseableHttpResponse)response).close();
+            }
+            httpRequest.releaseConnection();
+        }
+    }
+
+    public JsonResponse deleteIndex(String url) throws IOException {
+        HttpDelete httpRequest = new HttpDelete(url);
         HttpResponse response = null;
         try {
             response = httpClient.execute(httpRequest);

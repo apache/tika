@@ -19,6 +19,9 @@ package org.apache.tika.parser.txt;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import org.apache.tika.config.Field;
 import org.apache.tika.detect.EncodingDetector;
@@ -33,6 +36,8 @@ public class Icu4jEncodingDetector implements EncodingDetector {
 
     @Field
     private int markLimit = CharsetDetector.DEFAULT_MARK_LIMIT;
+
+    private Set<String> ignoreCharsets = new HashSet<>();
 
     public Charset detect(InputStream input, Metadata metadata) throws IOException {
         if (input == null) {
@@ -68,7 +73,11 @@ public class Icu4jEncodingDetector implements EncodingDetector {
 
         for (CharsetMatch match : detector.detectAll()) {
             try {
-                return CharsetUtils.forName(match.getName());
+                String n = match.getNormalizedName();
+                if (ignoreCharsets.contains(n)) {
+                    return null;
+                }
+                return CharsetUtils.forName(match.getNormalizedName());
             } catch (IllegalArgumentException e) {
                 // ignore
             }
@@ -110,5 +119,10 @@ public class Icu4jEncodingDetector implements EncodingDetector {
     @Field
     public void setMarkLimit(int markLimit) {
         this.markLimit = markLimit;
+    }
+
+    @Field
+    public void setIgnoreCharsets(List<String> charsetsToIgnore) {
+        this.ignoreCharsets.addAll(charsetsToIgnore);
     }
 }

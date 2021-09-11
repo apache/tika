@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-pipes</artifactId>
-    <version>2.1.0-SNAPSHOT</version>
+    <version>2.1.1-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
@@ -34,5 +34,10 @@
   <modules>
     <module>tika-fetcher-http</module>
     <module>tika-fetcher-s3</module>
+    <module>tika-fetcher-gcs</module>
   </modules>
+
+  <scm>
+    <tag>2.1.0-rc2</tag>
+  </scm>
 </project>

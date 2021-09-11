@@ -43,12 +43,13 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
+import org.apache.tika.pipes.fetcher.RangeFetcher;
 
 /**
  * Fetches files from s3. Example string: s3://my_bucket/path/to/my_file.pdf
  * This will parse the bucket out of that string and retrieve the path.
  */
-public class S3Fetcher extends AbstractFetcher implements Initializable {
+public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFetcher {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(S3Fetcher.class);
     private static final String PREFIX = "s3";
@@ -89,6 +90,7 @@ public class S3Fetcher extends AbstractFetcher implements Initializable {
         }
     }
 
+    @Override
     public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata)
             throws TikaException, IOException {
         //TODO -- figure out how to integrate this
