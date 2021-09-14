@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import com.amazonaws.AmazonClientException;
+import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
@@ -59,6 +60,7 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
     private String profile;
     private String credentialsProvider;
     private boolean extractUserMetadata = true;
+    private int maxConnections = ClientConfiguration.DEFAULT_MAX_CONNECTIONS;
     private AmazonS3 s3Client;
     private boolean spoolToTemp = true;
 
@@ -153,6 +155,11 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
     }
 
     @Field
+    public void setMaxConnections(int maxConnections) {
+        this.maxConnections = maxConnections;
+    }
+
+    @Field
     public void setCredentialsProvider(String credentialsProvider) {
         if (!credentialsProvider.equals("profile") && !credentialsProvider.equals("instance")) {
             throw new IllegalArgumentException(
@@ -180,9 +187,12 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
             throw new TikaConfigException("credentialsProvider must be set and " +
                     "must be either 'instance' or 'profile'");
         }
-
+        ClientConfiguration clientConfiguration = new ClientConfiguration()
+                        .withMaxConnections(maxConnections);
         try {
-            s3Client = AmazonS3ClientBuilder.standard().withRegion(region).withCredentials(provider)
+            s3Client = AmazonS3ClientBuilder.standard()
+                    .withClientConfiguration(clientConfiguration)
+                    .withRegion(region).withCredentials(provider)
                     .build();
         } catch (AmazonClientException e) {
             throw new TikaConfigException("can't initialize s3 fetcher", e);
