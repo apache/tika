@@ -105,18 +105,8 @@ public class HttpClientFactory {
     private String password;
     private String ntDomain;//if using nt credentials
     private String authScheme = "basic"; //ntlm or basic
-    private final boolean credentialsAESEncrypted = false;
-
-
-    public HttpClientFactory() throws TikaConfigException {
-        if (credentialsAESEncrypted && System.getenv(AES_ENV_VAR) == null) {
-            throw new TikaConfigException(
-                    "must specify aes key in the environment variable: " + AES_ENV_VAR);
-        }
-        if (credentialsAESEncrypted) {
-            aes = new AES();
-        }
-    }
+    private boolean credentialsAESEncrypted = false;
+    private boolean disableContentCompression = false;
 
     public String getProxyHost() {
         return proxyHost;
@@ -227,6 +217,44 @@ public class HttpClientFactory {
         this.authScheme = authScheme;
     }
 
+    public void setCredentialsAESEncrypted(boolean credentialsAESEncrypted)
+            throws TikaConfigException {
+        if (credentialsAESEncrypted) {
+            if (System.getenv(AES_ENV_VAR) == null) {
+                throw new TikaConfigException(
+                        "must specify aes key in the environment variable: " + AES_ENV_VAR);
+            }
+            if (credentialsAESEncrypted) {
+                aes = new AES();
+            }
+        }
+        this.credentialsAESEncrypted = credentialsAESEncrypted;
+    }
+
+    public void setDisableContentCompression(boolean disableContentCompression) {
+        this.disableContentCompression = disableContentCompression;
+    }
+
+    public HttpClientFactory copy() throws TikaConfigException {
+        HttpClientFactory cp = new HttpClientFactory();
+        cp.setAllowedHostsForRedirect(new HashSet<>(allowedHostsForRedirect));
+        cp.setAuthScheme(authScheme);
+        cp.setConnectTimeout(connectTimeout);
+        cp.setCredentialsAESEncrypted(credentialsAESEncrypted);
+        cp.setDisableContentCompression(disableContentCompression);
+        cp.setKeepAliveOnBadKeepAliveValueMs(keepAliveOnBadKeepAliveValueMs);
+        cp.setMaxConnectionsPerRoute(maxConnectionsPerRoute);
+        cp.setMaxConnections(maxConnections);
+        cp.setNtDomain(ntDomain);
+        cp.setPassword(password);
+        cp.setProxyHost(proxyHost);
+        cp.setProxyPort(proxyPort);
+        cp.setRequestTimeout(requestTimeout);
+        cp.setSocketTimeout(socketTimeout);
+        return cp;
+    }
+
+
     public HttpClient build() throws TikaConfigException {
         LOG.info("http client does not verify ssl at this point.  " +
                 "If you need that, please open a ticket.");
@@ -252,6 +280,9 @@ public class HttpClientFactory {
         manager.setMaxTotal(maxConnections);
 
         HttpClientBuilder builder = HttpClients.custom();
+        if (disableContentCompression) {
+            builder.disableContentCompression();
+        }
         addCredentialsProvider(builder);
         addProxy(builder);
         return builder.setConnectionManager(manager)
@@ -390,6 +421,7 @@ public class HttpClientFactory {
             return isRedirectedSuper;
         }
     }
+
 
     private static class AES {
         private final SecretKeySpec secretKey;
