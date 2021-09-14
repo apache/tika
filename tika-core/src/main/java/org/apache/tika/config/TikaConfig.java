@@ -73,6 +73,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.multiple.AbstractMultipleParser;
 import org.apache.tika.utils.AnnotationUtils;
+import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
 
 /**
@@ -493,13 +494,13 @@ public class TikaConfig {
             return;
         }
         String attr = child.getAttribute("maxEntityExpansions");
-        if (attr != null) {
+        if (!StringUtils.isBlank(attr)) {
             XMLReaderUtils.setMaxEntityExpansions(Integer.parseInt(attr));
         }
 
         //make sure to call this after set entity expansions
         attr = child.getAttribute("poolSize");
-        if (attr != null) {
+        if (!StringUtils.isBlank(attr)) {
             XMLReaderUtils.setPoolSize(Integer.parseInt(attr));
         }
 
