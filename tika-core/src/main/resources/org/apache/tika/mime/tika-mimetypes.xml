@@ -5845,9 +5845,10 @@
     <sub-class-of type="image/vnd.dxf"/>
     <_comment>AutoCAD DXF in ASCII Text form</_comment>
     <magic priority="50">
-      <!-- Variable number of spaces before the code groups -->
-      <match value="0\r\nSECTION\r\n" offset="0:3">
-        <match value="2\r\nHEADER\r\n" offset="12:18"/>
+      <!-- Variable number of spaces or possibly creator tool before the code groups -->
+      <!-- allow 999 (comments) before section -->
+      <match type="regex" value="(999\r?\n[^\r\n]{0,64}\\s+)?0\r?\nSECTION\r?\n" offset="0:32">
+        <match type="regex" value="2\r?\n(?:HEADER|ENTITIES)\r?\n" offset="12:60"/>
       </match>
     </magic>
   </mime-type>

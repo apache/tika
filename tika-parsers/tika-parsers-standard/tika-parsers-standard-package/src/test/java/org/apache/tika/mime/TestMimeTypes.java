@@ -623,8 +623,9 @@ public class TestMimeTypes {
         // From name, gets the common parent type
         assertTypeByName("image/vnd.dxf", "x.dxf");
         // With the data, can work out it's the ASCII flavour
-        //TODO lost /r/n need to fix file
-        //assertTypeByData("image/vnd.dxf; format=ascii", "testDXF_ascii.dxf");
+        assertTypeByData("image/vnd.dxf; format=ascii", "testDXF_ascii.dxf");
+        assertTypeByData("image/vnd.dxf; format=ascii", "testDXF_ascii_win_newlines.dxf");
+        assertTypeByData("image/vnd.dxf; format=ascii", "testDXF_ascii_no_header.dxf");
         // TODO Get a sample Binary DXF file and test
     }
 
