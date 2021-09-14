@@ -16,8 +16,6 @@
  */
 package org.apache.tika.pipes.solr.tests;
 
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,7 +40,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 import org.testcontainers.utility.DockerImageName;
@@ -187,8 +184,10 @@ public abstract class TikaPipesSolrTestBase {
             }
             //clean up test-embedded.docx so that the iterator won't try to update its children
             //in the next test
-            solrClient.deleteById(collection, "_root_:\"test-embedded.docx\"");
-            solrClient.commit(collection);
+
+            solrClient.deleteByQuery(collection, "_root_:\"test-embedded.docx\"");
+
+            solrClient.commit(collection, true, true);
         }
 
 
