@@ -40,6 +40,8 @@ public interface ZipContainerDetector extends Serializable {
      * If detection is successful, the ZipDetector should set the zip
      * file or OPCPackage in TikaInputStream.setOpenContainer()
      *
+     * Implementations should _not_ close the ZipFile
+     *
      * @param zipFile
      * @param tis
      * @return

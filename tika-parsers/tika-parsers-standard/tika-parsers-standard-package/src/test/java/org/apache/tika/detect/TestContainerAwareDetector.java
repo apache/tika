@@ -17,6 +17,7 @@
 package org.apache.tika.detect;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -24,6 +25,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
@@ -35,7 +37,11 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.microsoft.ooxml.OPCPackageDetector;
+import org.apache.tika.detect.zip.DefaultZipContainerDetector;
+import org.apache.tika.detect.zip.OpenDocumentDetector;
 import org.apache.tika.detect.zip.StreamingZipContainerDetector;
+import org.apache.tika.detect.zip.ZipContainerDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -244,6 +250,24 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
     public void testDetectODF() throws Exception {
         assertTypeByData("testODFwithOOo3.odt", "application/vnd.oasis.opendocument.text");
         assertTypeByData("testOpenOffice2.odf", "application/vnd.oasis.opendocument.formula");
+        assertTypeByData("testODTnotaZipFile.odt", "text/plain");
+    }
+
+    @Test
+    public void testODFDifferentOrder() throws Exception {
+        //TIKA-3356
+        List<ZipContainerDetector> detectors = new ArrayList<>();
+        detectors.add(new OPCPackageDetector());
+        detectors.add(new OpenDocumentDetector());
+        DefaultZipContainerDetector zipContainerDetector = new DefaultZipContainerDetector(detectors);
+        try (TikaInputStream tis = TikaInputStream.get(
+                getResourceAsFile("/test-documents/testODFwithOOo3.odt").toPath())) {
+            MediaType mt = zipContainerDetector.detect(tis, new Metadata());
+            assertEquals("application/vnd.oasis.opendocument.text", mt.toString());
+            assertNotNull(tis.getOpenContainer());
+            assertEquals("org.apache.commons.compress.archivers.zip.ZipFile",
+                    tis.getOpenContainer().getClass().getName());
+        }
     }
 
     @Test

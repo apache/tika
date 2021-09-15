@@ -2184,6 +2184,7 @@
       </match>
     </magic>
     <glob pattern="*.odc"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/vnd.oasis.opendocument.chart-template">
@@ -2196,6 +2197,7 @@
       </match>
     </magic>
     <glob pattern="*.otc"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/vnd.oasis.opendocument.base">
@@ -2226,6 +2228,7 @@
       </match>
     </magic>
     <glob pattern="*.odft"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/vnd.oasis.opendocument.graphics">
@@ -2238,6 +2241,7 @@
       </match>
     </magic>
     <glob pattern="*.odg"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/vnd.oasis.opendocument.graphics-template">
@@ -2250,6 +2254,7 @@
       </match>
     </magic>
     <glob pattern="*.otg"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/vnd.oasis.opendocument.image">
@@ -2262,6 +2267,7 @@
       </match>
     </magic>
     <glob pattern="*.odi"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/vnd.oasis.opendocument.image-template">
@@ -2274,6 +2280,7 @@
       </match>
     </magic>
     <glob pattern="*.oti"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/vnd.oasis.opendocument.presentation">
@@ -2286,6 +2293,7 @@
       </match>
     </magic>
     <glob pattern="*.odp"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/vnd.oasis.opendocument.presentation-template">
@@ -2298,6 +2306,7 @@
       </match>
     </magic>
     <glob pattern="*.otp"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/vnd.oasis.opendocument.spreadsheet">
@@ -2310,6 +2319,7 @@
       </match>
     </magic>
     <glob pattern="*.ods"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/vnd.oasis.opendocument.spreadsheet-template">
@@ -2322,6 +2332,7 @@
       </match>
     </magic>
     <glob pattern="*.ots"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/vnd.oasis.opendocument.text">
@@ -2334,6 +2345,7 @@
       </match>
     </magic>
     <glob pattern="*.odt"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <!-- can't tell from the root element whether this is fodt, fodp, etc.
@@ -2374,6 +2386,7 @@
       </match>
     </magic>
     <glob pattern="*.otm"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/vnd.oasis.opendocument.text-template">
@@ -2386,6 +2399,7 @@
       </match>
     </magic>
     <glob pattern="*.ott"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/vnd.oasis.opendocument.text-web">
@@ -2398,6 +2412,7 @@
       </match>
     </magic>
     <glob pattern="*.oth"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/vnd.obn"/>
@@ -2439,6 +2454,7 @@
   <mime-type type="application/vnd.omaloc-supl-init"/>
 
   <mime-type type="application/vnd.openofficeorg.extension">
+    <sub-class-of type="application/zip"/>
     <glob pattern="*.oxt"/>
   </mime-type>
 
