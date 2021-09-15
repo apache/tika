@@ -261,7 +261,9 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         detectors.add(new OpenDocumentDetector());
         DefaultZipContainerDetector zipContainerDetector = new DefaultZipContainerDetector(detectors);
         try (TikaInputStream tis = TikaInputStream.get(
-                getResourceAsFile("/test-documents/testODFwithOOo3.odt").toPath())) {
+                getResourceAsStream("/test-documents/testODFwithOOo3.odt"))) {
+            //force underlying file to test the proper behavior with the underlying zipfile
+            tis.getFile();
             MediaType mt = zipContainerDetector.detect(tis, new Metadata());
             assertEquals("application/vnd.oasis.opendocument.text", mt.toString());
             assertNotNull(tis.getOpenContainer());
