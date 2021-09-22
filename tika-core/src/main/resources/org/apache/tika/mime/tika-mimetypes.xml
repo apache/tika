@@ -370,6 +370,12 @@
     <glob pattern="*.json"/>
   </mime-type>
 
+  <mime-type type="application/manifest+json">
+    <_comment>Web Application Manifest file</_comment>
+    <sub-class-of type="application/json"/>
+    <glob pattern="*.webmanifest"/>
+  </mime-type>
+
   <mime-type type="application/java-vm">
     <_comment>Java Class File</_comment>
     <alias type="application/x-java-vm"/>
