@@ -1,5 +1,7 @@
 Release 2.1.1 - ???
 
+   * Add detection of JPEG XL file types (TIKA-3562)
+
    * Improve robustness and features of the httpfetcher (TIKA-3543)
    
    * Add optional fetch ranges to FetchEmitTuple to allow range fetching from,

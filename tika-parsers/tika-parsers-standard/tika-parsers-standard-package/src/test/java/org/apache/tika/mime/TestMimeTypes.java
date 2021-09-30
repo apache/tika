@@ -432,6 +432,14 @@ public class TestMimeTypes {
     }
 
     @Test
+    public void testJxlDetection() throws Exception {
+        //test file created by: https://github.com/surma/jxl-art/blob/main/LICENSE
+        assertType("image/jxl", "testJXL.jxl");
+        assertTypeByData("image/jxl", "testJXL.jxl");
+        assertTypeByName("image/jxl", "testJXL.jxl");
+    }
+
+    @Test
     public void testAVIFDetection() throws Exception {
         // The test file is an avif header fragment only, not a complete image.
         assertType("image/avif", "testAVIF.avif");
