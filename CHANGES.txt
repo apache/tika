@@ -1,6 +1,7 @@
 Release 2.1.1 - ???
 
-   * Add detection of JPEG XL file types (TIKA-3562)
+   * Add detection of JPEG XL, MARC, ICC profiles, NES-ROM file types
+     (TIKA-3562 and TIKA-3563)
 
    * Improve robustness and features of the httpfetcher (TIKA-3543)
    

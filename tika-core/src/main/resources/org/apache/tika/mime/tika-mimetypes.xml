@@ -427,8 +427,25 @@
   </mime-type>
 
   <mime-type type="application/macwriteii"/>
+
   <mime-type type="application/marc">
+    <!-- todo add marc xml <marc:collection> -->
     <glob pattern="*.mrc"/>
+    <magic priority="50">
+      <!-- built from, e.g. https://www.loc.gov/marc/community/cileader.html -->
+      <match value="[0-9]{5,5}" type="regex" offset="0">
+        <!-- bibliographic -->
+        <match value="[acdnp][acdefgijkmoprt][abcdims]" type="regex" offset="5"/>
+        <!-- authority-->
+        <match value="[acdnosx]z" type="regex" offset="5"/>
+        <!-- holdings -->
+        <match value="[cdn][uvxy]" type="regex" offset="5"/>
+        <!-- classification -->
+        <match value="[acdn]w" type="regex" offset="5"/>
+        <!-- community -->
+        <match value="[cdn]q" type="regex" offset="5"/>
+      </match>
+    </magic>
   </mime-type>
 
   <mime-type type="application/mathematica">
@@ -622,7 +639,6 @@
   <mime-type type="application/kate">
     <sub-class-of type="application/ogg"/>
   </mime-type>
-
   <mime-type type="application/onenote">
     <alias type="application/msonenote"/>
     <acronym>OneNote</acronym>
@@ -1505,6 +1521,9 @@
   <mime-type type="application/vnd.iccprofile">
     <glob pattern="*.icc"/>
     <glob pattern="*.icm"/>
+    <magic priority="50">
+      <match value="acsp" type="string" offset="36"/>
+    </magic>
   </mime-type>
   <mime-type type="application/vnd.igloader">
     <glob pattern="*.igl"/>
@@ -3648,6 +3667,7 @@
 
   <mime-type type="application/x-dosexec">
     <_comment>DOS/Windows executable (EXE)</_comment>
+    <!-- magic is MZ at offset=0, but that may not be unique enough -->
     <sub-class-of type="application/x-msdownload"/>
     <glob pattern="*.exe"/>
   </mime-type>
@@ -4186,7 +4206,13 @@
     <!-- MISAM Data files are header-less, so no magic -->
     <sub-class-of type="application/x-mysql-db"/>
   </mime-type>
-
+  <mime-type type="application/x-nesrom">
+    <_comment>Nintendo Entertainment System ROM</_comment>
+    <glob pattern="*.nes"/>
+    <magic priority="50">
+      <match value="0x4E45531A" type="string" offest="0" />
+    </magic>
+  </mime-type>
   <mime-type type="application/x-netcdf">
     <glob pattern="*.nc"/>
     <glob pattern="*.cdf"/>

@@ -28,6 +28,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -437,6 +439,13 @@ public class TestMimeTypes {
         assertType("image/jxl", "testJXL.jxl");
         assertTypeByData("image/jxl", "testJXL.jxl");
         assertTypeByName("image/jxl", "testJXL.jxl");
+    }
+
+    @Test
+    public void testMARC() throws Exception {
+        assertType("application/marc", "testMARC.mrc");
+        assertTypeByData("application/marc", "testMARC.mrc");
+        assertTypeByName("application/marc", "testMARC.mrc");
     }
 
     @Test
