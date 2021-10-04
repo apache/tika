@@ -21,5 +21,6 @@ org.apache.tika.parser.image.WebPParser
 org.apache.tika.parser.image.JpegParser
 org.apache.tika.parser.image.HeifParser
 org.apache.tika.parser.image.ICNSParser
+org.apache.tika.parser.image.JXLParser
 
 
