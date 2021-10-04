@@ -446,6 +446,13 @@ public class TestMimeTypes {
     }
 
     @Test
+    public void testMARC() throws Exception {
+        assertType("application/marc", "testMARC.mrc");
+        assertTypeByData("application/marc", "testMARC.mrc");
+        assertTypeByName("application/marc", "testMARC.mrc");
+    }
+
+    @Test
     public void testAVIFDetection() throws Exception {
         // The test file is an avif header fragment only, not a complete image.
         assertType("image/avif", "testAVIF.avif");

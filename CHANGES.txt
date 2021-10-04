@@ -1,5 +1,7 @@
 Release 2.1.1 - ???
 
+   * Add detection of JPEG XL, MARC, ICC profiles, NES-ROM file types
+     (TIKA-3562 and TIKA-3563)
    * Remove duplicate "subject" metadata keys that were intended
      for backwards compatibility within 1.x only (TIKA-3564).
 
