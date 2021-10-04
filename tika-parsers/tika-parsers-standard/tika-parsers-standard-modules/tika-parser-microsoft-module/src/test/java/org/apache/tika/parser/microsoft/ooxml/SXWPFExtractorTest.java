@@ -37,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.EncryptedDocumentException;
+import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
@@ -385,7 +386,7 @@ public class SXWPFExtractorTest extends TikaTest {
         assertEquals("Keyword1 Keyword2", metadata.get(Office.KEYWORDS));
 
         assertContains("Subject is here", content);
-        assertEquals("Subject is here", metadata.get(OfficeOpenXMLCore.SUBJECT));
+        assertEquals("Subject is here", metadata.get(DublinCore.SUBJECT));
 
         assertContains("Suddenly some Japanese text:", content);
         // Special version of (GHQ)
@@ -418,7 +419,7 @@ public class SXWPFExtractorTest extends TikaTest {
         assertEquals("My Keyword", metadata.get(Office.KEYWORDS));
         assertContains("My Keyword", Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
         assertEquals("Normal.dotm", metadata.get(OfficeOpenXMLExtended.TEMPLATE));
-        assertEquals("My subject", metadata.get(OfficeOpenXMLCore.SUBJECT));
+        assertEquals("My subject", metadata.get(DublinCore.SUBJECT));
         assertEquals("EDF-DIT", metadata.get(TikaCoreProperties.PUBLISHER));
         assertEquals("true", metadata.get("custom:myCustomBoolean"));
         assertEquals("3", metadata.get("custom:myCustomNumber"));

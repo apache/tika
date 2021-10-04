@@ -30,6 +30,7 @@ import org.openxmlformats.schemas.officeDocument.x2006.customProperties.CTProper
 import org.openxmlformats.schemas.officeDocument.x2006.extendedProperties.CTProperties;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
@@ -79,7 +80,7 @@ public class MetadataExtractor {
         addMultiProperty(metadata, TikaCoreProperties.CREATOR, propsHolder.getCreatorProperty());
         setProperty(metadata, TikaCoreProperties.DESCRIPTION, propsHolder.getDescriptionProperty());
         setProperty(metadata, TikaCoreProperties.IDENTIFIER, propsHolder.getIdentifierProperty());
-        addProperty(metadata, OfficeOpenXMLCore.SUBJECT, propsHolder.getSubjectProperty());
+        addProperty(metadata, DublinCore.SUBJECT, propsHolder.getSubjectProperty());
         addProperty(metadata, Office.KEYWORDS, propsHolder.getKeywordsProperty());
         setProperty(metadata, TikaCoreProperties.LANGUAGE, propsHolder.getLanguageProperty());
         setProperty(metadata, TikaCoreProperties.MODIFIER, propsHolder.getLastModifiedByProperty());

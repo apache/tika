@@ -373,8 +373,8 @@ public class ExcelParserTest extends TikaTest {
         }
 
         assertEquals("application/vnd.ms-excel", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("", metadata.get(TikaCoreProperties.CREATOR));
-        assertEquals("", metadata.get(TikaCoreProperties.MODIFIER));
+        assertNull(metadata.get(TikaCoreProperties.CREATOR));
+        assertNull(metadata.get(TikaCoreProperties.MODIFIER));
         assertEquals("2011-08-22T13:45:54Z", metadata.get(TikaCoreProperties.MODIFIED));
         assertEquals("2006-09-12T15:06:44Z", metadata.get(TikaCoreProperties.CREATED));
         assertEquals("Microsoft Excel", metadata.get(OfficeOpenXMLExtended.APPLICATION));

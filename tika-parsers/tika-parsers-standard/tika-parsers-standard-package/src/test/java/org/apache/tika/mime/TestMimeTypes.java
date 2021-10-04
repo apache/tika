@@ -437,6 +437,12 @@ public class TestMimeTypes {
         assertType("image/jxl", "testJXL.jxl");
         assertTypeByData("image/jxl", "testJXL.jxl");
         assertTypeByName("image/jxl", "testJXL.jxl");
+
+        //test file contributed by Tyler Thorsted
+        //testJXL_ISOBMFF.jxl
+        assertType("image/jxl", "testJXL_ISOBMFF.jxl");
+        assertTypeByData("image/jxl", "testJXL_ISOBMFF.jxl");
+        assertTypeByName("image/jxl", "testJXL_ISOBMFF.jxl");
     }
 
     @Test

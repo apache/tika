@@ -25,6 +25,7 @@ import org.apache.poi.openxml4j.opc.ContentTypes;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.Property;
@@ -73,7 +74,7 @@ class CorePropertiesHandler extends AbstractPartHandler {
         cp.put("lastModifiedBy", TikaCoreProperties.MODIFIER);
         cp.put("lastPrinted", OfficeOpenXMLCore.LAST_PRINTED);
         cp.put("revision", OfficeOpenXMLCore.REVISION);
-        cp.put("subject", OfficeOpenXMLCore.SUBJECT);
+        cp.put("subject", DublinCore.SUBJECT);
         cp.put("version", OfficeOpenXMLCore.VERSION);
         properties.put(CP_NS, cp);
     }
