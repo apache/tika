@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<properties>
+    <parsers>
+        <parser class="org.apache.tika.parser.external2.ExternalParser">
+            <params>
+                <param name="supportedTypes" type="list">
+                    <string>application/xml</string>
+                </param>
+                <param name="commandLine" type="list">
+                    <string>file</string>
+                    <string>-b</string>
+                    <string>--mime-type</string>
+                    <string>${INPUT_FILE}</string>
+                </param>
+                <param name="checkCommandLine" type="list">
+                    <string>file</string>
+                    <string>--version</string>
+                </param>
+                <param name="checkExitValues" type="list">
+                    <!-- which exit values confirm that the application basically works -->
+                    <int>0</int>
+                </param>
+                <param name="outputParser" type="class" class="org.apache.tika.parser.RegexCaptureParser">
+                    <params>
+                        <param name="regexMap" type="map">
+                            <title>^Title: ([^\r\n]+)</title>
+                        </param>
+                    </params>
+                </param>
+            </params>
+        </parser>
+    </parsers>
+</properties>

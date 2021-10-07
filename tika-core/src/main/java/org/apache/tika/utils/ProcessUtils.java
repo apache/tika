@@ -116,9 +116,20 @@ public class ProcessUtils {
                     p.destroyForcibly();
                     outThread.join(1000);
                     errThread.join(1000);
+                    boolean completed = p.waitFor(500, TimeUnit.MILLISECONDS);
+                    if (completed) {
+                        try {
+                            exitValue = p.exitValue();
+                        } catch (IllegalThreadStateException e) {
+                            //not finished!
+                        }
+                    }
                 }
             } catch (InterruptedException e) {
                 exitValue = -1000;
+            } finally {
+                outThread.interrupt();
+                errThread.interrupt();
             }
             FileProcessResult result = new FileProcessResult();
             result.processTimeMillis = elapsed;
@@ -142,7 +153,7 @@ public class ProcessUtils {
     }
 
     /**
-     * This redirects stdout to stdoutRedirect.
+     * This redirects stdout to stdoutRedirect path.
      *
      * @param pb
      * @param timeoutMillis
