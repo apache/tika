@@ -25,7 +25,7 @@
     <parent>
         <groupId>org.apache</groupId>
         <artifactId>apache</artifactId>
-        <version>17</version>
+        <version>24</version>
         <relativePath />
     </parent>
 
@@ -321,6 +321,7 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
+        <project.build.outputTimestamp>1</project.build.outputTimestamp>
         <!-- plugin versions -->
         <forbiddenapis.version>3.1</forbiddenapis.version>
         <groovy.maven.version>2.1.1</groovy.maven.version>
@@ -341,6 +342,7 @@
         <gson.version>2.8.7</gson.version>
         <guava.version>30.1.1-jre</guava.version>
         <osgi.core.version>6.0.0</osgi.core.version>
+        <lombok.version>1.18.20</lombok.version>
 
     <cxf.version>3.4.4</cxf.version>
     <slf4j.version>1.7.30</slf4j.version>
