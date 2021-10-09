@@ -74,6 +74,16 @@
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <version>${log4j2.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j-impl</artifactId>
+      <version>${log4j2.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -84,7 +94,7 @@
           <argLine>-da -XX:+HeapDumpOnOutOfMemoryError -Xmx512m</argLine>
           <systemPropertyVariables>
             <java.util.logging.config.file>
-              ${basedir}/src/main/resources/commons-logging.properties
+              ${basedir}/src/main/resources/log4j2.xml
             </java.util.logging.config.file>
           </systemPropertyVariables>
         </configuration>
