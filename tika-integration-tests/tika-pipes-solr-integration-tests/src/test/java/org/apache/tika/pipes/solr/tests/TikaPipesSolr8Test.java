@@ -20,7 +20,7 @@ public class TikaPipesSolr8Test extends TikaPipesSolrTestBase {
 
     @Override
     public String getSolrImageName() {
-        return "solr:8";
+        return "solr:8.10";
     }
 
     @Override
