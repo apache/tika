@@ -54,7 +54,6 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.FileProcessResult;
 import org.apache.tika.utils.ProcessUtils;
-import org.apache.tika.utils.StringUtils;
 
 /**
  * This is a next generation external parser that uses some of the more
@@ -67,8 +66,6 @@ import org.apache.tika.utils.StringUtils;
 public class ExternalParser extends AbstractParser implements Initializable {
 
     public static final long DEFAULT_TIMEOUT_MS = 60000;
-
-    public static final long DEFAULT_CHECK_TIMEOUT_MS = 30000;
 
     public static final String INPUT_FILE_TOKEN =
             org.apache.tika.parser.external.ExternalParser.INPUT_FILE_TOKEN;
@@ -85,10 +82,6 @@ public class ExternalParser extends AbstractParser implements Initializable {
 
     private List<String> commandLine = new ArrayList<>();
 
-    private List<String> checkCommandLine = new ArrayList<>();
-
-    private Set<Integer> checkExitValuesOk = new HashSet<>();
-
     private Parser outputParser = EmptyParser.INSTANCE;
 
     private boolean returnStdout = false;
@@ -96,8 +89,6 @@ public class ExternalParser extends AbstractParser implements Initializable {
     private boolean returnStderr = true;
 
     private long timeoutMs = DEFAULT_TIMEOUT_MS;
-
-    private long checkTimeoutMs = DEFAULT_CHECK_TIMEOUT_MS;
 
     private int maxStdErr = 10000;
 
@@ -219,11 +210,6 @@ public class ExternalParser extends AbstractParser implements Initializable {
     }
 
     @Field
-    public void setCheckTimeoutMs(long checkTimeoutMs) {
-        this.checkTimeoutMs = checkTimeoutMs;
-    }
-
-    @Field
     public void setMaxStdErr(int maxStdErr) {
         this.maxStdErr = maxStdErr;
     }
@@ -246,10 +232,6 @@ public class ExternalParser extends AbstractParser implements Initializable {
         this.commandLine = commandLine;
     }
 
-    @Field
-    public void setCheckCommandLine(List<String> commandLine) {
-        this.checkCommandLine = commandLine;
-    }
 
     /**
      * If set to true, this will return the stdout in the metadata
@@ -291,19 +273,6 @@ public class ExternalParser extends AbstractParser implements Initializable {
         return outputParser;
     }
 
-    /**
-     * Set the allowable exit values, e.g. if you get one of these,
-     * this means that the application works.
-     *
-     * @param exitValues
-     */
-    @Field
-    public void setCheckExitValues(List<Integer> exitValues) {
-        for (Integer exitValue : exitValues) {
-            this.checkExitValuesOk.add(exitValue);
-        }
-    }
-
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         //no-op
@@ -318,48 +287,10 @@ public class ExternalParser extends AbstractParser implements Initializable {
         if (commandLine.isEmpty()) {
             throw new TikaConfigException("commandLine is empty?!");
         }
-        if (checkCommandLine.isEmpty()) {
-            throw new TikaConfigException("checkCommandLine is empty?!");
-        }
+
         if (outputParser == EmptyParser.INSTANCE) {
             LOG.debug("no parser selected for the output; contents will be " +
                     "written to the content handler");
-        }
-
-        check(checkCommandLine, checkTimeoutMs, checkExitValuesOk);
-    }
-
-    public static void check(List<String> checkCommandLine, long checkTimeoutMs,
-                   Set<Integer> checkExitValuesOk) throws TikaConfigException {
-        ProcessBuilder pb = new ProcessBuilder(checkCommandLine);
-        try {
-            LOG.debug("Check external parser commandline: {}", checkCommandLine);
-
-            FileProcessResult fileProcessResult = ProcessUtils.execute(
-                    pb, checkTimeoutMs, 1000, 1000);
-
-            if (! checkExitValuesOk.contains(fileProcessResult.getExitValue())) {
-                if (!StringUtils.isBlank(fileProcessResult.getStdout())) {
-                    LOG.error("Failed check's stdout: " + fileProcessResult.getStdout());
-                }
-                if (!StringUtils.isBlank(fileProcessResult.getStderr())) {
-                    LOG.error("Failed check's stderr: " + fileProcessResult.getStderr());
-                }
-                if (fileProcessResult.isTimeout()) {
-                    LOG.error("Timed out while trying to check the commandline; " +
-                            "consider increasing checkTimeoutMs");
-                    throw new TikaConfigException("timeout exception trying to check the external" +
-                            " commandline");
-                }
-                LOG.error("Exit value {} was not in the list of ok exit values",
-                        fileProcessResult.getExitValue());
-                throw new TikaConfigException("Exit value " + fileProcessResult.getExitValue() +
-                        " was not in list of acceptable exitValues");
-            }
-            LOG.debug("Check external parser result: {}", fileProcessResult);
-
-        } catch (IOException e) {
-            throw new TikaConfigException("io exception trying to run", e);
         }
     }
 

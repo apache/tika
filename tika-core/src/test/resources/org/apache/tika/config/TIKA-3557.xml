@@ -28,14 +28,6 @@
                     <string>--mime-type</string>
                     <string>${INPUT_FILE}</string>
                 </param>
-                <param name="checkCommandLine" type="list">
-                    <string>file</string>
-                    <string>--version</string>
-                </param>
-                <param name="checkExitValues" type="list">
-                    <!-- which exit values confirm that the application basically works -->
-                    <int>0</int>
-                </param>
                 <param name="outputParser" type="class" class="org.apache.tika.parser.RegexCaptureParser">
                     <params>
                         <param name="regexMap" type="map">
