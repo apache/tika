@@ -302,6 +302,7 @@ public class POIFSContainerDetector implements Detector {
         } else if (names.contains("Layer")) {
             //in one test file, also saw LayerSmallImage and LayerLargeImage
             //maybe add those if we get false positives?
+            //in other test files there was a singl entry for "Layer"
             return ESRI_LAYER;
         } else {
             for (String name : names) {
