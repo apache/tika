@@ -58,40 +58,41 @@ public class TesseractOCRConfig implements Serializable {
 
     private static Pattern ALLOWABLE_OTHER_PARAMS_PATTERN =
             Pattern.compile("(?i)^[-_/\\.A-Z0-9]+$");
-    // Language dictionary to be used.
-    private String language = "eng";
-    // Tesseract page segmentation mode.
-    private String pageSegMode = "1";
-    // Minimum file size to submit file to ocr.
-    private long minFileSizeToOcr = 0;
-    // Maximum file size to submit file to ocr.
-    private long maxFileSizeToOcr = Integer.MAX_VALUE;
-    // Maximum time (seconds) to wait for the ocring process termination
-    private int timeoutSeconds = 120;
-    // The format of the ocr'ed output to be returned, txt or hocr.
-    private OUTPUT_TYPE outputType = OUTPUT_TYPE.TXT;
-    // enable image preprocessing with ImageMagick (optional)
-    private boolean enableImagePreprocessing = false;
+
+    // whether or not to apply rotation calculated by the rotation.py script
+    private boolean applyRotation = false;
+    // colorspace of processed image.
+    private String colorspace = "gray";
     // resolution of processed image (in dpi).
     private int density = 300;
     // number of bits in a color sample within a pixel.
     private int depth = 4;
-    // colorspace of processed image.
-    private String colorspace = "gray";
+    // enable image preprocessing with ImageMagick (optional)
+    private boolean enableImagePreprocessing = false;
     // filter to be applied to the processed image.
     private String filter = "triangle";
-    // factor by which image is to be scaled.
-    // TODO: we should make this dynamic depending on the size of the image
-    // The current testRotation.png takes minutes to expand 900%
-    private int resize = 200;
+    // Language dictionary to be used.
+    private String language = "eng";
+    // Maximum file size to submit file to ocr.
+    private long maxFileSizeToOcr = Integer.MAX_VALUE;
+    // Minimum file size to submit file to ocr.
+    private long minFileSizeToOcr = 0;
+    // The format of the ocr'ed output to be returned, txt or hocr.
+    private OUTPUT_TYPE outputType = OUTPUT_TYPE.TXT;
+    // Tesseract page segmentation mode.
+    private String pageSegMode = "1";
     // See setPageSeparator.
     private String pageSeparator = "";
     // whether or not to preserve interword spacing
     private boolean preserveInterwordSpacing = false;
-    // whether or not to apply rotation calculated by the rotation.py script
-    private boolean applyRotation = false;
+    // factor by which image is to be scaled.
+    // TODO: we should make this dynamic depending on the size of the image
+    // The current testRotation.png takes minutes to expand 900%
+    private int resize = 200;
     // runtime switch to turn off OCR
     private boolean skipOcr = false;
+    // Maximum time (seconds) to wait for the ocring process termination
+    private int timeoutSeconds = 120;
     // See addOtherTesseractConfig.
     private Map<String, String> otherTesseractConfig = new HashMap<>();
     private Set<String> userConfigured = new HashSet<>();
