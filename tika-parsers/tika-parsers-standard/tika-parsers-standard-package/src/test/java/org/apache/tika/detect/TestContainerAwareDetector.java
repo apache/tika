@@ -32,6 +32,7 @@ import java.util.Random;
 
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.MultiThreadedTikaTest;
@@ -468,6 +469,15 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
     @Test
     public void testLZMAOOM() throws Exception {
         assertTypeByData("testLZMA_oom", "application/x-lzma");
+    }
+
+    @Test
+    @Disabled("find acceptable test file")
+    public void testLyr() throws Exception {
+        //file used in development but not added to
+        //repo: https://cmgds.marine.usgs.gov/publications/of2005-1346/arcgis/bathy/Bathymetry.lyr
+        assertTypeByNameAndData("testLyr.lyr", "x-esri-layer",
+                "application/x-esri-layer", "application/x-tika-msoffice");
     }
 
     @Test

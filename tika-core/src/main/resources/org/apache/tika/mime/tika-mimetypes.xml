@@ -3837,6 +3837,11 @@
     </magic>
     <glob pattern="*.zstd"/>
   </mime-type>
+  <mime-type type="application/x-esri-layer">
+    <_comment>ESRI Layer file</_comment>
+    <sub-class-of type="application/x-tika-msoffice"/>
+    <glob pattern="*.lyr"/>
+  </mime-type>
   <mime-type type="application/x-hdf">
     <_comment>Hierarchical Data Format File</_comment>
     <magic priority="50">
