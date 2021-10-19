@@ -111,7 +111,7 @@ public class OOXMLExtractorFactory {
                         new RereadableInputStream(stream, MAX_BUFFER_LENGTH,
                                 true, false)) {
                     try {
-                        pkg = OPCPackage.open(rereadableInputStream);
+                        pkg = OPCPackage.open(CloseShieldInputStream.wrap(rereadableInputStream));
                     } catch (EOFException|UnsupportedZipFeatureException e) {
                         rereadableInputStream.rewind();
                         tmpRepairedCopy = File.createTempFile("tika-ooxml-repair-", "");
