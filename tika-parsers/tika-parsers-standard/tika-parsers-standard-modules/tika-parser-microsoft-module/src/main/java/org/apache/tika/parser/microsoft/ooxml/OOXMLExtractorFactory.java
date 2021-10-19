@@ -107,7 +107,7 @@ public class OOXMLExtractorFactory {
                 try (RereadableInputStream rereadableInputStream = new RereadableInputStream(stream,
                         MAX_BUFFER_LENGTH, false)) {
                     try {
-                        pkg = OPCPackage.open(new CloseShieldInputStream(rereadableInputStream));
+                        pkg = OPCPackage.open(CloseShieldInputStream.wrap(rereadableInputStream));
                     } catch (UnsupportedZipFeatureException e) {
                         if (e.getFeature() !=
                                 UnsupportedZipFeatureException.Feature.DATA_DESCRIPTOR) {
