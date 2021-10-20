@@ -57,8 +57,6 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.AccessPermissions;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Office;
-import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -86,13 +84,17 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * turn this feature on, see
  * {@link PDFParserConfig#setExtractInlineImages(boolean)}.
  * <p/>
- * Please note that tables are not stored as entities within PDFs. It
+ * Please note that many pdfs do not store table structures.
+ * So you should not expect table markup for what looks like a table. It
  * takes significant computation to identify and then correctly extract
  * tables from PDFs. As of this writing, the {@link PDFParser} extracts
  * text within tables, but it does not compute table cell boundaries or
  * table row boundaries. Please see
  * <a href="http://tabula.technology/">tabula</a> for one project that
  * tries to maintain the structure of tables represented in PDFs.
+ *
+ * If your PDFs contain marked content or tags, consider
+ * {@link PDFParserConfig#setExtractMarkedContent(boolean)}
  */
 public class PDFParser extends AbstractParser implements Initializable {
 
@@ -292,7 +294,6 @@ public class PDFParser extends AbstractParser implements Initializable {
         PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_CREATOR_TOOL, info.getCreator());
         PDMetadataExtractor
                 .addMetadata(metadata, TikaCoreProperties.CREATOR_TOOL, info.getCreator());
-        PDMetadataExtractor.addMetadata(metadata, Office.KEYWORDS, info.getKeywords());
         PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_KEY_WORDS, info.getKeywords());
         PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_PRODUCER, info.getProducer());
         PDMetadataExtractor.addMetadata(metadata, PDF.PRODUCER, info.getProducer());
@@ -301,7 +302,6 @@ public class PDFParser extends AbstractParser implements Initializable {
 
         PDMetadataExtractor.addMetadata(metadata, TikaCoreProperties.SUBJECT, info.getKeywords());
         PDMetadataExtractor.addMetadata(metadata, TikaCoreProperties.SUBJECT, info.getSubject());
-        PDMetadataExtractor.addMetadata(metadata, OfficeOpenXMLCore.SUBJECT, info.getSubject());
 
         PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_TRAPPED, info.getTrapped());
         Calendar created = info.getCreationDate();

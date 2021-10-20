@@ -49,6 +49,7 @@ import org.apache.tika.metadata.XMP;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.xmp.JempboxExtractor;
+import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
 
 class PDMetadataExtractor {
@@ -301,7 +302,15 @@ class PDMetadataExtractor {
     static void addMetadata(Metadata metadata, Property property, String value) {
         if (value != null) {
             String decoded = decode(value);
+            if (StringUtils.isBlank(decoded)) {
+                return;
+            }
             if (property.isMultiValuePermitted() || metadata.get(property) == null) {
+                for (String v : metadata.getValues(property)) {
+                    if (v.equals(decoded)) {
+                        return;
+                    }
+                }
                 metadata.add(property, decoded);
             }
             //silently skip adding property that already exists if multiple values are not permitted
@@ -310,7 +319,16 @@ class PDMetadataExtractor {
 
     static void addMetadata(Metadata metadata, String name, String value) {
         if (value != null) {
-            metadata.add(name, decode(value));
+            String decoded = decode(value);
+            if (StringUtils.isBlank(decoded)) {
+                return;
+            }
+            for (String v : metadata.getValues(name)) {
+                if (v.equals(decoded)) {
+                    return;
+                }
+            }
+            metadata.add(name, decoded);
         }
     }
 

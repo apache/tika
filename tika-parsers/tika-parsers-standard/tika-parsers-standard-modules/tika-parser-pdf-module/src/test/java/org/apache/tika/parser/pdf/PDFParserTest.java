@@ -53,8 +53,6 @@ import org.apache.tika.exception.ZeroByteFileException;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.metadata.Font;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Office;
-import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMP;
@@ -180,7 +178,7 @@ public class PDFParserTest extends TikaTest {
         assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("The Bank of England", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("Speeches by Andrew G Haldane",
-                metadata.get(OfficeOpenXMLCore.SUBJECT));
+                metadata.get(TikaCoreProperties.SUBJECT));
         assertEquals(
                 "Rethinking the Financial Network, Speech by Andrew G Haldane, " +
                         "Executive Director, Financial Stability " +
@@ -206,7 +204,7 @@ public class PDFParserTest extends TikaTest {
 
         assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("The Bank of England", metadata.get(TikaCoreProperties.CREATOR));
-        assertEquals("Speeches by Andrew G Haldane", metadata.get(OfficeOpenXMLCore.SUBJECT));
+        assertEquals("Speeches by Andrew G Haldane", metadata.get(TikaCoreProperties.SUBJECT));
         assertEquals(
                 "Rethinking the Financial Network, Speech by Andrew G Haldane, " +
                         "Executive Director, Financial Stability delivered at the " +
@@ -299,10 +297,11 @@ public class PDFParserTest extends TikaTest {
         }
 
         assertContains("Keyword1 Keyword2", content);
-        assertEquals("Keyword1 Keyword2", metadata.get(Office.KEYWORDS));
+        assertContains("Keyword1 Keyword2", metadata.get(TikaCoreProperties.SUBJECT));
 
         assertContains("Subject is here", content);
-        assertEquals("Subject is here", metadata.get(OfficeOpenXMLCore.SUBJECT));
+        assertContains("Subject is here",
+                Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
 
         assertContains("Suddenly some Japanese text:", content);
         // Special version of (GHQ)
