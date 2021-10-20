@@ -368,9 +368,14 @@ public class PDFParserTest extends TikaTest {
 
     @Test
     public void testEmbeddedPDFs() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testPDFPackage.pdf");
+        assertEquals(3, metadataList.size());
+        assertEquals("true", metadataList.get(0).get(PDF.HAS_COLLECTION));
+        assertContains("Adobe recommends using Adobe Reader ",
+                metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("<p>PDF1", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("<p>PDF2", metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
         String xml = getXML("testPDFPackage.pdf").xml;
-        assertContains("PDF1", xml);
-        assertContains("PDF2", xml);
     }
 
     @Test

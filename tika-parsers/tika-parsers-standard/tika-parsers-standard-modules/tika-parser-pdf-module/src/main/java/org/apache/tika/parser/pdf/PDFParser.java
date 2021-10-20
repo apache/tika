@@ -158,6 +158,8 @@ public class PDFParser extends AbstractParser implements Initializable {
                 metadata.set(PDF.HAS_XFA, Boolean.toString(hasXFA));
                 boolean hasMarkedContent = hasMarkedContent(pdfDocument);
                 metadata.set(PDF.HAS_MARKED_CONTENT, Boolean.toString(hasMarkedContent));
+                boolean hasCollection = hasCollection(pdfDocument);
+                metadata.set(PDF.HAS_COLLECTION, Boolean.toString(hasCollection));
                 if (shouldHandleXFAOnly(hasXFA, localConfig)) {
                     handleXFAOnly(pdfDocument, handler, metadata, context);
                 } else if (localConfig.getOcrStrategy()
@@ -179,6 +181,7 @@ public class PDFParser extends AbstractParser implements Initializable {
             }
         }
     }
+
 
     protected PDDocument getPDDocument(InputStream inputStream, String password,
                                        MemoryUsageSetting memoryUsageSetting, Metadata metadata,
@@ -210,6 +213,14 @@ public class PDFParser extends AbstractParser implements Initializable {
             if (((COSArray) base).size() > 0) {
                 return true;
             }
+        }
+        return false;
+    }
+
+    private boolean hasCollection(PDDocument pdfDocument) {
+        COSDictionary cosDict = pdfDocument.getDocumentCatalog().getCOSObject();
+        if (cosDict.containsKey(COSName.COLLECTION)) {
+            return true;
         }
         return false;
     }
