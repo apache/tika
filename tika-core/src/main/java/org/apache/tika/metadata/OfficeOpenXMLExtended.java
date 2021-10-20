@@ -25,7 +25,7 @@ package org.apache.tika.metadata;
  *
  * @see <a href="http://www.iso.org/iso/iso_catalogue/catalogue_tc/catalogue_detail.htm?csnumber=59575"
  * >ISO document of Office Open XML specification</a>
- * @see <a href="http://www.ecma-international.org/publications/standards/Ecma-376.htm
+ * @see <a href="http://www.ecma-international.org/publications/standards/Ecma-376.htm"
  * >ECMA document of Office Open XML specification</a>
  */
 public interface OfficeOpenXMLExtended {

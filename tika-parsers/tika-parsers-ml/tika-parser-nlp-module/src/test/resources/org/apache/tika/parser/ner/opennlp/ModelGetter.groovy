@@ -23,24 +23,6 @@ package org.apache.tika.parser.ner.opennlp
 
 import org.apache.maven.settings.Proxy as MvnProxy
 import java.net.Proxy as JDKProxy
-import groovy.transform.Field
-
-//BEGIN: Global context ; ${settings} is injected by the plugin
-List<MvnProxy> mvnProxies = settings.getProxies()?.findAll{it.isActive()}
-@Field JDKProxy proxy = null
-if (mvnProxies && mvnProxies.size() > 0) {
-    mvnProxy = mvnProxies.get(0)
-    println "Using the first Proxy setting : ${mvnProxy.username}@ ${mvnProxy.host} : ${mvnProxy.port} "
-    proxy = new JDKProxy(JDKProxy.Type.HTTP, new InetSocketAddress(mvnProxy.host, mvnProxy.port))
-    Authenticator.setDefault(new Authenticator(){
-        @Override
-        protected PasswordAuthentication getPasswordAuthentication(){
-            return new PasswordAuthentication(mvnProxy.username, mvnProxy.password?.toCharArray())
-        }
-    })
-    println "Proxy is configured"
-}
-//END : Global Context
 
 /**
  * Copies input stream to output stream, additionally printing the progress.
@@ -76,7 +58,7 @@ def copyWithProgress(InputStream inStr, OutputStream outStr, long totalLength){
  * @param file path to store file
  * @return
  */
-def downloadFile(String urlStr, File file) {
+def downloadFile(String urlStr, File file, Proxy proxy) {
     println "GET : $urlStr -> $file (Using proxy? ${proxy != null})"
     url = new URL(urlStr)
     try {
@@ -96,6 +78,21 @@ def downloadFile(String urlStr, File file) {
     }
 }
 
+def proxy = null
+def mvnProxies = settings.getProxies()?.findAll{it.isActive()}
+if (mvnProxies && mvnProxies.size() > 0) {
+    mvnProxy = mvnProxies.get(0)
+    println "Using the first Proxy setting : ${mvnProxy.username}@ ${mvnProxy.host} : ${mvnProxy.port} "
+    proxy = new JDKProxy(JDKProxy.Type.HTTP, new InetSocketAddress(mvnProxy.host, mvnProxy.port))
+    Authenticator.setDefault(new Authenticator(){
+        @Override
+        protected PasswordAuthentication getPasswordAuthentication(){
+            return new PasswordAuthentication(mvnProxy.username, mvnProxy.password?.toCharArray())
+        }
+    })
+    println "Proxy is configured"
+}
+
 def urlPrefix = "http://opennlp.sourceforge.net/models-1.5"
 def prefixPath = "src/test/resources/org/apache/tika/parser/ner/opennlp/"
 def ageUrlPrefix = "https://raw.githubusercontent.com/USCDataScience/AgePredictor/master/model"
@@ -110,18 +107,18 @@ if (new File("tika-parsers").exists() && new File("tika-app").exists()  ) {
 
 def modelFiles = //filePath : url
         [(prefixPath + "ner-person.bin"): (urlPrefix + "/en-ner-person.bin"),
-          (prefixPath + "ner-location.bin"): (urlPrefix + "/en-ner-location.bin"),
-          (prefixPath + "ner-organization.bin"): (urlPrefix + "/en-ner-organization.bin"),
-          (prefixPath + "en-pos-maxent.bin"): (urlPrefix + "/en-pos-maxent.bin"),
-          (prefixPath + "en-sent.bin"): (urlPrefix + "/en-sent.bin"),
-          (prefixPath + "en-token.bin"): (urlPrefix + "/en-token.bin"),
-          (prefixPath + "ner-date.bin"): (urlPrefix + "/en-ner-date.bin"),
-          (agePrefixPath + "classify-bigram.bin"): (ageUrlPrefix + "/classify-bigram.bin"),
-          (agePrefixPath + "regression-global.bin"): (ageUrlPrefix + "/regression-global.bin")]
+         (prefixPath + "ner-location.bin"): (urlPrefix + "/en-ner-location.bin"),
+         (prefixPath + "ner-organization.bin"): (urlPrefix + "/en-ner-organization.bin"),
+         (prefixPath + "en-pos-maxent.bin"): (urlPrefix + "/en-pos-maxent.bin"),
+         (prefixPath + "en-sent.bin"): (urlPrefix + "/en-sent.bin"),
+         (prefixPath + "en-token.bin"): (urlPrefix + "/en-token.bin"),
+         (prefixPath + "ner-date.bin"): (urlPrefix + "/en-ner-date.bin"),
+         (agePrefixPath + "classify-bigram.bin"): (ageUrlPrefix + "/classify-bigram.bin"),
+         (agePrefixPath + "regression-global.bin"): (ageUrlPrefix + "/regression-global.bin")]
 
 for (def entry : modelFiles) {
     File file = new File(entry.key)
     if (!file.exists()) {
-        downloadFile(entry.value, file)
+        downloadFile(entry.value, file, proxy)
     }
 }
