@@ -375,7 +375,6 @@ public class PDFParserTest extends TikaTest {
                 metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
         assertContains("<p>PDF1", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
         assertContains("<p>PDF2", metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
-        String xml = getXML("testPDFPackage.pdf").xml;
     }
 
     @Test

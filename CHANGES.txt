@@ -1,5 +1,8 @@
 Release 2.1.1 - ???
 
+   * Add metadata item whether or not a PDF has a collection/
+     is a Portfolio PDF (TIKA-3579).
+
    * Add detection of ESRI Layer files (TIKA-3570).
 
    * Add detection of JPEG XL, MARC, ICC profiles, NES-ROM file types
