@@ -40,7 +40,9 @@ public class PipesParser implements Closeable {
             clients.add(client);
         }
     }
-    public PipesResult parse(FetchEmitTuple t) throws PipesException, IOException {
+
+    public PipesResult parse(FetchEmitTuple t) throws InterruptedException,
+            PipesException, IOException {
         PipesClient client = null;
         try {
             client = clientQueue.poll(pipesConfig.getMaxWaitForClientMillis(),
@@ -49,8 +51,6 @@ public class PipesParser implements Closeable {
                 return PipesResult.CLIENT_UNAVAILABLE_WITHIN_MS;
             }
             return client.process(t);
-        } catch (InterruptedException e) {
-            throw new PipesException(e);
         } finally {
             if (client != null) {
                 clientQueue.offer(client);

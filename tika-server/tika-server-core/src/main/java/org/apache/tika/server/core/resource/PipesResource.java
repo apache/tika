@@ -93,7 +93,7 @@ public class PipesResource {
     }
 
     private Map<String, String> processTuple(FetchEmitTuple fetchEmitTuple)
-            throws PipesException, IOException {
+            throws InterruptedException, PipesException, IOException {
 
         PipesResult pipesResult = pipesParser.parse(fetchEmitTuple);
         switch (pipesResult.getStatus()) {

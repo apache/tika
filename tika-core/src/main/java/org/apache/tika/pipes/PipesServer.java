@@ -171,6 +171,7 @@ public class PipesServer implements Runnable {
         }
     }
 
+    @Override
     public void run() {
         try {
             while (true) {
@@ -188,7 +189,7 @@ public class PipesServer implements Runnable {
                 Thread.sleep(checkForTimeoutMs);
             }
         } catch (InterruptedException e) {
-            //swallow
+            LOG.debug("interrupted");
         }
     }
 

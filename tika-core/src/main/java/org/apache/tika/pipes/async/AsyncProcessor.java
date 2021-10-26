@@ -153,7 +153,7 @@ public class AsyncProcessor implements Closeable {
         }
     }
 
-    public synchronized boolean checkActive() {
+    public synchronized boolean checkActive() throws InterruptedException {
 
         Future<Integer> future = executorCompletionService.poll();
         if (future != null) {
@@ -174,8 +174,8 @@ public class AsyncProcessor implements Closeable {
                     default :
                         throw new IllegalArgumentException("Don't recognize this future code: " + i);
                 }
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
+            } catch (ExecutionException e) {
+                LOG.error("execution exception", e);
                 throw new RuntimeException(e);
             }
         }
