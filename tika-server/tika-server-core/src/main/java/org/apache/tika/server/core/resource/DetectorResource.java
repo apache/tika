@@ -34,6 +34,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.server.core.ServerStatus;
 
 @Path("/detect")
@@ -56,7 +57,10 @@ public class DetectorResource {
         String filename = TikaResource.detectFilename(httpHeaders.getRequestHeaders());
         LOG.info("Detecting media type for Filename: {}", filename);
         met.add(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
-        long taskId = serverStatus.start(ServerStatus.TASK.DETECT, filename);
+        ParseContext parseContext = new ParseContext();
+        TikaResource.fillParseContext(httpHeaders.getRequestHeaders(), met, parseContext);
+        long timeoutMillis = TikaResource.getTaskTimeout(parseContext);
+        long taskId = serverStatus.start(ServerStatus.TASK.DETECT, filename, timeoutMillis);
 
         try (TikaInputStream tis = TikaInputStream
                 .get(TikaResource.getInputStream(is, met, httpHeaders))) {

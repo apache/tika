@@ -1,6 +1,10 @@
 Release 2.1.1 - ???
 
-   * Add metadata item whether or not a PDF has a collection/
+   * Add timeout per task to be configured via headers
+     for tika-server's legacy endpoints /tika and /rmeta.
+     Note that this timeout greater than taskTimeoutMillis (TIKA-3582).
+
+   * Add metadata item for whether or not a PDF has a collection/
      is a Portfolio PDF (TIKA-3579).
 
    * Add detection of ESRI Layer files (TIKA-3570).

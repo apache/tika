@@ -35,20 +35,22 @@ public class ServerStatus {
     private Map<Long, TaskStatus> tasks = new HashMap<>();
     private STATUS status = STATUS.OPERATING;
     private volatile long lastStarted = Instant.now().toEpochMilli();
+
     public ServerStatus(String serverId, int numRestarts) {
         this(serverId, numRestarts, false);
     }
+
     public ServerStatus(String serverId, int numRestarts, boolean isLegacy) {
         this.serverId = serverId;
         this.numRestarts = numRestarts;
         this.isLegacy = isLegacy;
     }
 
-    public synchronized long start(TASK task, String fileName) {
+    public synchronized long start(TASK task, String fileName, long timeoutMillis) {
         long taskId = counter.incrementAndGet();
         Instant now = Instant.now();
         lastStarted = now.toEpochMilli();
-        tasks.put(taskId, new TaskStatus(task, now, fileName));
+        tasks.put(taskId, new TaskStatus(task, now, fileName, timeoutMillis));
         return taskId;
     }
 

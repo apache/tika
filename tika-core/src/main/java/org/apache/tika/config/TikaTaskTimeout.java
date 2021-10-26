@@ -14,28 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.server.core;
+package org.apache.tika.config;
 
-import java.time.Instant;
-import java.util.Optional;
+import org.apache.tika.parser.ParseContext;
 
-public class TaskStatus {
-    final ServerStatus.TASK task;
-    final Instant started;
-    final Optional<String> fileName;
-    final long timeoutMillis;
+public class TikaTaskTimeout {
 
-    TaskStatus(ServerStatus.TASK task, Instant started, String fileName, long timeoutMillis) {
-        this.task = task;
-        this.started = started;
-        this.fileName = Optional.ofNullable(fileName);
+    private final long timeoutMillis;
+
+    public TikaTaskTimeout(long timeoutMillis) {
         this.timeoutMillis = timeoutMillis;
     }
 
+    public long getTimeoutMillis() {
+        return timeoutMillis;
+    }
 
-    @Override
-    public String toString() {
-        return "TaskStatus{" + "task=" + task + ", started=" + started + ", fileName=" + fileName +
-                ", timeoutMillis=" + timeoutMillis + '}';
+    public static long getTimeoutMillis(ParseContext context, long defaultTimeoutMillis) {
+        TikaTaskTimeout tikaTaskTimeout = context.get(TikaTaskTimeout.class);
+        if (tikaTaskTimeout == null) {
+            return defaultTimeoutMillis;
+        }
+        return tikaTaskTimeout.getTimeoutMillis();
     }
 }

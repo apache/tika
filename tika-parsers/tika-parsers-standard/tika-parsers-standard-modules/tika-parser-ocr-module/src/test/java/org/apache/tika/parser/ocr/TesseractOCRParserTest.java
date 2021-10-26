@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -172,6 +173,24 @@ public class TesseractOCRParserTest extends TikaTest {
             assertEquals("ceb", tesseractOCRConfig.getLanguage());
             assertEquals(false, tesseractOCRConfig.isApplyRotation());
 //            assertContains("myspecial", tesseractOCRConfig.getTesseractPath());
+        }
+    }
+
+
+    @Test
+    public void testTimeoutOverride() throws Exception {
+        assumeTrue(canRun(), "can run OCR");
+
+        try (InputStream is = getResourceAsStream("/test-configs/TIKA-3582-tesseract.xml")) {
+            TikaConfig config = new TikaConfig(is);
+            Parser p = new AutoDetectParser(config);
+            Metadata m = new Metadata();
+            ParseContext parseContext = new ParseContext();
+            parseContext.set(TikaTaskTimeout.class, new TikaTaskTimeout(50));
+            getXML("testRotated+10.png", p, m, parseContext);
+            fail("should have thrown a timeout");
+        } catch (TikaException e) {
+            assertContains("timeout", e.getMessage());
         }
     }
 

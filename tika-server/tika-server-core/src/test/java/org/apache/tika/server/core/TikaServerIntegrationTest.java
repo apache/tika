@@ -44,6 +44,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.server.core.config.TimeoutConfig;
 import org.apache.tika.utils.ProcessUtils;
 
 public class TikaServerIntegrationTest extends IntegrationTestBase {
@@ -89,6 +90,31 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         try {
             response = WebClient.create(endPoint + META_PATH).accept("application/json")
                     .put(ClassLoader.getSystemResourceAsStream(TEST_OOM));
+        } catch (Exception e) {
+            //oom may or may not cause an exception depending
+            //on the timing
+        }
+        //give some time for the server to crash/terminate itself
+        Thread.sleep(2000);
+        testBaseline();
+        assertEquals(serverId, getServerId());
+        assertTrue(getNumRestarts() > 0);
+        assertTrue(getNumRestarts() < 3);
+    }
+
+    @Test
+    public void testTaskTimeoutHeader() throws Exception {
+
+        startProcess(new String[]{"-config", getConfig(
+                "tika-config-server-basic.xml")});
+        awaitServerStartup();
+        String serverId = getServerId();
+        Response response = null;
+        try {
+            response = WebClient.create(endPoint + META_PATH)
+                    .accept("application/json")
+                    .header(TimeoutConfig.X_TIKA_TIMEOUT_MILLIS, 100)
+                    .put(ClassLoader.getSystemResourceAsStream(TEST_HEAVY_HANG));
         } catch (Exception e) {
             //oom may or may not cause an exception depending
             //on the timing

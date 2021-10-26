@@ -14,28 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.server.core;
+package org.apache.tika.server.core.config;
 
-import java.time.Instant;
-import java.util.Optional;
+import javax.ws.rs.core.MultivaluedMap;
 
-public class TaskStatus {
-    final ServerStatus.TASK task;
-    final Instant started;
-    final Optional<String> fileName;
-    final long timeoutMillis;
+import org.apache.tika.config.TikaTaskTimeout;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.server.core.ParseContextConfig;
 
-    TaskStatus(ServerStatus.TASK task, Instant started, String fileName, long timeoutMillis) {
-        this.task = task;
-        this.started = started;
-        this.fileName = Optional.ofNullable(fileName);
-        this.timeoutMillis = timeoutMillis;
-    }
+public class TimeoutConfig implements ParseContextConfig {
 
+    public static final String X_TIKA_TIMEOUT_MILLIS = "X-Tika-Timeout-Millis";
 
     @Override
-    public String toString() {
-        return "TaskStatus{" + "task=" + task + ", started=" + started + ", fileName=" + fileName +
-                ", timeoutMillis=" + timeoutMillis + '}';
+    public void configure(MultivaluedMap<String, String> httpHeaders, Metadata metadata,
+                          ParseContext context) {
+        if (httpHeaders.containsKey(X_TIKA_TIMEOUT_MILLIS)) {
+            long timeout = Long.parseLong(httpHeaders.getFirst(X_TIKA_TIMEOUT_MILLIS));
+            context.set(TikaTaskTimeout.class, new TikaTaskTimeout(timeout));
+        }
     }
 }

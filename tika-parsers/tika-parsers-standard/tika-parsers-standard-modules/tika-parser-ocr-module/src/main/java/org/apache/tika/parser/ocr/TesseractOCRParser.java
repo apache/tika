@@ -61,6 +61,7 @@ import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
+import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
@@ -282,7 +283,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
                                 "User has selected to preprocess images, " +
                                         "but I can't find ImageMagick." +
                                         "Backing off to original file.");
-                        doOCR(input.toFile(), tmpOCROutputFile, config);
+                        doOCR(input.toFile(), tmpOCROutputFile, config, parseContext);
                     } else {
                         // copy the contents of the original input file into a temporary file
                         // which will be preprocessed for OCR
@@ -291,11 +292,11 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
                             Path tmpFile = tmp.createTempFile();
                             Files.copy(input, tmpFile, StandardCopyOption.REPLACE_EXISTING);
                             imagePreprocessor.process(tmpFile, tmpFile, metadata, config);
-                            doOCR(tmpFile.toFile(), tmpOCROutputFile, config);
+                            doOCR(tmpFile.toFile(), tmpOCROutputFile, config, parseContext);
                         }
                     }
                 } else {
-                    doOCR(input.toFile(), tmpOCROutputFile, config);
+                    doOCR(input.toFile(), tmpOCROutputFile, config, parseContext);
                 }
 
                 String extension = config.getPageSegMode().equals("0") ? "osd" :
@@ -375,7 +376,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
      * @throws TikaException if the extraction timed out
      * @throws IOException   if an input error occurred
      */
-    private void doOCR(File input, File output, TesseractOCRConfig config)
+    private void doOCR(File input, File output, TesseractOCRConfig config, ParseContext parseContext)
             throws IOException, TikaException {
 
         ArrayList<String> cmd = new ArrayList<>(
@@ -403,10 +404,12 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
 
         Process process = null;
         String id = null;
+        long timeoutMillis = TikaTaskTimeout.getTimeoutMillis(parseContext,
+                config.getTimeoutSeconds() * 1000);
         try {
             process = pb.start();
             id = register(process);
-            runOCRProcess(process, config.getTimeoutSeconds());
+            runOCRProcess(process, timeoutMillis);
         } finally {
             if (process != null) {
                 process.destroyForcibly();
@@ -417,7 +420,8 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         }
     }
 
-    private void runOCRProcess(Process process, int timeout) throws IOException, TikaException {
+    private void runOCRProcess(Process process, long timeoutMillis) throws IOException,
+            TikaException {
         process.getOutputStream().close();
         InputStream out = process.getInputStream();
         InputStream err = process.getErrorStream();
@@ -430,7 +434,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
 
         int exitValue = Integer.MIN_VALUE;
         try {
-            boolean finished = process.waitFor(timeout, TimeUnit.SECONDS);
+            boolean finished = process.waitFor(timeoutMillis, TimeUnit.MILLISECONDS);
             if (!finished) {
                 throw new TikaException("TesseractOCRParser timeout");
             }
@@ -685,6 +689,13 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         defaultConfig.setMinFileSizeToOcr(minFileSizeToOcr);
     }
 
+    /**
+     * Set default timeout in seconds.  This can be overridden per parse
+     * with {@link TikaTaskTimeout} sent in via the {@link ParseContext}
+     * at parse time.
+     *
+     * @param timeout
+     */
     @Field
     public void setTimeout(int timeout) {
         defaultConfig.setTimeoutSeconds(timeout);

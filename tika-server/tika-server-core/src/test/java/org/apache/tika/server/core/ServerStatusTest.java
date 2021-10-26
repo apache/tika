@@ -85,7 +85,7 @@ public class ServerStatusTest {
             int processed = 0;
             for (int i = 0; i < filesToProcess; i++) {
                 sleepRandom(200);
-                long taskId = serverStatus.start(ServerStatus.TASK.PARSE, null);
+                long taskId = serverStatus.start(ServerStatus.TASK.PARSE, null, 60000);
                 sleepRandom(100);
                 serverStatus.complete(taskId);
                 processed++;

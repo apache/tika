@@ -48,7 +48,8 @@ public class TranslateResourceTest extends CXFTestBase {
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(TranslateResource.class);
         sf.setResourceProvider(TranslateResource.class,
-                new SingletonResourceProvider(new TranslateResource(new ServerStatus("", 0))));
+                new SingletonResourceProvider(new TranslateResource(
+                        new ServerStatus("", 0), 60000)));
 
     }
 

@@ -340,7 +340,9 @@ public class TikaResource {
 
         checkIsOperating();
         String fileName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
-        long taskId = SERVER_STATUS.start(ServerStatus.TASK.PARSE, fileName);
+        long timeoutMillis = getTaskTimeout(parseContext);
+
+        long taskId = SERVER_STATUS.start(ServerStatus.TASK.PARSE, fileName, timeoutMillis);
         try {
             parser.parse(inputStream, handler, metadata, parseContext);
         } catch (SAXException e) {
@@ -361,6 +363,23 @@ public class TikaResource {
             SERVER_STATUS.complete(taskId);
             inputStream.close();
         }
+    }
+
+    protected static long getTaskTimeout(ParseContext parseContext) {
+
+        TikaTaskTimeout tikaTaskTimeout = parseContext.get(TikaTaskTimeout.class);
+        long timeoutMillis = TIKA_SERVER_CONFIG.getTaskTimeoutMillis();
+
+        if (tikaTaskTimeout != null) {
+            if (tikaTaskTimeout.getTimeoutMillis() > TIKA_SERVER_CONFIG.getTaskTimeoutMillis()) {
+                throw new IllegalArgumentException("Can't request a timeout ( " +
+                        tikaTaskTimeout.getTimeoutMillis() +
+                        "ms) greater than the taskTimeoutMillis set in the server config (" +
+                        TIKA_SERVER_CONFIG.getTaskTimeoutMillis() + "ms)");
+            }
+            timeoutMillis = tikaTaskTimeout.getTimeoutMillis();
+        }
+        return timeoutMillis;
     }
 
     public static void checkIsOperating() {

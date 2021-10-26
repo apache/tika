@@ -39,6 +39,7 @@ import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
+import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
@@ -125,9 +126,9 @@ public class ExternalParser extends AbstractParser implements Initializable {
                     thisCommandLine.add(c);
                 }
             }
-
+            long localTimeoutMillis = TikaTaskTimeout.getTimeoutMillis(context, timeoutMs);
             FileProcessResult result = ProcessUtils.execute(new ProcessBuilder(thisCommandLine),
-                    timeoutMs, maxStdOut, maxStdErr);
+                    localTimeoutMillis, maxStdOut, maxStdErr);
             metadata.set(ExternalProcess.IS_TIMEOUT, result.isTimeout());
             metadata.set(ExternalProcess.EXIT_VALUE, result.getExitValue());
             metadata.set(ExternalProcess.STD_OUT_LENGTH, result.getStdoutLength());
