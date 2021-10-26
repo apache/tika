@@ -51,7 +51,7 @@ public class TikaServerConfig extends ConfigBase {
      * Number of milliseconds to wait per server task (parse, detect, unpack, translate,
      * etc.) before timing out and shutting down the forked process.
      */
-    public static final long DEFAULT_TASK_TIMEOUT_MILLIS = 120000;
+    public static final long DEFAULT_TASK_TIMEOUT_MILLIS = 300000;
     /**
      * How often to check to see that the task hasn't timed out
      */
