@@ -63,6 +63,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
@@ -103,12 +104,12 @@ public class TikaResource {
 
 
     public static void init(TikaConfig config, TikaServerConfig tikaServerConfg,
-                            DigestingParser.Digester digestr,
-                            InputStreamFactory iSF, ServerStatus serverStatus) {
+                            DigestingParser.Digester digester,
+                            InputStreamFactory inputStreamFactory, ServerStatus serverStatus) {
         TIKA_CONFIG = config;
         TIKA_SERVER_CONFIG = tikaServerConfg;
-        DIGESTER = digestr;
-        INPUTSTREAM_FACTORY = iSF;
+        DIGESTER = digester;
+        INPUTSTREAM_FACTORY = inputStreamFactory;
         SERVER_STATUS = serverStatus;
     }
 
