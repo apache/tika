@@ -378,6 +378,12 @@ public class TikaResource {
                         TIKA_SERVER_CONFIG.getTaskTimeoutMillis() + "ms)");
             }
             timeoutMillis = tikaTaskTimeout.getTimeoutMillis();
+            if (timeoutMillis < TIKA_SERVER_CONFIG.getMinimumTimeoutMillis()) {
+                throw new WebApplicationException(
+                        new IllegalArgumentException("taskTimeoutMillis must be > " +
+                        "minimumTimeoutMillis, currently set to (" + TIKA_SERVER_CONFIG.getMinimumTimeoutMillis() +
+                        "ms)"), Response.Status.BAD_REQUEST);
+            }
         }
         return timeoutMillis;
     }

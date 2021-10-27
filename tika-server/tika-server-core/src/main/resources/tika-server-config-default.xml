@@ -63,6 +63,8 @@
       <!-- maximum time to allow per parse before shutting down and restarting
           the forked parser. Not allowed if nofork=true. -->
       <taskTimeoutMillis>300000</taskTimeoutMillis>
+      <!-- clients cannot specify a timeout less than this amount -->
+      <minimumTimeoutMillis>30000</minimumTimeoutMillis>
       <!-- how often to check whether a parse has timed out.
           Not allowed if nofork=true. -->
       <taskPulseMillis>10000</taskPulseMillis>

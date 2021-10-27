@@ -52,6 +52,15 @@ public class TikaServerConfig extends ConfigBase {
      * etc.) before timing out and shutting down the forked process.
      */
     public static final long DEFAULT_TASK_TIMEOUT_MILLIS = 300000;
+
+    /**
+     * Clients may not set a timeout less than this amount.  This hinders
+     * malicious clients from setting the timeout to a very low value
+     * and DoS the server by forcing timeout restarts.  Making tika-server
+     * available to untrusted clients is dangerous.
+     */
+    public static final long DEFAULT_MINIMUM_TIMEOUT_MILLIS = 30000;
+
     /**
      * How often to check to see that the task hasn't timed out
      */
@@ -94,6 +103,7 @@ public class TikaServerConfig extends ConfigBase {
     private int maxRestarts = -1;
     private long maxFiles = 100000;
     private long taskTimeoutMillis = DEFAULT_TASK_TIMEOUT_MILLIS;
+    private long minimumTimeoutMillis = DEFAULT_MINIMUM_TIMEOUT_MILLIS;
     private long taskPulseMillis = DEFAULT_TASK_PULSE_MILLIS;
     private long maxforkedStartupMillis = DEFAULT_FORKED_STARTUP_MILLIS;
     private boolean enableUnsecureFeatures = false;
@@ -350,6 +360,14 @@ public class TikaServerConfig extends ConfigBase {
             args.add(ProcessUtils.escapeCommandLine(configPath.toAbsolutePath().toString()));
         }
         return args;
+    }
+
+    public long getMinimumTimeoutMillis() {
+        return minimumTimeoutMillis;
+    }
+
+    public void setMinimumTimeoutMillis(long minimumTimeoutMillis) {
+        this.minimumTimeoutMillis = minimumTimeoutMillis;
     }
 
     public String getIdBase() {

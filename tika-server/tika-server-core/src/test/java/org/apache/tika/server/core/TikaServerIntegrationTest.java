@@ -35,6 +35,7 @@ import javax.ws.rs.core.Response;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.cxf.helpers.IOUtils;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -67,7 +68,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
 
         Response response = null;
         try {
-            response = WebClient.create(endPoint + META_PATH).accept("application/json")
+            response = WebClient.create(endPoint + RMETA_PATH).accept("application/json")
                     .put(ClassLoader.getSystemResourceAsStream(TEST_OOM));
         } catch (Exception e) {
             //oom may or may not cause an exception depending
@@ -88,7 +89,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         String serverId = getServerId();
         Response response = null;
         try {
-            response = WebClient.create(endPoint + META_PATH).accept("application/json")
+            response = WebClient.create(endPoint + RMETA_PATH).accept("application/json")
                     .put(ClassLoader.getSystemResourceAsStream(TEST_OOM));
         } catch (Exception e) {
             //oom may or may not cause an exception depending
@@ -103,6 +104,20 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    public void testMinimumTimeoutInHeader() throws Exception {
+        startProcess(new String[]{"-config", getConfig(
+                "tika-config-server-basic.xml")});
+        awaitServerStartup();
+
+        Response response = WebClient.create(endPoint + RMETA_PATH)
+                    .accept("application/json")
+                    .header(TimeoutConfig.X_TIKA_TIMEOUT_MILLIS, 1)
+                    .put(ClassLoader.getSystemResourceAsStream(TEST_HEAVY_HANG));
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(),
+                    response.getStatus());
+    }
+
+    @Test
     public void testTaskTimeoutHeader() throws Exception {
 
         startProcess(new String[]{"-config", getConfig(
@@ -111,7 +126,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         String serverId = getServerId();
         Response response = null;
         try {
-            response = WebClient.create(endPoint + META_PATH)
+            response = WebClient.create(endPoint + RMETA_PATH)
                     .accept("application/json")
                     .header(TimeoutConfig.X_TIKA_TIMEOUT_MILLIS, 100)
                     .put(ClassLoader.getSystemResourceAsStream(TEST_HEAVY_HANG));
@@ -136,7 +151,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         awaitServerStartup();
         Response response = null;
         try {
-            response = WebClient.create(endPoint + META_PATH).accept("application/json")
+            response = WebClient.create(endPoint + RMETA_PATH).accept("application/json")
                     .put(ClassLoader.getSystemResourceAsStream(TEST_OOM));
         } catch (Exception e) {
             //oom may or may not cause an exception depending
@@ -174,7 +189,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         awaitServerStartup();
         Response response = null;
         try {
-            response = WebClient.create(endPoint + META_PATH).accept("application/json")
+            response = WebClient.create(endPoint + RMETA_PATH).accept("application/json")
                     .put(ClassLoader.getSystemResourceAsStream(TEST_SYSTEM_EXIT));
         } catch (Exception e) {
             //sys exit causes catchable problems for the client
@@ -193,7 +208,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         awaitServerStartup();
         Response response = null;
         try {
-            response = WebClient.create(endPoint + META_PATH).accept("application/json")
+            response = WebClient.create(endPoint + RMETA_PATH).accept("application/json")
                     .put(ClassLoader.getSystemResourceAsStream(TEST_HEAVY_HANG_SHORT));
         } catch (Exception e) {
             //potential exception depending on timing
@@ -210,7 +225,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         awaitServerStartup();
         Response response = null;
         try {
-            response = WebClient.create(endPoint + META_PATH).accept("application/json")
+            response = WebClient.create(endPoint + RMETA_PATH).accept("application/json")
                     .put(ClassLoader.getSystemResourceAsStream(TEST_HEAVY_HANG));
         } catch (Exception e) {
             //catchable exception when server shuts down.
@@ -252,7 +267,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
                 new String[]{"-config", getConfig("tika-config-server-timeout-10000.xml")});
         awaitServerStartup();
 
-        Response response = WebClient.create(endPoint + META_PATH).accept("application/json")
+        Response response = WebClient.create(endPoint + RMETA_PATH).accept("application/json")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_STDOUT_STDERR));
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
@@ -270,7 +285,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
                 new String[]{"-config", getConfig("tika-config-server-timeout-10000.xml")});
         awaitServerStartup();
 
-        Response response = WebClient.create(endPoint + META_PATH).accept("application/json")
+        Response response = WebClient.create(endPoint + RMETA_PATH).accept("application/json")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_STATIC_STDOUT_STDERR));
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
@@ -296,7 +311,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         serverThread.start();
         awaitServerStartup();
 
-        Response response = WebClient.create(endPoint + META_PATH).accept("application/json")
+        Response response = WebClient.create(endPoint + RMETA_PATH).accept("application/json")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_STDOUT_STDERR));
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
@@ -336,7 +351,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
                 } else if (r.nextFloat() < 0.02) {
                     file = TEST_HEAVY_HANG;
                 }
-                response = WebClient.create(endPoint + META_PATH).accept("application/json")
+                response = WebClient.create(endPoint + RMETA_PATH).accept("application/json")
                         .put(ClassLoader.getSystemResourceAsStream(file));
             } catch (Exception e) {
                 ex = true;
@@ -368,7 +383,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
             Response response = null;
 
             try {
-                response = WebClient.create(endPoint + META_PATH).accept("application/json")
+                response = WebClient.create(endPoint + RMETA_PATH).accept("application/json")
                         .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
             } catch (ProcessingException e) {
                 continue;

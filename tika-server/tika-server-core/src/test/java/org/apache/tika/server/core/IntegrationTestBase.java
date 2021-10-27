@@ -50,7 +50,7 @@ public class IntegrationTestBase extends TikaTest {
     static final String TEST_HEAVY_HANG_SHORT = "test-documents/mock/heavy_hang_100.xml";
     static final String TEST_STDOUT_STDERR = "test-documents/mock/testStdOutErr.xml";
     static final String TEST_STATIC_STDOUT_STDERR = "test-documents/mock/testStaticStdOutErr.xml";
-    static final String META_PATH = "/rmeta";
+    static final String RMETA_PATH = "/rmeta";
     static final String STATUS_PATH = "/status";
 
     static final long MAX_WAIT_MS = 60000;
