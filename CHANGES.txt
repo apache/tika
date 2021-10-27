@@ -1,5 +1,8 @@
 Release 2.1.1 - ???
 
+   * Fix race condition when starting multiple forked
+     servers on multiple ports (TIKA-3586).
+
    * Add timeout per task to be configured via headers
      for tika-server's legacy endpoints /tika and /rmeta.
      Note that this timeout greater than taskTimeoutMillis (TIKA-3582).
