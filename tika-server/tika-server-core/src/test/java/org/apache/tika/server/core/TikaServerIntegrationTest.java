@@ -35,7 +35,6 @@ import javax.ws.rs.core.Response;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.cxf.helpers.IOUtils;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
