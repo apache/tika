@@ -73,8 +73,8 @@ public class TikaServerConfig extends ConfigBase {
                     " your emitter endpoints.  See CVE-2015-3271.\n" +
                     "Please make sure you know what you are doing.";
     private static final List<String> ONLY_IN_FORK_MODE = Arrays.asList(
-            new String[]{"taskTimeoutMillis", "taskPulseMillis", "pingTimeoutMillis",
-                    "pingPulseMillis", "maxFiles", "javaHome", "maxRestarts", "numRestarts",
+            new String[]{"taskTimeoutMillis", "taskPulseMillis",
+                    "maxFiles", "javaPath", "maxRestarts", "numRestarts",
                     "forkedStatusFile", "maxForkedStartupMillis", "tmpFilePrefix"});
 
         /*
@@ -100,7 +100,8 @@ public class TikaServerConfig extends ConfigBase {
     private String cors = "";
     private boolean returnStackTrace = false;
     private boolean noFork = false;
-    private String tempFilePrefix = "apache-tika-server-forked-tmp-"; //can be set for debugging
+    //TODO: make parameterizable for debugging
+    private String tempFilePrefix = "apache-tika-server-forked-tmp-";
     private Set<String> supportedFetchers = new HashSet<>();
     private Set<String> supportedEmitters = new HashSet<>();
     private List<String> forkedJvmArgs = new ArrayList<>();
@@ -109,6 +110,7 @@ public class TikaServerConfig extends ConfigBase {
     private String host = DEFAULT_HOST;
     private int digestMarkLimit = DEFAULT_DIGEST_MARK_LIMIT;
     private String digest = "";
+    private String javaPath = "java";
     //debug or info only
     private String logLevel = "";
     private Path configPath;
@@ -259,7 +261,7 @@ public class TikaServerConfig extends ConfigBase {
         return noFork;
     }
 
-    private void setNoFork(boolean noFork) {
+    public void setNoFork(boolean noFork) {
         this.noFork = noFork;
     }
 
@@ -360,7 +362,11 @@ public class TikaServerConfig extends ConfigBase {
      * @return
      */
     public String getJavaPath() {
-        return "java";
+        return javaPath;
+    }
+
+    public void setJavaPath(String javaPath) {
+        this.javaPath = javaPath;
     }
 
     public List<String> getForkedJvmArgs() {
@@ -514,7 +520,7 @@ public class TikaServerConfig extends ConfigBase {
         return idBase;
     }
 
-    private void setId(String id) {
+    public void setId(String id) {
         this.idBase = id;
     }
 

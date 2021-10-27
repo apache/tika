@@ -27,10 +27,12 @@ import java.util.Set;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.TikaConfigTest;
+import org.apache.tika.utils.ProcessUtils;
 
 public class TikaServerConfigTest {
 
@@ -71,5 +73,29 @@ public class TikaServerConfigTest {
         assertEquals(1, config.getSupportedEmitters().size());
         assertTrue(config.getSupportedFetchers().contains("fsf"));
         assertTrue(config.getSupportedEmitters().contains("fse"));
+    }
+
+    @Test
+    public void testPorts() throws Exception {
+        CommandLineParser parser = new DefaultParser();
+        Path path = Paths.get(TikaConfigTest.class.getResource(
+                "/configs/tika-config-server.xml").toURI());
+        CommandLine commandLine =
+                parser.parse(
+                        new Options()
+                                .addOption(Option.builder("p").longOpt("port").hasArg().build())
+                                .addOption(Option.builder("c").longOpt("config").hasArg().build()
+                                ),
+                        new String[]{
+                                "-p", "9994-9999",
+                                "-c",
+                                ProcessUtils.escapeCommandLine(path.toAbsolutePath().toString())
+                        });
+        TikaServerConfig config = TikaServerConfig
+                .load(commandLine);
+        int[] ports = config.getPorts();
+        assertEquals(6, ports.length);
+        assertEquals(9994, ports[0]);
+        assertEquals(9999, ports[5]);
     }
 }
