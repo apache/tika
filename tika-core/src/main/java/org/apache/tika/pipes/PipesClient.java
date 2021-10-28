@@ -97,10 +97,15 @@ public class PipesClient implements Closeable {
     }
 
     public PipesResult process(FetchEmitTuple t) throws IOException, InterruptedException {
-
-        if (!ping() || (pipesConfig.getMaxFilesProcessedPerProcess() > 0 &&
-                filesProcessed >= pipesConfig.getMaxFilesProcessedPerProcess())) {
+        boolean restart = false;
+        if (!ping()) {
+            restart = true;
+        } else if (pipesConfig.getMaxFilesProcessedPerProcess() > 0 &&
+                filesProcessed >= pipesConfig.getMaxFilesProcessedPerProcess()) {
             LOG.info("restarting server after hitting max files: " + filesProcessed);
+            restart = true;
+        }
+        if (restart) {
             boolean successfulRestart = false;
             while (!successfulRestart) {
                 try {
