@@ -1,5 +1,10 @@
 Release 2.1.1 - ???
 
+   * Fix default logging in tika-app in batch mode (TIKA-3589).
+
+   * Fix bug that prevented specifingy a config with the long
+     --config= option in tika-app in batch mode (TIKA-3589).
+
    * Fix thread starvation after numerous restarts in
      PipesClient (TIKA-3588).
 
