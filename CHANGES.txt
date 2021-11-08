@@ -1,5 +1,8 @@
 Release 2.1.1 - ???
 
+   * Fix thread starvation after numerous restarts in
+     PipesClient (TIKA-3588).
+
    * Fix race condition when starting multiple forked
      servers on multiple ports (TIKA-3586).
 
