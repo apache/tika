@@ -48,11 +48,6 @@ import org.apache.tika.sax.BodyContentHandler;
 public class WordParserTest extends TikaTest {
 
     @Test
-    public void testOneOff() throws Exception {
-        debug(getRecursiveMetadata("testWORD_various.doc"));
-    }
-
-    @Test
     public void testWordParser() throws Exception {
         try (InputStream input = getResourceAsStream("/test-documents/testWORD.doc")) {
             ContentHandler handler = new BodyContentHandler();
