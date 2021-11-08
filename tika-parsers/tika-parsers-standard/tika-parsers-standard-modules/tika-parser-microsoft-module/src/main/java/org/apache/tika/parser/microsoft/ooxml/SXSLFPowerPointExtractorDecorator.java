@@ -33,7 +33,7 @@ import org.apache.poi.openxml4j.opc.PackageRelationship;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.openxml4j.opc.PackagingURIHelper;
 import org.apache.poi.openxml4j.opc.TargetMode;
-import org.apache.poi.xslf.extractor.XSLFPowerPointExtractor;
+import org.apache.poi.xslf.extractor.XSLFExtractor;
 import org.apache.poi.xslf.usermodel.XSLFRelation;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -96,7 +96,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
     }
 
     /**
-     * @see XSLFPowerPointExtractor#getText()
+     * @see XSLFExtractor#getText()
      */
     protected void buildXHTML(XHTMLContentHandler xhtml) throws SAXException, IOException {
 

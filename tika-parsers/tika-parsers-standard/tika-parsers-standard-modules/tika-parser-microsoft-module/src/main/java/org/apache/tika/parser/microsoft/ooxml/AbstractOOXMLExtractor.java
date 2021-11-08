@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.poi.ooxml.POIXMLDocument;
-import org.apache.poi.ooxml.extractor.ExtractorFactory;
 import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
@@ -94,9 +93,6 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
     private static final String TYPE_OLE_OBJECT =
             "application/vnd.openxmlformats-officedocument.oleObject";
 
-    static {
-        ExtractorFactory.setAllThreadsPreferEventExtractors(true);
-    }
 
     private final EmbeddedDocumentExtractor embeddedExtractor;
     private final ParseContext context;
