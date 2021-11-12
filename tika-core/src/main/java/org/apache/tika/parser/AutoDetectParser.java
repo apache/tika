@@ -18,6 +18,7 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -40,6 +41,52 @@ import org.apache.tika.sax.SecureContentHandler;
 public class AutoDetectParser extends CompositeParser {
 
     /**
+     * This config object can be used to tune how conservative we want to be
+     * when parsing data that is extremely compressible and resembles a ZIP
+     * bomb. Null values will be ignored and will not effect the default values
+     * in SecureContentHandler.
+     */
+    public static class SecureContentHandlerConfig implements Serializable {
+        /**
+         * Creates a SecureContentHandlerConfig using the passed in parameters.
+         * @param maxOutputThreshold character output threshold.
+         * @param maxCompressionRatio max compression ratio allowed.
+         * @param maxDepth maximum XML element nesting level.
+         * @param maxPackageEntryDepth maximum package entry nesting level.
+         */
+        public SecureContentHandlerConfig(
+            Long maxOutputThreshold,
+            Long maxCompressionRatio,
+            Integer maxDepth,
+            Integer maxPackageEntryDepth) {
+            this.maxOutputThreshold = maxOutputThreshold;
+            this.maxCompressionRatio = maxCompressionRatio;
+            this.maxDepth = maxDepth;
+            this.maxPackageEntryDepth = maxPackageEntryDepth;
+        }
+
+        /**
+         * Desired output threshold in characters.
+         */
+        public final Long maxOutputThreshold;
+
+        /**
+         * Desired maximum compression ratio.
+         */
+        public final Long maxCompressionRatio;
+
+        /**
+         * Desired maximum XML nesting level.
+         */
+        public final Integer maxDepth;
+
+        /**
+         * Desired maximum package entry nesting level.
+         */
+        public final Integer maxPackageEntryDepth;
+    }
+
+    /**
      * Serial version UID
      */
     private static final long serialVersionUID = 6110455808615143122L;
@@ -50,6 +97,11 @@ public class AutoDetectParser extends CompositeParser {
      * of a document.
      */
     private Detector detector; // always set in the constructor
+
+    /**
+     * Configuration used when initializing a SecureContentHandler.
+     */
+    private SecureContentHandlerConfig secureContentHandlerConfig;
 
     /**
      * Creates an auto-detecting parser instance using the default Tika
@@ -108,6 +160,18 @@ public class AutoDetectParser extends CompositeParser {
         this.detector = detector;
     }
 
+    /**
+     * Sets the configuration that will be used to create SecureContentHandlers
+     * that will be used for parsing.
+     *
+     * @param secureContentHandlerConfig type SecureContentHandlerConfig
+     * @since Apache Tika 2.1.1
+     */
+    public void setSecureContentHandlerConfig(
+        SecureContentHandlerConfig secureContentHandlerConfig) {
+        this.secureContentHandlerConfig = secureContentHandlerConfig;
+    }
+
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         TemporaryResources tmp = new TemporaryResources();
@@ -132,7 +196,8 @@ public class AutoDetectParser extends CompositeParser {
             }
             // TIKA-216: Zip bomb prevention
             SecureContentHandler sch =
-                    handler != null ? new SecureContentHandler(handler, tis) : null;
+                    handler != null ?
+                        createSecureContentHandler(handler, tis, secureContentHandlerConfig) : null;
 
             //pass self to handle embedded documents if
             //the caller hasn't specified one.
@@ -163,6 +228,33 @@ public class AutoDetectParser extends CompositeParser {
         ParseContext context = new ParseContext();
         context.set(Parser.class, this);
         parse(stream, handler, metadata, context);
+    }
+
+    private SecureContentHandler createSecureContentHandler(
+        ContentHandler handler,
+        TikaInputStream tis,
+        SecureContentHandlerConfig config) {
+        SecureContentHandler sch = new SecureContentHandler(handler, tis);
+        if (config == null) {
+            return sch;
+        }
+
+        if (config.maxOutputThreshold != null) {
+            sch.setMaximumCompressionRatio(config.maxOutputThreshold);
+        }
+
+        if (config.maxCompressionRatio != null) {
+            sch.setMaximumCompressionRatio(config.maxCompressionRatio);
+        }
+
+        if (config.maxDepth != null) {
+            sch.setMaximumCompressionRatio(config.maxDepth);
+        }
+
+        if (config.maxPackageEntryDepth != null) {
+            sch.setMaximumCompressionRatio(config.maxPackageEntryDepth);
+        }
+        return sch;
     }
 
 }
