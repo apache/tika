@@ -160,6 +160,7 @@
               bcmail-jdk15on|
               bcprov-jdk15on|
               bcpkix-jdk15on|
+              bcutil-jdk15on|
               poi|poi-scratchpad|
               poi-ooxml|
               poi-ooxml-schemas|
