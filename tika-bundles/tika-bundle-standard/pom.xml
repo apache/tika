@@ -219,7 +219,7 @@
               org.apache.tika.detect,
               org.apache.tika.mime,
               org.apache.tika.fork,
-              org.apache.commons.io,
+              org.apache.commons.io.*;version="[2,3)",
               android.util;resolution:=optional,
               com.adobe.xmp;resolution:=optional,
               com.adobe.xmp.impl;resolution:=optional,
