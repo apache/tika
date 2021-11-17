@@ -47,43 +47,42 @@ public class AutoDetectParser extends CompositeParser {
      * in SecureContentHandler.
      */
     public static class SecureContentHandlerConfig implements Serializable {
-        /**
-         * Creates a SecureContentHandlerConfig using the passed in parameters.
-         * @param maxOutputThreshold character output threshold.
-         * @param maxCompressionRatio max compression ratio allowed.
-         * @param maxDepth maximum XML element nesting level.
-         * @param maxPackageEntryDepth maximum package entry nesting level.
-         */
-        public SecureContentHandlerConfig(
-            Long maxOutputThreshold,
-            Long maxCompressionRatio,
-            Integer maxDepth,
-            Integer maxPackageEntryDepth) {
-            this.maxOutputThreshold = maxOutputThreshold;
-            this.maxCompressionRatio = maxCompressionRatio;
-            this.maxDepth = maxDepth;
-            this.maxPackageEntryDepth = maxPackageEntryDepth;
-        }
 
         /**
          * Desired output threshold in characters.
          */
-        public final Long maxOutputThreshold;
+        public final Long outputThreshold;
 
         /**
          * Desired maximum compression ratio.
          */
-        public final Long maxCompressionRatio;
+        public final Long maximumCompressionRatio;
 
         /**
          * Desired maximum XML nesting level.
          */
-        public final Integer maxDepth;
+        public final Integer maximumDepth;
 
         /**
          * Desired maximum package entry nesting level.
          */
-        public final Integer maxPackageEntryDepth;
+        public final Integer maximumPackageEntryDepth;
+
+        /**
+         * Creates a SecureContentHandlerConfig using the passed in parameters.
+         * @param outputThreshold character output threshold.
+         * @param maximumCompressionRatio max compression ratio allowed.
+         * @param maximumDepth maximum XML element nesting level.
+         * @param maximumPackageEntryDepth maximum package entry nesting level.
+         */
+        public SecureContentHandlerConfig(Long outputThreshold, Long maximumCompressionRatio,
+                                          Integer maximumDepth,
+                                          Integer maximumPackageEntryDepth) {
+            this.outputThreshold = outputThreshold;
+            this.maximumCompressionRatio = maximumCompressionRatio;
+            this.maximumDepth = maximumDepth;
+            this.maximumPackageEntryDepth = maximumPackageEntryDepth;
+        }
     }
 
     /**
@@ -167,8 +166,7 @@ public class AutoDetectParser extends CompositeParser {
      * @param secureContentHandlerConfig type SecureContentHandlerConfig
      * @since Apache Tika 2.1.1
      */
-    public void setSecureContentHandlerConfig(
-        SecureContentHandlerConfig secureContentHandlerConfig) {
+    public void setSecureContentHandlerConfig(SecureContentHandlerConfig secureContentHandlerConfig) {
         this.secureContentHandlerConfig = secureContentHandlerConfig;
     }
 
@@ -230,29 +228,27 @@ public class AutoDetectParser extends CompositeParser {
         parse(stream, handler, metadata, context);
     }
 
-    private SecureContentHandler createSecureContentHandler(
-        ContentHandler handler,
-        TikaInputStream tis,
-        SecureContentHandlerConfig config) {
+    private SecureContentHandler createSecureContentHandler(ContentHandler handler, TikaInputStream tis,
+                                                            SecureContentHandlerConfig config) {
         SecureContentHandler sch = new SecureContentHandler(handler, tis);
         if (config == null) {
             return sch;
         }
 
-        if (config.maxOutputThreshold != null) {
-            sch.setMaximumCompressionRatio(config.maxOutputThreshold);
+        if (config.outputThreshold != null) {
+            sch.setOutputThreshold(config.outputThreshold);
         }
 
-        if (config.maxCompressionRatio != null) {
-            sch.setMaximumCompressionRatio(config.maxCompressionRatio);
+        if (config.maximumCompressionRatio != null) {
+            sch.setMaximumCompressionRatio(config.maximumCompressionRatio);
         }
 
-        if (config.maxDepth != null) {
-            sch.setMaximumCompressionRatio(config.maxDepth);
+        if (config.maximumDepth != null) {
+            sch.setMaximumDepth(config.maximumDepth);
         }
 
-        if (config.maxPackageEntryDepth != null) {
-            sch.setMaximumCompressionRatio(config.maxPackageEntryDepth);
+        if (config.maximumPackageEntryDepth != null) {
+            sch.setMaximumPackageEntryDepth(config.maximumPackageEntryDepth);
         }
         return sch;
     }
