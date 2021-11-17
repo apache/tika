@@ -171,6 +171,7 @@ public class PipesServer implements Runnable {
         }
     }
 
+    @Override
     public void run() {
         try {
             while (true) {
@@ -188,11 +189,12 @@ public class PipesServer implements Runnable {
                 Thread.sleep(checkForTimeoutMs);
             }
         } catch (InterruptedException e) {
-            //swallow
+            LOG.debug("interrupted");
         }
     }
 
     public void processRequests() {
+        LOG.debug("processing requests {}");
         //initialize
         try {
             long start = System.currentTimeMillis();
@@ -200,6 +202,7 @@ public class PipesServer implements Runnable {
             if (LOG.isTraceEnabled()) {
                 LOG.trace("timer -- initialize parser: {} ms", System.currentTimeMillis() - start);
             }
+            LOG.debug("pipes server initialized");
         } catch (Throwable t) {
             t.printStackTrace();
             LOG.error("couldn't initialize parser", t);
@@ -218,6 +221,7 @@ public class PipesServer implements Runnable {
             while (true) {
                 int request = input.read();
                 if (request == -1) {
+                    LOG.warn("received -1 from client; shutting down");
                     exit(1);
                 } else if (request == STATUS.PING.getByte()) {
                     if (LOG.isTraceEnabled()) {

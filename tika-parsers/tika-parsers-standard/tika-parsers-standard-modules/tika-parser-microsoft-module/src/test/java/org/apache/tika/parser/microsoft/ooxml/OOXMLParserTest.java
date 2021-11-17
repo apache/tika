@@ -59,9 +59,9 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
-import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -589,7 +589,6 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("Subject is here", content);
         assertContains("Subject is here",
                 Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
-        assertEquals("Subject is here", metadata.get(OfficeOpenXMLCore.SUBJECT));
 
 
         assertContains("Suddenly some Japanese text:", content);
@@ -658,7 +657,7 @@ public class OOXMLParserTest extends TikaTest {
         assertEquals("Keyword1 Keyword2", metadata.get(Office.KEYWORDS));
 
         assertContains("Subject is here", xml);
-        assertEquals("Subject is here", metadata.get(OfficeOpenXMLCore.SUBJECT));
+        assertEquals("Subject is here", metadata.get(DublinCore.SUBJECT));
 
         assertContains("Keyword1 Keyword2",
                 Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
@@ -805,7 +804,7 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("My Keyword", Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
 
         assertEquals("Normal.dotm", metadata.get(OfficeOpenXMLExtended.TEMPLATE));
-        assertEquals("My subject", metadata.get(OfficeOpenXMLCore.SUBJECT));
+        assertEquals("My subject", metadata.get(DublinCore.SUBJECT));
         assertEquals("EDF-DIT", metadata.get(TikaCoreProperties.PUBLISHER));
         assertEquals("true", metadata.get("custom:myCustomBoolean"));
         assertEquals("3", metadata.get("custom:myCustomNumber"));

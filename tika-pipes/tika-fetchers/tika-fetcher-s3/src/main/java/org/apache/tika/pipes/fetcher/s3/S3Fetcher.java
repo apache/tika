@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import com.amazonaws.AmazonClientException;
+import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
@@ -44,6 +45,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.RangeFetcher;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * Fetches files from s3. Example string: s3://my_bucket/path/to/my_file.pdf
@@ -57,18 +59,21 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
     private String region;
     private String bucket;
     private String profile;
+    private String prefix;
     private String credentialsProvider;
     private boolean extractUserMetadata = true;
+    private int maxConnections = ClientConfiguration.DEFAULT_MAX_CONNECTIONS;
     private AmazonS3 s3Client;
     private boolean spoolToTemp = true;
 
     @Override
     public InputStream fetch(String fetchKey, Metadata metadata) throws TikaException, IOException {
 
-        LOGGER.debug("about to fetch fetchkey={} from bucket ({})", fetchKey, bucket);
+        String theFetchKey = StringUtils.isBlank(prefix) ? fetchKey : prefix + fetchKey;
+        LOGGER.debug("about to fetch fetchkey={} from bucket ({})", theFetchKey, bucket);
 
         try {
-            S3Object s3Object = s3Client.getObject(new GetObjectRequest(bucket, fetchKey));
+            S3Object s3Object = s3Client.getObject(new GetObjectRequest(bucket, theFetchKey));
             if (extractUserMetadata) {
                 for (Map.Entry<String, String> e : s3Object.getObjectMetadata().getUserMetadata()
                         .entrySet()) {
@@ -93,13 +98,14 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
     @Override
     public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata)
             throws TikaException, IOException {
+        String theFetchKey = StringUtils.isBlank(prefix) ? fetchKey : prefix + fetchKey;
         //TODO -- figure out how to integrate this
-        LOGGER.debug("about to fetch fetchkey={} (start={} end={}) from bucket ({})", fetchKey,
-                startRange, endRange, bucket);
+        LOGGER.debug("about to fetch fetchkey={} (start={} end={}) from bucket ({})",
+                theFetchKey, startRange, endRange, bucket);
 
         try {
             S3Object s3Object = s3Client.getObject(
-                    new GetObjectRequest(bucket, fetchKey).withRange(startRange, endRange));
+                    new GetObjectRequest(bucket, theFetchKey).withRange(startRange, endRange));
 
             if (extractUserMetadata) {
                 for (Map.Entry<String, String> e : s3Object.getObjectMetadata().getUserMetadata()
@@ -143,6 +149,19 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
     }
 
     /**
+     * prefix to prepend to the fetch key before fetching.
+     * This will automatically add a '/' at the end.
+     * @param prefix
+     */
+    @Field
+    public void setPrefix(String prefix) {
+        //guarantee that the prefix ends with /
+        if (! prefix.endsWith("/")) {
+            prefix += "/";
+        }
+        this.prefix = prefix;
+    }
+    /**
      * Whether or not to extract user metadata from the S3Object
      *
      * @param extractUserMetadata
@@ -150,6 +169,11 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
     @Field
     public void setExtractUserMetadata(boolean extractUserMetadata) {
         this.extractUserMetadata = extractUserMetadata;
+    }
+
+    @Field
+    public void setMaxConnections(int maxConnections) {
+        this.maxConnections = maxConnections;
     }
 
     @Field
@@ -180,9 +204,12 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
             throw new TikaConfigException("credentialsProvider must be set and " +
                     "must be either 'instance' or 'profile'");
         }
-
+        ClientConfiguration clientConfiguration = new ClientConfiguration()
+                        .withMaxConnections(maxConnections);
         try {
-            s3Client = AmazonS3ClientBuilder.standard().withRegion(region).withCredentials(provider)
+            s3Client = AmazonS3ClientBuilder.standard()
+                    .withClientConfiguration(clientConfiguration)
+                    .withRegion(region).withCredentials(provider)
                     .build();
         } catch (AmazonClientException e) {
             throw new TikaConfigException("can't initialize s3 fetcher", e);

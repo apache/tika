@@ -37,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
@@ -44,6 +45,7 @@ import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * Extractor for Common OLE2 (HPSF) metadata
@@ -66,7 +68,7 @@ public class SummaryExtractor {
     //as a semicolon-delimited list.  We need to split
     //on semicolon to add each value.
     public static void addMulti(Metadata metadata, Property property, String string) {
-        if (string == null) {
+        if (StringUtils.isBlank(string)) {
             return;
         }
         String[] parts = string.split(";");
@@ -77,8 +79,10 @@ public class SummaryExtractor {
         }
         for (String part : parts) {
             if (!seen.contains(part)) {
-                metadata.add(property, part);
-                seen.add(part);
+                if (! StringUtils.isBlank(part)) {
+                    metadata.add(property, part);
+                    seen.add(part);
+                }
             }
         }
     }
@@ -124,7 +128,7 @@ public class SummaryExtractor {
         addMulti(metadata, TikaCoreProperties.CREATOR, summary.getAuthor());
         //make sure these are retrievable specifically
         add(Office.KEYWORDS, summary.getKeywords());
-        add(OfficeOpenXMLCore.SUBJECT, summary.getSubject());
+        add(DublinCore.SUBJECT, summary.getSubject());
 
         set(TikaCoreProperties.MODIFIER, summary.getLastAuthor());
         set(TikaCoreProperties.COMMENTS, summary.getComments());
@@ -208,19 +212,19 @@ public class SummaryExtractor {
     }
 
     private void set(String name, String value) {
-        if (value != null) {
+        if (!StringUtils.isBlank(value)) {
             metadata.set(name, value);
         }
     }
 
     private void set(Property property, String value) {
-        if (value != null) {
+        if (!StringUtils.isBlank(value)) {
             metadata.set(property, value);
         }
     }
 
     private void add(Property property, String value) {
-        if (value != null) {
+        if (!StringUtils.isBlank(value)) {
             metadata.add(property, value);
         }
     }

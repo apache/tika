@@ -188,24 +188,30 @@ public class DefaultZipContainerDetector implements Detector {
      * @return
      */
     private MediaType detectZipFormatOnFile(TikaInputStream tis) {
+        ZipFile zip = null;
         try {
-            ZipFile zip = new ZipFile(tis.getFile()); // TODO: hasFile()?
+            zip = new ZipFile(tis.getFile()); // TODO: hasFile()?
 
-            try {
-                for (ZipContainerDetector zipDetector : zipDetectors) {
-                    MediaType type = zipDetector.detect(zip, tis);
-                    if (type != null) {
-                        return type;
+            for (ZipContainerDetector zipDetector : zipDetectors) {
+                MediaType type = zipDetector.detect(zip, tis);
+                if (type != null) {
+                    //e.g. if OPCPackage has already been set
+                    //don't overwrite it with the zip
+                    if (tis.getOpenContainer() == null) {
+                        tis.setOpenContainer(zip);
+                    } else {
+                        tis.addCloseableResource(zip);
                     }
+                    return type;
                 }
-            } finally {
-                tis.setOpenContainer(zip);
             }
-
         } catch (IOException e) {
-            // ignore
+            //do nothing
         }
         // Fallback: it's still a zip file, we just don't know what kind of one
+        if (zip != null) {
+            IOUtils.closeQuietly(zip);
+        }
         return MediaType.APPLICATION_ZIP;
     }
 

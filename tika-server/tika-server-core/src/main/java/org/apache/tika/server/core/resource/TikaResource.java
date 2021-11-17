@@ -63,6 +63,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
@@ -93,38 +94,38 @@ public class TikaResource {
     private static final String META_PREFIX = "meta_";
     private static final Logger LOG = LoggerFactory.getLogger(TikaResource.class);
     private static Pattern ALLOWABLE_HEADER_CHARS = Pattern.compile("(?i)^[-/_+\\.A-Z0-9 ]+$");
-    private static TikaConfig tikaConfig;
-    private static TikaServerConfig tikaServerConfig;
-    private static DigestingParser.Digester digester = null;
-    private static InputStreamFactory inputStreamFactory = null;
+    private static TikaConfig TIKA_CONFIG;
+    private static TikaServerConfig TIKA_SERVER_CONFIG;
+    private static DigestingParser.Digester DIGESTER = null;
+    private static InputStreamFactory INPUTSTREAM_FACTORY = null;
     private static ServerStatus SERVER_STATUS = null;
 
     private static ParseContextConfig PARSE_CONTEXT_CONFIG = new CompositeParseContextConfig();
 
 
     public static void init(TikaConfig config, TikaServerConfig tikaServerConfg,
-                            DigestingParser.Digester digestr,
-                            InputStreamFactory iSF, ServerStatus serverStatus) {
-        tikaConfig = config;
-        tikaServerConfig = tikaServerConfg;
-        digester = digestr;
-        inputStreamFactory = iSF;
+                            DigestingParser.Digester digester,
+                            InputStreamFactory inputStreamFactory, ServerStatus serverStatus) {
+        TIKA_CONFIG = config;
+        TIKA_SERVER_CONFIG = tikaServerConfg;
+        DIGESTER = digester;
+        INPUTSTREAM_FACTORY = inputStreamFactory;
         SERVER_STATUS = serverStatus;
     }
 
 
     @SuppressWarnings("serial")
     public static Parser createParser() {
-        final Parser parser = new AutoDetectParser(tikaConfig);
+        final Parser parser = new AutoDetectParser(TIKA_CONFIG);
 
-        if (digester != null) {
-            return new DigestingParser(parser, digester);
+        if (DIGESTER != null) {
+            return new DigestingParser(parser, DIGESTER);
         }
         return parser;
     }
 
     public static TikaConfig getConfig() {
-        return tikaConfig;
+        return TIKA_CONFIG;
     }
 
     public static String detectFilename(MultivaluedMap<String, String> httpHeaders) {
@@ -154,7 +155,7 @@ public class TikaResource {
     public static InputStream getInputStream(InputStream is, Metadata metadata,
                                              HttpHeaders headers) {
         try {
-            return inputStreamFactory.getInputStream(is, metadata, headers);
+            return INPUTSTREAM_FACTORY.getInputStream(is, metadata, headers);
         } catch (IOException e) {
             throw new TikaServerParseException(e);
         }
@@ -339,7 +340,9 @@ public class TikaResource {
 
         checkIsOperating();
         String fileName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
-        long taskId = SERVER_STATUS.start(ServerStatus.TASK.PARSE, fileName);
+        long timeoutMillis = getTaskTimeout(parseContext);
+
+        long taskId = SERVER_STATUS.start(ServerStatus.TASK.PARSE, fileName, timeoutMillis);
         try {
             parser.parse(inputStream, handler, metadata, parseContext);
         } catch (SAXException e) {
@@ -360,6 +363,29 @@ public class TikaResource {
             SERVER_STATUS.complete(taskId);
             inputStream.close();
         }
+    }
+
+    protected static long getTaskTimeout(ParseContext parseContext) {
+
+        TikaTaskTimeout tikaTaskTimeout = parseContext.get(TikaTaskTimeout.class);
+        long timeoutMillis = TIKA_SERVER_CONFIG.getTaskTimeoutMillis();
+
+        if (tikaTaskTimeout != null) {
+            if (tikaTaskTimeout.getTimeoutMillis() > TIKA_SERVER_CONFIG.getTaskTimeoutMillis()) {
+                throw new IllegalArgumentException("Can't request a timeout ( " +
+                        tikaTaskTimeout.getTimeoutMillis() +
+                        "ms) greater than the taskTimeoutMillis set in the server config (" +
+                        TIKA_SERVER_CONFIG.getTaskTimeoutMillis() + "ms)");
+            }
+            timeoutMillis = tikaTaskTimeout.getTimeoutMillis();
+            if (timeoutMillis < TIKA_SERVER_CONFIG.getMinimumTimeoutMillis()) {
+                throw new WebApplicationException(
+                        new IllegalArgumentException("taskTimeoutMillis must be > " +
+                        "minimumTimeoutMillis, currently set to (" + TIKA_SERVER_CONFIG.getMinimumTimeoutMillis() +
+                        "ms)"), Response.Status.BAD_REQUEST);
+            }
+        }
+        return timeoutMillis;
     }
 
     public static void checkIsOperating() {
@@ -576,7 +602,7 @@ public class TikaResource {
                 metadata.set(TikaCoreProperties.WRITE_LIMIT_REACHED, "true");
                 writeLimitReached = true;
             }
-            if (tikaServerConfig.isReturnStackTrace()) {
+            if (TIKA_SERVER_CONFIG.isReturnStackTrace()) {
                 if (cause != null) {
                     metadata.add(TikaCoreProperties.CONTAINER_EXCEPTION,
                             ExceptionUtils.getStackTrace(cause));
@@ -588,7 +614,7 @@ public class TikaResource {
                 throw e;
             }
         } catch (OutOfMemoryError e) {
-            if (tikaServerConfig.isReturnStackTrace()) {
+            if (TIKA_SERVER_CONFIG.isReturnStackTrace()) {
                 metadata.add(TikaCoreProperties.CONTAINER_EXCEPTION,
                         ExceptionUtils.getStackTrace(e));
             } else {

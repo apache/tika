@@ -30,6 +30,7 @@ import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
@@ -52,13 +53,15 @@ public class TikaCLIBatchIntegrationTest {
     private OutputStream out = null;
     private OutputStream err = null;
     private ByteArrayOutputStream outBuffer = null;
+    private ByteArrayOutputStream errBuffer = null;
+    private Path configFile = null;
 
     @Before
     public void setup() throws Exception {
         tempOutputDir = Files.createTempDirectory("tika-cli-test-batch-");
         outBuffer = new ByteArrayOutputStream();
         PrintStream outWriter = new PrintStream(outBuffer, true, UTF_8.name());
-        ByteArrayOutputStream errBuffer = new ByteArrayOutputStream();
+        errBuffer = new ByteArrayOutputStream();
         PrintStream errWriter = new PrintStream(errBuffer, true, UTF_8.name());
         out = System.out;
         err = System.err;
@@ -67,7 +70,10 @@ public class TikaCLIBatchIntegrationTest {
         testInputDirForCommandLine = testInputDir.toAbsolutePath().toString();
         tempOutputDirForCommandLine = tempOutputDir.toAbsolutePath().toString();
         customBatchLogging = tempOutputDir.resolve(propsFileName);
+        configFile = Files.createTempFile("tika-app-batch-", ".xml");
         Files.copy(this.getClass().getResourceAsStream("/" + propsFileName), customBatchLogging);
+        Files.copy(this.getClass().getResourceAsStream("/test-data/tika-config1.xml"),
+                configFile, StandardCopyOption.REPLACE_EXISTING);
     }
 
     @After
@@ -76,17 +82,27 @@ public class TikaCLIBatchIntegrationTest {
         System.setErr(new PrintStream(err, true, UTF_8.name()));
         //TODO: refactor to use our deleteDirectory with straight path
         FileUtils.deleteDirectory(tempOutputDir.toFile());
+        Files.delete(configFile);
     }
 
     @Test
     public void testSimplestBatchIntegration() throws Exception {
         String[] params = {testInputDirForCommandLine, tempOutputDirForCommandLine};
         TikaCLI.main(params);
-
         assertFileExists(tempOutputDir.resolve("bad_xml.xml.xml"));
         assertFileExists(tempOutputDir.resolve("coffee.xls.xml"));
     }
 
+    @Test
+    public void testTikaConfig() throws Exception {
+        String[] params = {
+                "-i", testInputDirForCommandLine,
+                "-o", tempOutputDirForCommandLine,
+                "--config="+configFile.toAbsolutePath().toString()};
+        TikaCLI.main(params);
+        assertFileExists(tempOutputDir.resolve("bad_xml.xml.xml"));
+        assertFileExists(tempOutputDir.resolve("coffee.xls.xml"));
+    }
     @Test
     public void testBasicBatchIntegration() throws Exception {
         String[] params = {"-i", testInputDirForCommandLine, "-o", tempOutputDirForCommandLine,

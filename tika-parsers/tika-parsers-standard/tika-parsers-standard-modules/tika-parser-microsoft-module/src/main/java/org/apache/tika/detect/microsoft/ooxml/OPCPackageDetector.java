@@ -236,7 +236,8 @@ public class OPCPackageDetector implements ZipContainerDetector {
     public MediaType detect(ZipFile zipFile, TikaInputStream stream) throws IOException {
         //as of 4.x, POI throws an exception for non-POI OPC file types
         //unless we change POI, we can't rely on POI for non-POI files
-        ZipEntrySource zipEntrySource = new ZipFileZipEntrySource(zipFile);
+        ZipEntrySource zipEntrySource =
+                new CloseShieldZipFileZipEntrySource(zipFile);
 
         // Use POI to open and investigate it for us
         //Unfortunately, POI can throw a RuntimeException...so we
@@ -246,17 +247,17 @@ public class OPCPackageDetector implements ZipContainerDetector {
         try {
             pkg = OPCPackage.open(zipEntrySource);
             type = detectOfficeOpenXML(pkg);
-
         } catch (SecurityException e) {
             closeQuietly(zipEntrySource);
-            closeQuietly(zipFile);
             //TIKA-2571
             throw e;
         } catch (InvalidFormatException | RuntimeException e) {
-            closeQuietly(zipEntrySource);
-            closeQuietly(zipFile);
+            //no need to close zipEntrySource because it
+            //only closes the underlying zipFile, not any other resources
+            //as of this writing.... :'(
             return null;
         }
+        ((CloseShieldZipFileZipEntrySource)zipEntrySource).allowClose();
         //only set the open container if we made it here
         stream.setOpenContainer(pkg);
         return type;
@@ -343,6 +344,25 @@ public class OPCPackageDetector implements ZipContainerDetector {
 
         private int getCount() {
             return cnt;
+        }
+    }
+
+    private static class CloseShieldZipFileZipEntrySource extends ZipFileZipEntrySource {
+        private boolean allowClose = false;
+        public CloseShieldZipFileZipEntrySource(ZipFile zipFile) {
+            super(zipFile);
+        }
+
+        @Override
+        public void close() throws IOException {
+            if (allowClose) {
+                super.close();
+            }
+            //no-op, do not close the underlying zipFile
+        }
+
+        public void allowClose() {
+            allowClose = true;
         }
     }
 }

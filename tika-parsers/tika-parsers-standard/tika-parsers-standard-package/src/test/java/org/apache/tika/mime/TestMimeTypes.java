@@ -432,6 +432,27 @@ public class TestMimeTypes {
     }
 
     @Test
+    public void testJxlDetection() throws Exception {
+        //test file created by: https://github.com/surma/jxl-art/blob/main/LICENSE
+        assertType("image/jxl", "testJXL.jxl");
+        assertTypeByData("image/jxl", "testJXL.jxl");
+        assertTypeByName("image/jxl", "testJXL.jxl");
+
+        //test file contributed by Tyler Thorsted
+        //testJXL_ISOBMFF.jxl
+        assertType("image/jxl", "testJXL_ISOBMFF.jxl");
+        assertTypeByData("image/jxl", "testJXL_ISOBMFF.jxl");
+        assertTypeByName("image/jxl", "testJXL_ISOBMFF.jxl");
+    }
+
+    @Test
+    public void testMARC() throws Exception {
+        assertType("application/marc", "testMARC.mrc");
+        assertTypeByData("application/marc", "testMARC.mrc");
+        assertTypeByName("application/marc", "testMARC.mrc");
+    }
+
+    @Test
     public void testAVIFDetection() throws Exception {
         // The test file is an avif header fragment only, not a complete image.
         assertType("image/avif", "testAVIF.avif");
@@ -623,8 +644,9 @@ public class TestMimeTypes {
         // From name, gets the common parent type
         assertTypeByName("image/vnd.dxf", "x.dxf");
         // With the data, can work out it's the ASCII flavour
-        //TODO lost /r/n need to fix file
-        //assertTypeByData("image/vnd.dxf; format=ascii", "testDXF_ascii.dxf");
+        assertTypeByData("image/vnd.dxf; format=ascii", "testDXF_ascii.dxf");
+        assertTypeByData("image/vnd.dxf; format=ascii", "testDXF_ascii_win_newlines.dxf");
+        assertTypeByData("image/vnd.dxf; format=ascii", "testDXF_ascii_no_header.dxf");
         // TODO Get a sample Binary DXF file and test
     }
 

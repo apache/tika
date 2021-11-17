@@ -32,6 +32,8 @@ import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.server.core.config.TimeoutConfig;
+
 public class ServerStatusWatcher implements Runnable {
 
 
@@ -128,19 +130,19 @@ public class ServerStatusWatcher implements Runnable {
         Instant now = Instant.now();
         for (TaskStatus status : serverStatus.getTasks().values()) {
             long millisElapsed = Duration.between(status.started, now).toMillis();
-            if (millisElapsed > tikaServerConfig.getTaskTimeoutMillis()) {
+            if (millisElapsed > status.timeoutMillis) {
                 serverStatus.setStatus(ServerStatus.STATUS.TIMEOUT);
                 if (status.fileName.isPresent()) {
-                    LOG.error("Timeout task {}, millis elapsed {}, file {}" +
+                    LOG.error("Timeout task {}, millis elapsed {}, timeoutMillis {}, file id {}" +
                                     "consider increasing the allowable time with the " +
-                                    "<taskTimeoutMillis/> parameter", status.task.toString(),
-                            millisElapsed,
-                            status.fileName.get());
+                                    "<taskTimeoutMillis/> parameter or the {} header", status.task.toString(),
+                            millisElapsed, status.timeoutMillis,
+                            status.fileName.get(), TimeoutConfig.X_TIKA_TIMEOUT_MILLIS);
                 } else {
                     LOG.error("Timeout task {}, millis elapsed {}; " +
                                     "consider increasing the allowable time with the " +
-                                    "<taskTimeoutMillis/> parameter", status.task.toString(),
-                            millisElapsed);
+                                    "<taskTimeoutMillis/> parameter or the {} header", status.task.toString(),
+                            millisElapsed, TimeoutConfig.X_TIKA_TIMEOUT_MILLIS);
                 }
             }
         }

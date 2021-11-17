@@ -90,7 +90,7 @@ public interface PDF {
 
     /**
      * If xmp is extracted by, e.g. the XMLProfiler, where did it come from?
-     * The document document catalog or a specific page...or?
+     * The document's document catalog or a specific page...or?
      */
     Property XMP_LOCATION = Property.internalText(PDF_PREFIX + "xmpLocation");
 
@@ -101,4 +101,11 @@ public interface PDF {
 
     Property HAS_MARKED_CONTENT = Property.internalBoolean(PDF_PREFIX + "hasMarkedContent");
 
+    /**
+     * Has a collection element in the root.  If true, this is likely a PDF Portfolio.
+     */
+    Property HAS_COLLECTION = Property.internalBoolean(PDF_PREFIX + "hasCollection");
+
+    Property EMBEDDED_FILE_DESCRIPTION = Property.externalText(PDF_PREFIX +
+            "embeddedFileDescription");
 }

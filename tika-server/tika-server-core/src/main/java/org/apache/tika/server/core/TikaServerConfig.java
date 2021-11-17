@@ -51,7 +51,16 @@ public class TikaServerConfig extends ConfigBase {
      * Number of milliseconds to wait per server task (parse, detect, unpack, translate,
      * etc.) before timing out and shutting down the forked process.
      */
-    public static final long DEFAULT_TASK_TIMEOUT_MILLIS = 120000;
+    public static final long DEFAULT_TASK_TIMEOUT_MILLIS = 300000;
+
+    /**
+     * Clients may not set a timeout less than this amount.  This hinders
+     * malicious clients from setting the timeout to a very low value
+     * and DoS the server by forcing timeout restarts.  Making tika-server
+     * available to untrusted clients is dangerous.
+     */
+    public static final long DEFAULT_MINIMUM_TIMEOUT_MILLIS = 30000;
+
     /**
      * How often to check to see that the task hasn't timed out
      */
@@ -73,8 +82,8 @@ public class TikaServerConfig extends ConfigBase {
                     " your emitter endpoints.  See CVE-2015-3271.\n" +
                     "Please make sure you know what you are doing.";
     private static final List<String> ONLY_IN_FORK_MODE = Arrays.asList(
-            new String[]{"taskTimeoutMillis", "taskPulseMillis", "pingTimeoutMillis",
-                    "pingPulseMillis", "maxFiles", "javaHome", "maxRestarts", "numRestarts",
+            new String[]{"taskTimeoutMillis", "taskPulseMillis",
+                    "maxFiles", "javaPath", "maxRestarts", "numRestarts",
                     "forkedStatusFile", "maxForkedStartupMillis", "tmpFilePrefix"});
 
         /*
@@ -94,13 +103,15 @@ public class TikaServerConfig extends ConfigBase {
     private int maxRestarts = -1;
     private long maxFiles = 100000;
     private long taskTimeoutMillis = DEFAULT_TASK_TIMEOUT_MILLIS;
+    private long minimumTimeoutMillis = DEFAULT_MINIMUM_TIMEOUT_MILLIS;
     private long taskPulseMillis = DEFAULT_TASK_PULSE_MILLIS;
     private long maxforkedStartupMillis = DEFAULT_FORKED_STARTUP_MILLIS;
     private boolean enableUnsecureFeatures = false;
     private String cors = "";
     private boolean returnStackTrace = false;
     private boolean noFork = false;
-    private String tempFilePrefix = "apache-tika-server-forked-tmp-"; //can be set for debugging
+    //TODO: make parameterizable for debugging
+    private String tempFilePrefix = "apache-tika-server-forked-tmp-";
     private Set<String> supportedFetchers = new HashSet<>();
     private Set<String> supportedEmitters = new HashSet<>();
     private List<String> forkedJvmArgs = new ArrayList<>();
@@ -109,6 +120,7 @@ public class TikaServerConfig extends ConfigBase {
     private String host = DEFAULT_HOST;
     private int digestMarkLimit = DEFAULT_DIGEST_MARK_LIMIT;
     private String digest = "";
+    private String javaPath = "java";
     //debug or info only
     private String logLevel = "";
     private Path configPath;
@@ -259,7 +271,7 @@ public class TikaServerConfig extends ConfigBase {
         return noFork;
     }
 
-    private void setNoFork(boolean noFork) {
+    public void setNoFork(boolean noFork) {
         this.noFork = noFork;
     }
 
@@ -350,6 +362,14 @@ public class TikaServerConfig extends ConfigBase {
         return args;
     }
 
+    public long getMinimumTimeoutMillis() {
+        return minimumTimeoutMillis;
+    }
+
+    public void setMinimumTimeoutMillis(long minimumTimeoutMillis) {
+        this.minimumTimeoutMillis = minimumTimeoutMillis;
+    }
+
     public String getIdBase() {
         return idBase;
     }
@@ -360,7 +380,11 @@ public class TikaServerConfig extends ConfigBase {
      * @return
      */
     public String getJavaPath() {
-        return "java";
+        return javaPath;
+    }
+
+    public void setJavaPath(String javaPath) {
+        this.javaPath = javaPath;
     }
 
     public List<String> getForkedJvmArgs() {
@@ -514,7 +538,7 @@ public class TikaServerConfig extends ConfigBase {
         return idBase;
     }
 
-    private void setId(String id) {
+    public void setId(String id) {
         this.idBase = id;
     }
 

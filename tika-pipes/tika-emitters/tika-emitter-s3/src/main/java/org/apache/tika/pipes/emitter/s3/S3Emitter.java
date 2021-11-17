@@ -32,12 +32,14 @@ import java.util.List;
 import java.util.Map;
 
 import com.amazonaws.AmazonClientException;
+import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,6 +102,7 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
     private String fileExtension = "json";
     private boolean spoolToTemp = true;
     private String prefix = null;
+    private int maxConnections = ClientConfiguration.DEFAULT_MAX_CONNECTIONS;
     private AmazonS3 s3Client;
 
     /**
@@ -163,30 +166,33 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
         }
 
         LOGGER.debug("about to emit to target bucket: ({}) path:({})", bucket, path);
-        long length = -1;
+
+        ObjectMetadata objectMetadata = new ObjectMetadata();
+        for (String n : userMetadata.names()) {
+            String[] vals = userMetadata.getValues(n);
+            if (vals.length > 1) {
+                LOGGER.warn("Can only write the first value for key {}. I see {} values.",
+                        n,
+                        vals.length);
+            }
+            objectMetadata.addUserMetadata(n, vals[0]);
+        }
+        //In practice, sending a file is more robust
+        //We ran into stream reset issues during digesting, and aws doesn't
+        //like putObjects for streams without lengths
         if (is instanceof TikaInputStream) {
             if (((TikaInputStream) is).hasFile()) {
                 try {
-                    length = ((TikaInputStream) is).getLength();
+                    PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, path,
+                            ((TikaInputStream) is).getFile()).withMetadata(objectMetadata);
+                    s3Client.putObject(putObjectRequest);
                 } catch (IOException e) {
-                    throw new TikaEmitterException("exception getting length", e);
+                    throw new TikaEmitterException("exception sending underlying file", e);
                 }
+                return;
             }
         }
         try {
-            ObjectMetadata objectMetadata = new ObjectMetadata();
-            if (length > 0) {
-                objectMetadata.setContentLength(length);
-            }
-            for (String n : userMetadata.names()) {
-                String[] vals = userMetadata.getValues(n);
-                if (vals.length > 1) {
-                    LOGGER.warn("Can only write the first value for key {}. I see {} values.",
-                            n,
-                            vals.length);
-                }
-                objectMetadata.addUserMetadata(n, vals[0]);
-            }
             s3Client.putObject(bucket, path, is, objectMetadata);
         } catch (AmazonClientException e) {
             throw new IOException("problem writing s3object", e);
@@ -250,7 +256,16 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
         this.fileExtension = fileExtension;
     }
 
-
+    /**
+     * maximum number of http connections allowed.  This should be
+     * greater than or equal to the number of threads emitting to S3.
+     *
+     * @param maxConnections
+     */
+    @Field
+    public void setMaxConnections(int maxConnections) {
+        this.maxConnections = maxConnections;
+    }
     /**
      * This initializes the s3 client. Note, we wrap S3's RuntimeExceptions,
      * e.g. AmazonClientException in a TikaConfigException.
@@ -270,9 +285,12 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
             throw new TikaConfigException("credentialsProvider must be set and " +
                     "must be either 'instance' or 'profile'");
         }
-
+        ClientConfiguration clientConfig = new ClientConfiguration()
+                .withMaxConnections(maxConnections);
         try {
-            s3Client = AmazonS3ClientBuilder.standard().withRegion(region).withCredentials(provider)
+            s3Client =
+                    AmazonS3ClientBuilder.standard()
+                            .withClientConfiguration(clientConfig).withRegion(region).withCredentials(provider)
                     .build();
         } catch (AmazonClientException e) {
             throw new TikaConfigException("can't initialize s3 emitter", e);

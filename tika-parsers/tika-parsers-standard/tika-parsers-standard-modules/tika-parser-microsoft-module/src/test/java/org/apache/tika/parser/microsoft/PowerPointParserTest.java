@@ -32,7 +32,6 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
-import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
@@ -106,7 +105,6 @@ public class PowerPointParserTest extends TikaTest {
         assertContains("Subject is here", xml);
         assertContains("Subject is here",
                 Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
-        assertEquals("Subject is here", metadata.get(OfficeOpenXMLCore.SUBJECT));
 
 
         assertContains("Suddenly some Japanese text:", xml);

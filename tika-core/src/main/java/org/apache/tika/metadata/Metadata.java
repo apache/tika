@@ -376,6 +376,43 @@ public class Metadata
     }
 
     /**
+     * Sets the integer value of the identified metadata property.
+     *
+     * @param property simple integer property definition
+     * @param value    property value
+     * @since Apache Tika 0.8
+     */
+    public void set(Property property, long value) {
+        if (property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
+            throw new PropertyTypeException(Property.PropertyType.SIMPLE,
+                    property.getPrimaryProperty().getPropertyType());
+        }
+        if (property.getPrimaryProperty().getValueType() != Property.ValueType.REAL) {
+            throw new PropertyTypeException(Property.ValueType.REAL,
+                    property.getPrimaryProperty().getValueType());
+        }
+        set(property, Long.toString(value));
+    }
+    /**
+     * Sets the integer value of the identified metadata property.
+     *
+     * @param property simple integer property definition
+     * @param value    property value
+     * @since Apache Tika 2.1.1
+     */
+    public void set(Property property, boolean value) {
+        if (property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
+            throw new PropertyTypeException(Property.PropertyType.SIMPLE,
+                    property.getPrimaryProperty().getPropertyType());
+        }
+        if (property.getPrimaryProperty().getValueType() != Property.ValueType.BOOLEAN) {
+            throw new PropertyTypeException(Property.ValueType.BOOLEAN,
+                    property.getPrimaryProperty().getValueType());
+        }
+        set(property, Boolean.toString(value));
+    }
+
+    /**
      * Adds the integer value of the identified metadata property.
      *
      * @param property seq integer property definition

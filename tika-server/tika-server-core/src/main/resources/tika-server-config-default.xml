@@ -33,7 +33,7 @@
           forked server has to restart, it will maintain its original id.
           If not specified, a UUID will be generated.
           -->
-      <id></id>
+      <id>my-id</id>
       <!-- whether or not to allow CORS requests. Set to 'all' if you
           want to allow all CORS requests. Set to NONE or leave blank
            if you do not want to enable CORS. -->
@@ -46,12 +46,10 @@
           spooling to disc...only if digest is selected -->
       <digestMarkLimit>1000000</digestMarkLimit>
       <!-- request URI log level 'debug' or 'info' -->
-      <log>info</log>
+      <logLevel>info</logLevel>
       <!-- whether or not to include the stacktrace when a parse exception happens
           in the data returned to the user -->
-      <includeStack>false</includeStack>
-      <!-- whether or not to enable the status endpoint -->
-      <status>false</status>
+      <returnStackTrace>false</returnStackTrace>
       <!-- If set to 'true', this runs tika server "in process"
           in the legacy 1.x mode.
           This means that the server will be susceptible to infinite loops
@@ -61,20 +59,15 @@
           (this was called -spawnChild mode in 1.x).
           nofork=false is the default in 2.x
       -->
-      <nofork>false</nofork>
+      <noFork>false</noFork>
       <!-- maximum time to allow per parse before shutting down and restarting
           the forked parser. Not allowed if nofork=true. -->
       <taskTimeoutMillis>300000</taskTimeoutMillis>
+      <!-- clients cannot specify a timeout less than this amount -->
+      <minimumTimeoutMillis>30000</minimumTimeoutMillis>
       <!-- how often to check whether a parse has timed out.
           Not allowed if nofork=true. -->
       <taskPulseMillis>10000</taskPulseMillis>
-      <!-- maximum time to allow for a response from the forked process
-          before shutting it down and restarting it.
-          Not allowed if nofork=true. -->
-      <pingTimeoutMillis>60000</pingTimeoutMillis>
-      <!-- how often to check whether the fork process needs to be restarted
-          Not allowed if nofork=true. -->
-      <pingPulseMillis>10000</pingPulseMillis>
       <!-- maximum amount of time to wait for a forked process to
           start up.
           Not allowed if nofork=true. -->
@@ -88,12 +81,11 @@
           memory leaks.
           Not allowed if nofork=true. -->
       <maxFiles>100000</maxFiles>
-      <!-- if you want to specify a specific javaHome for
-          the forked process.
+      <!-- if you want to specify a specific javaPath for
+          the forked process.  This should be the full path
+          including the executable, e.g.: /usr/bin/java
           Not allowed if nofork=true. -->
-      <javaHome></javaHome>
-      <!-- this is for debugging only -->
-      <tmpFilePrefix></tmpFilePrefix>
+      <javaPath>java</javaPath>
     </params>
   </server>
 </properties>

@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -172,6 +173,45 @@ public class TesseractOCRParserTest extends TikaTest {
             assertEquals("ceb", tesseractOCRConfig.getLanguage());
             assertEquals(false, tesseractOCRConfig.isApplyRotation());
 //            assertContains("myspecial", tesseractOCRConfig.getTesseractPath());
+        }
+    }
+
+
+    @Test
+    public void testTimeoutOverride() throws Exception {
+        assumeTrue(canRun(), "can run OCR");
+
+        try (InputStream is = getResourceAsStream("/test-configs/TIKA-3582-tesseract.xml")) {
+            TikaConfig config = new TikaConfig(is);
+            Parser p = new AutoDetectParser(config);
+            Metadata m = new Metadata();
+            ParseContext parseContext = new ParseContext();
+            parseContext.set(TikaTaskTimeout.class, new TikaTaskTimeout(50));
+            getXML("testRotated+10.png", p, m, parseContext);
+            fail("should have thrown a timeout");
+        } catch (TikaException e) {
+            assertContains("timeout", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testPSM0() throws Exception {
+        assumeTrue(canRun(), "can run OCR");
+        //this test may be too brittle...e.g. with different versions of tesseract installed
+        try (InputStream is = getResourceAsStream("/test-configs/tika-config-psm0.xml")) {
+            TikaConfig config = new TikaConfig(is);
+            Parser p = new AutoDetectParser(config);
+            Metadata m = new Metadata();
+            getXML("testRotated+10.png", p, m);
+            assertEquals(0, m.getInt(TesseractOCRParser.PSM0_PAGE_NUMBER));
+            assertEquals(180, m.getInt(TesseractOCRParser.PSM0_ORIENTATION));
+            assertEquals(180, m.getInt(TesseractOCRParser.PSM0_ROTATE));
+            assertEquals(5.71,
+                    Double.parseDouble(m.get(TesseractOCRParser.PSM0_ORIENTATION_CONFIDENCE)), 0.1);
+            assertEquals(0.83,
+                    Double.parseDouble(m.get(TesseractOCRParser.PSM0_SCRIPT_CONFIDENCE)),
+                    0.1);
+            assertEquals("Latin", m.get(TesseractOCRParser.PSM0_SCRIPT));
         }
     }
 

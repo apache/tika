@@ -24,6 +24,7 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,6 +38,7 @@ import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.http.ConnectionClosedException;
 import org.apache.http.Header;
 import org.apache.http.HttpConnection;
 import org.apache.http.HttpEntity;
@@ -47,6 +49,7 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.impl.conn.ConnectionShutdownException;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,6 +68,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.RangeFetcher;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * Based on Apache httpclient
@@ -104,11 +108,13 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
     public static Property HTTP_CONTENT_TYPE =
             Property.externalText(HTTP_HEADER_PREFIX + "content-type");
 
+    private static String USER_AGENT = "User-Agent";
 
     Logger LOG = LoggerFactory.getLogger(HttpFetcher.class);
-    private HttpClientFactory httpClientFactory;
+    private HttpClientFactory httpClientFactory = new HttpClientFactory();
     private HttpClient httpClient;
-
+    //back-off client that disables compression
+    private HttpClient noCompressHttpClient;
     private int maxRedirects = 10;
     //overall timeout in milliseconds
     private long overallTimeout = -1;
@@ -122,9 +128,10 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
     //httpHeaders to capture in the metadata
     private Set<String> httpHeaders = new HashSet<>();
 
-    public HttpFetcher() throws TikaConfigException {
-        httpClientFactory = new HttpClientFactory();
-    }
+    //When making the request, what User-Agent is sent.
+    //By default httpclient adds e.g. "Apache-HttpClient/4.5.13 (Java/x.y.z)"
+    private String userAgent = null;
+
 
     @Override
     public InputStream fetch(String fetchKey, Metadata metadata) throws IOException, TikaException {
@@ -134,18 +141,25 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
                         .setMaxRedirects(maxRedirects)
                         .setRedirectsEnabled(true).build();
         get.setConfig(requestConfig);
-        return get(get, metadata);
+        if (! StringUtils.isBlank(userAgent)) {
+            get.setHeader(USER_AGENT, userAgent);
+        }
+        return execute(get, metadata, httpClient, true);
     }
 
     @Override
     public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata)
             throws IOException, TikaException {
         HttpGet get = new HttpGet(fetchKey);
+        if (! StringUtils.isBlank(userAgent)) {
+            get.setHeader(USER_AGENT, userAgent);
+        }
         get.setHeader("Range", "bytes=" + startRange + "-" + endRange);
-        return get(get, metadata);
+        return execute(get, metadata, httpClient, true);
     }
 
-    private InputStream get(HttpGet get, Metadata metadata) throws IOException, TikaException {
+    private InputStream execute(HttpGet get, Metadata metadata, HttpClient client,
+                                boolean retryOnBadLength) throws IOException {
         HttpClientContext context = HttpClientContext.create();
         HttpResponse response = null;
         final AtomicBoolean timeout = new AtomicBoolean(false);
@@ -165,7 +179,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
                 timer = new Timer(false);
                 timer.schedule(task, overallTimeout);
             }
-            response = httpClient.execute(get, context);
+            response = client.execute(get, context);
 
             updateMetadata(get.getURI().toString(), response, context, metadata);
 
@@ -177,7 +191,19 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
             try (InputStream is = response.getEntity().getContent()) {
                 return spool(is, metadata);
             }
-        } catch (IOException e) {
+        } catch (ConnectionClosedException e) {
+
+            if (retryOnBadLength && e.getMessage() != null && e.getMessage().contains("Premature " +
+                    "end of " +
+                    "Content-Length delimited message")) {
+                //one trigger for this is if the server sends the uncompressed length
+                //and then compresses the stream. See HTTPCLIENT-2176
+                LOG.warn("premature end of content-length delimited message; retrying with " +
+                        "content compression disabled for {}", get.getURI());
+                return execute(get, metadata, noCompressHttpClient, false);
+            }
+            throw e;
+        } catch  (IOException e) {
             if (timeout.get() == true) {
                 throw new TikaTimeoutException("Overall timeout after " + overallTimeout + "ms");
             } else {
@@ -188,7 +214,11 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
                 timer.cancel();
                 timer.purge();
             }
-            if (response != null && response instanceof CloseableHttpResponse) {
+            if (response != null) {
+                //make sure you've consumed the entity
+                EntityUtils.consumeQuietly(response.getEntity());
+            }
+            if (response instanceof CloseableHttpResponse) {
                 ((CloseableHttpResponse) response).close();
             }
         }
@@ -215,13 +245,19 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
 
     private void updateMetadata(String url, HttpResponse response, HttpClientContext context,
                                 Metadata metadata) {
+        if (response == null) {
+            return;
+        }
 
-        metadata.set(HTTP_STATUS_CODE, response.getStatusLine().getStatusCode());
+        if (response.getStatusLine() != null) {
+            metadata.set(HTTP_STATUS_CODE, response.getStatusLine().getStatusCode());
+        }
+
         HttpEntity entity = response.getEntity();
-        if (entity.getContentEncoding() != null) {
+        if (entity != null && entity.getContentEncoding() != null) {
             metadata.set(HTTP_CONTENT_ENCODING, entity.getContentEncoding().getValue());
         }
-        if (entity.getContentType() != null) {
+        if (entity != null && entity.getContentType() != null) {
             metadata.set(HTTP_CONTENT_TYPE, entity.getContentType().getValue());
         }
 
@@ -242,22 +278,38 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         } else {
             metadata.set(HTTP_NUM_REDIRECTS, uriList.size());
             try {
-                metadata.set(HTTP_TARGET_URL, uriList.get(uriList.size() - 1).toURL().toString());
+                //there were some rare NPEs in this part of the codebase
+                //during development.
+                URI uri = uriList.get(uriList.size() - 1);
+                if (uri != null) {
+                    URL u = uri.toURL();
+                    if (u != null) {
+                        metadata.set(HTTP_TARGET_URL, u.toString());
+                    }
+                }
             } catch (MalformedURLException e) {
                 //swallow
             }
         }
         HttpConnection connection = context.getConnection();
         if (connection instanceof HttpInetConnection) {
-            InetAddress inetAddress = ((HttpInetConnection)connection).getRemoteAddress();
-            if (inetAddress != null) {
-                metadata.set(HTTP_TARGET_IP_ADDRESS, inetAddress.getHostAddress());
+            try {
+                InetAddress inetAddress = ((HttpInetConnection)connection).getRemoteAddress();
+                if (inetAddress != null) {
+                    metadata.set(HTTP_TARGET_IP_ADDRESS, inetAddress.getHostAddress());
+                }
+            } catch (ConnectionShutdownException e) {
+                LOG.warn("connection shutdown while trying to get target URL: " +
+                        url);
             }
         }
 
     }
 
     private String responseToString(HttpResponse response) {
+        if (response.getEntity() == null) {
+            return "";
+        }
         try (InputStream is = response.getEntity().getContent()) {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             IOUtils.copyLarge(is, bos, 0, maxErrMsgSize);
@@ -265,12 +317,10 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         } catch (IOException e) {
             LOG.warn("IOexception trying to read error message", e);
             return "";
+        } catch (NullPointerException e ) {
+            return "";
         } finally {
-            try {
-                EntityUtils.consume(response.getEntity());
-            } catch (IOException e) {
-                //swallow
-            }
+            EntityUtils.consumeQuietly(response.getEntity());
         }
 
     }
@@ -320,6 +370,16 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         httpClientFactory.setSocketTimeout(socketTimeout);
     }
 
+    @Field
+    public void setMaxConnections(int maxConnections) {
+        httpClientFactory.setMaxConnections(maxConnections);
+    }
+
+    @Field
+    public void setMaxConnectionsPerRoute(int maxConnectionsPerRoute) {
+        httpClientFactory.setMaxConnectionsPerRoute(maxConnectionsPerRoute);
+    }
+
     /**
      * Set the maximum number of bytes to spool to a temp file.
      * If this value is <code>-1</code>, the full stream will be spooled to a temp file
@@ -366,9 +426,23 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         this.maxErrMsgSize = maxErrMsgSize;
     }
 
+    /**
+     * When making the request, what User-Agent is sent in the request.
+     * By default httpclient adds e.g. "Apache-HttpClient/4.5.13 (Java/x.y.z)"
+     *
+     * @param userAgent
+     */
+    @Field
+    public void setUserAgent(String userAgent) {
+        this.userAgent = userAgent;
+    }
+
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         httpClient = httpClientFactory.build();
+        HttpClientFactory cp = httpClientFactory.copy();
+        cp.setDisableContentCompression(true);
+        noCompressHttpClient = cp.build();
     }
 
     @Override

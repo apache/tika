@@ -112,6 +112,7 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.ExceptionUtils;
+import org.apache.tika.utils.StringUtils;
 
 class AbstractPDF2XHTML extends PDFTextStripper {
 
@@ -373,17 +374,21 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
         //current strategy is to pull all, not just first non-null
         extractPDEmbeddedFile(displayName, spec.getFileUnicode(), spec.getFile(),
-                spec.getEmbeddedFile(), attributes);
+                spec.getFileDescription(), spec.getEmbeddedFile(), attributes);
         extractPDEmbeddedFile(displayName, spec.getFileUnicode(), spec.getFileMac(),
-                spec.getEmbeddedFileMac(), attributes);
+                spec.getFileDescription(), spec.getEmbeddedFileMac(), attributes);
         extractPDEmbeddedFile(displayName, spec.getFileUnicode(), spec.getFileDos(),
-                spec.getEmbeddedFileDos(), attributes);
+                spec.getFileDescription(), spec.getEmbeddedFileDos(), attributes);
         extractPDEmbeddedFile(displayName, spec.getFileUnicode(), spec.getFileUnix(),
-                spec.getEmbeddedFileUnix(), attributes);
+                spec.getFileDescription(), spec.getEmbeddedFileUnix(), attributes);
+
+        //Check for /Thumb (thumbnail image);
+        // /CI (collection item) adobe specific, can have /adobe:DisplayName and a summary
     }
 
     private void extractPDEmbeddedFile(String displayName, String unicodeFileName, String fileName,
-                                       PDEmbeddedFile file, AttributesImpl attributes)
+                                       String description, PDEmbeddedFile file,
+                                       AttributesImpl attributes)
             throws SAXException, IOException, TikaException {
 
         if (file == null) {
@@ -402,6 +407,9 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
         embeddedMetadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, fileName);
+        if (!StringUtils.isBlank(description)) {
+            embeddedMetadata.set(PDF.EMBEDDED_FILE_DESCRIPTION, description);
+        }
         if (!embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
             return;
         }

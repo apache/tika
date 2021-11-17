@@ -47,12 +47,14 @@ public class TranslateResource {
     private final ServerStatus serverStatus;
     private Translator defaultTranslator;
     private ServiceLoader loader;
+    private final long timeoutMillis;
 
-    public TranslateResource(ServerStatus serverStatus) {
+    public TranslateResource(ServerStatus serverStatus, long timeoutMillis) {
         this.loader =
                 new ServiceLoader(ServiceLoader.class.getClassLoader(), LoadErrorHandler.WARN);
         this.defaultTranslator = TikaResource.getConfig().getTranslator();
         this.serverStatus = serverStatus;
+        this.timeoutMillis = timeoutMillis;
     }
 
     @PUT
@@ -82,6 +84,7 @@ public class TranslateResource {
 
         String sLang = language.getLanguage();
         LOG.info("LanguageIdentifier: detected source lang: [{}]", sLang);
+
         return doTranslate(content, translator, sLang, dLang);
     }
 
@@ -94,7 +97,7 @@ public class TranslateResource {
             LOG.info("Using default translator");
         }
         TikaResource.checkIsOperating();
-        long taskId = serverStatus.start(ServerStatus.TASK.TRANSLATE, null);
+        long taskId = serverStatus.start(ServerStatus.TASK.TRANSLATE, null, timeoutMillis);
         try {
             return translate.translate(content, sLang, dLang);
         } catch (OutOfMemoryError e) {

@@ -21,6 +21,7 @@ import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
 
 import java.awt.Image;
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -42,6 +43,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.imageio.ImageIO;
 
 import org.apache.commons.io.FilenameUtils;
@@ -58,6 +61,7 @@ import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
+import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
@@ -92,6 +96,17 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
     public static final Property IMAGE_MAGICK =
             Property.externalBooleanSeq(TESS_META + "image_magick_processed");
     private static final String TESSDATA_PREFIX = "TESSDATA_PREFIX";
+
+    public static final Property
+            PSM0_PAGE_NUMBER = Property.externalInteger(TESS_META + "page_number");
+    public static final Property
+            PSM0_ORIENTATION = Property.externalInteger(TESS_META + "orientation");
+    public static final Property PSM0_ROTATE = Property.externalInteger(TESS_META + "rotate");
+    public static final Property PSM0_ORIENTATION_CONFIDENCE = Property.externalReal(TESS_META +
+            "orientation_confidence");
+    public static final Property PSM0_SCRIPT = Property.externalText(TESS_META + "script");
+    public static final Property PSM0_SCRIPT_CONFIDENCE = Property.externalReal(TESS_META +
+            "script_confidence");
 
     private static final String OCR = "ocr-";
     private static final Logger LOG = LoggerFactory.getLogger(TesseractOCRParser.class);
@@ -268,7 +283,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
                                 "User has selected to preprocess images, " +
                                         "but I can't find ImageMagick." +
                                         "Backing off to original file.");
-                        doOCR(input.toFile(), tmpOCROutputFile, config);
+                        doOCR(input.toFile(), tmpOCROutputFile, config, parseContext);
                     } else {
                         // copy the contents of the original input file into a temporary file
                         // which will be preprocessed for OCR
@@ -277,20 +292,24 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
                             Path tmpFile = tmp.createTempFile();
                             Files.copy(input, tmpFile, StandardCopyOption.REPLACE_EXISTING);
                             imagePreprocessor.process(tmpFile, tmpFile, metadata, config);
-                            doOCR(tmpFile.toFile(), tmpOCROutputFile, config);
+                            doOCR(tmpFile.toFile(), tmpOCROutputFile, config, parseContext);
                         }
                     }
                 } else {
-                    doOCR(input.toFile(), tmpOCROutputFile, config);
+                    doOCR(input.toFile(), tmpOCROutputFile, config, parseContext);
                 }
 
-                // Tesseract appends the output type (.txt or .hocr) to output file name
-                tmpTxtOutput = new File(tmpOCROutputFile.getAbsolutePath() + "." +
-                        config.getOutputType().toString().toLowerCase(Locale.US));
+                String extension = config.getPageSegMode().equals("0") ? "osd" :
+                        config.getOutputType().toString().toLowerCase(Locale.US);
+                // Tesseract appends the output type (.txt or .hocr or .osd) to output file name
+                tmpTxtOutput = new File(tmpOCROutputFile.getAbsolutePath() +
+                        "." + extension);
 
                 if (tmpTxtOutput.exists()) {
                     try (InputStream is = new FileInputStream(tmpTxtOutput)) {
-                        if (config.getOutputType().equals(TesseractOCRConfig.OUTPUT_TYPE.HOCR)) {
+                        if (config.getPageSegMode().equals("0")) {
+                            extractOSD(is, metadata);
+                        } else if (config.getOutputType().equals(TesseractOCRConfig.OUTPUT_TYPE.HOCR)) {
                             extractHOCROutput(is, parseContext, xhtml);
                         } else {
                             extractOutput(is, xhtml);
@@ -301,6 +320,43 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         } finally {
             if (tmpTxtOutput != null) {
                 tmpTxtOutput.delete();
+            }
+        }
+    }
+
+    private void extractOSD(InputStream is, Metadata metadata) throws IOException {
+        Matcher matcher = Pattern.compile("^([^:]+):\\s+(.*)").matcher("");
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is,
+                UTF_8))) {
+            String line = reader.readLine();
+            while (line != null) {
+                if (matcher.reset(line).find()) {
+                    String k = matcher.group(1);
+                    String v = matcher.group(2);
+                    switch (k) {
+                        case "Page number":
+                            metadata.set(PSM0_PAGE_NUMBER, Integer.parseInt(v));
+                            break;
+                        case "Orientation in degrees":
+                            metadata.set(PSM0_ORIENTATION, Integer.parseInt(v));
+                            break;
+                        case "Rotate":
+                            metadata.set(PSM0_ROTATE, Integer.parseInt(v));
+                            break;
+                        case "Orientation confidence":
+                            metadata.set(PSM0_ORIENTATION_CONFIDENCE, Double.parseDouble(v));
+                            break;
+                        case "Script":
+                            metadata.set(PSM0_SCRIPT, v);
+                            break;
+                        case "Script confidence":
+                            metadata.set(PSM0_SCRIPT_CONFIDENCE, Double.parseDouble(v));
+                            break;
+                        default:
+                            LOG.warn("I regret I don't know how to parse {} with value {}", k, v);
+                    }
+                }
+                line = reader.readLine();
             }
         }
     }
@@ -320,24 +376,27 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
      * @throws TikaException if the extraction timed out
      * @throws IOException   if an input error occurred
      */
-    private void doOCR(File input, File output, TesseractOCRConfig config)
+    private void doOCR(File input, File output, TesseractOCRConfig config, ParseContext parseContext)
             throws IOException, TikaException {
 
         ArrayList<String> cmd = new ArrayList<>(
                 Arrays.asList(getTesseractPath() + getTesseractProg(), input.getPath(),
                         output.getPath(), "--psm", config.getPageSegMode()));
-        if (!StringUtils.isBlank(config.getLanguage())) {
-            cmd.add("-l");
-            cmd.add(config.getLanguage());
+        //if --psm == 0, don't add anything else to the command line
+        if (! "0".equals(config.getPageSegMode())) {
+            if (!StringUtils.isBlank(config.getLanguage())) {
+                cmd.add("-l");
+                cmd.add(config.getLanguage());
+            }
+            for (Map.Entry<String, String> entry : config.getOtherTesseractConfig().entrySet()) {
+                cmd.add("-c");
+                cmd.add(entry.getKey() + "=" + entry.getValue());
+            }
+            cmd.addAll(Arrays.asList("-c", "page_separator=" + config.getPageSeparator(), "-c",
+                    (config.isPreserveInterwordSpacing()) ? "preserve_interword_spaces=1" :
+                            "preserve_interword_spaces=0",
+                    config.getOutputType().name().toLowerCase(Locale.US)));
         }
-        for (Map.Entry<String, String> entry : config.getOtherTesseractConfig().entrySet()) {
-            cmd.add("-c");
-            cmd.add(entry.getKey() + "=" + entry.getValue());
-        }
-        cmd.addAll(Arrays.asList("-c", "page_separator=" + config.getPageSeparator(), "-c",
-                (config.isPreserveInterwordSpacing()) ? "preserve_interword_spaces=1" :
-                        "preserve_interword_spaces=0",
-                config.getOutputType().name().toLowerCase(Locale.US)));
         LOG.debug("Tesseract command: " + String.join(" ", cmd));
 
         ProcessBuilder pb = new ProcessBuilder(cmd);
@@ -345,10 +404,12 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
 
         Process process = null;
         String id = null;
+        long timeoutMillis = TikaTaskTimeout.getTimeoutMillis(parseContext,
+                config.getTimeoutSeconds() * 1000);
         try {
             process = pb.start();
             id = register(process);
-            runOCRProcess(process, config.getTimeoutSeconds());
+            runOCRProcess(process, timeoutMillis);
         } finally {
             if (process != null) {
                 process.destroyForcibly();
@@ -359,7 +420,8 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         }
     }
 
-    private void runOCRProcess(Process process, int timeout) throws IOException, TikaException {
+    private void runOCRProcess(Process process, long timeoutMillis) throws IOException,
+            TikaException {
         process.getOutputStream().close();
         InputStream out = process.getInputStream();
         InputStream err = process.getErrorStream();
@@ -372,7 +434,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
 
         int exitValue = Integer.MIN_VALUE;
         try {
-            boolean finished = process.waitFor(timeout, TimeUnit.SECONDS);
+            boolean finished = process.waitFor(timeoutMillis, TimeUnit.MILLISECONDS);
             if (!finished) {
                 throw new TikaException("TesseractOCRParser timeout");
             }
@@ -627,6 +689,13 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         defaultConfig.setMinFileSizeToOcr(minFileSizeToOcr);
     }
 
+    /**
+     * Set default timeout in seconds.  This can be overridden per parse
+     * with {@link TikaTaskTimeout} sent in via the {@link ParseContext}
+     * at parse time.
+     *
+     * @param timeout
+     */
     @Field
     public void setTimeout(int timeout) {
         defaultConfig.setTimeoutSeconds(timeout);

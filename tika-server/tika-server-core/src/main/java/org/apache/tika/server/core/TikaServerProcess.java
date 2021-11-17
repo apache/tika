@@ -325,7 +325,8 @@ public class TikaServerProcess {
                     .add(new SingletonResourceProvider(new DetectorResource(serverStatus)));
             resourceProviders.add(new SingletonResourceProvider(new LanguageResource()));
             resourceProviders
-                    .add(new SingletonResourceProvider(new TranslateResource(serverStatus)));
+                    .add(new SingletonResourceProvider(new TranslateResource(serverStatus,
+                            tikaServerConfig.getTaskTimeoutMillis())));
             resourceProviders.add(new SingletonResourceProvider(new TikaResource()));
             resourceProviders.add(new SingletonResourceProvider(new UnpackerResource()));
             resourceProviders.add(new SingletonResourceProvider(new TikaMimeTypes()));
@@ -355,7 +356,8 @@ public class TikaServerProcess {
                 } else if ("language".equals(endPoint)) {
                     resourceProviders.add(new SingletonResourceProvider(new LanguageResource()));
                 } else if ("translate".equals(endPoint)) {
-                    resourceProviders.add(new SingletonResourceProvider(new TranslateResource(serverStatus)));
+                    resourceProviders.add(new SingletonResourceProvider(new TranslateResource(
+                            serverStatus, tikaServerConfig.getTaskTimeoutMillis())));
                 } else if ("tika".equals(endPoint)) {
                     resourceProviders.add(new SingletonResourceProvider(new TikaResource()));
                 } else if ("unpack".equals(endPoint)) {

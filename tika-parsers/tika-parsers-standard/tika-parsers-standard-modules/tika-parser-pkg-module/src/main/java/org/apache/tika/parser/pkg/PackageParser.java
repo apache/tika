@@ -154,8 +154,22 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 "application/vnd.sun.xml.writer", "application/vnd.sun.xml.writer.template",
                 "application/vnd.sun.xml.draw", "application/vnd.sun.xml.impress",
                 "application/vnd.openofficeorg.autotext",
-
-
+                "application/vnd.oasis.opendocument.graphics-template",
+                "application/vnd.oasis.opendocument.text-web",
+                "application/vnd.oasis.opendocument.spreadsheet-template",
+                "application/vnd.oasis.opendocument.graphics",
+                "application/vnd.oasis.opendocument.image-template",
+                "application/vnd.oasis.opendocument.text",
+                "application/vnd.oasis.opendocument.text-template",
+                "application/vnd.oasis.opendocument.presentation",
+                "application/vnd.oasis.opendocument.chart",
+                "application/vnd.openofficeorg.extension",
+                "application/vnd.oasis.opendocument.spreadsheet",
+                "application/vnd.oasis.opendocument.image",
+                "application/vnd.oasis.opendocument.formula-template",
+                "application/vnd.oasis.opendocument.presentation-template",
+                "application/vnd.oasis.opendocument.chart-template",
+                "application/vnd.oasis.opendocument.text-master",
                 "application/x-gtar" //specialization of tar
         }) {
             zipSpecializations.add(MediaType.parse(mediaTypeString));

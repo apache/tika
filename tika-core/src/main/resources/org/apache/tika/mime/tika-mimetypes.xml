@@ -370,6 +370,12 @@
     <glob pattern="*.json"/>
   </mime-type>
 
+  <mime-type type="application/manifest+json">
+    <_comment>Web Application Manifest file</_comment>
+    <sub-class-of type="application/json"/>
+    <glob pattern="*.webmanifest"/>
+  </mime-type>
+
   <mime-type type="application/java-vm">
     <_comment>Java Class File</_comment>
     <alias type="application/x-java-vm"/>
@@ -427,8 +433,25 @@
   </mime-type>
 
   <mime-type type="application/macwriteii"/>
+
   <mime-type type="application/marc">
+    <!-- todo add marc xml <marc:collection> -->
     <glob pattern="*.mrc"/>
+    <magic priority="50">
+      <!-- built from, e.g. https://www.loc.gov/marc/community/cileader.html -->
+      <match value="[0-9]{5,5}" type="regex" offset="0">
+        <!-- bibliographic -->
+        <match value="[acdnp][acdefgijkmoprt][abcdims]" type="regex" offset="5"/>
+        <!-- authority-->
+        <match value="[acdnosx]z" type="regex" offset="5"/>
+        <!-- holdings -->
+        <match value="[cdn][uvxy]" type="regex" offset="5"/>
+        <!-- classification -->
+        <match value="[acdn]w" type="regex" offset="5"/>
+        <!-- community -->
+        <match value="[cdn]q" type="regex" offset="5"/>
+      </match>
+    </magic>
   </mime-type>
 
   <mime-type type="application/mathematica">
@@ -622,7 +645,6 @@
   <mime-type type="application/kate">
     <sub-class-of type="application/ogg"/>
   </mime-type>
-
   <mime-type type="application/onenote">
     <alias type="application/msonenote"/>
     <acronym>OneNote</acronym>
@@ -1505,6 +1527,9 @@
   <mime-type type="application/vnd.iccprofile">
     <glob pattern="*.icc"/>
     <glob pattern="*.icm"/>
+    <magic priority="50">
+      <match value="acsp" type="string" offset="36"/>
+    </magic>
   </mime-type>
   <mime-type type="application/vnd.igloader">
     <glob pattern="*.igl"/>
@@ -2184,6 +2209,7 @@
       </match>
     </magic>
     <glob pattern="*.odc"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/vnd.oasis.opendocument.chart-template">
@@ -2196,6 +2222,7 @@
       </match>
     </magic>
     <glob pattern="*.otc"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/vnd.oasis.opendocument.base">
@@ -2226,6 +2253,7 @@
       </match>
     </magic>
     <glob pattern="*.odft"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/vnd.oasis.opendocument.graphics">
@@ -2238,6 +2266,7 @@
       </match>
     </magic>
     <glob pattern="*.odg"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/vnd.oasis.opendocument.graphics-template">
@@ -2250,6 +2279,7 @@
       </match>
     </magic>
     <glob pattern="*.otg"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/vnd.oasis.opendocument.image">
@@ -2262,6 +2292,7 @@
       </match>
     </magic>
     <glob pattern="*.odi"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/vnd.oasis.opendocument.image-template">
@@ -2274,6 +2305,7 @@
       </match>
     </magic>
     <glob pattern="*.oti"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/vnd.oasis.opendocument.presentation">
@@ -2286,6 +2318,7 @@
       </match>
     </magic>
     <glob pattern="*.odp"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/vnd.oasis.opendocument.presentation-template">
@@ -2298,6 +2331,7 @@
       </match>
     </magic>
     <glob pattern="*.otp"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/vnd.oasis.opendocument.spreadsheet">
@@ -2310,6 +2344,7 @@
       </match>
     </magic>
     <glob pattern="*.ods"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/vnd.oasis.opendocument.spreadsheet-template">
@@ -2322,6 +2357,7 @@
       </match>
     </magic>
     <glob pattern="*.ots"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/vnd.oasis.opendocument.text">
@@ -2334,6 +2370,7 @@
       </match>
     </magic>
     <glob pattern="*.odt"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <!-- can't tell from the root element whether this is fodt, fodp, etc.
@@ -2374,6 +2411,7 @@
       </match>
     </magic>
     <glob pattern="*.otm"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/vnd.oasis.opendocument.text-template">
@@ -2386,6 +2424,7 @@
       </match>
     </magic>
     <glob pattern="*.ott"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/vnd.oasis.opendocument.text-web">
@@ -2398,6 +2437,7 @@
       </match>
     </magic>
     <glob pattern="*.oth"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/vnd.obn"/>
@@ -2439,6 +2479,7 @@
   <mime-type type="application/vnd.omaloc-supl-init"/>
 
   <mime-type type="application/vnd.openofficeorg.extension">
+    <sub-class-of type="application/zip"/>
     <glob pattern="*.oxt"/>
   </mime-type>
 
@@ -3648,6 +3689,7 @@
 
   <mime-type type="application/x-dosexec">
     <_comment>DOS/Windows executable (EXE)</_comment>
+    <!-- magic is MZ at offset=0, but that may not be unique enough -->
     <sub-class-of type="application/x-msdownload"/>
     <glob pattern="*.exe"/>
   </mime-type>
@@ -3800,6 +3842,11 @@
       <match value="0xFD2FB528" type="little32" offset="0"/>
     </magic>
     <glob pattern="*.zstd"/>
+  </mime-type>
+  <mime-type type="application/x-esri-layer">
+    <_comment>ESRI Layer file</_comment>
+    <sub-class-of type="application/x-tika-msoffice"/>
+    <glob pattern="*.lyr"/>
   </mime-type>
   <mime-type type="application/x-hdf">
     <_comment>Hierarchical Data Format File</_comment>
@@ -4186,7 +4233,13 @@
     <!-- MISAM Data files are header-less, so no magic -->
     <sub-class-of type="application/x-mysql-db"/>
   </mime-type>
-
+  <mime-type type="application/x-nesrom">
+    <_comment>Nintendo Entertainment System ROM</_comment>
+    <glob pattern="*.nes"/>
+    <magic priority="50">
+      <match value="0x4E45531A" type="string" offest="0" />
+    </magic>
+  </mime-type>
   <mime-type type="application/x-netcdf">
     <glob pattern="*.nc"/>
     <glob pattern="*.cdf"/>
@@ -5845,9 +5898,10 @@
     <sub-class-of type="image/vnd.dxf"/>
     <_comment>AutoCAD DXF in ASCII Text form</_comment>
     <magic priority="50">
-      <!-- Variable number of spaces before the code groups -->
-      <match value="0\r\nSECTION\r\n" offset="0:3">
-        <match value="2\r\nHEADER\r\n" offset="12:18"/>
+      <!-- Variable number of spaces or possibly creator tool before the code groups -->
+      <!-- allow 999 (comments) before section -->
+      <match type="regex" value="(999\r?\n[^\r\n]{0,64}\\s+)?0\r?\nSECTION\r?\n" offset="0:32">
+        <match type="regex" value="2\r?\n(?:HEADER|ENTITIES)\r?\n" offset="12:60"/>
       </match>
     </magic>
   </mime-type>
@@ -6055,6 +6109,15 @@
     <magic priority="50">
       <match value="0x0000000C6A5020200D0A870A" type="string" offset="0"/>
     </magic>
+  </mime-type>
+
+  <mime-type type="image/jxl">
+    <_comment>JPEG XL</_comment>
+    <magic priority="50">
+      <match value="0xFF0A" type="string" offset="0"/>
+      <match value="0x0000000C4A584C200D0A870A" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.jxl"/>
   </mime-type>
 
   <mime-type type="image/x-niff">

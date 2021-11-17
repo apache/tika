@@ -48,6 +48,7 @@ public class PipesConfigBase extends ConfigBase {
     private long maxForEmitBatchBytes = DEFAULT_MAX_FOR_EMIT_BATCH;
     private long timeoutMillis = DEFAULT_TIMEOUT_MILLIS;
     private long startupTimeoutMillis = DEFAULT_STARTUP_TIMEOUT_MILLIS;
+    private long sleepOnStartupTimeoutMillis = DEFAULT_STARTUP_TIMEOUT_MILLIS;
 
     private long shutdownClientAfterMillis = DEFAULT_SHUTDOWN_CLIENT_AFTER_MILLS;
     private int numClients = DEFAULT_NUM_CLIENTS;
@@ -97,6 +98,10 @@ public class PipesConfigBase extends ConfigBase {
         List<String> ret = new ArrayList<>();
         ret.addAll(forkedJvmArgs);
         return ret;
+    }
+
+    public void setStartupTimeoutMillis(long startupTimeoutMillis) {
+        this.startupTimeoutMillis = startupTimeoutMillis;
     }
 
     public void setForkedJvmArgs(List<String> jvmArgs) {
@@ -157,5 +162,13 @@ public class PipesConfigBase extends ConfigBase {
 
     public void setMaxForEmitBatchBytes(long maxForEmitBatchBytes) {
         this.maxForEmitBatchBytes = maxForEmitBatchBytes;
+    }
+
+    public long getSleepOnStartupTimeoutMillis() {
+        return sleepOnStartupTimeoutMillis;
+    }
+
+    public void setSleepOnStartupTimeoutMillis(long sleepOnStartupTimeoutMillis) {
+        this.sleepOnStartupTimeoutMillis = sleepOnStartupTimeoutMillis;
     }
 }

@@ -42,7 +42,15 @@ public abstract class AbstractImageParser extends AbstractParser {
 
     public static String OCR_MEDIATYPE_PREFIX = "ocr-";
 
+    /**
+     *
+     * @param mediaType
+     * @return ocr media type if mediatype is not null; returns null if mediatype is null
+     */
     static MediaType convertToOCRMediaType(MediaType mediaType) {
+        if (mediaType == null) {
+            return null;
+        }
         return new MediaType(mediaType.getType(), OCR_MEDIATYPE_PREFIX + mediaType.getSubtype());
     }
 
@@ -61,11 +69,13 @@ public abstract class AbstractImageParser extends AbstractParser {
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         String mediaTypeString = metadata.get(Metadata.CONTENT_TYPE);
-        //note: mediaType can be null
+        //note: mediaType can be null if mediaTypeString is null or
+        //not parseable.
         MediaType mediaType = normalizeMediaType(MediaType.parse(mediaTypeString));
         MediaType ocrMediaType = convertToOCRMediaType(mediaType);
         Parser ocrParser = EmbeddedDocumentUtil.getStatelessParser(context);
-        if (ocrParser == null || !ocrParser.getSupportedTypes(context).contains(ocrMediaType)) {
+        if (ocrMediaType == null ||
+                ocrParser == null || !ocrParser.getSupportedTypes(context).contains(ocrMediaType)) {
             extractMetadata(stream, handler, metadata, context);
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             xhtml.startDocument();

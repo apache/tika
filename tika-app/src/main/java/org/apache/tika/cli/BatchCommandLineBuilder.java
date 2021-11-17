@@ -69,7 +69,7 @@ class BatchCommandLineBuilder {
         }
         //use the log4j config file inside the app /resources/log4j2_batch_process.properties
         if (!hasLog4j) {
-            jvmOpts.put("-Dlog4j.configuration=log4j_batch_process.properties", "");
+            jvmOpts.put("-Dlog4j.configurationFile=log4j2_batch_process.properties", "");
         }
         //now build the full command line
         List<String> fullCommand = new ArrayList<>();
@@ -88,6 +88,7 @@ class BatchCommandLineBuilder {
         if (!foundHeadlessOption) {
             fullCommand.add("-Djava.awt.headless=true");
         }
+
         fullCommand.add("org.apache.tika.batch.fs.FSBatchProcessCLI");
         //now add the process commands
         for (Map.Entry<String, String> e : processArgs.entrySet()) {
@@ -172,6 +173,8 @@ class BatchCommandLineBuilder {
             if (arg.startsWith("--config=")) {
                 String configPath = arg.substring("--config=".length());
                 map.put("-c", configPath);
+                //now remove --config=x.config from the map :)
+                map.remove(arg);
                 break;
             }
         }

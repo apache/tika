@@ -16,6 +16,8 @@
  */
 package org.apache.tika.utils;
 
+import java.util.List;
+
 public class StringUtils {
 
     /**
@@ -202,5 +204,21 @@ public class StringUtils {
                 }
                 return buf.toString();
         }
+    }
+
+
+    public static String joinWith(String delimiter, List<String> lines) {
+        if (lines.size() == 0) {
+            return EMPTY;
+        }
+        int i = 0;
+        StringBuilder sb = new StringBuilder();
+        for (String line : lines) {
+            if (i++ > 0) {
+                sb.append(delimiter);
+            }
+            sb.append(line);
+        }
+        return sb.toString();
     }
 }

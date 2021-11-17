@@ -138,6 +138,8 @@ public class POIFSContainerDetector implements Detector {
      */
     public static final MediaType SLDWORKS = application("sldworks");
 
+    public static final MediaType ESRI_LAYER = application("x-esri-layer");
+
     /**
      * Serial version UID
      */
@@ -297,6 +299,11 @@ public class POIFSContainerDetector implements Detector {
             }
         } else if (names.contains("Equation Native")) {
             return MS_EQUATION;
+        } else if (names.contains("Layer")) {
+            //in one test file, also saw LayerSmallImage and LayerLargeImage
+            //maybe add those if we get false positives?
+            //in other test files there was a single entry for "Layer"
+            return ESRI_LAYER;
         } else {
             for (String name : names) {
                 if (name.startsWith("__substg1.0_")) {

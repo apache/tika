@@ -36,9 +36,9 @@ import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
-import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
@@ -181,7 +181,7 @@ public class WordParserTest extends TikaTest {
             assertEquals("The quick brown fox jumps over the lazy dog",
                     metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Gym class featuring a brown fox and lazy dog",
-                    metadata.get(OfficeOpenXMLCore.SUBJECT));
+                    metadata.get(DublinCore.SUBJECT));
             assertEquals("Nevin Nollop", metadata.get(TikaCoreProperties.CREATOR));
             assertContains("The quick brown fox jumps over the lazy dog", handler.toString());
         }
@@ -270,11 +270,11 @@ public class WordParserTest extends TikaTest {
         }
 
         assertContains("Keyword1 Keyword2", content);
-        assertEquals("Keyword1 Keyword2", metadata.get(TikaCoreProperties.SUBJECT));
 
         assertContains("Subject is here", content);
 
-        assertEquals("Subject is here", metadata.get(OfficeOpenXMLCore.SUBJECT));
+        assertContains("Subject is here", Arrays.asList(metadata.getValues(DublinCore.SUBJECT)));
+        assertContains("Keyword1 Keyword2", Arrays.asList(metadata.getValues(DublinCore.SUBJECT)));
 
         assertContains("Suddenly some Japanese text:", content);
         // Special version of (GHQ)
@@ -339,11 +339,11 @@ public class WordParserTest extends TikaTest {
         assertEquals("1", metadata.get(Office.PAGE_COUNT));
         assertEquals("2", metadata.get(Office.WORD_COUNT));
         assertEquals("My Title", metadata.get(TikaCoreProperties.TITLE));
-        assertEquals("My Keyword", metadata.get(TikaCoreProperties.SUBJECT));
         assertEquals("Normal.dotm", metadata.get(OfficeOpenXMLExtended.TEMPLATE));
         assertEquals("My Comments", metadata.get(TikaCoreProperties.COMMENTS));
         // TODO: Move to OO subject in Tika 2.0
-        assertEquals("My subject", metadata.get(OfficeOpenXMLCore.SUBJECT));
+        assertContains("My subject", Arrays.asList(metadata.getValues(DublinCore.SUBJECT)));
+        assertContains("My Keyword", Arrays.asList(metadata.getValues(DublinCore.SUBJECT)));
         assertEquals("EDF-DIT", metadata.get(OfficeOpenXMLExtended.COMPANY));
         assertEquals("MyStringValue", metadata.get("custom:MyCustomString"));
         assertEquals("2010-12-30T23:00:00Z", metadata.get("custom:MyCustomDate"));

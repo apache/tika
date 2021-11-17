@@ -45,7 +45,6 @@ import org.apache.tika.pipes.emitter.opensearch.OpenSearchEmitter;
 
 public class TikaPipesOpenSearchBase {
 
-    private static final String DOCKER_IMAGE_NAME = "opensearchproject/opensearch:1.0.0";
     private static final String TEST_INDEX = "tika-pipes-index";
     private static final File TEST_FILE_FOLDER = new File("target", "test-files");
     private int numTestDocs = 0;

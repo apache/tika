@@ -19,6 +19,7 @@
   <server>
     <params>
       <taskTimeoutMillis>120000</taskTimeoutMillis>
+      <minimumTimeoutMillis>10</minimumTimeoutMillis>
       <port>9999</port>
       <maxFiles>1000</maxFiles>
       <forkedJvmArgs>

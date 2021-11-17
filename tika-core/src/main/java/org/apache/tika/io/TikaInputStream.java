@@ -617,6 +617,14 @@ public class TikaInputStream extends TaggedInputStream {
         }
     }
 
+    /**
+     *
+     * @param closeable
+     */
+    public void addCloseableResource(Closeable closeable) {
+        tmp.addResource(closeable);
+    }
+
     public boolean hasInputStreamFactory() {
         return streamFactory != null;
     }

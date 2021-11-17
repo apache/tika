@@ -16,14 +16,18 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.InputStream;
+import java.util.Arrays;
 
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -63,11 +67,14 @@ public class ProjectParserTest {
 
         assertEquals("The quick brown fox jumps over the lazy dog",
                 metadata.get(TikaCoreProperties.TITLE));
-        assertEquals("Gym class featuring a brown fox and lazy dog",
-                metadata.get(OfficeOpenXMLCore.SUBJECT));
+        assertEquals("Pangram, fox, dog",
+                metadata.get(Office.KEYWORDS));
         assertEquals("Nevin Nollop", metadata.get(TikaCoreProperties.CREATOR));
-        assertEquals("", metadata.get(TikaCoreProperties.MODIFIER));
-        assertEquals("Pangram, fox, dog", metadata.get(TikaCoreProperties.SUBJECT));
+        assertNull(metadata.get(TikaCoreProperties.MODIFIER));
+        assertContains("Pangram, fox, dog",
+                Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
+        assertContains("Gym class featuring a brown fox and lazy dog",
+                Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
         assertEquals("Comment Vulpes vulpes comment", metadata.get(TikaCoreProperties.COMMENTS));
 
         assertEquals("Category1", metadata.get(OfficeOpenXMLCore.CATEGORY));
