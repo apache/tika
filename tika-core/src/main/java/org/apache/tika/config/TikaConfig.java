@@ -67,13 +67,13 @@ import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.mime.MimeTypesFactory;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.AutoDetectParserConfig;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.multiple.AbstractMultipleParser;
 import org.apache.tika.utils.AnnotationUtils;
-import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
 
 /**
@@ -91,6 +91,7 @@ public class TikaConfig {
     private final ExecutorService executorService;
     private final EncodingDetector encodingDetector;
     private final MetadataFilter metadataFilter;
+    private final AutoDetectParserConfig autoDetectParserConfig;
 
     public TikaConfig(String file) throws TikaException, IOException, SAXException {
         this(Paths.get(file));
@@ -159,6 +160,7 @@ public class TikaConfig {
         this.translator = translatorLoader.loadOverall(element, mimeTypes, loader);
         this.executorService = executorLoader.loadOverall(element, mimeTypes, loader);
         this.metadataFilter = MetadataFilter.load(element, true);
+        this.autoDetectParserConfig = AutoDetectParserConfig.load(element);
         this.serviceLoader = loader;
         TIMES_INSTANTIATED.incrementAndGet();
     }
@@ -184,6 +186,7 @@ public class TikaConfig {
         this.translator = getDefaultTranslator(serviceLoader);
         this.executorService = getDefaultExecutorService();
         this.metadataFilter = new NoOpFilter();
+        this.autoDetectParserConfig = AutoDetectParserConfig.DEFAULT;
         TIMES_INSTANTIATED.incrementAndGet();
     }
 
@@ -220,6 +223,7 @@ public class TikaConfig {
             this.translator = getDefaultTranslator(serviceLoader);
             this.executorService = getDefaultExecutorService();
             this.metadataFilter = new NoOpFilter();
+            this.autoDetectParserConfig = AutoDetectParserConfig.DEFAULT;
         } else {
             ServiceLoader tmpServiceLoader = new ServiceLoader();
             try (InputStream stream = getConfigInputStream(config, tmpServiceLoader)) {
@@ -243,6 +247,7 @@ public class TikaConfig {
                 this.executorService =
                         executorLoader.loadOverall(element, mimeTypes, serviceLoader);
                 this.metadataFilter = MetadataFilter.load(element, true);
+                this.autoDetectParserConfig = AutoDetectParserConfig.load(element);
             } catch (SAXException e) {
                 throw new TikaException("Specified Tika configuration has syntax errors: " + config,
                         e);
@@ -566,6 +571,10 @@ public class TikaConfig {
 
     public MetadataFilter getMetadataFilter() {
         return metadataFilter;
+    }
+
+    public AutoDetectParserConfig getAutoDetectParserConfig() {
+        return autoDetectParserConfig;
     }
 
     private static abstract class XmlLoader<CT, T> {
