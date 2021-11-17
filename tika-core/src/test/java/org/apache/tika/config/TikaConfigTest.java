@@ -360,6 +360,12 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
     }
 
     @Test
+    public void testXMLReaderUtilsUnspecifiedAttribute() throws Exception {
+        TikaConfig tikaConfig = getConfig("TIKA-3551-xmlreaderutils.xml");
+        assertEquals(XMLReaderUtils.DEFAULT_MAX_ENTITY_EXPANSIONS, XMLReaderUtils.getMaxEntityExpansions());
+    }
+
+    @Test
     public void testBadExclude() throws Exception {
         assertThrows(TikaConfigException.class, () -> {
             getConfig("TIKA-3268-bad-parser-exclude.xml");

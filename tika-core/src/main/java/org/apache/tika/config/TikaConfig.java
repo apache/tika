@@ -493,15 +493,14 @@ public class TikaConfig {
         if (child == null) {
             return;
         }
-        String attr = child.getAttribute("maxEntityExpansions");
-        if (!StringUtils.isBlank(attr)) {
-            XMLReaderUtils.setMaxEntityExpansions(Integer.parseInt(attr));
+
+        if (child.hasAttribute("maxEntityExpansions")) {
+            XMLReaderUtils.setMaxEntityExpansions(Integer.parseInt(child.getAttribute("maxEntityExpansions")));
         }
 
-        //make sure to call this after set entity expansions
-        attr = child.getAttribute("poolSize");
-        if (!StringUtils.isBlank(attr)) {
-            XMLReaderUtils.setPoolSize(Integer.parseInt(attr));
+        // make sure to call this after set entity expansions
+        if (child.hasAttribute("poolSize")) {
+            XMLReaderUtils.setPoolSize(Integer.parseInt(child.getAttribute("poolSize")));
         }
 
     }
