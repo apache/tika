@@ -435,6 +435,8 @@ public class TikaConfig {
                 loadErrorHandler = LoadErrorHandler.WARN;
             } else if (LoadErrorHandler.THROW.toString().equalsIgnoreCase(loadErrorHandleConfig)) {
                 loadErrorHandler = LoadErrorHandler.THROW;
+            } else if (LoadErrorHandler.IGNORE.toString().equalsIgnoreCase(loadErrorHandleConfig)) {
+                loadErrorHandler = LoadErrorHandler.IGNORE;
             }
             InitializableProblemHandler initializableProblemHandler =
                     getInitializableProblemHandler(

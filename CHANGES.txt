@@ -1,4 +1,9 @@
-Release 2.1.1 - ???
+Release 2.2.0 - ???
+
+   * Added back ability to ignore load errors in TikaConfig (TIKA-3575).
+
+   * Make SecureContentHandler and other parameters configurable in
+     AutoDetectParser programmatically and via tika-config.xml (TIKA-3594).
 
    * Fix default logging in tika-app in batch mode (TIKA-3589).
 
