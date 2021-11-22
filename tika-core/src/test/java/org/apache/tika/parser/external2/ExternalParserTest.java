@@ -76,7 +76,7 @@ public class ExternalParserTest extends TikaTest {
             ExternalParser externalParser = (ExternalParser) p.getAllComponentParsers().get(0);
 
             XMLResult xmlResult = getXML("example.xml", externalParser);
-            assertContains("<body>text/xml</body>", xmlResult.xml);
+            assertContains("<body>text/xml</body>", xmlResult.xml.replaceAll("[\r\n]", ""));
         }
     }
 }

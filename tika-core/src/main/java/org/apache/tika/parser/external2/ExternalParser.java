@@ -111,6 +111,7 @@ public class ExternalParser extends AbstractParser implements Initializable {
             List<String> thisCommandLine = new ArrayList<>();
             Matcher inputMatcher = INPUT_TOKEN_MATCHER.matcher("");
             Matcher outputMatcher = OUTPUT_TOKEN_MATCHER.matcher("");
+            boolean outputFileInCommandline = false;
             for (String c : commandLine) {
                 if (inputMatcher.reset(c).find()) {
                     String updated =
@@ -122,13 +123,21 @@ public class ExternalParser extends AbstractParser implements Initializable {
                             outputMatcher.replaceAll(ProcessUtils.escapeCommandLine(
                                     outFile.toAbsolutePath().toString()));
                     thisCommandLine.add(updated);
+                    outputFileInCommandline = true;
                 } else {
                     thisCommandLine.add(c);
                 }
             }
+            FileProcessResult result = null;
             long localTimeoutMillis = TikaTaskTimeout.getTimeoutMillis(context, timeoutMs);
-            FileProcessResult result = ProcessUtils.execute(new ProcessBuilder(thisCommandLine),
-                    localTimeoutMillis, maxStdOut, maxStdErr);
+            if (outputFileInCommandline) {
+                result = ProcessUtils.execute(new ProcessBuilder(thisCommandLine),
+                        localTimeoutMillis, maxStdOut, maxStdErr);
+            } else {
+                outFile = Files.createTempFile("tika-external2-", "");
+                result = ProcessUtils.execute(new ProcessBuilder(thisCommandLine),
+                        localTimeoutMillis, outFile, maxStdErr);
+            }
             metadata.set(ExternalProcess.IS_TIMEOUT, result.isTimeout());
             metadata.set(ExternalProcess.EXIT_VALUE, result.getExitValue());
             metadata.set(ExternalProcess.STD_OUT_LENGTH, result.getStdoutLength());
