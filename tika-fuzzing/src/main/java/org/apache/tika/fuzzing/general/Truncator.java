@@ -16,10 +16,6 @@
  */
 package org.apache.tika.fuzzing.general;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.tika.fuzzing.Transformer;
-import org.apache.tika.mime.MediaType;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -27,10 +23,15 @@ import java.util.Collections;
 import java.util.Random;
 import java.util.Set;
 
+import org.apache.commons.io.IOUtils;
+
+import org.apache.tika.fuzzing.Transformer;
+import org.apache.tika.mime.MediaType;
+
 public class Truncator implements Transformer {
 
-    Random random = new Random();
     static Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.OCTET_STREAM);
+    Random random = new Random();
 
     @Override
     public Set<MediaType> getSupportedTypes() {
@@ -47,7 +48,7 @@ public class Truncator implements Transformer {
         int len = 1 + random.nextInt(input.length);
         //at least one
         if (len >= input.length) {
-            len = input.length-2;
+            len = input.length - 2;
             if (len < 0) {
                 len = 0;
             }

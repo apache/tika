@@ -16,27 +16,29 @@
  */
 package org.apache.tika.fuzzing.pdf;
 
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.fuzzing.Transformer;
-import org.apache.tika.fuzzing.exceptions.CantFuzzException;
-import org.apache.tika.mime.MediaType;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Collections;
 import java.util.Set;
 
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
+
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.fuzzing.Transformer;
+import org.apache.tika.fuzzing.exceptions.CantFuzzException;
+import org.apache.tika.mime.MediaType;
+
 public class PDFTransformer implements Transformer {
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.application("pdf"));
+    private static final Set<MediaType> SUPPORTED_TYPES =
+            Collections.singleton(MediaType.application("pdf"));
+    private final PDFTransformerConfig config = new PDFTransformerConfig();
+
     @Override
     public Set<MediaType> getSupportedTypes() {
         return SUPPORTED_TYPES;
     }
-
-    private PDFTransformerConfig config = new PDFTransformerConfig();
 
     @Override
     public void transform(InputStream is, OutputStream os) throws IOException, TikaException {

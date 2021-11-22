@@ -16,6 +16,36 @@
  */
 package org.apache.tika.fuzzing.pdf;
 
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.SequenceInputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+
 import org.apache.pdfbox.cos.COSArray;
 import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSBoolean;
@@ -48,47 +78,16 @@ import org.apache.pdfbox.pdmodel.fdf.FDFDocument;
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.COSFilterInputStream;
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.SignatureInterface;
 import org.apache.pdfbox.util.Hex;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.fuzzing.Transformer;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.SequenceInputStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
 
 public class EvilCOSWriter implements ICOSVisitor, Closeable {
-
-    private static final Logger LOG = LoggerFactory.getLogger(EvilCOSWriter.class);
 
     /**
      * The dictionary open token.
@@ -106,7 +105,6 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
      * The start to a PDF comment.
      */
     public static final byte[] COMMENT = {'%'};
-
     /**
      * The output version of the PDF.
      */
@@ -114,17 +112,17 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
     /**
      * Garbage bytes used to create the PDF header.
      */
-    public static final byte[] GARBAGE = new byte[]{(byte) 0xf6, (byte) 0xe4, (byte) 0xfc, (byte) 0xdf};
+    public static final byte[] GARBAGE =
+            new byte[]{(byte) 0xf6, (byte) 0xe4, (byte) 0xfc, (byte) 0xdf};
     /**
      * The EOF constant.
      */
     public static final byte[] EOF = "%%EOF".getBytes(StandardCharsets.US_ASCII);
-    // pdf tokens
-
     /**
      * The reference token.
      */
     public static final byte[] REFERENCE = "R".getBytes(StandardCharsets.US_ASCII);
+    // pdf tokens
     /**
      * The XREF token.
      */
@@ -169,47 +167,27 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
      * The close stream token.
      */
     public static final byte[] ENDSTREAM = "endstream".getBytes(StandardCharsets.US_ASCII);
-
-    private final NumberFormat formatXrefOffset = new DecimalFormat("0000000000",
-            DecimalFormatSymbols.getInstance(Locale.US));
+    private static final Logger LOG = LoggerFactory.getLogger(EvilCOSWriter.class);
+    private final NumberFormat formatXrefOffset =
+            new DecimalFormat("0000000000", DecimalFormatSymbols.getInstance(Locale.US));
 
     // the decimal format for the xref object generation number data
-    private final NumberFormat formatXrefGeneration = new DecimalFormat("00000",
-            DecimalFormatSymbols.getInstance(Locale.US));
-
-    // the stream where we create the pdf output
-    private OutputStream output;
-
-    // the stream used to write standard cos data
-    private COSStandardOutputStream standardOutput;
-
-    // the start position of the x ref section
-    private long startxref = 0;
-
-    // the current object number
-    private long number = 0;
-
-    private int roughNumberOfObjects = 0;
-
+    private final NumberFormat formatXrefGeneration =
+            new DecimalFormat("00000", DecimalFormatSymbols.getInstance(Locale.US));
     // maps the object to the keys generated in the writer
     // these are used for indirect references in other objects
     //A hashtable is used on purpose over a hashmap
     //so that null entries will not get added.
     @SuppressWarnings({"squid:S1149"})
     private final Map<COSBase, COSObjectKey> objectKeys = new Hashtable<>();
-
     private final Map<COSObjectKey, COSBase> keyObject = new HashMap<>();
-
     // the list of x ref entries to be made so far
     private final List<COSWriterXRefEntry> xRefEntries = new ArrayList<>();
     private final Set<COSBase> objectsToWriteSet = new HashSet<>();
-
     //A list of objects to write.
     private final Deque<COSBase> objectsToWrite = new LinkedList<>();
-
     //a list of objects already written
     private final Set<COSBase> writtenObjects = new HashSet<>();
-
     //An 'actual' is any COSBase that is not a COSObject.
     //need to keep a list of the actuals that are added
     //as well as the objects because there is a problem
@@ -217,14 +195,23 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
     //the actual for that object, so we will track
     //actuals separately.
     private final Set<COSBase> actualsAdded = new HashSet<>();
-
+    private final PDFTransformerConfig config;
+    private final Random random = new Random();
+    // the stream where we create the pdf output
+    private OutputStream output;
+    // the stream used to write standard cos data
+    private COSStandardOutputStream standardOutput;
+    // the start position of the x ref section
+    private long startxref = 0;
+    // the current object number
+    private long number = 0;
+    private int roughNumberOfObjects = 0;
     private COSObjectKey currentObjectKey = null;
     private PDDocument pdDocument = null;
     private FDFDocument fdfDocument = null;
     private boolean willEncrypt = false;
-
     // signing
-    private boolean incrementalUpdate = false;
+    private final boolean incrementalUpdate = false;
     private boolean reachedSignature = false;
     private long signatureOffset;
     private long signatureLength;
@@ -235,11 +222,8 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
     private SignatureInterface signatureInterface;
     private byte[] incrementPart;
     private COSArray byteRangeArray;
+    private final FilterFactory filterFactory = FilterFactory.INSTANCE;
 
-    private FilterFactory filterFactory = FilterFactory.INSTANCE;
-
-    private final PDFTransformerConfig config;
-    private final Random random = new Random();
     /**
      * COSWriter constructor.
      *
@@ -252,7 +236,79 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
         this.config = config;
     }
 
-    private void prepareIncrement(PDDocument doc)  throws IOException {
+    /**
+     * This will output the given byte getString as a PDF object.
+     *
+     * @param string COSString to be written
+     * @param output The stream to write to.
+     * @throws IOException If there is an error writing to the stream.
+     */
+    public static void writeString(COSString string, OutputStream output) throws IOException {
+        writeString(string.getBytes(), string.getForceHexForm(), output);
+    }
+
+    /**
+     * This will output the given text/byte getString as a PDF object.
+     *
+     * @param bytes  byte array representation of a string to be written
+     * @param output The stream to write to.
+     * @throws IOException If there is an error writing to the stream.
+     */
+    public static void writeString(byte[] bytes, OutputStream output) throws IOException {
+        writeString(bytes, false, output);
+    }
+
+    /**
+     * This will output the given text/byte string as a PDF object.
+     *
+     * @param output The stream to write to.
+     * @throws IOException If there is an error writing to the stream.
+     */
+    private static void writeString(byte[] bytes, boolean forceHex, OutputStream output)
+            throws IOException {
+        // check for non-ASCII characters
+        boolean isASCII = true;
+        if (!forceHex) {
+            for (byte b : bytes) {
+                // if the byte is negative then it is an eight bit byte and is outside the ASCII range
+                if (b < 0) {
+                    isASCII = false;
+                    break;
+                }
+                // PDFBOX-3107 EOL markers within a string are troublesome
+                if (b == 0x0d || b == 0x0a) {
+                    isASCII = false;
+                    break;
+                }
+            }
+        }
+
+        if (isASCII && !forceHex) {
+            // write ASCII string
+            output.write('(');
+            for (byte b : bytes) {
+                switch (b) {
+                    case '(':
+                    case ')':
+                    case '\\':
+                        output.write('\\');
+                        output.write(b);
+                        break;
+                    default:
+                        output.write(b);
+                        break;
+                }
+            }
+            output.write(')');
+        } else {
+            // write hex string
+            output.write('<');
+            Hex.writeHexBytes(bytes, output);
+            output.write('>');
+        }
+    }
+
+    private void prepareIncrement(PDDocument doc) throws IOException {
         if (doc != null) {
             COSDocument cosDoc = doc.getDocument();
 
@@ -311,6 +367,16 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
     }
 
     /**
+     * This will set the current object number.
+     *
+     * @param newNumber The new object number.
+     */
+    protected void setNumber(long newNumber) {
+        number = newNumber;
+
+    }
+
+    /**
      * This will get all available object keys.
      *
      * @return A map of all object keys.
@@ -329,49 +395,21 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
     }
 
     /**
-     * This will get the standard output stream.
-     *
-     * @return The standard output stream.
-     */
-    protected COSStandardOutputStream getStandardOutput() {
-        return standardOutput;
-    }
-
-    /**
-     * This will get the current start xref.
-     *
-     * @return The current start xref.
-     */
-    protected long getStartxref() {
-        return startxref;
-    }
-
-    /**
-     * This will get the xref entries.
-     *
-     * @return All available xref entries.
-     */
-    protected List<COSWriterXRefEntry> getXRefEntries() {
-        return xRefEntries;
-    }
-
-    /**
-     * This will set the current object number.
-     *
-     * @param newNumber The new object number.
-     */
-    protected void setNumber(long newNumber) {
-        number = newNumber;
-
-    }
-
-    /**
      * This will set the output stream.
      *
      * @param newOutput The new output stream.
      */
     private void setOutput(OutputStream newOutput) {
         output = newOutput;
+    }
+
+    /**
+     * This will get the standard output stream.
+     *
+     * @return The standard output stream.
+     */
+    protected COSStandardOutputStream getStandardOutput() {
+        return standardOutput;
     }
 
     /**
@@ -384,12 +422,30 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
     }
 
     /**
+     * This will get the current start xref.
+     *
+     * @return The current start xref.
+     */
+    protected long getStartxref() {
+        return startxref;
+    }
+
+    /**
      * This will set the start xref.
      *
      * @param newStartxref The new start xref attribute.
      */
     protected void setStartxref(long newStartxref) {
         startxref = newStartxref;
+    }
+
+    /**
+     * This will get the xref entries.
+     *
+     * @return All available xref entries.
+     */
+    protected List<COSWriterXRefEntry> getXRefEntries() {
+        return xRefEntries;
     }
 
     /**
@@ -434,8 +490,7 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
             actual = ((COSObject) actual).getObject();
         }
 
-        if (!writtenObjects.contains(object) &&
-                !objectsToWriteSet.contains(object) &&
+        if (!writtenObjects.contains(object) && !objectsToWriteSet.contains(object) &&
                 !actualsAdded.contains(actual)) {
             COSBase cosBase = null;
             COSObjectKey cosObjectKey = null;
@@ -445,9 +500,11 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
             if (cosObjectKey != null) {
                 cosBase = keyObject.get(cosObjectKey);
             }
-            if (actual != null && objectKeys.containsKey(actual)
-                    && object instanceof COSUpdateInfo && !((COSUpdateInfo) object).isNeedToBeUpdated()
-                    && cosBase instanceof COSUpdateInfo && !((COSUpdateInfo) cosBase).isNeedToBeUpdated()) {
+            if (actual != null && objectKeys.containsKey(actual) &&
+                    object instanceof COSUpdateInfo &&
+                    !((COSUpdateInfo) object).isNeedToBeUpdated() &&
+                    cosBase instanceof COSUpdateInfo &&
+                    !((COSUpdateInfo) cosBase).isNeedToBeUpdated()) {
                 return;
             }
             objectsToWrite.add(object);
@@ -473,13 +530,15 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
         // write the object
 
         long objectNumber = currentObjectKey.getNumber();
-        if (config.getRandomizeObjectNumbers() > 0.0f && random.nextFloat() <
-            config.getRandomizeObjectNumbers()) {
-                objectNumber = random.nextInt(((int)objectNumber)*2);
+        if (config.getRandomizeObjectNumbers() > 0.0f &&
+                random.nextFloat() < config.getRandomizeObjectNumbers()) {
+            objectNumber = random.nextInt(((int) objectNumber) * 2);
         }
-        getStandardOutput().write(String.valueOf(objectNumber).getBytes(StandardCharsets.ISO_8859_1));
+        getStandardOutput().write(
+                String.valueOf(objectNumber).getBytes(StandardCharsets.ISO_8859_1));
         getStandardOutput().write(SPACE);
-        getStandardOutput().write(String.valueOf(currentObjectKey.getGeneration()).getBytes(StandardCharsets.ISO_8859_1));
+        getStandardOutput().write(String.valueOf(currentObjectKey.getGeneration())
+                .getBytes(StandardCharsets.ISO_8859_1));
         getStandardOutput().write(SPACE);
         getStandardOutput().write(OBJ);
         getStandardOutput().writeEOL();
@@ -496,15 +555,16 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
     }
 
     private void writeObjContents(COSBase obj) throws IOException {
-        if (! (obj instanceof COSObject)) {
+        if (!(obj instanceof COSObject)) {
             obj.accept(this);
             return;
         }
 
-        COSObject cosObject = (COSObject)obj;
+        COSObject cosObject = (COSObject) obj;
         COSBase underlyingObject = cosObject.getObject();
-        if (underlyingObject instanceof COSStream && config.getUnfilteredStreamTransformer() != null) {
-            COSStream cosStream = (COSStream)underlyingObject;
+        if (underlyingObject instanceof COSStream &&
+                config.getUnfilteredStreamTransformer() != null) {
+            COSStream cosStream = (COSStream) underlyingObject;
             Transformer unfilteredStreamTransformer = config.getUnfilteredStreamTransformer();
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             try (InputStream is = cosStream.createRawInputStream()) {
@@ -512,7 +572,8 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
             }
             ByteArrayOutputStream transformed = new ByteArrayOutputStream();
             try {
-                unfilteredStreamTransformer.transform(new ByteArrayInputStream(bos.toByteArray()), transformed);
+                unfilteredStreamTransformer.transform(new ByteArrayInputStream(bos.toByteArray()),
+                        transformed);
             } catch (TikaException e) {
                 throw new IOException(e);
             }
@@ -530,7 +591,7 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
 
         //stub
         if (obj instanceof COSStream) {
-            COSStream stream = (COSStream)obj;
+            COSStream stream = (COSStream) obj;
             //get the raw unfiltered bytes
             byte[] bytes = new PDStream(stream).toByteArray();
             //transform the underlying stream _before_ filters are applied
@@ -568,31 +629,32 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
                 stream.setItem(COSName.FILTER, actualFilters);
             }
         } else if (obj instanceof COSObject) {
-                COSBase underlyingObject = ((COSObject)obj).getObject();
-                mutate(underlyingObject);
+            COSBase underlyingObject = ((COSObject) obj).getObject();
+            mutate(underlyingObject);
 
         }
     }
 
-    private TikaInputStream runFilters(COSBase filters, TikaInputStream is, List<COSName> usedFilters) throws IOException {
+    private TikaInputStream runFilters(COSBase filters, TikaInputStream is,
+                                       List<COSName> usedFilters) throws IOException {
         if (filters instanceof COSNull) {
         } else if (filters instanceof COSName) {
-            is = runFilter((COSName)filters, is, new COSDictionary(), 0);
-            usedFilters.add((COSName)filters);
-            LOG.debug("filter:" + filters.toString() +" "+0 + " : " + is.getLength() );
+            is = runFilter((COSName) filters, is, new COSDictionary(), 0);
+            usedFilters.add((COSName) filters);
+            LOG.debug("filter:" + filters + " " + 0 + " : " + is.getLength());
         } else if (filters instanceof COSArray) {
-            COSArray filterArray = (COSArray)filters;
+            COSArray filterArray = (COSArray) filters;
             //need to apply them in reverse order!
             boolean transformed = false;
-            for (int i = filterArray.size()-1; i >= 0; i--) {
-                COSName filter = (COSName)filterArray.get(i);
+            for (int i = filterArray.size() - 1; i >= 0; i--) {
+                COSName filter = (COSName) filterArray.get(i);
                 is = runFilter(filter, is, new COSDictionary(), 0);
                 if (random.nextFloat() > 0.1 && transformed == false) {
                     is = transformRawStream(is);
                     transformed = true;
                 }
                 usedFilters.add(filter);
-                LOG.debug("filter:" + filter.toString() +" "+i + " : " +  is.getLength());
+                LOG.debug("filter:" + filter.toString() + " " + i + " : " + is.getLength());
                 if (is.getLength() > config.getMaxFilteredStreamLength()) {
                     LOG.debug("stopping early");
                     return is;
@@ -600,7 +662,8 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
             }
             return is;
         } else {
-            throw new IllegalArgumentException("Can't handle this class here: "+filters.getClass());
+            throw new IllegalArgumentException(
+                    "Can't handle this class here: " + filters.getClass());
         }
         return transformRawStream(is);
     }
@@ -631,8 +694,9 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
         return is;
     }
 
-    private TikaInputStream runFilter(COSName filterCOSName, TikaInputStream tis, COSDictionary filterParameters,
-                             int filterIndex) throws IOException {
+    private TikaInputStream runFilter(COSName filterCOSName, TikaInputStream tis,
+                                      COSDictionary filterParameters, int filterIndex)
+            throws IOException {
 
         Filter filter = filterFactory.getFilter(filterCOSName);
         if (tis.getLength() < 100000000) {
@@ -680,9 +744,9 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
     protected void doWriteHeader(COSDocument doc) throws IOException {
         String headerString;
         if (fdfDocument != null) {
-            headerString = "%FDF-" + Float.toString(doc.getVersion());
+            headerString = "%FDF-" + doc.getVersion();
         } else {
-            headerString = "%PDF-" + Float.toString(doc.getVersion());
+            headerString = "%PDF-" + doc.getVersion();
         }
         getStandardOutput().write(headerString.getBytes(StandardCharsets.ISO_8859_1));
 
@@ -691,7 +755,6 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
         getStandardOutput().write(GARBAGE);
         getStandardOutput().writeEOL();
     }
-
 
     /**
      * This will write the trailer to the PDF document.
@@ -818,7 +881,8 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
         long inLength = incrementalInput.length();
         long beforeLength = signatureOffset;
         long afterOffset = signatureOffset + signatureLength;
-        long afterLength = getStandardOutput().getPos() - (inLength + signatureLength) - (signatureOffset - inLength);
+        long afterLength = getStandardOutput().getPos() - (inLength + signatureLength) -
+                (signatureOffset - inLength);
 
         String byteRange = "0 " + beforeLength + " " + afterOffset + " " + afterLength + "]";
 
@@ -880,14 +944,9 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
         // range of incremental bytes to be signed (includes /ByteRange but not /Contents)
         int incPartSigOffset = (int) (signatureOffset - incrementalInput.length());
         int afterSigOffset = incPartSigOffset + (int) signatureLength;
-        int[] range =
-                {
-                        0, incPartSigOffset,
-                        afterSigOffset, incrementPart.length - afterSigOffset
-                };
+        int[] range = {0, incPartSigOffset, afterSigOffset, incrementPart.length - afterSigOffset};
 
-        return new SequenceInputStream(
-                new RandomAccessInputStream(incrementalInput),
+        return new SequenceInputStream(new RandomAccessInputStream(incrementalInput),
                 new COSFilterInputStream(incrementPart, range));
     }
 
@@ -912,7 +971,8 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
 
         // overwrite the signature Contents in the buffer
         int incPartSigOffset = (int) (signatureOffset - incrementalInput.length());
-        System.arraycopy(signatureBytes, 0, incrementPart, incPartSigOffset + 1, signatureBytes.length);
+        System.arraycopy(signatureBytes, 0, incrementPart, incPartSigOffset + 1,
+                signatureBytes.length);
 
         // write the data to the incremental output stream
         IOUtils.copy(new RandomAccessInputStream(incrementalInput), incrementalOutput);
@@ -1028,7 +1088,8 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
                 }
             } else if (current instanceof COSObject) {
                 COSBase subValue = ((COSObject) current).getObject();
-                if (willEncrypt || incrementalUpdate || subValue instanceof COSDictionary || subValue == null) {
+                if (willEncrypt || incrementalUpdate || subValue instanceof COSDictionary ||
+                        subValue == null) {
                     // PDFBOX-4308: added willEncrypt to prevent an object
                     // that is referenced several times from being written
                     // direct and indirect, thus getting encrypted
@@ -1104,7 +1165,8 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
                     }
                 } else if (value instanceof COSObject) {
                     COSBase subValue = ((COSObject) value).getObject();
-                    if (willEncrypt || incrementalUpdate || subValue instanceof COSDictionary || subValue == null) {
+                    if (willEncrypt || incrementalUpdate || subValue instanceof COSDictionary ||
+                            subValue == null) {
                         // PDFBOX-4308: added willEncrypt to prevent an object
                         // that is referenced several times from being written
                         // direct and indirect, thus getting encrypted
@@ -1177,7 +1239,8 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
         // write endof
         getStandardOutput().write(STARTXREF);
         getStandardOutput().writeEOL();
-        getStandardOutput().write(String.valueOf(getStartxref()).getBytes(StandardCharsets.ISO_8859_1));
+        getStandardOutput().write(
+                String.valueOf(getStartxref()).getBytes(StandardCharsets.ISO_8859_1));
         getStandardOutput().writeEOL();
         getStandardOutput().write(EOF);
         getStandardOutput().writeEOL();
@@ -1227,17 +1290,18 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
         COSObjectKey key = getObjectKey(obj);
         float randomThreshold = config.getRandomizeRefNumbers();
         float r = random.nextFloat();
-        if (randomThreshold > 0.0f &&
-                r < randomThreshold) {
+        if (randomThreshold > 0.0f && r < randomThreshold) {
             long num = random.nextInt(roughNumberOfObjects);
-            LOG.debug("corrupting ref number: "+key.getNumber() + " -> "+num);
+            LOG.debug("corrupting ref number: " + key.getNumber() + " -> " + num);
             getStandardOutput().write(String.valueOf(num).getBytes(StandardCharsets.ISO_8859_1));
         } else {
-            getStandardOutput().write(String.valueOf(key.getNumber()).getBytes(StandardCharsets.ISO_8859_1));
+            getStandardOutput().write(
+                    String.valueOf(key.getNumber()).getBytes(StandardCharsets.ISO_8859_1));
 
         }
         getStandardOutput().write(SPACE);
-        getStandardOutput().write(String.valueOf(key.getGeneration()).getBytes(StandardCharsets.ISO_8859_1));
+        getStandardOutput().write(
+                String.valueOf(key.getGeneration()).getBytes(StandardCharsets.ISO_8859_1));
         getStandardOutput().write(SPACE);
         getStandardOutput().write(REFERENCE);
     }
@@ -1246,7 +1310,8 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
     public Object visitFromStream(COSStream obj) throws IOException {
         if (willEncrypt) {
             pdDocument.getEncryption().getSecurityHandler()
-                    .encryptStream(obj, currentObjectKey.getNumber(), currentObjectKey.getGeneration());
+                    .encryptStream(obj, currentObjectKey.getNumber(),
+                            currentObjectKey.getGeneration());
         }
 
         InputStream input = null;
@@ -1270,13 +1335,13 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
         }
 
     }
+
     @Override
     public Object visitFromString(COSString obj) throws IOException {
         if (willEncrypt) {
-            pdDocument.getEncryption().getSecurityHandler().encryptString(
-                    obj,
-                    currentObjectKey.getNumber(),
-                    currentObjectKey.getGeneration());
+            pdDocument.getEncryption().getSecurityHandler()
+                    .encryptString(obj, currentObjectKey.getNumber(),
+                            currentObjectKey.getGeneration());
         }
         COSWriter.writeString(obj, getStandardOutput());
         return null;
@@ -1284,7 +1349,6 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
 
     /**
      * This will write the pdf document.  }
-     *
      *
      * @param doc The document to write.
      * @throws IOException If an error occurs while generating the data.
@@ -1317,8 +1381,8 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
      *                               policy.
      */
     public void write(PDDocument doc, SignatureInterface signInterface) throws IOException {
-        long idTime = doc.getDocumentId() == null ? System.currentTimeMillis() :
-                doc.getDocumentId();
+        long idTime =
+                doc.getDocumentId() == null ? System.currentTimeMillis() : doc.getDocumentId();
 
         pdDocument = doc;
         signatureInterface = signInterface;
@@ -1338,10 +1402,12 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
         } else {
             if (pdDocument.getEncryption() != null) {
                 if (!incrementalUpdate) {
-                    SecurityHandler securityHandler = pdDocument.getEncryption().getSecurityHandler();
+                    SecurityHandler securityHandler =
+                            pdDocument.getEncryption().getSecurityHandler();
                     if (!securityHandler.hasProtectionPolicy()) {
-                        throw new IllegalStateException("PDF contains an encryption dictionary, please remove it with "
-                                + "setAllSecurityToBeRemoved() or set a protection policy with protect()");
+                        throw new IllegalStateException(
+                                "PDF contains an encryption dictionary, please remove it with " +
+                                        "setAllSecurityToBeRemoved() or set a protection policy with protect()");
                     }
                     securityHandler.prepareDocumentForEncryption(pdDocument);
                 }
@@ -1384,7 +1450,8 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
                 }
             }
             // reuse origin documentID if available as first value
-            COSString firstID = missingID ? new COSString(md5.digest()) : (COSString) idArray.get(0);
+            COSString firstID =
+                    missingID ? new COSString(md5.digest()) : (COSString) idArray.get(0);
             // it's ok to use the same ID for the second part if the ID is created for the first time
             COSString secondID = missingID ? firstID : new COSString(md5.digest());
             idArray = new COSArray();
@@ -1406,77 +1473,5 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
         willEncrypt = false;
         COSDocument cosDoc = fdfDocument.getDocument();
         cosDoc.accept(this);
-    }
-
-    /**
-     * This will output the given byte getString as a PDF object.
-     *
-     * @param string COSString to be written
-     * @param output The stream to write to.
-     * @throws IOException If there is an error writing to the stream.
-     */
-    public static void writeString(COSString string, OutputStream output) throws IOException {
-        writeString(string.getBytes(), string.getForceHexForm(), output);
-    }
-
-    /**
-     * This will output the given text/byte getString as a PDF object.
-     *
-     * @param bytes  byte array representation of a string to be written
-     * @param output The stream to write to.
-     * @throws IOException If there is an error writing to the stream.
-     */
-    public static void writeString(byte[] bytes, OutputStream output) throws IOException {
-        writeString(bytes, false, output);
-    }
-
-    /**
-     * This will output the given text/byte string as a PDF object.
-     *
-     * @param output The stream to write to.
-     * @throws IOException If there is an error writing to the stream.
-     */
-    private static void writeString(byte[] bytes, boolean forceHex, OutputStream output)
-            throws IOException {
-        // check for non-ASCII characters
-        boolean isASCII = true;
-        if (!forceHex) {
-            for (byte b : bytes) {
-                // if the byte is negative then it is an eight bit byte and is outside the ASCII range
-                if (b < 0) {
-                    isASCII = false;
-                    break;
-                }
-                // PDFBOX-3107 EOL markers within a string are troublesome
-                if (b == 0x0d || b == 0x0a) {
-                    isASCII = false;
-                    break;
-                }
-            }
-        }
-
-        if (isASCII && !forceHex) {
-            // write ASCII string
-            output.write('(');
-            for (byte b : bytes) {
-                switch (b) {
-                    case '(':
-                    case ')':
-                    case '\\':
-                        output.write('\\');
-                        output.write(b);
-                        break;
-                    default:
-                        output.write(b);
-                        break;
-                }
-            }
-            output.write(')');
-        } else {
-            // write hex string
-            output.write('<');
-            Hex.writeHexBytes(bytes, output);
-            output.write('>');
-        }
     }
 }

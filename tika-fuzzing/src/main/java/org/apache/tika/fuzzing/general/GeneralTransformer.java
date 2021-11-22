@@ -16,13 +16,6 @@
  */
 package org.apache.tika.fuzzing.general;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.fuzzing.Transformer;
-import org.apache.tika.mime.MediaType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -33,25 +26,32 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.fuzzing.Transformer;
+import org.apache.tika.mime.MediaType;
+
 public class GeneralTransformer implements Transformer {
 
     private static final Logger LOG = LoggerFactory.getLogger(GeneralTransformer.class);
-
-    Random random = new Random();
-
     private final int maxTransforms;
     private final Transformer[] transformers;
     private final Set<MediaType> supportedTypes;
+    Random random = new Random();
+
     public GeneralTransformer() {
-        this(new ByteDeleter(), new ByteFlipper(),
-                new ByteInjector(), new Truncator(), new SpanSwapper());
+        this(new ByteDeleter(), new ByteFlipper(), new ByteInjector(), new Truncator(),
+                new SpanSwapper());
     }
 
-    public GeneralTransformer(Transformer ... transformers) {
+    public GeneralTransformer(Transformer... transformers) {
         this(transformers.length, transformers);
     }
 
-    public GeneralTransformer(int maxTransforms, Transformer ... transformers) {
+    public GeneralTransformer(int maxTransforms, Transformer... transformers) {
         this.maxTransforms = (maxTransforms < 0) ? transformers.length : maxTransforms;
         this.transformers = transformers;
         Set<MediaType> tmpTypes = new HashSet<>();
@@ -83,8 +83,7 @@ public class GeneralTransformer implements Transformer {
         for (int transformerIndex : transformerIndices) {
             byte[] bytes = bos.toByteArray();
             bos = new ByteArrayOutputStream();
-            transformers[transformerIndex].transform(
-                    new ByteArrayInputStream(bytes), bos);
+            transformers[transformerIndex].transform(new ByteArrayInputStream(bytes), bos);
             bos.flush();
             if (bos.toByteArray().length == 0) {
                 LOG.warn("zero length: " + transformers[transformerIndex]);

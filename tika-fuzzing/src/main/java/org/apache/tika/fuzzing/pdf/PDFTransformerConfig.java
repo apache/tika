@@ -16,9 +16,16 @@
  */
 package org.apache.tika.fuzzing.pdf;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
+
 import org.apache.pdfbox.cos.COSArray;
 import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSName;
+
 import org.apache.tika.fuzzing.Transformer;
 import org.apache.tika.fuzzing.general.ByteDeleter;
 import org.apache.tika.fuzzing.general.ByteFlipper;
@@ -26,12 +33,6 @@ import org.apache.tika.fuzzing.general.ByteInjector;
 import org.apache.tika.fuzzing.general.GeneralTransformer;
 import org.apache.tika.fuzzing.general.SpanSwapper;
 import org.apache.tika.fuzzing.general.Truncator;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
 
 public class PDFTransformerConfig {
 
@@ -48,20 +49,19 @@ public class PDFTransformerConfig {
 
     private Set<COSName> allowableFilters = new HashSet<>();
 
-    private Transformer streamTransformer = new GeneralTransformer(1,
-            new ByteDeleter(),
-            new ByteFlipper(), new ByteInjector(), new SpanSwapper(), new Truncator());
+    private Transformer streamTransformer =
+            new GeneralTransformer(1, new ByteDeleter(), new ByteFlipper(), new ByteInjector(),
+                    new SpanSwapper(), new Truncator());
 
-    private Transformer unfilteredStreamTransformer = new GeneralTransformer(1,
-            new ByteDeleter(),
-            new ByteFlipper(), new ByteInjector(), new SpanSwapper(), new Truncator());
+    private Transformer unfilteredStreamTransformer =
+            new GeneralTransformer(1, new ByteDeleter(), new ByteFlipper(), new ByteInjector(),
+                    new SpanSwapper(), new Truncator());
 
     public float getRandomizeObjectNumbers() {
         return randomizeObjectNumbers;
     }
 
     /**
-     *
      * @param randomizeObjectNumbers probability that a given object number will be randomized.
      *                               If < 0, this will be ignored.
      */
@@ -69,8 +69,11 @@ public class PDFTransformerConfig {
         this.randomizeObjectNumbers = randomizeObjectNumbers;
     }
 
+    public float getRandomizeRefNumbers() {
+        return randomizeRefNumbers;
+    }
+
     /**
-     *
      * @param randomizeRefNumbers probability that a given reference number will be randomized.
      *                            If < 0, this will be ignored.
      */
@@ -78,12 +81,18 @@ public class PDFTransformerConfig {
         this.randomizeRefNumbers = randomizeRefNumbers;
     }
 
-    public float getRandomizeRefNumbers() {
-        return randomizeRefNumbers;
-    }
-
     public Transformer getUnfilteredStreamTransformer() {
         return unfilteredStreamTransformer;
+    }
+
+    /**
+     * This transformer is applied to the stream _before_ any filters
+     * are applied.
+     *
+     * @param transformer
+     */
+    public void setUnfilteredStreamTransformer(Transformer transformer) {
+        this.unfilteredStreamTransformer = transformer;
     }
 
     public Transformer getStreamTransformer() {
@@ -100,16 +109,6 @@ public class PDFTransformerConfig {
     }
 
     /**
-     * This transformer is applied to the stream _before_ any filters
-     * are applied.
-     * @param transformer
-     */
-    public void setUnfilteredStreamTransformer(Transformer transformer) {
-        this.unfilteredStreamTransformer = transformer;
-    }
-
-    /**
-     *
      * @param maxFilters maximum number of filters to apply
      */
     public void setMaxFilters(int maxFilters) {
@@ -118,6 +117,7 @@ public class PDFTransformerConfig {
 
     /**
      * Which filters are allowed
+     *
      * @return
      */
     public Set<COSName> getAllowableFilters() {
@@ -140,17 +140,17 @@ public class PDFTransformerConfig {
         if (maxFilters < 0) {
             List<COSName> ret = new ArrayList<>();
             if (existingFilters instanceof COSArray) {
-                for (COSBase obj : ((COSArray)existingFilters)) {
-                    ret.add((COSName)obj);
+                for (COSBase obj : ((COSArray) existingFilters)) {
+                    ret.add((COSName) obj);
                 }
             } else if (existingFilters instanceof COSName) {
-                ret.add((COSName)existingFilters);
+                ret.add((COSName) existingFilters);
             }
             return ret;
         }
 
         int numFilters;
-        if (maxFilters-minFilters == 0) {
+        if (maxFilters - minFilters == 0) {
             numFilters = maxFilters;
         } else {
             numFilters = minFilters + random.nextInt(maxFilters - minFilters);

@@ -19,7 +19,7 @@
 -->
 
 <mock>
-    <metadata action="add" name="author">Nikolai Lobachevsky</metadata>
-    <write element="p">some content</write>
-    <hang millis="30000" heavy="true" pulse_millis="100" />
+  <metadata action="add" name="author">Nikolai Lobachevsky</metadata>
+  <write element="p">some content</write>
+  <hang millis="30000" heavy="true" pulse_millis="100"/>
 </mock>
