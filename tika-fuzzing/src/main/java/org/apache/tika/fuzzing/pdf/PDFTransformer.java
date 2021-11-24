@@ -33,7 +33,7 @@ import org.apache.tika.mime.MediaType;
 public class PDFTransformer implements Transformer {
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.application("pdf"));
-    private final PDFTransformerConfig config = new PDFTransformerConfig();
+    private PDFTransformerConfig config = new PDFTransformerConfig();
 
     @Override
     public Set<MediaType> getSupportedTypes() {
@@ -43,11 +43,18 @@ public class PDFTransformer implements Transformer {
     @Override
     public void transform(InputStream is, OutputStream os) throws IOException, TikaException {
         try (PDDocument pdDocument = PDDocument.load(is)) {
+            //some docs have security which prevents mods and writing
+            //given our purposes here, we should remove security
+            pdDocument.setAllSecurityToBeRemoved(true);
             try (EvilCOSWriter cosWriter = new EvilCOSWriter(os, config)) {
                 cosWriter.write(pdDocument);
             }
         } catch (InvalidPasswordException e) {
             throw new CantFuzzException("encrypted doc");
         }
+    }
+
+    public void setConfig(PDFTransformerConfig pdfTransformerConfig) {
+        this.config = pdfTransformerConfig;
     }
 }
