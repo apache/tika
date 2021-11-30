@@ -26,7 +26,7 @@ import org.testcontainers.utility.DockerImageName;
 
 public class TikaPipesOpenSearchTest extends TikaPipesOpenSearchBase {
 
-    private static final String DOCKER_IMAGE_NAME = "opensearchproject/opensearch:1.1.0";
+    private static final String DOCKER_IMAGE_NAME = "opensearchproject/opensearch:1.2.0";
 
     @ClassRule
     public static GenericContainer<?> OPEN_SEARCH_CONTAINER =
