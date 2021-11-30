@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.opensearch.tests;
+package org.apache.tika.pipes.xsearch.tests;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -41,11 +41,11 @@ import org.apache.tika.pipes.emitter.opensearch.OpenSearchEmitter;
  * This expands on the OpenSearchClient for testing purposes.
  * This has more functionality than is needed for sending docs to OpenSearch
  */
-public class OpenSearchTestClient extends OpenSearchClient {
+public class XSearchTestClient extends OpenSearchClient {
 
-    protected OpenSearchTestClient(String openSearchUrl, HttpClient httpClient,
-                                   OpenSearchEmitter.AttachmentStrategy attachmentStrategy,
-                                   String embeddedFileFieldName) {
+    protected XSearchTestClient(String openSearchUrl, HttpClient httpClient,
+                                OpenSearchEmitter.AttachmentStrategy attachmentStrategy,
+                                String embeddedFileFieldName) {
         super(openSearchUrl, httpClient, attachmentStrategy, embeddedFileFieldName);
     }
 
