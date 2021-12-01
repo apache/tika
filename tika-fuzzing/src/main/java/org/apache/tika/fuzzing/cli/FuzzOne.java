@@ -123,7 +123,7 @@ public class FuzzOne {
             Files.delete(target);
             throw t;
         }
-        ExecutorService executor = Executors.newSingleThreadExecutor();
+        ExecutorService executor = Executors.newFixedThreadPool(1);
         Future<Integer> future = executor.submit(new ParseTask(target));
 
         try {

@@ -273,7 +273,7 @@ public abstract class FSBatchTestBase extends TikaTest {
     }
 
     protected ParallelFileProcessingResult run(BatchProcess process) throws Exception {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
+        ExecutorService executor = Executors.newFixedThreadPool(1);
         Future<ParallelFileProcessingResult> futureResult = executor.submit(process);
         return futureResult.get(10, TimeUnit.SECONDS);
     }

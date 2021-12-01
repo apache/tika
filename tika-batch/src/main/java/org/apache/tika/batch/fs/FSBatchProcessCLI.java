@@ -134,7 +134,7 @@ public class FSBatchProcessCLI {
         final Thread mainThread = Thread.currentThread();
 
 
-        ExecutorService executor = Executors.newSingleThreadExecutor();
+        ExecutorService executor = Executors.newFixedThreadPool(1);
         Future<ParallelFileProcessingResult> futureResult = executor.submit(process);
 
         ParallelFileProcessingResult result = futureResult.get();
