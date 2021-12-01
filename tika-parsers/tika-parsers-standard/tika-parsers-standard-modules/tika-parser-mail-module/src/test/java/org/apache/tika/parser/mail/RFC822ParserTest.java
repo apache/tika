@@ -22,8 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -385,7 +385,7 @@ public class RFC822ParserTest extends TikaTest {
                 "Sun, 15 May 2016 01:32:00", //no timezone
                 "Sunday, May 15 2016 1:32 AM", "May 15 2016 1:32am", "May 15 2016 1:32 am",
                 "2016-05-15 01:32:00", "      Sun, 15 May 2016 3:32:00 +0200",
-//format correctly handled by mime4j if no leading whitespace
+                //format correctly handled by mime4j if no leading whitespace
                 "      Sun, 14 May 2016 20:32:00 EST",}) {
             testDate(dateString, expected);
         }
@@ -613,4 +613,5 @@ public class RFC822ParserTest extends TikaTest {
         assertEquals(1, metadataList.size());
         assertContains("ssssss", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
     }
+
 }

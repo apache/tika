@@ -107,12 +107,12 @@
         </sql>
         <sql>
             update exceptions_compared
-            set exc_prcnt_a = cast(exc_cnt_a as decimal)/cast(total as decimal)
+            set exc_prcnt_a = cast(exc_cnt_a as double)/cast(total as double)
             where total > 0;
         </sql>
         <sql>
             update exceptions_compared
-            set exc_prcnt_b = cast(exc_cnt_b as decimal)/cast(total as decimal)
+            set exc_prcnt_b = cast(exc_cnt_b as double)/cast(total as double)
             where total > 0;
         </sql>
 
@@ -705,7 +705,7 @@
         </sql>
         <sql>
             update parse_time_compared ptc set prcnt_increase=(100.0 *
-            cast(total_b as decimal)/cast(total_a as decimal))
+            cast(total_b as float)/cast(total_a as float))
             where total_a > 0;
         </sql>
     </before>

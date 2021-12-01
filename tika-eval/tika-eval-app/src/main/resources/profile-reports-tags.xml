@@ -122,7 +122,7 @@
             num_tokens, num_alphabetic_tokens, num_common_tokens,
             case
                 when num_alphabetic_tokens &gt; 0
-                then cast(num_common_tokens as decimal)/cast(num_alphabetic_tokens as decimal)
+                then cast(num_common_tokens as double)/cast(num_alphabetic_tokens as double)
                 else 0
             end as common_div_alphabetic
             from contents c
@@ -131,7 +131,7 @@
             join mimes m on p.mime_id=m.mime_id
             where
                 (num_alphabetic_tokens = 0
-                    or cast(num_common_tokens as decimal)/cast(num_alphabetic_tokens as decimal) &lt; 0.50
+                    or cast(num_common_tokens as double)/cast(num_alphabetic_tokens as double) &lt; 0.50
                 )
             and mime_string not like 'image%'
             and mime_string not like 'video%'
@@ -159,7 +159,7 @@
                 when num_tokens = 0
                     then 0
                 else
-                    cast(num_tokens as decimal)/cast(num_pages as decimal)
+                    cast(num_tokens as double)/cast(num_pages as double)
             end as num_tokens_div_num_pages
             from profiles p
             left join contents c on p.id=c.id
