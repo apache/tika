@@ -1,5 +1,8 @@
 Release 2.2.0 - ???
 
+   * Fix logic bug in PipesServer that prevented concatenation of
+     content from attachments (TIKA-3609).
+
    * Added back ability to ignore load errors in TikaConfig (TIKA-3575).
 
    * Make SecureContentHandler and other parameters configurable in
