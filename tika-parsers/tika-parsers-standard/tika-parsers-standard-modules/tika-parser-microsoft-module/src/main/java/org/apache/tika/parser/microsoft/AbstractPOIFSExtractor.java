@@ -157,12 +157,14 @@ abstract class AbstractPOIFSExtractor {
                                            XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
 
+
         // Is it an embedded OLE2 document, or an embedded OOXML document?
+        //first try for ooxml
+        Entry ooxml = dir.hasEntry("Package") ? dir.getEntry("Package") :
+                (dir.hasEntry("package") ? dir.getEntry("package") : null);
 
-        if (dir.hasEntry("Package")) {
+        if (ooxml != null) {
             // It's OOXML (has a ZipFile):
-            Entry ooxml = dir.getEntry("Package");
-
             try (TikaInputStream stream = TikaInputStream
                     .get(new DocumentInputStream((DocumentEntry) ooxml))) {
                 Detector detector = new DefaultZipContainerDetector();

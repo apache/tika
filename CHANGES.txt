@@ -1,5 +1,8 @@
 Release 2.2.0 - ???
 
+   * Improve extraction of embedded files from MSOffice files created
+     by non-Microsoft tools (TIKA-3526).
+
    * Added back ability to ignore load errors in TikaConfig (TIKA-3575).
 
    * Make SecureContentHandler and other parameters configurable in

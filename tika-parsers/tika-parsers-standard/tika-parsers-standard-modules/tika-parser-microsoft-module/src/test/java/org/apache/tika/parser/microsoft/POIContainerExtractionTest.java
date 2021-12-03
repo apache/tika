@@ -19,8 +19,11 @@ package org.apache.tika.parser.microsoft;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
@@ -43,7 +46,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
     @Test
     public void testWithoutEmbedded() throws Exception {
         ContainerExtractor extractor = new ParserContainerExtractor();
-
+        debug(getRecursiveMetadata("testPPT.ppt"));
         String[] files =
                 new String[]{"testEXCEL.xls", "testWORD.doc", "testPPT.ppt", "testVISIO.vsd",
                         "test-outlook.msg"};
@@ -52,8 +55,8 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
             TrackingHandler handler = process(file, extractor, false);
 
             // Won't have fired
-            assertEquals(0, handler.filenames.size());
-            assertEquals(0, handler.mediaTypes.size());
+            assertEquals(0, handler.filenames.size(), file);
+            assertEquals(0, handler.mediaTypes.size(), file);
 
             // Ditto with recursing
             handler = process(file, extractor, true);
@@ -167,5 +170,44 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         List<Metadata> metadataList = getRecursiveMetadata("testMSEquation-govdocs-863534.doc");
         assertEquals(3, metadataList.size());
         assertEquals("application/vnd.ms-equation", metadataList.get(2).get(Metadata.CONTENT_TYPE));
+    }
+
+    @Test
+    public void testWPSVariantAttachments() throws Exception {
+        //test that files created by WPS have embedded files extracted
+        //TIKA-3526
+        Set<String> expected = new HashSet<>();
+        expected.add("application/msword");
+        expected.add("application/vnd.ms-excel");
+        expected.add("application/vnd.ms-powerpoint");
+        expected.add("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        expected.add("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        expected.add("application/vnd.openxmlformats-officedocument.presentationml.presentation");
+        expected.add("application/pdf");
+        expected.add("application/xml");
+        expected.add("text/plain; charset=ISO-8859-1");
+        //test that we're correctly handling attachment variants for
+        // files created by WPS 表格 (https://www.wps.cn/)
+        for (String suffix : new String[]{
+                "ppt", "doc", "xls", "docx", "pptx", "xlsx"
+        }) {
+            List<Metadata> metadataList = getRecursiveMetadata("testWPSAttachment." + suffix);
+            Set<String> found = new HashSet<>();
+            int i = 0;
+            for (Metadata m : metadataList) {
+                if (i++ > 0) {
+                    found.add(m.get(Metadata.CONTENT_TYPE));
+                }
+            }
+            Set<String> notFound = new HashSet<>();
+            for (String ex : expected) {
+                if (! found.contains(ex)) {
+                    notFound.add(ex);
+                }
+            }
+            if (notFound.size() > 0) {
+                fail("Couldn't find: " + notFound);
+            }
+        }
     }
 }
