@@ -492,7 +492,7 @@ public class PipesServer implements Runnable {
                 if (maxEmbedded < 0) {
                     return true;
                 }
-                return embedded++ > maxEmbedded;
+                return embedded++ < maxEmbedded;
             }
         });
 

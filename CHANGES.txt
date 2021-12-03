@@ -1,5 +1,8 @@
 Release 2.2.0 - ???
 
+   * Fix logic bug in PipesServer that prevented concatenation of
+     content from attachments (TIKA-3609).
+
    * Improve extraction of embedded files from MSOffice files created
      by non-Microsoft tools (TIKA-3526).
 
