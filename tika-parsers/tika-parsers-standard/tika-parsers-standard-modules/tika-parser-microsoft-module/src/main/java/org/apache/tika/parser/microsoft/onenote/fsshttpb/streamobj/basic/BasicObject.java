@@ -33,7 +33,8 @@ public abstract class BasicObject implements IFSSHTTPBSerializable {
      * @param index     The index special where to start.
      * @return The instance of target object.
      */
-    public static <T extends BasicObject> T parse(byte[] byteArray, AtomicInteger index, Class<T> clazz) {
+    public static <T extends BasicObject> T parse(byte[] byteArray, AtomicInteger index,
+                                                  Class<T> clazz) {
         try {
             T fsshttpbObject = clazz.newInstance();
             index.addAndGet(fsshttpbObject.DeserializeFromByteArray(byteArray, index.get()));

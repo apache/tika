@@ -36,7 +36,7 @@ public class TwoBytesOfData implements IProperty {
      * @return Return the length in byte of the TwoBytesOfData.
      */
     public int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
-        this.Data = new byte[] {byteArray[startIndex], byteArray[startIndex + 1]};
+        this.Data = new byte[]{byteArray[startIndex], byteArray[startIndex + 1]};
 
         return 2;
     }

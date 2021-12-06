@@ -26,26 +26,28 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
 
 public class RevisionStoreObjectGroup {
+    public ExGuid ObjectGroupID;
+    public List<RevisionStoreObject> Objects;
+    public List<EncryptionObject> EncryptionObjects;
     public RevisionStoreObjectGroup(ExGuid objectGroupId) {
         this.Objects = new ArrayList<>();
         this.EncryptionObjects = new ArrayList<>();
         this.ObjectGroupID = objectGroupId;
     }
 
-    public ExGuid ObjectGroupID;
-    public List<RevisionStoreObject> Objects;
-    public List<EncryptionObject> EncryptionObjects;
-
-    public static RevisionStoreObjectGroup CreateInstance(ExGuid objectGroupId, ObjectGroupDataElementData dataObject,
+    public static RevisionStoreObjectGroup CreateInstance(ExGuid objectGroupId,
+                                                          ObjectGroupDataElementData dataObject,
                                                           boolean isEncryption) {
         RevisionStoreObjectGroup objectGroup = new RevisionStoreObjectGroup(objectGroupId);
         Map<ExGuid, RevisionStoreObject> objectDict = new HashMap<>();
         if (!isEncryption) {
             RevisionStoreObject revisionObject = null;
-            for (int i = 0; i < dataObject.ObjectGroupDeclarations.ObjectDeclarationList.size(); i++) {
+            for (int i = 0; i < dataObject.ObjectGroupDeclarations.ObjectDeclarationList.size();
+                    i++) {
                 ObjectGroupObjectDeclare objectDeclaration =
                         dataObject.ObjectGroupDeclarations.ObjectDeclarationList.get(i);
-                ObjectGroupObjectData objectData = dataObject.ObjectGroupData.ObjectGroupObjectDataList.get(i);
+                ObjectGroupObjectData objectData =
+                        dataObject.ObjectGroupData.ObjectGroupObjectDataList.get(i);
 
                 if (!objectDict.containsKey(objectDeclaration.ObjectExtendedGUID)) {
                     revisionObject = new RevisionStoreObject();
@@ -58,7 +60,8 @@ public class RevisionStoreObjectGroup {
                 if (objectDeclaration.ObjectPartitionID.getDecodedValue() == 4) {
                     revisionObject.JCID = new JCIDObject(objectDeclaration, objectData);
                 } else if (objectDeclaration.ObjectPartitionID.getDecodedValue() == 1) {
-                    revisionObject.PropertySet = new PropertySetObject(objectDeclaration, objectData);
+                    revisionObject.PropertySet =
+                            new PropertySetObject(objectDeclaration, objectData);
                     if (revisionObject.JCID.JCID.IsFileData != 0) {
                         revisionObject.ReferencedObjectID = objectData.ObjectExGUIDArray;
                         revisionObject.ReferencedObjectSpacesID = objectData.cellIDArray;
@@ -66,30 +69,38 @@ public class RevisionStoreObjectGroup {
                 }
             }
 
-            for (int i = 0; i < dataObject.ObjectGroupDeclarations.ObjectGroupObjectBLOBDataDeclarationList.size();
-                 i++) {
+            for (int i = 0; i <
+                    dataObject.ObjectGroupDeclarations.ObjectGroupObjectBLOBDataDeclarationList.size();
+                    i++) {
                 ObjectGroupObjectBLOBDataDeclaration objectGroupObjectBLOBDataDeclaration =
-                        dataObject.ObjectGroupDeclarations.ObjectGroupObjectBLOBDataDeclarationList.get(i);
+                        dataObject.ObjectGroupDeclarations.ObjectGroupObjectBLOBDataDeclarationList.get(
+                                i);
                 ObjectGroupObjectDataBLOBReference objectGroupObjectDataBLOBReference =
                         dataObject.ObjectGroupData.ObjectGroupObjectDataBLOBReferenceList.get(i);
                 if (!objectDict.containsKey(objectGroupObjectBLOBDataDeclaration.ObjectExGUID)) {
                     revisionObject = new RevisionStoreObject();
-                    objectDict.put(objectGroupObjectBLOBDataDeclaration.ObjectExGUID, revisionObject);
+                    objectDict.put(objectGroupObjectBLOBDataDeclaration.ObjectExGUID,
+                            revisionObject);
                 } else {
-                    revisionObject = objectDict.get(objectGroupObjectBLOBDataDeclaration.ObjectExGUID);
+                    revisionObject =
+                            objectDict.get(objectGroupObjectBLOBDataDeclaration.ObjectExGUID);
                 }
                 if (objectGroupObjectBLOBDataDeclaration.ObjectPartitionID.getDecodedValue() == 2) {
                     revisionObject.FileDataObject = new FileDataObject();
-                    revisionObject.FileDataObject.ObjectDataBLOBDeclaration = objectGroupObjectBLOBDataDeclaration;
-                    revisionObject.FileDataObject.ObjectDataBLOBReference = objectGroupObjectDataBLOBReference;
+                    revisionObject.FileDataObject.ObjectDataBLOBDeclaration =
+                            objectGroupObjectBLOBDataDeclaration;
+                    revisionObject.FileDataObject.ObjectDataBLOBReference =
+                            objectGroupObjectDataBLOBReference;
                 }
             }
             objectGroup.Objects.addAll(objectDict.values());
         } else {
-            for (int i = 0; i < dataObject.ObjectGroupDeclarations.ObjectDeclarationList.size(); i++) {
+            for (int i = 0; i < dataObject.ObjectGroupDeclarations.ObjectDeclarationList.size();
+                    i++) {
                 ObjectGroupObjectDeclare objectDeclaration =
                         dataObject.ObjectGroupDeclarations.ObjectDeclarationList.get(i);
-                ObjectGroupObjectData objectData = dataObject.ObjectGroupData.ObjectGroupObjectDataList.get(i);
+                ObjectGroupObjectData objectData =
+                        dataObject.ObjectGroupData.ObjectGroupObjectDataList.get(i);
 
                 if (objectDeclaration.ObjectPartitionID.getDecodedValue() == 1) {
                     EncryptionObject encrypObject = new EncryptionObject();

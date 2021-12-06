@@ -26,25 +26,22 @@ import java.util.UUID;
  */
 public class BitReader {
     /**
-     * A byte array which contains the bytes need to be read.
-     */
-    private BitSet bitSet;
-
-    /**
      * A start position which will be not changed in the process of reading.
      * This value will be used for recording the start position and will be used by the function reset.
      */
     private final long startPosition;
-
-    /**
-     * An offset which is used to keep trace for the current read position in bit.
-     */
-    private long offset;
-
     /**
      * The length of the byte Array which contains the byte need to be read.
      */
     private final long length;
+    /**
+     * A byte array which contains the bytes need to be read.
+     */
+    private BitSet bitSet;
+    /**
+     * An offset which is used to keep trace for the current read position in bit.
+     */
+    private long offset;
 
     /**
      * Initializes a new instance of the BitReader class with specified bytes buffer and start position in byte.
@@ -57,6 +54,18 @@ public class BitReader {
         this.startPosition = this.offset;
         this.length = (long) array.length * 8;
         this.bitSet = BitSet.valueOf(array);
+    }
+
+    private static String toBinaryString(BitSet bs, int nbits) {
+        final StringBuilder buffer = new StringBuilder(bs.size());
+        for (int i = nbits - 1; i >= 0; --i) {
+            if (i < bs.size()) {
+                buffer.append(bs.get(i) ? "1" : "0");
+            } else {
+                buffer.append("0");
+            }
+        }
+        return buffer.toString();
     }
 
     public boolean getCurrent() {
@@ -134,7 +143,8 @@ public class BitReader {
     /**
      * Advances the enumerator to the next bit of the byte array.
      *
-     * @return true if the enumerator was successfully advanced to the next bit; false if the enumerator has passed the end of the byte array.
+     * @return true if the enumerator was successfully advanced to the next bit; false if the enumerator
+     * has passed the end of the byte array.
      */
     public boolean MoveNext() {
         return ++this.offset < this.length;
@@ -182,17 +192,5 @@ public class BitReader {
             result[i] = retSetBa[i];
         }
         return result;
-    }
-
-    private static String toBinaryString(BitSet bs, int nbits) {
-        final StringBuilder buffer = new StringBuilder(bs.size());
-        for (int i = nbits - 1; i >= 0; --i) {
-            if (i < bs.size()) {
-                buffer.append(bs.get(i) ? "1" : "0");
-            } else {
-                buffer.append("0");
-            }
-        }
-        return buffer.toString();
     }
 }

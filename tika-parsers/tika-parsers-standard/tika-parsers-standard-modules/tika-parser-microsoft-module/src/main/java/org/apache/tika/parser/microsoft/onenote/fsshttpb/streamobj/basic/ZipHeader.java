@@ -26,7 +26,7 @@ public class ZipHeader {
     /**
      * The file header in zip.
      */
-    public static final byte[] LocalFileHeader = new byte[] {0x50, 0x4b, 0x03, 0x04};
+    public static final byte[] LocalFileHeader = new byte[]{0x50, 0x4b, 0x03, 0x04};
 
     /**
      * Prevents a default instance of the ZipHeader class from being created

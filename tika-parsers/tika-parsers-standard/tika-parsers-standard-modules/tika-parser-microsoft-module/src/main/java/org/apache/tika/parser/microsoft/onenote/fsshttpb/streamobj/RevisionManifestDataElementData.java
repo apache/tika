@@ -25,6 +25,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.exception.DataElementParseErrorException;
 
 public class RevisionManifestDataElementData extends DataElementData {
+    public RevisionManifest RevisionManifest;
+    public List<RevisionManifestRootDeclare> RevisionManifestRootDeclareList;
+    public List<RevisionManifestObjectGroupReferences> RevisionManifestObjectGroupReferencesList;
+
     /**
      * Initializes a new instance of the RevisionManifestDataElementData class.
      */
@@ -33,12 +37,6 @@ public class RevisionManifestDataElementData extends DataElementData {
         this.RevisionManifestRootDeclareList = new ArrayList<>();
         this.RevisionManifestObjectGroupReferencesList = new ArrayList<>();
     }
-
-    public RevisionManifest RevisionManifest;
-
-    public List<RevisionManifestRootDeclare> RevisionManifestRootDeclareList;
-
-    public List<RevisionManifestObjectGroupReferences> RevisionManifestObjectGroupReferencesList;
 
     /**
      * Used to return the length of this element.
@@ -56,20 +54,24 @@ public class RevisionManifestDataElementData extends DataElementData {
         this.RevisionManifestObjectGroupReferencesList = new ArrayList<>();
         AtomicReference<StreamObjectHeaderStart> header = new AtomicReference<>();
         int headerLength = 0;
-        while ((headerLength = StreamObjectHeaderStart.TryParse(byteArray, index.get(), header)) != 0) {
+        while ((headerLength = StreamObjectHeaderStart.TryParse(byteArray, index.get(), header)) !=
+                0) {
             if (header.get().type == StreamObjectTypeHeaderStart.RevisionManifestRootDeclare) {
                 index.addAndGet(headerLength);
                 this.RevisionManifestRootDeclareList.add(
-                        (RevisionManifestRootDeclare) StreamObject.ParseStreamObject(header.get(), byteArray, index));
-            } else if (header.get().type == StreamObjectTypeHeaderStart.RevisionManifestObjectGroupReferences) {
+                        (RevisionManifestRootDeclare) StreamObject.ParseStreamObject(header.get(),
+                                byteArray, index));
+            } else if (header.get().type ==
+                    StreamObjectTypeHeaderStart.RevisionManifestObjectGroupReferences) {
                 index.addAndGet(headerLength);
                 this.RevisionManifestObjectGroupReferencesList.add(
-                        (RevisionManifestObjectGroupReferences) StreamObject.ParseStreamObject(header.get(), byteArray,
-                                index));
+                        (RevisionManifestObjectGroupReferences) StreamObject.ParseStreamObject(
+                                header.get(), byteArray, index));
             } else {
                 throw new DataElementParseErrorException(index.get(),
-                        "Failed to parse RevisionManifestDataElement, expect the inner object type RevisionManifestRootDeclare or RevisionManifestObjectGroupReferences, but actual type value is " +
-                                header.get().type, null);
+                        "Failed to parse RevisionManifestDataElement, expect the inner object type " +
+                                "RevisionManifestRootDeclare or RevisionManifestObjectGroupReferences, " +
+                                "but actual type value is " + header.get().type, null);
             }
         }
 
@@ -93,7 +95,8 @@ public class RevisionManifestDataElementData extends DataElementData {
         }
 
         if (this.RevisionManifestObjectGroupReferencesList != null) {
-            for (RevisionManifestObjectGroupReferences revisionManifestObjectGroupReferences : this.RevisionManifestObjectGroupReferencesList) {
+            for (RevisionManifestObjectGroupReferences revisionManifestObjectGroupReferences :
+                    this.RevisionManifestObjectGroupReferencesList) {
                 byteList.addAll(revisionManifestObjectGroupReferences.SerializeToByteList());
             }
         }

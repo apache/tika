@@ -29,6 +29,10 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
  * object data BLOB reference
  */
 public class ObjectGroupObjectDataBLOBReference extends StreamObject {
+    public ExGUIDArray ObjectExtendedGUIDArray;
+    public CellIDArray cellIDArray;
+    public ExGuid BLOBExtendedGUID;
+
     /**
      * Initializes a new instance of the ObjectGroupObjectDataBLOBReference class.
      */
@@ -39,12 +43,6 @@ public class ObjectGroupObjectDataBLOBReference extends StreamObject {
         this.BLOBExtendedGUID = new ExGuid();
     }
 
-    public ExGUIDArray ObjectExtendedGUIDArray;
-
-    public CellIDArray cellIDArray;
-
-    public ExGuid BLOBExtendedGUID;
-
     /**
      * Used to de-serialize the element.
      *
@@ -53,15 +51,16 @@ public class ObjectGroupObjectDataBLOBReference extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
+    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+                                                 int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.ObjectExtendedGUIDArray = BasicObject.parse(byteArray, index, ExGUIDArray.class);
         this.cellIDArray = BasicObject.parse(byteArray, index, CellIDArray.class);
         this.BLOBExtendedGUID = BasicObject.parse(byteArray, index, ExGuid.class);
 
         if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(), "ObjectGroupObjectDataBLOBReference",
-                    "Stream object over-parse error", null);
+            throw new StreamObjectParseErrorException(currentIndex.get(),
+                    "ObjectGroupObjectDataBLOBReference", "Stream object over-parse error", null);
         }
 
         currentIndex.set(index.get());

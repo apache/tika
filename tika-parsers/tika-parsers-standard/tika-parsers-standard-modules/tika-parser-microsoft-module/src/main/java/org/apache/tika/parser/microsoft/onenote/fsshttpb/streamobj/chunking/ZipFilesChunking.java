@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.codec.digest.DigestUtils;
+
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.LeafNodeObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.SignatureObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BinaryItem;
@@ -53,7 +54,8 @@ public class ZipFilesChunking extends AbstractChunking {
     @Override
     public List<LeafNodeObject> Chunking() {
         java.util.List<LeafNodeObject> list = new ArrayList<>();
-        LeafNodeObject.IntermediateNodeObjectBuilder builder = new LeafNodeObject.IntermediateNodeObjectBuilder();
+        LeafNodeObject.IntermediateNodeObjectBuilder builder =
+                new LeafNodeObject.IntermediateNodeObjectBuilder();
 
         int index = 0;
         while (ZipHeader.IsFileHeader(this.FileContent, index)) {
@@ -63,7 +65,8 @@ public class ZipFilesChunking extends AbstractChunking {
             int compressedSize = (int) this.GetCompressedSize(dataFileSignatureBytes.get());
 
             if (headerLength + compressedSize <= 4096) {
-                list.add(builder.Build(Arrays.copyOfRange(this.FileContent, index, headerLength + compressedSize),
+                list.add(builder.Build(
+                        Arrays.copyOfRange(this.FileContent, index, headerLength + compressedSize),
                         this.GetSingleChunkSignature(header, dataFileSignatureBytes.get())));
                 index += headerLength += compressedSize;
             } else {
@@ -73,7 +76,8 @@ public class ZipFilesChunking extends AbstractChunking {
                 byte[] dataFile = Arrays.copyOfRange(this.FileContent, index, compressedSize);
 
                 if (dataFile.length <= 1048576) {
-                    list.add(builder.Build(dataFile, this.GetDataFileSignature(dataFileSignatureBytes.get())));
+                    list.add(builder.Build(dataFile,
+                            this.GetDataFileSignature(dataFileSignatureBytes.get())));
                 } else {
                     list.addAll(this.GetSubChunkList(dataFile));
                 }
@@ -86,7 +90,8 @@ public class ZipFilesChunking extends AbstractChunking {
             return null;
         }
 
-        byte[] finalRes = Arrays.copyOfRange(this.FileContent, index, this.FileContent.length - index);
+        byte[] finalRes =
+                Arrays.copyOfRange(this.FileContent, index, this.FileContent.length - index);
 
         if (finalRes.length <= 1048576) {
             list.add(builder.Build(finalRes, this.GetSHA1Signature(finalRes)));
@@ -111,8 +116,8 @@ public class ZipFilesChunking extends AbstractChunking {
         while (index < chunkData.length) {
             int length = chunkData.length - index < 1048576 ? chunkData.length - index : 1048576;
             byte[] temp = Arrays.copyOfRange(chunkData, index, length);
-            subChunkList.add(
-                    new LeafNodeObject.IntermediateNodeObjectBuilder().Build(temp, this.GetSubChunkSignature()));
+            subChunkList.add(new LeafNodeObject.IntermediateNodeObjectBuilder().Build(temp,
+                    this.GetSubChunkSignature()));
             index += length;
         }
 
@@ -127,7 +132,8 @@ public class ZipFilesChunking extends AbstractChunking {
      * @param dataFileSignature Specify the output value for the data file signature.
      * @return Return the data file content.
      */
-    private byte[] AnalyzeFileHeader(byte[] content, int index, AtomicReference<byte[]> dataFileSignature) {
+    private byte[] AnalyzeFileHeader(byte[] content, int index,
+                                     AtomicReference<byte[]> dataFileSignature) {
         int crc32 = BitConverter.toInt32(content, index + 14);
         int compressedSize = BitConverter.toInt32(content, index + 18);
         int uncompressedSize = BitConverter.toInt32(content, index + 22);

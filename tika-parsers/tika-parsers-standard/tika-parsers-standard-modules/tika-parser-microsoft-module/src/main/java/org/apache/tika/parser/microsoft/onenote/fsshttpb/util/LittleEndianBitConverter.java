@@ -167,8 +167,9 @@ public class LittleEndianBitConverter {
         }
 
         if (startIndex > value.length - bytesRequired) {
-            throw new RuntimeException("startIndex " + startIndex + " is less than value.length (" + value.length +
-                    ") minus bytesRequired (" + bytesRequired + ")");
+            throw new RuntimeException(
+                    "startIndex " + startIndex + " is less than value.length (" + value.length +
+                            ") minus bytesRequired (" + bytesRequired + ")");
         }
     }
 }

@@ -22,6 +22,12 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ExGUIDArray extends BasicObject {
+    public Compact64bitInt Count;
+    /**
+     * Gets or sets an extended GUID array
+     */
+    public List<ExGuid> Content;
+
     /**
      * Initializes a new instance of the ExGUIDArray class with specified value.
      *
@@ -55,13 +61,6 @@ public class ExGUIDArray extends BasicObject {
         this.Count = new Compact64bitInt();
         this.Content = new ArrayList<>();
     }
-
-    public Compact64bitInt Count;
-
-    /**
-     * Gets or sets an extended GUID array
-     */
-    public List<ExGuid> Content;
 
     public java.util.List<ExGuid> getContent() {
         return Content;
@@ -98,7 +97,8 @@ public class ExGUIDArray extends BasicObject {
      * @return Return the length in byte of the ExGUIDArray basic object.
      */
     @Override
-    protected int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) // return the length consumed
+    protected int DoDeserializeFromByteArray(byte[] byteArray,
+                                             int startIndex) // return the length consumed
     {
         AtomicInteger index = new AtomicInteger(startIndex);
         this.Count = BasicObject.parse(byteArray, index, Compact64bitInt.class);

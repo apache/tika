@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -47,13 +48,17 @@ public class DataElement extends StreamObject {
             String className = DataElement.class.getPackage().getName() + "." + value.name();
 
             try {
-                dataElementDataTypeMapping.put(value,
-                        Class.forName(className));
+                dataElementDataTypeMapping.put(value, Class.forName(className));
             } catch (ClassNotFoundException e) {
                 // This is OK, we are not pulling over every single class
             }
         }
     }
+
+    public ExGuid dataElementExGuid;
+    public SerialNumber serialNumber;
+    public DataElementType dataElementType;
+    public DataElementData data;
 
     /**
      * Initializes a new instance of the DataElement class.
@@ -76,8 +81,10 @@ public class DataElement extends StreamObject {
 
         this.dataElementType = type;
         this.data = data;
-        this.dataElementExGuid = new ExGuid(SequenceNumberGenerator.GetCurrentSerialNumber(), UUID.randomUUID());
-        this.serialNumber = new SerialNumber(UUID.randomUUID(), SequenceNumberGenerator.GetCurrentSerialNumber());
+        this.dataElementExGuid =
+                new ExGuid(SequenceNumberGenerator.GetCurrentSerialNumber(), UUID.randomUUID());
+        this.serialNumber = new SerialNumber(UUID.randomUUID(),
+                SequenceNumberGenerator.GetCurrentSerialNumber());
     }
 
     /**
@@ -86,14 +93,6 @@ public class DataElement extends StreamObject {
     public DataElement() {
         super(StreamObjectTypeHeaderStart.DataElement);
     }
-
-    public ExGuid dataElementExGuid;
-
-    public SerialNumber serialNumber;
-
-    public DataElementType dataElementType;
-
-    public DataElementData data;
 
     /**
      * Used to get data.
@@ -105,9 +104,10 @@ public class DataElement extends StreamObject {
         if (this.data.getClass().equals(clazz)) {
             return (T) this.data;
         } else {
-            throw new RuntimeException(
-                    String.format("Unable to cast DataElementData to the type %s, its actual type is %s",
-                            clazz.getName(), this.data.getClass().getName()));
+            throw new RuntimeException(String.format(
+                    Locale.US,
+                    "Unable to cast DataElementData to the type %s, its actual type is %s",
+                    clazz.getName(), this.data.getClass().getName()));
         }
     }
 
@@ -123,39 +123,45 @@ public class DataElement extends StreamObject {
      *                      the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
+    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+                                                 int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
 
         try {
             this.dataElementExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
             this.serialNumber = BasicObject.parse(byteArray, index, SerialNumber.class);
             this.dataElementType = DataElementType.fromIntVal(
-                    (int) BasicObject.parse(byteArray, index, Compact64bitInt.class).getDecodedValue());
+                    (int) BasicObject.parse(byteArray, index, Compact64bitInt.class)
+                            .getDecodedValue());
         } catch (Exception e) {
             throw new DataElementParseErrorException(index.get(), e);
         }
 
         if (index.get() - currentIndex.get() != lengthOfItems) {
             throw new DataElementParseErrorException(currentIndex.get(),
-                    "Failed to check the data element header length, whose value does not cover the dataElementExGUID, SerialNumber and DataElementType",
+                    "Failed to check the data element header length, whose value does not cover the " +
+                            "dataElementExGUID, SerialNumber and DataElementType",
                     null);
         }
 
         if (dataElementDataTypeMapping.containsKey(this.dataElementType)) {
             try {
-                this.data = (DataElementData) dataElementDataTypeMapping.get(this.dataElementType).newInstance();
+                this.data = (DataElementData) dataElementDataTypeMapping.get(this.dataElementType)
+                        .newInstance();
             } catch (InstantiationException | IllegalAccessException e) {
                 throw new RuntimeException("Could not instantiate a " + dataElementType, e);
             }
 
             try {
-                index.addAndGet(this.data.DeserializeDataElementDataFromByteArray(byteArray, index.get()));
+                index.addAndGet(
+                        this.data.DeserializeDataElementDataFromByteArray(byteArray, index.get()));
             } catch (Exception e) {
                 throw new DataElementParseErrorException(index.get(), e);
             }
         } else {
             throw new DataElementParseErrorException(index.get(),
-                    "Failed to create specific data element instance with the type " + this.dataElementType, null);
+                    "Failed to create specific data element instance with the type " +
+                            this.dataElementType, null);
         }
 
         currentIndex.set(index.get());
@@ -172,7 +178,8 @@ public class DataElement extends StreamObject {
         int startIndex = byteList.size();
         byteList.addAll(this.dataElementExGuid.SerializeToByteList());
         byteList.addAll(this.serialNumber.SerializeToByteList());
-        byteList.addAll(new Compact64bitInt(this.dataElementType.getIntVal()).SerializeToByteList());
+        byteList.addAll(
+                new Compact64bitInt(this.dataElementType.getIntVal()).SerializeToByteList());
 
         int headerLength = byteList.size() - startIndex;
         byteList.addAll(this.data.SerializeToByteList());

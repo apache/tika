@@ -30,16 +30,16 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.SequenceNumberGenerator;
 
 public class LeafNodeObject extends NodeObject {
+    public org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.DataNodeObjectData
+            DataNodeObjectData;
+    public DataHashObject DataHash;
+
     /**
      * Initializes a new instance of the LeafNodeObjectData class.
      */
     public LeafNodeObject() {
         super(StreamObjectTypeHeaderStart.LeafNodeObject);
     }
-
-    public org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.DataNodeObjectData DataNodeObjectData;
-
-    public DataHashObject DataHash;
 
     /**
      * Get all the content which is represented by the intermediate node object.
@@ -58,7 +58,8 @@ public class LeafNodeObject extends NodeObject {
             }
         } else {
             throw new RuntimeException(
-                    "The DataNodeObjectData and IntermediateNodeObjectList properties in LeafNodeObjectData cannot be null at the same time.");
+                    "The DataNodeObjectData and IntermediateNodeObjectList properties in " +
+                            "LeafNodeObjectData cannot be null at the same time.");
         }
 
         return content;
@@ -72,7 +73,8 @@ public class LeafNodeObject extends NodeObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
+    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+                                                 int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         if (lengthOfItems != 0) {
             throw new StreamObjectParseErrorException(currentIndex.get(), "LeafNodeObjectData",
@@ -118,8 +120,10 @@ public class LeafNodeObject extends NodeObject {
          * @param intermediateGuid Specify the intermediate extended GUID.
          * @return Return the intermediate node object.
          */
-        public LeafNodeObject Build(List<ObjectGroupDataElementData> objectGroupList, ObjectGroupObjectData dataObj,
-                                    org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid intermediateGuid) {
+        public LeafNodeObject Build(List<ObjectGroupDataElementData> objectGroupList,
+                                    ObjectGroupObjectData dataObj,
+                                    org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid
+                                            intermediateGuid) {
             AtomicReference<LeafNodeObject> node = new AtomicReference<>();
             AtomicReference<IntermediateNodeObject> rootNode = new AtomicReference<>();
 
@@ -135,14 +139,15 @@ public class LeafNodeObject extends NodeObject {
 
                 // Contain a single Data Node Object.
                 if (dataObj.ObjectExGUIDArray.Count.getDecodedValue() == 1) {
-                    AtomicReference<ObjectGroupObjectDeclare> dataNodeDeclare = new AtomicReference<>();
-                    ObjectGroupObjectData dataNodeData =
-                            this.FindByExGuid(objectGroupList, dataObj.ObjectExGUIDArray.Content.get(0),
-                                    dataNodeDeclare);
+                    AtomicReference<ObjectGroupObjectDeclare> dataNodeDeclare =
+                            new AtomicReference<>();
+                    ObjectGroupObjectData dataNodeData = this.FindByExGuid(objectGroupList,
+                            dataObj.ObjectExGUIDArray.Content.get(0), dataNodeDeclare);
                     BinaryItem data = dataNodeData.Data;
 
-                    node.get().DataNodeObjectData = new DataNodeObjectData(ByteUtil.toByteArray(data.Content), 0,
-                            (int) data.Length.getDecodedValue());
+                    node.get().DataNodeObjectData =
+                            new DataNodeObjectData(ByteUtil.toByteArray(data.Content), 0,
+                                    (int) data.Length.getDecodedValue());
                     node.get().DataNodeObjectData.ExGuid = dataObj.ObjectExGUIDArray.Content.get(0);
                     node.get().IntermediateNodeObjectList = null;
                 } else {
@@ -150,15 +155,17 @@ public class LeafNodeObject extends NodeObject {
                     node.get().IntermediateNodeObjectList = new ArrayList<LeafNodeObject>();
                     node.get().DataNodeObjectData = null;
                     for (ExGuid extGuid : dataObj.ObjectExGUIDArray.Content) {
-                        AtomicReference<ObjectGroupObjectDeclare> intermediateDeclare = new AtomicReference<>();
+                        AtomicReference<ObjectGroupObjectDeclare> intermediateDeclare =
+                                new AtomicReference<>();
                         ObjectGroupObjectData intermediateData =
                                 this.FindByExGuid(objectGroupList, extGuid, intermediateDeclare);
                         node.get().IntermediateNodeObjectList.add(
-                                new IntermediateNodeObjectBuilder().Build(objectGroupList, intermediateData, extGuid));
+                                new IntermediateNodeObjectBuilder().Build(objectGroupList,
+                                        intermediateData, extGuid));
                     }
                 }
-            } else if (StreamObject.TryGetCurrent(ByteUtil.toByteArray(dataObj.Data.Content), index, rootNode,
-                    IntermediateNodeObject.class)) {
+            } else if (StreamObject.TryGetCurrent(ByteUtil.toByteArray(dataObj.Data.Content), index,
+                    rootNode, IntermediateNodeObject.class)) {
                 // In Sub chunking for larger than 1MB zip file, MOSS2010 could return IntermediateNodeObject.
                 // For easy further process, the rootNode will be replaced by intermediate node instead.
                 node.set(new LeafNodeObject());
@@ -168,15 +175,18 @@ public class LeafNodeObject extends NodeObject {
                 node.get().Signature = rootNode.get().Signature;
                 node.get().DataNodeObjectData = null;
                 for (ExGuid extGuid : dataObj.ObjectExGUIDArray.Content) {
-                    AtomicReference<ObjectGroupObjectDeclare> intermediateDeclare = new AtomicReference<>();
+                    AtomicReference<ObjectGroupObjectDeclare> intermediateDeclare =
+                            new AtomicReference<>();
                     ObjectGroupObjectData intermediateData =
                             this.FindByExGuid(objectGroupList, extGuid, intermediateDeclare);
                     node.get().IntermediateNodeObjectList.add(
-                            new IntermediateNodeObjectBuilder().Build(objectGroupList, intermediateData, extGuid));
+                            new IntermediateNodeObjectBuilder().Build(objectGroupList,
+                                    intermediateData, extGuid));
                 }
             } else {
                 throw new RuntimeException(
-                        "In the ObjectGroupDataElement cannot only contain the IntermediateNodeObject or IntermediateNodeOBject.");
+                        "In the ObjectGroupDataElement cannot only contain the " +
+                                "IntermediateNodeObject or IntermediateNodeObject.");
             }
 
             return node.get();
@@ -195,7 +205,8 @@ public class LeafNodeObject extends NodeObject {
             nodeObject.DataSize.DataSize = array.length;
 
             nodeObject.Signature = signature;
-            nodeObject.ExGuid = new ExGuid(SequenceNumberGenerator.GetCurrentSerialNumber(), UUID.randomUUID());
+            nodeObject.ExGuid =
+                    new ExGuid(SequenceNumberGenerator.GetCurrentSerialNumber(), UUID.randomUUID());
 
             nodeObject.DataNodeObjectData = new DataNodeObjectData(array, 0, array.length);
             nodeObject.IntermediateNodeObjectList = null;
@@ -219,7 +230,8 @@ public class LeafNodeObject extends NodeObject {
             for (ObjectGroupDataElementData objectGroup : objectGroupList) {
 
                 int findIndex = -1;
-                for (int i = 0; i < objectGroup.ObjectGroupDeclarations.ObjectDeclarationList.size(); ++i) {
+                for (int i = 0;
+                        i < objectGroup.ObjectGroupDeclarations.ObjectDeclarationList.size(); ++i) {
                     ObjectGroupObjectDeclare objDeclare =
                             objectGroup.ObjectGroupDeclarations.ObjectDeclarationList.get(i);
                     if (objDeclare.ObjectExtendedGUID.equals(extendedGuid)) {
@@ -232,7 +244,8 @@ public class LeafNodeObject extends NodeObject {
                     continue;
                 }
 
-                declare.set(objectGroup.ObjectGroupDeclarations.ObjectDeclarationList.get(findIndex));
+                declare.set(
+                        objectGroup.ObjectGroupDeclarations.ObjectDeclarationList.get(findIndex));
                 return objectGroup.ObjectGroupData.ObjectGroupObjectDataList.get(findIndex);
             }
 

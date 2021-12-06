@@ -28,13 +28,6 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.Compact
  */
 public class ObjectGroupMetadata extends StreamObject {
     /**
-     * Initializes a new instance of the ObjectGroupMetadata class.
-     */
-    public ObjectGroupMetadata() {
-        super(StreamObjectTypeHeaderStart.ObjectGroupMetadata);
-    }
-
-    /**
      * Gets or sets a compact unsigned 64-bit integer that specifies the expected change frequency of the object.
      * This value MUST be:
      * 0, if the change frequency is not known.
@@ -45,6 +38,13 @@ public class ObjectGroupMetadata extends StreamObject {
     public Compact64bitInt ObjectChangeFrequency;
 
     /**
+     * Initializes a new instance of the ObjectGroupMetadata class.
+     */
+    public ObjectGroupMetadata() {
+        super(StreamObjectTypeHeaderStart.ObjectGroupMetadata);
+    }
+
+    /**
      * Used to de-serialize the element.
      *
      * @param byteArray     A Byte array
@@ -52,7 +52,8 @@ public class ObjectGroupMetadata extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
+    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+                                                 int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.ObjectChangeFrequency = BasicObject.parse(byteArray, index, Compact64bitInt.class);
 

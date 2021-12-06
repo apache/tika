@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -36,29 +37,29 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
     /**
      * Hash set contains the StreamObjectTypeHeaderStart type.
      */
-    private static final Set<StreamObjectTypeHeaderStart> compoundTypes = new HashSet<>(Arrays.asList(
-            StreamObjectTypeHeaderStart.DataElement,
-            StreamObjectTypeHeaderStart.Knowledge,
-            StreamObjectTypeHeaderStart.CellKnowledge,
-            StreamObjectTypeHeaderStart.DataElementPackage,
-            StreamObjectTypeHeaderStart.ObjectGroupDeclarations,
-            StreamObjectTypeHeaderStart.ObjectGroupData,
-            StreamObjectTypeHeaderStart.WaterlineKnowledge,
-            StreamObjectTypeHeaderStart.ContentTagKnowledge,
-            StreamObjectTypeHeaderStart.Request,
-            StreamObjectTypeHeaderStart.FsshttpbSubResponse,
-            StreamObjectTypeHeaderStart.SubRequest,
-            StreamObjectTypeHeaderStart.ReadAccessResponse,
-            StreamObjectTypeHeaderStart.SpecializedKnowledge,
-            StreamObjectTypeHeaderStart.WriteAccessResponse,
-            StreamObjectTypeHeaderStart.QueryChangesFilter,
-            StreamObjectTypeHeaderStart.ResponseError,
-            StreamObjectTypeHeaderStart.UserAgent,
-            StreamObjectTypeHeaderStart.FragmentKnowledge,
-            StreamObjectTypeHeaderStart.ObjectGroupMetadataDeclarations,
-            StreamObjectTypeHeaderStart.LeafNodeObject,
-            StreamObjectTypeHeaderStart.IntermediateNodeObject,
-            StreamObjectTypeHeaderStart.TargetPartitionId));
+    private static final Set<StreamObjectTypeHeaderStart> compoundTypes = new HashSet<>(
+            Arrays.asList(StreamObjectTypeHeaderStart.DataElement,
+                    StreamObjectTypeHeaderStart.Knowledge,
+                    StreamObjectTypeHeaderStart.CellKnowledge,
+                    StreamObjectTypeHeaderStart.DataElementPackage,
+                    StreamObjectTypeHeaderStart.ObjectGroupDeclarations,
+                    StreamObjectTypeHeaderStart.ObjectGroupData,
+                    StreamObjectTypeHeaderStart.WaterlineKnowledge,
+                    StreamObjectTypeHeaderStart.ContentTagKnowledge,
+                    StreamObjectTypeHeaderStart.Request,
+                    StreamObjectTypeHeaderStart.FsshttpbSubResponse,
+                    StreamObjectTypeHeaderStart.SubRequest,
+                    StreamObjectTypeHeaderStart.ReadAccessResponse,
+                    StreamObjectTypeHeaderStart.SpecializedKnowledge,
+                    StreamObjectTypeHeaderStart.WriteAccessResponse,
+                    StreamObjectTypeHeaderStart.QueryChangesFilter,
+                    StreamObjectTypeHeaderStart.ResponseError,
+                    StreamObjectTypeHeaderStart.UserAgent,
+                    StreamObjectTypeHeaderStart.FragmentKnowledge,
+                    StreamObjectTypeHeaderStart.ObjectGroupMetadataDeclarations,
+                    StreamObjectTypeHeaderStart.LeafNodeObject,
+                    StreamObjectTypeHeaderStart.IntermediateNodeObject,
+                    StreamObjectTypeHeaderStart.TargetPartitionId));
 
     /**
      * The dictionary of StreamObjectTypeHeaderStart and type.
@@ -70,13 +71,23 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
         for (StreamObjectTypeHeaderStart value : StreamObjectTypeHeaderStart.values()) {
             String className = StreamObject.class.getPackage().getName() + "." + value.name();
             try {
-                streamObjectTypeMapping.put(value,
-                        Class.forName(className));
+                streamObjectTypeMapping.put(value, Class.forName(className));
             } catch (ClassNotFoundException e) {
                 // This is OK, we are not pulling over every single class
             }
         }
     }
+
+    StreamObjectHeaderEnd streamObjectHeaderEnd;
+    /**
+     * Gets the StreamObjectTypeHeaderStart.
+     */
+    private StreamObjectTypeHeaderStart streamObjectType;
+    /**
+     * Gets the length of items.
+     */
+    private int lengthOfItems;
+    private StreamObjectHeaderStart streamObjectHeaderStart;
 
     /**
      * Initializes a new instance of the StreamObject class.
@@ -102,47 +113,41 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
     }
 
     /**
-     * Gets the StreamObjectTypeHeaderStart.
-     */
-    private StreamObjectTypeHeaderStart streamObjectType;
-
-    /**
-     * Gets the length of items.
-     */
-    private int lengthOfItems;
-
-    private StreamObjectHeaderStart streamObjectHeaderStart;
-
-    StreamObjectHeaderEnd streamObjectHeaderEnd;
-
-    /**
      * Get current stream object.
      *
      * @param byteArray The byte array which contains message.
      * @param index     The position where to start.
      * @return The current object instance.
      */
-    public static <T extends StreamObject> T GetCurrent(byte[] byteArray, AtomicInteger index, Class<T> clazz) {
+    public static <T extends StreamObject> T GetCurrent(byte[] byteArray, AtomicInteger index,
+                                                        Class<T> clazz) {
         AtomicInteger tmpIndex = new AtomicInteger(index.get());
         int length;
         AtomicReference<StreamObjectHeaderStart> streamObjectHeader = new AtomicReference<>();
-        if ((length = StreamObjectHeaderStart.TryParse(byteArray, tmpIndex.get(), streamObjectHeader)) == 0) {
+        if ((length =
+                StreamObjectHeaderStart.TryParse(byteArray, tmpIndex.get(), streamObjectHeader)) ==
+                0) {
             throw new StreamObjectParseErrorException(tmpIndex.get(), clazz.getName(),
-                    "Failed to extract either 16bit or 32bit stream object header in the current index.", null);
+                    "Failed to extract either 16bit or 32bit stream object header in the current index.",
+                    null);
         }
 
         tmpIndex.addAndGet(length);
 
-        StreamObject streamObject = ParseStreamObject(streamObjectHeader.get(), byteArray, tmpIndex);
+        StreamObject streamObject =
+                ParseStreamObject(streamObjectHeader.get(), byteArray, tmpIndex);
 
         if (!streamObject.getClass().equals(clazz)) {
             String destClassName = "(null)";
             if (streamObjectTypeMapping.containsKey(streamObjectHeader.get().type)) {
-                destClassName = streamObjectTypeMapping.get(streamObjectHeader.get().type).getName();
+                destClassName =
+                        streamObjectTypeMapping.get(streamObjectHeader.get().type).getName();
             }
             throw new StreamObjectParseErrorException(tmpIndex.get(), clazz.getName(),
-                    String.format("Failed to get stream object as expect type %s, actual type is %s", clazz.getName(),
-                            destClassName), null);
+                    String.format(
+                            Locale.US,
+                            "Failed to get stream object as expect type %s, actual type is %s",
+                            clazz.getName(), destClassName), null);
         }
 
         // Store the current index to the ref parameter index.
@@ -176,10 +181,12 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
         }
 
         int tmpIndex = index.get();
-        tmpIndex -= header.headerType == StreamObjectHeaderStart.StreamObjectHeaderStart16bit ? 2 : 4;
+        tmpIndex -=
+                header.headerType == StreamObjectHeaderStart.StreamObjectHeaderStart16bit ? 2 : 4;
         throw new StreamObjectParseErrorException(tmpIndex, "Unknown", String.format(
-                "Failed to create the specified stream object instance, the type %s of stream object header in the current index is not defined",
-                header.type.getIntVal()), null);
+                Locale.US,
+                "Failed to create the specified stream object instance, the type %s of stream object " +
+                        "header in the current index is not defined", header.type.getIntVal()), null);
     }
 
     /**
@@ -191,13 +198,17 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
      * @return The result of whether get success.
      */
 
-    public static <T extends StreamObject> boolean TryGetCurrent(byte[] byteArray, AtomicInteger index,
-                                                                 AtomicReference<T> streamObject, Class<T> clazz) {
+    public static <T extends StreamObject> boolean TryGetCurrent(byte[] byteArray,
+                                                                 AtomicInteger index,
+                                                                 AtomicReference<T> streamObject,
+                                                                 Class<T> clazz) {
         AtomicInteger tmpIndex = new AtomicInteger(index.get());
 
         int length = 0;
         AtomicReference<StreamObjectHeaderStart> streamObjectHeader = new AtomicReference<>();
-        if ((length = StreamObjectHeaderStart.TryParse(byteArray, tmpIndex.get(), streamObjectHeader)) == 0) {
+        if ((length =
+                StreamObjectHeaderStart.TryParse(byteArray, tmpIndex.get(), streamObjectHeader)) ==
+                0) {
             return false;
         }
 
@@ -234,10 +245,11 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
 
         if (compoundTypes.contains(this.streamObjectType)) {
             if (this.streamObjectType.getIntVal() <= 0x3F) {
-                byteList.addAll(new StreamObjectHeaderEnd8bit(this.streamObjectType.getIntVal()).SerializeToByteList());
+                byteList.addAll(new StreamObjectHeaderEnd8bit(
+                        this.streamObjectType.getIntVal()).SerializeToByteList());
             } else {
-                byteList.addAll(
-                        new StreamObjectHeaderEnd16bit(this.streamObjectType.getIntVal()).SerializeToByteList());
+                byteList.addAll(new StreamObjectHeaderEnd16bit(
+                        this.streamObjectType.getIntVal()).SerializeToByteList());
             }
         }
 
@@ -252,13 +264,15 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
      * @param startIndex The position where to start.
      * @return The element length
      */
-    public int DeserializeFromByteArray(StreamObjectHeaderStart header, byte[] byteArray, int startIndex) {
+    public int DeserializeFromByteArray(StreamObjectHeaderStart header, byte[] byteArray,
+                                        int startIndex) {
         this.streamObjectType = header.type;
         this.lengthOfItems = header.length;
 
         if (header instanceof StreamObjectHeaderStart32bit) {
             if (header.length == 32767) {
-                this.lengthOfItems = (int) ((StreamObjectHeaderStart32bit) header).largeLength.getDecodedValue();
+                this.lengthOfItems =
+                        (int) ((StreamObjectHeaderStart32bit) header).largeLength.getDecodedValue();
             }
         }
 
@@ -279,7 +293,8 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
 
             if (end.type.getIntVal() != this.streamObjectType.getIntVal()) {
                 throw new StreamObjectParseErrorException(index.get(), null,
-                        "Unexpected the stream header end value " + this.streamObjectType.getIntVal(), null);
+                        "Unexpected the stream header end value " +
+                                this.streamObjectType.getIntVal(), null);
             }
 
             this.streamObjectHeaderEnd = end;
@@ -303,6 +318,7 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
      * @param currentIndex  The index special where to start.
      * @param lengthOfItems The length of items.
      */
-    protected abstract void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+    protected abstract void DeserializeItemsFromByteArray(byte[] byteArray,
+                                                          AtomicInteger currentIndex,
                                                           int lengthOfItems);
 }

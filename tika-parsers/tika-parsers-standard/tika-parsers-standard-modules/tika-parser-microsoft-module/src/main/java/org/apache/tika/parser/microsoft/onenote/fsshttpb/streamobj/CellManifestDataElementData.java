@@ -24,14 +24,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Cell manifest data element
  */
 public class CellManifestDataElementData extends DataElementData {
+    public CellManifestCurrentRevision cellManifestCurrentRevision;
+
     /**
      * Initializes a new instance of the CellManifestDataElementData class.
      */
     public CellManifestDataElementData() {
         this.cellManifestCurrentRevision = new CellManifestCurrentRevision();
     }
-
-    public CellManifestCurrentRevision cellManifestCurrentRevision;
 
     /**
      * Used to return the length of this element.
@@ -43,7 +43,8 @@ public class CellManifestDataElementData extends DataElementData {
     @Override
     public int DeserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex) {
         AtomicInteger index = new AtomicInteger(startIndex);
-        this.cellManifestCurrentRevision = StreamObject.GetCurrent(byteArray, index, CellManifestCurrentRevision.class);
+        this.cellManifestCurrentRevision =
+                StreamObject.GetCurrent(byteArray, index, CellManifestCurrentRevision.class);
         return index.get() - startIndex;
     }
 

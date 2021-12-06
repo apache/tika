@@ -26,6 +26,9 @@ import java.util.concurrent.atomic.AtomicReference;
  * Object Group Declarations
  */
 public class ObjectGroupDeclarations extends StreamObject {
+    public List<ObjectGroupObjectDeclare> ObjectDeclarationList;
+    public List<ObjectGroupObjectBLOBDataDeclaration> ObjectGroupObjectBLOBDataDeclarationList;
+
     /**
      * Initializes a new instance of the ObjectGroupDeclarations class.
      */
@@ -35,10 +38,6 @@ public class ObjectGroupDeclarations extends StreamObject {
         this.ObjectGroupObjectBLOBDataDeclarationList = new ArrayList<>();
     }
 
-    public List<ObjectGroupObjectDeclare> ObjectDeclarationList;
-
-    public List<ObjectGroupObjectBLOBDataDeclaration> ObjectGroupObjectBLOBDataDeclarationList;
-
     /**
      * Used to de-serialize the element.
      *
@@ -47,7 +46,8 @@ public class ObjectGroupDeclarations extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
+    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+                                                 int lengthOfItems) {
         if (lengthOfItems != 0) {
             throw new StreamObjectParseErrorException(currentIndex.get(), "ObjectGroupDeclarations",
                     "Stream object over-parse error", null);
@@ -58,19 +58,24 @@ public class ObjectGroupDeclarations extends StreamObject {
         AtomicReference<StreamObjectHeaderStart> header = new AtomicReference<>();
         this.ObjectDeclarationList = new ArrayList<>();
         this.ObjectGroupObjectBLOBDataDeclarationList = new ArrayList<>();
-        while ((headerLength = StreamObjectHeaderStart.TryParse(byteArray, index.get(), header)) != 0) {
+        while ((headerLength = StreamObjectHeaderStart.TryParse(byteArray, index.get(), header)) !=
+                0) {
             if (header.get().type == StreamObjectTypeHeaderStart.ObjectGroupObjectDeclare) {
                 index.addAndGet(headerLength);
                 this.ObjectDeclarationList.add(
-                        (ObjectGroupObjectDeclare) StreamObject.ParseStreamObject(header.get(), byteArray, index));
-            } else if (header.get().type == StreamObjectTypeHeaderStart.ObjectGroupObjectBLOBDataDeclaration) {
+                        (ObjectGroupObjectDeclare) StreamObject.ParseStreamObject(header.get(),
+                                byteArray, index));
+            } else if (header.get().type ==
+                    StreamObjectTypeHeaderStart.ObjectGroupObjectBLOBDataDeclaration) {
                 index.addAndGet(headerLength);
                 this.ObjectGroupObjectBLOBDataDeclarationList.add(
-                        (ObjectGroupObjectBLOBDataDeclaration) StreamObject.ParseStreamObject(header.get(), byteArray,
-                                index));
+                        (ObjectGroupObjectBLOBDataDeclaration) StreamObject.ParseStreamObject(
+                                header.get(), byteArray, index));
             } else {
                 throw new StreamObjectParseErrorException(index.get(), "ObjectGroupDeclarations",
-                        "Failed to parse ObjectGroupDeclarations, expect the inner object type either ObjectGroupObjectDeclare or ObjectGroupObjectBLOBDataDeclaration, but actual type value is " +
+                        "Failed to parse ObjectGroupDeclarations, expect the inner object type either " +
+                                "ObjectGroupObjectDeclare or ObjectGroupObjectBLOBDataDeclaration, " +
+                                "but actual type value is " +
                                 header.get().type, null);
             }
         }
@@ -93,7 +98,8 @@ public class ObjectGroupDeclarations extends StreamObject {
         }
 
         if (this.ObjectGroupObjectBLOBDataDeclarationList != null) {
-            for (ObjectGroupObjectBLOBDataDeclaration objectGroupObjectBLOBDataDeclaration : this.ObjectGroupObjectBLOBDataDeclarationList) {
+            for (ObjectGroupObjectBLOBDataDeclaration objectGroupObjectBLOBDataDeclaration :
+                    this.ObjectGroupObjectBLOBDataDeclarationList) {
                 byteList.addAll(objectGroupObjectBLOBDataDeclaration.SerializeToByteList());
             }
         }

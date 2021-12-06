@@ -70,6 +70,8 @@ public class Compact64bitInt extends BasicObject {
      * Specify the type value for compact uint 64 bits type value.
      */
     public static final int CompactUint64bitType = 128;
+    private int type;
+    private long decodedValue;
 
     /**
      * Initializes a new instance of the Compact64bitInt class with specified value.
@@ -79,17 +81,12 @@ public class Compact64bitInt extends BasicObject {
     public Compact64bitInt(long decodedValue) {
         this.decodedValue = decodedValue;
     }
-
     /**
      * Initializes a new instance of the Compact64bitInt class, this is the default constructor.
      */
     public Compact64bitInt() {
         this.decodedValue = 0;
     }
-
-    private int type;
-    private long decodedValue;
-
 
     /**
      * This method is used to convert the element of Compact64bitInt basic object into a byte List.
@@ -131,14 +128,16 @@ public class Compact64bitInt extends BasicObject {
     }
 
     /**
-     * This method is used to deserialize the Compact64bitInt basic object from the specified byte array and start index.
+     * This method is used to deserialize the Compact64bitInt basic object from the specified byte
+     * array and start index.
      *
      * @param byteArray  Specify the byte array.
      * @param startIndex Specify the start index from the byte array.
      * @return Return the length in byte of the Compact64bitInt basic object.
      */
     @Override
-    protected int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) // return the length consumed
+    protected int DoDeserializeFromByteArray(byte[] byteArray,
+                                             int startIndex) // return the length consumed
     {
         BitReader bitReader = new BitReader(byteArray, startIndex);
         int numberOfContinousZeroBit = 0;
@@ -197,7 +196,8 @@ public class Compact64bitInt extends BasicObject {
                 return 1;
 
             default:
-                throw new RuntimeException("Failed to parse the Compact64bitInt, the type value is unexpected");
+                throw new RuntimeException(
+                        "Failed to parse the Compact64bitInt, the type value is unexpected");
         }
     }
 
@@ -205,13 +205,13 @@ public class Compact64bitInt extends BasicObject {
         return type;
     }
 
-    public long getDecodedValue() {
-        return decodedValue;
-    }
-
     public Compact64bitInt setType(int type) {
         this.type = type;
         return this;
+    }
+
+    public long getDecodedValue() {
+        return decodedValue;
     }
 
     public Compact64bitInt setDecodedValue(long decodedValue) {

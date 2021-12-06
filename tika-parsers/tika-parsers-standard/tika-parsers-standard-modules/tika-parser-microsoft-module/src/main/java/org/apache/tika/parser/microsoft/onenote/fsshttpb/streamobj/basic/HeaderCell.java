@@ -36,14 +36,19 @@ public class HeaderCell {
     public static HeaderCell CreateInstance(ObjectGroupDataElementData objectElement) {
         HeaderCell instance = new HeaderCell();
 
-        for (int i = 0; i < objectElement.ObjectGroupDeclarations.ObjectDeclarationList.size(); i++) {
-            if (objectElement.ObjectGroupDeclarations.ObjectDeclarationList.get(i).ObjectPartitionID != null &&
+        for (int i = 0; i < objectElement.ObjectGroupDeclarations.ObjectDeclarationList.size();
+                i++) {
+            if (objectElement.ObjectGroupDeclarations.ObjectDeclarationList.get(
+                    i).ObjectPartitionID != null &&
                     objectElement.ObjectGroupDeclarations.ObjectDeclarationList.get(
                             i).ObjectPartitionID.getDecodedValue() == 1) {
-                instance.ObjectDeclaration = objectElement.ObjectGroupDeclarations.ObjectDeclarationList.get(i);
-                ObjectGroupObjectData objectData = objectElement.ObjectGroupData.ObjectGroupObjectDataList.get(i);
+                instance.ObjectDeclaration =
+                        objectElement.ObjectGroupDeclarations.ObjectDeclarationList.get(i);
+                ObjectGroupObjectData objectData =
+                        objectElement.ObjectGroupData.ObjectGroupObjectDataList.get(i);
                 instance.ObjectData = new ObjectSpaceObjectPropSet();
-                instance.ObjectData.DoDeserializeFromByteArray(ByteUtil.toByteArray(objectData.Data.Content), 0);
+                instance.ObjectData.DoDeserializeFromByteArray(
+                        ByteUtil.toByteArray(objectData.Data.Content), 0);
                 break;
             }
         }

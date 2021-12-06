@@ -32,6 +32,12 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
 
 public class ObjectGroupDataElementData extends DataElementData {
+    public org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.DataElementHash
+            DataElementHash;
+    public ObjectGroupDeclarations ObjectGroupDeclarations;
+    public ObjectGroupMetadataDeclarations ObjectMetadataDeclaration;
+    public ObjectGroupData ObjectGroupData;
+
     /**
      * Initializes a new instance of the ObjectGroupDataElementData class.
      */
@@ -45,14 +51,6 @@ public class ObjectGroupDataElementData extends DataElementData {
         this.DataElementHash = null;
         this.ObjectGroupData = new ObjectGroupData();
     }
-
-    public org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.DataElementHash DataElementHash;
-
-    public ObjectGroupDeclarations ObjectGroupDeclarations;
-
-    public ObjectGroupMetadataDeclarations ObjectMetadataDeclaration;
-
-    public ObjectGroupData ObjectGroupData;
 
     /**
      * Used to convert the element into a byte List.
@@ -92,7 +90,8 @@ public class ObjectGroupDataElementData extends DataElementData {
             this.DataElementHash = dataElementHash.get();
         }
 
-        this.ObjectGroupDeclarations = StreamObject.GetCurrent(byteArray, index, ObjectGroupDeclarations.class);
+        this.ObjectGroupDeclarations =
+                StreamObject.GetCurrent(byteArray, index, ObjectGroupDeclarations.class);
 
         AtomicReference<ObjectGroupMetadataDeclarations> objectMetadataDeclaration =
                 new AtomicReference<>(new ObjectGroupMetadataDeclarations());
@@ -123,7 +122,8 @@ public class ObjectGroupDataElementData extends DataElementData {
         }
 
         /**
-         * This method is used to travel the node tree and build the ObjectGroupDataElementData and the extra data element list
+         * This method is used to travel the node tree and build the ObjectGroupDataElementData
+         * and the extra data element list
          *
          * @param node         Specify the object node.
          * @param dataElements Specify the list of data elements.
@@ -132,7 +132,8 @@ public class ObjectGroupDataElementData extends DataElementData {
             if (node instanceof IntermediateNodeObject) {
                 IntermediateNodeObject intermediateNodeObject = (IntermediateNodeObject) node;
                 ObjectGroupDataElementData data = new ObjectGroupDataElementData();
-                data.ObjectGroupDeclarations.ObjectDeclarationList.add(this.CreateObjectDeclare(node));
+                data.ObjectGroupDeclarations.ObjectDeclarationList.add(
+                        this.CreateObjectDeclare(node));
                 data.ObjectGroupData.ObjectGroupObjectDataList.add(
                         this.CreateObjectData((IntermediateNodeObject) node));
 
@@ -145,21 +146,25 @@ public class ObjectGroupDataElementData extends DataElementData {
                 LeafNodeObject intermediateNode = (LeafNodeObject) node;
 
                 ObjectGroupDataElementData data = new ObjectGroupDataElementData();
-                data.ObjectGroupDeclarations.ObjectDeclarationList.add(this.CreateObjectDeclare(node));
-                data.ObjectGroupData.ObjectGroupObjectDataList.add(this.CreateObjectData(intermediateNode));
+                data.ObjectGroupDeclarations.ObjectDeclarationList.add(
+                        this.CreateObjectDeclare(node));
+                data.ObjectGroupData.ObjectGroupObjectDataList.add(
+                        this.CreateObjectData(intermediateNode));
 
                 if (intermediateNode.DataNodeObjectData != null) {
                     data.ObjectGroupDeclarations.ObjectDeclarationList.add(
                             this.CreateObjectDeclare(intermediateNode.DataNodeObjectData));
                     data.ObjectGroupData.ObjectGroupObjectDataList.add(
                             this.CreateObjectData(intermediateNode.DataNodeObjectData));
-                    dataElements.add(new DataElement(DataElementType.ObjectGroupDataElementData, data));
+                    dataElements.add(
+                            new DataElement(DataElementType.ObjectGroupDataElementData, data));
                     return;
                 }
 
                 if (intermediateNode.DataNodeObjectData == null &&
                         intermediateNode.IntermediateNodeObjectList != null) {
-                    dataElements.add(new DataElement(DataElementType.ObjectGroupDataElementData, data));
+                    dataElements.add(
+                            new DataElement(DataElementType.ObjectGroupDataElementData, data));
 
                     for (LeafNodeObject child : intermediateNode.IntermediateNodeObjectList) {
                         this.TravelNodeObject(child, dataElements);
@@ -169,7 +174,8 @@ public class ObjectGroupDataElementData extends DataElementData {
                 }
 
                 throw new RuntimeException(
-                        "The DataNodeObjectData and IntermediateNodeObjectList properties in LeafNodeObjectData type cannot be null in the same time.");
+                        "The DataNodeObjectData and IntermediateNodeObjectList properties in " +
+                                "LeafNodeObjectData type cannot be null in the same time.");
             }
         }
 

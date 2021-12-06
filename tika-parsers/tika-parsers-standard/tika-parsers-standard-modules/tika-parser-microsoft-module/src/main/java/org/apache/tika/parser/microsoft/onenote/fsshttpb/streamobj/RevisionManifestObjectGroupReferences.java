@@ -27,6 +27,8 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
  * Specifies a revision manifest object group references, each followed by object group extended GUIDs
  */
 public class RevisionManifestObjectGroupReferences extends StreamObject {
+    public ExGuid ObjectGroupExtendedGUID;
+
     /**
      * Initializes a new instance of the RevisionManifestObjectGroupReferences class.
      */
@@ -44,8 +46,6 @@ public class RevisionManifestObjectGroupReferences extends StreamObject {
         this.ObjectGroupExtendedGUID = objectGroupExtendedGUID;
     }
 
-    public ExGuid ObjectGroupExtendedGUID;
-
     /**
      * Used to de-serialize the element.
      *
@@ -54,12 +54,14 @@ public class RevisionManifestObjectGroupReferences extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
+    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+                                                 int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.ObjectGroupExtendedGUID = BasicObject.parse(byteArray, index, ExGuid.class);
         if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(), "RevisionManifestObjectGroupReferences",
-                    "Stream object over-parse error", null);
+            throw new StreamObjectParseErrorException(currentIndex.get(),
+                    "RevisionManifestObjectGroupReferences", "Stream object over-parse error",
+                    null);
         }
 
         currentIndex.set(index.get());

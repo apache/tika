@@ -79,7 +79,7 @@ public class OneNoteTreeWalkerOptions {
      * Print file node data in UTF-16 format when they match these props.
      *
      * @param utf16PropertiesToPrint The set of UTF properties you want to print UTF-16 for.
-     *         Defaults are usually ok here.
+     *                               Defaults are usually ok here.
      * @return Returns this, as per builder pattern.
      */
     public OneNoteTreeWalkerOptions setUtf16PropertiesToPrint(

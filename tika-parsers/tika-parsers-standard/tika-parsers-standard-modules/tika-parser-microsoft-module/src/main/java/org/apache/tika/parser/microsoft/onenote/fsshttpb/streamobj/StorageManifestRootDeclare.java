@@ -28,16 +28,15 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
  * Specifies one or more storage manifest root declare.
  */
 public class StorageManifestRootDeclare extends StreamObject {
+    public ExGuid RootExGUID;
+    public CellID cellID;
+
     /**
      * Initializes a new instance of the StorageManifestRootDeclare class.
      */
     public StorageManifestRootDeclare() {
         super(StreamObjectTypeHeaderStart.StorageManifestRootDeclare);
     }
-
-    public ExGuid RootExGUID;
-
-    public CellID cellID;
 
     /**
      * Used to de-serialize the items.
@@ -47,14 +46,15 @@ public class StorageManifestRootDeclare extends StreamObject {
      * @param lengthOfItems The length of items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
+    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+                                                 int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.RootExGUID = BasicObject.parse(byteArray, index, ExGuid.class);
         this.cellID = BasicObject.parse(byteArray, index, CellID.class);
 
         if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(), "StorageManifestRootDeclare",
-                    "Stream object over-parse error", null);
+            throw new StreamObjectParseErrorException(currentIndex.get(),
+                    "StorageManifestRootDeclare", "Stream object over-parse error", null);
         }
 
         currentIndex.set(index.get());

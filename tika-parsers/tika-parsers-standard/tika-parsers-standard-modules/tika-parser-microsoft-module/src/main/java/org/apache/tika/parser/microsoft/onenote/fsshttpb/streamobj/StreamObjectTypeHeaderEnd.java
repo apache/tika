@@ -151,8 +151,6 @@ public enum StreamObjectTypeHeaderEnd {
      */
     UserAgentClientandPlatform(0x8B);
 
-    private final int intVal;
-
     static final Map<Integer, StreamObjectTypeHeaderEnd> valToEnumMap = new HashMap<>();
 
     static {
@@ -161,15 +159,17 @@ public enum StreamObjectTypeHeaderEnd {
         }
     }
 
+    private final int intVal;
+
     StreamObjectTypeHeaderEnd(int intVal) {
         this.intVal = intVal;
     }
 
-    public int getIntVal() {
-        return intVal;
-    }
-
     public static StreamObjectTypeHeaderEnd fromIntVal(int intVal) {
         return valToEnumMap.get(intVal);
+    }
+
+    public int getIntVal() {
+        return intVal;
     }
 }

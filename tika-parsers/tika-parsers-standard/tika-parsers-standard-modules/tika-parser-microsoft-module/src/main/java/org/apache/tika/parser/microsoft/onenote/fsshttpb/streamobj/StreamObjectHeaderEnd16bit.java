@@ -18,6 +18,7 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.util.List;
+import java.util.Locale;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitReader;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitWriter;
@@ -37,7 +38,9 @@ public class StreamObjectHeaderEnd16bit extends StreamObjectHeaderEnd {
         this.type = StreamObjectTypeHeaderEnd.fromIntVal(type);
         if (this.type == null) {
             throw new RuntimeException(String.format(
-                    "The type value RuntimeException is not defined for the stream object end 16-bit header", type));
+                    Locale.US,
+                    "The type value RuntimeException is not defined for the stream object end 16-bit header",
+                    type));
         }
 
     }
@@ -81,7 +84,8 @@ public class StreamObjectHeaderEnd16bit extends StreamObjectHeaderEnd {
     }
 
     /**
-     * This method is used to deserialize the StreamObjectHeaderEnd16bit basic object from the specified byte array and start index.
+     * This method is used to deserialize the StreamObjectHeaderEnd16bit basic object from the
+     * specified byte array and start index.
      *
      * @param byteArray  Specify the byte array.
      * @param startIndex Specify the start index from the byte array.
@@ -94,7 +98,9 @@ public class StreamObjectHeaderEnd16bit extends StreamObjectHeaderEnd {
 
         if (headerType != 0x3) {
             throw new RuntimeException(String.format(
-                    "Failed to get the StreamObjectHeaderEnd16bit header type value, expect value %d, but actual value is %s",
+                    Locale.US,
+                    "Failed to get the StreamObjectHeaderEnd16bit header type value, expect value %d, " +
+                            "but actual value is %s",
                     0x3, headerType));
         }
 
@@ -102,6 +108,7 @@ public class StreamObjectHeaderEnd16bit extends StreamObjectHeaderEnd {
         this.type = StreamObjectTypeHeaderEnd.fromIntVal(typeValue);
         if (this.type == null) {
             throw new RuntimeException(String.format(
+                    Locale.US,
                     "Failed to get the StreamObjectHeaderEnd16bit type value, the value %d is not defined",
                     typeValue));
         }

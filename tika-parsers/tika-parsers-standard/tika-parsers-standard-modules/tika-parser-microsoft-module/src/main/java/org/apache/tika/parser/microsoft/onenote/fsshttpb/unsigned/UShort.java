@@ -1,9 +1,10 @@
 /*
- * Copyright (c) Data Geekery GmbH (http://www.datageekery.com)
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -12,6 +13,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Copyright (c) Data Geekery GmbH (http://www.datageekery.com)
  */
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.unsigned;
@@ -27,67 +30,33 @@ import java.math.BigInteger;
 public final class UShort extends UNumber implements Comparable<UShort> {
 
     /**
-     * Generated UID
-     */
-    private static final long serialVersionUID = -6821055240959745390L;
-
-    /**
      * A constant holding the minimum value an <code>unsigned short</code> can
      * have, 0.
      */
     public static final int MIN_VALUE = 0x0000;
-
     /**
      * A constant holding the maximum value an <code>unsigned short</code> can
      * have, 2<sup>16</sup>-1.
      */
     public static final int MAX_VALUE = 0xffff;
-
     /**
      * A constant holding the minimum value an <code>unsigned short</code> can
      * have as UShort, 0.
      */
     public static final UShort MIN = valueOf(MIN_VALUE);
-
     /**
      * A constant holding the maximum value an <code>unsigned short</code> can
      * have as UShort, 2<sup>16</sup>-1.
      */
     public static final UShort MAX = valueOf(MAX_VALUE);
-
+    /**
+     * Generated UID
+     */
+    private static final long serialVersionUID = -6821055240959745390L;
     /**
      * The value modelling the content of this <code>unsigned short</code>
      */
     private final int value;
-
-    /**
-     * Create an <code>unsigned short</code>
-     *
-     * @throws NumberFormatException If <code>value</code> does not contain a
-     *                               parsable <code>unsigned short</code>.
-     */
-    public static UShort valueOf(String value) throws NumberFormatException {
-        return new UShort(value);
-    }
-
-    /**
-     * Create an <code>unsigned short</code> by masking it with
-     * <code>0xFFFF</code> i.e. <code>(short) -1</code> becomes
-     * <code>(ushort) 65535</code>
-     */
-    public static UShort valueOf(short value) {
-        return new UShort(value);
-    }
-
-    /**
-     * Create an <code>unsigned short</code>
-     *
-     * @throws NumberFormatException If <code>value</code> is not in the range
-     *                               of an <code>unsigned short</code>
-     */
-    public static UShort valueOf(int value) throws NumberFormatException {
-        return new UShort(value);
-    }
 
     /**
      * Create an <code>unsigned short</code>
@@ -118,6 +87,35 @@ public final class UShort extends UNumber implements Comparable<UShort> {
     private UShort(String value) throws NumberFormatException {
         this.value = Integer.parseInt(value);
         rangeCheck();
+    }
+
+    /**
+     * Create an <code>unsigned short</code>
+     *
+     * @throws NumberFormatException If <code>value</code> does not contain a
+     *                               parsable <code>unsigned short</code>.
+     */
+    public static UShort valueOf(String value) throws NumberFormatException {
+        return new UShort(value);
+    }
+
+    /**
+     * Create an <code>unsigned short</code> by masking it with
+     * <code>0xFFFF</code> i.e. <code>(short) -1</code> becomes
+     * <code>(ushort) 65535</code>
+     */
+    public static UShort valueOf(short value) {
+        return new UShort(value);
+    }
+
+    /**
+     * Create an <code>unsigned short</code>
+     *
+     * @throws NumberFormatException If <code>value</code> is not in the range
+     *                               of an <code>unsigned short</code>
+     */
+    public static UShort valueOf(int value) throws NumberFormatException {
+        return new UShort(value);
     }
 
     private void rangeCheck() throws NumberFormatException {

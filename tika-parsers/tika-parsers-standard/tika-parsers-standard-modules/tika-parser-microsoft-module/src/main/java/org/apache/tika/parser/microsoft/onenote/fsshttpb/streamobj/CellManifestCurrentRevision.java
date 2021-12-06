@@ -24,14 +24,14 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicOb
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 
 public class CellManifestCurrentRevision extends StreamObject {
+    public ExGuid cellManifestCurrentRevisionExGuid;
+
     /**
      * Initializes a new instance of the CellManifestCurrentRevision class.
      */
     public CellManifestCurrentRevision() {
         super(StreamObjectTypeHeaderStart.CellManifestCurrentRevision);
     }
-
-    public ExGuid cellManifestCurrentRevisionExGuid;
 
     /**
      * Used to de-serialize the element.
@@ -41,13 +41,14 @@ public class CellManifestCurrentRevision extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
+    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+                                                 int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.cellManifestCurrentRevisionExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
 
         if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(), "CellManifestCurrentRevision",
-                    "Stream object over-parse error", null);
+            throw new StreamObjectParseErrorException(currentIndex.get(),
+                    "CellManifestCurrentRevision", "Stream object over-parse error", null);
         }
 
         currentIndex.set(index.get());

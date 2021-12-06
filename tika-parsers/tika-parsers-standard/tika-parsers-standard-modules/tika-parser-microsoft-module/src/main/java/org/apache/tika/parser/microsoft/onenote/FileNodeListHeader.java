@@ -50,9 +50,8 @@ class FileNodeListHeader {
         this.position = position;
         this.fileNodeListId = fileNodeListId;
         if (fileNodeListId < 0x00000010) {
-            throw new RuntimeException(
-                    "FileNodeListHeader.fileNodeListId MUST be equal " +
-                            "to or greater than 0x00000010");
+            throw new RuntimeException("FileNodeListHeader.fileNodeListId MUST be equal " +
+                    "to or greater than 0x00000010");
         }
         this.nFragmentSequence = nFragmentSequence;
     }

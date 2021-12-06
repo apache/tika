@@ -23,9 +23,10 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
+import org.junit.jupiter.api.Test;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
-import org.junit.jupiter.api.Test;
 
 public class OneNoteParserTest extends TikaTest {
 
@@ -204,8 +205,7 @@ public class OneNoteParserTest extends TikaTest {
                         "If it closes, you can go back to it and it will open at the same place " +
                         "you left off.  If you are offline and the notebook is " +
                         "being stored on a sharepoint site, you can work on it and it will sync " +
-                        "when you go back online.",
-                txt);
+                        "when you go back online.", txt);
         // ascii text
         assertContains("Correlation between Outlook and OneNote", txt);
     }
@@ -215,8 +215,8 @@ public class OneNoteParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testOneNoteEmbeddedWordDoc.one");
 
         assertTrue(metadataList.stream().anyMatch(
-                ml -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                        .equals(ml.get("Content-Type"))));
+                ml -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document".equals(
+                        ml.get("Content-Type"))));
     }
 
     /**
@@ -249,7 +249,10 @@ public class OneNoteParserTest extends TikaTest {
         String txt = getText("testOneNoteFromOffice365-2.one", metadata);
 
         List<String> mostRecentAuthors = Arrays.asList(metadata.getValues("mostRecentAuthors"));
-        assertContains("R\u0000o\u0000b\u0000e\u0000r\u0000t\u0000 \u0000L\u0000u\u0000c\u0000a\u0000r\u0000i\u0000n\u0000i\u0000\u0000\u0000", mostRecentAuthors);
+        assertContains(
+                "R\u0000o\u0000b\u0000e\u0000r\u0000t\u0000 \u0000L\u0000u\u0000c\u0000a" +
+                        "\u0000r\u0000i\u0000n\u0000i\u0000\u0000\u0000",
+                mostRecentAuthors);
 
         assertEquals(Instant.ofEpochSecond(1591712300),
                 Instant.ofEpochSecond(Long.parseLong(metadata.get("creationTimestamp"))));

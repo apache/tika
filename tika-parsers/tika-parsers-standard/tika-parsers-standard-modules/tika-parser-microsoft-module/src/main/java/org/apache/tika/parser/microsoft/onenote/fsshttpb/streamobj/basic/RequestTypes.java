@@ -71,4 +71,3 @@ public enum RequestTypes {
         return intVal;
     }
 }
-    

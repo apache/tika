@@ -18,6 +18,7 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
@@ -29,6 +30,13 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitWriter;
  * An 32-bit header for a compound object would indicate the start of a stream object
  */
 public class StreamObjectHeaderStart32bit extends StreamObjectHeaderStart {
+    /**
+     * Gets or sets an optional compact uint64 that specifies the length in bytes for additional data (if any).
+     * This field MUST be specified if the Length field contains 32767 and MUST NOT be specified if the Length field
+     * contains any other value than 32767.
+     */
+    public Compact64bitInt largeLength;
+
     /**
      * Initializes a new instance of the StreamObjectHeaderStart32bit class with specified type and length.
      *
@@ -65,13 +73,6 @@ public class StreamObjectHeaderStart32bit extends StreamObjectHeaderStart {
     }
 
     /**
-     * Gets or sets an optional compact uint64 that specifies the length in bytes for additional data (if any).
-     * This field MUST be specified if the Length field contains 32767 and MUST NOT be specified if the Length field
-     * contains any other value than 32767.
-     */
-    public Compact64bitInt largeLength;
-
-    /**
      * This method is used to convert the element of StreamObjectHeaderStart32bit basic object into a byte List.
      *
      * @return Return the byte list which store the byte information of StreamObjectHeaderStart32bit.
@@ -94,7 +95,8 @@ public class StreamObjectHeaderStart32bit extends StreamObjectHeaderStart {
     }
 
     /**
-     * This method is used to deserialize the StreamObjectHeaderStart32bit basic object from the specified byte array and start index.
+     * This method is used to deserialize the StreamObjectHeaderStart32bit basic object
+     * from the specified byte array and start index.
      *
      * @param byteArray  Specify the byte array.
      * @param startIndex Specify the start index from the byte array.
@@ -106,7 +108,9 @@ public class StreamObjectHeaderStart32bit extends StreamObjectHeaderStart {
         this.headerType = bitReader.ReadInt32(2);
         if (this.headerType != StreamObjectHeaderStart.StreamObjectHeaderStart32bit) {
             throw new RuntimeException(String.format(
-                    "Failed to get the StreamObjectHeaderStart32bit header type value, expect value %s, but actual value is %s",
+                    Locale.US,
+                    "Failed to get the StreamObjectHeaderStart32bit header type value, expect " +
+                            "value %s, but actual value is %s",
                     StreamObjectHeaderStart.StreamObjectHeaderStart32bit, this.headerType));
         }
 
@@ -115,13 +119,16 @@ public class StreamObjectHeaderStart32bit extends StreamObjectHeaderStart {
         this.type = StreamObjectTypeHeaderStart.fromIntVal(typeValue);
         if (type == null) {
             throw new RuntimeException(String.format(
+                    Locale.US,
                     "Failed to get the StreamObjectHeaderStart32bit type value, the value %s is not defined",
                     typeValue));
         }
 
         if (StreamObject.getCompoundTypes().contains(this.type) && this.compound != 1) {
             throw new RuntimeException(String.format(
-                    "Failed to parse the StreamObjectHeaderStart32bit header. If the type value is %s then the compound value should 1, but actual value is 0",
+                    Locale.US,
+                    "Failed to parse the StreamObjectHeaderStart32bit header. If the type value is %s " +
+                            "then the compound value should 1, but actual value is 0",
                     typeValue));
         }
 
