@@ -289,11 +289,6 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
             this.streamObjectHeaderEnd = end;
         }
 
-//        // Capture all the type related requirements
-//        if (SharedContext.Current.IsMsFsshttpRequirementsCaptured) {
-//            new MsfsshttpbAdapterCapture().InvokeCaptureMethod(this.GetType(), this, SharedContext.Current.Site);
-//        }
-
         return index.get() - startIndex;
     }
 
