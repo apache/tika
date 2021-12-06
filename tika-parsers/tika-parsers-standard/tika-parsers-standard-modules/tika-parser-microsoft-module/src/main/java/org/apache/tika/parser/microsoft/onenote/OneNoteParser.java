@@ -87,16 +87,7 @@ public class OneNoteParser extends AbstractParser {
 
             OneNoteHeader header = oneNoteDocument.header;
 
-            if (header.isMsHttpbFormat()) {
-                AlternativePackaging alternatePackageOneStoreFile = new AlternativePackaging();
-                alternatePackageOneStoreFile.DoDeserializeFromByteArray(oneStoreFileBytes, 0);
-
-                MSONESTOREParser onenoteParser = new MSONESTOREParser();
-                MSOneStorePackage pkg = onenoteParser.Parse(alternatePackageOneStoreFile.dataElementPackage);
-
-                pkg.walkTree(options, metadata, xhtml);
-
-            } else if (header.isMsOneStoreFormat()) {
+            if (header.isMsOneStoreFormat()) {
                 metadata.set("buildNumberCreated",
                         "0x" + Long.toHexString(oneNoteDocument.header.buildNumberCreated));
                 metadata.set("buildNumberLastWroteToFile",
@@ -163,10 +154,22 @@ public class OneNoteParser extends AbstractParser {
                     metadata.set("lastModified",
                             String.valueOf(oneNoteTreeWalker.getLastModified()));
                 }
+            } else if (header.isLegacyOrAlternativePackaging()) {
+                try {
+                    AlternativePackaging alternatePackageOneStoreFile = new AlternativePackaging();
+                    alternatePackageOneStoreFile.DoDeserializeFromByteArray(oneStoreFileBytes, 0);
+
+                    MSONESTOREParser onenoteParser = new MSONESTOREParser();
+                    MSOneStorePackage pkg = onenoteParser.Parse(alternatePackageOneStoreFile.dataElementPackage);
+
+                    pkg.walkTree(options, metadata, xhtml);
+                } catch (Exception e) {
+                    OneNoteLegacyDumpStrings dumpStrings =
+                            new OneNoteLegacyDumpStrings(oneNoteDirectFileResource, xhtml);
+                    dumpStrings.dump();
+                }
             } else {
-                OneNoteLegacyDumpStrings dumpStrings =
-                        new OneNoteLegacyDumpStrings(oneNoteDirectFileResource, xhtml);
-                dumpStrings.dump();
+                throw new TikaException("Invalid OneStore document - could not parse headers");
             }
             xhtml.endDocument();
         }

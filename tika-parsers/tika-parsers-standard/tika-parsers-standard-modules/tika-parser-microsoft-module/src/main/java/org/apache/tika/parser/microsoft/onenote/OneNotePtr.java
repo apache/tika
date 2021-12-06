@@ -52,7 +52,7 @@ class OneNotePtr {
     private static final Logger LOG = LoggerFactory.getLogger(OneNoteParser.class);
     private static final byte[] IFNDF =
             new byte[]{60, 0, 105, 0, 102, 0, 110, 0, 100, 0, 102, 0, 62, 0};
-    private static final String MS_FSS_HTTPB_PACKAGE_STORAGE_FILE_FORMAT_GUID = "{638DE92F-A6D4-4BC1-9A36-B3FC2511A5B7}";
+    private static final String PACKAGE_STORAGE_FILE_FORMAT_GUID = "{638DE92F-A6D4-4BC1-9A36-B3FC2511A5B7}";
 
     int indentLevel = 0;
 
@@ -116,8 +116,8 @@ class OneNotePtr {
                 .setBuildNumberLastWroteToFile(deserializeLittleEndianInt())
                 .setBuildNumberOldestWritten(deserializeLittleEndianInt())
                 .setBuildNumberNewestWritten(deserializeLittleEndianInt());
-        if (data.getGuidFileFormat().toString().equals(MS_FSS_HTTPB_PACKAGE_STORAGE_FILE_FORMAT_GUID)) {
-            return data.setIsMsHttpbFormat(true);
+        if (data.getGuidFileFormat().toString().equals(PACKAGE_STORAGE_FILE_FORMAT_GUID)) {
+            return data.setLegacyOrAlternativePackaging(true);
         }
         ByteBuffer reservedBytesAtEndOfHeader =
                 ByteBuffer.allocate(NUM_RESERVED_BYTES_AT_END_OF_HEADER);
