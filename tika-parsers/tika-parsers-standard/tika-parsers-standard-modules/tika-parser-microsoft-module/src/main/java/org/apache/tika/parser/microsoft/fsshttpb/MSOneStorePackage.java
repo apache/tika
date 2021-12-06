@@ -1,3 +1,19 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.tika.parser.microsoft.fsshttpb;
 
 import java.io.IOException;
@@ -42,41 +58,14 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 
 public class MSOneStorePackage {
-    /// <summary>
-    /// Gets or sets the Storage Index.
-    /// </summary>
     public StorageIndexDataElementData StorageIndex;
-    /// <summary>
-    /// Gets or sets the Storage Manifest.
-    /// </summary>
     public StorageManifestDataElementData StorageManifest;
-    /// <summary>
-    /// Gets or sets the Cell Manifest of Header Cell.
-    /// </summary>
     public CellManifestDataElementData HeaderCellCellManifest;
-    /// <summary>
-    /// Gets or sets the Revision Manifest of Header Cell.
-    /// </summary>
     public RevisionManifestDataElementData HeaderCellRevisionManifest;
-    /// <summary>
-    /// Gets or sets the Revision Manifests.
-    /// </summary>
     public List<RevisionManifestDataElementData> RevisionManifests;
-    /// <summary>
-    /// Gets or sets the Cell Manifests.
-    /// </summary>
     public List<CellManifestDataElementData> CellManifests;
-    /// <summary>
-    /// Gets or sets the Header Cell.
-    /// </summary>
     public HeaderCell headerCell;
-    /// <summary>
-    /// Gets or sets the root objects of the revision store file.
-    /// </summary>
     public List<RevisionStoreObjectGroup> DataRoot;
-    /// <summary>
-    /// Gets or sets the other objects of the revision store file.
-    /// </summary>
     public List<RevisionStoreObjectGroup> OtherFileNodeList;
 
     /**
@@ -124,11 +113,12 @@ public class MSOneStorePackage {
         this.OtherFileNodeList = new ArrayList<>();
     }
 
-    /// <summary>
-    /// This method is used to find the Storage Index Cell Mapping matches the Cell ID.
-    /// </summary>
-    /// <param name="cellID">Specify the Cell ID.</param>
-    /// <returns>Return the specific Storage Index Cell Mapping.</returns>
+    /**
+     * This method is used to find the Storage Index Cell Mapping matches the Cell ID.
+     *
+     * @param cellID Specify the Cell ID.
+     * @return Return the specific Storage Index Cell Mapping.
+     */
     public StorageIndexCellMapping FindStorageIndexCellMapping(CellID cellID) {
         StorageIndexCellMapping storageIndexCellMapping = null;
         if (this.StorageIndex != null) {
@@ -139,17 +129,18 @@ public class MSOneStorePackage {
         return storageIndexCellMapping;
     }
 
-    /// <summary>
-    /// This method is used to find the Storage Index Revision Mapping that matches the Revision Mapping Extended GUID.
-    /// </summary>
-    /// <param name="revisionExtendedGUID">Specify the Revision Mapping Extended GUID.</param>
-    /// <returns>Return the instance of Storage Index Revision Mapping.</returns>
+    /**
+     * This method is used to find the Storage Index Revision Mapping that matches the Revision Mapping Extended GUID.
+     *
+     * @param revisionExtendedGUID Specify the Revision Mapping Extended GUID.
+     * @return Return the instance of Storage Index Revision Mapping.
+     */
     public StorageIndexRevisionMapping FindStorageIndexRevisionMapping(ExGuid revisionExtendedGUID) {
         StorageIndexRevisionMapping instance = null;
-        if(this.StorageIndex!=null) {
+        if (this.StorageIndex != null) {
             instance = this.StorageIndex.StorageIndexRevisionMappingList.stream()
-                            .filter(r -> r.RevisionExGuid.equals(revisionExtendedGUID))
-                                    .findFirst().orElse(new StorageIndexRevisionMapping());
+                    .filter(r -> r.RevisionExGuid.equals(revisionExtendedGUID))
+                    .findFirst().orElse(new StorageIndexRevisionMapping());
         }
 
         return instance;
@@ -176,7 +167,8 @@ public class MSOneStorePackage {
                     IProperty property = propertySet.RgData.get(i);
                     PropertyID propertyID = propertySet.RgPrids[i];
                     PropertyType propertyType = PropertyType.fromIntVal(propertyID.Type);
-                    OneNotePropertyEnum oneNotePropertyEnum = OneNotePropertyEnum.of(Unsigned.uint(propertyID.Value).longValue());
+                    OneNotePropertyEnum oneNotePropertyEnum =
+                            OneNotePropertyEnum.of(Unsigned.uint(propertyID.Value).longValue());
                     if (oneNotePropertyEnum == OneNotePropertyEnum.LastModifiedTimeStamp) {
                         long fullval = getScalar(property);
                         Instant instant = Instant.ofEpochSecond(fullval / 10000000 + DATETIME_EPOCH_DIFF_1601);
@@ -251,15 +243,15 @@ public class MSOneStorePackage {
         }
         if (!authors.isEmpty()) {
             metadata.set(Property.externalTextBag("authors"),
-                    authors.toArray(new String[]{}));
+                    authors.toArray(new String[] {}));
         }
         if (!mostRecentAuthors.isEmpty()) {
             metadata.set(Property.externalTextBag("mostRecentAuthors"),
-                    mostRecentAuthors.toArray(new String[]{}));
+                    mostRecentAuthors.toArray(new String[] {}));
         }
         if (!originalAuthors.isEmpty()) {
             metadata.set(Property.externalTextBag("originalAuthors"),
-                    originalAuthors.toArray(new String[]{}));
+                    originalAuthors.toArray(new String[] {}));
         }
     }
 

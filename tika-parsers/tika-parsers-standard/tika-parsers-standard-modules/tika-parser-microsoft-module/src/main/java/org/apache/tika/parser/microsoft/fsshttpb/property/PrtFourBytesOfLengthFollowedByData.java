@@ -1,3 +1,19 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.tika.parser.microsoft.fsshttpb.property;
 
 import java.util.ArrayList;
@@ -6,50 +22,44 @@ import java.util.List;
 
 import org.apache.tika.parser.microsoft.fsshttpb.util.BitConverter;
 
-/// <summary>
-    /// This class is used to represent the prtFourBytesOfLengthFollowedByData.
-    /// </summary>
-    public class PrtFourBytesOfLengthFollowedByData implements IProperty
-    {
-        /// <summary>
-        /// Gets or sets an unsigned integer that specifies the size, in bytes, of the Data field.
-        /// </summary>
-        public int CB;
+/**
+ * This class is used to represent the prtFourBytesOfLengthFollowedByData.
+ */
+public class PrtFourBytesOfLengthFollowedByData implements IProperty {
+    public int CB;
 
-        /// <summary>
-        /// Gets or sets the value of Data field.
-        /// </summary>
-        public byte[] Data;
-        /// <summary>
-        /// This method is used to deserialize the prtFourBytesOfLengthFollowedByData from the specified byte array and start index.
-        /// </summary>
-        /// <param name="byteArray">Specify the byte array.</param>
-        /// <param name="startIndex">Specify the start index from the byte array.</param>
-        /// <returns>Return the length in byte of the prtFourBytesOfLengthFollowedByData.</returns>
-        public int DoDeserializeFromByteArray(byte[] byteArray, int startIndex)
-        {
-            int index = startIndex;
-            this.CB = (int) BitConverter.ToUInt32(byteArray, startIndex);
-            index += 4;
-            this.Data = Arrays.copyOfRange(byteArray, index, index + this.CB);
-            index += this.CB;
+    public byte[] Data;
 
-            return index - startIndex;
-        }
+    /**
+     * This method is used to deserialize the prtFourBytesOfLengthFollowedByData from the specified byte array and start index.
+     *
+     * @param byteArray  Specify the byte array.
+     * @param startIndex Specify the start index from the byte array.
+     * @return Return the length in byte of the prtFourBytesOfLengthFollowedByData.
+     */
+    public int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+        int index = startIndex;
+        this.CB = (int) BitConverter.ToUInt32(byteArray, startIndex);
+        index += 4;
+        this.Data = Arrays.copyOfRange(byteArray, index, index + this.CB);
+        index += this.CB;
 
-        /// <summary>
-        /// This method is used to convert the element of prtFourBytesOfLengthFollowedByData into a byte List.
-        /// </summary>
-        /// <returns>Return the byte list which store the byte information of prtFourBytesOfLengthFollowedByData.</returns>
-        public List<Byte> SerializeToByteList()
-        {
-            List<Byte> byteList = new ArrayList<>();
-            for (byte b : BitConverter.getBytes(this.CB)) {
-                byteList.add(b);
-            }
-            for (byte b : this.Data) {
-                byteList.add(b);
-            }
-            return byteList;
-        }
+        return index - startIndex;
     }
+
+    /**
+     * This method is used to convert the element of prtFourBytesOfLengthFollowedByData into a byte List.
+     *
+     * @return Return the byte list which store the byte information of prtFourBytesOfLengthFollowedByData.
+     */
+    public List<Byte> SerializeToByteList() {
+        List<Byte> byteList = new ArrayList<>();
+        for (byte b : BitConverter.getBytes(this.CB)) {
+            byteList.add(b);
+        }
+        for (byte b : this.Data) {
+            byteList.add(b);
+        }
+        return byteList;
+    }
+}

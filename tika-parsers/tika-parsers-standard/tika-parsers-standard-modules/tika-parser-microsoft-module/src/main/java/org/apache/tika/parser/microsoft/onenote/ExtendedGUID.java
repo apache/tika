@@ -92,10 +92,10 @@ public class ExtendedGUID implements Comparable<ExtendedGUID> {
         return this;
     }
 
-    /// <summary>
-    /// This method is used to convert the element of ExtendedGUID object into a byte List.
-    /// </summary>
-    /// <returns>Return the byte list which store the byte information of ExtendedGUID</returns>
+    /**
+     * This method is used to convert the element of ExtendedGUID object into a byte List.
+     * @return Return the byte list which store the byte information of ExtendedGUID
+     */
     public List<Byte> SerializeToByteList()
     {
         List<Byte> byteList = new ArrayList<>(guid.toByteArray());

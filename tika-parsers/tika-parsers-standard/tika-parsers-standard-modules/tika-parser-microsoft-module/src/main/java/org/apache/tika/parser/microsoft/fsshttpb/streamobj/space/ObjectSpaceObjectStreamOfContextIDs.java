@@ -1,3 +1,19 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj.space;
 
 import java.util.ArrayList;
@@ -5,58 +21,49 @@ import java.util.List;
 
 import org.apache.tika.parser.microsoft.fsshttpb.streamobj.basic.CompactID;
 
-/// <summary>
-    /// This class is used to represent a ObjectSpaceObjectStreamOfContextIDs.
-    /// </summary>
-    public class ObjectSpaceObjectStreamOfContextIDs
-    {
-        /// <summary>
-        /// Gets or sets value of header field.
-        /// </summary>
-        public ObjectSpaceObjectStreamHeader Header;
-        /// <summary>
-        /// Gets or sets the value of body field.
-        /// </summary>
-        public CompactID[] Body;
+/**
+ * This class is used to represent a ObjectSpaceObjectStreamOfContextIDs.
+ */
+public class ObjectSpaceObjectStreamOfContextIDs {
+    public ObjectSpaceObjectStreamHeader Header;
+    public CompactID[] Body;
 
-        /// <summary>
-        /// This method is used to convert the element of ObjectSpaceObjectStreamOfContextIDs object into a byte List.
-        /// </summary>
-        /// <returns>Return the byte list which store the byte information of ObjectSpaceObjectStreamOfContextIDs</returns>
-        public List<Byte> SerializeToByteList()
-        {
-            List<Byte> byteList = new ArrayList<>();
-            byteList.addAll(this.Header.SerializeToByteList());
-            for (CompactID compactID : this.Body)
-            {
-                byteList.addAll(compactID.SerializeToByteList());
-            }
-
-            return byteList;
+    /**
+     * This method is used to convert the element of ObjectSpaceObjectStreamOfContextIDs object into a byte List.
+     *
+     * @return Return the byte list which store the byte information of ObjectSpaceObjectStreamOfContextIDs
+     */
+    public List<Byte> SerializeToByteList() {
+        List<Byte> byteList = new ArrayList<>();
+        byteList.addAll(this.Header.SerializeToByteList());
+        for (CompactID compactID : this.Body) {
+            byteList.addAll(compactID.SerializeToByteList());
         }
 
-        /// <summary>
-        /// This method is used to deserialize the ObjectSpaceObjectStreamOfContextIDs object from the specified byte array and start index.
-        /// </summary>
-        /// <param name="byteArray">Specify the byte array.</param>
-        /// <param name="startIndex">Specify the start index from the byte array.</param>
-        /// <returns>Return the length in byte of the ObjectSpaceObjectStreamOfContextIDs object.</returns>
-        public int DoDeserializeFromByteArray(byte[] byteArray, int startIndex)
-        {
-            int index = startIndex;
-            this.Header = new ObjectSpaceObjectStreamHeader();
-            int headerCount = this.Header.DoDeserializeFromByteArray(byteArray, index);
-            index += headerCount;
-
-            this.Body = new CompactID[(int)this.Header.Count];
-            for (int i = 0; i < this.Header.Count; i++)
-            {
-                CompactID compactID = new CompactID();
-                int count = compactID.DoDeserializeFromByteArray(byteArray, startIndex);
-                this.Body[i] = compactID;
-                index += count;
-            }
-
-            return index - startIndex;
-        }
+        return byteList;
     }
+
+    /**
+     * This method is used to deserialize the ObjectSpaceObjectStreamOfContextIDs object from the specified byte array and start index.
+     *
+     * @param byteArray  Specify the byte array.
+     * @param startIndex Specify the start index from the byte array.
+     * @return Return the length in byte of the ObjectSpaceObjectStreamOfContextIDs object.
+     */
+    public int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+        int index = startIndex;
+        this.Header = new ObjectSpaceObjectStreamHeader();
+        int headerCount = this.Header.DoDeserializeFromByteArray(byteArray, index);
+        index += headerCount;
+
+        this.Body = new CompactID[(int) this.Header.Count];
+        for (int i = 0; i < this.Header.Count; i++) {
+            CompactID compactID = new CompactID();
+            int count = compactID.DoDeserializeFromByteArray(byteArray, startIndex);
+            this.Body[i] = compactID;
+            index += count;
+        }
+
+        return index - startIndex;
+    }
+}
