@@ -41,7 +41,7 @@ public class RDCAnalysisChunking extends AbstractChunking {
     /**
      * The max chunk size in RDC analysis chunking.
      */
-    private int maxChunkSize = 65535;
+    private final int maxChunkSize = 65535;
 
     /**
      * Initializes a new instance of the <see cref="RDCAnalysisChunking"/> class
@@ -66,7 +66,7 @@ public class RDCAnalysisChunking extends AbstractChunking {
         if (inputLength <= 0) {
             throw new RuntimeException("Cannot support the length less than 0");
         } else if (inputLength <= horizon) {
-            list.add(this.GetChunk(0, (int) inputLength));
+            list.add(this.GetChunk(0, inputLength));
             return list;
         }
 

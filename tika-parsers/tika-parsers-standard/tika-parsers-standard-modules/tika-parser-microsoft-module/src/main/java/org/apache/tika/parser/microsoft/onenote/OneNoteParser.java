@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.onenote;
 
 import java.io.IOException;
@@ -63,7 +64,7 @@ public class OneNoteParser extends AbstractParser {
         // TODO - add onetoc and other onenote mime types
     }
 
-    private OneNoteTreeWalkerOptions options = new OneNoteTreeWalkerOptions();
+    private final OneNoteTreeWalkerOptions options = new OneNoteTreeWalkerOptions();
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -73,11 +74,11 @@ public class OneNoteParser extends AbstractParser {
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        byte [] oneStoreFileBytes = IOUtils.toByteArray(stream);
+        byte[] oneStoreFileBytes = IOUtils.toByteArray(stream);
 
         try (TemporaryResources temporaryResources = new TemporaryResources();
-                TikaInputStream tikaInputStream = TikaInputStream.get(oneStoreFileBytes);
-                OneNoteDirectFileResource oneNoteDirectFileResource =
+             TikaInputStream tikaInputStream = TikaInputStream.get(oneStoreFileBytes);
+             OneNoteDirectFileResource oneNoteDirectFileResource =
                      new OneNoteDirectFileResource(tikaInputStream.getFile())) {
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             xhtml.startDocument();
@@ -132,15 +133,15 @@ public class OneNoteParser extends AbstractParser {
 
                 if (!oneNoteTreeWalker.getAuthors().isEmpty()) {
                     metadata.set(Property.externalTextBag("authors"),
-                            oneNoteTreeWalker.getAuthors().toArray(new String[]{}));
+                            oneNoteTreeWalker.getAuthors().toArray(new String[] {}));
                 }
                 if (!oneNoteTreeWalker.getMostRecentAuthors().isEmpty()) {
                     metadata.set(Property.externalTextBag("mostRecentAuthors"),
-                            oneNoteTreeWalker.getMostRecentAuthors().toArray(new String[]{}));
+                            oneNoteTreeWalker.getMostRecentAuthors().toArray(new String[] {}));
                 }
                 if (!oneNoteTreeWalker.getOriginalAuthors().isEmpty()) {
                     metadata.set(Property.externalTextBag("originalAuthors"),
-                            oneNoteTreeWalker.getOriginalAuthors().toArray(new String[]{}));
+                            oneNoteTreeWalker.getOriginalAuthors().toArray(new String[] {}));
                 }
                 if (!Instant.MAX.equals(Instant.ofEpochMilli(oneNoteTreeWalker.getCreationTimestamp()))) {
                     metadata.set("creationTimestamp",

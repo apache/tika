@@ -55,7 +55,7 @@ public class MSONESTOREParser {
     // The DataElements of Object BLOB
     private List<DataElement> objectBlOBElements;
 
-    private Set<CellID> storageIndexHashTab = new HashSet<>();
+    private final Set<CellID> storageIndexHashTab = new HashSet<>();
 
     public MSOneStorePackage Parse(DataElementPackage dataElementPackage) {
         MSOneStorePackage msOneStorePackage = new MSOneStorePackage();

@@ -81,7 +81,7 @@ public class MSOneStorePackage {
      * .EPOCH.
      */
     private static final long DATETIME_EPOCH_DIFF_1601;
-    private static Pattern HYPERLINK_PATTERN =
+    private static final Pattern HYPERLINK_PATTERN =
             Pattern.compile("\uFDDFHYPERLINK\\s+\"([^\"]+)\"([^\"]+)$");
 
     static {

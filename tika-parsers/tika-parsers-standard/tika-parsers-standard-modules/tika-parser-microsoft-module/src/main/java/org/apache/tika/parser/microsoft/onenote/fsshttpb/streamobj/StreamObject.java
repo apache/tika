@@ -36,7 +36,7 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
     /**
      * Hash set contains the StreamObjectTypeHeaderStart type.
      */
-    private static Set<StreamObjectTypeHeaderStart> compoundTypes = new HashSet<>(Arrays.asList(
+    private static final Set<StreamObjectTypeHeaderStart> compoundTypes = new HashSet<>(Arrays.asList(
             StreamObjectTypeHeaderStart.DataElement,
             StreamObjectTypeHeaderStart.Knowledge,
             StreamObjectTypeHeaderStart.CellKnowledge,
@@ -160,7 +160,7 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
      */
     public static StreamObject ParseStreamObject(StreamObjectHeaderStart header, byte[] byteArray,
                                                  AtomicInteger index) {
-        if (streamObjectTypeMapping.keySet().contains(header.type)) {
+        if (streamObjectTypeMapping.containsKey(header.type)) {
             Class headerTypeClass = streamObjectTypeMapping.get(header.type);
             StreamObject streamObject;
             try {

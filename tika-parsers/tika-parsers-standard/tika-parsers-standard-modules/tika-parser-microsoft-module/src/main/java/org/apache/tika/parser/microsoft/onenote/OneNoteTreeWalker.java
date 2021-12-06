@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.onenote;
 
 import java.io.IOException;
@@ -66,7 +67,7 @@ class OneNoteTreeWalker {
      * .EPOCH.
      */
     private static final long DATETIME_EPOCH_DIFF_1601;
-    private static Pattern HYPERLINK_PATTERN =
+    private static final Pattern HYPERLINK_PATTERN =
             Pattern.compile("\uFDDFHYPERLINK\\s+\"([^\"]+)\"([^\"]+)$");
 
     static {
@@ -88,11 +89,11 @@ class OneNoteTreeWalker {
     private final Set<String> authors = new HashSet<>();
     private final Set<String> mostRecentAuthors = new HashSet<>();
     private final Set<String> originalAuthors = new HashSet<>();
-    private OneNoteTreeWalkerOptions options;
-    private OneNoteDocument oneNoteDocument;
-    private OneNoteDirectFileResource dif;
-    private XHTMLContentHandler xhtml;
-    private Pair<Long, ExtendedGUID> roleAndContext;
+    private final OneNoteTreeWalkerOptions options;
+    private final OneNoteDocument oneNoteDocument;
+    private final OneNoteDirectFileResource dif;
+    private final XHTMLContentHandler xhtml;
+    private final Pair<Long, ExtendedGUID> roleAndContext;
     private Instant lastModifiedTimestamp = Instant.MIN;
     private long creationTimestamp = Long.MAX_VALUE;
     private long lastModified = Long.MIN_VALUE;

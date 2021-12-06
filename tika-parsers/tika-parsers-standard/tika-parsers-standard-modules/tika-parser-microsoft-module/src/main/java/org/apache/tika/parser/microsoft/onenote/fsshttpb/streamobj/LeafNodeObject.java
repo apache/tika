@@ -192,7 +192,7 @@ public class LeafNodeObject extends NodeObject {
         public LeafNodeObject Build(byte[] array, SignatureObject signature) {
             LeafNodeObject nodeObject = new LeafNodeObject();
             nodeObject.DataSize = new DataSizeObject();
-            nodeObject.DataSize.DataSize = (long) array.length;
+            nodeObject.DataSize.DataSize = array.length;
 
             nodeObject.Signature = signature;
             nodeObject.ExGuid = new ExGuid(SequenceNumberGenerator.GetCurrentSerialNumber(), UUID.randomUUID());

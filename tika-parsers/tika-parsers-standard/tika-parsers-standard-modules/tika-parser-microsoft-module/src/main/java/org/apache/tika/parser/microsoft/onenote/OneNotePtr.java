@@ -51,7 +51,7 @@ class OneNotePtr {
     public static final int NUM_RESERVED_BYTES_AT_END_OF_HEADER = 728;
     private static final Logger LOG = LoggerFactory.getLogger(OneNoteParser.class);
     private static final byte[] IFNDF =
-            new byte[]{60, 0, 105, 0, 102, 0, 110, 0, 100, 0, 102, 0, 62, 0};
+            new byte[] {60, 0, 105, 0, 102, 0, 110, 0, 100, 0, 102, 0, 62, 0};
     private static final String PACKAGE_STORAGE_FILE_FORMAT_GUID = "{638DE92F-A6D4-4BC1-9A36-B3FC2511A5B7}";
 
     int indentLevel = 0;
@@ -324,7 +324,7 @@ class OneNotePtr {
                 FileNode lastChild = data.children.get(data.children.size() - 1);
                 assert dereference
                         .equals(lastChild); // is this correct? or should we be
-                                            // checking the pointer?
+                // checking the pointer?
                 Integer curPathOffset =
                         curPath.nodeListPositions.get(curPath.nodeListPositions.size() - 1);
                 curPath.nodeListPositions
@@ -1086,8 +1086,8 @@ class OneNotePtr {
                         content.dumpHex();
                     }
                 }
-                    LOG.debug("]");
-                    break;
+                LOG.debug("]");
+                break;
                 case 0x9:
                 case 0xb:
                 case 0xd:
@@ -1181,8 +1181,8 @@ class OneNotePtr {
     }
 
     private ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs
-            deserializeObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs()
-                throws IOException, TikaException {
+    deserializeObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs()
+            throws IOException, TikaException {
         ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs data =
                 new ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs();
         long header = deserializeLittleEndianInt();

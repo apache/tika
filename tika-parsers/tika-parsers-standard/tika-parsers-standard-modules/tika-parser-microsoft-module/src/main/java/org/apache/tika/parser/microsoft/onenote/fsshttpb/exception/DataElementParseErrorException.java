@@ -19,7 +19,7 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb.exception;
 
 public class DataElementParseErrorException extends RuntimeException {
 
-    private int index;
+    private final int index;
 
     public DataElementParseErrorException(int index, Exception innerException) {
         super(innerException);
