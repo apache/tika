@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj;
 
 import java.util.List;
@@ -30,9 +31,6 @@ public class CellManifestDataElementData extends DataElementData {
         this.cellManifestCurrentRevision = new CellManifestCurrentRevision();
     }
 
-    /**
-     * Gets or sets a Cell Manifest Current Revision.
-     */
     public CellManifestCurrentRevision cellManifestCurrentRevision;
 
     /**

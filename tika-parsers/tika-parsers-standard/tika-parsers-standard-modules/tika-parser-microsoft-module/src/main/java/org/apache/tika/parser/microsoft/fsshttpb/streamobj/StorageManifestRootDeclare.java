@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj;
 
 import java.util.List;
@@ -34,14 +35,8 @@ public class StorageManifestRootDeclare extends StreamObject {
         super(StreamObjectTypeHeaderStart.StorageManifestRootDeclare);
     }
 
-    /**
-     * Gets or sets the root storage manifest.
-     */
     public ExGuid RootExGUID;
 
-    /**
-     * Gets or sets the cell identifier.
-     */
     public CellID cellID;
 
     /**

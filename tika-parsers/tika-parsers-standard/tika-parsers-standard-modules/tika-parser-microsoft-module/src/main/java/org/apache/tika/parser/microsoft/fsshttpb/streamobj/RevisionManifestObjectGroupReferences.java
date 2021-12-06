@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj;
 
 import java.util.List;
@@ -43,9 +44,6 @@ public class RevisionManifestObjectGroupReferences extends StreamObject {
         this.ObjectGroupExtendedGUID = objectGroupExtendedGUID;
     }
 
-    /**
-     * Gets or sets an extended GUID that specifies the object group for each Revision Manifest Object Group References.
-     */
     public ExGuid ObjectGroupExtendedGUID;
 
     /**

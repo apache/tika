@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj;
 
 import java.util.HashMap;
@@ -90,24 +91,12 @@ public class DataElement extends StreamObject {
         super(StreamObjectTypeHeaderStart.DataElement);
     }
 
-    /**
-     * Gets or sets an extended GUID that specifies the data element.
-     */
     public ExGuid dataElementExGuid;
 
-    /**
-     * Gets or sets a serial number that specifies the data element.
-     */
     public SerialNumber serialNumber;
 
-    /**
-     * Gets or sets a compact unsigned 64-bit integer that specifies the value of the storage index data element type.
-     */
     public DataElementType dataElementType;
 
-    /**
-     * Gets or sets a data element fragment.
-     */
     public DataElementData data;
 
     /**

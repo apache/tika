@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj;
 
 import java.util.ArrayList;
@@ -33,19 +34,10 @@ public class RevisionManifestDataElementData extends DataElementData {
         this.RevisionManifestObjectGroupReferencesList = new ArrayList<>();
     }
 
-    /**
-     * Gets or sets a 16-bit stream object header that specifies a revision manifest.
-     */
     public RevisionManifest RevisionManifest;
 
-    /**
-     * Gets or sets  a revision manifest root declare, each followed by root and object extended GUIDs.
-     */
     public List<RevisionManifestRootDeclare> RevisionManifestRootDeclareList;
 
-    /**
-     * Gets or sets  a list of revision manifest object group references, each followed by object group extended GUIDs.
-     */
     public List<RevisionManifestObjectGroupReferences> RevisionManifestObjectGroupReferencesList;
 
     /**

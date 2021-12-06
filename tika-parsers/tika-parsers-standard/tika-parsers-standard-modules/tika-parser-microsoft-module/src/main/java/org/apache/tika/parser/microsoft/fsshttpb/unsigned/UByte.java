@@ -30,6 +30,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.unsigned;
 
 import java.io.ObjectStreamException;
@@ -281,8 +282,6 @@ public final class UByte extends UNumber implements Comparable<UByte> {
 
     @Override
     public int hashCode() {
-
-
         return Short.valueOf(value).hashCode();
     }
 

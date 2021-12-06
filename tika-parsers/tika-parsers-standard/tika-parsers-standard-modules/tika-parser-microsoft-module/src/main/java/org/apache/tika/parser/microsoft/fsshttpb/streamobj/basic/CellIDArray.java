@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj.basic;
 
 import java.util.ArrayList;
@@ -53,14 +54,8 @@ public class CellIDArray extends BasicObject {
         this.Content = new ArrayList<CellID>();
     }
 
-    /**
-     * Gets or sets a compact unsigned 64-bit integer that specifies the count of cell IDs in the array.
-     */
     public long Count;
 
-    /**
-     * Gets or sets a cell ID list that specifies a list of cells.
-     */
     public List<CellID> Content;
 
     /**

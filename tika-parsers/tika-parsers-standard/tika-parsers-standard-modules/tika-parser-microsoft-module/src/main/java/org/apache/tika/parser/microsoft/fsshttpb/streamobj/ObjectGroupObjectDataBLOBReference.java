@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj;
 
 import java.util.List;
@@ -38,19 +39,10 @@ public class ObjectGroupObjectDataBLOBReference extends StreamObject {
         this.BLOBExtendedGUID = new ExGuid();
     }
 
-    /**
-     * Gets or sets an extended GUID array that specifies the object references.
-     */
     public ExGUIDArray ObjectExtendedGUIDArray;
 
-    /**
-     * Gets or sets a cell ID array that specifies the cell references.
-     */
     public CellIDArray cellIDArray;
 
-    /**
-     * Gets or sets an extended GUID that specifies the object data BLOB.
-     */
     public ExGuid BLOBExtendedGUID;
 
     /**

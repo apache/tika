@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj;
 
 import java.util.ArrayList;
@@ -114,14 +115,8 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
      */
     private int lengthOfItems;
 
-    /**
-     * Gets or sets the stream object header start.
-     */
     private StreamObjectHeaderStart streamObjectHeaderStart;
 
-    /**
-     * Gets or sets the stream object header end.
-     */
     StreamObjectHeaderEnd streamObjectHeaderEnd;
 
     /**

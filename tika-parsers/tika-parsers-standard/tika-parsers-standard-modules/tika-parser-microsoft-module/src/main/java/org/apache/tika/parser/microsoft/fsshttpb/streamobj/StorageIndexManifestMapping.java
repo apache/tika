@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj;
 
 import java.util.List;
@@ -31,14 +32,8 @@ public class StorageIndexManifestMapping extends StreamObject {
         super(StreamObjectTypeHeaderStart.StorageIndexManifestMapping);
     }
 
-    /**
-     * Gets or sets the extended GUID of the manifest mapping.
-     */
     public ExGuid ManifestMappingExGuid;
 
-    /**
-     * Gets or sets the serial number of the manifest mapping.
-     */
     public SerialNumber ManifestMappingSerialNumber;
 
     /**

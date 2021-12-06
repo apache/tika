@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj;
 
 import java.util.ArrayList;
@@ -33,19 +34,10 @@ public class StorageIndexDataElementData extends DataElementData {
         this.StorageIndexRevisionMappingList = new ArrayList<>();
     }
 
-    /**
-     * Gets or sets the storage index manifest mappings (with manifest mapping extended GUID and serial number).
-     */
     public StorageIndexManifestMapping StorageIndexManifestMapping;
 
-    /**
-     * Gets or sets  storage index manifest mappings.
-     */
     public List<StorageIndexCellMapping> StorageIndexCellMappingList;
 
-    /**
-     * Gets or sets the list of storage index revision mappings (with revision and revision mapping extended GUIDs, and revision mapping serial number).
-     */
     public List<StorageIndexRevisionMapping> StorageIndexRevisionMappingList;
 
     /**

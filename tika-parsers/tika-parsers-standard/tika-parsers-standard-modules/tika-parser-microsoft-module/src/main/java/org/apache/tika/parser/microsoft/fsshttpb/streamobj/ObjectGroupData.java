@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj;
 
 import java.util.ArrayList;
@@ -34,14 +35,8 @@ public class ObjectGroupData extends StreamObject {
         this.ObjectGroupObjectDataBLOBReferenceList = new ArrayList<ObjectGroupObjectDataBLOBReference>();
     }
 
-    /**
-     * Gets or sets a list of Object Data.
-     */
     public List<ObjectGroupObjectData> ObjectGroupObjectDataList;
 
-    /**
-     * Gets or sets a list of object data BLOB references that specifies the object.
-     */
     public List<ObjectGroupObjectDataBLOBReference> ObjectGroupObjectDataBLOBReferenceList;
 
     /**

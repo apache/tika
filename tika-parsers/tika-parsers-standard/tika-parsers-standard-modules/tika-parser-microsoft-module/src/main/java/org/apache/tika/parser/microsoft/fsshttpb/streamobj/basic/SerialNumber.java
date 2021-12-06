@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj.basic;
 
 import java.util.List;
@@ -51,19 +52,10 @@ public class SerialNumber extends BasicObject {
     public SerialNumber() {
     }
 
-    /**
-     * Gets or sets a value which indicate the SerialNumber type.
-     */
     public int type;
 
-    /**
-     * Gets or sets a GUID that specifies the item.
-     */
     public UUID guid;
 
-    /**
-     * Gets or sets an unsigned integer that specifies the value of the serial number.
-     */
     public long value;
 
     /**

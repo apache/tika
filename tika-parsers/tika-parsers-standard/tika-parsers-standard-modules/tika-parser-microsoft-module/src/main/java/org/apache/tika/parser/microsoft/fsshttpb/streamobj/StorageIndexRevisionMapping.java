@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj;
 
 import java.util.List;
@@ -34,19 +35,10 @@ public class StorageIndexRevisionMapping extends StreamObject {
         super(StreamObjectTypeHeaderStart.StorageIndexRevisionMapping);
     }
 
-    /**
-     * Gets or sets the extended GUID of the revision.
-     */
     public ExGuid RevisionExGuid;
 
-    /**
-     * Gets or sets the extended GUID of the revision mapping.
-     */
     public ExGuid RevisionMappingExGuid;
 
-    /**
-     * Gets or sets the serial number of the revision mapping.
-     */
     public SerialNumber RevisionMappingSerialNumber;
 
     /**

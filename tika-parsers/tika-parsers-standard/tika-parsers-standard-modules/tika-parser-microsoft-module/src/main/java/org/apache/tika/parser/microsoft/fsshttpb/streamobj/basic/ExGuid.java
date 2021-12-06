@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj.basic;
 
 import java.util.List;
@@ -79,19 +80,10 @@ public class ExGuid extends BasicObject {
         this.guid = GuidUtil.emptyGuid();
     }
 
-    /**
-     * Gets or sets an unsigned integer that specifies the type.
-     */
     public int type;
 
-    /**
-     * Gets or sets an unsigned integer that specifies the value.
-     */
     public int value;
 
-    /**
-     * Gets or sets a GUID that specifies the item. MUST NOT be "{00000000-0000-0000-0000-000000000000}".
-     */
     public UUID guid;
 
     /**

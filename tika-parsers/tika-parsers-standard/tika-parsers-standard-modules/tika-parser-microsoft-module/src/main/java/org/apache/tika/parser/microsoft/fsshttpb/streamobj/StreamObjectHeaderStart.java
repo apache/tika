@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj;
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -63,14 +64,8 @@ public abstract class StreamObjectHeaderStart extends BasicObject {
      */
     protected int compound;
 
-    /**
-     * Gets or sets a value that specifies the stream object type.
-     */
     public StreamObjectTypeHeaderStart type;
 
-    /**
-     * Gets or sets a 15-bit unsigned integer that specifies the length in bytes for additional data (if any).
-     */
     protected int length;
 
     /**

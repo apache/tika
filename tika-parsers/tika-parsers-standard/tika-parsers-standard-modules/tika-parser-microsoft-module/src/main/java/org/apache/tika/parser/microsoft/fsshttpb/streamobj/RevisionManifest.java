@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj;
 
 import java.util.List;
@@ -30,14 +31,8 @@ public class RevisionManifest extends StreamObject {
         super(StreamObjectTypeHeaderStart.RevisionManifest);
     }
 
-    /**
-     * Gets or sets an extended GUID that specifies the revision identifier represented by this data element.
-     */
     public ExGuid RevisionID;
 
-    /**
-     * Gets or sets an extended GUID that specifies the revision identifier of a base revision that could contain additional information for this revision.
-     */
     public ExGuid BaseRevisionID;
 
     /**

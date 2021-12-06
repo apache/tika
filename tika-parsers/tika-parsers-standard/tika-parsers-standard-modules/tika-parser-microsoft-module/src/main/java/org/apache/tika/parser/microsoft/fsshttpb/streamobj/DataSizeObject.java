@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj;
 
 import java.util.List;
@@ -33,9 +34,6 @@ public class DataSizeObject extends StreamObject {
         super(StreamObjectTypeHeaderStart.DataSizeObject);
     }
 
-    /**
-     * Gets or sets an unsigned 64-bit integer that specifies the size of the file data represented by this root node object.
-     */
     public long DataSize;
 
     /**

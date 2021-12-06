@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj.basic;
 
 import java.util.ArrayList;
@@ -42,14 +43,8 @@ public class BinaryItem extends BasicObject {
         this.Length.setDecodedValue(this.Content.size());
     }
 
-    /**
-     * Gets or sets a compact unsigned 64-bit integer that specifies the count of bytes of Content of the item.
-     */
     public Compact64bitInt Length;
 
-    /**
-     * Gets or sets a byte stream that specifies the data for the item.
-     */
     public List<Byte> Content;
 
     /**

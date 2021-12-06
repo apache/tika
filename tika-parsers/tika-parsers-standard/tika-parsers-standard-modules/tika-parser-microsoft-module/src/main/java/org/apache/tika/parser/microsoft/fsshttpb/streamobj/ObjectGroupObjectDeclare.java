@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj;
 /**
  * object declaration
@@ -43,14 +44,8 @@ public class ObjectGroupObjectDeclare extends StreamObject {
         this.CellReferencesCount.setDecodedValue(0);
     }
 
-    /**
-     * Gets or sets an extended GUID that specifies the data element hash.
-     */
     public ExGuid ObjectExtendedGUID;
 
-    /**
-     * Gets or sets a compact unsigned 64-bit integer that specifies the partition.
-     */
     public Compact64bitInt ObjectPartitionID;
 
     /**
@@ -60,14 +55,8 @@ public class ObjectGroupObjectDeclare extends StreamObject {
      */
     public Compact64bitInt ObjectDataSize;
 
-    /**
-     * Gets or sets a compact unsigned 64-bit integer that specifies the number of object references.
-     */
     public Compact64bitInt ObjectReferencesCount;
 
-    /**
-     * Gets or sets a compact unsigned 64-bit integer that specifies the number of cell references.
-     */
     public Compact64bitInt CellReferencesCount;
 
     /**
