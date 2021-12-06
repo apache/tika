@@ -28,11 +28,10 @@ import java.util.stream.Stream;
 
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.EndianUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is the main class used during parsing. This will contain an offset position and end
@@ -53,12 +52,8 @@ class OneNotePtr {
     private static final Logger LOG = LoggerFactory.getLogger(OneNoteParser.class);
     private static final byte[] IFNDF =
             new byte[]{60, 0, 105, 0, 102, 0, 110, 0, 100, 0, 102, 0, 62, 0};
-    private static final GUID FILE_DATA_STORE_OBJ_HEADER = new GUID(
-            new int[]{0xBD, 0xE3, 0x16, 0xE7, 0x26, 0x65, 0x45, 0x11, 0xA4, 0xC4, 0x8D, 0x4D, 0x0B,
-                    0x7A, 0x9E, 0xAC});
-    private static final GUID FILE_DATA_STORE_OBJ_FOOTER = new GUID(
-            new int[]{0x71, 0xFB, 0xA7, 0x22, 0x0F, 0x79, 0x4A, 0x0B, 0xBB, 0x13, 0x89, 0x92, 0x56,
-                    0x42, 0x6B, 0x24});
+    private static final String MS_FSS_HTTPB_PACKAGE_STORAGE_FILE_FORMAT_GUID = "{638DE92F-A6D4-4BC1-9A36-B3FC2511A5B7}";
+
     int indentLevel = 0;
 
     long offset;
@@ -85,8 +80,10 @@ class OneNotePtr {
 
     public OneNoteHeader deserializeHeader() throws IOException, TikaException {
         OneNoteHeader data = new OneNoteHeader();
-        data.setGuidFileType(deserializeGUID()).setGuidFile(deserializeGUID())
-                .setGuidLegacyFileVersion(deserializeGUID()).setGuidFileFormat(deserializeGUID())
+        data.setGuidFileType(deserializeGUID())
+                .setGuidFile(deserializeGUID())
+                .setGuidLegacyFileVersion(deserializeGUID())
+                .setGuidFileFormat(deserializeGUID())
                 .setFfvLastCodeThatWroteToThisFile(deserializeLittleEndianInt())
                 .setFfvOldestCodeThatHasWrittenToThisFile(deserializeLittleEndianInt())
                 .setFfvNewestCodeThatHasWrittenToThisFile(deserializeLittleEndianInt())
@@ -119,6 +116,9 @@ class OneNotePtr {
                 .setBuildNumberLastWroteToFile(deserializeLittleEndianInt())
                 .setBuildNumberOldestWritten(deserializeLittleEndianInt())
                 .setBuildNumberNewestWritten(deserializeLittleEndianInt());
+        if (data.getGuidFileFormat().toString().equals(MS_FSS_HTTPB_PACKAGE_STORAGE_FILE_FORMAT_GUID)) {
+            return data.setIsMsHttpbFormat(true);
+        }
         ByteBuffer reservedBytesAtEndOfHeader =
                 ByteBuffer.allocate(NUM_RESERVED_BYTES_AT_END_OF_HEADER);
         deserializeBytes(reservedBytesAtEndOfHeader);

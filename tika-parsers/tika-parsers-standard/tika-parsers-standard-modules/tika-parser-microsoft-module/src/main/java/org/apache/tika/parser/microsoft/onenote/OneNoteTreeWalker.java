@@ -35,9 +35,6 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -47,6 +44,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 /**
  * Walk the one note tree and create a Map while it goes.
@@ -448,7 +447,7 @@ class OneNoteTreeWalker {
             boolean isBinary = propertyIsBinary(propertyValue.propertyId.propertyEnum);
             propMap.put("isBinary", isBinary);
             if ((content.size() & 1) == 0 && propertyValue.propertyId.propertyEnum !=
-                    OneNotePropertyEnum.TextExtendedAscii && isBinary == false) {
+                    OneNotePropertyEnum.TextExtendedAscii && !isBinary) {
                 if (content.size() > dif.size()) {
                     throw new TikaMemoryLimitException(
                             "File data store cb " + content.size() + " exceeds document size: " +
@@ -475,7 +474,7 @@ class OneNoteTreeWalker {
                 xhtml.startElement(P);
                 xhtml.characters((String) propMap.get("dataAscii"));
                 xhtml.endElement(P);
-            } else if (isBinary == false) {
+            } else if (!isBinary) {
                 if (content.size() > dif.size()) {
                     throw new TikaMemoryLimitException(
                             "File data store cb " + content.size() + " exceeds document size: " +

@@ -18,9 +18,12 @@ package org.apache.tika.parser.microsoft.onenote;
 
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 
+import org.apache.tika.parser.microsoft.fsshttpb.BitConverter;
 import org.apache.tika.utils.StringUtils;
 
 public class GUID implements Comparable<GUID> {
@@ -130,5 +133,15 @@ public class GUID implements Comparable<GUID> {
 
     public String getGuidString() {
         return guid.toString();
+    }
+
+    public List<Byte> toByteArray() {
+        List<Byte> byteList = new ArrayList<>();
+        for (int nextInt : guid) {
+            for (byte b : BitConverter.getBytes(nextInt)) {
+                byteList.add(b);
+            }
+        }
+        return byteList;
     }
 }

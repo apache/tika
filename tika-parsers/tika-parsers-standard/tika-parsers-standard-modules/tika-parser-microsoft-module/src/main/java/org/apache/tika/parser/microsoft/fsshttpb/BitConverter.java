@@ -36,11 +36,26 @@ public class BitConverter {
         return x.getBytes();
     }
 
+    public static long doubleToInt64Bits(double x) {
+        return Double.doubleToRawLongBits(x);
+    }
+
+    public static double int64BitsToDouble(long x) {
+        return (double) x;
+    }
+
+    public boolean toBoolean(byte[] bytes, int index) {
+        if (bytes.length != 1) {
+            throw new RuntimeException("The length of the byte array must be at least 1 byte long.");
+        }
+        return bytes[index] != 0;
+    }
+
     public char toChar(byte[] bytes, int index) {
         if (bytes.length != 2) {
             throw new RuntimeException("The length of the byte array must be at least 2 bytes long.");
         }
-        return (char) ((0xff & bytes[index]) << 8 | (0xff & bytes[index + 1]));
+        return (char) ((0xff & bytes[index]) << 8 | (0xff & bytes[index + 1]) << 0);
     }
 
     public double toDouble(byte[] bytes, int index) {
@@ -54,22 +69,19 @@ public class BitConverter {
         if (bytes.length < 2) {
             throw new RuntimeException("The length of the byte array must be at least 2 bytes long.");
         }
-        byte[] uint32Bytes = Arrays.copyOfRange(bytes, index, index + 2);
-        return LittleEndianBitConverter.ToInt16(uint32Bytes, 0);
+        byte[] uint16Bytes = Arrays.copyOfRange(bytes, index, index + 2);
+        return LittleEndianBitConverter.ToUInt16(uint16Bytes, 0);
     }
 
     public static int toInt32(byte[] bytes, int index) {
         if (bytes.length < 4) {
             throw new RuntimeException("The length of the byte array must be at least 4 bytes long.");
         }
-        byte[] uint32Bytes = Arrays.copyOfRange(bytes, index, index + 4);
-        return LittleEndianBitConverter.ToInt32(uint32Bytes, 0);
+        byte[] int32Bytes = Arrays.copyOfRange(bytes, index, index + 4);
+        return LittleEndianBitConverter.ToInt32(int32Bytes, 0);
     }
 
     public static long ToUInt32(byte[] bytes, int index) {
-        if (bytes.length < 4) {
-            throw new RuntimeException("The length of the byte array must be at least 4 bytes long.");
-        }
         byte[] uint32Bytes = Arrays.copyOfRange(bytes, index, index + 4);
         return LittleEndianBitConverter.ToUInt32(uint32Bytes, 0);
     }
@@ -78,10 +90,8 @@ public class BitConverter {
         if (bytes.length != 8) {
             throw new RuntimeException("The length of the byte array must be at least 8 bytes long.");
         }
-        return ((long) (0xff & bytes[index]) << 56 | (long) (0xff & bytes[index + 1]) << 48
-                | (long) (0xff & bytes[index + 2]) << 40 | (long) (0xff & bytes[index + 3]) << 32
-                | (long) (0xff & bytes[index + 4]) << 24 | (long) (0xff & bytes[index + 5]) << 16
-                | (long) (0xff & bytes[index + 6]) << 8 | (long) (0xff & bytes[index + 7]));
+        byte[] uint64Bytes = Arrays.copyOfRange(bytes, index, index + 8);
+        return LittleEndianBitConverter.ToUInt64(uint64Bytes, 0);
     }
 
     public static float toSingle(byte[] bytes, int index) {
