@@ -72,7 +72,7 @@ public class StreamObjectHeaderEnd16bit extends StreamObjectHeaderEnd {
 
         if (headerType != 0x3) {
             throw new RuntimeException(String.format(
-                    "Failed to get the StreamObjectHeaderEnd16bit header type value, expect value RuntimeException, but actual value is %s",
+                    "Failed to get the StreamObjectHeaderEnd16bit header type value, expect value %d, but actual value is %s",
                     0x3, headerType));
         }
 
@@ -80,7 +80,7 @@ public class StreamObjectHeaderEnd16bit extends StreamObjectHeaderEnd {
         this.type = StreamObjectTypeHeaderEnd.fromIntVal(typeValue);
         if (this.type == null) {
             throw new RuntimeException(String.format(
-                    "Failed to get the StreamObjectHeaderEnd16bit type value, the value RuntimeException is not defined",
+                    "Failed to get the StreamObjectHeaderEnd16bit type value, the value %d is not defined",
                     typeValue));
         }
 

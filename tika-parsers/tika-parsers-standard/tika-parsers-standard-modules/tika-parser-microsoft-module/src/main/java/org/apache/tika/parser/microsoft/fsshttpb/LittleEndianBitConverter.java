@@ -1,5 +1,8 @@
 package org.apache.tika.parser.microsoft.fsshttpb;
 
+import org.joou.UByte;
+import org.joou.Unsigned;
+
 /**
  * Implement a converter which converts to/from little-endian byte arrays
  */
@@ -67,7 +70,7 @@ public class LittleEndianBitConverter {
      */
     public static long ToUInt64(byte[] array, int index) {
         CheckByteArgument(array, index, 8);
-        return (long) ConvertFromBytes(array, index, 8);
+        return ConvertFromBytes(array, index, 8);
     }
 
     /**
@@ -95,18 +98,6 @@ public class LittleEndianBitConverter {
     }
 
     /**
-     * Returns the specified 16-bit unsigned integer value as an array of bytes.
-     *
-     * @param value Specify the number to convert.
-     * @return Returns an array of bytes with length 2.
-     */
-    public static byte[] GetBytes(short value) {
-        byte[] buffer = new byte[2];
-        ConvertToBytes(value, buffer);
-        return buffer;
-    }
-
-    /**
      * Returns a value built from the specified number of bytes from the given buffer,
      * starting at index.
      *
@@ -120,7 +111,8 @@ public class LittleEndianBitConverter {
         long ret = 0;
         int bitCount = 0;
         for (int i = 0; i < bytesToConvert; i++) {
-            ret |= (long) buffer[startIndex + i] << bitCount;
+            UByte ubyte = Unsigned.ubyte(buffer[startIndex + i]);
+            ret |= ubyte.longValue() << bitCount;
 
             bitCount += 8;
         }
@@ -158,7 +150,7 @@ public class LittleEndianBitConverter {
         }
 
         if (startIndex > value.length - bytesRequired) {
-            throw new RuntimeException("startIndex");
+            throw new RuntimeException("startIndex " + startIndex + " is less than value.length (" + value.length + ") minus bytesRequired (" + bytesRequired + ")");
         }
     }
 }

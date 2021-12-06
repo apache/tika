@@ -120,6 +120,11 @@ public enum StreamObjectTypeHeaderEnd {
     ObjectGroupMetadataDeclarations(0x79),
 
     /**
+     * Alternative Packaging
+     */
+    AlternativePackaging(0x7A),
+
+    /**
      * Target PartitionId, new added in MOSS2013.
      */
     TargetPartitionId(0x083),
