@@ -13,6 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.tika.parser.microsoft.fsshttpb.unsigned;
 
 import java.math.BigInteger;
@@ -32,7 +49,7 @@ public final class Unsigned {
      * Create an <code>unsigned byte</code>
      *
      * @throws NumberFormatException If <code>value</code> does not contain a
-     *             parsable <code>unsigned byte</code>.
+     *                               parsable <code>unsigned byte</code>.
      * @see UByte#valueOf(String)
      */
     public static UByte ubyte(String value) throws NumberFormatException {
@@ -53,7 +70,7 @@ public final class Unsigned {
      * Create an <code>unsigned byte</code>
      *
      * @throws NumberFormatException If <code>value</code> is not in the range
-     *             of an <code>unsigned byte</code>
+     *                               of an <code>unsigned byte</code>
      * @see UByte#valueOf(short)
      */
     public static UByte ubyte(short value) throws NumberFormatException {
@@ -64,7 +81,7 @@ public final class Unsigned {
      * Create an <code>unsigned byte</code>
      *
      * @throws NumberFormatException If <code>value</code> is not in the range
-     *             of an <code>unsigned byte</code>
+     *                               of an <code>unsigned byte</code>
      * @see UByte#valueOf(short)
      */
     public static UByte ubyte(int value) throws NumberFormatException {
@@ -75,7 +92,7 @@ public final class Unsigned {
      * Create an <code>unsigned byte</code>
      *
      * @throws NumberFormatException If <code>value</code> is not in the range
-     *             of an <code>unsigned byte</code>
+     *                               of an <code>unsigned byte</code>
      * @see UByte#valueOf(short)
      */
     public static UByte ubyte(long value) throws NumberFormatException {
@@ -86,7 +103,7 @@ public final class Unsigned {
      * Create an <code>unsigned short</code>
      *
      * @throws NumberFormatException If <code>value</code> does not contain a
-     *             parsable <code>unsigned short</code>.
+     *                               parsable <code>unsigned short</code>.
      * @see UShort#valueOf(String)
      */
     public static UShort ushort(String value) throws NumberFormatException {
@@ -108,7 +125,7 @@ public final class Unsigned {
      * Create an <code>unsigned short</code>
      *
      * @throws NumberFormatException If <code>value</code> is not in the range
-     *             of an <code>unsigned short</code>
+     *                               of an <code>unsigned short</code>
      * @see UShort#valueOf(int)
      */
     public static UShort ushort(int value) throws NumberFormatException {
@@ -119,7 +136,7 @@ public final class Unsigned {
      * Create an <code>unsigned int</code>
      *
      * @throws NumberFormatException If <code>value</code> does not contain a
-     *             parsable <code>unsigned int</code>.
+     *                               parsable <code>unsigned int</code>.
      * @see UInteger#valueOf(String)
      */
     public static UInteger uint(String value) throws NumberFormatException {
@@ -141,7 +158,7 @@ public final class Unsigned {
      * Create an <code>unsigned int</code>
      *
      * @throws NumberFormatException If <code>value</code> is not in the range
-     *             of an <code>unsigned int</code>
+     *                               of an <code>unsigned int</code>
      * @see UInteger#valueOf(long)
      */
     public static UInteger uint(long value) throws NumberFormatException {
@@ -152,7 +169,7 @@ public final class Unsigned {
      * Create an <code>unsigned long</code>
      *
      * @throws NumberFormatException If <code>value</code> does not contain a
-     *             parsable <code>unsigned long</code>.
+     *                               parsable <code>unsigned long</code>.
      * @see ULong#valueOf(String)
      */
     public static ULong ulong(String value) throws NumberFormatException {
@@ -174,7 +191,7 @@ public final class Unsigned {
      * Create an <code>unsigned long</code>
      *
      * @throws NumberFormatException If <code>value</code> is not in the range
-     *             of an <code>unsigned long</code>
+     *                               of an <code>unsigned long</code>
      * @see ULong#valueOf(BigInteger)
      */
     public static ULong ulong(BigInteger value) throws NumberFormatException {
@@ -184,5 +201,6 @@ public final class Unsigned {
     /**
      * No instances
      */
-    private Unsigned() {}
+    private Unsigned() {
+    }
 }

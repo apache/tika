@@ -13,6 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.tika.parser.microsoft.fsshttpb.unsigned;
 
 import java.math.BigInteger;
@@ -29,48 +46,48 @@ public final class ULong extends UNumber implements Comparable<ULong> {
     /**
      * Generated UID
      */
-    private static final long      serialVersionUID = -6821055240959745390L;
+    private static final long serialVersionUID = -6821055240959745390L;
 
     /**
      * A constant holding the minimum value an <code>unsigned long</code> can
      * have, 0.
      */
-    public static final BigInteger MIN_VALUE        = BigInteger.ZERO;
+    public static final BigInteger MIN_VALUE = BigInteger.ZERO;
 
     /**
      * A constant holding the maximum value an <code>unsigned long</code> can
      * have, 2<sup>64</sup>-1.
      */
-    public static final BigInteger MAX_VALUE        = new BigInteger("18446744073709551615");
+    public static final BigInteger MAX_VALUE = new BigInteger("18446744073709551615");
 
     /**
      * A constant holding the maximum value + 1 an <code>signed long</code> can
      * have, 2<sup>63</sup>.
      */
-    public static final BigInteger MAX_VALUE_LONG   = new BigInteger("9223372036854775808");
+    public static final BigInteger MAX_VALUE_LONG = new BigInteger("9223372036854775808");
 
     /**
      * A constant holding the minimum value an <code>unsigned long</code> can
      * have as ULong, 0.
      */
-    public static final ULong      MIN              = valueOf(MIN_VALUE.longValue());
+    public static final ULong MIN = valueOf(MIN_VALUE.longValue());
 
     /**
      * A constant holding the maximum value + 1 an <code>signed long</code> can
      * have as ULong, 2<sup>63</sup>.
      */
-    public static final ULong      MAX              = valueOf(MAX_VALUE);
+    public static final ULong MAX = valueOf(MAX_VALUE);
 
     /**
      * The value modelling the content of this <code>unsigned long</code>
      */
-    private final long             value;
+    private final long value;
 
     /**
      * Create an <code>unsigned long</code>
      *
      * @throws NumberFormatException If <code>value</code> does not contain a
-     *             parsable <code>unsigned long</code>.
+     *                               parsable <code>unsigned long</code>.
      */
     public static ULong valueOf(String value) throws NumberFormatException {
         return new ULong(value);
@@ -89,7 +106,7 @@ public final class ULong extends UNumber implements Comparable<ULong> {
      * Create an <code>unsigned long</code>
      *
      * @throws NumberFormatException If <code>value</code> is not in the range
-     *             of an <code>unsigned long</code>
+     *                               of an <code>unsigned long</code>
      */
     public static ULong valueOf(BigInteger value) throws NumberFormatException {
         return new ULong(value);
@@ -105,13 +122,14 @@ public final class ULong extends UNumber implements Comparable<ULong> {
      * Create an <code>unsigned long</code>
      *
      * @throws NumberFormatException If <code>value</code> is not in the range
-     *             of an <code>unsigned long</code>
+     *                               of an <code>unsigned long</code>
      */
     private ULong(BigInteger value) throws NumberFormatException {
-        if (value.compareTo(MIN_VALUE) < 0 || value.compareTo(MAX_VALUE) > 0)
+        if (value.compareTo(MIN_VALUE) < 0 || value.compareTo(MAX_VALUE) > 0) {
             throw new NumberFormatException();
-        else
+        } else {
             this.value = value.longValue();
+        }
     }
 
     /**
@@ -127,20 +145,23 @@ public final class ULong extends UNumber implements Comparable<ULong> {
      * Create an <code>unsigned long</code>
      *
      * @throws NumberFormatException If <code>value</code> does not contain a
-     *             parsable <code>unsigned long</code>.
+     *                               parsable <code>unsigned long</code>.
      */
     private ULong(String value) throws NumberFormatException {
-        if (value == null)
+        if (value == null) {
             throw new NumberFormatException("null");
+        }
 
         int length = value.length();
 
-        if (length == 0)
+        if (length == 0) {
             throw new NumberFormatException("Empty input string");
+        }
 
-        if (value.charAt(0) == '-')
+        if (value.charAt(0) == '-') {
             throw new NumberFormatException(
-                String.format("Illegal leading minus sign on unsigned string %s", value));
+                    String.format("Illegal leading minus sign on unsigned string %s", value));
+        }
 
         if (length <= 18) {
             this.value = Long.parseLong(value, 10);
@@ -149,13 +170,15 @@ public final class ULong extends UNumber implements Comparable<ULong> {
 
         final long first = Long.parseLong(value.substring(0, length - 1), 10);
         final int second = Character.digit(value.charAt(length - 1), 10);
-        if (second < 0)
+        if (second < 0) {
             throw new NumberFormatException("Bad digit at end of " + value);
+        }
 
         long result = first * 10 + second;
-        if (compare(result, first) < 0)
+        if (compare(result, first) < 0) {
             throw new NumberFormatException(
-                String.format("String value %s exceeds range of unsigned long", value));
+                    String.format("String value %s exceeds range of unsigned long", value));
+        }
 
         this.value = result;
     }
@@ -172,23 +195,24 @@ public final class ULong extends UNumber implements Comparable<ULong> {
 
     @Override
     public float floatValue() {
-        if (value < 0)
+        if (value < 0) {
             return ((float) (value & Long.MAX_VALUE)) + Long.MAX_VALUE;
-        else
+        } else {
             return value;
+        }
     }
 
     @Override
     public double doubleValue() {
-        if (value < 0)
+        if (value < 0) {
             return ((double) (value & Long.MAX_VALUE)) + Long.MAX_VALUE;
-        else
+        } else {
             return value;
+        }
     }
 
     @Override
     public int hashCode() {
-
 
 
         return Long.valueOf(value).hashCode();
@@ -196,18 +220,20 @@ public final class ULong extends UNumber implements Comparable<ULong> {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof ULong)
+        if (obj instanceof ULong) {
             return value == ((ULong) obj).value;
+        }
 
         return false;
     }
 
     @Override
     public String toString() {
-        if (value >= 0)
+        if (value >= 0) {
             return Long.toString(value);
-        else
+        } else {
             return BigInteger.valueOf(value & Long.MAX_VALUE).add(MAX_VALUE_LONG).toString();
+        }
     }
 
     @Override
@@ -216,12 +242,14 @@ public final class ULong extends UNumber implements Comparable<ULong> {
     }
 
     public ULong add(ULong val) throws NumberFormatException {
-        if (value < 0 && val.value < 0)
+        if (value < 0 && val.value < 0) {
             throw new NumberFormatException();
+        }
 
         final long result = value + val.value;
-        if ((value < 0 || val.value < 0) && result >= 0)
+        if ((value < 0 || val.value < 0) && result >= 0) {
             throw new NumberFormatException();
+        }
 
         return valueOf(result);
     }
@@ -231,23 +259,27 @@ public final class ULong extends UNumber implements Comparable<ULong> {
     }
 
     public ULong add(long val) throws NumberFormatException {
-        if (val < 0)
+        if (val < 0) {
             return subtract(Math.abs(val));
+        }
 
         final long result = value + val;
-        if (value < 0 && result >= 0)
+        if (value < 0 && result >= 0) {
             throw new NumberFormatException();
+        }
 
         return valueOf(result);
     }
 
     public ULong subtract(final ULong val) {
-        if (this.compareTo(val) < 0)
+        if (this.compareTo(val) < 0) {
             throw new NumberFormatException();
+        }
 
         final long result = value - val.value;
-        if (value < 0 && result >= 0)
+        if (value < 0 && result >= 0) {
             throw new NumberFormatException();
+        }
 
         return valueOf(result);
     }
@@ -257,15 +289,18 @@ public final class ULong extends UNumber implements Comparable<ULong> {
     }
 
     public ULong subtract(final long val) {
-        if (val < 0)
+        if (val < 0) {
             return add(-val);
+        }
 
-        if (compare(value, val) < 0)
+        if (compare(value, val) < 0) {
             throw new NumberFormatException();
+        }
 
         final long result = value - val;
-        if (value < 0 && result >= 0)
+        if (value < 0 && result >= 0) {
             throw new NumberFormatException();
+        }
 
         return valueOf(result);
     }

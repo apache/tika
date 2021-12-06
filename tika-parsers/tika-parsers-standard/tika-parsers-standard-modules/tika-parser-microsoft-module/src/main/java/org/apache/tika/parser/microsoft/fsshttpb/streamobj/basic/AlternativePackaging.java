@@ -1,3 +1,19 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj.basic;
 
 import java.util.UUID;
@@ -11,81 +27,50 @@ import org.apache.tika.parser.microsoft.fsshttpb.streamobj.StreamObjectHeaderEnd
 import org.apache.tika.parser.microsoft.fsshttpb.streamobj.StreamObjectHeaderStart32bit;
 import org.apache.tika.parser.microsoft.fsshttpb.util.BitConverter;
 
-public class AlternativePackaging
-    {
-        /// <summary>
-        /// Gets or sets the value of guidFileType.
-        /// </summary>
-        public UUID guidFileType;
-        /// <summary>
-        /// Gets or sets the value of guidFile.
-        /// </summary>
-        public UUID guidFile;
-        /// <summary>
-        /// Gets or sets the value of guidLegacyFileVersion.
-        /// </summary>
-        public UUID guidLegacyFileVersion;
-        /// <summary>
-        /// Gets or sets the value of guidFileFormat.
-        /// </summary>
-        public UUID guidFileFormat;
-        /// <summary>
-        /// Gets or sets the value of rgbReserved.
-        /// </summary>
-        public long rgbReserved;
-        /// <summary>
-        /// Gets or sets the value of PackagingStart field.
-        /// </summary>
-        public StreamObjectHeaderStart32bit packagingStart;
-        /// <summary>
-        /// Gets or sets the value of StorageIndexExtendedGUID field.
-        /// </summary>
-        public ExGuid storageIndexExtendedGUID;
-        /// <summary>
-        /// Gets or sets the value of guidCellSchemaId field.
-        /// </summary>
-        public UUID guidCellSchemaId;
-        /// <summary>
-        /// Gets or sets the value of dataElementPackage field.
-        /// </summary>
-        public DataElementPackage dataElementPackage;
-        /// <summary>
-        /// Gets or sets the value of packagingEnd field.
-        /// </summary>
-        public StreamObjectHeaderEnd packagingEnd;
+public class AlternativePackaging {
+    public UUID guidFileType;
+    public UUID guidFile;
+    public UUID guidLegacyFileVersion;
+    public UUID guidFileFormat;
+    public long rgbReserved;
+    public StreamObjectHeaderStart32bit packagingStart;
+    public ExGuid storageIndexExtendedGUID;
+    public UUID guidCellSchemaId;
+    public DataElementPackage dataElementPackage;
+    public StreamObjectHeaderEnd packagingEnd;
 
-        /// <summary>
-        /// This method is used to deserialize the Alternative Packaging object from the specified byte array and start index.
-        /// </summary>
-        /// <param name="byteArray">Specify the byte array.</param>
-        /// <param name="startIndex">Specify the start index from the byte array.</param>
-        /// <returns>Return the length in byte of the Alternative Packaging object.</returns>
-        public int DoDeserializeFromByteArray(byte[] byteArray, int startIndex)
-        {
-            AtomicInteger index = new AtomicInteger(startIndex);
-            this.guidFileType = AdapterHelper.ReadGuid(byteArray, index.get());
-            index.addAndGet(16);
-            this.guidFile = AdapterHelper.ReadGuid(byteArray, index.get());
-            index.addAndGet(16);
-            this.guidLegacyFileVersion = AdapterHelper.ReadGuid(byteArray, index.get());
-            index.addAndGet(16);
-            this.guidFileFormat = AdapterHelper.ReadGuid(byteArray, index.get());
-            index.addAndGet(16);
-            this.rgbReserved = BitConverter.ToUInt32(byteArray, index.get());
-            index.addAndGet(4);
-            this.packagingStart = new StreamObjectHeaderStart32bit();
-            this.packagingStart.DeserializeFromByteArray(byteArray, index.get());
-            index.addAndGet(4);
-            this.storageIndexExtendedGUID = BasicObject.parse(byteArray, index, ExGuid.class);
-            this.guidCellSchemaId = AdapterHelper.ReadGuid(byteArray, index.get());
-            index.addAndGet(16);
-            AtomicReference<DataElementPackage> pkg = new AtomicReference<>();
-            StreamObject.TryGetCurrent(byteArray, index, pkg, DataElementPackage.class);
-            this.dataElementPackage = pkg.get();
-            this.packagingEnd = new StreamObjectHeaderEnd16bit();
-            this.packagingEnd.DeserializeFromByteArray(byteArray, index.get());
-            index.addAndGet(2);
+    /**
+     * This method is used to deserialize the Alternative Packaging object from the specified byte array and start index.
+     *
+     * @param byteArray  Specify the byte array.
+     * @param startIndex Specify the start index from the byte array.
+     * @return Return the length in byte of the Alternative Packaging object.
+     */
+    public int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+        AtomicInteger index = new AtomicInteger(startIndex);
+        this.guidFileType = AdapterHelper.ReadGuid(byteArray, index.get());
+        index.addAndGet(16);
+        this.guidFile = AdapterHelper.ReadGuid(byteArray, index.get());
+        index.addAndGet(16);
+        this.guidLegacyFileVersion = AdapterHelper.ReadGuid(byteArray, index.get());
+        index.addAndGet(16);
+        this.guidFileFormat = AdapterHelper.ReadGuid(byteArray, index.get());
+        index.addAndGet(16);
+        this.rgbReserved = BitConverter.ToUInt32(byteArray, index.get());
+        index.addAndGet(4);
+        this.packagingStart = new StreamObjectHeaderStart32bit();
+        this.packagingStart.DeserializeFromByteArray(byteArray, index.get());
+        index.addAndGet(4);
+        this.storageIndexExtendedGUID = BasicObject.parse(byteArray, index, ExGuid.class);
+        this.guidCellSchemaId = AdapterHelper.ReadGuid(byteArray, index.get());
+        index.addAndGet(16);
+        AtomicReference<DataElementPackage> pkg = new AtomicReference<>();
+        StreamObject.TryGetCurrent(byteArray, index, pkg, DataElementPackage.class);
+        this.dataElementPackage = pkg.get();
+        this.packagingEnd = new StreamObjectHeaderEnd16bit();
+        this.packagingEnd.DeserializeFromByteArray(byteArray, index.get());
+        index.addAndGet(2);
 
-            return index.get() - startIndex;
-        }
+        return index.get() - startIndex;
     }
+}
