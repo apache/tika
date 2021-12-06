@@ -36,7 +36,7 @@ public class DataElement extends StreamObject {
     /**
      * Data Element Data Type Mapping
      */
-    private static Map<DataElementType, Class> dataElementDataTypeMapping;
+    private static final Map<DataElementType, Class> dataElementDataTypeMapping;
 
     /**
      *  Initializes static members of the DataElement class

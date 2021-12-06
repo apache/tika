@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.onenote;
 
 import java.util.ArrayList;
@@ -94,10 +95,10 @@ public class ExtendedGUID implements Comparable<ExtendedGUID> {
 
     /**
      * This method is used to convert the element of ExtendedGUID object into a byte List.
+     *
      * @return Return the byte list which store the byte information of ExtendedGUID
      */
-    public List<Byte> SerializeToByteList()
-    {
+    public List<Byte> SerializeToByteList() {
         List<Byte> byteList = new ArrayList<>(guid.toByteArray());
         for (byte b : BitConverter.getBytes(n)) {
             byteList.add(b);

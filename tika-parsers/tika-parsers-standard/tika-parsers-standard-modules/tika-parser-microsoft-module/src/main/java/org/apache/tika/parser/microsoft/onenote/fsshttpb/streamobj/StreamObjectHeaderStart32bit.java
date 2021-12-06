@@ -42,7 +42,7 @@ public class StreamObjectHeaderStart32bit extends StreamObjectHeaderStart {
 
         if (length >= 32767) {
             this.length = 32767;
-            this.largeLength = new Compact64bitInt((long) length);
+            this.largeLength = new Compact64bitInt(length);
         } else {
             this.length = length;
             this.largeLength = null;

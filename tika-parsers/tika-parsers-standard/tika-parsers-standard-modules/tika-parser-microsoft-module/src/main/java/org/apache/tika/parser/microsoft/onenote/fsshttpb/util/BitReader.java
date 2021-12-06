@@ -34,7 +34,7 @@ public class BitReader {
      * A start position which will be not changed in the process of reading.
      * This value will be used for recording the start position and will be used by the function reset.
      */
-    private long startPosition;
+    private final long startPosition;
 
     /**
      * An offset which is used to keep trace for the current read position in bit.
@@ -44,7 +44,7 @@ public class BitReader {
     /**
      * The length of the byte Array which contains the byte need to be read.
      */
-    private long length;
+    private final long length;
 
     /**
      * Initializes a new instance of the BitReader class with specified bytes buffer and start position in byte.
