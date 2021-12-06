@@ -26,18 +26,18 @@ import java.util.concurrent.atomic.AtomicReference;
  * The ObjectGroupData class.
  */
 public class ObjectGroupData extends StreamObject {
+    public List<ObjectGroupObjectData> ObjectGroupObjectDataList;
+    public List<ObjectGroupObjectDataBLOBReference> ObjectGroupObjectDataBLOBReferenceList;
+
     /**
      * Initializes a new instance of the ObjectGroupData class.
      */
     public ObjectGroupData() {
         super(StreamObjectTypeHeaderStart.ObjectGroupData);
         this.ObjectGroupObjectDataList = new ArrayList<ObjectGroupObjectData>();
-        this.ObjectGroupObjectDataBLOBReferenceList = new ArrayList<ObjectGroupObjectDataBLOBReference>();
+        this.ObjectGroupObjectDataBLOBReferenceList =
+                new ArrayList<ObjectGroupObjectDataBLOBReference>();
     }
-
-    public List<ObjectGroupObjectData> ObjectGroupObjectDataList;
-
-    public List<ObjectGroupObjectDataBLOBReference> ObjectGroupObjectDataBLOBReferenceList;
 
     /**
      * Used to convert the element into a byte List
@@ -54,7 +54,8 @@ public class ObjectGroupData extends StreamObject {
         }
 
         if (this.ObjectGroupObjectDataBLOBReferenceList != null) {
-            for (ObjectGroupObjectDataBLOBReference objectGroupObjectDataBLOBReference : this.ObjectGroupObjectDataBLOBReferenceList) {
+            for (ObjectGroupObjectDataBLOBReference objectGroupObjectDataBLOBReference :
+                    this.ObjectGroupObjectDataBLOBReferenceList) {
                 byteList.addAll(objectGroupObjectDataBLOBReference.SerializeToByteList());
             }
         }
@@ -70,7 +71,8 @@ public class ObjectGroupData extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
+    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+                                                 int lengthOfItems) {
         if (lengthOfItems != 0) {
             throw new StreamObjectParseErrorException(currentIndex.get(), "ObjectGroupDeclarations",
                     "Stream object over-parse error", null);
@@ -83,21 +85,24 @@ public class ObjectGroupData extends StreamObject {
         this.ObjectGroupObjectDataList = new ArrayList<>();
         this.ObjectGroupObjectDataBLOBReferenceList = new ArrayList<>();
 
-        while ((headerLength = StreamObjectHeaderStart.TryParse(byteArray, index.get(), header)) != 0) {
+        while ((headerLength = StreamObjectHeaderStart.TryParse(byteArray, index.get(), header)) !=
+                0) {
             StreamObjectTypeHeaderStart type = header.get().type;
             if (type == StreamObjectTypeHeaderStart.ObjectGroupObjectData) {
                 index.addAndGet(headerLength);
                 this.ObjectGroupObjectDataList.add(
-                        (ObjectGroupObjectData) StreamObject.ParseStreamObject(header.get(), byteArray, index));
+                        (ObjectGroupObjectData) StreamObject.ParseStreamObject(header.get(),
+                                byteArray, index));
             } else if (type == StreamObjectTypeHeaderStart.ObjectGroupObjectDataBLOBReference) {
                 index.addAndGet(headerLength);
                 this.ObjectGroupObjectDataBLOBReferenceList.add(
-                        (ObjectGroupObjectDataBLOBReference) StreamObject.ParseStreamObject(header.get(), byteArray,
-                                index));
+                        (ObjectGroupObjectDataBLOBReference) StreamObject.ParseStreamObject(
+                                header.get(), byteArray, index));
             } else {
                 throw new StreamObjectParseErrorException(index.get(), "ObjectGroupDeclarations",
-                        "Failed to parse ObjectGroupData, expect the inner object type either ObjectGroupObjectData or ObjectGroupObjectDataBLOBReference, but actual type value is " +
-                                type, null);
+                        "Failed to parse ObjectGroupData, expect the inner object type either " +
+                                "ObjectGroupObjectData or ObjectGroupObjectDataBLOBReference, " +
+                                "but actual type value is " + type, null);
             }
         }
 

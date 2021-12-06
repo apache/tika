@@ -26,18 +26,19 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BinaryI
 
 public class DataHashObject extends StreamObject {
     /**
+     * Gets or sets a binary item as specified in [MS-FSSHTTPB] section 2.2.1.3 that specifies a
+     * value that is unique to the file data represented by this root node object.
+     * The value of this item depends on the file chunking algorithm used, as specified in section 2.4.
+     */
+    public BinaryItem Data;
+
+    /**
      * Initializes a new instance of the DataHashObject class.
      */
     public DataHashObject() {
         super(StreamObjectTypeHeaderStart.DataHashObject);
         this.Data = new BinaryItem();
     }
-
-    /**
-     * Gets or sets a binary item as specified in [MS-FSSHTTPB] section 2.2.1.3 that specifies a value that is unique to the file data represented by this root node object.
-     * The value of this item depends on the file chunking algorithm used, as specified in section 2.4.
-     */
-    public BinaryItem Data;
 
     @Override
     public boolean equals(Object o) {
@@ -58,10 +59,8 @@ public class DataHashObject extends StreamObject {
 
     @Override
     public String toString() {
-        return "DataHashObject{" +
-                "Data=" + Data +
-                ", streamObjectHeaderEnd=" + streamObjectHeaderEnd +
-                '}';
+        return "DataHashObject{" + "Data=" + Data + ", streamObjectHeaderEnd=" +
+                streamObjectHeaderEnd + '}';
     }
 
     /**
@@ -72,14 +71,15 @@ public class DataHashObject extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
+    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+                                                 int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
 
         this.Data = BasicObject.parse(byteArray, index, BinaryItem.class);
 
         if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(), "Signature", "Stream Object over-parse error",
-                    null);
+            throw new StreamObjectParseErrorException(currentIndex.get(), "Signature",
+                    "Stream Object over-parse error", null);
         }
 
         currentIndex.set(index.get());

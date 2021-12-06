@@ -28,18 +28,19 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BinaryI
  */
 public class SignatureObject extends StreamObject {
     /**
+     * Gets or sets a binary item as specified in [MS-FSSHTTPB] section 2.2.1.3 that specifies a
+     * value that is unique to the file data represented by this root node object.
+     * The value of this item depends on the file chunking algorithm used, as specified in section 2.4.
+     */
+    public BinaryItem SignatureData;
+
+    /**
      * Initializes a new instance of the SignatureObject class.
      */
     public SignatureObject() {
         super(StreamObjectTypeHeaderStart.SignatureObject);
         this.SignatureData = new BinaryItem();
     }
-
-    /**
-     * Gets or sets a binary item as specified in [MS-FSSHTTPB] section 2.2.1.3 that specifies a value that is unique to the file data represented by this root node object.
-     * The value of this item depends on the file chunking algorithm used, as specified in section 2.4.
-     */
-    public BinaryItem SignatureData;
 
     /**
      * Used to de-serialize the element.
@@ -49,14 +50,15 @@ public class SignatureObject extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
+    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+                                                 int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
 
         this.SignatureData = BasicObject.parse(byteArray, index, BinaryItem.class);
 
         if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(), "Signature", "Stream Object over-parse error",
-                    null);
+            throw new StreamObjectParseErrorException(currentIndex.get(), "Signature",
+                    "Stream Object over-parse error", null);
         }
 
         currentIndex.set(index.get());

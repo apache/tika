@@ -32,7 +32,8 @@ public class PrtFourBytesOfLengthFollowedByData implements IProperty {
     public byte[] Data;
 
     /**
-     * This method is used to deserialize the prtFourBytesOfLengthFollowedByData from the specified byte array and start index.
+     * This method is used to deserialize the prtFourBytesOfLengthFollowedByData from
+     * the specified byte array and start index.
      *
      * @param byteArray  Specify the byte array.
      * @param startIndex Specify the start index from the byte array.

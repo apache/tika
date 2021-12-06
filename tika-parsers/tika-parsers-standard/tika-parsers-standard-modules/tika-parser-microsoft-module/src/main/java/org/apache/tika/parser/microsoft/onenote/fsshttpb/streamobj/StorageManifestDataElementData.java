@@ -25,6 +25,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.exception.DataElementParseErrorException;
 
 public class StorageManifestDataElementData extends DataElementData {
+    public StorageManifestSchemaGUID storageManifestSchemaGUID;
+    public List<StorageManifestRootDeclare> StorageManifestRootDeclareList;
+
     /**
      * Initializes a new instance of the StorageManifestDataElementData class.
      */
@@ -33,10 +36,6 @@ public class StorageManifestDataElementData extends DataElementData {
         this.storageManifestSchemaGUID = new StorageManifestSchemaGUID();
         this.StorageManifestRootDeclareList = new ArrayList<>();
     }
-
-    public StorageManifestSchemaGUID storageManifestSchemaGUID;
-
-    public List<StorageManifestRootDeclare> StorageManifestRootDeclareList;
 
     /**
      * Used to convert the element into a byte List.
@@ -68,19 +67,23 @@ public class StorageManifestDataElementData extends DataElementData {
     public int DeserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex) {
         AtomicInteger index = new AtomicInteger(startIndex);
 
-        this.storageManifestSchemaGUID = StreamObject.GetCurrent(byteArray, index, StorageManifestSchemaGUID.class);
+        this.storageManifestSchemaGUID =
+                StreamObject.GetCurrent(byteArray, index, StorageManifestSchemaGUID.class);
         this.StorageManifestRootDeclareList = new ArrayList<>();
 
         AtomicReference<StreamObjectHeaderStart> header = new AtomicReference<>();
         int headerLength = 0;
-        while ((headerLength = StreamObjectHeaderStart.TryParse(byteArray, index.get(), header)) != 0) {
+        while ((headerLength = StreamObjectHeaderStart.TryParse(byteArray, index.get(), header)) !=
+                0) {
             if (header.get().type == StreamObjectTypeHeaderStart.StorageManifestRootDeclare) {
                 index.addAndGet(headerLength);
                 this.StorageManifestRootDeclareList.add(
-                        (StorageManifestRootDeclare) StreamObject.ParseStreamObject(header.get(), byteArray, index));
+                        (StorageManifestRootDeclare) StreamObject.ParseStreamObject(header.get(),
+                                byteArray, index));
             } else {
                 throw new DataElementParseErrorException(index.get(),
-                        "Failed to parse StorageManifestDataElement, expect the inner object type StorageManifestRootDeclare, but actual type value is " +
+                        "Failed to parse StorageManifestDataElement, expect the inner object type " +
+                                "StorageManifestRootDeclare, but actual type value is " +
                                 header.get().type, null);
             }
         }

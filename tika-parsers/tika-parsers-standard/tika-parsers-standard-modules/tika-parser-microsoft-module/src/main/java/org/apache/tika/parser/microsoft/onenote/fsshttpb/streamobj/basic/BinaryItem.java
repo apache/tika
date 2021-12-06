@@ -23,6 +23,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class BinaryItem extends BasicObject {
+    public Compact64bitInt Length;
+    public List<Byte> Content;
+
     /**
      * Initializes a new instance of the BinaryItem class.
      */
@@ -42,10 +45,6 @@ public class BinaryItem extends BasicObject {
         this.Content.addAll(content);
         this.Length.setDecodedValue(this.Content.size());
     }
-
-    public Compact64bitInt Length;
-
-    public List<Byte> Content;
 
     /**
      * This method is used to convert the element of BinaryItem basic object into a byte List.

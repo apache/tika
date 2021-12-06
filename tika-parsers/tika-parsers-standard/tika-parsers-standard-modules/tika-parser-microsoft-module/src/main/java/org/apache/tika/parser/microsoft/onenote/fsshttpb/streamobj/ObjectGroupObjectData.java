@@ -26,6 +26,10 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.CellIDA
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGUIDArray;
 
 public class ObjectGroupObjectData extends StreamObject {
+    public ExGUIDArray ObjectExGUIDArray;
+    public CellIDArray cellIDArray;
+    public BinaryItem Data;
+
     /**
      * Initializes a new instance of the ObjectGroupObjectData class.
      */
@@ -36,12 +40,6 @@ public class ObjectGroupObjectData extends StreamObject {
         this.Data = new BinaryItem();
     }
 
-    public ExGUIDArray ObjectExGUIDArray;
-
-    public CellIDArray cellIDArray;
-
-    public BinaryItem Data;
-
     /**
      * Used to de-serialize the element.
      *
@@ -50,7 +48,8 @@ public class ObjectGroupObjectData extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
+    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+                                                 int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.ObjectExGUIDArray = BasicObject.parse(byteArray, index, ExGUIDArray.class);
         this.cellIDArray = BasicObject.parse(byteArray, index, CellIDArray.class);

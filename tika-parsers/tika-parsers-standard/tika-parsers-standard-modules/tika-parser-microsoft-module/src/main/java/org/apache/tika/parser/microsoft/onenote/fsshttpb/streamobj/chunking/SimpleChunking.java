@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.codec.digest.DigestUtils;
+
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.LeafNodeObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.SignatureObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BinaryItem;
@@ -46,7 +47,8 @@ public class SimpleChunking extends AbstractChunking {
     public List<LeafNodeObject> Chunking() {
         int maxChunkSize = 1 * 1024 * 1024;
         java.util.List<LeafNodeObject> list = new ArrayList<>();
-        LeafNodeObject.IntermediateNodeObjectBuilder builder = new LeafNodeObject.IntermediateNodeObjectBuilder();
+        LeafNodeObject.IntermediateNodeObjectBuilder builder =
+                new LeafNodeObject.IntermediateNodeObjectBuilder();
         int chunkStart = 0;
 
         if (this.FileContent.length <= maxChunkSize) {
@@ -56,9 +58,8 @@ public class SimpleChunking extends AbstractChunking {
         }
 
         while (chunkStart < this.FileContent.length) {
-            int chunkLength =
-                    chunkStart + maxChunkSize >= this.FileContent.length ? this.FileContent.length - chunkStart :
-                            maxChunkSize;
+            int chunkLength = chunkStart + maxChunkSize >= this.FileContent.length ?
+                    this.FileContent.length - chunkStart : maxChunkSize;
             byte[] temp = Arrays.copyOfRange(this.FileContent, chunkStart, chunkLength);
             list.add(builder.Build(temp, this.GetSignature(temp)));
             chunkStart += chunkLength;

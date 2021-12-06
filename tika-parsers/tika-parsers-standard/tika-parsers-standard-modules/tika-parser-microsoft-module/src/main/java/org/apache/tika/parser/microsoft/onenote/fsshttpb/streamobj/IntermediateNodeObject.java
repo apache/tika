@@ -59,7 +59,8 @@ public class IntermediateNodeObject extends NodeObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
+    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+                                                 int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         if (lengthOfItems != 0) {
             throw new StreamObjectParseErrorException(currentIndex.get(), "IntermediateNodeObject",
@@ -100,8 +101,10 @@ public class IntermediateNodeObject extends NodeObject {
             rootNode.Signature = new SignatureObject();
             rootNode.DataSize = new DataSizeObject();
             rootNode.DataSize.DataSize = fileContent.length;
-            rootNode.ExGuid = new ExGuid(SequenceNumberGenerator.GetCurrentSerialNumber(), UUID.randomUUID());
-            rootNode.IntermediateNodeObjectList = ChunkingFactory.CreateChunkingInstance(fileContent).Chunking();
+            rootNode.ExGuid =
+                    new ExGuid(SequenceNumberGenerator.GetCurrentSerialNumber(), UUID.randomUUID());
+            rootNode.IntermediateNodeObjectList =
+                    ChunkingFactory.CreateChunkingInstance(fileContent).Chunking();
             return rootNode;
         }
     }

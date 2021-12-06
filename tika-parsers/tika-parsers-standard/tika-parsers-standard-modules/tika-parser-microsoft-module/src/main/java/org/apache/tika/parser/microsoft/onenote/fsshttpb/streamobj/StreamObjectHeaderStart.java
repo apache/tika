@@ -34,6 +34,20 @@ public abstract class StreamObjectHeaderStart extends BasicObject {
      * Specify for 32-bit stream object header start.
      */
     public static final int StreamObjectHeaderStart32bit = 0x02;
+    public StreamObjectTypeHeaderStart type;
+    /**
+     * Gets or sets the type of the stream object.
+     * value 0 for 16-bit stream object header start,
+     * value 2 for 32-bit stream object header start.
+     */
+    protected int headerType;
+    /**
+     * Gets or sets a value that specifies if set a compound parse type is needed and
+     * MUST be ended with either an 8-bit stream object header end or a 16-bit stream object header end.
+     * If the bit is zero, it specifies a single object. Otherwise it specifies a compound object.
+     */
+    protected int compound;
+    protected int length;
 
     /**
      * Initializes a new instance of the StreamObjectHeaderStart class.
@@ -49,24 +63,6 @@ public abstract class StreamObjectHeaderStart extends BasicObject {
     protected StreamObjectHeaderStart(StreamObjectTypeHeaderStart streamObjectTypeHeaderStart) {
         this.type = streamObjectTypeHeaderStart;
     }
-
-    /**
-     * Gets or sets the type of the stream object.
-     * value 0 for 16-bit stream object header start,
-     * value 2 for 32-bit stream object header start.
-     */
-    protected int headerType;
-
-    /**
-     * Gets or sets a value that specifies if set a compound parse type is needed and
-     * MUST be ended with either an 8-bit stream object header end or a 16-bit stream object header end.
-     * If the bit is zero, it specifies a single object. Otherwise it specifies a compound object.
-     */
-    protected int compound;
-
-    public StreamObjectTypeHeaderStart type;
-
-    protected int length;
 
     /**
      * This method is used to parse the actual 16bit or 32bit stream header.

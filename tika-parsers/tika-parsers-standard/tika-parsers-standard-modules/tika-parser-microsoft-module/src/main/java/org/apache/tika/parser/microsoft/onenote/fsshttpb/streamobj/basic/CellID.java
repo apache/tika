@@ -22,6 +22,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class CellID extends BasicObject {
+    public ExGuid ExtendGUID1;
+    public ExGuid ExtendGUID2;
+
     /**
      * Initializes a new instance of the CellID class with specified ExGuids.
      *
@@ -55,10 +58,6 @@ public class CellID extends BasicObject {
     public CellID() {
     }
 
-    public ExGuid ExtendGUID1;
-
-    public ExGuid ExtendGUID2;
-
     /**
      * This method is used to convert the element of CellID basic object into a byte List.
      *
@@ -86,9 +85,10 @@ public class CellID extends BasicObject {
             return false;
         }
 
-        if (another.ExtendGUID1 != null && another.ExtendGUID2 != null && this.ExtendGUID1 != null &&
-                this.ExtendGUID2 != null) {
-            return another.ExtendGUID1.equals(this.ExtendGUID1) && another.ExtendGUID2.equals(this.ExtendGUID2);
+        if (another.ExtendGUID1 != null && another.ExtendGUID2 != null &&
+                this.ExtendGUID1 != null && this.ExtendGUID2 != null) {
+            return another.ExtendGUID1.equals(this.ExtendGUID1) &&
+                    another.ExtendGUID2.equals(this.ExtendGUID2);
         }
 
         return false;

@@ -28,6 +28,9 @@ import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -36,12 +39,10 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.MSONESTOREParser;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.MSOneStorePackage;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.MSOneStoreParser;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.AlternativePackaging;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * OneNote tika parser capable of parsing Microsoft OneNote files.
@@ -60,7 +61,8 @@ public class OneNoteParser extends AbstractParser {
 
     static {
         // All types should be 4 bytes long, space padded as needed
-        typesMap.put(MediaType.application("onenote; format=one"), Collections.singletonList("ONE "));
+        typesMap.put(MediaType.application("onenote; format=one"),
+                Collections.singletonList("ONE "));
         // TODO - add onetoc and other onenote mime types
     }
 
@@ -77,8 +79,8 @@ public class OneNoteParser extends AbstractParser {
         byte[] oneStoreFileBytes = IOUtils.toByteArray(stream);
 
         try (TemporaryResources temporaryResources = new TemporaryResources();
-             TikaInputStream tikaInputStream = TikaInputStream.get(oneStoreFileBytes);
-             OneNoteDirectFileResource oneNoteDirectFileResource =
+                TikaInputStream tikaInputStream = TikaInputStream.get(oneStoreFileBytes);
+                OneNoteDirectFileResource oneNoteDirectFileResource =
                      new OneNoteDirectFileResource(tikaInputStream.getFile())) {
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             xhtml.startDocument();
@@ -125,25 +127,25 @@ public class OneNoteParser extends AbstractParser {
 
                 Pair<Long, ExtendedGUID> roleAndContext = Pair.of(1L, ExtendedGUID.nil());
                 OneNoteTreeWalker oneNoteTreeWalker =
-                        new OneNoteTreeWalker(options, oneNoteDocument,
-                                oneNoteDirectFileResource, xhtml, metadata, context,
-                                roleAndContext);
+                        new OneNoteTreeWalker(options, oneNoteDocument, oneNoteDirectFileResource,
+                                xhtml, metadata, context, roleAndContext);
 
                 oneNoteTreeWalker.walkTree();
 
                 if (!oneNoteTreeWalker.getAuthors().isEmpty()) {
                     metadata.set(Property.externalTextBag("authors"),
-                            oneNoteTreeWalker.getAuthors().toArray(new String[] {}));
+                            oneNoteTreeWalker.getAuthors().toArray(new String[]{}));
                 }
                 if (!oneNoteTreeWalker.getMostRecentAuthors().isEmpty()) {
                     metadata.set(Property.externalTextBag("mostRecentAuthors"),
-                            oneNoteTreeWalker.getMostRecentAuthors().toArray(new String[] {}));
+                            oneNoteTreeWalker.getMostRecentAuthors().toArray(new String[]{}));
                 }
                 if (!oneNoteTreeWalker.getOriginalAuthors().isEmpty()) {
                     metadata.set(Property.externalTextBag("originalAuthors"),
-                            oneNoteTreeWalker.getOriginalAuthors().toArray(new String[] {}));
+                            oneNoteTreeWalker.getOriginalAuthors().toArray(new String[]{}));
                 }
-                if (!Instant.MAX.equals(Instant.ofEpochMilli(oneNoteTreeWalker.getCreationTimestamp()))) {
+                if (!Instant.MAX.equals(
+                        Instant.ofEpochMilli(oneNoteTreeWalker.getCreationTimestamp()))) {
                     metadata.set("creationTimestamp",
                             String.valueOf(oneNoteTreeWalker.getCreationTimestamp()));
                 }
@@ -160,8 +162,9 @@ public class OneNoteParser extends AbstractParser {
                     AlternativePackaging alternatePackageOneStoreFile = new AlternativePackaging();
                     alternatePackageOneStoreFile.DoDeserializeFromByteArray(oneStoreFileBytes, 0);
 
-                    MSONESTOREParser onenoteParser = new MSONESTOREParser();
-                    MSOneStorePackage pkg = onenoteParser.Parse(alternatePackageOneStoreFile.dataElementPackage);
+                    MSOneStoreParser onenoteParser = new MSOneStoreParser();
+                    MSOneStorePackage pkg =
+                            onenoteParser.Parse(alternatePackageOneStoreFile.dataElementPackage);
 
                     pkg.walkTree(options, metadata, xhtml);
                 } catch (Exception e) {

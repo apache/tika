@@ -433,8 +433,6 @@ public enum StreamObjectTypeHeaderStart {
      */
     FileHash(0x8E);
 
-    private final int intVal;
-
     static final Map<Integer, StreamObjectTypeHeaderStart> valToEnumMap = new HashMap<>();
 
     static {
@@ -443,15 +441,17 @@ public enum StreamObjectTypeHeaderStart {
         }
     }
 
+    private final int intVal;
+
     StreamObjectTypeHeaderStart(int intVal) {
         this.intVal = intVal;
     }
 
-    public int getIntVal() {
-        return intVal;
-    }
-
     public static StreamObjectTypeHeaderStart fromIntVal(int intVal) {
         return valToEnumMap.get(intVal);
+    }
+
+    public int getIntVal() {
+        return intVal;
     }
 }

@@ -66,8 +66,6 @@ public enum DataElementType {
     ObjectDataBLOBDataElementData(10);
 
 
-    private final int intVal;
-
     static final Map<Integer, DataElementType> valToEnumMap = new HashMap<>();
 
     static {
@@ -76,15 +74,17 @@ public enum DataElementType {
         }
     }
 
+    private final int intVal;
+
     DataElementType(int intVal) {
         this.intVal = intVal;
     }
 
-    public int getIntVal() {
-        return intVal;
-    }
-
     public static DataElementType fromIntVal(int intVal) {
         return valToEnumMap.get(intVal);
+    }
+
+    public int getIntVal() {
+        return intVal;
     }
 }

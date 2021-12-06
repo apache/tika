@@ -44,7 +44,8 @@ public class ObjectSpaceObjectStreamHeader {
     }
 
     /**
-     * This method is used to deserialize the ObjectSpaceObjectStreamHeader object from the specified byte array and start index.
+     * This method is used to deserialize the ObjectSpaceObjectStreamHeader object from
+     * the specified byte array and start index.
      *
      * @param byteArray  Specify the byte array.
      * @param startIndex Specify the start index from the byte array.

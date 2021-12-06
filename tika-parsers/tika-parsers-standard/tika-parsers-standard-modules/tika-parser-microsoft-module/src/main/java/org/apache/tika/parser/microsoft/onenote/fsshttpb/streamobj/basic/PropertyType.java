@@ -71,7 +71,8 @@ public enum PropertyType {
      */
     ContextID(0xC),
     /**
-     * The property contains an array of CompactID structures in the ObjectSpaceObjectPropSet.ContextIDs.body stream field.
+     * The property contains an array of CompactID structures in the ObjectSpaceObjectPropSet.ContextIDs.body
+     * stream field.
      */
     ArrayOfContextIDs(0xD),
     /**
@@ -79,11 +80,10 @@ public enum PropertyType {
      */
     ArrayOfPropertyValues(0x10),
     /**
-     * The property contains a child PropertySet structure in the PropertySet.rgData stream field of the parent PropertySet.
+     * The property contains a child PropertySet structure in the PropertySet.rgData stream field
+     * of the parent PropertySet.
      */
     PropertySet(0x11);
-
-    private final int intVal;
 
     static final Map<Integer, PropertyType> valToEnumMap = new HashMap<>();
 
@@ -93,16 +93,18 @@ public enum PropertyType {
         }
     }
 
+    private final int intVal;
+
     PropertyType(int intVal) {
         this.intVal = intVal;
     }
 
-    public int getIntVal() {
-        return intVal;
-    }
-
     public static PropertyType fromIntVal(int intVal) {
         return valToEnumMap.get(intVal);
+    }
+
+    public int getIntVal() {
+        return intVal;
     }
 
 }

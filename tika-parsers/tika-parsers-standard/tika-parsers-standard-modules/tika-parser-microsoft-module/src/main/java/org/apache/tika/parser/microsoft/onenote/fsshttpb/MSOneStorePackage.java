@@ -30,6 +30,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -56,19 +58,8 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.Propert
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.unsigned.Unsigned;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitConverter;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.SAXException;
 
 public class MSOneStorePackage {
-    public StorageIndexDataElementData StorageIndex;
-    public StorageManifestDataElementData StorageManifest;
-    public CellManifestDataElementData HeaderCellCellManifest;
-    public RevisionManifestDataElementData HeaderCellRevisionManifest;
-    public List<RevisionManifestDataElementData> RevisionManifests;
-    public List<CellManifestDataElementData> CellManifests;
-    public HeaderCell headerCell;
-    public List<RevisionStoreObjectGroup> DataRoot;
-    public List<RevisionStoreObjectGroup> OtherFileNodeList;
-
     /**
      * See spec MS-ONE - 2.3.1 - TIME32 - epoch of jan 1 1980 UTC.
      * So we create this offset used to calculate number of seconds between this and the Instant
@@ -83,30 +74,37 @@ public class MSOneStorePackage {
     private static final long DATETIME_EPOCH_DIFF_1601;
     private static final Pattern HYPERLINK_PATTERN =
             Pattern.compile("\uFDDFHYPERLINK\\s+\"([^\"]+)\"([^\"]+)$");
+    private static final String P = "p";
 
     static {
-        LocalDateTime time32Epoch1980 = LocalDateTime.of(
-                1980, Month.JANUARY, 1, 0, 0);
+        LocalDateTime time32Epoch1980 = LocalDateTime.of(1980, Month.JANUARY, 1, 0, 0);
         Instant instant = time32Epoch1980.atZone(ZoneOffset.UTC).toInstant();
         TIME32_EPOCH_DIFF_1980 = (instant.toEpochMilli() - Instant.EPOCH.toEpochMilli()) / 1000;
     }
 
     static {
-        LocalDateTime time32Epoch1601 = LocalDateTime.of(
-                1601, Month.JANUARY, 1, 0, 0);
+        LocalDateTime time32Epoch1601 = LocalDateTime.of(1601, Month.JANUARY, 1, 0, 0);
         Instant instant = time32Epoch1601.atZone(ZoneOffset.UTC).toInstant();
         DATETIME_EPOCH_DIFF_1601 = (instant.toEpochMilli() - Instant.EPOCH.toEpochMilli()) / 1000;
     }
 
-    private boolean mostRecentAuthorProp = false;
-    private boolean originalAuthorProp = false;
     private final Set<String> authors = new HashSet<>();
     private final Set<String> mostRecentAuthors = new HashSet<>();
     private final Set<String> originalAuthors = new HashSet<>();
+    public StorageIndexDataElementData StorageIndex;
+    public StorageManifestDataElementData StorageManifest;
+    public CellManifestDataElementData HeaderCellCellManifest;
+    public RevisionManifestDataElementData HeaderCellRevisionManifest;
+    public List<RevisionManifestDataElementData> RevisionManifests;
+    public List<CellManifestDataElementData> CellManifests;
+    public HeaderCell headerCell;
+    public List<RevisionStoreObjectGroup> DataRoot;
+    public List<RevisionStoreObjectGroup> OtherFileNodeList;
+    private boolean mostRecentAuthorProp = false;
+    private boolean originalAuthorProp = false;
     private Instant lastModifiedTimestamp = Instant.MIN;
     private long creationTimestamp = Long.MAX_VALUE;
     private long lastModified = Long.MIN_VALUE;
-    private static final String P = "p";
 
     public MSOneStorePackage() {
         this.RevisionManifests = new ArrayList<>();
@@ -123,9 +121,9 @@ public class MSOneStorePackage {
     public StorageIndexCellMapping FindStorageIndexCellMapping(CellID cellID) {
         StorageIndexCellMapping storageIndexCellMapping = null;
         if (this.StorageIndex != null) {
-            storageIndexCellMapping = this.StorageIndex.StorageIndexCellMappingList
-                    .stream()
-                    .filter(s -> s.CellID.equals(cellID)).findFirst().orElse(new StorageIndexCellMapping());
+            storageIndexCellMapping = this.StorageIndex.StorageIndexCellMappingList.stream()
+                    .filter(s -> s.CellID.equals(cellID)).findFirst()
+                    .orElse(new StorageIndexCellMapping());
         }
         return storageIndexCellMapping;
     }
@@ -136,12 +134,13 @@ public class MSOneStorePackage {
      * @param revisionExtendedGUID Specify the Revision Mapping Extended GUID.
      * @return Return the instance of Storage Index Revision Mapping.
      */
-    public StorageIndexRevisionMapping FindStorageIndexRevisionMapping(ExGuid revisionExtendedGUID) {
+    public StorageIndexRevisionMapping FindStorageIndexRevisionMapping(
+            ExGuid revisionExtendedGUID) {
         StorageIndexRevisionMapping instance = null;
         if (this.StorageIndex != null) {
             instance = this.StorageIndex.StorageIndexRevisionMappingList.stream()
-                    .filter(r -> r.RevisionExGuid.equals(revisionExtendedGUID))
-                    .findFirst().orElse(new StorageIndexRevisionMapping());
+                    .filter(r -> r.RevisionExGuid.equals(revisionExtendedGUID)).findFirst()
+                    .orElse(new StorageIndexRevisionMapping());
         }
 
         return instance;
@@ -159,11 +158,13 @@ public class MSOneStorePackage {
                 property == OneNotePropertyEnum.RichEditTextUnicode;
     }
 
-    public void walkTree(OneNoteTreeWalkerOptions options, Metadata metadata, XHTMLContentHandler xhtml)
+    public void walkTree(OneNoteTreeWalkerOptions options, Metadata metadata,
+                         XHTMLContentHandler xhtml)
             throws SAXException, TikaException, IOException {
         for (RevisionStoreObjectGroup revisionStoreObjectGroup : OtherFileNodeList) {
             for (RevisionStoreObject revisionStoreObject : revisionStoreObjectGroup.Objects) {
-                PropertySet propertySet = revisionStoreObject.PropertySet.ObjectSpaceObjectPropSet.Body;
+                PropertySet propertySet =
+                        revisionStoreObject.PropertySet.ObjectSpaceObjectPropSet.Body;
                 for (int i = 0; i < propertySet.RgData.size(); ++i) {
                     IProperty property = propertySet.RgData.get(i);
                     PropertyID propertyID = propertySet.RgPrids[i];
@@ -172,11 +173,13 @@ public class MSOneStorePackage {
                             OneNotePropertyEnum.of(Unsigned.uint(propertyID.Value).longValue());
                     if (oneNotePropertyEnum == OneNotePropertyEnum.LastModifiedTimeStamp) {
                         long fullval = getScalar(property);
-                        Instant instant = Instant.ofEpochSecond(fullval / 10000000 + DATETIME_EPOCH_DIFF_1601);
+                        Instant instant = Instant.ofEpochSecond(
+                                fullval / 10000000 + DATETIME_EPOCH_DIFF_1601);
                         if (instant.isAfter(lastModifiedTimestamp)) {
                             lastModifiedTimestamp = instant;
                         }
-                        metadata.set("lastModifiedTimestamp", String.valueOf(lastModifiedTimestamp.toEpochMilli()));
+                        metadata.set("lastModifiedTimestamp",
+                                String.valueOf(lastModifiedTimestamp.toEpochMilli()));
                     } else if (oneNotePropertyEnum == OneNotePropertyEnum.CreationTimeStamp) {
                         // add the TIME32_EPOCH_DIFF_1980 because OneNote TIME32 epoch time is per 1980, not
                         // 1970
@@ -196,7 +199,9 @@ public class MSOneStorePackage {
                         }
                         metadata.set("lastModified", String.valueOf(lastModified));
                     } else if (oneNotePropertyEnum == OneNotePropertyEnum.Author) {
-                        String author = new String(((PrtFourBytesOfLengthFollowedByData) property).Data);
+                        String author =
+                                new String(((PrtFourBytesOfLengthFollowedByData) property).Data,
+                                        StandardCharsets.UTF_8);
                         if (mostRecentAuthorProp) {
                             mostRecentAuthors.add(author);
                         } else if (originalAuthorProp) {
@@ -210,27 +215,31 @@ public class MSOneStorePackage {
                         originalAuthorProp = true;
                     } else if (propertyType == PropertyType.FourBytesOfLengthFollowedByData) {
                         boolean isBinary = propertyIsBinary(oneNotePropertyEnum);
-                        PrtFourBytesOfLengthFollowedByData dataProperty = (PrtFourBytesOfLengthFollowedByData) property;
-                        if ((dataProperty.Data.length & 1) == 0 && oneNotePropertyEnum !=
-                                OneNotePropertyEnum.TextExtendedAscii && !isBinary) {
+                        PrtFourBytesOfLengthFollowedByData dataProperty =
+                                (PrtFourBytesOfLengthFollowedByData) property;
+                        if ((dataProperty.Data.length & 1) == 0 &&
+                                oneNotePropertyEnum != OneNotePropertyEnum.TextExtendedAscii &&
+                                !isBinary) {
                             if (options.getUtf16PropertiesToPrint().contains(oneNotePropertyEnum)) {
                                 xhtml.startElement(P);
-                                xhtml.characters(new String(dataProperty.Data, StandardCharsets.UTF_16LE));
+                                xhtml.characters(
+                                        new String(dataProperty.Data, StandardCharsets.UTF_16LE));
                                 xhtml.endElement(P);
                             }
                         } else if (oneNotePropertyEnum == OneNotePropertyEnum.TextExtendedAscii) {
                             xhtml.startElement(P);
-                            xhtml.characters(new String(dataProperty.Data, StandardCharsets.US_ASCII));
+                            xhtml.characters(
+                                    new String(dataProperty.Data, StandardCharsets.US_ASCII));
                             xhtml.endElement(P);
                         } else if (!isBinary) {
                             if (options.getUtf16PropertiesToPrint().contains(oneNotePropertyEnum)) {
                                 xhtml.startElement(P);
-                                xhtml.characters(new String(dataProperty.Data, StandardCharsets.UTF_16LE));
+                                xhtml.characters(
+                                        new String(dataProperty.Data, StandardCharsets.UTF_16LE));
                                 xhtml.endElement(P);
                             }
                         } else {
-                            if (oneNotePropertyEnum ==
-                                    OneNotePropertyEnum.RichEditTextUnicode) {
+                            if (oneNotePropertyEnum == OneNotePropertyEnum.RichEditTextUnicode) {
                                 handleRichEditTextUnicode(dataProperty.Data, xhtml);
                             } else {
                                 //TODO -- these seem to be somewhat broken font files and other
@@ -243,16 +252,15 @@ public class MSOneStorePackage {
             }
         }
         if (!authors.isEmpty()) {
-            metadata.set(Property.externalTextBag("authors"),
-                    authors.toArray(new String[] {}));
+            metadata.set(Property.externalTextBag("authors"), authors.toArray(new String[]{}));
         }
         if (!mostRecentAuthors.isEmpty()) {
             metadata.set(Property.externalTextBag("mostRecentAuthors"),
-                    mostRecentAuthors.toArray(new String[] {}));
+                    mostRecentAuthors.toArray(new String[]{}));
         }
         if (!originalAuthors.isEmpty()) {
             metadata.set(Property.externalTextBag("originalAuthors"),
-                    originalAuthors.toArray(new String[] {}));
+                    originalAuthors.toArray(new String[]{}));
         }
     }
 

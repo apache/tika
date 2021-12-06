@@ -30,7 +30,8 @@ public class StreamObjectParseErrorException extends RuntimeException {
      * @param streamObjectTypeName Specify the stream type name
      * @param innerException       Specify the inner exception
      */
-    public StreamObjectParseErrorException(int index, String streamObjectTypeName, Exception innerException) {
+    public StreamObjectParseErrorException(int index, String streamObjectTypeName,
+                                           Exception innerException) {
         super(innerException);
         this.Index = index;
         this.StreamObjectTypeName = streamObjectTypeName;

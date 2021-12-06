@@ -27,16 +27,15 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
  * Specifies a revision manifest root declare, each followed by root and object extended GUIDs
  */
 public class RevisionManifestRootDeclare extends StreamObject {
+    public ExGuid RootExGuid;
+    public ExGuid ObjectExGuid;
+
     /**
      * Initializes a new instance of the RevisionManifestRootDeclare class.
      */
     public RevisionManifestRootDeclare() {
         super(StreamObjectTypeHeaderStart.RevisionManifestRootDeclare);
     }
-
-    public ExGuid RootExGuid;
-
-    public ExGuid ObjectExGuid;
 
     /**
      * Used to de-serialize the element.
@@ -46,13 +45,14 @@ public class RevisionManifestRootDeclare extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
+    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+                                                 int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.RootExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
         this.ObjectExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
         if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(), "RevisionManifestRootDeclare",
-                    "Stream object over-parse error", null);
+            throw new StreamObjectParseErrorException(currentIndex.get(),
+                    "RevisionManifestRootDeclare", "Stream object over-parse error", null);
         }
 
         currentIndex.set(index.get());

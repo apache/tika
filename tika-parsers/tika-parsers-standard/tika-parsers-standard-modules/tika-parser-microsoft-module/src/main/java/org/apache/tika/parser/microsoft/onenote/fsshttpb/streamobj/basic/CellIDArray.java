@@ -22,6 +22,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class CellIDArray extends BasicObject {
+    public long Count;
+    public List<CellID> Content;
+
     /**
      * Initializes a new instance of the CellIDArray class.
      *
@@ -53,10 +56,6 @@ public class CellIDArray extends BasicObject {
     public CellIDArray() {
         this.Content = new ArrayList<CellID>();
     }
-
-    public long Count;
-
-    public List<CellID> Content;
 
     /**
      * This method is used to convert the element of CellIDArray basic object into a byte List.

@@ -24,16 +24,15 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class DataElementPackage extends StreamObject {
 
+    public List<DataElement> DataElements = new ArrayList<>();
+    public byte reserved;
+
     /**
      * Initializes a new instance of the DataElementHash class.
      */
     public DataElementPackage() {
         super(StreamObjectTypeHeaderStart.DataElementPackage);
     }
-
-    public List<DataElement> DataElements = new ArrayList<>();
-
-    public byte reserved;
 
     /**
      * Used to de-serialize the element.
@@ -43,7 +42,8 @@ public class DataElementPackage extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
+    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+                                                 int lengthOfItems) {
         if (lengthOfItems != 1) {
             throw new StreamObjectParseErrorException(currentIndex.get(), "DataElementPackage",
                     "Stream object over-parse error", null);
@@ -53,7 +53,8 @@ public class DataElementPackage extends StreamObject {
 
         this.DataElements = new ArrayList<>();
         AtomicReference<DataElement> dataElement = new AtomicReference<>();
-        while (StreamObject.TryGetCurrent(byteArray, currentIndex, dataElement, DataElement.class)) {
+        while (StreamObject.TryGetCurrent(byteArray, currentIndex, dataElement,
+                DataElement.class)) {
             this.DataElements.add(dataElement.get());
         }
     }

@@ -20,6 +20,7 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.chunking;
 import java.util.List;
 
 import org.apache.poi.openxml4j.exceptions.InvalidOperationException;
+
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.IntermediateNodeObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.LeafNodeObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ZipHeader;
@@ -61,7 +62,8 @@ public class ChunkingFactory {
         if (ZipHeader.IsFileHeader(fileContent, 0)) {
             return new ZipFilesChunking(fileContent);
         } else {
-            // For SharePoint Server 2013 compatible SUTs, always using the RDC Chunking method in the current test suite involved file resources.
+            // For SharePoint Server 2013 compatible SUTs, always using the RDC Chunking method in
+            // the current test suite involved file resources.
             AbstractChunking returnChunking = new SimpleChunking(fileContent);
 
             List<LeafNodeObject> nodes = returnChunking.Chunking();
@@ -92,7 +94,8 @@ public class ChunkingFactory {
      * @param chunkingMethod The type of chunking methods.
      * @return The instance of AbstractChunking.
      */
-    public static AbstractChunking CreateChunkingInstance(byte[] fileContent, ChunkingMethod chunkingMethod) {
+    public static AbstractChunking CreateChunkingInstance(byte[] fileContent,
+                                                          ChunkingMethod chunkingMethod) {
         AbstractChunking chunking;
         switch (chunkingMethod) {
             case RDCAnalysis:
@@ -106,7 +109,8 @@ public class ChunkingFactory {
                 break;
 
             default:
-                throw new InvalidOperationException("Cannot support the chunking type" + chunkingMethod);
+                throw new InvalidOperationException(
+                        "Cannot support the chunking type" + chunkingMethod);
         }
 
         return chunking;

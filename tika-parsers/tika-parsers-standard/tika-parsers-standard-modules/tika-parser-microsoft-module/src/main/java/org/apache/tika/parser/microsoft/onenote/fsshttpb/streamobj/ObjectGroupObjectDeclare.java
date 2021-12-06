@@ -28,6 +28,17 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.Compact
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 
 public class ObjectGroupObjectDeclare extends StreamObject {
+    public ExGuid ObjectExtendedGUID;
+    public Compact64bitInt ObjectPartitionID;
+    /**
+     * Gets or sets a compact unsigned 64-bit integer that specifies the size in bytes of the object.binary data opaque
+     * to this protocol for the declared object.
+     * This MUST match the size of the binary item in the corresponding object data for this object.
+     */
+    public Compact64bitInt ObjectDataSize;
+    public Compact64bitInt ObjectReferencesCount;
+    public Compact64bitInt CellReferencesCount;
+
     /**
      * Initializes a new instance of the ObjectGroupObjectDeclare class.
      */
@@ -44,21 +55,6 @@ public class ObjectGroupObjectDeclare extends StreamObject {
         this.CellReferencesCount.setDecodedValue(0);
     }
 
-    public ExGuid ObjectExtendedGUID;
-
-    public Compact64bitInt ObjectPartitionID;
-
-    /**
-     * Gets or sets a compact unsigned 64-bit integer that specifies the size in bytes of the object.binary data opaque
-     * to this protocol for the declared object.
-     * This MUST match the size of the binary item in the corresponding object data for this object.
-     */
-    public Compact64bitInt ObjectDataSize;
-
-    public Compact64bitInt ObjectReferencesCount;
-
-    public Compact64bitInt CellReferencesCount;
-
     /**
      * Used to de-serialize the element.
      *
@@ -67,7 +63,8 @@ public class ObjectGroupObjectDeclare extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
+    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+                                                 int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
 
         this.ObjectExtendedGUID = BasicObject.parse(byteArray, index, ExGuid.class);
@@ -77,8 +74,8 @@ public class ObjectGroupObjectDeclare extends StreamObject {
         this.CellReferencesCount = BasicObject.parse(byteArray, index, Compact64bitInt.class);
 
         if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(), "ObjectGroupObjectDeclare",
-                    "Stream object over-parse error", null);
+            throw new StreamObjectParseErrorException(currentIndex.get(),
+                    "ObjectGroupObjectDeclare", "Stream object over-parse error", null);
         }
 
         currentIndex.set(index.get());

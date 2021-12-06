@@ -25,6 +25,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.exception.DataElementParseErrorException;
 
 public class StorageIndexDataElementData extends DataElementData {
+    public StorageIndexManifestMapping StorageIndexManifestMapping;
+    public List<StorageIndexCellMapping> StorageIndexCellMappingList;
+    public List<StorageIndexRevisionMapping> StorageIndexRevisionMappingList;
+
     /**
      * Initializes a new instance of the StorageIndexDataElementData class.
      */
@@ -33,12 +37,6 @@ public class StorageIndexDataElementData extends DataElementData {
         this.StorageIndexCellMappingList = new ArrayList<>();
         this.StorageIndexRevisionMappingList = new ArrayList<>();
     }
-
-    public StorageIndexManifestMapping StorageIndexManifestMapping;
-
-    public List<StorageIndexCellMapping> StorageIndexCellMappingList;
-
-    public List<StorageIndexRevisionMapping> StorageIndexRevisionMappingList;
 
     /**
      * Used to convert the element into a byte List.
@@ -82,27 +80,33 @@ public class StorageIndexDataElementData extends DataElementData {
         int headerLength = 0;
         AtomicReference<StreamObjectHeaderStart> header = new AtomicReference<>();
         boolean isStorageIndexManifestMappingExist = false;
-        while ((headerLength = StreamObjectHeaderStart.TryParse(byteArray, index.get(), header)) != 0) {
+        while ((headerLength = StreamObjectHeaderStart.TryParse(byteArray, index.get(), header)) !=
+                0) {
             index.addAndGet(headerLength);
             if (header.get().type == StreamObjectTypeHeaderStart.StorageIndexManifestMapping) {
                 if (isStorageIndexManifestMappingExist) {
                     throw new DataElementParseErrorException(index.get() - headerLength,
-                            "Failed to parse StorageIndexDataElement, only can contain zero or one StorageIndexManifestMapping",
-                            null);
+                            "Failed to parse StorageIndexDataElement, only can contain zero or one " +
+                                    "StorageIndexManifestMapping", null);
                 }
 
                 this.StorageIndexManifestMapping =
-                        (StorageIndexManifestMapping) StreamObject.ParseStreamObject(header.get(), byteArray, index);
+                        (StorageIndexManifestMapping) StreamObject.ParseStreamObject(header.get(),
+                                byteArray, index);
                 isStorageIndexManifestMappingExist = true;
             } else if (header.get().type == StreamObjectTypeHeaderStart.StorageIndexCellMapping) {
                 this.StorageIndexCellMappingList.add(
-                        (StorageIndexCellMapping) StreamObject.ParseStreamObject(header.get(), byteArray, index));
-            } else if (header.get().type == StreamObjectTypeHeaderStart.StorageIndexRevisionMapping) {
+                        (StorageIndexCellMapping) StreamObject.ParseStreamObject(header.get(),
+                                byteArray, index));
+            } else if (header.get().type ==
+                    StreamObjectTypeHeaderStart.StorageIndexRevisionMapping) {
                 this.StorageIndexRevisionMappingList.add(
-                        (StorageIndexRevisionMapping) StreamObject.ParseStreamObject(header.get(), byteArray, index));
+                        (StorageIndexRevisionMapping) StreamObject.ParseStreamObject(header.get(),
+                                byteArray, index));
             } else {
                 throw new DataElementParseErrorException(index.get() - headerLength,
-                        "Failed to parse StorageIndexDataElement, expect the inner object type StorageIndexCellMapping or StorageIndexRevisionMapping, but actual type value is " +
+                        "Failed to parse StorageIndexDataElement, expect the inner object type " +
+                                "StorageIndexCellMapping or StorageIndexRevisionMapping, but actual type value is " +
                                 header.get().type, null);
             }
         }

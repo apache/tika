@@ -28,10 +28,11 @@ import java.util.stream.Stream;
 
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.EndianUtils;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.exception.TikaMemoryLimitException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaMemoryLimitException;
 
 /**
  * This is the main class used during parsing. This will contain an offset position and end
@@ -51,8 +52,9 @@ class OneNotePtr {
     public static final int NUM_RESERVED_BYTES_AT_END_OF_HEADER = 728;
     private static final Logger LOG = LoggerFactory.getLogger(OneNoteParser.class);
     private static final byte[] IFNDF =
-            new byte[] {60, 0, 105, 0, 102, 0, 110, 0, 100, 0, 102, 0, 62, 0};
-    private static final String PACKAGE_STORAGE_FILE_FORMAT_GUID = "{638DE92F-A6D4-4BC1-9A36-B3FC2511A5B7}";
+            new byte[]{60, 0, 105, 0, 102, 0, 110, 0, 100, 0, 102, 0, 62, 0};
+    private static final String PACKAGE_STORAGE_FILE_FORMAT_GUID =
+            "{638DE92F-A6D4-4BC1-9A36-B3FC2511A5B7}";
 
     int indentLevel = 0;
 
@@ -80,10 +82,8 @@ class OneNotePtr {
 
     public OneNoteHeader deserializeHeader() throws IOException, TikaException {
         OneNoteHeader data = new OneNoteHeader();
-        data.setGuidFileType(deserializeGUID())
-                .setGuidFile(deserializeGUID())
-                .setGuidLegacyFileVersion(deserializeGUID())
-                .setGuidFileFormat(deserializeGUID())
+        data.setGuidFileType(deserializeGUID()).setGuidFile(deserializeGUID())
+                .setGuidLegacyFileVersion(deserializeGUID()).setGuidFileFormat(deserializeGUID())
                 .setFfvLastCodeThatWroteToThisFile(deserializeLittleEndianInt())
                 .setFfvOldestCodeThatHasWrittenToThisFile(deserializeLittleEndianInt())
                 .setFfvNewestCodeThatHasWrittenToThisFile(deserializeLittleEndianInt())
@@ -322,13 +322,12 @@ class OneNotePtr {
                 pushBack.commit();
                 FileNode dereference = curPath.dereference(document);
                 FileNode lastChild = data.children.get(data.children.size() - 1);
-                assert dereference
-                        .equals(lastChild); // is this correct? or should we be
+                assert dereference.equals(lastChild); // is this correct? or should we be
                 // checking the pointer?
                 Integer curPathOffset =
                         curPath.nodeListPositions.get(curPath.nodeListPositions.size() - 1);
-                curPath.nodeListPositions
-                        .set(curPath.nodeListPositions.size() - 1, curPathOffset + 1);
+                curPath.nodeListPositions.set(curPath.nodeListPositions.size() - 1,
+                        curPathOffset + 1);
             } finally {
                 pushBack.popBackIfNotCommitted();
             }
@@ -338,10 +337,9 @@ class OneNotePtr {
         next.cb = nextChunkRef.cb;
         next.stp = nextChunkRef.stp;
         if (terminated) {
-            LOG.debug(
-                    "{}Chunk terminator found NextChunkRef.cb={}, NextChunkRef.stp={}," +
-                            " Offset={}, End={}",
-                    getIndent(), nextChunkRef.cb, nextChunkRef.stp, offset, end);
+            LOG.debug("{}Chunk terminator found NextChunkRef.cb={}, NextChunkRef.stp={}," +
+                            " Offset={}, End={}", getIndent(), nextChunkRef.cb, nextChunkRef.stp, offset,
+                    end);
             // TODO check that next is OK
         }
         long footer = deserializeLittleEndianLong();
@@ -456,9 +454,9 @@ class OneNotePtr {
 
             data.subType.globalIdTableEntryFNDX.guid = deserializeGUID();
 
-            document.revisionMap.get(document.currentRevision).globalId
-                    .put(data.subType.globalIdTableEntryFNDX.index,
-                            data.subType.globalIdTableEntryFNDX.guid);
+            document.revisionMap.get(document.currentRevision).globalId.put(
+                    data.subType.globalIdTableEntryFNDX.index,
+                    data.subType.globalIdTableEntryFNDX.guid);
         } else if (data.id == FndStructureConstants.GlobalIdTableEntry2FNDX) {
             data.subType.globalIdTableEntry2FNDX.indexMapFrom = deserializeLittleEndianInt();
             data.subType.globalIdTableEntry2FNDX.indexMapTo = deserializeLittleEndianInt();
@@ -466,13 +464,13 @@ class OneNotePtr {
             ExtendedGUID dependentRevision =
                     document.revisionMap.get(document.currentRevision).dependent;
             // Get the compactId from the revisionMap's globalId map.
-            GUID compactId = document.revisionMap.get(dependentRevision).globalId
-                    .get(data.subType.globalIdTableEntry2FNDX.indexMapFrom);
+            GUID compactId = document.revisionMap.get(dependentRevision).globalId.get(
+                    data.subType.globalIdTableEntry2FNDX.indexMapFrom);
             if (compactId == null) {
                 throw new TikaException("COMPACT_ID_MISSING");
             }
-            document.revisionMap.get(document.currentRevision).globalId
-                    .put(data.subType.globalIdTableEntry2FNDX.indexMapTo, compactId);
+            document.revisionMap.get(document.currentRevision).globalId.put(
+                    data.subType.globalIdTableEntry2FNDX.indexMapTo, compactId);
         } else if (data.id == FndStructureConstants.GlobalIdTableEntry3FNDX) {
             data.subType.globalIdTableEntry3FNDX.indexCopyFromStart = deserializeLittleEndianInt();
 
@@ -484,13 +482,13 @@ class OneNotePtr {
                     document.revisionMap.get(document.currentRevision).dependent;
             for (int i = 0; i < data.subType.globalIdTableEntry3FNDX.entriesToCopy; ++i) {
                 Map<Long, GUID> globalIdMap = document.revisionMap.get(dependent_revision).globalId;
-                GUID compactId = globalIdMap
-                        .get(data.subType.globalIdTableEntry3FNDX.indexCopyFromStart + i);
+                GUID compactId = globalIdMap.get(
+                        data.subType.globalIdTableEntry3FNDX.indexCopyFromStart + i);
                 if (compactId == null) {
                     throw new TikaException("COMPACT_ID_MISSING");
                 }
-                document.revisionMap.get(document.currentRevision).globalId
-                        .put(data.subType.globalIdTableEntry3FNDX.indexCopyToStart + i, compactId);
+                document.revisionMap.get(document.currentRevision).globalId.put(
+                        data.subType.globalIdTableEntry3FNDX.indexCopyToStart + i, compactId);
             }
         } else if (data.id == FndStructureConstants.CanRevise.ObjectRevisionWithRefCountFNDX ||
                 data.id == FndStructureConstants.CanRevise.ObjectRevisionWithRefCount2FNDX) {
@@ -571,8 +569,7 @@ class OneNotePtr {
                 data.id == FndStructureConstants.CanRevise.ObjectDeclaration2LargeRefCountFND ||
                 data.id == FndStructureConstants.CanRevise.ReadOnlyObjectDeclaration2RefCountFND ||
                 data.id ==
-                        FndStructureConstants.CanRevise
-                                .ReadOnlyObjectDeclaration2LargeRefCountFND) {
+                        FndStructureConstants.CanRevise.ReadOnlyObjectDeclaration2LargeRefCountFND) {
             data.subType.objectDeclarationWithRefCount.body.file_data_store_reference = false;
             if (data.id == FndStructureConstants.CanRevise.ObjectDeclarationWithRefCountFNDX ||
                     data.id == FndStructureConstants.CanRevise.ObjectDeclarationWithRefCount2FNDX) {
@@ -593,8 +590,7 @@ class OneNotePtr {
 
             if (data.id == FndStructureConstants.CanRevise.ReadOnlyObjectDeclaration2RefCountFND ||
                     data.id ==
-                            FndStructureConstants.CanRevise
-                                    .ReadOnlyObjectDeclaration2LargeRefCountFND) {
+                            FndStructureConstants.CanRevise.ReadOnlyObjectDeclaration2LargeRefCountFND) {
                 ByteBuffer md5Buffer = ByteBuffer.allocate(16);
                 deserializeBytes(md5Buffer);
                 data.subType.objectDeclarationWithRefCount.readOnly.md5 = md5Buffer.array();
@@ -607,8 +603,7 @@ class OneNotePtr {
         } else if (
                 data.id == FndStructureConstants.CanRevise.ObjectDeclarationFileData3RefCountFND ||
                         data.id ==
-                                FndStructureConstants.CanRevise
-                                        .ObjectDeclarationFileData3LargeRefCountFND) {
+                                FndStructureConstants.CanRevise.ObjectDeclarationFileData3LargeRefCountFND) {
             data.subType.objectDeclarationWithRefCount.body.oid = deserializeCompactID();
 
             long jcid = deserializeLittleEndianInt();
@@ -677,8 +672,7 @@ class OneNotePtr {
             currentRevision.manifestList.add(curPath);
         } else {
             LOG.debug(
-                    "No fnd needed to be parsed for data.id=0x" +
-                            Long.toHexString(data.id) + " (" +
+                    "No fnd needed to be parsed for data.id=0x" + Long.toHexString(data.id) + " (" +
                             FndStructureConstants.nameOf(data.id) + ")");
         }
         if (data.baseType == 2) {
@@ -766,8 +760,7 @@ class OneNotePtr {
      * @return
      * @throws IOException
      */
-    private FileDataStoreObject deserializeFileDataStoreObject()
-            throws IOException, TikaException {
+    private FileDataStoreObject deserializeFileDataStoreObject() throws IOException, TikaException {
         FileDataStoreObject data = new FileDataStoreObject();
         GUID header = deserializeGUID();
         // TODO - the expected header is different per version of one note.
@@ -1070,7 +1063,7 @@ class OneNotePtr {
 
                     val32 = deserializeLittleEndianInt();
                     LOG.debug(" raw data: ({})[", val32);
-                {
+
                     data.rawData.stp = offset;
                     data.rawData.cb = 0;
                     if (offset + val32 > end) {
@@ -1085,9 +1078,9 @@ class OneNotePtr {
                         content.reposition(data.rawData);
                         content.dumpHex();
                     }
-                }
-                LOG.debug("]");
-                break;
+
+                    LOG.debug("]");
+                    break;
                 case 0x9:
                 case 0xb:
                 case 0xd:
@@ -1180,8 +1173,7 @@ class OneNotePtr {
         return data;
     }
 
-    private ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs
-    deserializeObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs()
+    private ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs deserializeObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs()
             throws IOException, TikaException {
         ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs data =
                 new ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs();

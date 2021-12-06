@@ -24,16 +24,15 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicOb
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 
 public class RevisionManifest extends StreamObject {
+    public ExGuid RevisionID;
+    public ExGuid BaseRevisionID;
+
     /**
      * Initializes a new instance of the RevisionManifest class.
      */
     public RevisionManifest() {
         super(StreamObjectTypeHeaderStart.RevisionManifest);
     }
-
-    public ExGuid RevisionID;
-
-    public ExGuid BaseRevisionID;
 
     /**
      * Used to de-serialize the element.
@@ -43,7 +42,8 @@ public class RevisionManifest extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
+    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+                                                 int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.RevisionID = BasicObject.parse(byteArray, index, ExGuid.class);
         this.BaseRevisionID = BasicObject.parse(byteArray, index, ExGuid.class);

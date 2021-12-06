@@ -25,16 +25,15 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.SerialNumber;
 
 public class StorageIndexManifestMapping extends StreamObject {
+    public ExGuid ManifestMappingExGuid;
+    public SerialNumber ManifestMappingSerialNumber;
+
     /**
      * Initializes a new instance of the StorageIndexManifestMapping class.
      */
     public StorageIndexManifestMapping() {
         super(StreamObjectTypeHeaderStart.StorageIndexManifestMapping);
     }
-
-    public ExGuid ManifestMappingExGuid;
-
-    public SerialNumber ManifestMappingSerialNumber;
 
     /**
      * Used to Deserialize the items.
@@ -44,14 +43,15 @@ public class StorageIndexManifestMapping extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
+    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+                                                 int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.ManifestMappingExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
         this.ManifestMappingSerialNumber = BasicObject.parse(byteArray, index, SerialNumber.class);
 
         if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(), "StorageIndexManifestMapping",
-                    "Stream object over-parse error", null);
+            throw new StreamObjectParseErrorException(currentIndex.get(),
+                    "StorageIndexManifestMapping", "Stream object over-parse error", null);
         }
 
         currentIndex.set(index.get());

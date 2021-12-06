@@ -1,9 +1,10 @@
 /*
- * Copyright (c) Data Geekery GmbH (http://www.datageekery.com)
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -12,6 +13,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Copyright (c) Data Geekery GmbH (http://www.datageekery.com)
  */
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.unsigned;
@@ -28,57 +31,90 @@ import java.math.BigInteger;
  */
 public final class UInteger extends UNumber implements Comparable<UInteger> {
 
-    private static final Class<UInteger> CLASS = UInteger.class;
-    private static final String CLASS_NAME = CLASS.getName();
-
-    /**
-     * System property name for the property to set the size of the pre-cache.
-     */
-    private static final String PRECACHE_PROPERTY = CLASS_NAME + ".precacheSize";
-
-    /**
-     * Default size for the value cache.
-     */
-    private static final int DEFAULT_PRECACHE_SIZE = 256;
-
-    /**
-     * Generated UID
-     */
-    private static final long serialVersionUID = -6821055240959745390L;
-
-    /**
-     * Cached values
-     */
-    private static final UInteger[] VALUES = mkValues();
-
     /**
      * A constant holding the minimum value an <code>unsigned int</code> can
      * have, 0.
      */
     public static final long MIN_VALUE = 0x00000000;
-
     /**
      * A constant holding the maximum value an <code>unsigned int</code> can
      * have, 2<sup>32</sup>-1.
      */
     public static final long MAX_VALUE = 0xffffffffL;
-
+    private static final Class<UInteger> CLASS = UInteger.class;
+    private static final String CLASS_NAME = CLASS.getName();
+    /**
+     * System property name for the property to set the size of the pre-cache.
+     */
+    private static final String PRECACHE_PROPERTY = CLASS_NAME + ".precacheSize";
+    /**
+     * Cached values
+     */
+    private static final UInteger[] VALUES = mkValues();
     /**
      * A constant holding the minimum value an <code>unsigned int</code> can
      * have as UInteger, 0.
      */
     public static final UInteger MIN = valueOf(MIN_VALUE);
-
     /**
      * A constant holding the maximum value an <code>unsigned int</code> can
      * have as UInteger, 2<sup>32</sup>-1.
      */
     public static final UInteger MAX = valueOf(MAX_VALUE);
-
+    /**
+     * Default size for the value cache.
+     */
+    private static final int DEFAULT_PRECACHE_SIZE = 256;
+    /**
+     * Generated UID
+     */
+    private static final long serialVersionUID = -6821055240959745390L;
     /**
      * The value modelling the content of this <code>unsigned int</code>
      */
     private final long value;
+
+    /**
+     * Unchecked internal constructor. This serves two purposes: first it allows
+     * {@link #UInteger(long)} to stay deprecated without warnings and second
+     * constructor without unnecessary value checks.
+     *
+     * @param value  The value to wrap
+     * @param unused Unused parameter to distinguish between this and the
+     *               deprecated public constructor.
+     */
+    private UInteger(long value, boolean unused) {
+        this.value = value;
+    }
+
+    /**
+     * Create an <code>unsigned int</code>
+     *
+     * @throws NumberFormatException If <code>value</code> is not in the range
+     *                               of an <code>unsigned int</code>
+     */
+    private UInteger(long value) throws NumberFormatException {
+        this.value = rangeCheck(value);
+    }
+
+    /**
+     * Create an <code>unsigned int</code> by masking it with
+     * <code>0xFFFFFFFF</code> i.e. <code>(int) -1</code> becomes
+     * <code>(uint) 4294967295</code>
+     */
+    private UInteger(int value) {
+        this.value = value & MAX_VALUE;
+    }
+
+    /**
+     * Create an <code>unsigned int</code>
+     *
+     * @throws NumberFormatException If <code>value</code> does not contain a
+     *                               parsable <code>unsigned int</code>.
+     */
+    private UInteger(String value) throws NumberFormatException {
+        this.value = rangeCheck(Long.parseLong(value));
+    }
 
     /**
      * Figure out the size of the precache.
@@ -154,19 +190,6 @@ public final class UInteger extends UNumber implements Comparable<UInteger> {
     }
 
     /**
-     * Unchecked internal constructor. This serves two purposes: first it allows
-     * {@link #UInteger(long)} to stay deprecated without warnings and second
-     * constructor without unnecessary value checks.
-     *
-     * @param value  The value to wrap
-     * @param unused Unused parameter to distinguish between this and the
-     *               deprecated public constructor.
-     */
-    private UInteger(long value, boolean unused) {
-        this.value = value;
-    }
-
-    /**
      * Retrieve a cached value.
      *
      * @param value Cached value to retrieve
@@ -220,35 +243,6 @@ public final class UInteger extends UNumber implements Comparable<UInteger> {
      */
     public static UInteger valueOf(long value) throws NumberFormatException {
         return valueOfUnchecked(rangeCheck(value));
-    }
-
-    /**
-     * Create an <code>unsigned int</code>
-     *
-     * @throws NumberFormatException If <code>value</code> is not in the range
-     *                               of an <code>unsigned int</code>
-     */
-    private UInteger(long value) throws NumberFormatException {
-        this.value = rangeCheck(value);
-    }
-
-    /**
-     * Create an <code>unsigned int</code> by masking it with
-     * <code>0xFFFFFFFF</code> i.e. <code>(int) -1</code> becomes
-     * <code>(uint) 4294967295</code>
-     */
-    private UInteger(int value) {
-        this.value = value & MAX_VALUE;
-    }
-
-    /**
-     * Create an <code>unsigned int</code>
-     *
-     * @throws NumberFormatException If <code>value</code> does not contain a
-     *                               parsable <code>unsigned int</code>.
-     */
-    private UInteger(String value) throws NumberFormatException {
-        this.value = rangeCheck(Long.parseLong(value));
     }
 
     /**

@@ -25,6 +25,8 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.LeafNodeObjec
  * This class specifies the base class for file chunking
  */
 public abstract class AbstractChunking {
+    protected byte[] FileContent;
+
     /**
      * Initializes a new instance of the AbstractChunking class.
      *
@@ -33,8 +35,6 @@ public abstract class AbstractChunking {
     protected AbstractChunking(byte[] fileContent) {
         this.FileContent = fileContent;
     }
-
-    protected byte[] FileContent;
 
     /**
      * This method is used to chunk the file data.

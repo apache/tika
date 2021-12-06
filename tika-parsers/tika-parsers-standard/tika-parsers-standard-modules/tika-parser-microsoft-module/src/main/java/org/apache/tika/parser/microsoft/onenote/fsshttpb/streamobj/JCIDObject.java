@@ -25,18 +25,18 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
  * This class is used to represent the JCID object.
  */
 public class JCIDObject {
+    public ObjectGroupObjectDeclare ObjectDeclaration;
+    public JCID JCID;
     /**
      * Construct the JCIDObject instance.
      *
      * @param objectDeclaration The Object Declaration structure.
      * @param objectData        The Object Data structure.
      */
-    public JCIDObject(ObjectGroupObjectDeclare objectDeclaration, ObjectGroupObjectData objectData) {
+    public JCIDObject(ObjectGroupObjectDeclare objectDeclaration,
+                      ObjectGroupObjectData objectData) {
         this.ObjectDeclaration = objectDeclaration;
         this.JCID = new JCID();
         this.JCID.DoDeserializeFromByteArray(ByteUtil.toByteArray(objectData.Data.Content), 0);
     }
-
-    public ObjectGroupObjectDeclare ObjectDeclaration;
-    public JCID JCID;
 }

@@ -25,21 +25,20 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.SerialNumber;
 
 /**
- * Specifies the storage index revision mappings (with revision and revision mapping extended GUIDs, and revision mapping serial number)
+ * Specifies the storage index revision mappings (with revision and revision mapping
+ * extended GUIDs, and revision mapping serial number)
  */
 public class StorageIndexRevisionMapping extends StreamObject {
+    public ExGuid RevisionExGuid;
+    public ExGuid RevisionMappingExGuid;
+    public SerialNumber RevisionMappingSerialNumber;
+
     /**
      * Initializes a new instance of the StorageIndexRevisionMapping class.
      */
     public StorageIndexRevisionMapping() {
         super(StreamObjectTypeHeaderStart.StorageIndexRevisionMapping);
     }
-
-    public ExGuid RevisionExGuid;
-
-    public ExGuid RevisionMappingExGuid;
-
-    public SerialNumber RevisionMappingSerialNumber;
 
     /**
      * Used to de-serialize the items
@@ -49,15 +48,16 @@ public class StorageIndexRevisionMapping extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
+    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+                                                 int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.RevisionExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
         this.RevisionMappingExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
         this.RevisionMappingSerialNumber = BasicObject.parse(byteArray, index, SerialNumber.class);
 
         if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(), "StorageIndexRevisionMapping",
-                    "Stream object over-parse error", null);
+            throw new StreamObjectParseErrorException(currentIndex.get(),
+                    "StorageIndexRevisionMapping", "Stream object over-parse error", null);
         }
 
         currentIndex.set(index.get());

@@ -20,9 +20,10 @@ package org.apache.tika.parser.microsoft.onenote;
 import java.io.IOException;
 import java.util.Objects;
 
-import org.apache.tika.exception.TikaMemoryLimitException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.tika.exception.TikaMemoryLimitException;
 
 /**
  * A FileNode structure is the basic unit for holding and referencing data in the file.
@@ -119,9 +120,8 @@ class FileNode {
 
     @Override
     public int hashCode() {
-        return Objects
-                .hash(id, size, baseType, gosid, gctxid, fileDataStoreReference, ref, propertySet,
-                        isFileData, childFileNodeList, subType);
+        return Objects.hash(id, size, baseType, gosid, gctxid, fileDataStoreReference, ref,
+                propertySet, isFileData, childFileNodeList, subType);
     }
 
     public boolean hasGctxid() {

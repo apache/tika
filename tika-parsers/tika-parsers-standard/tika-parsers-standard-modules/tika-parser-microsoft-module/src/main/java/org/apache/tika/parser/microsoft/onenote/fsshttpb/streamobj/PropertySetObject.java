@@ -25,18 +25,19 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
  * This class is used to represent the property set.
  */
 public class PropertySetObject {
+    public ObjectGroupObjectDeclare ObjectDeclaration;
+    public ObjectSpaceObjectPropSet ObjectSpaceObjectPropSet;
     /**
      * Construct the PropertySetObject instance.
      *
      * @param objectDeclaration The Object Declaration structure.
      * @param objectData        The Object Data structure.
      */
-    public PropertySetObject(ObjectGroupObjectDeclare objectDeclaration, ObjectGroupObjectData objectData) {
+    public PropertySetObject(ObjectGroupObjectDeclare objectDeclaration,
+                             ObjectGroupObjectData objectData) {
         this.ObjectDeclaration = objectDeclaration;
         this.ObjectSpaceObjectPropSet = new ObjectSpaceObjectPropSet();
-        this.ObjectSpaceObjectPropSet.DoDeserializeFromByteArray(ByteUtil.toByteArray(objectData.Data.Content), 0);
+        this.ObjectSpaceObjectPropSet.DoDeserializeFromByteArray(
+                ByteUtil.toByteArray(objectData.Data.Content), 0);
     }
-
-    public ObjectGroupObjectDeclare ObjectDeclaration;
-    public ObjectSpaceObjectPropSet ObjectSpaceObjectPropSet;
 }

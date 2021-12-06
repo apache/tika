@@ -25,6 +25,10 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitWriter;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.GuidUtil;
 
 public class SerialNumber extends BasicObject {
+    public int type;
+    public UUID guid;
+    public long value;
+
     /**
      * Initializes a new instance of the SerialNumber class with specified values.
      *
@@ -51,12 +55,6 @@ public class SerialNumber extends BasicObject {
      */
     public SerialNumber() {
     }
-
-    public int type;
-
-    public UUID guid;
-
-    public long value;
 
     /**
      * This method is used to convert the element of SerialNumber basic object into a byte List.
@@ -87,7 +85,8 @@ public class SerialNumber extends BasicObject {
      * @return Return the length in byte of the SerialNumber basic object.
      */
     @Override
-    protected int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) // return the length consumed
+    protected int DoDeserializeFromByteArray(byte[] byteArray,
+                                             int startIndex) // return the length consumed
     {
         BitReader bitField = new BitReader(byteArray, startIndex);
         int type = bitField.ReadInt32(8);
@@ -104,8 +103,8 @@ public class SerialNumber extends BasicObject {
             return 25;
         } else {
             throw new RuntimeException(
-                    "Failed to parse SerialNumber object, Expect the type value is either 0 or 128, but the actual value is " +
-                            this.type);
+                    "Failed to parse SerialNumber object, Expect the type value is either 0 or 128, " +
+                            "but the actual value is " + this.type);
         }
     }
 }

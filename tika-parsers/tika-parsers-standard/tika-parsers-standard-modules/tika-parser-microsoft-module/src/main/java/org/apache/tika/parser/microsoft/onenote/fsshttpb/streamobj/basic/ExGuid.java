@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.apache.poi.openxml4j.exceptions.InvalidOperationException;
+
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitReader;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitWriter;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.GuidUtil;
@@ -50,6 +51,9 @@ public class ExGuid extends BasicObject {
      * Specify the extended GUID 32 Bit int type value.
      */
     public static final int ExtendedGUID32BitUintType = 128;
+    public int type;
+    public int value;
+    public UUID guid;
 
     /**
      * Initializes a new instance of the ExGuid class with specified value.
@@ -79,12 +83,6 @@ public class ExGuid extends BasicObject {
     public ExGuid() {
         this.guid = GuidUtil.emptyGuid();
     }
-
-    public int type;
-
-    public int value;
-
-    public UUID guid;
 
     /**
      * This method is used to convert the element of ExGuid basic object into a byte List.
@@ -196,7 +194,8 @@ public class ExGuid extends BasicObject {
                 return 1;
 
             default:
-                throw new InvalidOperationException("Failed to parse the ExGuid, the type value is unexpected");
+                throw new InvalidOperationException(
+                        "Failed to parse the ExGuid, the type value is unexpected");
         }
     }
 }

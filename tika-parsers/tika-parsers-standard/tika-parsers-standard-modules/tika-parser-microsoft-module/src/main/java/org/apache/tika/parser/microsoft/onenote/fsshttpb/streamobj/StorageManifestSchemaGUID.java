@@ -17,6 +17,7 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -28,6 +29,8 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
  * Specifies a storage manifest schema GUID
  */
 public class StorageManifestSchemaGUID extends StreamObject {
+    public UUID guid;
+
     /**
      * Initializes a new instance of the StorageManifestSchemaGUID class.
      */
@@ -35,8 +38,6 @@ public class StorageManifestSchemaGUID extends StreamObject {
         super(StreamObjectTypeHeaderStart.StorageManifestSchemaGUID);
         // this.GUID = DataElementExGuids.StorageManifestGUID;
     }
-
-    public UUID guid;
 
     /**
      * Used to de-serialize the items.
@@ -46,15 +47,16 @@ public class StorageManifestSchemaGUID extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
+    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+                                                 int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         byte[] temp = Arrays.copyOf(byteArray, 16);
         this.guid = UUID.nameUUIDFromBytes(temp);
         index.addAndGet(16);
 
         if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(), "StorageManifestSchemaGUID",
-                    "Stream object over-parse error", null);
+            throw new StreamObjectParseErrorException(currentIndex.get(),
+                    "StorageManifestSchemaGUID", "Stream object over-parse error", null);
         }
 
         currentIndex.set(index.get());
@@ -68,7 +70,7 @@ public class StorageManifestSchemaGUID extends StreamObject {
      */
     @Override
     protected int SerializeItemsToByteList(List<Byte> byteList) {
-        byteList.addAll(ByteUtil.toListOfByte(this.guid.toString().getBytes()));
+        byteList.addAll(ByteUtil.toListOfByte(this.guid.toString().getBytes(StandardCharsets.UTF_8)));
         return 16;
     }
 }
