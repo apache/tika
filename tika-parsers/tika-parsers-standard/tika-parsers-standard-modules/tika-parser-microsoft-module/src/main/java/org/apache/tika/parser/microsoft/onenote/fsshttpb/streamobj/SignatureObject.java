@@ -50,7 +50,7 @@ public class SignatureObject extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
 
@@ -71,9 +71,9 @@ public class SignatureObject extends StreamObject {
      * @return The number of elements
      */
     @Override
-    protected int SerializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) {
         int length = byteList.size();
-        byteList.addAll(this.SignatureData.SerializeToByteList());
+        byteList.addAll(this.SignatureData.serializeToByteList());
         return byteList.size() - length;
     }
 }

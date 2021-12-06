@@ -43,10 +43,10 @@ public class ObjectGroupMetadataDeclarations extends StreamObject {
      * @return A constant value 0
      */
     @Override
-    protected int SerializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) {
         if (this.ObjectGroupMetadataList != null) {
             for (ObjectGroupMetadata objectGroupMetadata : this.ObjectGroupMetadataList) {
-                byteList.addAll(objectGroupMetadata.SerializeToByteList());
+                byteList.addAll(objectGroupMetadata.serializeToByteList());
             }
         }
 
@@ -61,7 +61,7 @@ public class ObjectGroupMetadataDeclarations extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems) {
         if (lengthOfItems != 0) {
             throw new StreamObjectParseErrorException(currentIndex.get(),
@@ -73,17 +73,18 @@ public class ObjectGroupMetadataDeclarations extends StreamObject {
         AtomicReference<StreamObjectHeaderStart> header = new AtomicReference<>();
         this.ObjectGroupMetadataList = new ArrayList<>();
 
-        while ((headerLength = StreamObjectHeaderStart.TryParse(byteArray, index.get(), header)) !=
+        while ((headerLength = StreamObjectHeaderStart.tryParse(byteArray, index.get(), header)) !=
                 0) {
             index.addAndGet(headerLength);
             if (header.get().type == StreamObjectTypeHeaderStart.ObjectGroupMetadata) {
                 this.ObjectGroupMetadataList.add(
-                        (ObjectGroupMetadata) StreamObject.ParseStreamObject(header.get(),
+                        (ObjectGroupMetadata) StreamObject.parseStreamObject(header.get(),
                                 byteArray, index));
             } else {
                 throw new StreamObjectParseErrorException(index.get(), "ObjectGroupDeclarations",
                         "Failed to parse ObjectGroupMetadataDeclarations, expect the inner object type " +
-                                "ObjectGroupMetadata, but actual type value is " + header.get().type, null);
+                                "ObjectGroupMetadata, but actual type value is " +
+                                header.get().type, null);
             }
         }
 

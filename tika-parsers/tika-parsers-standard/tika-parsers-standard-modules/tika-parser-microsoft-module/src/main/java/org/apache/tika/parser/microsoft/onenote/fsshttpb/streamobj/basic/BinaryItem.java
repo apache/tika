@@ -52,11 +52,11 @@ public class BinaryItem extends BasicObject {
      * @return Return the byte list which store the byte information of BinaryItem.
      */
     @Override
-    public List<Byte> SerializeToByteList() {
+    public List<Byte> serializeToByteList() {
         this.Length.setDecodedValue(this.Content.size());
 
         List<Byte> result = new ArrayList<>();
-        result.addAll(this.Length.SerializeToByteList());
+        result.addAll(this.Length.serializeToByteList());
         result.addAll(this.Content);
 
         return result;
@@ -70,7 +70,7 @@ public class BinaryItem extends BasicObject {
      * @return Return the length in byte of the BinaryItem basic object.
      */
     @Override
-    protected int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         AtomicInteger index = new AtomicInteger(startIndex);
 
         this.Length = BasicObject.parse(byteArray, index, Compact64bitInt.class);

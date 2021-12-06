@@ -44,7 +44,7 @@ public class SimpleChunking extends AbstractChunking {
      * @return A list of LeafNodeObjectData.
      */
     @Override
-    public List<LeafNodeObject> Chunking() {
+    public List<LeafNodeObject> chunking() {
         int maxChunkSize = 1 * 1024 * 1024;
         java.util.List<LeafNodeObject> list = new ArrayList<>();
         LeafNodeObject.IntermediateNodeObjectBuilder builder =
@@ -52,7 +52,7 @@ public class SimpleChunking extends AbstractChunking {
         int chunkStart = 0;
 
         if (this.FileContent.length <= maxChunkSize) {
-            list.add(builder.Build(this.FileContent, this.GetSignature(this.FileContent)));
+            list.add(builder.Build(this.FileContent, this.getSignature(this.FileContent)));
 
             return list;
         }
@@ -61,7 +61,7 @@ public class SimpleChunking extends AbstractChunking {
             int chunkLength = chunkStart + maxChunkSize >= this.FileContent.length ?
                     this.FileContent.length - chunkStart : maxChunkSize;
             byte[] temp = Arrays.copyOfRange(this.FileContent, chunkStart, chunkLength);
-            list.add(builder.Build(temp, this.GetSignature(temp)));
+            list.add(builder.Build(temp, this.getSignature(temp)));
             chunkStart += chunkLength;
         }
 
@@ -74,7 +74,7 @@ public class SimpleChunking extends AbstractChunking {
      * @param array The data of the chunk.
      * @return The signature instance.
      */
-    private SignatureObject GetSignature(byte[] array) {
+    private SignatureObject getSignature(byte[] array) {
         if (this.FileContent.length <= 250 * 1024 * 1024) {
             byte[] temp = DigestUtils.sha1(array);
 

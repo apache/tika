@@ -62,7 +62,7 @@ public class ObjectGroupObjectBLOBDataDeclaration extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
 
@@ -87,14 +87,14 @@ public class ObjectGroupObjectBLOBDataDeclaration extends StreamObject {
      * @return The number of the element
      */
     @Override
-    protected int SerializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) {
         int itemsIndex = byteList.size();
-        byteList.addAll(this.ObjectExGUID.SerializeToByteList());
-        byteList.addAll(this.ObjectDataBLOBExGUID.SerializeToByteList());
-        byteList.addAll(this.ObjectPartitionID.SerializeToByteList());
-        byteList.addAll(this.ObjectDataSize.SerializeToByteList());
-        byteList.addAll(this.ObjectReferencesCount.SerializeToByteList());
-        byteList.addAll(this.CellReferencesCount.SerializeToByteList());
+        byteList.addAll(this.ObjectExGUID.serializeToByteList());
+        byteList.addAll(this.ObjectDataBLOBExGUID.serializeToByteList());
+        byteList.addAll(this.ObjectPartitionID.serializeToByteList());
+        byteList.addAll(this.ObjectDataSize.serializeToByteList());
+        byteList.addAll(this.ObjectReferencesCount.serializeToByteList());
+        byteList.addAll(this.CellReferencesCount.serializeToByteList());
         return byteList.size() - itemsIndex;
     }
 }

@@ -46,7 +46,7 @@ public class StorageManifestRootDeclare extends StreamObject {
      * @param lengthOfItems The length of items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.RootExGUID = BasicObject.parse(byteArray, index, ExGuid.class);
@@ -67,10 +67,10 @@ public class StorageManifestRootDeclare extends StreamObject {
      * @return The length of list
      */
     @Override
-    protected int SerializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) {
         int itemsIndex = byteList.size();
-        byteList.addAll(this.RootExGUID.SerializeToByteList());
-        byteList.addAll(this.cellID.SerializeToByteList());
+        byteList.addAll(this.RootExGUID.serializeToByteList());
+        byteList.addAll(this.cellID.serializeToByteList());
         return byteList.size() - itemsIndex;
     }
 }

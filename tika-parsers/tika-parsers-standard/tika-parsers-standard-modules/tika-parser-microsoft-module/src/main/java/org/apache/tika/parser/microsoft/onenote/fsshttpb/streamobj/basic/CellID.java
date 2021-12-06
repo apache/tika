@@ -64,10 +64,10 @@ public class CellID extends BasicObject {
      * @return Return the byte list which store the byte information of CellID.
      */
     @Override
-    public List<Byte> SerializeToByteList() {
+    public List<Byte> serializeToByteList() {
         java.util.List<Byte> byteList = new ArrayList<>();
-        byteList.addAll(this.ExtendGUID1.SerializeToByteList());
-        byteList.addAll(this.ExtendGUID2.SerializeToByteList());
+        byteList.addAll(this.ExtendGUID1.serializeToByteList());
+        byteList.addAll(this.ExtendGUID2.serializeToByteList());
         return byteList;
     }
 
@@ -112,7 +112,7 @@ public class CellID extends BasicObject {
      * @return Return the length in byte of the CellID basic object.
      */
     @Override
-    protected int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         AtomicInteger index = new AtomicInteger(startIndex);
 
         this.ExtendGUID1 = BasicObject.parse(byteArray, index, ExGuid.class);

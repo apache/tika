@@ -47,18 +47,18 @@ public class PropertySet implements IProperty {
      *
      * @return Return the byte list which store the byte information of PropertySet.
      */
-    public List<Byte> SerializeToByteList() {
+    public List<Byte> serializeToByteList() {
         List<Byte> byteList = new ArrayList<>();
         for (byte b : BitConverter.getBytes(this.CProperties)) {
             byteList.add(b);
         }
 
         for (PropertyID propertyId : this.RgPrids) {
-            byteList.addAll(propertyId.SerializeToByteList());
+            byteList.addAll(propertyId.serializeToByteList());
         }
 
         for (IProperty property : this.RgData) {
-            byteList.addAll(property.SerializeToByteList());
+            byteList.addAll(property.serializeToByteList());
         }
 
         return byteList;
@@ -71,7 +71,7 @@ public class PropertySet implements IProperty {
      * @param startIndex Specify the start index from the byte array.
      * @return Return the length in byte of the PropertySet.
      */
-    public int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         int index = startIndex;
 
         this.CProperties = BitConverter.toInt16(byteArray, startIndex);
@@ -79,7 +79,7 @@ public class PropertySet implements IProperty {
         this.RgPrids = new PropertyID[this.CProperties];
         for (int i = 0; i < this.CProperties; i++) {
             PropertyID propertyID = new PropertyID();
-            propertyID.DoDeserializeFromByteArray(byteArray, index);
+            propertyID.doDeserializeFromByteArray(byteArray, index);
             this.RgPrids[i] = propertyID;
             index += 4;
         }
@@ -124,7 +124,7 @@ public class PropertySet implements IProperty {
                     break;
             }
             if (property != null) {
-                int len = property.DoDeserializeFromByteArray(byteArray, index);
+                int len = property.doDeserializeFromByteArray(byteArray, index);
                 this.RgData.add(property);
                 index += len;
             }

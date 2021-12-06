@@ -41,10 +41,10 @@ public class CellManifestDataElementData extends DataElementData {
      * @return The element length
      */
     @Override
-    public int DeserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex) {
+    public int deserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex) {
         AtomicInteger index = new AtomicInteger(startIndex);
         this.cellManifestCurrentRevision =
-                StreamObject.GetCurrent(byteArray, index, CellManifestCurrentRevision.class);
+                StreamObject.getCurrent(byteArray, index, CellManifestCurrentRevision.class);
         return index.get() - startIndex;
     }
 
@@ -54,7 +54,7 @@ public class CellManifestDataElementData extends DataElementData {
      * @return The Byte list
      */
     @Override
-    public List<Byte> SerializeToByteList() {
-        return this.cellManifestCurrentRevision.SerializeToByteList();
+    public List<Byte> serializeToByteList() {
+        return this.cellManifestCurrentRevision.serializeToByteList();
     }
 }

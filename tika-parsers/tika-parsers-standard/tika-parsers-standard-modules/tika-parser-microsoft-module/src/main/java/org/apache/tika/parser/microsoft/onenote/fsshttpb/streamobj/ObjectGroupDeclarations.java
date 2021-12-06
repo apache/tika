@@ -46,7 +46,7 @@ public class ObjectGroupDeclarations extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems) {
         if (lengthOfItems != 0) {
             throw new StreamObjectParseErrorException(currentIndex.get(), "ObjectGroupDeclarations",
@@ -58,25 +58,24 @@ public class ObjectGroupDeclarations extends StreamObject {
         AtomicReference<StreamObjectHeaderStart> header = new AtomicReference<>();
         this.ObjectDeclarationList = new ArrayList<>();
         this.ObjectGroupObjectBLOBDataDeclarationList = new ArrayList<>();
-        while ((headerLength = StreamObjectHeaderStart.TryParse(byteArray, index.get(), header)) !=
+        while ((headerLength = StreamObjectHeaderStart.tryParse(byteArray, index.get(), header)) !=
                 0) {
             if (header.get().type == StreamObjectTypeHeaderStart.ObjectGroupObjectDeclare) {
                 index.addAndGet(headerLength);
                 this.ObjectDeclarationList.add(
-                        (ObjectGroupObjectDeclare) StreamObject.ParseStreamObject(header.get(),
+                        (ObjectGroupObjectDeclare) StreamObject.parseStreamObject(header.get(),
                                 byteArray, index));
             } else if (header.get().type ==
                     StreamObjectTypeHeaderStart.ObjectGroupObjectBLOBDataDeclaration) {
                 index.addAndGet(headerLength);
                 this.ObjectGroupObjectBLOBDataDeclarationList.add(
-                        (ObjectGroupObjectBLOBDataDeclaration) StreamObject.ParseStreamObject(
+                        (ObjectGroupObjectBLOBDataDeclaration) StreamObject.parseStreamObject(
                                 header.get(), byteArray, index));
             } else {
                 throw new StreamObjectParseErrorException(index.get(), "ObjectGroupDeclarations",
                         "Failed to parse ObjectGroupDeclarations, expect the inner object type either " +
                                 "ObjectGroupObjectDeclare or ObjectGroupObjectBLOBDataDeclaration, " +
-                                "but actual type value is " +
-                                header.get().type, null);
+                                "but actual type value is " + header.get().type, null);
             }
         }
 
@@ -90,17 +89,17 @@ public class ObjectGroupDeclarations extends StreamObject {
      * @return A constant value 0
      */
     @Override
-    protected int SerializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) {
         if (this.ObjectDeclarationList != null) {
             for (ObjectGroupObjectDeclare objectGroupObjectDeclare : this.ObjectDeclarationList) {
-                byteList.addAll(objectGroupObjectDeclare.SerializeToByteList());
+                byteList.addAll(objectGroupObjectDeclare.serializeToByteList());
             }
         }
 
         if (this.ObjectGroupObjectBLOBDataDeclarationList != null) {
             for (ObjectGroupObjectBLOBDataDeclaration objectGroupObjectBLOBDataDeclaration :
                     this.ObjectGroupObjectBLOBDataDeclarationList) {
-                byteList.addAll(objectGroupObjectBLOBDataDeclaration.SerializeToByteList());
+                byteList.addAll(objectGroupObjectBLOBDataDeclaration.serializeToByteList());
             }
         }
 

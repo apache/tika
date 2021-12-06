@@ -37,11 +37,11 @@ public class PropertyID {
      *
      * @return Return the byte list which store the byte information of PropertyID.
      */
-    public List<Byte> SerializeToByteList() {
+    public List<Byte> serializeToByteList() {
         BitWriter bitWriter = new BitWriter(4);
-        bitWriter.AppendUInit32(this.Id, 26);
-        bitWriter.AppendUInit32(this.Type, 5);
-        bitWriter.AppendInit32(this.BoolValue, 1);
+        bitWriter.appendUInit32(this.Id, 26);
+        bitWriter.appendUInit32(this.Type, 5);
+        bitWriter.appendInit32(this.BoolValue, 1);
 
         return bitWriter.getByteList();
     }
@@ -53,11 +53,11 @@ public class PropertyID {
      * @param startIndex Specify the start index from the byte array.
      * @return Return the length in byte of the PropertyID object.
      */
-    public int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         BitReader bitReader = new BitReader(byteArray, startIndex);
-        this.Id = bitReader.ReadUInt32(26);
-        this.Type = bitReader.ReadUInt32(5);
-        this.BoolValue = bitReader.ReadInt32(1);
+        this.Id = bitReader.readUInt32(26);
+        this.Type = bitReader.readUInt32(5);
+        this.BoolValue = bitReader.readInt32(1);
         this.Value = BitConverter.toInt32(byteArray, startIndex);
         return 4;
     }

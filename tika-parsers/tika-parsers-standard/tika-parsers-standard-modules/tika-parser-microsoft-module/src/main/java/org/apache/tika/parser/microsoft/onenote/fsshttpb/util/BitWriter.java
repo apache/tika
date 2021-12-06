@@ -70,9 +70,9 @@ public class BitWriter {
      * @param value  Specify the value which needs to be appended.
      * @param length Specify the bit length which the value will occupy in the buffer.
      */
-    public void AppendUInt64(long value, int length) {
-        byte[] convertedBytes = LittleEndianBitConverter.GetBytes(value);
-        this.SetBytes(convertedBytes, length);
+    public void appendUInt64(long value, int length) {
+        byte[] convertedBytes = LittleEndianBitConverter.getBytes(value);
+        this.setBytes(convertedBytes, length);
     }
 
     /**
@@ -81,9 +81,9 @@ public class BitWriter {
      * @param value  Specify the value which needs to be appended.
      * @param length Specify the bit length which the value will occupy in the buffer.
      */
-    public void AppendUInit32(int value, int length) {
-        byte[] convertedBytes = LittleEndianBitConverter.GetBytes(value);
-        this.SetBytes(convertedBytes, length);
+    public void appendUInit32(int value, int length) {
+        byte[] convertedBytes = LittleEndianBitConverter.getBytes(value);
+        this.setBytes(convertedBytes, length);
     }
 
     /**
@@ -92,9 +92,9 @@ public class BitWriter {
      * @param value  Specify the value which needs to be appended.
      * @param length Specify the bit length which the value will occupy in the buffer.
      */
-    public void AppendInit32(int value, int length) {
-        byte[] convertedBytes = LittleEndianBitConverter.GetBytes(value);
-        this.SetBytes(convertedBytes, length);
+    public void appendInit32(int value, int length) {
+        byte[] convertedBytes = LittleEndianBitConverter.getBytes(value);
+        this.setBytes(convertedBytes, length);
     }
 
     /**
@@ -102,8 +102,8 @@ public class BitWriter {
      *
      * @param value Specify the GUID value.
      */
-    public void AppendGUID(UUID value) {
-        this.SetBytes(UuidUtils.asBytes(value), 128);
+    public void appendGUID(UUID value) {
+        this.setBytes(UuidUtils.asBytes(value), 128);
     }
 
     /**
@@ -112,9 +112,9 @@ public class BitWriter {
      * @param needWrittenBytes Specify the needed written byte array.
      * @param length           Specify the bit length which the byte array will occupy in the buffer.
      */
-    private void SetBytes(byte[] needWrittenBytes, int length) {
+    private void setBytes(byte[] needWrittenBytes, int length) {
         for (int i = 0; i < length; i++) {
-            if (Bit.IsBitSet(needWrittenBytes, i)) {
+            if (Bit.isBitSet(needWrittenBytes, i)) {
                 bitSet.set(this.bitOffset++);
             } else {
                 bitSet.clear(this.bitOffset++);

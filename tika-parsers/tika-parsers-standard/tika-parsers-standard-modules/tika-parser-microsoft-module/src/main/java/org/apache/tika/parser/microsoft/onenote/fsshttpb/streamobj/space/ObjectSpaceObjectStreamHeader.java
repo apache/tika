@@ -33,12 +33,12 @@ public class ObjectSpaceObjectStreamHeader {
      *
      * @return Return the byte list which store the byte information of ObjectSpaceObjectStreamHeader
      */
-    public List<Byte> SerializeToByteList() {
+    public List<Byte> serializeToByteList() {
         BitWriter bitWriter = new BitWriter(4);
-        bitWriter.AppendUInit32((int) this.Count, 24);
-        bitWriter.AppendInit32(this.Reserved, 6);
-        bitWriter.AppendInit32(this.ExtendedStreamsPresent, 1);
-        bitWriter.AppendInit32(this.OsidStreamNotPresent, 1);
+        bitWriter.appendUInit32((int) this.Count, 24);
+        bitWriter.appendInit32(this.Reserved, 6);
+        bitWriter.appendInit32(this.ExtendedStreamsPresent, 1);
+        bitWriter.appendInit32(this.OsidStreamNotPresent, 1);
 
         return bitWriter.getByteList();
     }
@@ -53,10 +53,10 @@ public class ObjectSpaceObjectStreamHeader {
      */
     public int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         BitReader bitReader = new BitReader(byteArray, startIndex);
-        this.Count = bitReader.ReadUInt32(24);
-        this.Reserved = bitReader.ReadInt32(6);
-        this.ExtendedStreamsPresent = bitReader.ReadInt32(1);
-        this.OsidStreamNotPresent = bitReader.ReadInt32(1);
+        this.Count = bitReader.readUInt32(24);
+        this.Reserved = bitReader.readInt32(6);
+        this.ExtendedStreamsPresent = bitReader.readInt32(1);
+        this.OsidStreamNotPresent = bitReader.readInt32(1);
         return 4;
     }
 }

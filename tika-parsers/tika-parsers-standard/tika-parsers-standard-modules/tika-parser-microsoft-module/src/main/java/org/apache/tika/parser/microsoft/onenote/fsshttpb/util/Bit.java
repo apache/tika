@@ -28,7 +28,7 @@ public class Bit {
      * @param bit   Specify the bit position.
      * @return Return the bit value in the specified bit position.
      */
-    public static boolean IsBitSet(byte[] array, long bit) {
+    public static boolean isBitSet(byte[] array, long bit) {
         return (array[(int) (bit / 8)] & (1 << (int) (bit % 8))) != 0;
     }
 
@@ -38,7 +38,7 @@ public class Bit {
      * @param array Specify the byte array.
      * @param bit   Specify the bit position.
      */
-    public static void SetBit(byte[] array, long bit) {
+    public static void setBit(byte[] array, long bit) {
         array[(int) (bit / 8)] |= (byte) (1 << (int) (bit % 8));
     }
 
@@ -48,7 +48,7 @@ public class Bit {
      * @param array Specify the byte array.
      * @param bit   Specify the bit position.
      */
-    public static void ClearBit(byte[] array, long bit) {
+    public static void clearBit(byte[] array, long bit) {
         array[(int) (bit / 8)] &= (byte) (~(1 << (int) (bit % 8)));
     }
 }

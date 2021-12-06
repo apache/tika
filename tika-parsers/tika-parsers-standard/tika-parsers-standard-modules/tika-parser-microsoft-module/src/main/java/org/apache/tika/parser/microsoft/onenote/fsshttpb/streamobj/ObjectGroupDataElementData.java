@@ -58,19 +58,19 @@ public class ObjectGroupDataElementData extends DataElementData {
      * @return A Byte list
      */
     @Override
-    public List<Byte> SerializeToByteList() {
+    public List<Byte> serializeToByteList() {
         List<Byte> result = new ArrayList<>();
 
         if (this.DataElementHash != null) {
-            result.addAll(this.DataElementHash.SerializeToByteList());
+            result.addAll(this.DataElementHash.serializeToByteList());
         }
 
-        result.addAll(this.ObjectGroupDeclarations.SerializeToByteList());
+        result.addAll(this.ObjectGroupDeclarations.serializeToByteList());
         if (this.ObjectMetadataDeclaration != null) {
-            result.addAll(this.ObjectMetadataDeclaration.SerializeToByteList());
+            result.addAll(this.ObjectMetadataDeclaration.serializeToByteList());
         }
 
-        result.addAll(this.ObjectGroupData.SerializeToByteList());
+        result.addAll(this.ObjectGroupData.serializeToByteList());
         return result;
     }
 
@@ -82,25 +82,25 @@ public class ObjectGroupDataElementData extends DataElementData {
      * @return The length of the element
      */
     @Override
-    public int DeserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex) {
+    public int deserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex) {
         AtomicInteger index = new AtomicInteger(startIndex);
 
         AtomicReference<DataElementHash> dataElementHash = new AtomicReference<>();
-        if (StreamObject.TryGetCurrent(byteArray, index, dataElementHash, DataElementHash.class)) {
+        if (StreamObject.tryGetCurrent(byteArray, index, dataElementHash, DataElementHash.class)) {
             this.DataElementHash = dataElementHash.get();
         }
 
         this.ObjectGroupDeclarations =
-                StreamObject.GetCurrent(byteArray, index, ObjectGroupDeclarations.class);
+                StreamObject.getCurrent(byteArray, index, ObjectGroupDeclarations.class);
 
         AtomicReference<ObjectGroupMetadataDeclarations> objectMetadataDeclaration =
                 new AtomicReference<>(new ObjectGroupMetadataDeclarations());
-        if (StreamObject.TryGetCurrent(byteArray, index, objectMetadataDeclaration,
+        if (StreamObject.tryGetCurrent(byteArray, index, objectMetadataDeclaration,
                 ObjectGroupMetadataDeclarations.class)) {
             this.ObjectMetadataDeclaration = objectMetadataDeclaration.get();
         }
 
-        this.ObjectGroupData = StreamObject.GetCurrent(byteArray, index, ObjectGroupData.class);
+        this.ObjectGroupData = StreamObject.getCurrent(byteArray, index, ObjectGroupData.class);
 
         return index.get() - startIndex;
     }
@@ -192,7 +192,7 @@ public class ObjectGroupDataElementData extends DataElementData {
             objectGroupObjectDeclare.ObjectPartitionID = new Compact64bitInt(1);
             objectGroupObjectDeclare.CellReferencesCount = new Compact64bitInt(0);
             objectGroupObjectDeclare.ObjectReferencesCount = new Compact64bitInt(0);
-            objectGroupObjectDeclare.ObjectDataSize = new Compact64bitInt(node.GetContent().size());
+            objectGroupObjectDeclare.ObjectDataSize = new Compact64bitInt(node.getContent().size());
 
             return objectGroupObjectDeclare;
         }
@@ -232,7 +232,7 @@ public class ObjectGroupDataElementData extends DataElementData {
             }
 
             objectData.ObjectExGUIDArray = new ExGUIDArray(extendedGuidList);
-            objectData.Data = new BinaryItem(node.SerializeToByteList());
+            objectData.Data = new BinaryItem(node.serializeToByteList());
 
             return objectData;
         }
@@ -258,7 +258,7 @@ public class ObjectGroupDataElementData extends DataElementData {
             }
 
             objectData.ObjectExGUIDArray = new ExGUIDArray(extendedGuidList);
-            objectData.Data = new BinaryItem(node.SerializeToByteList());
+            objectData.Data = new BinaryItem(node.serializeToByteList());
 
             return objectData;
         }

@@ -91,14 +91,14 @@ public class MSOneStorePackage {
     private final Set<String> authors = new HashSet<>();
     private final Set<String> mostRecentAuthors = new HashSet<>();
     private final Set<String> originalAuthors = new HashSet<>();
-    public StorageIndexDataElementData StorageIndex;
-    public StorageManifestDataElementData StorageManifest;
-    public CellManifestDataElementData HeaderCellCellManifest;
-    public RevisionManifestDataElementData HeaderCellRevisionManifest;
-    public List<RevisionManifestDataElementData> RevisionManifests;
-    public List<CellManifestDataElementData> CellManifests;
+    public StorageIndexDataElementData storageIndex;
+    public StorageManifestDataElementData storageManifest;
+    public CellManifestDataElementData headerCellCellManifest;
+    public RevisionManifestDataElementData headerCellRevisionManifest;
+    public List<RevisionManifestDataElementData> revisionManifests;
+    public List<CellManifestDataElementData> cellManifests;
     public HeaderCell headerCell;
-    public List<RevisionStoreObjectGroup> DataRoot;
+    public List<RevisionStoreObjectGroup> dataRoot;
     public List<RevisionStoreObjectGroup> OtherFileNodeList;
     private boolean mostRecentAuthorProp = false;
     private boolean originalAuthorProp = false;
@@ -107,8 +107,8 @@ public class MSOneStorePackage {
     private long lastModified = Long.MIN_VALUE;
 
     public MSOneStorePackage() {
-        this.RevisionManifests = new ArrayList<>();
-        this.CellManifests = new ArrayList<>();
+        this.revisionManifests = new ArrayList<>();
+        this.cellManifests = new ArrayList<>();
         this.OtherFileNodeList = new ArrayList<>();
     }
 
@@ -118,10 +118,10 @@ public class MSOneStorePackage {
      * @param cellID Specify the Cell ID.
      * @return Return the specific Storage Index Cell Mapping.
      */
-    public StorageIndexCellMapping FindStorageIndexCellMapping(CellID cellID) {
+    public StorageIndexCellMapping findStorageIndexCellMapping(CellID cellID) {
         StorageIndexCellMapping storageIndexCellMapping = null;
-        if (this.StorageIndex != null) {
-            storageIndexCellMapping = this.StorageIndex.StorageIndexCellMappingList.stream()
+        if (this.storageIndex != null) {
+            storageIndexCellMapping = this.storageIndex.storageIndexCellMappingList.stream()
                     .filter(s -> s.CellID.equals(cellID)).findFirst()
                     .orElse(new StorageIndexCellMapping());
         }
@@ -134,11 +134,11 @@ public class MSOneStorePackage {
      * @param revisionExtendedGUID Specify the Revision Mapping Extended GUID.
      * @return Return the instance of Storage Index Revision Mapping.
      */
-    public StorageIndexRevisionMapping FindStorageIndexRevisionMapping(
+    public StorageIndexRevisionMapping findStorageIndexRevisionMapping(
             ExGuid revisionExtendedGUID) {
         StorageIndexRevisionMapping instance = null;
-        if (this.StorageIndex != null) {
-            instance = this.StorageIndex.StorageIndexRevisionMappingList.stream()
+        if (this.storageIndex != null) {
+            instance = this.storageIndex.StorageIndexRevisionMappingList.stream()
                     .filter(r -> r.RevisionExGuid.equals(revisionExtendedGUID)).findFirst()
                     .orElse(new StorageIndexRevisionMapping());
         }
@@ -295,7 +295,7 @@ public class MSOneStorePackage {
     private long getScalar(IProperty property) throws TikaException {
         if (property instanceof FourBytesOfData) {
             FourBytesOfData fourBytesOfDataProp = (FourBytesOfData) property;
-            return BitConverter.ToUInt32(fourBytesOfDataProp.Data, 0);
+            return BitConverter.toUInt32(fourBytesOfDataProp.Data, 0);
         } else if (property instanceof EightBytesOfData) {
             EightBytesOfData fourBytesOfDataProp = (EightBytesOfData) property;
             return BitConverter.toInt64(fourBytesOfDataProp.Data, 0);

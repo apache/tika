@@ -27,6 +27,7 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
 public class PropertySetObject {
     public ObjectGroupObjectDeclare ObjectDeclaration;
     public ObjectSpaceObjectPropSet ObjectSpaceObjectPropSet;
+
     /**
      * Construct the PropertySetObject instance.
      *
@@ -37,7 +38,7 @@ public class PropertySetObject {
                              ObjectGroupObjectData objectData) {
         this.ObjectDeclaration = objectDeclaration;
         this.ObjectSpaceObjectPropSet = new ObjectSpaceObjectPropSet();
-        this.ObjectSpaceObjectPropSet.DoDeserializeFromByteArray(
+        this.ObjectSpaceObjectPropSet.doDeserializeFromByteArray(
                 ByteUtil.toByteArray(objectData.Data.Content), 0);
     }
 }

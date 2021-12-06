@@ -34,10 +34,10 @@ public class CompactID {
      *
      * @return Return the byte list which store the byte information of CompactID.
      */
-    public List<Byte> SerializeToByteList() {
+    public List<Byte> serializeToByteList() {
         BitWriter bitWriter = new BitWriter(4);
-        bitWriter.AppendUInit32((int) this.N, 8);
-        bitWriter.AppendUInit32((int) this.GuidIndex, 24);
+        bitWriter.appendUInit32((int) this.N, 8);
+        bitWriter.appendUInit32((int) this.GuidIndex, 24);
 
         return bitWriter.getByteList();
     }
@@ -49,10 +49,10 @@ public class CompactID {
      * @param startIndex Specify the start index from the byte array.
      * @return Return the length in byte of the CompactID object.
      */
-    public int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         BitReader bitReader = new BitReader(byteArray, startIndex);
-        this.N = bitReader.ReadUInt32(8);
-        this.GuidIndex = bitReader.ReadUInt32(24);
+        this.N = bitReader.readUInt32(8);
+        this.GuidIndex = bitReader.readUInt32(24);
         return 4;
     }
 }

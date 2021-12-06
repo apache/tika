@@ -47,7 +47,7 @@ public class StorageManifestSchemaGUID extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         byte[] temp = Arrays.copyOf(byteArray, 16);
@@ -69,8 +69,9 @@ public class StorageManifestSchemaGUID extends StreamObject {
      * @return A constant value 16
      */
     @Override
-    protected int SerializeItemsToByteList(List<Byte> byteList) {
-        byteList.addAll(ByteUtil.toListOfByte(this.guid.toString().getBytes(StandardCharsets.UTF_8)));
+    protected int serializeItemsToByteList(List<Byte> byteList) {
+        byteList.addAll(
+                ByteUtil.toListOfByte(this.guid.toString().getBytes(StandardCharsets.UTF_8)));
         return 16;
     }
 }

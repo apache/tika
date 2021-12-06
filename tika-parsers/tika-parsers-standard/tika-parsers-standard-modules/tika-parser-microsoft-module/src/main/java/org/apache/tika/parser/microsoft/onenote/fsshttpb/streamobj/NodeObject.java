@@ -39,5 +39,5 @@ public abstract class NodeObject extends StreamObject {
      *
      * @return Return the byte list of node object content.
      */
-    public abstract List<Byte> GetContent();
+    public abstract List<Byte> getContent();
 }

@@ -44,14 +44,14 @@ public class DataSizeObject extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems) {
         if (lengthOfItems != 8) {
             throw new StreamObjectParseErrorException(currentIndex.get(), "DataSize",
                     "Stream Object over-parse error", null);
         }
 
-        this.DataSize = LittleEndianBitConverter.ToUInt64(byteArray, currentIndex.get());
+        this.DataSize = LittleEndianBitConverter.toUInt64(byteArray, currentIndex.get());
         currentIndex.addAndGet(8);
     }
 
@@ -62,9 +62,9 @@ public class DataSizeObject extends StreamObject {
      * @return A constant value 8
      */
     @Override
-    protected int SerializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) {
         ByteUtil.appendByteArrayToListOfByte(byteList,
-                LittleEndianBitConverter.GetBytes(this.DataSize));
+                LittleEndianBitConverter.getBytes(this.DataSize));
         return 8;
     }
 }

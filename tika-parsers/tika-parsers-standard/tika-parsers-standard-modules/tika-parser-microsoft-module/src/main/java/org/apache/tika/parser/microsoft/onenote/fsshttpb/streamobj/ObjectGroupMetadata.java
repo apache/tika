@@ -52,7 +52,7 @@ public class ObjectGroupMetadata extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.ObjectChangeFrequency = BasicObject.parse(byteArray, index, Compact64bitInt.class);
@@ -72,8 +72,8 @@ public class ObjectGroupMetadata extends StreamObject {
      * @return The number of elements actually contained in the list
      */
     @Override
-    protected int SerializeItemsToByteList(List<Byte> byteList) {
-        List<Byte> tmpList = this.ObjectChangeFrequency.SerializeToByteList();
+    protected int serializeItemsToByteList(List<Byte> byteList) {
+        List<Byte> tmpList = this.ObjectChangeFrequency.serializeToByteList();
         byteList.addAll(tmpList);
         return tmpList.size();
     }

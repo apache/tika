@@ -90,27 +90,27 @@ public class ExGuid extends BasicObject {
      * @return Return the byte list which store the byte information of ExGuid.
      */
     @Override
-    public List<Byte> SerializeToByteList() {
+    public List<Byte> serializeToByteList() {
         BitWriter bitWriter = new BitWriter(21);
 
         if (this.guid.equals(GuidUtil.emptyGuid())) {
-            bitWriter.AppendUInit32(0, 8);
+            bitWriter.appendUInit32(0, 8);
         } else if (this.value >= 0x00 && this.value <= 0x1F) {
-            bitWriter.AppendUInit32(ExtendedGUID5BitUintType, 3);
-            bitWriter.AppendUInit32(this.value, 5);
-            bitWriter.AppendGUID(this.guid);
+            bitWriter.appendUInit32(ExtendedGUID5BitUintType, 3);
+            bitWriter.appendUInit32(this.value, 5);
+            bitWriter.appendGUID(this.guid);
         } else if (this.value >= 0x20 && this.value <= 0x3FF) {
-            bitWriter.AppendUInit32(ExtendedGUID10BitUintType, 6);
-            bitWriter.AppendUInit32(this.value, 10);
-            bitWriter.AppendGUID(this.guid);
+            bitWriter.appendUInit32(ExtendedGUID10BitUintType, 6);
+            bitWriter.appendUInit32(this.value, 10);
+            bitWriter.appendGUID(this.guid);
         } else if (this.value >= 0x400 && this.value <= 0x1FFFF) {
-            bitWriter.AppendUInit32(ExtendedGUID17BitUintType, 7);
-            bitWriter.AppendUInit32(this.value, 17);
-            bitWriter.AppendGUID(this.guid);
+            bitWriter.appendUInit32(ExtendedGUID17BitUintType, 7);
+            bitWriter.appendUInit32(this.value, 17);
+            bitWriter.appendGUID(this.guid);
         } else if (this.value >= 0x20000) {
-            bitWriter.AppendUInit32(ExtendedGUID32BitUintType, 8);
-            bitWriter.AppendUInit32(this.value, 32);
-            bitWriter.AppendGUID(this.guid);
+            bitWriter.appendUInit32(ExtendedGUID32BitUintType, 8);
+            bitWriter.appendUInit32(this.value, 32);
+            bitWriter.appendGUID(this.guid);
         }
 
         return bitWriter.getByteList();
@@ -152,10 +152,10 @@ public class ExGuid extends BasicObject {
      * @return Return the length in byte of the ExGuid basic object.
      */
     @Override
-    protected int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         BitReader bitReader = new BitReader(byteArray, startIndex);
         int numberOfContinousZeroBit = 0;
-        while (numberOfContinousZeroBit < 8 && bitReader.MoveNext()) {
+        while (numberOfContinousZeroBit < 8 && bitReader.moveNext()) {
             if (!bitReader.getCurrent()) {
                 numberOfContinousZeroBit++;
             } else {
@@ -165,26 +165,26 @@ public class ExGuid extends BasicObject {
 
         switch (numberOfContinousZeroBit) {
             case 2:
-                this.value = bitReader.ReadUInt32(5);
-                this.guid = bitReader.ReadGuid();
+                this.value = bitReader.readUInt32(5);
+                this.guid = bitReader.readGuid();
                 this.type = ExtendedGUID5BitUintType;
                 return 17;
 
             case 5:
-                this.value = bitReader.ReadUInt32(10);
-                this.guid = bitReader.ReadGuid();
+                this.value = bitReader.readUInt32(10);
+                this.guid = bitReader.readGuid();
                 this.type = ExtendedGUID10BitUintType;
                 return 18;
 
             case 6:
-                this.value = bitReader.ReadUInt32(17);
-                this.guid = bitReader.ReadGuid();
+                this.value = bitReader.readUInt32(17);
+                this.guid = bitReader.readGuid();
                 this.type = ExtendedGUID17BitUintType;
                 return 19;
 
             case 7:
-                this.value = bitReader.ReadUInt32(32);
-                this.guid = bitReader.ReadGuid();
+                this.value = bitReader.readUInt32(32);
+                this.guid = bitReader.readGuid();
                 this.type = ExtendedGUID32BitUintType;
                 return 21;
 

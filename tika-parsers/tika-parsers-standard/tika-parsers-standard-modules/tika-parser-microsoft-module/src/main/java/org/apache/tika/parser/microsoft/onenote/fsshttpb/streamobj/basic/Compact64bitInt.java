@@ -81,6 +81,7 @@ public class Compact64bitInt extends BasicObject {
     public Compact64bitInt(long decodedValue) {
         this.decodedValue = decodedValue;
     }
+
     /**
      * Initializes a new instance of the Compact64bitInt class, this is the default constructor.
      */
@@ -94,35 +95,35 @@ public class Compact64bitInt extends BasicObject {
      * @return Return the byte list which store the byte information of Compact64bitInt.
      */
     @Override
-    public List<Byte> SerializeToByteList() {
+    public List<Byte> serializeToByteList() {
         BitWriter bitWriter = new BitWriter(9);
 
         if (this.decodedValue == 0) {
-            bitWriter.AppendUInt64(0, 8);
+            bitWriter.appendUInt64(0, 8);
         } else if (this.decodedValue >= 0x01 && this.decodedValue <= 0x7F) {
-            bitWriter.AppendUInt64(CompactUint7bitType, 1);
-            bitWriter.AppendUInt64(this.decodedValue, 7);
+            bitWriter.appendUInt64(CompactUint7bitType, 1);
+            bitWriter.appendUInt64(this.decodedValue, 7);
         } else if (this.decodedValue >= 0x0080 && this.decodedValue <= 0x3FFF) {
-            bitWriter.AppendUInt64(CompactUint14bitType, 2);
-            bitWriter.AppendUInt64(this.decodedValue, 14);
+            bitWriter.appendUInt64(CompactUint14bitType, 2);
+            bitWriter.appendUInt64(this.decodedValue, 14);
         } else if (this.decodedValue >= 0x004000 && this.decodedValue <= 0x1FFFFF) {
-            bitWriter.AppendUInt64(CompactUint21bitType, 3);
-            bitWriter.AppendUInt64(this.decodedValue, 21);
+            bitWriter.appendUInt64(CompactUint21bitType, 3);
+            bitWriter.appendUInt64(this.decodedValue, 21);
         } else if (this.decodedValue >= 0x0200000 && this.decodedValue <= 0xFFFFFFF) {
-            bitWriter.AppendUInt64(CompactUint28bitType, 4);
-            bitWriter.AppendUInt64(this.decodedValue, 28);
+            bitWriter.appendUInt64(CompactUint28bitType, 4);
+            bitWriter.appendUInt64(this.decodedValue, 28);
         } else if (this.decodedValue >= 0x010000000 && this.decodedValue <= 0x7FFFFFFFFL) {
-            bitWriter.AppendUInt64(CompactUint35bitType, 5);
-            bitWriter.AppendUInt64(this.decodedValue, 35);
+            bitWriter.appendUInt64(CompactUint35bitType, 5);
+            bitWriter.appendUInt64(this.decodedValue, 35);
         } else if (this.decodedValue >= 0x00800000000L && this.decodedValue <= 0x3FFFFFFFFFFL) {
-            bitWriter.AppendUInt64(CompactUint42bitType, 6);
-            bitWriter.AppendUInt64(this.decodedValue, 42);
+            bitWriter.appendUInt64(CompactUint42bitType, 6);
+            bitWriter.appendUInt64(this.decodedValue, 42);
         } else if (this.decodedValue >= 0x0040000000000L && this.decodedValue <= 0x1FFFFFFFFFFFFL) {
-            bitWriter.AppendUInt64(CompactUint49bitType, 7);
-            bitWriter.AppendUInt64(this.decodedValue, 49);
+            bitWriter.appendUInt64(CompactUint49bitType, 7);
+            bitWriter.appendUInt64(this.decodedValue, 49);
         } else if (this.decodedValue >= 0x0002000000000000L) {
-            bitWriter.AppendUInt64(CompactUint64bitType, 8);
-            bitWriter.AppendUInt64(this.decodedValue, 64);
+            bitWriter.appendUInt64(CompactUint64bitType, 8);
+            bitWriter.appendUInt64(this.decodedValue, 64);
         }
         return bitWriter.getByteList();
     }
@@ -136,12 +137,12 @@ public class Compact64bitInt extends BasicObject {
      * @return Return the length in byte of the Compact64bitInt basic object.
      */
     @Override
-    protected int DoDeserializeFromByteArray(byte[] byteArray,
+    protected int doDeserializeFromByteArray(byte[] byteArray,
                                              int startIndex) // return the length consumed
     {
         BitReader bitReader = new BitReader(byteArray, startIndex);
         int numberOfContinousZeroBit = 0;
-        while (numberOfContinousZeroBit < 8 && bitReader.MoveNext()) {
+        while (numberOfContinousZeroBit < 8 && bitReader.moveNext()) {
             if (!bitReader.getCurrent()) {
                 numberOfContinousZeroBit++;
             } else {
@@ -151,42 +152,42 @@ public class Compact64bitInt extends BasicObject {
 
         switch (numberOfContinousZeroBit) {
             case 0:
-                this.decodedValue = bitReader.ReadUInt64(7);
+                this.decodedValue = bitReader.readUInt64(7);
                 this.type = CompactUint7bitType;
                 return 1;
 
             case 1:
-                this.decodedValue = bitReader.ReadUInt64(14);
+                this.decodedValue = bitReader.readUInt64(14);
                 this.type = CompactUint14bitType;
                 return 2;
 
             case 2:
-                this.decodedValue = bitReader.ReadUInt64(21);
+                this.decodedValue = bitReader.readUInt64(21);
                 this.type = CompactUint21bitType;
                 return 3;
 
             case 3:
-                this.decodedValue = bitReader.ReadUInt64(28);
+                this.decodedValue = bitReader.readUInt64(28);
                 this.type = CompactUint28bitType;
                 return 4;
 
             case 4:
-                this.decodedValue = bitReader.ReadUInt64(35);
+                this.decodedValue = bitReader.readUInt64(35);
                 this.type = CompactUint35bitType;
                 return 5;
 
             case 5:
-                this.decodedValue = bitReader.ReadUInt64(42);
+                this.decodedValue = bitReader.readUInt64(42);
                 this.type = CompactUint42bitType;
                 return 6;
 
             case 6:
-                this.decodedValue = bitReader.ReadUInt64(49);
+                this.decodedValue = bitReader.readUInt64(49);
                 this.type = CompactUint49bitType;
                 return 7;
 
             case 7:
-                this.decodedValue = bitReader.ReadUInt64(64);
+                this.decodedValue = bitReader.readUInt64(64);
                 this.type = CompactUint64bitType;
                 return 9;
 

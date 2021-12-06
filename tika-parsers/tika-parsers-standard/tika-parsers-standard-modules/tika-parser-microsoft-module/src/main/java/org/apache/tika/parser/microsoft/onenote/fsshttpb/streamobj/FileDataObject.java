@@ -20,8 +20,8 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 /**
  * This class is used to represent the file data.
  */
-public class FileDataObject {
-    public ObjectGroupObjectBLOBDataDeclaration ObjectDataBLOBDeclaration;
-    public ObjectGroupObjectDataBLOBReference ObjectDataBLOBReference;
-    public DataElement ObjectDataBLOBDataElement;
+class FileDataObject {
+    public ObjectGroupObjectBLOBDataDeclaration objectDataBLOBDeclaration;
+    public ObjectGroupObjectDataBLOBReference objectDataBLOBReference;
+    public DataElement objectDataBLOBDataElement;
 }

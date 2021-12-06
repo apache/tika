@@ -48,29 +48,29 @@ public class AlternativePackaging {
      * @param startIndex Specify the start index from the byte array.
      * @return Return the length in byte of the Alternative Packaging object.
      */
-    public int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         AtomicInteger index = new AtomicInteger(startIndex);
-        this.guidFileType = AdapterHelper.ReadGuid(byteArray, index.get());
+        this.guidFileType = AdapterHelper.readGuid(byteArray, index.get());
         index.addAndGet(16);
-        this.guidFile = AdapterHelper.ReadGuid(byteArray, index.get());
+        this.guidFile = AdapterHelper.readGuid(byteArray, index.get());
         index.addAndGet(16);
-        this.guidLegacyFileVersion = AdapterHelper.ReadGuid(byteArray, index.get());
+        this.guidLegacyFileVersion = AdapterHelper.readGuid(byteArray, index.get());
         index.addAndGet(16);
-        this.guidFileFormat = AdapterHelper.ReadGuid(byteArray, index.get());
+        this.guidFileFormat = AdapterHelper.readGuid(byteArray, index.get());
         index.addAndGet(16);
-        this.rgbReserved = BitConverter.ToUInt32(byteArray, index.get());
+        this.rgbReserved = BitConverter.toUInt32(byteArray, index.get());
         index.addAndGet(4);
         this.packagingStart = new StreamObjectHeaderStart32bit();
-        this.packagingStart.DeserializeFromByteArray(byteArray, index.get());
+        this.packagingStart.deserializeFromByteArray(byteArray, index.get());
         index.addAndGet(4);
         this.storageIndexExtendedGUID = BasicObject.parse(byteArray, index, ExGuid.class);
-        this.guidCellSchemaId = AdapterHelper.ReadGuid(byteArray, index.get());
+        this.guidCellSchemaId = AdapterHelper.readGuid(byteArray, index.get());
         index.addAndGet(16);
         AtomicReference<DataElementPackage> pkg = new AtomicReference<>();
-        StreamObject.TryGetCurrent(byteArray, index, pkg, DataElementPackage.class);
+        StreamObject.tryGetCurrent(byteArray, index, pkg, DataElementPackage.class);
         this.dataElementPackage = pkg.get();
         this.packagingEnd = new StreamObjectHeaderEnd16bit();
-        this.packagingEnd.DeserializeFromByteArray(byteArray, index.get());
+        this.packagingEnd.deserializeFromByteArray(byteArray, index.get());
         index.addAndGet(2);
 
         return index.get() - startIndex;

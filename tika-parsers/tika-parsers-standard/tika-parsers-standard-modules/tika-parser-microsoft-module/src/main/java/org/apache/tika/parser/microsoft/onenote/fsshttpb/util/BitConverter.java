@@ -78,12 +78,12 @@ public class BitConverter {
                     "The length of the byte array must be at least 4 bytes long.");
         }
         byte[] int32Bytes = Arrays.copyOfRange(bytes, index, index + 4);
-        return LittleEndianBitConverter.ToInt32(int32Bytes, 0);
+        return LittleEndianBitConverter.toInt32(int32Bytes, 0);
     }
 
-    public static long ToUInt32(byte[] bytes, int index) {
+    public static long toUInt32(byte[] bytes, int index) {
         byte[] uint32Bytes = Arrays.copyOfRange(bytes, index, index + 4);
-        return LittleEndianBitConverter.ToUInt32(uint32Bytes, 0);
+        return LittleEndianBitConverter.toUInt32(uint32Bytes, 0);
     }
 
     public static long toInt64(byte[] bytes, int index) {
@@ -92,7 +92,7 @@ public class BitConverter {
                     "The length of the byte array must be at least 8 bytes long.");
         }
         byte[] uint64Bytes = Arrays.copyOfRange(bytes, index, index + 8);
-        return LittleEndianBitConverter.ToUInt64(uint64Bytes, 0);
+        return LittleEndianBitConverter.toUInt64(uint64Bytes, 0);
     }
 
     public static float toSingle(byte[] bytes, int index) {

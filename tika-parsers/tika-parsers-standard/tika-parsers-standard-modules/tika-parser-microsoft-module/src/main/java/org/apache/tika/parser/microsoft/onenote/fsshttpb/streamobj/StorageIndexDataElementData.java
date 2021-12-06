@@ -26,7 +26,7 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.exception.DataElementPa
 
 public class StorageIndexDataElementData extends DataElementData {
     public StorageIndexManifestMapping StorageIndexManifestMapping;
-    public List<StorageIndexCellMapping> StorageIndexCellMappingList;
+    public List<StorageIndexCellMapping> storageIndexCellMappingList;
     public List<StorageIndexRevisionMapping> StorageIndexRevisionMappingList;
 
     /**
@@ -34,7 +34,7 @@ public class StorageIndexDataElementData extends DataElementData {
      */
     public StorageIndexDataElementData() {
         this.StorageIndexManifestMapping = new StorageIndexManifestMapping();
-        this.StorageIndexCellMappingList = new ArrayList<>();
+        this.storageIndexCellMappingList = new ArrayList<>();
         this.StorageIndexRevisionMappingList = new ArrayList<>();
     }
 
@@ -44,23 +44,23 @@ public class StorageIndexDataElementData extends DataElementData {
      * @return A Byte list
      */
     @Override
-    public List<Byte> SerializeToByteList() {
+    public List<Byte> serializeToByteList() {
         List<Byte> byteList = new ArrayList<>();
 
         if (this.StorageIndexManifestMapping != null) {
-            byteList.addAll(this.StorageIndexManifestMapping.SerializeToByteList());
+            byteList.addAll(this.StorageIndexManifestMapping.serializeToByteList());
         }
 
-        if (this.StorageIndexCellMappingList != null) {
-            for (StorageIndexCellMapping cellMapping : this.StorageIndexCellMappingList) {
-                byteList.addAll(cellMapping.SerializeToByteList());
+        if (this.storageIndexCellMappingList != null) {
+            for (StorageIndexCellMapping cellMapping : this.storageIndexCellMappingList) {
+                byteList.addAll(cellMapping.serializeToByteList());
             }
         }
 
         // Storage Index Revision Mapping
         if (this.StorageIndexRevisionMappingList != null) {
             for (StorageIndexRevisionMapping revisionMapping : this.StorageIndexRevisionMappingList) {
-                byteList.addAll(revisionMapping.SerializeToByteList());
+                byteList.addAll(revisionMapping.serializeToByteList());
             }
         }
 
@@ -75,12 +75,12 @@ public class StorageIndexDataElementData extends DataElementData {
      * @return The length of the element
      */
     @Override
-    public int DeserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex) {
+    public int deserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex) {
         AtomicInteger index = new AtomicInteger(startIndex);
         int headerLength = 0;
         AtomicReference<StreamObjectHeaderStart> header = new AtomicReference<>();
         boolean isStorageIndexManifestMappingExist = false;
-        while ((headerLength = StreamObjectHeaderStart.TryParse(byteArray, index.get(), header)) !=
+        while ((headerLength = StreamObjectHeaderStart.tryParse(byteArray, index.get(), header)) !=
                 0) {
             index.addAndGet(headerLength);
             if (header.get().type == StreamObjectTypeHeaderStart.StorageIndexManifestMapping) {
@@ -91,17 +91,17 @@ public class StorageIndexDataElementData extends DataElementData {
                 }
 
                 this.StorageIndexManifestMapping =
-                        (StorageIndexManifestMapping) StreamObject.ParseStreamObject(header.get(),
+                        (StorageIndexManifestMapping) StreamObject.parseStreamObject(header.get(),
                                 byteArray, index);
                 isStorageIndexManifestMappingExist = true;
             } else if (header.get().type == StreamObjectTypeHeaderStart.StorageIndexCellMapping) {
-                this.StorageIndexCellMappingList.add(
-                        (StorageIndexCellMapping) StreamObject.ParseStreamObject(header.get(),
+                this.storageIndexCellMappingList.add(
+                        (StorageIndexCellMapping) StreamObject.parseStreamObject(header.get(),
                                 byteArray, index));
             } else if (header.get().type ==
                     StreamObjectTypeHeaderStart.StorageIndexRevisionMapping) {
                 this.StorageIndexRevisionMappingList.add(
-                        (StorageIndexRevisionMapping) StreamObject.ParseStreamObject(header.get(),
+                        (StorageIndexRevisionMapping) StreamObject.parseStreamObject(header.get(),
                                 byteArray, index));
             } else {
                 throw new DataElementParseErrorException(index.get() - headerLength,

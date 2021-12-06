@@ -59,7 +59,7 @@ public class RDCAnalysisChunking extends AbstractChunking {
      * @return A list of LeafNodeObjectData.
      */
     @Override
-    public List<LeafNodeObject> Chunking() {
+    public List<LeafNodeObject> chunking() {
         int horizon = 16384;
         List<LeafNodeObject> list = new ArrayList<>();
         int inputLength = FileContent.length;
@@ -67,12 +67,12 @@ public class RDCAnalysisChunking extends AbstractChunking {
         if (inputLength <= 0) {
             throw new RuntimeException("Cannot support the length less than 0");
         } else if (inputLength <= horizon) {
-            list.add(this.GetChunk(0, inputLength));
+            list.add(this.getChunk(0, inputLength));
             return list;
         }
 
         long chunkStart = 0;
-        UInteger[] hashValues = this.GetHashValues();
+        UInteger[] hashValues = this.getHashValues();
 
         while (chunkStart + 1 < inputLength) {
             long chunkEndMax = Math.min(chunkStart + this.maxChunkSize, inputLength);
@@ -121,7 +121,7 @@ public class RDCAnalysisChunking extends AbstractChunking {
                 break;
             }
 
-            list.add(this.GetChunk(chunkStart, chunkEnd));
+            list.add(this.getChunk(chunkStart, chunkEnd));
             chunkStart = chunkEnd;
         }
 
@@ -135,7 +135,7 @@ public class RDCAnalysisChunking extends AbstractChunking {
      * @param chunkEnd   The end index of the chunk.
      * @return An LeafNodeObjectData which contains a chunk.
      */
-    private LeafNodeObject GetChunk(long chunkStart, long chunkEnd) {
+    private LeafNodeObject getChunk(long chunkStart, long chunkEnd) {
         if (chunkEnd <= chunkStart || (chunkEnd - chunkStart > this.maxChunkSize) ||
                 chunkStart > Integer.MAX_VALUE) {
             throw new RuntimeException("ChunkStart out of range");
@@ -162,10 +162,10 @@ public class RDCAnalysisChunking extends AbstractChunking {
      *
      * @return The array of hash value.
      */
-    private UInteger[] GetHashValues() {
+    private UInteger[] getHashValues() {
         int hashWindowSize = 48;
         UInteger[] hashValues = new UInteger[this.FileContent.length];
-        int shiftAmount = this.GetShiftAmount(hashWindowSize);
+        int shiftAmount = this.getShiftAmount(hashWindowSize);
         int i = 0;
 
         int[] lookupTable =
@@ -234,7 +234,7 @@ public class RDCAnalysisChunking extends AbstractChunking {
      * @param hashWindowSize The value of hash window size.
      * @return The value of shift amount.
      */
-    private int GetShiftAmount(int hashWindowSize) {
+    private int getShiftAmount(int hashWindowSize) {
         int shiftAmount = 1;
         int i = 32;
 

@@ -47,14 +47,14 @@ public class LeafNodeObject extends NodeObject {
      * @return Return the byte list of intermediate node object content.
      */
     @Override
-    public List<Byte> GetContent() {
+    public List<Byte> getContent() {
         List<Byte> content = new ArrayList<Byte>();
 
         if (this.DataNodeObjectData != null) {
             ByteUtil.appendByteArrayToListOfByte(content, this.DataNodeObjectData.ObjectData);
         } else if (this.IntermediateNodeObjectList != null) {
             for (LeafNodeObject intermediateNode : this.IntermediateNodeObjectList) {
-                content.addAll(intermediateNode.GetContent());
+                content.addAll(intermediateNode.getContent());
             }
         } else {
             throw new RuntimeException(
@@ -73,7 +73,7 @@ public class LeafNodeObject extends NodeObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         if (lengthOfItems != 0) {
@@ -81,14 +81,14 @@ public class LeafNodeObject extends NodeObject {
                     "Stream Object over-parse error", null);
         }
 
-        this.Signature = StreamObject.GetCurrent(byteArray, index, SignatureObject.class);
-        this.DataSize = StreamObject.GetCurrent(byteArray, index, DataSizeObject.class);
+        this.Signature = StreamObject.getCurrent(byteArray, index, SignatureObject.class);
+        this.DataSize = StreamObject.getCurrent(byteArray, index, DataSizeObject.class);
 
         // Try to read StreamObjectHeaderStart to see there is data hash object or not
         AtomicReference<StreamObjectHeaderStart> streamObjectHeader = new AtomicReference<>();
-        if ((StreamObjectHeaderStart.TryParse(byteArray, index.get(), streamObjectHeader)) != 0) {
+        if ((StreamObjectHeaderStart.tryParse(byteArray, index.get(), streamObjectHeader)) != 0) {
             if (streamObjectHeader.get().type == StreamObjectTypeHeaderStart.DataHashObject) {
-                this.DataHash = StreamObject.GetCurrent(byteArray, index, DataHashObject.class);
+                this.DataHash = StreamObject.getCurrent(byteArray, index, DataHashObject.class);
             }
         }
 
@@ -102,9 +102,9 @@ public class LeafNodeObject extends NodeObject {
      * @return A constant value
      */
     @Override
-    protected int SerializeItemsToByteList(List<Byte> byteList) {
-        byteList.addAll(this.Signature.SerializeToByteList());
-        byteList.addAll(this.DataSize.SerializeToByteList());
+    protected int serializeItemsToByteList(List<Byte> byteList) {
+        byteList.addAll(this.Signature.serializeToByteList());
+        byteList.addAll(this.DataSize.serializeToByteList());
         return 0;
     }
 
@@ -122,13 +122,12 @@ public class LeafNodeObject extends NodeObject {
          */
         public LeafNodeObject Build(List<ObjectGroupDataElementData> objectGroupList,
                                     ObjectGroupObjectData dataObj,
-                                    org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid
-                                            intermediateGuid) {
+                                    ExGuid intermediateGuid) {
             AtomicReference<LeafNodeObject> node = new AtomicReference<>();
             AtomicReference<IntermediateNodeObject> rootNode = new AtomicReference<>();
 
             AtomicInteger index = new AtomicInteger(0);
-            if (StreamObject.TryGetCurrent(ByteUtil.toByteArray(dataObj.Data.Content), index, node,
+            if (StreamObject.tryGetCurrent(ByteUtil.toByteArray(dataObj.Data.Content), index, node,
                     LeafNodeObject.class)) {
                 if (dataObj.ObjectExGUIDArray == null) {
                     throw new RuntimeException(
@@ -164,7 +163,7 @@ public class LeafNodeObject extends NodeObject {
                                         intermediateData, extGuid));
                     }
                 }
-            } else if (StreamObject.TryGetCurrent(ByteUtil.toByteArray(dataObj.Data.Content), index,
+            } else if (StreamObject.tryGetCurrent(ByteUtil.toByteArray(dataObj.Data.Content), index,
                     rootNode, IntermediateNodeObject.class)) {
                 // In Sub chunking for larger than 1MB zip file, MOSS2010 could return IntermediateNodeObject.
                 // For easy further process, the rootNode will be replaced by intermediate node instead.

@@ -51,7 +51,7 @@ public class ObjectGroupObjectDataBLOBReference extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.ObjectExtendedGUIDArray = BasicObject.parse(byteArray, index, ExGUIDArray.class);
@@ -73,11 +73,11 @@ public class ObjectGroupObjectDataBLOBReference extends StreamObject {
      * @return The number of the elements
      */
     @Override
-    protected int SerializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) {
         int itemsIndex = byteList.size();
-        byteList.addAll(this.ObjectExtendedGUIDArray.SerializeToByteList());
-        byteList.addAll(cellIDArray.SerializeToByteList());
-        byteList.addAll(this.BLOBExtendedGUID.SerializeToByteList());
+        byteList.addAll(this.ObjectExtendedGUIDArray.serializeToByteList());
+        byteList.addAll(cellIDArray.serializeToByteList());
+        byteList.addAll(this.BLOBExtendedGUID.serializeToByteList());
         return byteList.size() - itemsIndex;
     }
 }

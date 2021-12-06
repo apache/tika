@@ -41,5 +41,5 @@ public abstract class AbstractChunking {
      *
      * @return A list of LeafNodeObjectData.
      */
-    public abstract List<LeafNodeObject> Chunking();
+    public abstract List<LeafNodeObject> chunking();
 }

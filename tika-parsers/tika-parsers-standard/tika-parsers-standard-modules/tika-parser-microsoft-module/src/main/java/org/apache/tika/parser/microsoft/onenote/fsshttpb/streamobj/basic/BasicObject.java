@@ -37,7 +37,7 @@ public abstract class BasicObject implements IFSSHTTPBSerializable {
                                                   Class<T> clazz) {
         try {
             T fsshttpbObject = clazz.newInstance();
-            index.addAndGet(fsshttpbObject.DeserializeFromByteArray(byteArray, index.get()));
+            index.addAndGet(fsshttpbObject.deserializeFromByteArray(byteArray, index.get()));
 
             return fsshttpbObject;
         } catch (InstantiationException | IllegalAccessException e) {
@@ -52,8 +52,8 @@ public abstract class BasicObject implements IFSSHTTPBSerializable {
      * @param startIndex The start position.
      * @return The element length.
      */
-    public int DeserializeFromByteArray(byte[] byteArray, int startIndex) {
-        return this.DoDeserializeFromByteArray(byteArray, startIndex);
+    public int deserializeFromByteArray(byte[] byteArray, int startIndex) {
+        return this.doDeserializeFromByteArray(byteArray, startIndex);
     }
 
     /**
@@ -61,7 +61,7 @@ public abstract class BasicObject implements IFSSHTTPBSerializable {
      *
      * @return The byte list.
      */
-    public abstract List<Byte> SerializeToByteList();
+    public abstract List<Byte> serializeToByteList();
 
     /**
      * Used to return the length of this element.
@@ -70,5 +70,5 @@ public abstract class BasicObject implements IFSSHTTPBSerializable {
      * @param startIndex The start position.
      * @return The element length
      */
-    protected abstract int DoDeserializeFromByteArray(byte[] byteArray, int startIndex);
+    protected abstract int doDeserializeFromByteArray(byte[] byteArray, int startIndex);
 }

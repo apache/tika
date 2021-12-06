@@ -38,8 +38,8 @@ public class LittleEndianBitConverter {
      * @return Returns a 16-bit unsigned integer formed by two bytes beginning at startIndex.
      */
     public static short ToUInt16(byte[] array, int index) {
-        CheckByteArgument(array, index, 2);
-        return (short) ConvertFromBytes(array, index, 2);
+        checkByteArgument(array, index, 2);
+        return (short) convertFromBytes(array, index, 2);
     }
 
     /**
@@ -49,9 +49,9 @@ public class LittleEndianBitConverter {
      * @param index Specify the starting position.
      * @return Returns a 32-bit unsigned integer formed by two bytes beginning at startIndex.
      */
-    public static int ToUInt32(byte[] array, int index) {
-        CheckByteArgument(array, index, 4);
-        return (int) ConvertFromBytes(array, index, 4);
+    public static int toUInt32(byte[] array, int index) {
+        checkByteArgument(array, index, 4);
+        return (int) convertFromBytes(array, index, 4);
     }
 
     /**
@@ -61,9 +61,9 @@ public class LittleEndianBitConverter {
      * @param index Specify the starting position.
      * @return Returns a 32-bit signed integer formed by two bytes beginning at startIndex.
      */
-    public static int ToInt32(byte[] array, int index) {
-        CheckByteArgument(array, index, 4);
-        return (int) ConvertFromBytes(array, index, 4);
+    public static int toInt32(byte[] array, int index) {
+        checkByteArgument(array, index, 4);
+        return (int) convertFromBytes(array, index, 4);
     }
 
     /**
@@ -73,9 +73,9 @@ public class LittleEndianBitConverter {
      * @param index Specify the starting position.
      * @return Returns a 16-bit signed integer formed by two bytes beginning at startIndex.
      */
-    public static short ToInt16(byte[] array, int index) {
-        CheckByteArgument(array, index, 4);
-        return (short) ConvertFromBytes(array, index, 2);
+    public static short toInt16(byte[] array, int index) {
+        checkByteArgument(array, index, 4);
+        return (short) convertFromBytes(array, index, 2);
     }
 
     /**
@@ -85,9 +85,9 @@ public class LittleEndianBitConverter {
      * @param index Specify the starting position.
      * @return Returns a 64-bit unsigned integer formed by two bytes beginning at startIndex.
      */
-    public static long ToUInt64(byte[] array, int index) {
-        CheckByteArgument(array, index, 8);
-        return ConvertFromBytes(array, index, 8);
+    public static long toUInt64(byte[] array, int index) {
+        checkByteArgument(array, index, 8);
+        return convertFromBytes(array, index, 8);
     }
 
     /**
@@ -96,9 +96,9 @@ public class LittleEndianBitConverter {
      * @param value Specify the number to convert.
      * @return Returns an array of bytes with length 8.
      */
-    public static byte[] GetBytes(long value) {
+    public static byte[] getBytes(long value) {
         byte[] buffer = new byte[8];
-        ConvertToBytes(value, buffer);
+        convertToBytes(value, buffer);
         return buffer;
     }
 
@@ -108,9 +108,9 @@ public class LittleEndianBitConverter {
      * @param value Specify the number to convert.
      * @return Returns an array of bytes with length 4.
      */
-    public static byte[] GetBytes(int value) {
+    public static byte[] getBytes(int value) {
         byte[] buffer = new byte[4];
-        ConvertToBytes(value, buffer);
+        convertToBytes(value, buffer);
         return buffer;
     }
 
@@ -124,7 +124,7 @@ public class LittleEndianBitConverter {
      * @return Return the value built from the given bytes
      */
 
-    private static long ConvertFromBytes(byte[] buffer, int startIndex, int bytesToConvert) {
+    private static long convertFromBytes(byte[] buffer, int startIndex, int bytesToConvert) {
         long ret = 0;
         int bitCount = 0;
         for (int i = 0; i < bytesToConvert; i++) {
@@ -143,7 +143,7 @@ public class LittleEndianBitConverter {
      * @param value  Specify the value to convert.
      * @param buffer Specify the buffer which copies the bytes into.
      */
-    private static void ConvertToBytes(long value, byte[] buffer) {
+    private static void convertToBytes(long value, byte[] buffer) {
         for (int i = 0; i < buffer.length; i++) {
             buffer[i] = (byte) (value & 0xff);
             value = value >> 8;
@@ -157,7 +157,7 @@ public class LittleEndianBitConverter {
      * @param startIndex    Specify the start index.
      * @param bytesRequired Specify the number of bytes.
      */
-    private static void CheckByteArgument(byte[] value, int startIndex, int bytesRequired) {
+    private static void checkByteArgument(byte[] value, int startIndex, int bytesRequired) {
         if (value == null) {
             throw new RuntimeException("value");
         }

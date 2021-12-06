@@ -34,7 +34,7 @@ public class AdapterHelper {
      * @param startIndex The offset of the Guid value.
      * @return Return the value of Guid.
      */
-    public static UUID ReadGuid(byte[] byteArray, int startIndex) {
+    public static UUID readGuid(byte[] byteArray, int startIndex) {
         byte[] bytes = Arrays.copyOfRange(byteArray, startIndex, startIndex + 16);
         return UUID.nameUUIDFromBytes(bytes);
     }
@@ -46,7 +46,7 @@ public class AdapterHelper {
      * @param exGuid2 The second ExtendedGUID instance.
      * @return Returns the result of XOR two ExtendedGUID instances.
      */
-    public static ExGuid XORExtendedGUID(ExtendedGUID exGuid1, ExtendedGUID exGuid2) {
+    public static ExGuid xorExtendedGUID(ExtendedGUID exGuid1, ExtendedGUID exGuid2) {
         List<Byte> exGuid1Buffer = exGuid1.SerializeToByteList();
         List<Byte> exGuid2Buffer = exGuid2.SerializeToByteList();
         List<Byte> resultBuffer = new ArrayList<>(exGuid1Buffer.size());
@@ -57,7 +57,7 @@ public class AdapterHelper {
             resultBuffer.set(i, (byte) (fromExGuid1 ^ fromExGuid2));
         }
         ExGuid resultExGuid = new ExGuid();
-        resultExGuid.DoDeserializeFromByteArray(ByteUtil.toByteArray(resultBuffer), 0);
+        resultExGuid.doDeserializeFromByteArray(ByteUtil.toByteArray(resultBuffer), 0);
         return resultExGuid;
     }
 }

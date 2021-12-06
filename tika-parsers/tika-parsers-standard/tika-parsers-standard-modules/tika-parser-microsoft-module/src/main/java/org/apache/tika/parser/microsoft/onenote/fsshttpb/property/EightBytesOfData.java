@@ -36,7 +36,7 @@ public class EightBytesOfData implements IProperty {
      * @param startIndex Specify the start index from the byte array.
      * @return Return the length in byte of the EightBytesOfData.
      */
-    public int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         this.Data = Arrays.copyOfRange(byteArray, startIndex, startIndex + 8);
         return 8;
     }
@@ -46,7 +46,7 @@ public class EightBytesOfData implements IProperty {
      *
      * @return Return the byte list which store the byte information of EightBytesOfData.
      */
-    public List<Byte> SerializeToByteList() {
+    public List<Byte> serializeToByteList() {
         return ByteUtil.toListOfByte(this.Data);
     }
 }

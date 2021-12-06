@@ -41,11 +41,11 @@ public class IntermediateNodeObject extends NodeObject {
      * @return Return the byte list of root node object content.
      */
     @Override
-    public List<Byte> GetContent() {
+    public List<Byte> getContent() {
         List<Byte> content = new ArrayList<>();
 
         for (LeafNodeObject intermediateNode : this.IntermediateNodeObjectList) {
-            content.addAll(intermediateNode.GetContent());
+            content.addAll(intermediateNode.getContent());
         }
 
         return content;
@@ -59,7 +59,7 @@ public class IntermediateNodeObject extends NodeObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         if (lengthOfItems != 0) {
@@ -67,8 +67,8 @@ public class IntermediateNodeObject extends NodeObject {
                     "Stream Object over-parse error", null);
         }
 
-        this.Signature = StreamObject.GetCurrent(byteArray, index, SignatureObject.class);
-        this.DataSize = StreamObject.GetCurrent(byteArray, index, DataSizeObject.class);
+        this.Signature = StreamObject.getCurrent(byteArray, index, SignatureObject.class);
+        this.DataSize = StreamObject.getCurrent(byteArray, index, DataSizeObject.class);
 
         currentIndex.set(index.get());
     }
@@ -80,9 +80,9 @@ public class IntermediateNodeObject extends NodeObject {
      * @return The Byte list
      */
     @Override
-    protected int SerializeItemsToByteList(List<Byte> byteList) {
-        byteList.addAll(this.Signature.SerializeToByteList());
-        byteList.addAll(this.DataSize.SerializeToByteList());
+    protected int serializeItemsToByteList(List<Byte> byteList) {
+        byteList.addAll(this.Signature.serializeToByteList());
+        byteList.addAll(this.DataSize.serializeToByteList());
         return 0;
     }
 
@@ -104,7 +104,7 @@ public class IntermediateNodeObject extends NodeObject {
             rootNode.ExGuid =
                     new ExGuid(SequenceNumberGenerator.GetCurrentSerialNumber(), UUID.randomUUID());
             rootNode.IntermediateNodeObjectList =
-                    ChunkingFactory.CreateChunkingInstance(fileContent).Chunking();
+                    ChunkingFactory.createChunkingInstance(fileContent).chunking();
             return rootNode;
         }
     }

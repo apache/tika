@@ -29,5 +29,5 @@ public interface IFSSHTTPBSerializable {
      *
      * @return The byte list.
      */
-    List<Byte> SerializeToByteList();
+    List<Byte> serializeToByteList();
 }

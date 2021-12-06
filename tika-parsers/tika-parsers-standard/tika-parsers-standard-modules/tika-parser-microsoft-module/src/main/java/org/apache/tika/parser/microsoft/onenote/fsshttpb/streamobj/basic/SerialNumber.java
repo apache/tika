@@ -62,16 +62,16 @@ public class SerialNumber extends BasicObject {
      * @return Return the byte list which store the byte information of SerialNumber.
      */
     @Override
-    public List<Byte> SerializeToByteList() {
+    public List<Byte> serializeToByteList() {
         BitWriter bitWriter = null;
         if (this.guid.equals(GuidUtil.emptyGuid())) {
             bitWriter = new BitWriter(1);
-            bitWriter.AppendUInit32(0, 8);
+            bitWriter.appendUInit32(0, 8);
         } else {
             bitWriter = new BitWriter(25);
-            bitWriter.AppendUInit32(128, 8);
-            bitWriter.AppendGUID(this.guid);
-            bitWriter.AppendUInt64(this.value, 64);
+            bitWriter.appendUInit32(128, 8);
+            bitWriter.appendGUID(this.guid);
+            bitWriter.appendUInt64(this.value, 64);
         }
 
         return bitWriter.getByteList();
@@ -85,11 +85,11 @@ public class SerialNumber extends BasicObject {
      * @return Return the length in byte of the SerialNumber basic object.
      */
     @Override
-    protected int DoDeserializeFromByteArray(byte[] byteArray,
+    protected int doDeserializeFromByteArray(byte[] byteArray,
                                              int startIndex) // return the length consumed
     {
         BitReader bitField = new BitReader(byteArray, startIndex);
-        int type = bitField.ReadInt32(8);
+        int type = bitField.readInt32(8);
 
         if (type == 0) {
             this.guid = GuidUtil.emptyGuid();
@@ -97,8 +97,8 @@ public class SerialNumber extends BasicObject {
 
             return 1;
         } else if (type == 128) {
-            this.guid = bitField.ReadGuid();
-            this.value = bitField.ReadUInt64(64);
+            this.guid = bitField.readGuid();
+            this.value = bitField.readUInt64(64);
             this.type = 128;
             return 25;
         } else {

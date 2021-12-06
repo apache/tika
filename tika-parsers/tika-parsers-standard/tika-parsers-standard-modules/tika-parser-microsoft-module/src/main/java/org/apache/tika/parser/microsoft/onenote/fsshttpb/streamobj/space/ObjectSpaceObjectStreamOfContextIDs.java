@@ -34,11 +34,11 @@ public class ObjectSpaceObjectStreamOfContextIDs {
      *
      * @return Return the byte list which store the byte information of ObjectSpaceObjectStreamOfContextIDs
      */
-    public List<Byte> SerializeToByteList() {
+    public List<Byte> serializeToByteList() {
         List<Byte> byteList = new ArrayList<>();
-        byteList.addAll(this.Header.SerializeToByteList());
+        byteList.addAll(this.Header.serializeToByteList());
         for (CompactID compactID : this.Body) {
-            byteList.addAll(compactID.SerializeToByteList());
+            byteList.addAll(compactID.serializeToByteList());
         }
 
         return byteList;
@@ -52,7 +52,7 @@ public class ObjectSpaceObjectStreamOfContextIDs {
      * @param startIndex Specify the start index from the byte array.
      * @return Return the length in byte of the ObjectSpaceObjectStreamOfContextIDs object.
      */
-    public int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         int index = startIndex;
         this.Header = new ObjectSpaceObjectStreamHeader();
         int headerCount = this.Header.DoDeserializeFromByteArray(byteArray, index);
@@ -61,7 +61,7 @@ public class ObjectSpaceObjectStreamOfContextIDs {
         this.Body = new CompactID[(int) this.Header.Count];
         for (int i = 0; i < this.Header.Count; i++) {
             CompactID compactID = new CompactID();
-            int count = compactID.DoDeserializeFromByteArray(byteArray, startIndex);
+            int count = compactID.doDeserializeFromByteArray(byteArray, startIndex);
             this.Body[i] = compactID;
             index += count;
         }

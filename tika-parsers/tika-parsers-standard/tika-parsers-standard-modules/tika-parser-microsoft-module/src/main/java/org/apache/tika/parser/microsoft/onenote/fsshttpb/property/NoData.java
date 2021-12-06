@@ -31,7 +31,7 @@ public class NoData implements IProperty {
      * @param startIndex Specify the start index from the byte array.
      * @return
      */
-    public int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         return 0;
     }
 
@@ -40,7 +40,7 @@ public class NoData implements IProperty {
      *
      * @return Return the byte list which store the byte information of NoData.
      */
-    public List<Byte> SerializeToByteList() {
+    public List<Byte> serializeToByteList() {
         return new ArrayList<>();
     }
 }

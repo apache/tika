@@ -42,8 +42,8 @@ public class ChunkingFactory {
      * @param fileContent The content of the file.
      * @return The instance of AbstractChunking.
      */
-    public static AbstractChunking CreateChunkingInstance(byte[] fileContent) {
-        if (ZipHeader.IsFileHeader(fileContent, 0)) {
+    public static AbstractChunking createChunkingInstance(byte[] fileContent) {
+        if (ZipHeader.isFileHeader(fileContent, 0)) {
             return new ZipFilesChunking(fileContent);
         } else {
             return new RDCAnalysisChunking(fileContent);
@@ -57,16 +57,16 @@ public class ChunkingFactory {
      * @return The instance of AbstractChunking.
      */
 
-    public static AbstractChunking CreateChunkingInstance(IntermediateNodeObject nodeObject) {
-        byte[] fileContent = ByteUtil.toByteArray(nodeObject.GetContent());
-        if (ZipHeader.IsFileHeader(fileContent, 0)) {
+    public static AbstractChunking createChunkingInstance(IntermediateNodeObject nodeObject) {
+        byte[] fileContent = ByteUtil.toByteArray(nodeObject.getContent());
+        if (ZipHeader.isFileHeader(fileContent, 0)) {
             return new ZipFilesChunking(fileContent);
         } else {
             // For SharePoint Server 2013 compatible SUTs, always using the RDC Chunking method in
             // the current test suite involved file resources.
             AbstractChunking returnChunking = new SimpleChunking(fileContent);
 
-            List<LeafNodeObject> nodes = returnChunking.Chunking();
+            List<LeafNodeObject> nodes = returnChunking.chunking();
             if (nodeObject.IntermediateNodeObjectList.size() == nodes.size()) {
                 boolean isDataSizeMatching = true;
                 for (int i = 0; i < nodes.size(); i++) {
@@ -94,7 +94,7 @@ public class ChunkingFactory {
      * @param chunkingMethod The type of chunking methods.
      * @return The instance of AbstractChunking.
      */
-    public static AbstractChunking CreateChunkingInstance(byte[] fileContent,
+    public static AbstractChunking createChunkingInstance(byte[] fileContent,
                                                           ChunkingMethod chunkingMethod) {
         AbstractChunking chunking;
         switch (chunkingMethod) {

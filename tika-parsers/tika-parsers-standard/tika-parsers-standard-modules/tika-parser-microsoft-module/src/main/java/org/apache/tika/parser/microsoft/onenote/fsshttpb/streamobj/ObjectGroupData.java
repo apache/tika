@@ -46,17 +46,17 @@ public class ObjectGroupData extends StreamObject {
      * @return A constant value 0
      */
     @Override
-    protected int SerializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) {
         if (this.ObjectGroupObjectDataList != null) {
             for (ObjectGroupObjectData objectGroupObjectData : this.ObjectGroupObjectDataList) {
-                byteList.addAll(objectGroupObjectData.SerializeToByteList());
+                byteList.addAll(objectGroupObjectData.serializeToByteList());
             }
         }
 
         if (this.ObjectGroupObjectDataBLOBReferenceList != null) {
             for (ObjectGroupObjectDataBLOBReference objectGroupObjectDataBLOBReference :
                     this.ObjectGroupObjectDataBLOBReferenceList) {
-                byteList.addAll(objectGroupObjectDataBLOBReference.SerializeToByteList());
+                byteList.addAll(objectGroupObjectDataBLOBReference.serializeToByteList());
             }
         }
 
@@ -71,7 +71,7 @@ public class ObjectGroupData extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems) {
         if (lengthOfItems != 0) {
             throw new StreamObjectParseErrorException(currentIndex.get(), "ObjectGroupDeclarations",
@@ -85,18 +85,18 @@ public class ObjectGroupData extends StreamObject {
         this.ObjectGroupObjectDataList = new ArrayList<>();
         this.ObjectGroupObjectDataBLOBReferenceList = new ArrayList<>();
 
-        while ((headerLength = StreamObjectHeaderStart.TryParse(byteArray, index.get(), header)) !=
+        while ((headerLength = StreamObjectHeaderStart.tryParse(byteArray, index.get(), header)) !=
                 0) {
             StreamObjectTypeHeaderStart type = header.get().type;
             if (type == StreamObjectTypeHeaderStart.ObjectGroupObjectData) {
                 index.addAndGet(headerLength);
                 this.ObjectGroupObjectDataList.add(
-                        (ObjectGroupObjectData) StreamObject.ParseStreamObject(header.get(),
+                        (ObjectGroupObjectData) StreamObject.parseStreamObject(header.get(),
                                 byteArray, index));
             } else if (type == StreamObjectTypeHeaderStart.ObjectGroupObjectDataBLOBReference) {
                 index.addAndGet(headerLength);
                 this.ObjectGroupObjectDataBLOBReferenceList.add(
-                        (ObjectGroupObjectDataBLOBReference) StreamObject.ParseStreamObject(
+                        (ObjectGroupObjectDataBLOBReference) StreamObject.parseStreamObject(
                                 header.get(), byteArray, index));
             } else {
                 throw new StreamObjectParseErrorException(index.get(), "ObjectGroupDeclarations",
