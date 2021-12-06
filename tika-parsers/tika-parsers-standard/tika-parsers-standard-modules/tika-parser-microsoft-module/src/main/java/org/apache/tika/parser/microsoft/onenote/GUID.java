@@ -23,7 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-import org.apache.tika.parser.microsoft.fsshttpb.util.BitConverter;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitConverter;
 import org.apache.tika.utils.StringUtils;
 
 public class GUID implements Comparable<GUID> {
