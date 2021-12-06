@@ -1,5 +1,7 @@
 package org.apache.tika.parser.microsoft.fsshttpb;
 
+import java.util.Arrays;
+import java.util.BitSet;
 import java.util.UUID;
 
 /**
@@ -9,7 +11,7 @@ public class BitReader {
     /**
      * A byte array which contains the bytes need to be read.
      */
-    private byte[] byteArray;
+    private BitSet bitSet;
 
     /**
      * A start position which will be not changed in the process of reading.
@@ -34,14 +36,14 @@ public class BitReader {
      * @param index Specify the start position in byte.
      */
     public BitReader(byte[] array, int index) {
-        this.byteArray = array;
         this.offset = ((long) index * 8) - 1;
         this.startPosition = this.offset;
         this.length = (long) array.length * 8;
+        this.bitSet = BitSet.valueOf(array);
     }
 
     public boolean getCurrent() {
-        return Bit.IsBitSet(this.byteArray, this.offset);
+        return bitSet.get((int) offset);
     }
 
     /**
@@ -66,6 +68,11 @@ public class BitReader {
         return LittleEndianBitConverter.ToUInt32(uint32Bytes, 0);
     }
 
+    public int ReadUInt16(int readingLength) {
+        byte[] uint16Bytes = this.GetBytes(readingLength, 2);
+        return LittleEndianBitConverter.ToUInt16(uint16Bytes, 0);
+    }
+
     /**
      * Reading the bytes specified by the byte length.
      *
@@ -73,19 +80,7 @@ public class BitReader {
      * @return Return the read bytes array.
      */
     public byte[] ReadBytes(int readingLength) {
-        byte[] readingByteArray = this.GetBytes(readingLength * 8, readingLength);
-        return readingByteArray;
-    }
-
-    /**
-     * Read specified bit length content as an byte type and increase the bit offset with the specified length.
-     *
-     * @param readingBitLength Specify the reading bit length.
-     * @return Return the byte value.
-     */
-    public byte ReadByte(int readingBitLength) {
-        byte[] readingByteArray = this.GetBytes(readingBitLength, 1);
-        return readingByteArray[0];
+        return this.GetBytes(readingLength * 8, readingLength);
     }
 
     /**
@@ -132,7 +127,7 @@ public class BitReader {
      * Assign the internal read buffer to null.
      */
     public void Dispose() {
-        this.byteArray = null;
+        this.bitSet = null;
     }
 
     /**
@@ -150,22 +145,37 @@ public class BitReader {
      * @return Returns the constructed byte array.
      */
     private byte[] GetBytes(int needReadlength, int size) {
-        byte[] retBytes = new byte[size];
+        BitSet retSet = new BitSet(size);
         int i = 0;
         while (i < needReadlength) {
             if (!this.MoveNext()) {
                 throw new RuntimeException("Unexpected to meet the byte array end.");
             }
-
             if (getCurrent()) {
-                Bit.SetBit(retBytes, i);
+                retSet.set(i);
             } else {
-                Bit.ClearBit(retBytes, i);
+                retSet.clear(i);
             }
-
             i++;
         }
+        byte [] result = new byte[size];
+        Arrays.fill(result, (byte)0);
+        byte [] retSetBa = retSet.toByteArray();
+        for (i = 0; i < retSetBa.length; ++i) {
+            result[i] = retSetBa[i];
+        }
+        return result;
+    }
 
-        return retBytes;
+    private static String toBinaryString(BitSet bs, int nbits) {
+        final StringBuilder buffer = new StringBuilder(bs.size());
+        for (int i = nbits - 1; i >= 0; --i) {
+            if (i < bs.size()) {
+                buffer.append(bs.get(i) ? "1" : "0");
+            } else {
+                buffer.append("0");
+            }
+        }
+        return buffer.toString();
     }
 }

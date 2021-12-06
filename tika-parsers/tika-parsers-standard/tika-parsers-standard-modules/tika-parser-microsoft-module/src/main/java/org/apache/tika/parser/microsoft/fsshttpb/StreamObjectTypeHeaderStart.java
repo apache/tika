@@ -352,6 +352,11 @@ public enum StreamObjectTypeHeaderStart {
     ObjectGroupMetadata(0x78),
 
     /**
+     * Alternative Packaging
+     */
+    AlternativePackaging(0x7A),
+
+    /**
      * Allocate Extended GUID Range Request
      */
     AllocateExtendedGUIDRangeRequest(0x080),

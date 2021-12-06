@@ -2,14 +2,13 @@ package org.apache.tika.parser.microsoft.fsshttpb;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.List;
 import java.util.UUID;
 
 public class BitWriter {
-    /**
-     * A byte buffer will contain all the written byte.
-     */
-    private final byte[] bytes;
+
+    private final BitSet bitSet;
 
     /**
      * An offset which is used to keep trace for the current write position in bit, staring with 0.
@@ -22,7 +21,7 @@ public class BitWriter {
      * @param bufferSize Specify the buffer byte size.
      */
     public BitWriter(int bufferSize) {
-        this.bytes = new byte[bufferSize];
+        this.bitSet = new BitSet(bufferSize);
         this.bitOffset = 0;
     }
 
@@ -36,7 +35,7 @@ public class BitWriter {
         }
 
         int retByteLength = this.bitOffset / 8;
-        return Arrays.copyOfRange(this.bytes, 0, retByteLength);
+        return Arrays.copyOfRange(bitSet.toByteArray(), 0, retByteLength);
     }
 
     public List<Byte> getByteList() {
@@ -99,9 +98,9 @@ public class BitWriter {
     private void SetBytes(byte[] needWrittenBytes, int length) {
         for (int i = 0; i < length; i++) {
             if (Bit.IsBitSet(needWrittenBytes, i)) {
-                Bit.SetBit(this.bytes, this.bitOffset++);
+                bitSet.set(this.bitOffset++);
             } else {
-                Bit.ClearBit(this.bytes, this.bitOffset++);
+                bitSet.clear(this.bitOffset++);
             }
         }
     }

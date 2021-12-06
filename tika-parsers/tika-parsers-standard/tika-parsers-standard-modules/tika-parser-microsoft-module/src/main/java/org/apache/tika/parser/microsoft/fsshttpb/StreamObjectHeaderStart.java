@@ -72,7 +72,6 @@ public abstract class StreamObjectHeaderStart extends BasicObject {
             if (headerType == StreamObjectHeaderStart.StreamObjectHeaderStart32bit) {
                 streamObjectHeader.set(new StreamObjectHeaderStart32bit());
             } else {
-                streamObjectHeader = null;
                 return 0;
             }
         }
@@ -80,7 +79,6 @@ public abstract class StreamObjectHeaderStart extends BasicObject {
         try {
             return streamObjectHeader.get().DeserializeFromByteArray(byteArray, startIndex);
         } catch (Exception e) {
-            streamObjectHeader = null;
             return 0;
         }
     }
