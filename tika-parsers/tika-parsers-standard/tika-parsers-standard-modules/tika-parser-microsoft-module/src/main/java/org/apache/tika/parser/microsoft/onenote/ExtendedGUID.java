@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
-import org.apache.tika.parser.microsoft.fsshttpb.util.BitConverter;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitConverter;
 
 public class ExtendedGUID implements Comparable<ExtendedGUID> {
     GUID guid;
