@@ -1,7 +1,7 @@
 package org.apache.tika.parser.microsoft.fsshttpb.util;
 
-import org.joou.UByte;
-import org.joou.Unsigned;
+import org.apache.tika.parser.microsoft.fsshttpb.unsigned.UByte;
+import org.apache.tika.parser.microsoft.fsshttpb.unsigned.Unsigned;
 
 /**
  * Implement a converter which converts to/from little-endian byte arrays

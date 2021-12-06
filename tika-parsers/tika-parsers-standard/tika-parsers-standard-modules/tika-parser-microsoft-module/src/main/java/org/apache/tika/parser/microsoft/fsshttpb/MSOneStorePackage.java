@@ -34,11 +34,11 @@ import org.apache.tika.parser.microsoft.fsshttpb.streamobj.basic.ExGuid;
 import org.apache.tika.parser.microsoft.fsshttpb.streamobj.basic.HeaderCell;
 import org.apache.tika.parser.microsoft.fsshttpb.streamobj.basic.PropertyID;
 import org.apache.tika.parser.microsoft.fsshttpb.streamobj.basic.PropertyType;
+import org.apache.tika.parser.microsoft.fsshttpb.unsigned.Unsigned;
 import org.apache.tika.parser.microsoft.fsshttpb.util.BitConverter;
 import org.apache.tika.parser.microsoft.onenote.OneNotePropertyEnum;
 import org.apache.tika.parser.microsoft.onenote.OneNoteTreeWalkerOptions;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.joou.Unsigned;
 import org.xml.sax.SAXException;
 
 public class MSOneStorePackage {

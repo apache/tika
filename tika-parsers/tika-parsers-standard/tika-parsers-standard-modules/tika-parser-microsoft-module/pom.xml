@@ -97,11 +97,6 @@
       <version>${commons.logging.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.jooq</groupId>
-      <artifactId>joou-java-6</artifactId>
-      <version>0.9.5</version>
-    </dependency>
-    <dependency>
       <groupId>com.healthmarketscience.jackcess</groupId>
       <artifactId>jackcess</artifactId>
       <version>${jackcess.version}</version>
