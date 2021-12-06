@@ -55,8 +55,7 @@ import java.util.List;
         {
             int index = startIndex;
 
-            this.CProperties = new BitReader(byteArray, startIndex)
-                    .ReadUInt16(2);
+            this.CProperties = BitConverter.toInt16(byteArray, startIndex);
             index += 2;
             this.RgPrids = new PropertyID[this.CProperties];
             for (int i = 0; i < this.CProperties; i++)

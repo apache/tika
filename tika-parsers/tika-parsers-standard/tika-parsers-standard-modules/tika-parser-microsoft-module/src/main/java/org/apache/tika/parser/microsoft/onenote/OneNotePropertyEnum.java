@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @SuppressWarnings("unused")
-enum OneNotePropertyEnum {
+public enum OneNotePropertyEnum {
     LayoutTightLayout(0x08001C00), PageWidth(0x14001C01), PageHeight(0x14001C02),
     OutlineElementChildLevel(0x0C001C03), Bold(0x08001C04), Italic(0x08001C05),
     Underline(0x08001C06), Strikethrough(0x08001C07), Superscript(0x08001C08),

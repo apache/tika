@@ -24,7 +24,7 @@ import java.util.Set;
 /**
  * Options when walking the one note tree.
  */
-class OneNoteTreeWalkerOptions {
+public class OneNoteTreeWalkerOptions {
     private boolean crawlAllFileNodesFromRoot = true;
     private boolean onlyLatestRevision = true;
     private Set<OneNotePropertyEnum> utf16PropertiesToPrint = new HashSet<>(

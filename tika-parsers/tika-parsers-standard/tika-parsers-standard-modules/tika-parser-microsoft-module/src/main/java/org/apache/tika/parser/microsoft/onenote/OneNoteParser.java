@@ -25,10 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -37,7 +35,12 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.fsshttpb.AlternativePackaging;
+import org.apache.tika.parser.microsoft.fsshttpb.MSONESTOREParser;
+import org.apache.tika.parser.microsoft.fsshttpb.MSOneStorePackage;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * OneNote tika parser capable of parsing Microsoft OneNote files.
@@ -60,6 +63,8 @@ public class OneNoteParser extends AbstractParser {
         // TODO - add onetoc and other onenote mime types
     }
 
+    private OneNoteTreeWalkerOptions options = new OneNoteTreeWalkerOptions();
+
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -68,19 +73,30 @@ public class OneNoteParser extends AbstractParser {
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
+        byte [] oneStoreFileBytes = IOUtils.toByteArray(stream);
 
         try (TemporaryResources temporaryResources = new TemporaryResources();
-                TikaInputStream tikaInputStream = TikaInputStream.get(stream, temporaryResources);
+                TikaInputStream tikaInputStream = TikaInputStream.get(oneStoreFileBytes);
                 OneNoteDirectFileResource oneNoteDirectFileResource =
                      new OneNoteDirectFileResource(tikaInputStream.getFile())) {
-
-            temporaryResources.addResource(oneNoteDirectFileResource);
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             xhtml.startDocument();
+            temporaryResources.addResource(oneNoteDirectFileResource);
             OneNoteDocument oneNoteDocument =
                     createOneNoteDocumentFromDirectFileResource(oneNoteDirectFileResource);
 
-            if (!oneNoteDocument.header.isLegacy()) {
+            OneNoteHeader header = oneNoteDocument.header;
+
+            if (header.isMsHttpbFormat()) {
+                AlternativePackaging alternatePackageOneStoreFile = new AlternativePackaging();
+                alternatePackageOneStoreFile.DoDeserializeFromByteArray(oneStoreFileBytes, 0);
+
+                MSONESTOREParser onenoteParser = new MSONESTOREParser();
+                MSOneStorePackage pkg = onenoteParser.Parse(alternatePackageOneStoreFile.dataElementPackage);
+
+                pkg.walkTree(options, metadata, xhtml);
+
+            } else if (header.isMsOneStoreFormat()) {
                 metadata.set("buildNumberCreated",
                         "0x" + Long.toHexString(oneNoteDocument.header.buildNumberCreated));
                 metadata.set("buildNumberLastWroteToFile",
@@ -117,7 +133,7 @@ public class OneNoteParser extends AbstractParser {
 
                 Pair<Long, ExtendedGUID> roleAndContext = Pair.of(1L, ExtendedGUID.nil());
                 OneNoteTreeWalker oneNoteTreeWalker =
-                        new OneNoteTreeWalker(new OneNoteTreeWalkerOptions(), oneNoteDocument,
+                        new OneNoteTreeWalker(options, oneNoteDocument,
                                 oneNoteDirectFileResource, xhtml, metadata, context,
                                 roleAndContext);
 
@@ -135,7 +151,7 @@ public class OneNoteParser extends AbstractParser {
                     metadata.set(Property.externalTextBag("originalAuthors"),
                             oneNoteTreeWalker.getOriginalAuthors().toArray(new String[]{}));
                 }
-                if (!Instant.MAX.equals(oneNoteTreeWalker.getCreationTimestamp())) {
+                if (!Instant.MAX.equals(Instant.ofEpochMilli(oneNoteTreeWalker.getCreationTimestamp()))) {
                     metadata.set("creationTimestamp",
                             String.valueOf(oneNoteTreeWalker.getCreationTimestamp()));
                 }
@@ -154,12 +170,14 @@ public class OneNoteParser extends AbstractParser {
             }
             xhtml.endDocument();
         }
+
+
     }
 
     /**
      * Create a OneNoteDocument object.
      * <p>
-     * This won't actually have the binary data of any of the sections, but it's more of a
+     * This won't actually have the binary data of the sections, but it's more of a
      * metadata structure that contains
      * the general structure of the container and contains offset positions of where to find the
      * binary data we care about.
@@ -199,7 +217,7 @@ public class OneNoteParser extends AbstractParser {
         // First parse out the header.
         oneNoteDocument.header = oneNotePtr.deserializeHeader();
 
-        if (!oneNoteDocument.header.isLegacy()) {
+        if (oneNoteDocument.header.isMsOneStoreFormat()) {
             // Now that we parsed the header, the "root file node list"
             oneNotePtr.reposition(oneNoteDocument.header.fcrFileNodeListRoot);
             FileNodePtr curPath = new FileNodePtr();

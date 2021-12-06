@@ -58,6 +58,7 @@ class OneNoteHeader implements Serializable {
     long buildNumberLastWroteToFile;
     long buildNumberOldestWritten;
     long buildNumberNewestWritten;
+    private boolean msHttpbFormat;
 
     /**
      * Determine if this OneNote file pre-dates the open specs published by
@@ -65,8 +66,18 @@ class OneNoteHeader implements Serializable {
      *
      * @return True if file is based on the MS-ONE and MS-ONESTORE specs. False otherwise.
      */
-    public boolean isLegacy() {
-        return !GUID.nil().equals(guidLegacyFileVersion);
+    public boolean isMsOneStoreFormat() {
+        return GUID.nil().equals(guidLegacyFileVersion);
+    }
+
+    /**
+     * Determine if this OneNote file pre-dates the open specs published by
+     * microsoft.
+     *
+     * @return True if file is based on the MS-ONE and MS-ONESTORE specs. False otherwise.
+     */
+    public boolean isMsOneStore() {
+        return GUID.nil().equals(guidLegacyFileVersion);
     }
 
     public GUID getGuidFileType() {
@@ -405,5 +416,14 @@ class OneNoteHeader implements Serializable {
     public OneNoteHeader setBuildNumberNewestWritten(long buildNumberNewestWritten) {
         this.buildNumberNewestWritten = buildNumberNewestWritten;
         return this;
+    }
+
+    public OneNoteHeader setIsMsHttpbFormat(boolean msHttpbFormat) {
+        this.msHttpbFormat = msHttpbFormat;
+        return this;
+    }
+
+    public boolean isMsHttpbFormat() {
+        return msHttpbFormat;
     }
 }
