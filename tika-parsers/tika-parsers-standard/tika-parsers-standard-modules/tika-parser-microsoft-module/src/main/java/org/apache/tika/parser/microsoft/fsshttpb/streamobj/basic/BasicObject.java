@@ -52,14 +52,7 @@ public abstract class BasicObject implements IFSSHTTPBSerializable {
      * @return The element length.
      */
     public int DeserializeFromByteArray(byte[] byteArray, int startIndex) {
-        int length = this.DoDeserializeFromByteArray(byteArray, startIndex);
-
-//        // Invoke the basic object related capture code.
-//        if (SharedContext.Current.IsMsFsshttpRequirementsCaptured) {
-//            new MsfsshttpbAdapterCapture().InvokeCaptureMethod(this.GetType(), this, SharedContext.Current.Site);
-//        }
-
-        return length;
+        return this.DoDeserializeFromByteArray(byteArray, startIndex);
     }
 
     /**

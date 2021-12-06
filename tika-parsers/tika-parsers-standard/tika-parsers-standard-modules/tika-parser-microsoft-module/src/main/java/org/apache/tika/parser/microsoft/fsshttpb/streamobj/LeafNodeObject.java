@@ -145,11 +145,6 @@ public class LeafNodeObject extends NodeObject {
                             (int) data.Length.getDecodedValue());
                     node.get().DataNodeObjectData.ExGuid = dataObj.ObjectExGUIDArray.Content.get(0);
                     node.get().IntermediateNodeObjectList = null;
-
-//                        if (SharedContext.Current.IsMsFsshttpRequirementsCaptured)
-//                        {
-//                            MsfsshttpdCapture.VerifyObjectGroupObjectDataForDataNodeObject(dataNodeData, dataNodeDeclare, objectGroupList, SharedContext.Current.Site);
-//                        }
                 } else {
                     // Contain a list of LeafNodeObjectData
                     node.get().IntermediateNodeObjectList = new ArrayList<LeafNodeObject>();
@@ -160,11 +155,6 @@ public class LeafNodeObject extends NodeObject {
                                 this.FindByExGuid(objectGroupList, extGuid, intermediateDeclare);
                         node.get().IntermediateNodeObjectList.add(
                                 new IntermediateNodeObjectBuilder().Build(objectGroupList, intermediateData, extGuid));
-
-//                            if (SharedContext.Current.IsMsFsshttpRequirementsCaptured)
-//                            {
-//                                MsfsshttpdCapture.VerifyObjectGroupObjectDataForIntermediateNode(intermediateData, intermediateDeclare, objectGroupList, SharedContext.Current.Site);
-//                            }
                     }
                 }
             } else if (StreamObject.TryGetCurrent(ByteUtil.toByteArray(dataObj.Data.Content), index, rootNode,
@@ -183,11 +173,6 @@ public class LeafNodeObject extends NodeObject {
                             this.FindByExGuid(objectGroupList, extGuid, intermediateDeclare);
                     node.get().IntermediateNodeObjectList.add(
                             new IntermediateNodeObjectBuilder().Build(objectGroupList, intermediateData, extGuid));
-
-//                        if (SharedContext.Current.IsMsFsshttpRequirementsCaptured)
-//                        {
-//                            MsfsshttpdCapture.VerifyObjectGroupObjectDataForIntermediateNode(intermediateData, intermediateDeclare, objectGroupList, SharedContext.Current.Site);
-//                        }
                 }
             } else {
                 throw new RuntimeException(
