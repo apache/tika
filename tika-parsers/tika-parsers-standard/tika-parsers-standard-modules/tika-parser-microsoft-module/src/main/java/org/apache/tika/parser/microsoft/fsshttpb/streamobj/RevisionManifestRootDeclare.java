@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj;
 
 import java.util.List;
@@ -33,14 +34,8 @@ public class RevisionManifestRootDeclare extends StreamObject {
         super(StreamObjectTypeHeaderStart.RevisionManifestRootDeclare);
     }
 
-    /**
-     * Gets or sets an extended GUID that specifies the root revision for each revision manifest root declare.
-     */
     public ExGuid RootExGuid;
 
-    /**
-     * Gets or sets an extended GUID that specifies the object for each revision manifest root declare.
-     */
     public ExGuid ObjectExGuid;
 
     /**

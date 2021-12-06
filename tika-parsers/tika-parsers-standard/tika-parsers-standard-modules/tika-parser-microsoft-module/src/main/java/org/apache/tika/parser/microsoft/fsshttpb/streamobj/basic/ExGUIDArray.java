@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj.basic;
 
 import java.util.ArrayList;
@@ -55,9 +56,6 @@ public class ExGUIDArray extends BasicObject {
         this.Content = new ArrayList<>();
     }
 
-    /**
-     * Gets or sets a compact unsigned 64-bit integer that specifies the count extended GUIDs in the array.
-     */
     public Compact64bitInt Count;
 
     /**

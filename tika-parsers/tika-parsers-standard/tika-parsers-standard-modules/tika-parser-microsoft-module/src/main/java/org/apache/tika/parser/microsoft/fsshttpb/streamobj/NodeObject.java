@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj;
 
 import java.util.List;
@@ -28,24 +29,12 @@ public abstract class NodeObject extends StreamObject {
         super(headerType);
     }
 
-    /**
-     * Gets or sets the extended GUID of this node object.
-     */
     public org.apache.tika.parser.microsoft.fsshttpb.streamobj.basic.ExGuid ExGuid;
 
-    /**
-     * Gets or sets the intermediate node object list.
-     */
     public List<LeafNodeObject> IntermediateNodeObjectList;
 
-    /**
-     * Gets or sets the signature.
-     */
     public SignatureObject Signature;
 
-    /**
-     * Gets or sets the data size.
-     */
     public DataSizeObject DataSize;
 
     /**

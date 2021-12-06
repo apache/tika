@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj;
 /**
  * object data
@@ -38,19 +39,10 @@ public class ObjectGroupObjectData extends StreamObject {
         this.Data = new BinaryItem();
     }
 
-    /**
-     * Gets or sets an extended GUID array that specifies the object group.
-     */
     public ExGUIDArray ObjectExGUIDArray;
 
-    /**
-     * Gets or sets a cell ID array that specifies the object group.
-     */
     public CellIDArray cellIDArray;
 
-    /**
-     * Gets or sets a byte stream that specifies the binary data which is opaque to this protocol.
-     */
     public BinaryItem Data;
 
     /**

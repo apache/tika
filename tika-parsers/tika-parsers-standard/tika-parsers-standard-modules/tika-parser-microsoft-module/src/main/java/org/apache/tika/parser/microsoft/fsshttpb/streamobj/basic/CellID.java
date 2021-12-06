@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj.basic;
 
 import java.util.ArrayList;
@@ -54,14 +55,8 @@ public class CellID extends BasicObject {
     public CellID() {
     }
 
-    /**
-     * Gets or sets an extended GUID that specifies the first cell identifier.
-     */
     public ExGuid ExtendGUID1;
 
-    /**
-     * Gets or sets an extended GUID that specifies the second cell identifier.
-     */
     public ExGuid ExtendGUID2;
 
     /**

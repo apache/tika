@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj;
 
 import java.util.ArrayList;
@@ -33,14 +34,8 @@ public class StorageManifestDataElementData extends DataElementData {
         this.StorageManifestRootDeclareList = new ArrayList<>();
     }
 
-    /**
-     * Gets or sets storage manifest schema GUID.
-     */
     public StorageManifestSchemaGUID storageManifestSchemaGUID;
 
-    /**
-     * Gets or sets storage manifest root declare.
-     */
     public List<StorageManifestRootDeclare> StorageManifestRootDeclareList;
 
     /**

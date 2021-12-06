@@ -30,6 +30,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.unsigned;
 
 import java.math.BigInteger;
@@ -213,8 +214,6 @@ public final class ULong extends UNumber implements Comparable<ULong> {
 
     @Override
     public int hashCode() {
-
-
         return Long.valueOf(value).hashCode();
     }
 

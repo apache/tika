@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj;
 
 import java.util.ArrayList;
@@ -45,24 +46,12 @@ public class ObjectGroupDataElementData extends DataElementData {
         this.ObjectGroupData = new ObjectGroupData();
     }
 
-    /**
-     * Gets or sets an optional data element hash for the object data group.
-     */
     public org.apache.tika.parser.microsoft.fsshttpb.streamobj.DataElementHash DataElementHash;
 
-    /**
-     * Gets or sets an optional array of object declarations that specifies the object.
-     */
     public ObjectGroupDeclarations ObjectGroupDeclarations;
 
-    /**
-     * Gets or sets an object metadata declaration. If no object metadata exists, this field must be omitted.
-     */
     public ObjectGroupMetadataDeclarations ObjectMetadataDeclaration;
 
-    /**
-     * Gets or sets an object group data.
-     */
     public ObjectGroupData ObjectGroupData;
 
     /**

@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj;
 
 import java.util.List;
@@ -34,14 +35,8 @@ public class DataElementHash extends StreamObject {
         super(StreamObjectTypeHeaderStart.DataElementHash);
     }
 
-    /**
-     * Gets or sets a compact unsigned 64-bit integer that specifies the hash schema. This value MUST be 1, indicating Content Information Data Structure Version 1.0.
-     */
     public Compact64bitInt DataElementHashScheme;
 
-    /**
-     * Gets or sets the data element hash data.
-     */
     public BinaryItem DataElementHashData;
 
     /**

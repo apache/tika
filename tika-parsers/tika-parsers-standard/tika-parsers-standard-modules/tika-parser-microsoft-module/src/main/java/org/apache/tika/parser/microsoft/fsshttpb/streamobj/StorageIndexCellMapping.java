@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj;
 
 import java.util.List;
@@ -35,19 +36,10 @@ public class StorageIndexCellMapping extends StreamObject {
         super(StreamObjectTypeHeaderStart.StorageIndexCellMapping);
     }
 
-    /**
-     * Gets or sets the cell identifier.
-     */
     public org.apache.tika.parser.microsoft.fsshttpb.streamobj.basic.CellID CellID;
 
-    /**
-     * Gets or sets the extended GUID of the cell mapping.
-     */
     public ExGuid CellMappingExGuid;
 
-    /**
-     * Gets or sets the serial number of the cell mapping.
-     */
     public SerialNumber CellMappingSerialNumber;
 
     /**

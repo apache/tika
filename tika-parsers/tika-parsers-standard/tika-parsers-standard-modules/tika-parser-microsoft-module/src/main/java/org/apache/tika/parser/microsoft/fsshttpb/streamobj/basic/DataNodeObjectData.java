@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj.basic;
 
 import java.util.Arrays;
@@ -45,13 +46,7 @@ public class DataNodeObjectData {
         this.ExGuid = new ExGuid(SequenceNumberGenerator.GetCurrentSerialNumber(), UUID.randomUUID());
     }
 
-    /**
-     * Gets or sets the extended GUID of the data node object.
-     */
     public ExGuid ExGuid;
 
-    /**
-     * Gets or sets the Data field for the Intermediate Node Object.
-     */
     public byte[] ObjectData;
 }

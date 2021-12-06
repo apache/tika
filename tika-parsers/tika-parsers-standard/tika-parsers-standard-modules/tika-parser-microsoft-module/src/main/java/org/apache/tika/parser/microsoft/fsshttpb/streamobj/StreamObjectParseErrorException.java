@@ -14,19 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj;
 
 public class StreamObjectParseErrorException extends RuntimeException {
 
-
-    /**
-     * Gets or sets index of object.
-     */
     public int Index;
 
-    /**
-     * Gets or sets stream object type name.
-     */
     public String StreamObjectTypeName;
 
     /**

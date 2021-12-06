@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj.chunking;
 
 import java.util.List;
@@ -33,9 +34,6 @@ public abstract class AbstractChunking {
         this.FileContent = fileContent;
     }
 
-    /**
-     * Gets or sets the file content.
-     */
     protected byte[] FileContent;
 
     /**

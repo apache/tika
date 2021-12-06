@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj;
 
 import java.util.List;
@@ -30,9 +31,6 @@ public class CellManifestCurrentRevision extends StreamObject {
         super(StreamObjectTypeHeaderStart.CellManifestCurrentRevision);
     }
 
-    /**
-     * Gets or sets a 16-bit stream object header that specifies a cell manifest current revision.
-     */
     public ExGuid cellManifestCurrentRevisionExGuid;
 
     /**

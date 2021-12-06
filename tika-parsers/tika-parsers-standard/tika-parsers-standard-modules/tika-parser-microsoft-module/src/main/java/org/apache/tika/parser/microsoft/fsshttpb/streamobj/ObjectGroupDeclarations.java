@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj;
 
 import java.util.ArrayList;
@@ -34,14 +35,8 @@ public class ObjectGroupDeclarations extends StreamObject {
         this.ObjectGroupObjectBLOBDataDeclarationList = new ArrayList<>();
     }
 
-    /**
-     * Gets or sets a list of declarations that specifies the object.
-     */
     public List<ObjectGroupObjectDeclare> ObjectDeclarationList;
 
-    /**
-     * Gets or sets a list of object data BLOB declarations that specifies the object.
-     */
     public List<ObjectGroupObjectBLOBDataDeclaration> ObjectGroupObjectBLOBDataDeclarationList;
 
     /**
