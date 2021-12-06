@@ -1,0 +1,94 @@
+package org.apache.tika.parser.microsoft.fsshttpb.streamobj;
+
+import java.util.List;
+
+import org.apache.tika.parser.microsoft.fsshttpb.util.BitReader;
+import org.apache.tika.parser.microsoft.fsshttpb.util.BitWriter;
+import org.apache.tika.parser.microsoft.fsshttpb.util.ByteUtil;
+import org.apache.tika.parser.microsoft.fsshttpb.util.LittleEndianBitConverter;
+
+/**
+ * An 16-bit header for a compound object would indicate the end of a stream object
+ */
+public class StreamObjectHeaderEnd16bit extends StreamObjectHeaderEnd {
+    /**
+     * Initializes a new instance of the StreamObjectHeaderEnd16bit class with the specified type value.
+     *
+     * @param type Specify the integer value of the type.
+     */
+    public StreamObjectHeaderEnd16bit(int type) {
+        this.type = StreamObjectTypeHeaderEnd.fromIntVal(type);
+        if (this.type == null) {
+            throw new RuntimeException(String.format(
+                    "The type value RuntimeException is not defined for the stream object end 16-bit header", type));
+        }
+
+    }
+
+    /**
+     * Initializes a new instance of the StreamObjectHeaderEnd16bit class with the specified type value.
+     *
+     * @param headerType Specify the value of the type.
+     */
+    public StreamObjectHeaderEnd16bit(StreamObjectTypeHeaderEnd headerType) {
+        this.type = headerType;
+    }
+
+    /**
+     * Initializes a new instance of the StreamObjectHeaderEnd16bit class, this is the default constructor.
+     */
+    public StreamObjectHeaderEnd16bit() {
+    }
+
+    /**
+     * This method is used to convert the element of StreamObjectHeaderEnd16bit basic object into a byte List.
+     *
+     * @return Return the byte list which store the byte information of StreamObjectHeaderEnd16bit.
+     */
+    @Override
+    public List<Byte> SerializeToByteList() {
+        BitWriter bitFieldWriter = new BitWriter(2);
+        bitFieldWriter.AppendInit32(0x3, 2);
+        bitFieldWriter.AppendUInit32(this.type.getIntVal(), 14);
+        return bitFieldWriter.getByteList();
+    }
+
+    /**
+     * This method is used to get the byte value of the 16-bit stream object header End.
+     *
+     * @return Return StreamObjectHeaderEnd8bit value represented by unsigned short integer.
+     */
+    public short ToUint16() {
+        List<Byte> bytes = this.SerializeToByteList();
+        return LittleEndianBitConverter.ToUInt16(ByteUtil.toByteArray(bytes), 0);
+    }
+
+    /**
+     * This method is used to deserialize the StreamObjectHeaderEnd16bit basic object from the specified byte array and start index.
+     *
+     * @param byteArray  Specify the byte array.
+     * @param startIndex Specify the start index from the byte array.
+     * @return Return the length in byte of the StreamObjectHeaderEnd16bit basic object.
+     */
+    @Override
+    protected int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+        BitReader reader = new BitReader(byteArray, startIndex);
+        int headerType = reader.ReadInt32(2);
+
+        if (headerType != 0x3) {
+            throw new RuntimeException(String.format(
+                    "Failed to get the StreamObjectHeaderEnd16bit header type value, expect value %d, but actual value is %s",
+                    0x3, headerType));
+        }
+
+        int typeValue = reader.ReadUInt32(14);
+        this.type = StreamObjectTypeHeaderEnd.fromIntVal(typeValue);
+        if (this.type == null) {
+            throw new RuntimeException(String.format(
+                    "Failed to get the StreamObjectHeaderEnd16bit type value, the value %d is not defined",
+                    typeValue));
+        }
+
+        return 2;
+    }
+}

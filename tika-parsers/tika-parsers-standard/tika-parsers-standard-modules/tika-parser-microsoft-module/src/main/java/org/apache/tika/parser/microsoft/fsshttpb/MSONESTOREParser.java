@@ -7,6 +7,23 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.apache.tika.parser.microsoft.fsshttpb.streamobj.CellManifestDataElementData;
+import org.apache.tika.parser.microsoft.fsshttpb.streamobj.DataElement;
+import org.apache.tika.parser.microsoft.fsshttpb.streamobj.DataElementPackage;
+import org.apache.tika.parser.microsoft.fsshttpb.streamobj.ObjectGroupDataElementData;
+import org.apache.tika.parser.microsoft.fsshttpb.streamobj.RevisionManifestDataElementData;
+import org.apache.tika.parser.microsoft.fsshttpb.streamobj.RevisionManifestObjectGroupReferences;
+import org.apache.tika.parser.microsoft.fsshttpb.streamobj.RevisionManifestRootDeclare;
+import org.apache.tika.parser.microsoft.fsshttpb.streamobj.RevisionStoreObjectGroup;
+import org.apache.tika.parser.microsoft.fsshttpb.streamobj.StorageIndexCellMapping;
+import org.apache.tika.parser.microsoft.fsshttpb.streamobj.StorageIndexDataElementData;
+import org.apache.tika.parser.microsoft.fsshttpb.streamobj.StorageIndexRevisionMapping;
+import org.apache.tika.parser.microsoft.fsshttpb.streamobj.StorageManifestDataElementData;
+import org.apache.tika.parser.microsoft.fsshttpb.streamobj.basic.CellID;
+import org.apache.tika.parser.microsoft.fsshttpb.streamobj.basic.DataElementType;
+import org.apache.tika.parser.microsoft.fsshttpb.streamobj.basic.ExGuid;
+import org.apache.tika.parser.microsoft.fsshttpb.streamobj.basic.HeaderCell;
+
 public class MSONESTOREParser
     {
         // The DataElements of Storage Index
