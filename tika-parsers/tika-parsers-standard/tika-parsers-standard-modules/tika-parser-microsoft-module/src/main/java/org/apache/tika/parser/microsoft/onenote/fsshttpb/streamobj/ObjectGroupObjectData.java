@@ -48,7 +48,7 @@ public class ObjectGroupObjectData extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.ObjectExGUIDArray = BasicObject.parse(byteArray, index, ExGUIDArray.class);
@@ -70,11 +70,11 @@ public class ObjectGroupObjectData extends StreamObject {
      * @return The number of the element
      */
     @Override
-    protected int SerializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) {
         int itemsIndex = byteList.size();
-        byteList.addAll(this.ObjectExGUIDArray.SerializeToByteList());
-        byteList.addAll(this.cellIDArray.SerializeToByteList());
-        byteList.addAll(this.Data.SerializeToByteList());
+        byteList.addAll(this.ObjectExGUIDArray.serializeToByteList());
+        byteList.addAll(this.cellIDArray.serializeToByteList());
+        byteList.addAll(this.Data.serializeToByteList());
         return byteList.size() - itemsIndex;
     }
 }

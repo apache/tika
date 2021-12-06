@@ -39,24 +39,24 @@ public class ObjectSpaceObjectPropSet {
      * @param startIndex Specify the start index from the byte array.
      * @return Return the length in byte of the ObjectSpaceObjectPropSet.
      */
-    public int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         int index = startIndex;
         this.OIDs = new ObjectSpaceObjectStreamOfOIDs();
-        int len = this.OIDs.DoDeserializeFromByteArray(byteArray, index);
+        int len = this.OIDs.doDeserializeFromByteArray(byteArray, index);
         index += len;
         if (this.OIDs.Header.OsidStreamNotPresent == 0) {
             this.OSIDs = new ObjectSpaceObjectStreamOfOSIDs();
-            len = this.OSIDs.DoDeserializeFromByteArray(byteArray, index);
+            len = this.OSIDs.doDeserializeFromByteArray(byteArray, index);
             index += len;
 
             if (this.OSIDs.Header.ExtendedStreamsPresent == 1) {
                 this.ContextIDs = new ObjectSpaceObjectStreamOfContextIDs();
-                len = this.ContextIDs.DoDeserializeFromByteArray(byteArray, index);
+                len = this.ContextIDs.doDeserializeFromByteArray(byteArray, index);
                 index += len;
             }
         }
         this.Body = new PropertySet();
-        len = this.Body.DoDeserializeFromByteArray(byteArray, index);
+        len = this.Body.doDeserializeFromByteArray(byteArray, index);
         index += len;
 
         int paddingLength = 8 - (index - startIndex) % 8;
@@ -72,12 +72,12 @@ public class ObjectSpaceObjectPropSet {
      *
      * @return Return the byte list which store the byte information of the ObjectSpaceObjectPropSet.
      */
-    public List<Byte> SerializeToByteList() {
+    public List<Byte> serializeToByteList() {
         List<Byte> byteList = new ArrayList<>();
-        byteList.addAll(this.OIDs.SerializeToByteList());
-        byteList.addAll(this.OSIDs.SerializeToByteList());
-        byteList.addAll(this.ContextIDs.SerializeToByteList());
-        byteList.addAll(this.Body.SerializeToByteList());
+        byteList.addAll(this.OIDs.serializeToByteList());
+        byteList.addAll(this.OSIDs.serializeToByteList());
+        byteList.addAll(this.ContextIDs.serializeToByteList());
+        byteList.addAll(this.Body.serializeToByteList());
         for (byte b : this.Padding) {
             byteList.add(b);
         }

@@ -35,7 +35,7 @@ public class TwoBytesOfData implements IProperty {
      * @param startIndex Specify the start index from the byte array.
      * @return Return the length in byte of the TwoBytesOfData.
      */
-    public int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         this.Data = new byte[]{byteArray[startIndex], byteArray[startIndex + 1]};
 
         return 2;
@@ -46,7 +46,7 @@ public class TwoBytesOfData implements IProperty {
      *
      * @return Return the byte list which store the byte information of TwoBytesOfData.
      */
-    public List<Byte> SerializeToByteList() {
+    public List<Byte> serializeToByteList() {
         return ByteUtil.toListOfByte(this.Data);
     }
 }

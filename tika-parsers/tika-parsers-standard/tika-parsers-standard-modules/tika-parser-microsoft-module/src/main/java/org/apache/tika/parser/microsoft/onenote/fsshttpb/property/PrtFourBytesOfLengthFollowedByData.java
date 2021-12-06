@@ -39,9 +39,9 @@ public class PrtFourBytesOfLengthFollowedByData implements IProperty {
      * @param startIndex Specify the start index from the byte array.
      * @return Return the length in byte of the prtFourBytesOfLengthFollowedByData.
      */
-    public int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         int index = startIndex;
-        this.CB = (int) BitConverter.ToUInt32(byteArray, startIndex);
+        this.CB = (int) BitConverter.toUInt32(byteArray, startIndex);
         index += 4;
         this.Data = Arrays.copyOfRange(byteArray, index, index + this.CB);
         index += this.CB;
@@ -54,7 +54,7 @@ public class PrtFourBytesOfLengthFollowedByData implements IProperty {
      *
      * @return Return the byte list which store the byte information of prtFourBytesOfLengthFollowedByData.
      */
-    public List<Byte> SerializeToByteList() {
+    public List<Byte> serializeToByteList() {
         List<Byte> byteList = new ArrayList<>();
         for (byte b : BitConverter.getBytes(this.CB)) {
             byteList.add(b);

@@ -48,6 +48,10 @@ public final class UInteger extends UNumber implements Comparable<UInteger> {
      */
     private static final String PRECACHE_PROPERTY = CLASS_NAME + ".precacheSize";
     /**
+     * Default size for the value cache.
+     */
+    private static final int DEFAULT_PRECACHE_SIZE = 256;
+    /**
      * Cached values
      */
     private static final UInteger[] VALUES = mkValues();
@@ -61,10 +65,6 @@ public final class UInteger extends UNumber implements Comparable<UInteger> {
      * have as UInteger, 2<sup>32</sup>-1.
      */
     public static final UInteger MAX = valueOf(MAX_VALUE);
-    /**
-     * Default size for the value cache.
-     */
-    private static final int DEFAULT_PRECACHE_SIZE = 256;
     /**
      * Generated UID
      */

@@ -35,6 +35,7 @@ public class RevisionStoreObject {
             FileDataObject;
     public ExGUIDArray ReferencedObjectID;
     public CellIDArray ReferencedObjectSpacesID;
+
     /**
      * Initialize the class.
      */

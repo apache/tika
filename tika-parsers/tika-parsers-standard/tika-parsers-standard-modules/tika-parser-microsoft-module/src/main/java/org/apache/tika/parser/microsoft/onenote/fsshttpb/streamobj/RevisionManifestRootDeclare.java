@@ -45,7 +45,7 @@ public class RevisionManifestRootDeclare extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.RootExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
@@ -65,10 +65,10 @@ public class RevisionManifestRootDeclare extends StreamObject {
      * @return The length of list
      */
     @Override
-    protected int SerializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) {
         int itemsIndex = byteList.size();
-        byteList.addAll(this.RootExGuid.SerializeToByteList());
-        byteList.addAll(this.ObjectExGuid.SerializeToByteList());
+        byteList.addAll(this.RootExGuid.serializeToByteList());
+        byteList.addAll(this.ObjectExGuid.serializeToByteList());
         return byteList.size() - itemsIndex;
     }
 }

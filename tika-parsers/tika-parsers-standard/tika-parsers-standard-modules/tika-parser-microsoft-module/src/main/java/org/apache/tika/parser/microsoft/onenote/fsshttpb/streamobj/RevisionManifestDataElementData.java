@@ -27,7 +27,7 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.exception.DataElementPa
 public class RevisionManifestDataElementData extends DataElementData {
     public RevisionManifest RevisionManifest;
     public List<RevisionManifestRootDeclare> RevisionManifestRootDeclareList;
-    public List<RevisionManifestObjectGroupReferences> RevisionManifestObjectGroupReferencesList;
+    public List<RevisionManifestObjectGroupReferences> revisionManifestObjectGroupReferences;
 
     /**
      * Initializes a new instance of the RevisionManifestDataElementData class.
@@ -35,7 +35,7 @@ public class RevisionManifestDataElementData extends DataElementData {
     public RevisionManifestDataElementData() {
         this.RevisionManifest = new RevisionManifest();
         this.RevisionManifestRootDeclareList = new ArrayList<>();
-        this.RevisionManifestObjectGroupReferencesList = new ArrayList<>();
+        this.revisionManifestObjectGroupReferences = new ArrayList<>();
     }
 
     /**
@@ -46,26 +46,26 @@ public class RevisionManifestDataElementData extends DataElementData {
      * @return The length of the element
      */
     @Override
-    public int DeserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex) {
+    public int deserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex) {
         AtomicInteger index = new AtomicInteger(startIndex);
-        this.RevisionManifest = StreamObject.GetCurrent(byteArray, index, RevisionManifest.class);
+        this.RevisionManifest = StreamObject.getCurrent(byteArray, index, RevisionManifest.class);
 
         this.RevisionManifestRootDeclareList = new ArrayList<>();
-        this.RevisionManifestObjectGroupReferencesList = new ArrayList<>();
+        this.revisionManifestObjectGroupReferences = new ArrayList<>();
         AtomicReference<StreamObjectHeaderStart> header = new AtomicReference<>();
         int headerLength = 0;
-        while ((headerLength = StreamObjectHeaderStart.TryParse(byteArray, index.get(), header)) !=
+        while ((headerLength = StreamObjectHeaderStart.tryParse(byteArray, index.get(), header)) !=
                 0) {
             if (header.get().type == StreamObjectTypeHeaderStart.RevisionManifestRootDeclare) {
                 index.addAndGet(headerLength);
                 this.RevisionManifestRootDeclareList.add(
-                        (RevisionManifestRootDeclare) StreamObject.ParseStreamObject(header.get(),
+                        (RevisionManifestRootDeclare) StreamObject.parseStreamObject(header.get(),
                                 byteArray, index));
             } else if (header.get().type ==
                     StreamObjectTypeHeaderStart.RevisionManifestObjectGroupReferences) {
                 index.addAndGet(headerLength);
-                this.RevisionManifestObjectGroupReferencesList.add(
-                        (RevisionManifestObjectGroupReferences) StreamObject.ParseStreamObject(
+                this.revisionManifestObjectGroupReferences.add(
+                        (RevisionManifestObjectGroupReferences) StreamObject.parseStreamObject(
                                 header.get(), byteArray, index));
             } else {
                 throw new DataElementParseErrorException(index.get(),
@@ -84,20 +84,20 @@ public class RevisionManifestDataElementData extends DataElementData {
      * @return A Byte list
      */
     @Override
-    public List<Byte> SerializeToByteList() {
+    public List<Byte> serializeToByteList() {
         List<Byte> byteList = new ArrayList<>();
-        byteList.addAll(this.RevisionManifest.SerializeToByteList());
+        byteList.addAll(this.RevisionManifest.serializeToByteList());
 
         if (this.RevisionManifestRootDeclareList != null) {
             for (RevisionManifestRootDeclare revisionManifestRootDeclare : this.RevisionManifestRootDeclareList) {
-                byteList.addAll(revisionManifestRootDeclare.SerializeToByteList());
+                byteList.addAll(revisionManifestRootDeclare.serializeToByteList());
             }
         }
 
-        if (this.RevisionManifestObjectGroupReferencesList != null) {
+        if (this.revisionManifestObjectGroupReferences != null) {
             for (RevisionManifestObjectGroupReferences revisionManifestObjectGroupReferences :
-                    this.RevisionManifestObjectGroupReferencesList) {
-                byteList.addAll(revisionManifestObjectGroupReferences.SerializeToByteList());
+                    this.revisionManifestObjectGroupReferences) {
+                byteList.addAll(revisionManifestObjectGroupReferences.serializeToByteList());
             }
         }
 

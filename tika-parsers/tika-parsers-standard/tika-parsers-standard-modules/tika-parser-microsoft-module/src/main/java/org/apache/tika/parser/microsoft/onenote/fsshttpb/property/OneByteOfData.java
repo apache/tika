@@ -33,7 +33,7 @@ public class OneByteOfData implements IProperty {
      * @param startIndex Specify the start index from the byte array.
      * @return
      */
-    public int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         this.Data = byteArray[startIndex];
         return 1;
     }
@@ -43,7 +43,7 @@ public class OneByteOfData implements IProperty {
      *
      * @return Return the byte list which store the byte information of OneByteOfData.
      */
-    public List<Byte> SerializeToByteList() {
+    public List<Byte> serializeToByteList() {
         return new ArrayList<>(this.Data);
     }
 }

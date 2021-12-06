@@ -27,7 +27,7 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
  * Specifies a revision manifest object group references, each followed by object group extended GUIDs
  */
 public class RevisionManifestObjectGroupReferences extends StreamObject {
-    public ExGuid ObjectGroupExtendedGUID;
+    public ExGuid objectGroupExtendedGUID;
 
     /**
      * Initializes a new instance of the RevisionManifestObjectGroupReferences class.
@@ -43,7 +43,7 @@ public class RevisionManifestObjectGroupReferences extends StreamObject {
      */
     public RevisionManifestObjectGroupReferences(ExGuid objectGroupExtendedGUID) {
         super(StreamObjectTypeHeaderStart.RevisionManifestObjectGroupReferences);
-        this.ObjectGroupExtendedGUID = objectGroupExtendedGUID;
+        this.objectGroupExtendedGUID = objectGroupExtendedGUID;
     }
 
     /**
@@ -54,10 +54,10 @@ public class RevisionManifestObjectGroupReferences extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
-        this.ObjectGroupExtendedGUID = BasicObject.parse(byteArray, index, ExGuid.class);
+        this.objectGroupExtendedGUID = BasicObject.parse(byteArray, index, ExGuid.class);
         if (index.get() - currentIndex.get() != lengthOfItems) {
             throw new StreamObjectParseErrorException(currentIndex.get(),
                     "RevisionManifestObjectGroupReferences", "Stream object over-parse error",
@@ -74,8 +74,8 @@ public class RevisionManifestObjectGroupReferences extends StreamObject {
      * @return The number of elements actually contained in the list.
      */
     @Override
-    protected int SerializeItemsToByteList(List<Byte> byteList) {
-        List<Byte> tmpList = this.ObjectGroupExtendedGUID.SerializeToByteList();
+    protected int serializeItemsToByteList(List<Byte> byteList) {
+        List<Byte> tmpList = this.objectGroupExtendedGUID.serializeToByteList();
         byteList.addAll(tmpList);
         return tmpList.size();
     }

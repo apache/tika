@@ -40,17 +40,17 @@ public class PrtArrayOfPropertyValues implements IProperty {
      * @param startIndex Specify the start index from the byte array.
      * @return
      */
-    public int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         int index = startIndex;
         this.CProperties = BitConverter.toInt32(byteArray, index);
         index += 4;
         this.Prid = new PropertyID();
-        int len = this.Prid.DoDeserializeFromByteArray(byteArray, index);
+        int len = this.Prid.doDeserializeFromByteArray(byteArray, index);
         index += len;
         this.Data = new PropertySet[this.CProperties];
         for (int i = 0; i < this.CProperties; i++) {
             this.Data[i] = new PropertySet();
-            int length = this.Data[i].DoDeserializeFromByteArray(byteArray, index);
+            int length = this.Data[i].doDeserializeFromByteArray(byteArray, index);
             index += length;
         }
 
@@ -62,14 +62,14 @@ public class PrtArrayOfPropertyValues implements IProperty {
      *
      * @return Return the byte list which store the byte information of the prtArrayOfPropertyValues.
      */
-    public List<Byte> SerializeToByteList() {
+    public List<Byte> serializeToByteList() {
         List<Byte> byteList = new ArrayList<>();
         for (byte b : BitConverter.getBytes(this.CProperties)) {
             byteList.add(b);
         }
-        byteList.addAll(this.Prid.SerializeToByteList());
+        byteList.addAll(this.Prid.serializeToByteList());
         for (PropertySet ps : this.Data) {
-            byteList.addAll(ps.SerializeToByteList());
+            byteList.addAll(ps.serializeToByteList());
         }
         return byteList;
     }

@@ -125,7 +125,8 @@ public final class ULong extends UNumber implements Comparable<ULong> {
         long result = first * 10 + second;
         if (compare(result, first) < 0) {
             throw new NumberFormatException(
-                    String.format(Locale.US, "String value %s exceeds range of unsigned long", value));
+                    String.format(Locale.US, "String value %s exceeds range of unsigned long",
+                            value));
         }
 
         this.value = result;

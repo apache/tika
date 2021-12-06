@@ -29,7 +29,7 @@ public interface IProperty {
      *
      * @return Return the byte list which store the byte information of property.
      */
-    List<Byte> SerializeToByteList();
+    List<Byte> serializeToByteList();
 
     /**
      * This method is used to deserialize the property from the specified byte array and start index.
@@ -38,5 +38,5 @@ public interface IProperty {
      * @param startIndex Specify the start index from the byte array.
      * @return Return the length in byte of the property.
      */
-    int DoDeserializeFromByteArray(byte[] byteArray, int startIndex);
+    int doDeserializeFromByteArray(byte[] byteArray, int startIndex);
 }

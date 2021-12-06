@@ -36,8 +36,7 @@ public class StreamObjectHeaderEnd8bit extends StreamObjectHeaderEnd {
 
         this.type = StreamObjectTypeHeaderEnd.fromIntVal(type);
         if (this.type == null) {
-            throw new RuntimeException(String.format(
-                    Locale.US,
+            throw new RuntimeException(String.format(Locale.US,
                     "The type value %s is not defined for the stream object end 8 bit header",
                     type));
         }
@@ -65,10 +64,10 @@ public class StreamObjectHeaderEnd8bit extends StreamObjectHeaderEnd {
      * @return Return the byte list which store the byte information of StreamObjectHeaderEnd8bit.
      */
     @Override
-    public List<Byte> SerializeToByteList() {
+    public List<Byte> serializeToByteList() {
         BitWriter bitFieldWriter = new BitWriter(1);
-        bitFieldWriter.AppendInit32(0x1, 2);
-        bitFieldWriter.AppendUInit32(this.type.getIntVal(), 6);
+        bitFieldWriter.appendInit32(0x1, 2);
+        bitFieldWriter.appendUInit32(this.type.getIntVal(), 6);
         return bitFieldWriter.getByteList();
     }
 
@@ -77,8 +76,8 @@ public class StreamObjectHeaderEnd8bit extends StreamObjectHeaderEnd {
      *
      * @return Return StreamObjectHeaderEnd8bit value represented by byte.
      */
-    public byte ToByte() {
-        List<Byte> bytes = this.SerializeToByteList();
+    public byte toByte() {
+        List<Byte> bytes = this.serializeToByteList();
 
         if (bytes.size() != 1) {
             throw new RuntimeException("The unexpected StreamObjectHeaderEnd8bit length");
@@ -96,23 +95,20 @@ public class StreamObjectHeaderEnd8bit extends StreamObjectHeaderEnd {
      * @return Return the length in byte of the StreamObjectHeaderEnd8bit basic object.
      */
     @Override
-    protected int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         BitReader reader = new BitReader(byteArray, startIndex);
-        int headerType = reader.ReadInt32(2);
+        int headerType = reader.readInt32(2);
 
         if (headerType != 0x1) {
-            throw new RuntimeException(String.format(
-                    Locale.US,
+            throw new RuntimeException(String.format(Locale.US,
                     "Failed to get the StreamObjectHeaderEnd8bit header type value, " +
-                            "expect value %s, but actual value is %s",
-                    0x1, headerType));
+                            "expect value %s, but actual value is %s", 0x1, headerType));
         }
 
-        int typeValue = reader.ReadUInt32(6);
+        int typeValue = reader.readUInt32(6);
         this.type = StreamObjectTypeHeaderEnd.fromIntVal(typeValue);
         if (this.type == null) {
-            throw new RuntimeException(String.format(
-                    Locale.US,
+            throw new RuntimeException(String.format(Locale.US,
                     "Failed to get the StreamObjectHeaderEnd8bit type value, the value %s is not defined",
                     typeValue));
         }

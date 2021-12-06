@@ -52,34 +52,34 @@ public class ZipFilesChunking extends AbstractChunking {
      * @return A list of LeafNodeObjectData.
      */
     @Override
-    public List<LeafNodeObject> Chunking() {
+    public List<LeafNodeObject> chunking() {
         java.util.List<LeafNodeObject> list = new ArrayList<>();
         LeafNodeObject.IntermediateNodeObjectBuilder builder =
                 new LeafNodeObject.IntermediateNodeObjectBuilder();
 
         int index = 0;
-        while (ZipHeader.IsFileHeader(this.FileContent, index)) {
+        while (ZipHeader.isFileHeader(this.FileContent, index)) {
             AtomicReference<byte[]> dataFileSignatureBytes = new AtomicReference<>();
-            byte[] header = this.AnalyzeFileHeader(this.FileContent, index, dataFileSignatureBytes);
+            byte[] header = this.analyzeFileHeader(this.FileContent, index, dataFileSignatureBytes);
             int headerLength = header.length;
-            int compressedSize = (int) this.GetCompressedSize(dataFileSignatureBytes.get());
+            int compressedSize = (int) this.getCompressedSize(dataFileSignatureBytes.get());
 
             if (headerLength + compressedSize <= 4096) {
                 list.add(builder.Build(
                         Arrays.copyOfRange(this.FileContent, index, headerLength + compressedSize),
-                        this.GetSingleChunkSignature(header, dataFileSignatureBytes.get())));
+                        this.getSingleChunkSignature(header, dataFileSignatureBytes.get())));
                 index += headerLength += compressedSize;
             } else {
-                list.add(builder.Build(header, this.GetSHA1Signature(header)));
+                list.add(builder.Build(header, this.getSHA1Signature(header)));
                 index += headerLength;
 
                 byte[] dataFile = Arrays.copyOfRange(this.FileContent, index, compressedSize);
 
                 if (dataFile.length <= 1048576) {
                     list.add(builder.Build(dataFile,
-                            this.GetDataFileSignature(dataFileSignatureBytes.get())));
+                            this.getDataFileSignature(dataFileSignatureBytes.get())));
                 } else {
-                    list.addAll(this.GetSubChunkList(dataFile));
+                    list.addAll(this.getSubChunkList(dataFile));
                 }
 
                 index += compressedSize;
@@ -94,7 +94,7 @@ public class ZipFilesChunking extends AbstractChunking {
                 Arrays.copyOfRange(this.FileContent, index, this.FileContent.length - index);
 
         if (finalRes.length <= 1048576) {
-            list.add(builder.Build(finalRes, this.GetSHA1Signature(finalRes)));
+            list.add(builder.Build(finalRes, this.getSHA1Signature(finalRes)));
         } else {
             // In current, it has no idea about how to compute the signature for final part larger than 1MB.
             throw new RuntimeException(
@@ -110,14 +110,14 @@ public class ZipFilesChunking extends AbstractChunking {
      * @param chunkData A byte array that contains the data.
      * @return A list of LeafNodeObjectData.
      */
-    private List<LeafNodeObject> GetSubChunkList(byte[] chunkData) {
+    private List<LeafNodeObject> getSubChunkList(byte[] chunkData) {
         List<LeafNodeObject> subChunkList = new ArrayList<LeafNodeObject>();
         int index = 0;
         while (index < chunkData.length) {
             int length = chunkData.length - index < 1048576 ? chunkData.length - index : 1048576;
             byte[] temp = Arrays.copyOfRange(chunkData, index, length);
             subChunkList.add(new LeafNodeObject.IntermediateNodeObjectBuilder().Build(temp,
-                    this.GetSubChunkSignature()));
+                    this.getSubChunkSignature()));
             index += length;
         }
 
@@ -132,7 +132,7 @@ public class ZipFilesChunking extends AbstractChunking {
      * @param dataFileSignature Specify the output value for the data file signature.
      * @return Return the data file content.
      */
-    private byte[] AnalyzeFileHeader(byte[] content, int index,
+    private byte[] analyzeFileHeader(byte[] content, int index,
                                      AtomicReference<byte[]> dataFileSignature) {
         int crc32 = BitConverter.toInt32(content, index + 14);
         int compressedSize = BitConverter.toInt32(content, index + 18);
@@ -142,9 +142,9 @@ public class ZipFilesChunking extends AbstractChunking {
         int headerLength = 30 + fileNameLength + extraFileldLength;
 
         BitWriter writer = new BitWriter(20);
-        writer.AppendInit32(crc32, 32);
-        writer.AppendUInt64(compressedSize, 64);
-        writer.AppendUInt64(uncompressedSize, 64);
+        writer.appendInit32(crc32, 32);
+        writer.appendUInt64(compressedSize, 64);
+        writer.appendUInt64(uncompressedSize, 64);
         dataFileSignature.set(writer.getBytes());
 
         return Arrays.copyOfRange(content, index, headerLength);
@@ -156,10 +156,10 @@ public class ZipFilesChunking extends AbstractChunking {
      * @param dataFileSignature Specify the signature of the zip file content.
      * @return Return the compressed size value.
      */
-    private long GetCompressedSize(byte[] dataFileSignature) {
+    private long getCompressedSize(byte[] dataFileSignature) {
         BitReader reader = new BitReader(dataFileSignature, 0);
-        reader.ReadUInt32(32);
-        return reader.ReadUInt64(64);
+        reader.readUInt32(32);
+        return reader.readUInt64(64);
     }
 
     /**
@@ -169,7 +169,7 @@ public class ZipFilesChunking extends AbstractChunking {
      * @param dataFile The data of data file.
      * @return An instance of SignatureObject.
      */
-    private SignatureObject GetSingleChunkSignature(byte[] header, byte[] dataFile) {
+    private SignatureObject getSingleChunkSignature(byte[] header, byte[] dataFile) {
         byte[] headerSignature = DigestUtils.sha1(header);
 
         List<Byte> singleSignature = new ArrayList<>();
@@ -187,7 +187,7 @@ public class ZipFilesChunking extends AbstractChunking {
      * @param array The input data.
      * @return An instance of SignatureObject.
      */
-    private SignatureObject GetSHA1Signature(byte[] array) {
+    private SignatureObject getSHA1Signature(byte[] array) {
         byte[] temp = DigestUtils.sha1(array);
 
         SignatureObject signature = new SignatureObject();
@@ -201,7 +201,7 @@ public class ZipFilesChunking extends AbstractChunking {
      * @param array The input data.
      * @return An instance of SignatureObject.
      */
-    private SignatureObject GetDataFileSignature(byte[] array) {
+    private SignatureObject getDataFileSignature(byte[] array) {
         SignatureObject signature = new SignatureObject();
         signature.SignatureData = new BinaryItem(ByteUtil.toListOfByte(array));
 
@@ -213,7 +213,7 @@ public class ZipFilesChunking extends AbstractChunking {
      *
      * @return An instance of SignatureObject.
      */
-    private SignatureObject GetSubChunkSignature() {
+    private SignatureObject getSubChunkSignature() {
         // In current, it has no idea about how to compute the signature for sub chunk.
         throw new RuntimeException("The Get sub chunk signature method is not implemented.");
     }

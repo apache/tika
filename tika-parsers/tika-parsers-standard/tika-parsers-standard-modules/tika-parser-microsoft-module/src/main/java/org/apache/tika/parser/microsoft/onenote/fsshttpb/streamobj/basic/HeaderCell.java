@@ -28,12 +28,12 @@ public class HeaderCell {
     public ObjectSpaceObjectPropSet ObjectData;
 
     /**
-     * Create the instacne of Header Cell.
+     * Create the instance of Header Cell.
      *
      * @param objectElement The instance of ObjectGroupDataElementData.
      * @return Returns the instacne of HeaderCell.
      */
-    public static HeaderCell CreateInstance(ObjectGroupDataElementData objectElement) {
+    public static HeaderCell createInstance(ObjectGroupDataElementData objectElement) {
         HeaderCell instance = new HeaderCell();
 
         for (int i = 0; i < objectElement.ObjectGroupDeclarations.ObjectDeclarationList.size();
@@ -47,7 +47,7 @@ public class HeaderCell {
                 ObjectGroupObjectData objectData =
                         objectElement.ObjectGroupData.ObjectGroupObjectDataList.get(i);
                 instance.ObjectData = new ObjectSpaceObjectPropSet();
-                instance.ObjectData.DoDeserializeFromByteArray(
+                instance.ObjectData.doDeserializeFromByteArray(
                         ByteUtil.toByteArray(objectData.Data.Content), 0);
                 break;
             }

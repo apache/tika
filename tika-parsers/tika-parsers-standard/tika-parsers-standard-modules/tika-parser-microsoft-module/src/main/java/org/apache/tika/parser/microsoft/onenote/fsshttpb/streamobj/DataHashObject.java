@@ -71,7 +71,7 @@ public class DataHashObject extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
 
@@ -92,9 +92,9 @@ public class DataHashObject extends StreamObject {
      * @return The number of elements
      */
     @Override
-    protected int SerializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) {
         int length = byteList.size();
-        byteList.addAll(this.Data.SerializeToByteList());
+        byteList.addAll(this.Data.serializeToByteList());
         return byteList.size() - length;
     }
 }

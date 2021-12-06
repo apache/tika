@@ -29,6 +29,7 @@ public class RevisionStoreObjectGroup {
     public ExGuid ObjectGroupID;
     public List<RevisionStoreObject> Objects;
     public List<EncryptionObject> EncryptionObjects;
+
     public RevisionStoreObjectGroup(ExGuid objectGroupId) {
         this.Objects = new ArrayList<>();
         this.EncryptionObjects = new ArrayList<>();
@@ -87,9 +88,9 @@ public class RevisionStoreObjectGroup {
                 }
                 if (objectGroupObjectBLOBDataDeclaration.ObjectPartitionID.getDecodedValue() == 2) {
                     revisionObject.FileDataObject = new FileDataObject();
-                    revisionObject.FileDataObject.ObjectDataBLOBDeclaration =
+                    revisionObject.FileDataObject.objectDataBLOBDeclaration =
                             objectGroupObjectBLOBDataDeclaration;
-                    revisionObject.FileDataObject.ObjectDataBLOBReference =
+                    revisionObject.FileDataObject.objectDataBLOBReference =
                             objectGroupObjectDataBLOBReference;
                 }
             }
@@ -104,8 +105,8 @@ public class RevisionStoreObjectGroup {
 
                 if (objectDeclaration.ObjectPartitionID.getDecodedValue() == 1) {
                     EncryptionObject encrypObject = new EncryptionObject();
-                    encrypObject.ObjectDeclaration = objectDeclaration;
-                    encrypObject.ObjectData = ByteUtil.toByteArray(objectData.Data.Content);
+                    encrypObject.objectDeclaration = objectDeclaration;
+                    encrypObject.objectData = ByteUtil.toByteArray(objectData.Data.Content);
                     objectGroup.EncryptionObjects.add(encrypObject);
                 }
             }

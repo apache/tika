@@ -39,15 +39,15 @@ public class JCID {
      *
      * @return Return the byte list which store the byte information of JCID
      */
-    public List<Byte> SerializeToByteList() {
+    public List<Byte> serializeToByteList() {
         BitWriter bitWriter = new BitWriter(4);
-        bitWriter.AppendInit32(this.Index, 16);
-        bitWriter.AppendInit32(this.IsBinary, 1);
-        bitWriter.AppendInit32(this.IsPropertySet, 1);
-        bitWriter.AppendInit32(this.IsGraphNode, 1);
-        bitWriter.AppendInit32(this.IsFileData, 1);
-        bitWriter.AppendInit32(this.IsReadOnly, 1);
-        bitWriter.AppendInit32(this.Reserved, 11);
+        bitWriter.appendInit32(this.Index, 16);
+        bitWriter.appendInit32(this.IsBinary, 1);
+        bitWriter.appendInit32(this.IsPropertySet, 1);
+        bitWriter.appendInit32(this.IsGraphNode, 1);
+        bitWriter.appendInit32(this.IsFileData, 1);
+        bitWriter.appendInit32(this.IsReadOnly, 1);
+        bitWriter.appendInit32(this.Reserved, 11);
 
         return bitWriter.getByteList();
     }
@@ -59,15 +59,15 @@ public class JCID {
      * @param startIndex Specify the start index from the byte array.
      * @return Return the length in byte of the JCID object.
      */
-    public int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         BitReader bitReader = new BitReader(byteArray, startIndex);
-        this.Index = bitReader.ReadInt32(16);
-        this.IsBinary = bitReader.ReadInt32(1);
-        this.IsPropertySet = bitReader.ReadInt32(1);
-        this.IsGraphNode = bitReader.ReadInt32(1);
-        this.IsFileData = bitReader.ReadInt32(1);
-        this.IsReadOnly = bitReader.ReadInt32(1);
-        this.Reserved = bitReader.ReadInt32(11);
+        this.Index = bitReader.readInt32(16);
+        this.IsBinary = bitReader.readInt32(1);
+        this.IsPropertySet = bitReader.readInt32(1);
+        this.IsGraphNode = bitReader.readInt32(1);
+        this.IsFileData = bitReader.readInt32(1);
+        this.IsReadOnly = bitReader.readInt32(1);
+        this.Reserved = bitReader.readInt32(11);
 
         return 4;
     }

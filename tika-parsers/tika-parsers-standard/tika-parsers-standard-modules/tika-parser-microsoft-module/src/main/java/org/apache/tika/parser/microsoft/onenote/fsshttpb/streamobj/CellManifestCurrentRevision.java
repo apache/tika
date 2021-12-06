@@ -41,7 +41,7 @@ public class CellManifestCurrentRevision extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.cellManifestCurrentRevisionExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
@@ -61,8 +61,8 @@ public class CellManifestCurrentRevision extends StreamObject {
      * @return The number of elements actually contained in the list.
      */
     @Override
-    protected int SerializeItemsToByteList(List<Byte> byteList) {
-        List<Byte> tmpList = this.cellManifestCurrentRevisionExGuid.SerializeToByteList();
+    protected int serializeItemsToByteList(List<Byte> byteList) {
+        List<Byte> tmpList = this.cellManifestCurrentRevisionExGuid.serializeToByteList();
         byteList.addAll(tmpList);
         return tmpList.size();
     }

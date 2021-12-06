@@ -42,7 +42,7 @@ public class DataElementPackage extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems) {
         if (lengthOfItems != 1) {
             throw new StreamObjectParseErrorException(currentIndex.get(), "DataElementPackage",
@@ -53,7 +53,7 @@ public class DataElementPackage extends StreamObject {
 
         this.DataElements = new ArrayList<>();
         AtomicReference<DataElement> dataElement = new AtomicReference<>();
-        while (StreamObject.TryGetCurrent(byteArray, currentIndex, dataElement,
+        while (StreamObject.tryGetCurrent(byteArray, currentIndex, dataElement,
                 DataElement.class)) {
             this.DataElements.add(dataElement.get());
         }
@@ -66,11 +66,11 @@ public class DataElementPackage extends StreamObject {
      * @return The number of elements actually contained in the list
      */
     @Override
-    protected int SerializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) {
         // Add the reserved byte
         byteList.add((byte) 0);
         for (DataElement dataElement : DataElements) {
-            byteList.addAll(dataElement.SerializeToByteList());
+            byteList.addAll(dataElement.serializeToByteList());
         }
         return 1;
     }

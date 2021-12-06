@@ -80,8 +80,8 @@ public class OneNoteParser extends AbstractParser {
 
         try (TemporaryResources temporaryResources = new TemporaryResources();
                 TikaInputStream tikaInputStream = TikaInputStream.get(oneStoreFileBytes);
-                OneNoteDirectFileResource oneNoteDirectFileResource =
-                     new OneNoteDirectFileResource(tikaInputStream.getFile())) {
+                OneNoteDirectFileResource oneNoteDirectFileResource = new OneNoteDirectFileResource(
+                        tikaInputStream.getFile())) {
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             xhtml.startDocument();
             temporaryResources.addResource(oneNoteDirectFileResource);
@@ -160,11 +160,11 @@ public class OneNoteParser extends AbstractParser {
             } else if (header.isLegacyOrAlternativePackaging()) {
                 try {
                     AlternativePackaging alternatePackageOneStoreFile = new AlternativePackaging();
-                    alternatePackageOneStoreFile.DoDeserializeFromByteArray(oneStoreFileBytes, 0);
+                    alternatePackageOneStoreFile.doDeserializeFromByteArray(oneStoreFileBytes, 0);
 
                     MSOneStoreParser onenoteParser = new MSOneStoreParser();
                     MSOneStorePackage pkg =
-                            onenoteParser.Parse(alternatePackageOneStoreFile.dataElementPackage);
+                            onenoteParser.parse(alternatePackageOneStoreFile.dataElementPackage);
 
                     pkg.walkTree(options, metadata, xhtml);
                 } catch (Exception e) {

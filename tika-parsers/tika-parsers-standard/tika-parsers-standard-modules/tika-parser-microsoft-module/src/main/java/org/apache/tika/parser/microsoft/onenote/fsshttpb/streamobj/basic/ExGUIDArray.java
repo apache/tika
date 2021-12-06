@@ -77,13 +77,13 @@ public class ExGUIDArray extends BasicObject {
      * @return Return the byte list which store the byte information of ExGUIDArray.
      */
     @Override
-    public List<Byte> SerializeToByteList() {
+    public List<Byte> serializeToByteList() {
         this.Count.setDecodedValue(this.Content.size());
 
         List<Byte> result = new ArrayList<Byte>();
-        result.addAll(this.Count.SerializeToByteList());
+        result.addAll(this.Count.serializeToByteList());
         for (ExGuid extendGuid : this.Content) {
-            result.addAll(extendGuid.SerializeToByteList());
+            result.addAll(extendGuid.serializeToByteList());
         }
 
         return result;
@@ -97,7 +97,7 @@ public class ExGUIDArray extends BasicObject {
      * @return Return the length in byte of the ExGUIDArray basic object.
      */
     @Override
-    protected int DoDeserializeFromByteArray(byte[] byteArray,
+    protected int doDeserializeFromByteArray(byte[] byteArray,
                                              int startIndex) // return the length consumed
     {
         AtomicInteger index = new AtomicInteger(startIndex);

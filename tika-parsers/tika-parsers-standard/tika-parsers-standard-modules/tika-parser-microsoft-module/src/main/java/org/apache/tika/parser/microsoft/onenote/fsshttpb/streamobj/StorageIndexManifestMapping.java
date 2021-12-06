@@ -43,7 +43,7 @@ public class StorageIndexManifestMapping extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.ManifestMappingExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
@@ -64,10 +64,10 @@ public class StorageIndexManifestMapping extends StreamObject {
      * @return The length of list
      */
     @Override
-    protected int SerializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) {
         int itemsIndex = byteList.size();
-        byteList.addAll(this.ManifestMappingExGuid.SerializeToByteList());
-        byteList.addAll(this.ManifestMappingSerialNumber.SerializeToByteList());
+        byteList.addAll(this.ManifestMappingExGuid.serializeToByteList());
+        byteList.addAll(this.ManifestMappingSerialNumber.serializeToByteList());
         return byteList.size() - itemsIndex;
     }
 }

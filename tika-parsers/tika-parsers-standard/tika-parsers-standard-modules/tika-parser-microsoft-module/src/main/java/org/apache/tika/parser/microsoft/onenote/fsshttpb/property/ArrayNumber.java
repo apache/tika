@@ -35,7 +35,7 @@ public class ArrayNumber implements IProperty {
      * @param startIndex Specify the start index from the byte array.
      * @return Return the length in byte of the number of array.
      */
-    public int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         this.Number = BitConverter.toInt32(byteArray, startIndex);
         return 4;
     }
@@ -45,7 +45,7 @@ public class ArrayNumber implements IProperty {
      *
      * @return Return the byte list which store the byte information of the number of array.
      */
-    public List<Byte> SerializeToByteList() {
+    public List<Byte> serializeToByteList() {
         return ByteUtil.toListOfByte(BitConverter.getBytes(this.Number));
     }
 }

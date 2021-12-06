@@ -49,7 +49,7 @@ public class StorageIndexCellMapping extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.CellID = BasicObject.parse(byteArray, index, CellID.class);
@@ -71,11 +71,11 @@ public class StorageIndexCellMapping extends StreamObject {
      * @return The length of list
      */
     @Override
-    protected int SerializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) {
         int itemsIndex = byteList.size();
-        byteList.addAll(this.CellID.SerializeToByteList());
-        byteList.addAll(this.CellMappingExGuid.SerializeToByteList());
-        byteList.addAll(this.CellMappingSerialNumber.SerializeToByteList());
+        byteList.addAll(this.CellID.serializeToByteList());
+        byteList.addAll(this.CellMappingExGuid.serializeToByteList());
+        byteList.addAll(this.CellMappingSerialNumber.serializeToByteList());
         return byteList.size() - itemsIndex;
     }
 }

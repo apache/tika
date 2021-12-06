@@ -63,12 +63,12 @@ public class CellIDArray extends BasicObject {
      * @return Return the byte list which store the byte information of CellIDArray.
      */
     @Override
-    public List<Byte> SerializeToByteList() {
+    public List<Byte> serializeToByteList() {
         List<Byte> byteList = new ArrayList<Byte>();
-        byteList.addAll((new Compact64bitInt(this.Count)).SerializeToByteList());
+        byteList.addAll((new Compact64bitInt(this.Count)).serializeToByteList());
         if (this.Content != null) {
             for (CellID extendGuid : this.Content) {
-                byteList.addAll(extendGuid.SerializeToByteList());
+                byteList.addAll(extendGuid.serializeToByteList());
             }
         }
 
@@ -83,7 +83,7 @@ public class CellIDArray extends BasicObject {
      * @return Return the length in byte of the CellIDArray basic object.
      */
     @Override
-    protected int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         AtomicInteger index = new AtomicInteger(startIndex);
 
         this.Count = BasicObject.parse(byteArray, index, Compact64bitInt.class).getDecodedValue();

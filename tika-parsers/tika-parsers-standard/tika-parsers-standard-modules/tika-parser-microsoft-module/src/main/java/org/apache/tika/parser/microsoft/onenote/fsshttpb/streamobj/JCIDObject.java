@@ -27,6 +27,7 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
 public class JCIDObject {
     public ObjectGroupObjectDeclare ObjectDeclaration;
     public JCID JCID;
+
     /**
      * Construct the JCIDObject instance.
      *
@@ -37,6 +38,6 @@ public class JCIDObject {
                       ObjectGroupObjectData objectData) {
         this.ObjectDeclaration = objectDeclaration;
         this.JCID = new JCID();
-        this.JCID.DoDeserializeFromByteArray(ByteUtil.toByteArray(objectData.Data.Content), 0);
+        this.JCID.doDeserializeFromByteArray(ByteUtil.toByteArray(objectData.Data.Content), 0);
     }
 }

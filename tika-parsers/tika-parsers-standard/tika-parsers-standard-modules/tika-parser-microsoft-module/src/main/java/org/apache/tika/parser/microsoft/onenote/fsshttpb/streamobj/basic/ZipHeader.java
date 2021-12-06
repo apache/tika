@@ -41,7 +41,7 @@ public class ZipHeader {
      * @param index     The index where to start.
      * @return True if the input data is a local file header, otherwise false.
      */
-    public static boolean IsFileHeader(byte[] byteArray, int index) {
+    public static boolean isFileHeader(byte[] byteArray, int index) {
         return Arrays.equals(LocalFileHeader, Arrays.copyOfRange(byteArray, index, 4));
     }
 }

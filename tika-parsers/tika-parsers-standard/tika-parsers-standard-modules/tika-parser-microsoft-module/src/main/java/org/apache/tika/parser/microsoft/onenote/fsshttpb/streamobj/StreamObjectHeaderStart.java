@@ -72,7 +72,7 @@ public abstract class StreamObjectHeaderStart extends BasicObject {
      * @param streamObjectHeader Specify the out value for the parse result.
      * @return Return true if success, otherwise returns false.
      */
-    public static int TryParse(byte[] byteArray, int startIndex,
+    public static int tryParse(byte[] byteArray, int startIndex,
                                AtomicReference<StreamObjectHeaderStart> streamObjectHeader) {
         int headerType = byteArray[startIndex] & 0x03;
         if (headerType == StreamObjectHeaderStart.StreamObjectHeaderStart16bit) {
@@ -86,7 +86,7 @@ public abstract class StreamObjectHeaderStart extends BasicObject {
         }
 
         try {
-            return streamObjectHeader.get().DeserializeFromByteArray(byteArray, startIndex);
+            return streamObjectHeader.get().deserializeFromByteArray(byteArray, startIndex);
         } catch (Exception e) {
             return 0;
         }

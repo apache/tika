@@ -37,8 +37,7 @@ public class StreamObjectHeaderEnd16bit extends StreamObjectHeaderEnd {
     public StreamObjectHeaderEnd16bit(int type) {
         this.type = StreamObjectTypeHeaderEnd.fromIntVal(type);
         if (this.type == null) {
-            throw new RuntimeException(String.format(
-                    Locale.US,
+            throw new RuntimeException(String.format(Locale.US,
                     "The type value RuntimeException is not defined for the stream object end 16-bit header",
                     type));
         }
@@ -66,10 +65,10 @@ public class StreamObjectHeaderEnd16bit extends StreamObjectHeaderEnd {
      * @return Return the byte list which store the byte information of StreamObjectHeaderEnd16bit.
      */
     @Override
-    public List<Byte> SerializeToByteList() {
+    public List<Byte> serializeToByteList() {
         BitWriter bitFieldWriter = new BitWriter(2);
-        bitFieldWriter.AppendInit32(0x3, 2);
-        bitFieldWriter.AppendUInit32(this.type.getIntVal(), 14);
+        bitFieldWriter.appendInit32(0x3, 2);
+        bitFieldWriter.appendUInit32(this.type.getIntVal(), 14);
         return bitFieldWriter.getByteList();
     }
 
@@ -78,8 +77,8 @@ public class StreamObjectHeaderEnd16bit extends StreamObjectHeaderEnd {
      *
      * @return Return StreamObjectHeaderEnd8bit value represented by unsigned short integer.
      */
-    public short ToUint16() {
-        List<Byte> bytes = this.SerializeToByteList();
+    public short toUint16() {
+        List<Byte> bytes = this.serializeToByteList();
         return LittleEndianBitConverter.ToUInt16(ByteUtil.toByteArray(bytes), 0);
     }
 
@@ -92,23 +91,20 @@ public class StreamObjectHeaderEnd16bit extends StreamObjectHeaderEnd {
      * @return Return the length in byte of the StreamObjectHeaderEnd16bit basic object.
      */
     @Override
-    protected int DoDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         BitReader reader = new BitReader(byteArray, startIndex);
-        int headerType = reader.ReadInt32(2);
+        int headerType = reader.readInt32(2);
 
         if (headerType != 0x3) {
-            throw new RuntimeException(String.format(
-                    Locale.US,
+            throw new RuntimeException(String.format(Locale.US,
                     "Failed to get the StreamObjectHeaderEnd16bit header type value, expect value %d, " +
-                            "but actual value is %s",
-                    0x3, headerType));
+                            "but actual value is %s", 0x3, headerType));
         }
 
-        int typeValue = reader.ReadUInt32(14);
+        int typeValue = reader.readUInt32(14);
         this.type = StreamObjectTypeHeaderEnd.fromIntVal(typeValue);
         if (this.type == null) {
-            throw new RuntimeException(String.format(
-                    Locale.US,
+            throw new RuntimeException(String.format(Locale.US,
                     "Failed to get the StreamObjectHeaderEnd16bit type value, the value %d is not defined",
                     typeValue));
         }

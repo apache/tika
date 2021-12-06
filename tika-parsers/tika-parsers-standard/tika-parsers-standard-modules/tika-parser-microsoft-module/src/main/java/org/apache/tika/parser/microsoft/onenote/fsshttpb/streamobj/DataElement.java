@@ -100,12 +100,11 @@ public class DataElement extends StreamObject {
      * @return Data of
      * the element
      */
-    public <T extends DataElementData> T GetData(Class<T> clazz) {
+    public <T extends DataElementData> T getData(Class<T> clazz) {
         if (this.data.getClass().equals(clazz)) {
             return (T) this.data;
         } else {
-            throw new RuntimeException(String.format(
-                    Locale.US,
+            throw new RuntimeException(String.format(Locale.US,
                     "Unable to cast DataElementData to the type %s, its actual type is %s",
                     clazz.getName(), this.data.getClass().getName()));
         }
@@ -123,7 +122,7 @@ public class DataElement extends StreamObject {
      *                      the items
      */
     @Override
-    protected void DeserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
+    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
 
@@ -140,8 +139,7 @@ public class DataElement extends StreamObject {
         if (index.get() - currentIndex.get() != lengthOfItems) {
             throw new DataElementParseErrorException(currentIndex.get(),
                     "Failed to check the data element header length, whose value does not cover the " +
-                            "dataElementExGUID, SerialNumber and DataElementType",
-                    null);
+                            "dataElementExGUID, SerialNumber and DataElementType", null);
         }
 
         if (dataElementDataTypeMapping.containsKey(this.dataElementType)) {
@@ -154,7 +152,7 @@ public class DataElement extends StreamObject {
 
             try {
                 index.addAndGet(
-                        this.data.DeserializeDataElementDataFromByteArray(byteArray, index.get()));
+                        this.data.deserializeDataElementDataFromByteArray(byteArray, index.get()));
             } catch (Exception e) {
                 throw new DataElementParseErrorException(index.get(), e);
             }
@@ -174,15 +172,15 @@ public class DataElement extends StreamObject {
      * @return The element length
      */
     @Override
-    protected int SerializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) {
         int startIndex = byteList.size();
-        byteList.addAll(this.dataElementExGuid.SerializeToByteList());
-        byteList.addAll(this.serialNumber.SerializeToByteList());
+        byteList.addAll(this.dataElementExGuid.serializeToByteList());
+        byteList.addAll(this.serialNumber.serializeToByteList());
         byteList.addAll(
-                new Compact64bitInt(this.dataElementType.getIntVal()).SerializeToByteList());
+                new Compact64bitInt(this.dataElementType.getIntVal()).serializeToByteList());
 
         int headerLength = byteList.size() - startIndex;
-        byteList.addAll(this.data.SerializeToByteList());
+        byteList.addAll(this.data.serializeToByteList());
 
         return headerLength;
     }

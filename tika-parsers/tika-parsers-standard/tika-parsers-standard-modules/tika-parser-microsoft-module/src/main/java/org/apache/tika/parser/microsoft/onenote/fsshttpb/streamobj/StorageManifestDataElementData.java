@@ -26,7 +26,7 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.exception.DataElementPa
 
 public class StorageManifestDataElementData extends DataElementData {
     public StorageManifestSchemaGUID storageManifestSchemaGUID;
-    public List<StorageManifestRootDeclare> StorageManifestRootDeclareList;
+    public List<StorageManifestRootDeclare> storageManifestRootDeclareList;
 
     /**
      * Initializes a new instance of the StorageManifestDataElementData class.
@@ -34,7 +34,7 @@ public class StorageManifestDataElementData extends DataElementData {
     public StorageManifestDataElementData() {
         // Storage Manifest
         this.storageManifestSchemaGUID = new StorageManifestSchemaGUID();
-        this.StorageManifestRootDeclareList = new ArrayList<>();
+        this.storageManifestRootDeclareList = new ArrayList<>();
     }
 
     /**
@@ -43,13 +43,13 @@ public class StorageManifestDataElementData extends DataElementData {
      * @return A Byte list
      */
     @Override
-    public List<Byte> SerializeToByteList() {
+    public List<Byte> serializeToByteList() {
         List<Byte> byteList = new ArrayList<Byte>();
-        byteList.addAll(this.storageManifestSchemaGUID.SerializeToByteList());
+        byteList.addAll(this.storageManifestSchemaGUID.serializeToByteList());
 
-        if (this.StorageManifestRootDeclareList != null) {
-            for (StorageManifestRootDeclare storageManifestRootDeclare : this.StorageManifestRootDeclareList) {
-                byteList.addAll(storageManifestRootDeclare.SerializeToByteList());
+        if (this.storageManifestRootDeclareList != null) {
+            for (StorageManifestRootDeclare storageManifestRootDeclare : this.storageManifestRootDeclareList) {
+                byteList.addAll(storageManifestRootDeclare.serializeToByteList());
             }
         }
 
@@ -64,21 +64,21 @@ public class StorageManifestDataElementData extends DataElementData {
      * @return The length of the array
      */
     @Override
-    public int DeserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex) {
+    public int deserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex) {
         AtomicInteger index = new AtomicInteger(startIndex);
 
         this.storageManifestSchemaGUID =
-                StreamObject.GetCurrent(byteArray, index, StorageManifestSchemaGUID.class);
-        this.StorageManifestRootDeclareList = new ArrayList<>();
+                StreamObject.getCurrent(byteArray, index, StorageManifestSchemaGUID.class);
+        this.storageManifestRootDeclareList = new ArrayList<>();
 
         AtomicReference<StreamObjectHeaderStart> header = new AtomicReference<>();
         int headerLength = 0;
-        while ((headerLength = StreamObjectHeaderStart.TryParse(byteArray, index.get(), header)) !=
+        while ((headerLength = StreamObjectHeaderStart.tryParse(byteArray, index.get(), header)) !=
                 0) {
             if (header.get().type == StreamObjectTypeHeaderStart.StorageManifestRootDeclare) {
                 index.addAndGet(headerLength);
-                this.StorageManifestRootDeclareList.add(
-                        (StorageManifestRootDeclare) StreamObject.ParseStreamObject(header.get(),
+                this.storageManifestRootDeclareList.add(
+                        (StorageManifestRootDeclare) StreamObject.parseStreamObject(header.get(),
                                 byteArray, index));
             } else {
                 throw new DataElementParseErrorException(index.get(),
