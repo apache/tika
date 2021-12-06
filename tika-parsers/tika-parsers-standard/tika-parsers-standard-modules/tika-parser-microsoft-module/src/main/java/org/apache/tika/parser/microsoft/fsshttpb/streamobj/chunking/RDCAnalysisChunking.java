@@ -1,7 +1,7 @@
 package org.apache.tika.parser.microsoft.fsshttpb.streamobj.chunking;
 
-import static org.joou.Unsigned.ubyte;
-import static org.joou.Unsigned.uint;
+import static org.apache.tika.parser.microsoft.fsshttpb.unsigned.Unsigned.ubyte;
+import static org.apache.tika.parser.microsoft.fsshttpb.unsigned.Unsigned.uint;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,8 +10,8 @@ import java.util.List;
 import org.apache.tika.parser.microsoft.fsshttpb.streamobj.LeafNodeObject;
 import org.apache.tika.parser.microsoft.fsshttpb.streamobj.SignatureObject;
 import org.apache.tika.parser.microsoft.fsshttpb.streamobj.basic.BinaryItem;
+import org.apache.tika.parser.microsoft.fsshttpb.unsigned.UInteger;
 import org.apache.tika.parser.microsoft.fsshttpb.util.ByteUtil;
-import org.joou.UInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
