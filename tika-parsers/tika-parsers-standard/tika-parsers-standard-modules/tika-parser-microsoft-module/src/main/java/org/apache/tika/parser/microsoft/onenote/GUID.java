@@ -14,16 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.onenote;
 
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitConverter;
 import org.apache.tika.utils.StringUtils;
 
-class GUID implements Comparable<GUID> {
+public class GUID implements Comparable<GUID> {
     int[] guid;
 
     public GUID(int[] guid) {
@@ -34,7 +38,7 @@ class GUID implements Comparable<GUID> {
      * Converts a GUID of format: {AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE} (in bytes) to a GUID
      * object.
      *
-     * @param guid The bytes that contai  string in UTF-16 format of {AAAAAAAA-BBBB-CCCC-DDDD
+     * @param guid The bytes that contains string in UTF-16 format of {AAAAAAAA-BBBB-CCCC-DDDD
      *             -EEEEEEEEEEEE}
      * @return GUID object parsed from guid bytes.
      */
@@ -130,5 +134,15 @@ class GUID implements Comparable<GUID> {
 
     public String getGuidString() {
         return guid.toString();
+    }
+
+    public List<Byte> toByteArray() {
+        List<Byte> byteList = new ArrayList<>();
+        for (int nextInt : guid) {
+            for (byte b : BitConverter.getBytes(nextInt)) {
+                byteList.add(b);
+            }
+        }
+        return byteList;
     }
 }

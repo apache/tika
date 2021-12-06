@@ -47,7 +47,7 @@ enum JCIDPropertySetTypeEnum {
         }
     }
 
-    private long jcid;
+    private final long jcid;
 
     JCIDPropertySetTypeEnum(long jcid) {
         this.jcid = jcid;

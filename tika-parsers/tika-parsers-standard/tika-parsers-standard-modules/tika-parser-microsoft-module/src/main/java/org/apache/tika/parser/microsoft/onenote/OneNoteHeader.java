@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.onenote;
 
 import java.io.Serializable;
@@ -58,15 +59,15 @@ class OneNoteHeader implements Serializable {
     long buildNumberLastWroteToFile;
     long buildNumberOldestWritten;
     long buildNumberNewestWritten;
+    private boolean legacyOrAlternativePackaging;
 
     /**
-     * Determine if this OneNote file pre-dates the open specs published by
-     * microsoft.
+     * Determine if this file is saved in the OnPrem OneNote 2013 or greater spec.
      *
      * @return True if file is based on the MS-ONE and MS-ONESTORE specs. False otherwise.
      */
-    public boolean isLegacy() {
-        return !GUID.nil().equals(guidLegacyFileVersion);
+    public boolean isMsOneStoreFormat() {
+        return GUID.nil().equals(guidLegacyFileVersion);
     }
 
     public GUID getGuidFileType() {
@@ -404,6 +405,15 @@ class OneNoteHeader implements Serializable {
 
     public OneNoteHeader setBuildNumberNewestWritten(long buildNumberNewestWritten) {
         this.buildNumberNewestWritten = buildNumberNewestWritten;
+        return this;
+    }
+
+    public boolean isLegacyOrAlternativePackaging() {
+        return legacyOrAlternativePackaging;
+    }
+
+    public OneNoteHeader setLegacyOrAlternativePackaging(boolean legacyOrAlternativePackaging) {
+        this.legacyOrAlternativePackaging = legacyOrAlternativePackaging;
         return this;
     }
 }

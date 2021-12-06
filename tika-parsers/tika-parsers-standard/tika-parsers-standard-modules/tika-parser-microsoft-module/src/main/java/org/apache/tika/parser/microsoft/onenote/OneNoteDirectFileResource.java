@@ -34,7 +34,7 @@ class OneNoteDirectFileResource implements Closeable {
 
     private static final int TRANSFER_SIZE = 8192;
 
-    private RandomAccessFile raf;
+    private final RandomAccessFile raf;
 
     public OneNoteDirectFileResource(File f) throws IOException {
         this.raf = new RandomAccessFile(f, "r");
