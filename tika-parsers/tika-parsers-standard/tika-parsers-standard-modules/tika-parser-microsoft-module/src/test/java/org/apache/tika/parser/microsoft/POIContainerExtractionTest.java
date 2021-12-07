@@ -21,6 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -46,7 +48,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
     @Test
     public void testWithoutEmbedded() throws Exception {
         ContainerExtractor extractor = new ParserContainerExtractor();
-        debug(getRecursiveMetadata("testPPT.ppt"));
+
         String[] files =
                 new String[]{"testEXCEL.xls", "testWORD.doc", "testPPT.ppt", "testVISIO.vsd",
                         "test-outlook.msg"};

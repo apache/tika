@@ -120,7 +120,6 @@ abstract class AbstractPOIFSExtractor {
         try {
 
             if (filename != null) {
-                embeddedMetadata.set(Metadata.TIKA_MIME_FILE, filename);
                 embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
             }
             if (relationshipID != null) {
@@ -202,6 +201,8 @@ abstract class AbstractPOIFSExtractor {
                     if (ole.getLabel() != null) {
                         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
                                 rName + '/' + ole.getLabel());
+                    } else {
+                        metadata.add(TikaCoreProperties.RESOURCE_NAME_KEY, rName);
                     }
                     if (ole.getCommand() != null) {
                         metadata.add(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, ole.getCommand());

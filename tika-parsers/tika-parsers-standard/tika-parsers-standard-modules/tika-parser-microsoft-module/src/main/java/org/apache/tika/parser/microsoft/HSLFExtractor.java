@@ -62,6 +62,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.StringUtils;
 
 public class HSLFExtractor extends AbstractPOIFSExtractor {
 
@@ -175,10 +176,14 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
             throws SAXException {
         
         HSLFObjectData[] objectData = ss.getEmbeddedObjects();
-
+        int i = 0;
         for (HSLFObjectData d : objectData) {
             if (processedEmbeddedObjects.contains(d.getExOleObjStg().getPersistId())) {
                 continue;
+            }
+            String filename = d.getFileName();
+            if (StringUtils.isBlank(filename)) {
+                filename = "UNKNOWN-" + i;
             }
             try (TikaInputStream tis = TikaInputStream.get(d.getInputStream())) {
                 if (FileMagic.valueOf(tis) == FileMagic.OLE2) {
@@ -188,14 +193,25 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                         if (pfs.getRoot().getEntryNames().size() < 1) {
                             return;
                         }
-                        handleEmbeddedOfficeDoc(pfs.getRoot(), d.getFileName(), xhtml);
+                        handleEmbeddedOfficeDoc(pfs.getRoot(), filename, xhtml);
                     }
                 } else {
-                    handleEmbeddedResource(tis, d.getFileName(), null, null, xhtml, true);
+                    boolean shouldProcess = false;
+                    try {
+                        tis.mark(1);
+                        int b = tis.read();
+                        shouldProcess = b > -1;
+                    } finally {
+                        tis.reset();
+                    }
+                    if (shouldProcess) {
+                        handleEmbeddedResource(tis, filename, null, null, xhtml, true);
+                    }
                 }
             } catch (IOException | TikaException e) {
                 EmbeddedDocumentUtil.recordException(e, parentMetadata);
             }
+            i++;
         }
     }
 
