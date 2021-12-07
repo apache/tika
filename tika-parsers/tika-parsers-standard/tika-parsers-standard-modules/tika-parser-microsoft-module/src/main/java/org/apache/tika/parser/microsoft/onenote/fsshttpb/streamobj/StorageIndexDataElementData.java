@@ -17,25 +17,27 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.exception.DataElementParseErrorException;
 
 public class StorageIndexDataElementData extends DataElementData {
-    public StorageIndexManifestMapping StorageIndexManifestMapping;
+    public StorageIndexManifestMapping storageIndexManifestMapping;
     public List<StorageIndexCellMapping> storageIndexCellMappingList;
-    public List<StorageIndexRevisionMapping> StorageIndexRevisionMappingList;
+    public List<StorageIndexRevisionMapping> storageIndexRevisionMappingList;
 
     /**
      * Initializes a new instance of the StorageIndexDataElementData class.
      */
     public StorageIndexDataElementData() {
-        this.StorageIndexManifestMapping = new StorageIndexManifestMapping();
+        this.storageIndexManifestMapping = new StorageIndexManifestMapping();
         this.storageIndexCellMappingList = new ArrayList<>();
-        this.StorageIndexRevisionMappingList = new ArrayList<>();
+        this.storageIndexRevisionMappingList = new ArrayList<>();
     }
 
     /**
@@ -44,11 +46,11 @@ public class StorageIndexDataElementData extends DataElementData {
      * @return A Byte list
      */
     @Override
-    public List<Byte> serializeToByteList() {
+    public List<Byte> serializeToByteList() throws TikaException, IOException {
         List<Byte> byteList = new ArrayList<>();
 
-        if (this.StorageIndexManifestMapping != null) {
-            byteList.addAll(this.StorageIndexManifestMapping.serializeToByteList());
+        if (this.storageIndexManifestMapping != null) {
+            byteList.addAll(this.storageIndexManifestMapping.serializeToByteList());
         }
 
         if (this.storageIndexCellMappingList != null) {
@@ -58,8 +60,8 @@ public class StorageIndexDataElementData extends DataElementData {
         }
 
         // Storage Index Revision Mapping
-        if (this.StorageIndexRevisionMappingList != null) {
-            for (StorageIndexRevisionMapping revisionMapping : this.StorageIndexRevisionMappingList) {
+        if (this.storageIndexRevisionMappingList != null) {
+            for (StorageIndexRevisionMapping revisionMapping : this.storageIndexRevisionMappingList) {
                 byteList.addAll(revisionMapping.serializeToByteList());
             }
         }
@@ -75,7 +77,8 @@ public class StorageIndexDataElementData extends DataElementData {
      * @return The length of the element
      */
     @Override
-    public int deserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex) {
+    public int deserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex)
+            throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(startIndex);
         int headerLength = 0;
         AtomicReference<StreamObjectHeaderStart> header = new AtomicReference<>();
@@ -90,7 +93,7 @@ public class StorageIndexDataElementData extends DataElementData {
                                     "StorageIndexManifestMapping", null);
                 }
 
-                this.StorageIndexManifestMapping =
+                this.storageIndexManifestMapping =
                         (StorageIndexManifestMapping) StreamObject.parseStreamObject(header.get(),
                                 byteArray, index);
                 isStorageIndexManifestMappingExist = true;
@@ -100,7 +103,7 @@ public class StorageIndexDataElementData extends DataElementData {
                                 byteArray, index));
             } else if (header.get().type ==
                     StreamObjectTypeHeaderStart.StorageIndexRevisionMapping) {
-                this.StorageIndexRevisionMappingList.add(
+                this.storageIndexRevisionMappingList.add(
                         (StorageIndexRevisionMapping) StreamObject.parseStreamObject(header.get(),
                                 byteArray, index));
             } else {

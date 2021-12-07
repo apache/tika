@@ -24,7 +24,7 @@ import java.util.List;
  * This class is used to represent the property contains 1 byte of data in the PropertySet.rgData stream field.
  */
 public class OneByteOfData implements IProperty {
-    public byte Data;
+    public byte data;
 
     /**
      * This method is used to deserialize the OneByteOfData from the specified byte array and start index.
@@ -34,7 +34,7 @@ public class OneByteOfData implements IProperty {
      * @return
      */
     public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
-        this.Data = byteArray[startIndex];
+        this.data = byteArray[startIndex];
         return 1;
     }
 
@@ -44,6 +44,6 @@ public class OneByteOfData implements IProperty {
      * @return Return the byte list which store the byte information of OneByteOfData.
      */
     public List<Byte> serializeToByteList() {
-        return new ArrayList<>(this.Data);
+        return new ArrayList<>(this.data);
     }
 }

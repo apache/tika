@@ -17,6 +17,7 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -62,7 +63,7 @@ public class SerialNumber extends BasicObject {
      * @return Return the byte list which store the byte information of SerialNumber.
      */
     @Override
-    public List<Byte> serializeToByteList() {
+    public List<Byte> serializeToByteList() throws IOException {
         BitWriter bitWriter = null;
         if (this.guid.equals(GuidUtil.emptyGuid())) {
             bitWriter = new BitWriter(1);
@@ -86,7 +87,8 @@ public class SerialNumber extends BasicObject {
      */
     @Override
     protected int doDeserializeFromByteArray(byte[] byteArray,
-                                             int startIndex) // return the length consumed
+                                             int startIndex)
+            throws IOException // return the length consumed
     {
         BitReader bitField = new BitReader(byteArray, startIndex);
         int type = bitField.readInt32(8);
@@ -102,7 +104,7 @@ public class SerialNumber extends BasicObject {
             this.type = 128;
             return 25;
         } else {
-            throw new RuntimeException(
+            throw new IllegalArgumentException(
                     "Failed to parse SerialNumber object, Expect the type value is either 0 or 128, " +
                             "but the actual value is " + this.type);
         }

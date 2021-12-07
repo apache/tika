@@ -17,9 +17,11 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.IFSSHTTPBSerializable;
 
 /**
@@ -34,14 +36,15 @@ public abstract class BasicObject implements IFSSHTTPBSerializable {
      * @return The instance of target object.
      */
     public static <T extends BasicObject> T parse(byte[] byteArray, AtomicInteger index,
-                                                  Class<T> clazz) {
+                                                  Class<T> clazz) throws TikaException,
+            IOException {
         try {
             T fsshttpbObject = clazz.newInstance();
             index.addAndGet(fsshttpbObject.deserializeFromByteArray(byteArray, index.get()));
 
             return fsshttpbObject;
         } catch (InstantiationException | IllegalAccessException e) {
-            throw new RuntimeException("Could not parse basic object", e);
+            throw new TikaException("Could not parse basic object", e);
         }
     }
 
@@ -52,7 +55,8 @@ public abstract class BasicObject implements IFSSHTTPBSerializable {
      * @param startIndex The start position.
      * @return The element length.
      */
-    public int deserializeFromByteArray(byte[] byteArray, int startIndex) {
+    public int deserializeFromByteArray(byte[] byteArray, int startIndex)
+            throws TikaException, IOException {
         return this.doDeserializeFromByteArray(byteArray, startIndex);
     }
 
@@ -61,7 +65,7 @@ public abstract class BasicObject implements IFSSHTTPBSerializable {
      *
      * @return The byte list.
      */
-    public abstract List<Byte> serializeToByteList();
+    public abstract List<Byte> serializeToByteList() throws IOException;
 
     /**
      * Used to return the length of this element.
@@ -70,5 +74,6 @@ public abstract class BasicObject implements IFSSHTTPBSerializable {
      * @param startIndex The start position.
      * @return The element length
      */
-    protected abstract int doDeserializeFromByteArray(byte[] byteArray, int startIndex);
+    protected abstract int doDeserializeFromByteArray(byte[] byteArray, int startIndex)
+            throws IOException, TikaException;
 }

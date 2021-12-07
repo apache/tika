@@ -17,6 +17,7 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.util;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
@@ -63,72 +64,72 @@ public class BitConverter {
         return (double) x;
     }
 
-    public static short toInt16(byte[] bytes, int index) {
+    public static short toInt16(byte[] bytes, int index) throws IOException {
         if (bytes.length < 2) {
-            throw new RuntimeException(
+            throw new IOException(
                     "The length of the byte array must be at least 2 bytes long.");
         }
         byte[] uint16Bytes = Arrays.copyOfRange(bytes, index, index + 2);
         return LittleEndianBitConverter.ToUInt16(uint16Bytes, 0);
     }
 
-    public static int toInt32(byte[] bytes, int index) {
+    public static int toInt32(byte[] bytes, int index) throws IOException {
         if (bytes.length < 4) {
-            throw new RuntimeException(
+            throw new IOException(
                     "The length of the byte array must be at least 4 bytes long.");
         }
         byte[] int32Bytes = Arrays.copyOfRange(bytes, index, index + 4);
         return LittleEndianBitConverter.toInt32(int32Bytes, 0);
     }
 
-    public static long toUInt32(byte[] bytes, int index) {
+    public static long toUInt32(byte[] bytes, int index) throws IOException {
         byte[] uint32Bytes = Arrays.copyOfRange(bytes, index, index + 4);
         return LittleEndianBitConverter.toUInt32(uint32Bytes, 0);
     }
 
-    public static long toInt64(byte[] bytes, int index) {
+    public static long toInt64(byte[] bytes, int index) throws IOException {
         if (bytes.length != 8) {
-            throw new RuntimeException(
+            throw new IOException(
                     "The length of the byte array must be at least 8 bytes long.");
         }
         byte[] uint64Bytes = Arrays.copyOfRange(bytes, index, index + 8);
         return LittleEndianBitConverter.toUInt64(uint64Bytes, 0);
     }
 
-    public static float toSingle(byte[] bytes, int index) {
+    public static float toSingle(byte[] bytes, int index) throws IOException {
         if (bytes.length != 4) {
-            throw new RuntimeException(
+            throw new IOException(
                     "The length of the byte array must be at least 4 bytes long.");
         }
         return Float.intBitsToFloat(toInt32(bytes, index));
     }
 
-    public static String toString(byte[] bytes) {
+    public static String toString(byte[] bytes) throws IOException {
         if (bytes == null) {
-            throw new RuntimeException("The byte array must have at least 1 byte.");
+            throw new IOException("The byte array must have at least 1 byte.");
         }
         return new String(bytes, StandardCharsets.UTF_8);
     }
 
-    public boolean toBoolean(byte[] bytes, int index) {
+    public boolean toBoolean(byte[] bytes, int index) throws IOException {
         if (bytes.length != 1) {
-            throw new RuntimeException(
+            throw new IOException(
                     "The length of the byte array must be at least 1 byte long.");
         }
         return bytes[index] != 0;
     }
 
-    public char toChar(byte[] bytes, int index) {
+    public char toChar(byte[] bytes, int index) throws IOException {
         if (bytes.length != 2) {
-            throw new RuntimeException(
+            throw new IOException(
                     "The length of the byte array must be at least 2 bytes long.");
         }
         return (char) ((0xff & bytes[index]) << 8 | (0xff & bytes[index + 1]) << 0);
     }
 
-    public double toDouble(byte[] bytes, int index) {
+    public double toDouble(byte[] bytes, int index) throws IOException {
         if (bytes.length < 8) {
-            throw new RuntimeException(
+            throw new IOException(
                     "The length of the byte array must be at least 8 bytes long.");
         }
         return Double.longBitsToDouble(toInt64(bytes, index));

@@ -17,9 +17,11 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitReader;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitWriter;
 
@@ -32,11 +34,11 @@ public class StreamObjectHeaderEnd8bit extends StreamObjectHeaderEnd {
      *
      * @param type Specify the integer value of the type.
      */
-    public StreamObjectHeaderEnd8bit(int type) {
+    public StreamObjectHeaderEnd8bit(int type) throws TikaException {
 
         this.type = StreamObjectTypeHeaderEnd.fromIntVal(type);
         if (this.type == null) {
-            throw new RuntimeException(String.format(Locale.US,
+            throw new TikaException(String.format(Locale.US,
                     "The type value %s is not defined for the stream object end 8 bit header",
                     type));
         }
@@ -54,7 +56,7 @@ public class StreamObjectHeaderEnd8bit extends StreamObjectHeaderEnd {
      *
      * @param type Specify the value of the type.
      */
-    public StreamObjectHeaderEnd8bit(StreamObjectTypeHeaderEnd type) {
+    public StreamObjectHeaderEnd8bit(StreamObjectTypeHeaderEnd type) throws TikaException {
         this(type.getIntVal());
     }
 
@@ -64,7 +66,7 @@ public class StreamObjectHeaderEnd8bit extends StreamObjectHeaderEnd {
      * @return Return the byte list which store the byte information of StreamObjectHeaderEnd8bit.
      */
     @Override
-    public List<Byte> serializeToByteList() {
+    public List<Byte> serializeToByteList() throws IOException {
         BitWriter bitFieldWriter = new BitWriter(1);
         bitFieldWriter.appendInit32(0x1, 2);
         bitFieldWriter.appendUInit32(this.type.getIntVal(), 6);
@@ -76,11 +78,11 @@ public class StreamObjectHeaderEnd8bit extends StreamObjectHeaderEnd {
      *
      * @return Return StreamObjectHeaderEnd8bit value represented by byte.
      */
-    public byte toByte() {
+    public byte toByte() throws IOException {
         List<Byte> bytes = this.serializeToByteList();
 
         if (bytes.size() != 1) {
-            throw new RuntimeException("The unexpected StreamObjectHeaderEnd8bit length");
+            throw new IOException("The unexpected StreamObjectHeaderEnd8bit length");
         }
 
         return bytes.get(0);
@@ -95,12 +97,13 @@ public class StreamObjectHeaderEnd8bit extends StreamObjectHeaderEnd {
      * @return Return the length in byte of the StreamObjectHeaderEnd8bit basic object.
      */
     @Override
-    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex)
+            throws IOException, TikaException {
         BitReader reader = new BitReader(byteArray, startIndex);
         int headerType = reader.readInt32(2);
 
         if (headerType != 0x1) {
-            throw new RuntimeException(String.format(Locale.US,
+            throw new TikaException(String.format(Locale.US,
                     "Failed to get the StreamObjectHeaderEnd8bit header type value, " +
                             "expect value %s, but actual value is %s", 0x1, headerType));
         }
@@ -108,7 +111,7 @@ public class StreamObjectHeaderEnd8bit extends StreamObjectHeaderEnd {
         int typeValue = reader.readUInt32(6);
         this.type = StreamObjectTypeHeaderEnd.fromIntVal(typeValue);
         if (this.type == null) {
-            throw new RuntimeException(String.format(Locale.US,
+            throw new TikaException(String.format(Locale.US,
                     "Failed to get the StreamObjectHeaderEnd8bit type value, the value %s is not defined",
                     typeValue));
         }

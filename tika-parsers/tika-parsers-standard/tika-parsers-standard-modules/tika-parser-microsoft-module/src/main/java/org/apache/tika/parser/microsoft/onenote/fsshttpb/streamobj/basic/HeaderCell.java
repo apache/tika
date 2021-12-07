@@ -17,6 +17,8 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
+import java.io.IOException;
+
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.ObjectGroupDataElementData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.ObjectGroupObjectData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.ObjectGroupObjectDeclare;
@@ -24,8 +26,8 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.space.ObjectS
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
 
 public class HeaderCell {
-    public ObjectGroupObjectDeclare ObjectDeclaration;
-    public ObjectSpaceObjectPropSet ObjectData;
+    public ObjectGroupObjectDeclare objectDeclaration;
+    public ObjectSpaceObjectPropSet objectData;
 
     /**
      * Create the instance of Header Cell.
@@ -33,22 +35,23 @@ public class HeaderCell {
      * @param objectElement The instance of ObjectGroupDataElementData.
      * @return Returns the instacne of HeaderCell.
      */
-    public static HeaderCell createInstance(ObjectGroupDataElementData objectElement) {
+    public static HeaderCell createInstance(ObjectGroupDataElementData objectElement)
+            throws IOException {
         HeaderCell instance = new HeaderCell();
 
-        for (int i = 0; i < objectElement.ObjectGroupDeclarations.ObjectDeclarationList.size();
+        for (int i = 0; i < objectElement.objectGroupDeclarations.objectDeclarationList.size();
                 i++) {
-            if (objectElement.ObjectGroupDeclarations.ObjectDeclarationList.get(
-                    i).ObjectPartitionID != null &&
-                    objectElement.ObjectGroupDeclarations.ObjectDeclarationList.get(
-                            i).ObjectPartitionID.getDecodedValue() == 1) {
-                instance.ObjectDeclaration =
-                        objectElement.ObjectGroupDeclarations.ObjectDeclarationList.get(i);
+            if (objectElement.objectGroupDeclarations.objectDeclarationList.get(
+                    i).objectPartitionID != null &&
+                    objectElement.objectGroupDeclarations.objectDeclarationList.get(
+                            i).objectPartitionID.getDecodedValue() == 1) {
+                instance.objectDeclaration =
+                        objectElement.objectGroupDeclarations.objectDeclarationList.get(i);
                 ObjectGroupObjectData objectData =
-                        objectElement.ObjectGroupData.ObjectGroupObjectDataList.get(i);
-                instance.ObjectData = new ObjectSpaceObjectPropSet();
-                instance.ObjectData.doDeserializeFromByteArray(
-                        ByteUtil.toByteArray(objectData.Data.Content), 0);
+                        objectElement.objectGroupData.objectGroupObjectDataList.get(i);
+                instance.objectData = new ObjectSpaceObjectPropSet();
+                instance.objectData.doDeserializeFromByteArray(
+                        ByteUtil.toByteArray(objectData.data.content), 0);
                 break;
             }
         }

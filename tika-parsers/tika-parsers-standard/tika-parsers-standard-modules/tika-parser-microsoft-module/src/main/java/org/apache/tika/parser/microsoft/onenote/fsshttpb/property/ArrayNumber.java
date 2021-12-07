@@ -17,6 +17,7 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.property;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitConverter;
@@ -26,7 +27,7 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
  * The class is used to represent the number of the array.
  */
 public class ArrayNumber implements IProperty {
-    public int Number;
+    public int number;
 
     /**
      * This method is used to deserialize the number of array from the specified byte array and start index.
@@ -35,8 +36,8 @@ public class ArrayNumber implements IProperty {
      * @param startIndex Specify the start index from the byte array.
      * @return Return the length in byte of the number of array.
      */
-    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
-        this.Number = BitConverter.toInt32(byteArray, startIndex);
+    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException {
+        this.number = BitConverter.toInt32(byteArray, startIndex);
         return 4;
     }
 
@@ -46,6 +47,6 @@ public class ArrayNumber implements IProperty {
      * @return Return the byte list which store the byte information of the number of array.
      */
     public List<Byte> serializeToByteList() {
-        return ByteUtil.toListOfByte(BitConverter.getBytes(this.Number));
+        return ByteUtil.toListOfByte(BitConverter.getBytes(this.number));
     }
 }

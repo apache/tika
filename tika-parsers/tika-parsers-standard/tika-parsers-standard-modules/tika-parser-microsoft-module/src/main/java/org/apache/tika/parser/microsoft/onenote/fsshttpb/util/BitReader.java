@@ -17,6 +17,7 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.util;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.UUID;
@@ -78,7 +79,7 @@ public class BitReader {
      * @param readingLength Specify the reading bit length.
      * @return Return the UInt64 type value.
      */
-    public long readUInt64(int readingLength) {
+    public long readUInt64(int readingLength) throws IOException {
         byte[] uint64Bytes = this.getBytes(readingLength, 8);
         return LittleEndianBitConverter.toUInt64(uint64Bytes, 0);
     }
@@ -89,12 +90,12 @@ public class BitReader {
      * @param readingLength Specify the reading bit length.
      * @return Return the UInt32 type value.
      */
-    public int readUInt32(int readingLength) {
+    public int readUInt32(int readingLength) throws IOException {
         byte[] uint32Bytes = this.getBytes(readingLength, 4);
         return LittleEndianBitConverter.toUInt32(uint32Bytes, 0);
     }
 
-    public int readUInt16(int readingLength) {
+    public int readUInt16(int readingLength) throws IOException {
         byte[] uint16Bytes = this.getBytes(readingLength, 2);
         return LittleEndianBitConverter.ToUInt16(uint16Bytes, 0);
     }
@@ -105,7 +106,7 @@ public class BitReader {
      * @param readingLength Specify the reading byte length.
      * @return Return the read bytes array.
      */
-    public byte[] readBytes(int readingLength) {
+    public byte[] readBytes(int readingLength) throws IOException {
         return this.getBytes(readingLength * 8, readingLength);
     }
 
@@ -115,7 +116,7 @@ public class BitReader {
      * @param readingLength Specify the reading bit length.
      * @return Return the UInt16 value.
      */
-    public short readInt16(int readingLength) {
+    public short readInt16(int readingLength) throws IOException {
         byte[] uint16Bytes = this.getBytes(readingLength, 2);
         return LittleEndianBitConverter.toInt16(uint16Bytes, 0);
     }
@@ -126,7 +127,7 @@ public class BitReader {
      * @param readingLength Specify the reading bit length.
      * @return Return the Int32 type value.
      */
-    public int readInt32(int readingLength) {
+    public int readInt32(int readingLength) throws IOException {
         byte[] uint32Bytes = this.getBytes(readingLength, 4);
         return LittleEndianBitConverter.toInt32(uint32Bytes, 0);
     }
@@ -136,7 +137,7 @@ public class BitReader {
      *
      * @return Return the GUID value.
      */
-    public UUID readGuid() {
+    public UUID readGuid() throws IOException {
         return UUID.nameUUIDFromBytes(this.getBytes(128, 16));
     }
 
@@ -171,12 +172,12 @@ public class BitReader {
      * @param size           Specify the byte array size.
      * @return Returns the constructed byte array.
      */
-    private byte[] getBytes(int needReadlength, int size) {
+    private byte[] getBytes(int needReadlength, int size) throws IOException {
         BitSet retSet = new BitSet(size);
         int i = 0;
         while (i < needReadlength) {
             if (!this.moveNext()) {
-                throw new RuntimeException("Unexpected to meet the byte array end.");
+                throw new IOException("Unexpected to meet the byte array end.");
             }
             if (getCurrent()) {
                 retSet.set(i);

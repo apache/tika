@@ -17,6 +17,7 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.util;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -45,9 +46,9 @@ public class BitWriter {
     /**
      * Gets a copy byte array which contains the current written byte.
      */
-    public byte[] getBytes() {
+    public byte[] getBytes() throws IOException {
         if (this.bitOffset % 8 != 0) {
-            throw new RuntimeException(
+            throw new IOException(
                     "BitWriter:Bytes, Cannot get the current bytes because the last byte is not written completely.");
         }
 
@@ -55,7 +56,7 @@ public class BitWriter {
         return Arrays.copyOfRange(bitSet.toByteArray(), 0, retByteLength);
     }
 
-    public List<Byte> getByteList() {
+    public List<Byte> getByteList() throws IOException {
         byte[] bytes = getBytes();
         List<Byte> byteList = new ArrayList<>(bytes.length);
         for (byte aByte : bytes) {

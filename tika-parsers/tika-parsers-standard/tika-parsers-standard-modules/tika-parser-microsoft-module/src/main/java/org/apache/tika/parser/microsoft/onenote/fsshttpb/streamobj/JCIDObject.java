@@ -17,6 +17,8 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
+
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.JCID;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
 
@@ -25,8 +27,8 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
  * This class is used to represent the JCID object.
  */
 public class JCIDObject {
-    public ObjectGroupObjectDeclare ObjectDeclaration;
-    public JCID JCID;
+    public ObjectGroupObjectDeclare objectDeclaration;
+    public JCID jcid;
 
     /**
      * Construct the JCIDObject instance.
@@ -35,9 +37,9 @@ public class JCIDObject {
      * @param objectData        The Object Data structure.
      */
     public JCIDObject(ObjectGroupObjectDeclare objectDeclaration,
-                      ObjectGroupObjectData objectData) {
-        this.ObjectDeclaration = objectDeclaration;
-        this.JCID = new JCID();
-        this.JCID.doDeserializeFromByteArray(ByteUtil.toByteArray(objectData.Data.Content), 0);
+                      ObjectGroupObjectData objectData) throws IOException {
+        this.objectDeclaration = objectDeclaration;
+        this.jcid = new JCID();
+        this.jcid.doDeserializeFromByteArray(ByteUtil.toByteArray(objectData.data.content), 0);
     }
 }

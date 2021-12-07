@@ -17,11 +17,13 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.exception.DataElementParseErrorException;
 
 public class StorageManifestDataElementData extends DataElementData {
@@ -43,7 +45,7 @@ public class StorageManifestDataElementData extends DataElementData {
      * @return A Byte list
      */
     @Override
-    public List<Byte> serializeToByteList() {
+    public List<Byte> serializeToByteList() throws TikaException, IOException {
         List<Byte> byteList = new ArrayList<Byte>();
         byteList.addAll(this.storageManifestSchemaGUID.serializeToByteList());
 
@@ -64,7 +66,8 @@ public class StorageManifestDataElementData extends DataElementData {
      * @return The length of the array
      */
     @Override
-    public int deserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex) {
+    public int deserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex)
+            throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(startIndex);
 
         this.storageManifestSchemaGUID =

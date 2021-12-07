@@ -26,7 +26,7 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
  * This class is used to represent the property contains 4 bytes of data in the PropertySet.rgData stream field.
  */
 public class FourBytesOfData implements IProperty {
-    public byte[] Data;
+    public byte[] data;
 
     /**
      * This method is used to deserialize the FourBytesOfData from the specified byte array and start index.
@@ -36,7 +36,7 @@ public class FourBytesOfData implements IProperty {
      * @return Return the length in byte of the FourBytesOfData.
      */
     public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
-        this.Data = Arrays.copyOfRange(byteArray, startIndex, startIndex + 4);
+        this.data = Arrays.copyOfRange(byteArray, startIndex, startIndex + 4);
         return 4;
     }
 
@@ -46,6 +46,6 @@ public class FourBytesOfData implements IProperty {
      * @return Return the byte list which store the byte information of FourBytesOfData.
      */
     public List<Byte> serializeToByteList() {
-        return ByteUtil.toListOfByte(this.Data);
+        return ByteUtil.toListOfByte(this.data);
     }
 }

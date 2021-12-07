@@ -17,9 +17,11 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 
@@ -27,8 +29,8 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
  * Specifies a revision manifest root declare, each followed by root and object extended GUIDs
  */
 public class RevisionManifestRootDeclare extends StreamObject {
-    public ExGuid RootExGuid;
-    public ExGuid ObjectExGuid;
+    public ExGuid rootExGuid;
+    public ExGuid objectExGuid;
 
     /**
      * Initializes a new instance of the RevisionManifestRootDeclare class.
@@ -46,10 +48,11 @@ public class RevisionManifestRootDeclare extends StreamObject {
      */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems) {
+                                                 int lengthOfItems)
+            throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
-        this.RootExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
-        this.ObjectExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
+        this.rootExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
+        this.objectExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
         if (index.get() - currentIndex.get() != lengthOfItems) {
             throw new StreamObjectParseErrorException(currentIndex.get(),
                     "RevisionManifestRootDeclare", "Stream object over-parse error", null);
@@ -65,10 +68,10 @@ public class RevisionManifestRootDeclare extends StreamObject {
      * @return The length of list
      */
     @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) throws IOException {
         int itemsIndex = byteList.size();
-        byteList.addAll(this.RootExGuid.serializeToByteList());
-        byteList.addAll(this.ObjectExGuid.serializeToByteList());
+        byteList.addAll(this.rootExGuid.serializeToByteList());
+        byteList.addAll(this.objectExGuid.serializeToByteList());
         return byteList.size() - itemsIndex;
     }
 }

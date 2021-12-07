@@ -17,9 +17,11 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.Compact64bitInt;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
@@ -28,30 +30,30 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
  * object data BLOB declaration
  */
 public class ObjectGroupObjectBLOBDataDeclaration extends StreamObject {
-    public ExGuid ObjectExGUID;
-    public ExGuid ObjectDataBLOBExGUID;
-    public Compact64bitInt ObjectPartitionID;
+    public ExGuid objectExGUID;
+    public ExGuid objectDataBLOBExGUID;
+    public Compact64bitInt objectPartitionID;
     /**
      * Gets or sets a compact unsigned 64-bit integer that specifies the size in bytes of the
      * object.opaque binary data  for the declared object.
      * This MUST match the size of the binary item in the corresponding object data BLOB
      * referenced by the Object Data BLOB reference for this object.
      */
-    public Compact64bitInt ObjectDataSize;
-    public Compact64bitInt ObjectReferencesCount;
-    public Compact64bitInt CellReferencesCount;
+    public Compact64bitInt objectDataSize;
+    public Compact64bitInt objectReferencesCount;
+    public Compact64bitInt cellReferencesCount;
 
     /**
      * Initializes a new instance of the ObjectGroupObjectBLOBDataDeclaration class.
      */
     public ObjectGroupObjectBLOBDataDeclaration() {
         super(StreamObjectTypeHeaderStart.ObjectGroupObjectBLOBDataDeclaration);
-        this.ObjectExGUID = new ExGuid();
-        this.ObjectDataBLOBExGUID = new ExGuid();
-        this.ObjectPartitionID = new Compact64bitInt();
-        this.ObjectDataSize = new Compact64bitInt();
-        this.ObjectReferencesCount = new Compact64bitInt();
-        this.CellReferencesCount = new Compact64bitInt();
+        this.objectExGUID = new ExGuid();
+        this.objectDataBLOBExGUID = new ExGuid();
+        this.objectPartitionID = new Compact64bitInt();
+        this.objectDataSize = new Compact64bitInt();
+        this.objectReferencesCount = new Compact64bitInt();
+        this.cellReferencesCount = new Compact64bitInt();
     }
 
     /**
@@ -63,14 +65,15 @@ public class ObjectGroupObjectBLOBDataDeclaration extends StreamObject {
      */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems) {
+                                                 int lengthOfItems)
+            throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
 
-        this.ObjectExGUID = BasicObject.parse(byteArray, index, ExGuid.class);
-        this.ObjectDataBLOBExGUID = BasicObject.parse(byteArray, index, ExGuid.class);
-        this.ObjectPartitionID = BasicObject.parse(byteArray, index, Compact64bitInt.class);
-        this.ObjectReferencesCount = BasicObject.parse(byteArray, index, Compact64bitInt.class);
-        this.CellReferencesCount = BasicObject.parse(byteArray, index, Compact64bitInt.class);
+        this.objectExGUID = BasicObject.parse(byteArray, index, ExGuid.class);
+        this.objectDataBLOBExGUID = BasicObject.parse(byteArray, index, ExGuid.class);
+        this.objectPartitionID = BasicObject.parse(byteArray, index, Compact64bitInt.class);
+        this.objectReferencesCount = BasicObject.parse(byteArray, index, Compact64bitInt.class);
+        this.cellReferencesCount = BasicObject.parse(byteArray, index, Compact64bitInt.class);
 
         if (index.get() - currentIndex.get() != lengthOfItems) {
             throw new StreamObjectParseErrorException(currentIndex.get(),
@@ -87,14 +90,14 @@ public class ObjectGroupObjectBLOBDataDeclaration extends StreamObject {
      * @return The number of the element
      */
     @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) throws IOException {
         int itemsIndex = byteList.size();
-        byteList.addAll(this.ObjectExGUID.serializeToByteList());
-        byteList.addAll(this.ObjectDataBLOBExGUID.serializeToByteList());
-        byteList.addAll(this.ObjectPartitionID.serializeToByteList());
-        byteList.addAll(this.ObjectDataSize.serializeToByteList());
-        byteList.addAll(this.ObjectReferencesCount.serializeToByteList());
-        byteList.addAll(this.CellReferencesCount.serializeToByteList());
+        byteList.addAll(this.objectExGUID.serializeToByteList());
+        byteList.addAll(this.objectDataBLOBExGUID.serializeToByteList());
+        byteList.addAll(this.objectPartitionID.serializeToByteList());
+        byteList.addAll(this.objectDataSize.serializeToByteList());
+        byteList.addAll(this.objectReferencesCount.serializeToByteList());
+        byteList.addAll(this.cellReferencesCount.serializeToByteList());
         return byteList.size() - itemsIndex;
     }
 }

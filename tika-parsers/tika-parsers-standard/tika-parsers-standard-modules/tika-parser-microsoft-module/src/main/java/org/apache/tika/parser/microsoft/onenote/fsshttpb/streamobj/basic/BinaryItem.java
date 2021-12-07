@@ -17,21 +17,24 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.tika.exception.TikaException;
+
 public class BinaryItem extends BasicObject {
-    public Compact64bitInt Length;
-    public List<Byte> Content;
+    public Compact64bitInt length;
+    public List<Byte> content;
 
     /**
      * Initializes a new instance of the BinaryItem class.
      */
     public BinaryItem() {
-        this.Length = new Compact64bitInt();
-        this.Content = new ArrayList<>();
+        this.length = new Compact64bitInt();
+        this.content = new ArrayList<>();
     }
 
     /**
@@ -40,10 +43,10 @@ public class BinaryItem extends BasicObject {
      * @param content Specify the binary content.
      */
     public BinaryItem(Collection<Byte> content) {
-        this.Length = new Compact64bitInt();
-        this.Content = new ArrayList<>();
-        this.Content.addAll(content);
-        this.Length.setDecodedValue(this.Content.size());
+        this.length = new Compact64bitInt();
+        this.content = new ArrayList<>();
+        this.content.addAll(content);
+        this.length.setDecodedValue(this.content.size());
     }
 
     /**
@@ -52,12 +55,12 @@ public class BinaryItem extends BasicObject {
      * @return Return the byte list which store the byte information of BinaryItem.
      */
     @Override
-    public List<Byte> serializeToByteList() {
-        this.Length.setDecodedValue(this.Content.size());
+    public List<Byte> serializeToByteList() throws IOException {
+        this.length.setDecodedValue(this.content.size());
 
         List<Byte> result = new ArrayList<>();
-        result.addAll(this.Length.serializeToByteList());
-        result.addAll(this.Content);
+        result.addAll(this.length.serializeToByteList());
+        result.addAll(this.content);
 
         return result;
     }
@@ -70,14 +73,15 @@ public class BinaryItem extends BasicObject {
      * @return Return the length in byte of the BinaryItem basic object.
      */
     @Override
-    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex)
+            throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(startIndex);
 
-        this.Length = BasicObject.parse(byteArray, index, Compact64bitInt.class);
+        this.length = BasicObject.parse(byteArray, index, Compact64bitInt.class);
 
-        this.Content.clear();
-        for (long i = 0; i < this.Length.getDecodedValue(); i++) {
-            this.Content.add(byteArray[index.getAndIncrement()]);
+        this.content.clear();
+        for (long i = 0; i < this.length.getDecodedValue(); i++) {
+            this.content.add(byteArray[index.getAndIncrement()]);
         }
 
         return index.get() - startIndex;

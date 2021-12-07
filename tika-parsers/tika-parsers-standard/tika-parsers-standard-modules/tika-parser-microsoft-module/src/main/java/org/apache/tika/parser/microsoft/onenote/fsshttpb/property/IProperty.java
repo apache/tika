@@ -17,6 +17,7 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.property;
 
+import java.io.IOException;
 import java.util.List;
 
 
@@ -29,7 +30,7 @@ public interface IProperty {
      *
      * @return Return the byte list which store the byte information of property.
      */
-    List<Byte> serializeToByteList();
+    List<Byte> serializeToByteList() throws IOException;
 
     /**
      * This method is used to deserialize the property from the specified byte array and start index.
@@ -38,5 +39,5 @@ public interface IProperty {
      * @param startIndex Specify the start index from the byte array.
      * @return Return the length in byte of the property.
      */
-    int doDeserializeFromByteArray(byte[] byteArray, int startIndex);
+    int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException;
 }

@@ -17,10 +17,12 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.Compact64bitInt;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitReader;
@@ -44,7 +46,7 @@ public class StreamObjectHeaderStart32bit extends StreamObjectHeaderStart {
      * @param length Specify the length of the StreamObjectHeaderStart32bit.
      */
     public StreamObjectHeaderStart32bit(StreamObjectTypeHeaderStart type, int length) {
-        this.headerType = StreamObjectHeaderStart.StreamObjectHeaderStart32bit;
+        this.headerType = StreamObjectHeaderStart.STREAM_OBJECT_HEADER_START_32_BIT;
         this.type = type;
         this.compound = StreamObject.getCompoundTypes().contains(this.type) ? 1 : 0;
 
@@ -78,7 +80,7 @@ public class StreamObjectHeaderStart32bit extends StreamObjectHeaderStart {
      * @return Return the byte list which store the byte information of StreamObjectHeaderStart32bit.
      */
     @Override
-    public List<Byte> serializeToByteList() {
+    public List<Byte> serializeToByteList() throws IOException {
         BitWriter bitFieldWriter = new BitWriter(4);
         bitFieldWriter.appendInit32(this.headerType, 2);
         bitFieldWriter.appendInit32(this.compound, 1);
@@ -103,27 +105,28 @@ public class StreamObjectHeaderStart32bit extends StreamObjectHeaderStart {
      * @return Return the length in byte of the StreamObjectHeaderStart32bit basic object.
      */
     @Override
-    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex)
+            throws IOException, TikaException {
         BitReader bitReader = new BitReader(byteArray, startIndex);
         this.headerType = bitReader.readInt32(2);
-        if (this.headerType != StreamObjectHeaderStart.StreamObjectHeaderStart32bit) {
-            throw new RuntimeException(String.format(Locale.US,
+        if (this.headerType != StreamObjectHeaderStart.STREAM_OBJECT_HEADER_START_32_BIT) {
+            throw new TikaException(String.format(Locale.US,
                     "Failed to get the StreamObjectHeaderStart32bit header type value, expect " +
                             "value %s, but actual value is %s",
-                    StreamObjectHeaderStart.StreamObjectHeaderStart32bit, this.headerType));
+                    StreamObjectHeaderStart.STREAM_OBJECT_HEADER_START_32_BIT, this.headerType));
         }
 
         this.compound = bitReader.readInt32(1);
         int typeValue = bitReader.readInt32(14);
         this.type = StreamObjectTypeHeaderStart.fromIntVal(typeValue);
         if (type == null) {
-            throw new RuntimeException(String.format(Locale.US,
+            throw new TikaException(String.format(Locale.US,
                     "Failed to get the StreamObjectHeaderStart32bit type value, the value %s is not defined",
                     typeValue));
         }
 
         if (StreamObject.getCompoundTypes().contains(this.type) && this.compound != 1) {
-            throw new RuntimeException(String.format(Locale.US,
+            throw new TikaException(String.format(Locale.US,
                     "Failed to parse the StreamObjectHeaderStart32bit header. If the type value is %s " +
                             "then the compound value should 1, but actual value is 0", typeValue));
         }

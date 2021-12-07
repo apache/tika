@@ -17,25 +17,28 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.tika.exception.TikaException;
+
 /**
  * Object Group Declarations
  */
 public class ObjectGroupDeclarations extends StreamObject {
-    public List<ObjectGroupObjectDeclare> ObjectDeclarationList;
-    public List<ObjectGroupObjectBLOBDataDeclaration> ObjectGroupObjectBLOBDataDeclarationList;
+    public List<ObjectGroupObjectDeclare> objectDeclarationList;
+    public List<ObjectGroupObjectBLOBDataDeclaration> objectGroupObjectBLOBDataDeclarationList;
 
     /**
      * Initializes a new instance of the ObjectGroupDeclarations class.
      */
     public ObjectGroupDeclarations() {
         super(StreamObjectTypeHeaderStart.ObjectGroupDeclarations);
-        this.ObjectDeclarationList = new ArrayList<>();
-        this.ObjectGroupObjectBLOBDataDeclarationList = new ArrayList<>();
+        this.objectDeclarationList = new ArrayList<>();
+        this.objectGroupObjectBLOBDataDeclarationList = new ArrayList<>();
     }
 
     /**
@@ -47,7 +50,8 @@ public class ObjectGroupDeclarations extends StreamObject {
      */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems) {
+                                                 int lengthOfItems)
+            throws TikaException, IOException {
         if (lengthOfItems != 0) {
             throw new StreamObjectParseErrorException(currentIndex.get(), "ObjectGroupDeclarations",
                     "Stream object over-parse error", null);
@@ -56,19 +60,19 @@ public class ObjectGroupDeclarations extends StreamObject {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         int headerLength = 0;
         AtomicReference<StreamObjectHeaderStart> header = new AtomicReference<>();
-        this.ObjectDeclarationList = new ArrayList<>();
-        this.ObjectGroupObjectBLOBDataDeclarationList = new ArrayList<>();
+        this.objectDeclarationList = new ArrayList<>();
+        this.objectGroupObjectBLOBDataDeclarationList = new ArrayList<>();
         while ((headerLength = StreamObjectHeaderStart.tryParse(byteArray, index.get(), header)) !=
                 0) {
             if (header.get().type == StreamObjectTypeHeaderStart.ObjectGroupObjectDeclare) {
                 index.addAndGet(headerLength);
-                this.ObjectDeclarationList.add(
+                this.objectDeclarationList.add(
                         (ObjectGroupObjectDeclare) StreamObject.parseStreamObject(header.get(),
                                 byteArray, index));
             } else if (header.get().type ==
                     StreamObjectTypeHeaderStart.ObjectGroupObjectBLOBDataDeclaration) {
                 index.addAndGet(headerLength);
-                this.ObjectGroupObjectBLOBDataDeclarationList.add(
+                this.objectGroupObjectBLOBDataDeclarationList.add(
                         (ObjectGroupObjectBLOBDataDeclaration) StreamObject.parseStreamObject(
                                 header.get(), byteArray, index));
             } else {
@@ -89,16 +93,16 @@ public class ObjectGroupDeclarations extends StreamObject {
      * @return A constant value 0
      */
     @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) {
-        if (this.ObjectDeclarationList != null) {
-            for (ObjectGroupObjectDeclare objectGroupObjectDeclare : this.ObjectDeclarationList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) throws TikaException, IOException {
+        if (this.objectDeclarationList != null) {
+            for (ObjectGroupObjectDeclare objectGroupObjectDeclare : this.objectDeclarationList) {
                 byteList.addAll(objectGroupObjectDeclare.serializeToByteList());
             }
         }
 
-        if (this.ObjectGroupObjectBLOBDataDeclarationList != null) {
+        if (this.objectGroupObjectBLOBDataDeclarationList != null) {
             for (ObjectGroupObjectBLOBDataDeclaration objectGroupObjectBLOBDataDeclaration :
-                    this.ObjectGroupObjectBLOBDataDeclarationList) {
+                    this.objectGroupObjectBLOBDataDeclarationList) {
                 byteList.addAll(objectGroupObjectBLOBDataDeclaration.serializeToByteList());
             }
         }

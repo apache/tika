@@ -17,6 +17,7 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.property;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -27,9 +28,9 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitConverter;
  * This class is used to represent the prtFourBytesOfLengthFollowedByData.
  */
 public class PrtFourBytesOfLengthFollowedByData implements IProperty {
-    public int CB;
+    public int cb;
 
-    public byte[] Data;
+    public byte[] data;
 
     /**
      * This method is used to deserialize the prtFourBytesOfLengthFollowedByData from
@@ -39,12 +40,12 @@ public class PrtFourBytesOfLengthFollowedByData implements IProperty {
      * @param startIndex Specify the start index from the byte array.
      * @return Return the length in byte of the prtFourBytesOfLengthFollowedByData.
      */
-    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException {
         int index = startIndex;
-        this.CB = (int) BitConverter.toUInt32(byteArray, startIndex);
+        this.cb = (int) BitConverter.toUInt32(byteArray, startIndex);
         index += 4;
-        this.Data = Arrays.copyOfRange(byteArray, index, index + this.CB);
-        index += this.CB;
+        this.data = Arrays.copyOfRange(byteArray, index, index + this.cb);
+        index += this.cb;
 
         return index - startIndex;
     }
@@ -56,10 +57,10 @@ public class PrtFourBytesOfLengthFollowedByData implements IProperty {
      */
     public List<Byte> serializeToByteList() {
         List<Byte> byteList = new ArrayList<>();
-        for (byte b : BitConverter.getBytes(this.CB)) {
+        for (byte b : BitConverter.getBytes(this.cb)) {
             byteList.add(b);
         }
-        for (byte b : this.Data) {
+        for (byte b : this.data) {
             byteList.add(b);
         }
         return byteList;

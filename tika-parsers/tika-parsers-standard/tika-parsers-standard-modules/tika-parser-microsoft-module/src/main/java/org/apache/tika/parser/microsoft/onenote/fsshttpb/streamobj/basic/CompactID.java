@@ -17,6 +17,7 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitReader;
@@ -26,18 +27,18 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitWriter;
  * This class is used to represent the CompactID structrue.
  */
 public class CompactID {
-    public long N;
-    public long GuidIndex;
+    public long n;
+    public long guidIndex;
 
     /**
      * This method is used to convert the element of CompactID object into a byte List.
      *
      * @return Return the byte list which store the byte information of CompactID.
      */
-    public List<Byte> serializeToByteList() {
+    public List<Byte> serializeToByteList() throws IOException {
         BitWriter bitWriter = new BitWriter(4);
-        bitWriter.appendUInit32((int) this.N, 8);
-        bitWriter.appendUInit32((int) this.GuidIndex, 24);
+        bitWriter.appendUInit32((int) this.n, 8);
+        bitWriter.appendUInit32((int) this.guidIndex, 24);
 
         return bitWriter.getByteList();
     }
@@ -49,10 +50,10 @@ public class CompactID {
      * @param startIndex Specify the start index from the byte array.
      * @return Return the length in byte of the CompactID object.
      */
-    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException {
         BitReader bitReader = new BitReader(byteArray, startIndex);
-        this.N = bitReader.readUInt32(8);
-        this.GuidIndex = bitReader.readUInt32(24);
+        this.n = bitReader.readUInt32(8);
+        this.guidIndex = bitReader.readUInt32(24);
         return 4;
     }
 }

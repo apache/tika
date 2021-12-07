@@ -17,15 +17,17 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.chunking;
 
+import java.io.IOException;
 import java.util.List;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.LeafNodeObject;
 
 /**
  * This class specifies the base class for file chunking
  */
 public abstract class AbstractChunking {
-    protected byte[] FileContent;
+    protected byte[] fileContent;
 
     /**
      * Initializes a new instance of the AbstractChunking class.
@@ -33,7 +35,7 @@ public abstract class AbstractChunking {
      * @param fileContent The content of the file.
      */
     protected AbstractChunking(byte[] fileContent) {
-        this.FileContent = fileContent;
+        this.fileContent = fileContent;
     }
 
     /**
@@ -41,5 +43,5 @@ public abstract class AbstractChunking {
      *
      * @return A list of LeafNodeObjectData.
      */
-    public abstract List<LeafNodeObject> chunking();
+    public abstract List<LeafNodeObject> chunking() throws IOException, TikaException;
 }

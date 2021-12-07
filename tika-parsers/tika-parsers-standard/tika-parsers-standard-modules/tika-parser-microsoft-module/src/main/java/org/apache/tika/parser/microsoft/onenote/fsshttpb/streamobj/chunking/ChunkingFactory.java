@@ -17,10 +17,12 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.chunking;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.apache.poi.openxml4j.exceptions.InvalidOperationException;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.IntermediateNodeObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.LeafNodeObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ZipHeader;
@@ -57,7 +59,8 @@ public class ChunkingFactory {
      * @return The instance of AbstractChunking.
      */
 
-    public static AbstractChunking createChunkingInstance(IntermediateNodeObject nodeObject) {
+    public static AbstractChunking createChunkingInstance(IntermediateNodeObject nodeObject)
+            throws TikaException, IOException {
         byte[] fileContent = ByteUtil.toByteArray(nodeObject.getContent());
         if (ZipHeader.isFileHeader(fileContent, 0)) {
             return new ZipFilesChunking(fileContent);
@@ -67,11 +70,11 @@ public class ChunkingFactory {
             AbstractChunking returnChunking = new SimpleChunking(fileContent);
 
             List<LeafNodeObject> nodes = returnChunking.chunking();
-            if (nodeObject.IntermediateNodeObjectList.size() == nodes.size()) {
+            if (nodeObject.intermediateNodeObjectList.size() == nodes.size()) {
                 boolean isDataSizeMatching = true;
                 for (int i = 0; i < nodes.size(); i++) {
-                    if (nodeObject.IntermediateNodeObjectList.get(i).DataSize.DataSize !=
-                            nodes.get(i).DataSize.DataSize) {
+                    if (nodeObject.intermediateNodeObjectList.get(i).dataSize.dataSize !=
+                            nodes.get(i).dataSize.dataSize) {
                         isDataSizeMatching = false;
                         break;
                     }

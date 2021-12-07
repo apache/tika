@@ -17,11 +17,13 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.chunking.ChunkingFactory;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.SequenceNumberGenerator;
@@ -32,7 +34,7 @@ public class IntermediateNodeObject extends NodeObject {
      */
     public IntermediateNodeObject() {
         super(StreamObjectTypeHeaderStart.IntermediateNodeObject);
-        this.IntermediateNodeObjectList = new ArrayList<>();
+        this.intermediateNodeObjectList = new ArrayList<>();
     }
 
     /**
@@ -41,10 +43,10 @@ public class IntermediateNodeObject extends NodeObject {
      * @return Return the byte list of root node object content.
      */
     @Override
-    public List<Byte> getContent() {
+    public List<Byte> getContent() throws TikaException {
         List<Byte> content = new ArrayList<>();
 
-        for (LeafNodeObject intermediateNode : this.IntermediateNodeObjectList) {
+        for (LeafNodeObject intermediateNode : this.intermediateNodeObjectList) {
             content.addAll(intermediateNode.getContent());
         }
 
@@ -60,15 +62,16 @@ public class IntermediateNodeObject extends NodeObject {
      */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems) {
+                                                 int lengthOfItems)
+            throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         if (lengthOfItems != 0) {
             throw new StreamObjectParseErrorException(currentIndex.get(), "IntermediateNodeObject",
                     "Stream Object over-parse error", null);
         }
 
-        this.Signature = StreamObject.getCurrent(byteArray, index, SignatureObject.class);
-        this.DataSize = StreamObject.getCurrent(byteArray, index, DataSizeObject.class);
+        this.signature = StreamObject.getCurrent(byteArray, index, SignatureObject.class);
+        this.dataSize = StreamObject.getCurrent(byteArray, index, DataSizeObject.class);
 
         currentIndex.set(index.get());
     }
@@ -80,9 +83,9 @@ public class IntermediateNodeObject extends NodeObject {
      * @return The Byte list
      */
     @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) {
-        byteList.addAll(this.Signature.serializeToByteList());
-        byteList.addAll(this.DataSize.serializeToByteList());
+    protected int serializeItemsToByteList(List<Byte> byteList) throws TikaException, IOException {
+        byteList.addAll(this.signature.serializeToByteList());
+        byteList.addAll(this.dataSize.serializeToByteList());
         return 0;
     }
 
@@ -96,14 +99,14 @@ public class IntermediateNodeObject extends NodeObject {
          * @param fileContent Specify the byte array.
          * @return Return a root node object build from the byte array.
          */
-        public IntermediateNodeObject Build(byte[] fileContent) {
+        public IntermediateNodeObject Build(byte[] fileContent) throws TikaException, IOException {
             IntermediateNodeObject rootNode = new IntermediateNodeObject();
-            rootNode.Signature = new SignatureObject();
-            rootNode.DataSize = new DataSizeObject();
-            rootNode.DataSize.DataSize = fileContent.length;
-            rootNode.ExGuid =
+            rootNode.signature = new SignatureObject();
+            rootNode.dataSize = new DataSizeObject();
+            rootNode.dataSize.dataSize = fileContent.length;
+            rootNode.exGuid =
                     new ExGuid(SequenceNumberGenerator.GetCurrentSerialNumber(), UUID.randomUUID());
-            rootNode.IntermediateNodeObjectList =
+            rootNode.intermediateNodeObjectList =
                     ChunkingFactory.createChunkingInstance(fileContent).chunking();
             return rootNode;
         }

@@ -19,9 +19,9 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 public class StreamObjectParseErrorException extends RuntimeException {
 
-    public int Index;
+    public int index;
 
-    public String StreamObjectTypeName;
+    public String streamObjectTypeName;
 
     /**
      * Initializes a new instance of the StreamObjectParseErrorException class
@@ -33,8 +33,8 @@ public class StreamObjectParseErrorException extends RuntimeException {
     public StreamObjectParseErrorException(int index, String streamObjectTypeName,
                                            Exception innerException) {
         super(innerException);
-        this.Index = index;
-        this.StreamObjectTypeName = streamObjectTypeName;
+        this.index = index;
+        this.streamObjectTypeName = streamObjectTypeName;
     }
 
     /**
@@ -48,7 +48,7 @@ public class StreamObjectParseErrorException extends RuntimeException {
     public StreamObjectParseErrorException(int index, String streamObjectTypeName, String message,
                                            Exception innerException) {
         super(message, innerException);
-        this.Index = index;
-        this.StreamObjectTypeName = streamObjectTypeName;
+        this.index = index;
+        this.streamObjectTypeName = streamObjectTypeName;
     }
 }

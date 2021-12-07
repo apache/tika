@@ -17,6 +17,7 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitReader;
@@ -26,28 +27,28 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitWriter;
  * This class is used to represent a JCID
  */
 public class JCID {
-    public int Index;
-    public int IsBinary;
-    public int IsPropertySet;
-    public int IsGraphNode;
-    public int IsFileData;
-    public int IsReadOnly;
-    public int Reserved;
+    public int index;
+    public int isBinary;
+    public int isPropertySet;
+    public int isGraphNode;
+    public int isFileData;
+    public int isReadOnly;
+    public int reserved;
 
     /**
      * This method is used to convert the element of JCID object into a byte List.
      *
      * @return Return the byte list which store the byte information of JCID
      */
-    public List<Byte> serializeToByteList() {
+    public List<Byte> serializeToByteList() throws IOException {
         BitWriter bitWriter = new BitWriter(4);
-        bitWriter.appendInit32(this.Index, 16);
-        bitWriter.appendInit32(this.IsBinary, 1);
-        bitWriter.appendInit32(this.IsPropertySet, 1);
-        bitWriter.appendInit32(this.IsGraphNode, 1);
-        bitWriter.appendInit32(this.IsFileData, 1);
-        bitWriter.appendInit32(this.IsReadOnly, 1);
-        bitWriter.appendInit32(this.Reserved, 11);
+        bitWriter.appendInit32(this.index, 16);
+        bitWriter.appendInit32(this.isBinary, 1);
+        bitWriter.appendInit32(this.isPropertySet, 1);
+        bitWriter.appendInit32(this.isGraphNode, 1);
+        bitWriter.appendInit32(this.isFileData, 1);
+        bitWriter.appendInit32(this.isReadOnly, 1);
+        bitWriter.appendInit32(this.reserved, 11);
 
         return bitWriter.getByteList();
     }
@@ -59,15 +60,15 @@ public class JCID {
      * @param startIndex Specify the start index from the byte array.
      * @return Return the length in byte of the JCID object.
      */
-    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException {
         BitReader bitReader = new BitReader(byteArray, startIndex);
-        this.Index = bitReader.readInt32(16);
-        this.IsBinary = bitReader.readInt32(1);
-        this.IsPropertySet = bitReader.readInt32(1);
-        this.IsGraphNode = bitReader.readInt32(1);
-        this.IsFileData = bitReader.readInt32(1);
-        this.IsReadOnly = bitReader.readInt32(1);
-        this.Reserved = bitReader.readInt32(11);
+        this.index = bitReader.readInt32(16);
+        this.isBinary = bitReader.readInt32(1);
+        this.isPropertySet = bitReader.readInt32(1);
+        this.isGraphNode = bitReader.readInt32(1);
+        this.isFileData = bitReader.readInt32(1);
+        this.isReadOnly = bitReader.readInt32(1);
+        this.reserved = bitReader.readInt32(11);
 
         return 4;
     }

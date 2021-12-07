@@ -17,9 +17,11 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BinaryItem;
 
@@ -32,14 +34,14 @@ public class SignatureObject extends StreamObject {
      * value that is unique to the file data represented by this root node object.
      * The value of this item depends on the file chunking algorithm used, as specified in section 2.4.
      */
-    public BinaryItem SignatureData;
+    public BinaryItem signatureData;
 
     /**
      * Initializes a new instance of the SignatureObject class.
      */
     public SignatureObject() {
         super(StreamObjectTypeHeaderStart.SignatureObject);
-        this.SignatureData = new BinaryItem();
+        this.signatureData = new BinaryItem();
     }
 
     /**
@@ -51,10 +53,11 @@ public class SignatureObject extends StreamObject {
      */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems) {
+                                                 int lengthOfItems)
+            throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
 
-        this.SignatureData = BasicObject.parse(byteArray, index, BinaryItem.class);
+        this.signatureData = BasicObject.parse(byteArray, index, BinaryItem.class);
 
         if (index.get() - currentIndex.get() != lengthOfItems) {
             throw new StreamObjectParseErrorException(currentIndex.get(), "Signature",
@@ -71,9 +74,9 @@ public class SignatureObject extends StreamObject {
      * @return The number of elements
      */
     @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) throws IOException {
         int length = byteList.size();
-        byteList.addAll(this.SignatureData.serializeToByteList());
+        byteList.addAll(this.signatureData.serializeToByteList());
         return byteList.size() - length;
     }
 }

@@ -20,6 +20,8 @@ package org.apache.tika.parser.microsoft.onenote;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.tika.exception.TikaException;
+
 /**
  * Stores a list that represents how to get to the file node in the data structure.
  */
@@ -51,12 +53,12 @@ class FileNodePtr {
      * @param document
      * @return
      */
-    public FileNode dereference(OneNoteDocument document) {
+    public FileNode dereference(OneNoteDocument document) throws TikaException {
         if (nodeListPositions.isEmpty()) {
             return null;
         }
         if (nodeListPositions.get(0) >= document.root.children.size()) {
-            throw new RuntimeException("Exceeded root child size");
+            throw new TikaException("Exceeded root child size");
         }
         FileNode cur = document.root.children.get(nodeListPositions.get(0));
         for (int i = 1, ie = nodeListPositions.size(); i < ie; ++i) {

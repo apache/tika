@@ -17,10 +17,12 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BinaryItem;
 
@@ -30,14 +32,14 @@ public class DataHashObject extends StreamObject {
      * value that is unique to the file data represented by this root node object.
      * The value of this item depends on the file chunking algorithm used, as specified in section 2.4.
      */
-    public BinaryItem Data;
+    public BinaryItem data;
 
     /**
      * Initializes a new instance of the DataHashObject class.
      */
     public DataHashObject() {
         super(StreamObjectTypeHeaderStart.DataHashObject);
-        this.Data = new BinaryItem();
+        this.data = new BinaryItem();
     }
 
     @Override
@@ -49,17 +51,17 @@ public class DataHashObject extends StreamObject {
             return false;
         }
         DataHashObject that = (DataHashObject) o;
-        return Objects.equals(Data, that.Data);
+        return Objects.equals(data, that.data);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(Data);
+        return Objects.hash(data);
     }
 
     @Override
     public String toString() {
-        return "DataHashObject{" + "Data=" + Data + ", streamObjectHeaderEnd=" +
+        return "DataHashObject{" + "Data=" + data + ", streamObjectHeaderEnd=" +
                 streamObjectHeaderEnd + '}';
     }
 
@@ -72,10 +74,11 @@ public class DataHashObject extends StreamObject {
      */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems) {
+                                                 int lengthOfItems)
+            throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
 
-        this.Data = BasicObject.parse(byteArray, index, BinaryItem.class);
+        this.data = BasicObject.parse(byteArray, index, BinaryItem.class);
 
         if (index.get() - currentIndex.get() != lengthOfItems) {
             throw new StreamObjectParseErrorException(currentIndex.get(), "Signature",
@@ -92,9 +95,9 @@ public class DataHashObject extends StreamObject {
      * @return The number of elements
      */
     @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) throws IOException {
         int length = byteList.size();
-        byteList.addAll(this.Data.serializeToByteList());
+        byteList.addAll(this.data.serializeToByteList());
         return byteList.size() - length;
     }
 }

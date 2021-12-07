@@ -17,6 +17,7 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitReader;
@@ -95,7 +96,7 @@ public class Compact64bitInt extends BasicObject {
      * @return Return the byte list which store the byte information of Compact64bitInt.
      */
     @Override
-    public List<Byte> serializeToByteList() {
+    public List<Byte> serializeToByteList() throws IOException {
         BitWriter bitWriter = new BitWriter(9);
 
         if (this.decodedValue == 0) {
@@ -138,7 +139,8 @@ public class Compact64bitInt extends BasicObject {
      */
     @Override
     protected int doDeserializeFromByteArray(byte[] byteArray,
-                                             int startIndex) // return the length consumed
+                                             int startIndex)
+            throws IOException // return the length consumed
     {
         BitReader bitReader = new BitReader(byteArray, startIndex);
         int numberOfContinousZeroBit = 0;
@@ -197,7 +199,7 @@ public class Compact64bitInt extends BasicObject {
                 return 1;
 
             default:
-                throw new RuntimeException(
+                throw new IllegalArgumentException(
                         "Failed to parse the Compact64bitInt, the type value is unexpected");
         }
     }

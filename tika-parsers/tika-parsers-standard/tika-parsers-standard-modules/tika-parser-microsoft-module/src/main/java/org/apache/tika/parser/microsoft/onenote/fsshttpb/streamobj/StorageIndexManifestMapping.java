@@ -17,16 +17,18 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.SerialNumber;
 
 public class StorageIndexManifestMapping extends StreamObject {
-    public ExGuid ManifestMappingExGuid;
-    public SerialNumber ManifestMappingSerialNumber;
+    public ExGuid manifestMappingExGuid;
+    public SerialNumber manifestMappingSerialNumber;
 
     /**
      * Initializes a new instance of the StorageIndexManifestMapping class.
@@ -44,10 +46,11 @@ public class StorageIndexManifestMapping extends StreamObject {
      */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems) {
+                                                 int lengthOfItems)
+            throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
-        this.ManifestMappingExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
-        this.ManifestMappingSerialNumber = BasicObject.parse(byteArray, index, SerialNumber.class);
+        this.manifestMappingExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
+        this.manifestMappingSerialNumber = BasicObject.parse(byteArray, index, SerialNumber.class);
 
         if (index.get() - currentIndex.get() != lengthOfItems) {
             throw new StreamObjectParseErrorException(currentIndex.get(),
@@ -64,10 +67,10 @@ public class StorageIndexManifestMapping extends StreamObject {
      * @return The length of list
      */
     @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) throws IOException {
         int itemsIndex = byteList.size();
-        byteList.addAll(this.ManifestMappingExGuid.serializeToByteList());
-        byteList.addAll(this.ManifestMappingSerialNumber.serializeToByteList());
+        byteList.addAll(this.manifestMappingExGuid.serializeToByteList());
+        byteList.addAll(this.manifestMappingSerialNumber.serializeToByteList());
         return byteList.size() - itemsIndex;
     }
 }

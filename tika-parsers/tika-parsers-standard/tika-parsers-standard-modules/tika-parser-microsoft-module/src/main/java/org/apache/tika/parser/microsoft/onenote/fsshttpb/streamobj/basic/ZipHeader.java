@@ -26,7 +26,7 @@ public class ZipHeader {
     /**
      * The file header in zip.
      */
-    public static final byte[] LocalFileHeader = new byte[]{0x50, 0x4b, 0x03, 0x04};
+    public static final byte[] LOCAL_FILE_HEADER = new byte[]{0x50, 0x4b, 0x03, 0x04};
 
     /**
      * Prevents a default instance of the ZipHeader class from being created
@@ -42,6 +42,6 @@ public class ZipHeader {
      * @return True if the input data is a local file header, otherwise false.
      */
     public static boolean isFileHeader(byte[] byteArray, int index) {
-        return Arrays.equals(LocalFileHeader, Arrays.copyOfRange(byteArray, index, 4));
+        return Arrays.equals(LOCAL_FILE_HEADER, Arrays.copyOfRange(byteArray, index, 4));
     }
 }

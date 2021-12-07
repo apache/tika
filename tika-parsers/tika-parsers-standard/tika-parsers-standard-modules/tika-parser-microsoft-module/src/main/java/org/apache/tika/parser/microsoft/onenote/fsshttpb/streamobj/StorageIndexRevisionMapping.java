@@ -17,9 +17,11 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.SerialNumber;
@@ -29,9 +31,9 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.SerialN
  * extended GUIDs, and revision mapping serial number)
  */
 public class StorageIndexRevisionMapping extends StreamObject {
-    public ExGuid RevisionExGuid;
-    public ExGuid RevisionMappingExGuid;
-    public SerialNumber RevisionMappingSerialNumber;
+    public ExGuid revisionExGuid;
+    public ExGuid revisionMappingExGuid;
+    public SerialNumber revisionMappingSerialNumber;
 
     /**
      * Initializes a new instance of the StorageIndexRevisionMapping class.
@@ -49,11 +51,12 @@ public class StorageIndexRevisionMapping extends StreamObject {
      */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems) {
+                                                 int lengthOfItems)
+            throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
-        this.RevisionExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
-        this.RevisionMappingExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
-        this.RevisionMappingSerialNumber = BasicObject.parse(byteArray, index, SerialNumber.class);
+        this.revisionExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
+        this.revisionMappingExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
+        this.revisionMappingSerialNumber = BasicObject.parse(byteArray, index, SerialNumber.class);
 
         if (index.get() - currentIndex.get() != lengthOfItems) {
             throw new StreamObjectParseErrorException(currentIndex.get(),
@@ -70,11 +73,11 @@ public class StorageIndexRevisionMapping extends StreamObject {
      * @return The length of list
      */
     @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) throws IOException {
         int itemsIndex = byteList.size();
-        byteList.addAll(this.RevisionExGuid.serializeToByteList());
-        byteList.addAll(this.RevisionMappingExGuid.serializeToByteList());
-        byteList.addAll(this.RevisionMappingSerialNumber.serializeToByteList());
+        byteList.addAll(this.revisionExGuid.serializeToByteList());
+        byteList.addAll(this.revisionMappingExGuid.serializeToByteList());
+        byteList.addAll(this.revisionMappingSerialNumber.serializeToByteList());
         return byteList.size() - itemsIndex;
     }
 }

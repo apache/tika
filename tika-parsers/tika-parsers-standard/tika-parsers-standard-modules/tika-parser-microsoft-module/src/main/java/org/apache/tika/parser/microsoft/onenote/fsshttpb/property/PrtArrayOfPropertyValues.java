@@ -17,6 +17,7 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.property;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,9 +30,9 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitConverter;
  * The class is used to represent the prtArrayOfPropertyValues .
  */
 public class PrtArrayOfPropertyValues implements IProperty {
-    public int CProperties;
-    public PropertyID Prid;
-    public PropertySet[] Data;
+    public int cProperties;
+    public PropertyID propertyID;
+    public PropertySet[] data;
 
     /**
      * This method is used to deserialize the prtArrayOfPropertyValues from the specified byte array and start index.
@@ -40,17 +41,17 @@ public class PrtArrayOfPropertyValues implements IProperty {
      * @param startIndex Specify the start index from the byte array.
      * @return
      */
-    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException {
         int index = startIndex;
-        this.CProperties = BitConverter.toInt32(byteArray, index);
+        this.cProperties = BitConverter.toInt32(byteArray, index);
         index += 4;
-        this.Prid = new PropertyID();
-        int len = this.Prid.doDeserializeFromByteArray(byteArray, index);
+        this.propertyID = new PropertyID();
+        int len = this.propertyID.doDeserializeFromByteArray(byteArray, index);
         index += len;
-        this.Data = new PropertySet[this.CProperties];
-        for (int i = 0; i < this.CProperties; i++) {
-            this.Data[i] = new PropertySet();
-            int length = this.Data[i].doDeserializeFromByteArray(byteArray, index);
+        this.data = new PropertySet[this.cProperties];
+        for (int i = 0; i < this.cProperties; i++) {
+            this.data[i] = new PropertySet();
+            int length = this.data[i].doDeserializeFromByteArray(byteArray, index);
             index += length;
         }
 
@@ -62,13 +63,13 @@ public class PrtArrayOfPropertyValues implements IProperty {
      *
      * @return Return the byte list which store the byte information of the prtArrayOfPropertyValues.
      */
-    public List<Byte> serializeToByteList() {
+    public List<Byte> serializeToByteList() throws IOException {
         List<Byte> byteList = new ArrayList<>();
-        for (byte b : BitConverter.getBytes(this.CProperties)) {
+        for (byte b : BitConverter.getBytes(this.cProperties)) {
             byteList.add(b);
         }
-        byteList.addAll(this.Prid.serializeToByteList());
-        for (PropertySet ps : this.Data) {
+        byteList.addAll(this.propertyID.serializeToByteList());
+        for (PropertySet ps : this.data) {
             byteList.addAll(ps.serializeToByteList());
         }
         return byteList;

@@ -17,9 +17,11 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitReader;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitWriter;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
@@ -34,10 +36,10 @@ public class StreamObjectHeaderEnd16bit extends StreamObjectHeaderEnd {
      *
      * @param type Specify the integer value of the type.
      */
-    public StreamObjectHeaderEnd16bit(int type) {
+    public StreamObjectHeaderEnd16bit(int type) throws TikaException {
         this.type = StreamObjectTypeHeaderEnd.fromIntVal(type);
         if (this.type == null) {
-            throw new RuntimeException(String.format(Locale.US,
+            throw new TikaException(String.format(Locale.US,
                     "The type value RuntimeException is not defined for the stream object end 16-bit header",
                     type));
         }
@@ -65,7 +67,7 @@ public class StreamObjectHeaderEnd16bit extends StreamObjectHeaderEnd {
      * @return Return the byte list which store the byte information of StreamObjectHeaderEnd16bit.
      */
     @Override
-    public List<Byte> serializeToByteList() {
+    public List<Byte> serializeToByteList() throws IOException {
         BitWriter bitFieldWriter = new BitWriter(2);
         bitFieldWriter.appendInit32(0x3, 2);
         bitFieldWriter.appendUInit32(this.type.getIntVal(), 14);
@@ -77,7 +79,7 @@ public class StreamObjectHeaderEnd16bit extends StreamObjectHeaderEnd {
      *
      * @return Return StreamObjectHeaderEnd8bit value represented by unsigned short integer.
      */
-    public short toUint16() {
+    public short toUint16() throws IOException {
         List<Byte> bytes = this.serializeToByteList();
         return LittleEndianBitConverter.ToUInt16(ByteUtil.toByteArray(bytes), 0);
     }
@@ -91,12 +93,13 @@ public class StreamObjectHeaderEnd16bit extends StreamObjectHeaderEnd {
      * @return Return the length in byte of the StreamObjectHeaderEnd16bit basic object.
      */
     @Override
-    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex)
+            throws IOException, TikaException {
         BitReader reader = new BitReader(byteArray, startIndex);
         int headerType = reader.readInt32(2);
 
         if (headerType != 0x3) {
-            throw new RuntimeException(String.format(Locale.US,
+            throw new TikaException(String.format(Locale.US,
                     "Failed to get the StreamObjectHeaderEnd16bit header type value, expect value %d, " +
                             "but actual value is %s", 0x3, headerType));
         }
@@ -104,7 +107,7 @@ public class StreamObjectHeaderEnd16bit extends StreamObjectHeaderEnd {
         int typeValue = reader.readUInt32(14);
         this.type = StreamObjectTypeHeaderEnd.fromIntVal(typeValue);
         if (this.type == null) {
-            throw new RuntimeException(String.format(Locale.US,
+            throw new TikaException(String.format(Locale.US,
                     "Failed to get the StreamObjectHeaderEnd16bit type value, the value %d is not defined",
                     typeValue));
         }

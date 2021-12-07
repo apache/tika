@@ -17,6 +17,7 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.space;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,18 +28,18 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.Compact
  * This class is used to represent a ObjectSpaceObjectStreamOfOIDs.
  */
 public class ObjectSpaceObjectStreamOfOIDs {
-    public ObjectSpaceObjectStreamHeader Header;
-    public CompactID[] Body;
+    public ObjectSpaceObjectStreamHeader header;
+    public CompactID[] body;
 
     /**
      * This method is used to convert the element of ObjectSpaceObjectStreamOfOIDs object into a byte List.
      *
      * @return Return the byte list which store the byte information of ObjectSpaceObjectStreamOfOIDs
      */
-    public List<Byte> serializeToByteList() {
+    public List<Byte> serializeToByteList() throws IOException {
         List<Byte> byteList = new ArrayList<>();
-        byteList.addAll(this.Header.serializeToByteList());
-        for (CompactID compactID : this.Body) {
+        byteList.addAll(this.header.serializeToByteList());
+        for (CompactID compactID : this.body) {
             byteList.addAll(compactID.serializeToByteList());
         }
 
@@ -53,17 +54,17 @@ public class ObjectSpaceObjectStreamOfOIDs {
      * @param startIndex Specify the start index from the byte array.
      * @return Return the length in byte of the ObjectSpaceObjectStreamOfOIDs object.
      */
-    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException {
         int index = startIndex;
-        this.Header = new ObjectSpaceObjectStreamHeader();
-        int headerCount = this.Header.DoDeserializeFromByteArray(byteArray, index);
+        this.header = new ObjectSpaceObjectStreamHeader();
+        int headerCount = this.header.doDeserializeFromByteArray(byteArray, index);
         index += headerCount;
 
-        this.Body = new CompactID[(int) this.Header.Count];
-        for (int i = 0; i < this.Header.Count; i++) {
+        this.body = new CompactID[(int) this.header.count];
+        for (int i = 0; i < this.header.count; i++) {
             CompactID compactID = new CompactID();
             int count = compactID.doDeserializeFromByteArray(byteArray, startIndex);
-            this.Body[i] = compactID;
+            this.body[i] = compactID;
             index += count;
         }
 

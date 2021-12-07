@@ -17,14 +17,17 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.tika.exception.TikaException;
+
 public class DataElementPackage extends StreamObject {
 
-    public List<DataElement> DataElements = new ArrayList<>();
+    public List<DataElement> dataElements = new ArrayList<>();
     public byte reserved;
 
     /**
@@ -43,7 +46,8 @@ public class DataElementPackage extends StreamObject {
      */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems) {
+                                                 int lengthOfItems)
+            throws TikaException, IOException {
         if (lengthOfItems != 1) {
             throw new StreamObjectParseErrorException(currentIndex.get(), "DataElementPackage",
                     "Stream object over-parse error", null);
@@ -51,11 +55,11 @@ public class DataElementPackage extends StreamObject {
 
         reserved = byteArray[currentIndex.getAndIncrement()];
 
-        this.DataElements = new ArrayList<>();
+        this.dataElements = new ArrayList<>();
         AtomicReference<DataElement> dataElement = new AtomicReference<>();
         while (StreamObject.tryGetCurrent(byteArray, currentIndex, dataElement,
                 DataElement.class)) {
-            this.DataElements.add(dataElement.get());
+            this.dataElements.add(dataElement.get());
         }
     }
 
@@ -66,10 +70,10 @@ public class DataElementPackage extends StreamObject {
      * @return The number of elements actually contained in the list
      */
     @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) throws TikaException, IOException {
         // Add the reserved byte
         byteList.add((byte) 0);
-        for (DataElement dataElement : DataElements) {
+        for (DataElement dataElement : dataElements) {
             byteList.addAll(dataElement.serializeToByteList());
         }
         return 1;

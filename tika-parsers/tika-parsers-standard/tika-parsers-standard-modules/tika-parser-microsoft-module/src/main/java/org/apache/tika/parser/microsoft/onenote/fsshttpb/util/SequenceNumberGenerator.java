@@ -19,6 +19,8 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb.util;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.tika.exception.TikaException;
+
 public class SequenceNumberGenerator {
     /**
      * Specify the max token value.
@@ -28,7 +30,7 @@ public class SequenceNumberGenerator {
     /**
      * Specify the max sub request ID.
      */
-    public static final int MAXSUBREQUSTID = 0xFFFFFFFF;
+    public static final int MAXSUBREQUESTID = 0xFFFFFFFF;
 
     /**
      * Specify the current token value.
@@ -50,12 +52,12 @@ public class SequenceNumberGenerator {
      *
      * @return Returns the current token value.
      */
-    public static int getCurrentToken() {
+    public static int getCurrentToken() throws TikaException {
         long currentToken = token.incrementAndGet();
 
         // The token value cannot be exceed the value 4294967295.
         if (currentToken > MAXTOKENVALUE) {
-            throw new RuntimeException("The token exceeds the max value 4294967295");
+            throw new TikaException("The token exceeds the max value 4294967295");
         }
 
         return (int) currentToken;
@@ -66,13 +68,13 @@ public class SequenceNumberGenerator {
      *
      * @return Returns the current sub request ID.
      */
-    public static int getCurrentFSSHTTPBSubRequestID() {
+    public static int getCurrentFSSHTTPBSubRequestID() throws TikaException {
         // Thread safety increase the token by 1.
         long currentID = subRequestID.incrementAndGet();
 
         // The token value cannot be exceed the value 0xFFFFFFFF.
-        if (currentID > MAXSUBREQUSTID) {
-            throw new RuntimeException("The token exceeds the max value 4294967295");
+        if (currentID > MAXSUBREQUESTID) {
+            throw new TikaException("The token exceeds the max value 4294967295");
         }
 
         return (int) currentID;

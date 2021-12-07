@@ -17,27 +17,29 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BinaryItem;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.CellIDArray;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGUIDArray;
 
 public class ObjectGroupObjectData extends StreamObject {
-    public ExGUIDArray ObjectExGUIDArray;
+    public ExGUIDArray objectExGUIDArray;
     public CellIDArray cellIDArray;
-    public BinaryItem Data;
+    public BinaryItem data;
 
     /**
      * Initializes a new instance of the ObjectGroupObjectData class.
      */
     public ObjectGroupObjectData() {
         super(StreamObjectTypeHeaderStart.ObjectGroupObjectData);
-        this.ObjectExGUIDArray = new ExGUIDArray();
+        this.objectExGUIDArray = new ExGUIDArray();
         this.cellIDArray = new CellIDArray();
-        this.Data = new BinaryItem();
+        this.data = new BinaryItem();
     }
 
     /**
@@ -49,11 +51,12 @@ public class ObjectGroupObjectData extends StreamObject {
      */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems) {
+                                                 int lengthOfItems)
+            throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
-        this.ObjectExGUIDArray = BasicObject.parse(byteArray, index, ExGUIDArray.class);
+        this.objectExGUIDArray = BasicObject.parse(byteArray, index, ExGUIDArray.class);
         this.cellIDArray = BasicObject.parse(byteArray, index, CellIDArray.class);
-        this.Data = BasicObject.parse(byteArray, index, BinaryItem.class);
+        this.data = BasicObject.parse(byteArray, index, BinaryItem.class);
 
         if (index.get() - currentIndex.get() != lengthOfItems) {
             throw new StreamObjectParseErrorException(currentIndex.get(), "ObjectGroupObjectData",
@@ -70,11 +73,11 @@ public class ObjectGroupObjectData extends StreamObject {
      * @return The number of the element
      */
     @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) throws IOException {
         int itemsIndex = byteList.size();
-        byteList.addAll(this.ObjectExGUIDArray.serializeToByteList());
+        byteList.addAll(this.objectExGUIDArray.serializeToByteList());
         byteList.addAll(this.cellIDArray.serializeToByteList());
-        byteList.addAll(this.Data.serializeToByteList());
+        byteList.addAll(this.data.serializeToByteList());
         return byteList.size() - itemsIndex;
     }
 }

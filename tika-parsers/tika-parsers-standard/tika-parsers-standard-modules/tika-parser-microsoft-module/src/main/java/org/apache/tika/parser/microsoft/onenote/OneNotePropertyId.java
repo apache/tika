@@ -17,6 +17,8 @@
 
 package org.apache.tika.parser.microsoft.onenote;
 
+import org.apache.tika.exception.TikaException;
+
 class OneNotePropertyId {
     OneNotePropertyEnum propertyEnum;
     long pid;
@@ -26,7 +28,7 @@ class OneNotePropertyId {
     public OneNotePropertyId() {
     }
 
-    public OneNotePropertyId(long pid) {
+    public OneNotePropertyId(long pid) throws TikaException {
         this.pid = pid;
         propertyEnum = OneNotePropertyEnum.of(pid);
         type = pid >> 26 & 0x1f;
@@ -35,7 +37,7 @@ class OneNotePropertyId {
             inlineBool = ((pid >> 31) & 0x1) > 0; // set the bool value from header
         } else {
             if (((pid >> 31) & 0x1) > 0) {
-                throw new RuntimeException("Reserved non-zero");
+                throw new TikaException("Reserved non-zero");
             }
         }
     }

@@ -17,24 +17,26 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.exception.DataElementParseErrorException;
 
 public class RevisionManifestDataElementData extends DataElementData {
-    public RevisionManifest RevisionManifest;
-    public List<RevisionManifestRootDeclare> RevisionManifestRootDeclareList;
+    public RevisionManifest revisionManifest;
+    public List<RevisionManifestRootDeclare> revisionManifestRootDeclareList;
     public List<RevisionManifestObjectGroupReferences> revisionManifestObjectGroupReferences;
 
     /**
      * Initializes a new instance of the RevisionManifestDataElementData class.
      */
     public RevisionManifestDataElementData() {
-        this.RevisionManifest = new RevisionManifest();
-        this.RevisionManifestRootDeclareList = new ArrayList<>();
+        this.revisionManifest = new RevisionManifest();
+        this.revisionManifestRootDeclareList = new ArrayList<>();
         this.revisionManifestObjectGroupReferences = new ArrayList<>();
     }
 
@@ -46,11 +48,12 @@ public class RevisionManifestDataElementData extends DataElementData {
      * @return The length of the element
      */
     @Override
-    public int deserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex) {
+    public int deserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex)
+            throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(startIndex);
-        this.RevisionManifest = StreamObject.getCurrent(byteArray, index, RevisionManifest.class);
+        this.revisionManifest = StreamObject.getCurrent(byteArray, index, RevisionManifest.class);
 
-        this.RevisionManifestRootDeclareList = new ArrayList<>();
+        this.revisionManifestRootDeclareList = new ArrayList<>();
         this.revisionManifestObjectGroupReferences = new ArrayList<>();
         AtomicReference<StreamObjectHeaderStart> header = new AtomicReference<>();
         int headerLength = 0;
@@ -58,7 +61,7 @@ public class RevisionManifestDataElementData extends DataElementData {
                 0) {
             if (header.get().type == StreamObjectTypeHeaderStart.RevisionManifestRootDeclare) {
                 index.addAndGet(headerLength);
-                this.RevisionManifestRootDeclareList.add(
+                this.revisionManifestRootDeclareList.add(
                         (RevisionManifestRootDeclare) StreamObject.parseStreamObject(header.get(),
                                 byteArray, index));
             } else if (header.get().type ==
@@ -84,12 +87,12 @@ public class RevisionManifestDataElementData extends DataElementData {
      * @return A Byte list
      */
     @Override
-    public List<Byte> serializeToByteList() {
+    public List<Byte> serializeToByteList() throws TikaException, IOException {
         List<Byte> byteList = new ArrayList<>();
-        byteList.addAll(this.RevisionManifest.serializeToByteList());
+        byteList.addAll(this.revisionManifest.serializeToByteList());
 
-        if (this.RevisionManifestRootDeclareList != null) {
-            for (RevisionManifestRootDeclare revisionManifestRootDeclare : this.RevisionManifestRootDeclareList) {
+        if (this.revisionManifestRootDeclareList != null) {
+            for (RevisionManifestRootDeclare revisionManifestRootDeclare : this.revisionManifestRootDeclareList) {
                 byteList.addAll(revisionManifestRootDeclare.serializeToByteList());
             }
         }

@@ -26,8 +26,8 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.SequenceNumberGene
  * Data Node Object data
  */
 public class DataNodeObjectData {
-    public ExGuid ExGuid;
-    public byte[] ObjectData;
+    public ExGuid exGuid;
+    public byte[] objectData;
 
     /**
      * Initializes a new instance of the DataNodeObjectData class.
@@ -38,7 +38,7 @@ public class DataNodeObjectData {
      */
     public DataNodeObjectData(byte[] byteArray, int startIndex, int length) {
         this();
-        this.ObjectData = Arrays.copyOfRange(byteArray, startIndex, length);
+        this.objectData = Arrays.copyOfRange(byteArray, startIndex, length);
 
     }
 
@@ -46,7 +46,7 @@ public class DataNodeObjectData {
      * Initializes a new instance of the DataNodeObjectData class.
      */
     DataNodeObjectData() {
-        this.ExGuid =
+        this.exGuid =
                 new ExGuid(SequenceNumberGenerator.GetCurrentSerialNumber(), UUID.randomUUID());
     }
 }

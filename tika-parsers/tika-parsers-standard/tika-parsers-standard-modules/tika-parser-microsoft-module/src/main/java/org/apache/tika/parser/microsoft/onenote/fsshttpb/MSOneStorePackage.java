@@ -122,7 +122,7 @@ public class MSOneStorePackage {
         StorageIndexCellMapping storageIndexCellMapping = null;
         if (this.storageIndex != null) {
             storageIndexCellMapping = this.storageIndex.storageIndexCellMappingList.stream()
-                    .filter(s -> s.CellID.equals(cellID)).findFirst()
+                    .filter(s -> s.cellID.equals(cellID)).findFirst()
                     .orElse(new StorageIndexCellMapping());
         }
         return storageIndexCellMapping;
@@ -138,8 +138,8 @@ public class MSOneStorePackage {
             ExGuid revisionExtendedGUID) {
         StorageIndexRevisionMapping instance = null;
         if (this.storageIndex != null) {
-            instance = this.storageIndex.StorageIndexRevisionMappingList.stream()
-                    .filter(r -> r.RevisionExGuid.equals(revisionExtendedGUID)).findFirst()
+            instance = this.storageIndex.storageIndexRevisionMappingList.stream()
+                    .filter(r -> r.revisionExGuid.equals(revisionExtendedGUID)).findFirst()
                     .orElse(new StorageIndexRevisionMapping());
         }
 
@@ -162,15 +162,15 @@ public class MSOneStorePackage {
                          XHTMLContentHandler xhtml)
             throws SAXException, TikaException, IOException {
         for (RevisionStoreObjectGroup revisionStoreObjectGroup : OtherFileNodeList) {
-            for (RevisionStoreObject revisionStoreObject : revisionStoreObjectGroup.Objects) {
+            for (RevisionStoreObject revisionStoreObject : revisionStoreObjectGroup.objects) {
                 PropertySet propertySet =
-                        revisionStoreObject.PropertySet.ObjectSpaceObjectPropSet.Body;
-                for (int i = 0; i < propertySet.RgData.size(); ++i) {
-                    IProperty property = propertySet.RgData.get(i);
-                    PropertyID propertyID = propertySet.RgPrids[i];
-                    PropertyType propertyType = PropertyType.fromIntVal(propertyID.Type);
+                        revisionStoreObject.propertySet.objectSpaceObjectPropSet.body;
+                for (int i = 0; i < propertySet.rgData.size(); ++i) {
+                    IProperty property = propertySet.rgData.get(i);
+                    PropertyID propertyID = propertySet.rgPrids[i];
+                    PropertyType propertyType = PropertyType.fromIntVal(propertyID.type);
                     OneNotePropertyEnum oneNotePropertyEnum =
-                            OneNotePropertyEnum.of(Unsigned.uint(propertyID.Value).longValue());
+                            OneNotePropertyEnum.of(Unsigned.uint(propertyID.value).longValue());
                     if (oneNotePropertyEnum == OneNotePropertyEnum.LastModifiedTimeStamp) {
                         long fullval = getScalar(property);
                         Instant instant = Instant.ofEpochSecond(
@@ -200,7 +200,7 @@ public class MSOneStorePackage {
                         metadata.set("lastModified", String.valueOf(lastModified));
                     } else if (oneNotePropertyEnum == OneNotePropertyEnum.Author) {
                         String author =
-                                new String(((PrtFourBytesOfLengthFollowedByData) property).Data,
+                                new String(((PrtFourBytesOfLengthFollowedByData) property).data,
                                         StandardCharsets.UTF_8);
                         if (mostRecentAuthorProp) {
                             mostRecentAuthors.add(author);
@@ -217,30 +217,30 @@ public class MSOneStorePackage {
                         boolean isBinary = propertyIsBinary(oneNotePropertyEnum);
                         PrtFourBytesOfLengthFollowedByData dataProperty =
                                 (PrtFourBytesOfLengthFollowedByData) property;
-                        if ((dataProperty.Data.length & 1) == 0 &&
+                        if ((dataProperty.data.length & 1) == 0 &&
                                 oneNotePropertyEnum != OneNotePropertyEnum.TextExtendedAscii &&
                                 !isBinary) {
                             if (options.getUtf16PropertiesToPrint().contains(oneNotePropertyEnum)) {
                                 xhtml.startElement(P);
                                 xhtml.characters(
-                                        new String(dataProperty.Data, StandardCharsets.UTF_16LE));
+                                        new String(dataProperty.data, StandardCharsets.UTF_16LE));
                                 xhtml.endElement(P);
                             }
                         } else if (oneNotePropertyEnum == OneNotePropertyEnum.TextExtendedAscii) {
                             xhtml.startElement(P);
                             xhtml.characters(
-                                    new String(dataProperty.Data, StandardCharsets.US_ASCII));
+                                    new String(dataProperty.data, StandardCharsets.US_ASCII));
                             xhtml.endElement(P);
                         } else if (!isBinary) {
                             if (options.getUtf16PropertiesToPrint().contains(oneNotePropertyEnum)) {
                                 xhtml.startElement(P);
                                 xhtml.characters(
-                                        new String(dataProperty.Data, StandardCharsets.UTF_16LE));
+                                        new String(dataProperty.data, StandardCharsets.UTF_16LE));
                                 xhtml.endElement(P);
                             }
                         } else {
                             if (oneNotePropertyEnum == OneNotePropertyEnum.RichEditTextUnicode) {
-                                handleRichEditTextUnicode(dataProperty.Data, xhtml);
+                                handleRichEditTextUnicode(dataProperty.data, xhtml);
                             } else {
                                 //TODO -- these seem to be somewhat broken font files and other
                                 //odds and ends...what are they and how should we process them?
@@ -292,13 +292,13 @@ public class MSOneStorePackage {
         }
     }
 
-    private long getScalar(IProperty property) throws TikaException {
+    private long getScalar(IProperty property) throws TikaException, IOException {
         if (property instanceof FourBytesOfData) {
             FourBytesOfData fourBytesOfDataProp = (FourBytesOfData) property;
-            return BitConverter.toUInt32(fourBytesOfDataProp.Data, 0);
+            return BitConverter.toUInt32(fourBytesOfDataProp.data, 0);
         } else if (property instanceof EightBytesOfData) {
             EightBytesOfData fourBytesOfDataProp = (EightBytesOfData) property;
-            return BitConverter.toInt64(fourBytesOfDataProp.Data, 0);
+            return BitConverter.toInt64(fourBytesOfDataProp.data, 0);
         }
         throw new TikaException("Could not parse scalar of type " + property.getClass());
     }

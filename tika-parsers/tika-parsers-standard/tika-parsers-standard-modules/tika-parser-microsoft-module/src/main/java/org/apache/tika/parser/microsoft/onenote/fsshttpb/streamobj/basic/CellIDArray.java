@@ -17,13 +17,16 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.tika.exception.TikaException;
+
 public class CellIDArray extends BasicObject {
-    public long Count;
-    public List<CellID> Content;
+    public long count;
+    public List<CellID> content;
 
     /**
      * Initializes a new instance of the CellIDArray class.
@@ -32,8 +35,8 @@ public class CellIDArray extends BasicObject {
      * @param content Specify the list of CellID.
      */
     public CellIDArray(long count, java.util.List<CellID> content) {
-        this.Count = count;
-        this.Content = content;
+        this.count = count;
+        this.content = content;
     }
 
     /**
@@ -42,10 +45,10 @@ public class CellIDArray extends BasicObject {
      * @param cellIdArray Specify the CellIDArray.
      */
     public CellIDArray(CellIDArray cellIdArray) {
-        this.Count = cellIdArray.Count;
-        if (cellIdArray.Content != null) {
-            for (CellID cellId : cellIdArray.Content) {
-                this.Content.add(new CellID(cellId));
+        this.count = cellIdArray.count;
+        if (cellIdArray.content != null) {
+            for (CellID cellId : cellIdArray.content) {
+                this.content.add(new CellID(cellId));
             }
         }
     }
@@ -54,7 +57,7 @@ public class CellIDArray extends BasicObject {
      * Initializes a new instance of the CellIDArray class, this is default constructor.
      */
     public CellIDArray() {
-        this.Content = new ArrayList<CellID>();
+        this.content = new ArrayList<CellID>();
     }
 
     /**
@@ -63,11 +66,11 @@ public class CellIDArray extends BasicObject {
      * @return Return the byte list which store the byte information of CellIDArray.
      */
     @Override
-    public List<Byte> serializeToByteList() {
+    public List<Byte> serializeToByteList() throws IOException {
         List<Byte> byteList = new ArrayList<Byte>();
-        byteList.addAll((new Compact64bitInt(this.Count)).serializeToByteList());
-        if (this.Content != null) {
-            for (CellID extendGuid : this.Content) {
+        byteList.addAll((new Compact64bitInt(this.count)).serializeToByteList());
+        if (this.content != null) {
+            for (CellID extendGuid : this.content) {
                 byteList.addAll(extendGuid.serializeToByteList());
             }
         }
@@ -83,13 +86,14 @@ public class CellIDArray extends BasicObject {
      * @return Return the length in byte of the CellIDArray basic object.
      */
     @Override
-    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex)
+            throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(startIndex);
 
-        this.Count = BasicObject.parse(byteArray, index, Compact64bitInt.class).getDecodedValue();
+        this.count = BasicObject.parse(byteArray, index, Compact64bitInt.class).getDecodedValue();
 
-        for (long i = 0; i < this.Count; i++) {
-            this.Content.add(BasicObject.parse(byteArray, index, CellID.class));
+        for (long i = 0; i < this.count; i++) {
+            this.content.add(BasicObject.parse(byteArray, index, CellID.class));
         }
 
         return index.get() - startIndex;

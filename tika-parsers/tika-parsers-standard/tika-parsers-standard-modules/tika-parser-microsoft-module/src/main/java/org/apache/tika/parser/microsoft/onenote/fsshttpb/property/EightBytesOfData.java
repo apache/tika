@@ -27,7 +27,7 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
  * This class is used to represent the property contains 8 bytes of data in the PropertySet.rgData stream field.
  */
 public class EightBytesOfData implements IProperty {
-    public byte[] Data;
+    public byte[] data;
 
     /**
      * This method is used to deserialize the EightBytesOfData from the specified byte array and start index.
@@ -37,7 +37,7 @@ public class EightBytesOfData implements IProperty {
      * @return Return the length in byte of the EightBytesOfData.
      */
     public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
-        this.Data = Arrays.copyOfRange(byteArray, startIndex, startIndex + 8);
+        this.data = Arrays.copyOfRange(byteArray, startIndex, startIndex + 8);
         return 8;
     }
 
@@ -47,6 +47,6 @@ public class EightBytesOfData implements IProperty {
      * @return Return the byte list which store the byte information of EightBytesOfData.
      */
     public List<Byte> serializeToByteList() {
-        return ByteUtil.toListOfByte(this.Data);
+        return ByteUtil.toListOfByte(this.data);
     }
 }

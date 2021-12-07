@@ -17,9 +17,11 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.CellIDArray;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGUIDArray;
@@ -29,18 +31,18 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
  * object data BLOB reference
  */
 public class ObjectGroupObjectDataBLOBReference extends StreamObject {
-    public ExGUIDArray ObjectExtendedGUIDArray;
+    public ExGUIDArray objectExtendedGUIDArray;
     public CellIDArray cellIDArray;
-    public ExGuid BLOBExtendedGUID;
+    public ExGuid blobExtendedGUID;
 
     /**
      * Initializes a new instance of the ObjectGroupObjectDataBLOBReference class.
      */
     public ObjectGroupObjectDataBLOBReference() {
         super(StreamObjectTypeHeaderStart.ObjectGroupObjectDataBLOBReference);
-        this.ObjectExtendedGUIDArray = new ExGUIDArray();
+        this.objectExtendedGUIDArray = new ExGUIDArray();
         this.cellIDArray = new CellIDArray();
-        this.BLOBExtendedGUID = new ExGuid();
+        this.blobExtendedGUID = new ExGuid();
     }
 
     /**
@@ -52,11 +54,12 @@ public class ObjectGroupObjectDataBLOBReference extends StreamObject {
      */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems) {
+                                                 int lengthOfItems)
+            throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
-        this.ObjectExtendedGUIDArray = BasicObject.parse(byteArray, index, ExGUIDArray.class);
+        this.objectExtendedGUIDArray = BasicObject.parse(byteArray, index, ExGUIDArray.class);
         this.cellIDArray = BasicObject.parse(byteArray, index, CellIDArray.class);
-        this.BLOBExtendedGUID = BasicObject.parse(byteArray, index, ExGuid.class);
+        this.blobExtendedGUID = BasicObject.parse(byteArray, index, ExGuid.class);
 
         if (index.get() - currentIndex.get() != lengthOfItems) {
             throw new StreamObjectParseErrorException(currentIndex.get(),
@@ -73,11 +76,11 @@ public class ObjectGroupObjectDataBLOBReference extends StreamObject {
      * @return The number of the elements
      */
     @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) throws IOException {
         int itemsIndex = byteList.size();
-        byteList.addAll(this.ObjectExtendedGUIDArray.serializeToByteList());
+        byteList.addAll(this.objectExtendedGUIDArray.serializeToByteList());
         byteList.addAll(cellIDArray.serializeToByteList());
-        byteList.addAll(this.BLOBExtendedGUID.serializeToByteList());
+        byteList.addAll(this.blobExtendedGUID.serializeToByteList());
         return byteList.size() - itemsIndex;
     }
 }

@@ -17,6 +17,7 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -28,6 +29,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.IFSSHTTPBSerializable;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitReader;
@@ -120,7 +122,8 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
      * @return The current object instance.
      */
     public static <T extends StreamObject> T getCurrent(byte[] byteArray, AtomicInteger index,
-                                                        Class<T> clazz) {
+                                                        Class<T> clazz)
+            throws TikaException, IOException {
         AtomicInteger tmpIndex = new AtomicInteger(index.get());
         int length;
         AtomicReference<StreamObjectHeaderStart> streamObjectHeader = new AtomicReference<>();
@@ -163,14 +166,14 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
      * @return The instance of StreamObject.
      */
     public static StreamObject parseStreamObject(StreamObjectHeaderStart header, byte[] byteArray,
-                                                 AtomicInteger index) {
+                                                 AtomicInteger index) throws IOException, TikaException {
         if (streamObjectTypeMapping.containsKey(header.type)) {
             Class headerTypeClass = streamObjectTypeMapping.get(header.type);
             StreamObject streamObject;
             try {
                 streamObject = (StreamObject) headerTypeClass.newInstance();
             } catch (InstantiationException | IllegalAccessException e) {
-                throw new RuntimeException("Could not instantiate class " + headerTypeClass, e);
+                throw new TikaException("Could not instantiate class " + headerTypeClass, e);
             }
 
             int res = streamObject.deserializeFromByteArray(header, byteArray, index.get());
@@ -181,7 +184,7 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
 
         int tmpIndex = index.get();
         tmpIndex -=
-                header.headerType == StreamObjectHeaderStart.StreamObjectHeaderStart16bit ? 2 : 4;
+                header.headerType == StreamObjectHeaderStart.STREAM_OBJECT_HEADER_START_16_BIT ? 2 : 4;
         throw new StreamObjectParseErrorException(tmpIndex, "Unknown", String.format(Locale.US,
                 "Failed to create the specified stream object instance, the type %s of stream object " +
                         "header in the current index is not defined", header.type.getIntVal()),
@@ -200,7 +203,8 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
     public static <T extends StreamObject> boolean tryGetCurrent(byte[] byteArray,
                                                                  AtomicInteger index,
                                                                  AtomicReference<T> streamObject,
-                                                                 Class<T> clazz) {
+                                                                 Class<T> clazz)
+            throws TikaException, IOException {
         AtomicInteger tmpIndex = new AtomicInteger(index.get());
 
         int length = 0;
@@ -228,7 +232,7 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
      *
      * @return The byte list.
      */
-    public List<Byte> serializeToByteList() {
+    public List<Byte> serializeToByteList() throws IOException, TikaException {
         List<Byte> byteList = new ArrayList<>();
 
         int lengthOfItems = this.serializeItemsToByteList(byteList);
@@ -264,7 +268,7 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
      * @return The element length
      */
     public int deserializeFromByteArray(StreamObjectHeaderStart header, byte[] byteArray,
-                                        int startIndex) {
+                                        int startIndex) throws IOException, TikaException {
         this.streamObjectType = header.type;
         this.lengthOfItems = header.length;
 
@@ -308,7 +312,8 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
      * @param byteList The byte list need to serialized.
      * @return The length in bytes for additional data if the current stream object has, otherwise return 0.
      */
-    protected abstract int serializeItemsToByteList(List<Byte> byteList);
+    protected abstract int serializeItemsToByteList(List<Byte> byteList)
+            throws IOException, TikaException;
 
     /**
      * De-serialize items from byte array.
@@ -319,5 +324,6 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
      */
     protected abstract void deserializeItemsFromByteArray(byte[] byteArray,
                                                           AtomicInteger currentIndex,
-                                                          int lengthOfItems);
+                                                          int lengthOfItems)
+            throws TikaException, IOException;
 }

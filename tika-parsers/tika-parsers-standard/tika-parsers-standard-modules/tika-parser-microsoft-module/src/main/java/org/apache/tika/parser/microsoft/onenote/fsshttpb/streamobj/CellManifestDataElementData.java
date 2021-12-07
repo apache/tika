@@ -17,8 +17,11 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.apache.tika.exception.TikaException;
 
 /**
  * Cell manifest data element
@@ -41,7 +44,8 @@ public class CellManifestDataElementData extends DataElementData {
      * @return The element length
      */
     @Override
-    public int deserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex) {
+    public int deserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex)
+            throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(startIndex);
         this.cellManifestCurrentRevision =
                 StreamObject.getCurrent(byteArray, index, CellManifestCurrentRevision.class);
@@ -54,7 +58,7 @@ public class CellManifestDataElementData extends DataElementData {
      * @return The Byte list
      */
     @Override
-    public List<Byte> serializeToByteList() {
+    public List<Byte> serializeToByteList() throws TikaException, IOException {
         return this.cellManifestCurrentRevision.serializeToByteList();
     }
 }

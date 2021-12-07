@@ -17,6 +17,7 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,88 +27,88 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
 
 public class RevisionStoreObjectGroup {
-    public ExGuid ObjectGroupID;
-    public List<RevisionStoreObject> Objects;
-    public List<EncryptionObject> EncryptionObjects;
+    public ExGuid objectGroupID;
+    public List<RevisionStoreObject> objects;
+    public List<EncryptionObject> encryptionObjects;
 
     public RevisionStoreObjectGroup(ExGuid objectGroupId) {
-        this.Objects = new ArrayList<>();
-        this.EncryptionObjects = new ArrayList<>();
-        this.ObjectGroupID = objectGroupId;
+        this.objects = new ArrayList<>();
+        this.encryptionObjects = new ArrayList<>();
+        this.objectGroupID = objectGroupId;
     }
 
-    public static RevisionStoreObjectGroup CreateInstance(ExGuid objectGroupId,
+    public static RevisionStoreObjectGroup createInstance(ExGuid objectGroupId,
                                                           ObjectGroupDataElementData dataObject,
-                                                          boolean isEncryption) {
+                                                          boolean isEncryption) throws IOException {
         RevisionStoreObjectGroup objectGroup = new RevisionStoreObjectGroup(objectGroupId);
         Map<ExGuid, RevisionStoreObject> objectDict = new HashMap<>();
         if (!isEncryption) {
             RevisionStoreObject revisionObject = null;
-            for (int i = 0; i < dataObject.ObjectGroupDeclarations.ObjectDeclarationList.size();
+            for (int i = 0; i < dataObject.objectGroupDeclarations.objectDeclarationList.size();
                     i++) {
                 ObjectGroupObjectDeclare objectDeclaration =
-                        dataObject.ObjectGroupDeclarations.ObjectDeclarationList.get(i);
+                        dataObject.objectGroupDeclarations.objectDeclarationList.get(i);
                 ObjectGroupObjectData objectData =
-                        dataObject.ObjectGroupData.ObjectGroupObjectDataList.get(i);
+                        dataObject.objectGroupData.objectGroupObjectDataList.get(i);
 
-                if (!objectDict.containsKey(objectDeclaration.ObjectExtendedGUID)) {
+                if (!objectDict.containsKey(objectDeclaration.objectExtendedGUID)) {
                     revisionObject = new RevisionStoreObject();
-                    revisionObject.ObjectGroupID = objectGroupId;
-                    revisionObject.ObjectID = objectDeclaration.ObjectExtendedGUID;
-                    objectDict.put(objectDeclaration.ObjectExtendedGUID, revisionObject);
+                    revisionObject.objectGroupID = objectGroupId;
+                    revisionObject.objectID = objectDeclaration.objectExtendedGUID;
+                    objectDict.put(objectDeclaration.objectExtendedGUID, revisionObject);
                 } else {
-                    revisionObject = objectDict.get(objectDeclaration.ObjectExtendedGUID);
+                    revisionObject = objectDict.get(objectDeclaration.objectExtendedGUID);
                 }
-                if (objectDeclaration.ObjectPartitionID.getDecodedValue() == 4) {
-                    revisionObject.JCID = new JCIDObject(objectDeclaration, objectData);
-                } else if (objectDeclaration.ObjectPartitionID.getDecodedValue() == 1) {
-                    revisionObject.PropertySet =
+                if (objectDeclaration.objectPartitionID.getDecodedValue() == 4) {
+                    revisionObject.jcid = new JCIDObject(objectDeclaration, objectData);
+                } else if (objectDeclaration.objectPartitionID.getDecodedValue() == 1) {
+                    revisionObject.propertySet =
                             new PropertySetObject(objectDeclaration, objectData);
-                    if (revisionObject.JCID.JCID.IsFileData != 0) {
-                        revisionObject.ReferencedObjectID = objectData.ObjectExGUIDArray;
-                        revisionObject.ReferencedObjectSpacesID = objectData.cellIDArray;
+                    if (revisionObject.jcid.jcid.isFileData != 0) {
+                        revisionObject.referencedObjectID = objectData.objectExGUIDArray;
+                        revisionObject.referencedObjectSpacesID = objectData.cellIDArray;
                     }
                 }
             }
 
             for (int i = 0; i <
-                    dataObject.ObjectGroupDeclarations.ObjectGroupObjectBLOBDataDeclarationList.size();
+                    dataObject.objectGroupDeclarations.objectGroupObjectBLOBDataDeclarationList.size();
                     i++) {
                 ObjectGroupObjectBLOBDataDeclaration objectGroupObjectBLOBDataDeclaration =
-                        dataObject.ObjectGroupDeclarations.ObjectGroupObjectBLOBDataDeclarationList.get(
+                        dataObject.objectGroupDeclarations.objectGroupObjectBLOBDataDeclarationList.get(
                                 i);
                 ObjectGroupObjectDataBLOBReference objectGroupObjectDataBLOBReference =
-                        dataObject.ObjectGroupData.ObjectGroupObjectDataBLOBReferenceList.get(i);
-                if (!objectDict.containsKey(objectGroupObjectBLOBDataDeclaration.ObjectExGUID)) {
+                        dataObject.objectGroupData.objectGroupObjectDataBLOBReferenceList.get(i);
+                if (!objectDict.containsKey(objectGroupObjectBLOBDataDeclaration.objectExGUID)) {
                     revisionObject = new RevisionStoreObject();
-                    objectDict.put(objectGroupObjectBLOBDataDeclaration.ObjectExGUID,
+                    objectDict.put(objectGroupObjectBLOBDataDeclaration.objectExGUID,
                             revisionObject);
                 } else {
                     revisionObject =
-                            objectDict.get(objectGroupObjectBLOBDataDeclaration.ObjectExGUID);
+                            objectDict.get(objectGroupObjectBLOBDataDeclaration.objectExGUID);
                 }
-                if (objectGroupObjectBLOBDataDeclaration.ObjectPartitionID.getDecodedValue() == 2) {
-                    revisionObject.FileDataObject = new FileDataObject();
-                    revisionObject.FileDataObject.objectDataBLOBDeclaration =
+                if (objectGroupObjectBLOBDataDeclaration.objectPartitionID.getDecodedValue() == 2) {
+                    revisionObject.fileDataObject = new FileDataObject();
+                    revisionObject.fileDataObject.objectDataBLOBDeclaration =
                             objectGroupObjectBLOBDataDeclaration;
-                    revisionObject.FileDataObject.objectDataBLOBReference =
+                    revisionObject.fileDataObject.objectDataBLOBReference =
                             objectGroupObjectDataBLOBReference;
                 }
             }
-            objectGroup.Objects.addAll(objectDict.values());
+            objectGroup.objects.addAll(objectDict.values());
         } else {
-            for (int i = 0; i < dataObject.ObjectGroupDeclarations.ObjectDeclarationList.size();
+            for (int i = 0; i < dataObject.objectGroupDeclarations.objectDeclarationList.size();
                     i++) {
                 ObjectGroupObjectDeclare objectDeclaration =
-                        dataObject.ObjectGroupDeclarations.ObjectDeclarationList.get(i);
+                        dataObject.objectGroupDeclarations.objectDeclarationList.get(i);
                 ObjectGroupObjectData objectData =
-                        dataObject.ObjectGroupData.ObjectGroupObjectDataList.get(i);
+                        dataObject.objectGroupData.objectGroupObjectDataList.get(i);
 
-                if (objectDeclaration.ObjectPartitionID.getDecodedValue() == 1) {
+                if (objectDeclaration.objectPartitionID.getDecodedValue() == 1) {
                     EncryptionObject encrypObject = new EncryptionObject();
                     encrypObject.objectDeclaration = objectDeclaration;
-                    encrypObject.objectData = ByteUtil.toByteArray(objectData.Data.Content);
-                    objectGroup.EncryptionObjects.add(encrypObject);
+                    encrypObject.objectData = ByteUtil.toByteArray(objectData.data.content);
+                    objectGroup.encryptionObjects.add(encrypObject);
                 }
             }
         }

@@ -20,6 +20,7 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.chunking;
 import static org.apache.tika.parser.microsoft.onenote.fsshttpb.unsigned.Unsigned.ubyte;
 import static org.apache.tika.parser.microsoft.onenote.fsshttpb.unsigned.Unsigned.uint;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -59,13 +60,13 @@ public class RDCAnalysisChunking extends AbstractChunking {
      * @return A list of LeafNodeObjectData.
      */
     @Override
-    public List<LeafNodeObject> chunking() {
+    public List<LeafNodeObject> chunking() throws IOException {
         int horizon = 16384;
         List<LeafNodeObject> list = new ArrayList<>();
-        int inputLength = FileContent.length;
+        int inputLength = fileContent.length;
 
         if (inputLength <= 0) {
-            throw new RuntimeException("Cannot support the length less than 0");
+            throw new IOException("Cannot support the length less than 0");
         } else if (inputLength <= horizon) {
             list.add(this.getChunk(0, inputLength));
             return list;
@@ -135,18 +136,18 @@ public class RDCAnalysisChunking extends AbstractChunking {
      * @param chunkEnd   The end index of the chunk.
      * @return An LeafNodeObjectData which contains a chunk.
      */
-    private LeafNodeObject getChunk(long chunkStart, long chunkEnd) {
+    private LeafNodeObject getChunk(long chunkStart, long chunkEnd) throws IOException {
         if (chunkEnd <= chunkStart || (chunkEnd - chunkStart > this.maxChunkSize) ||
                 chunkStart > Integer.MAX_VALUE) {
-            throw new RuntimeException("ChunkStart out of range");
+            throw new IOException("ChunkStart out of range");
         }
 
-        byte[] temp = Arrays.copyOfRange(this.FileContent, (int) chunkStart,
+        byte[] temp = Arrays.copyOfRange(this.fileContent, (int) chunkStart,
                 (int) (chunkEnd - chunkStart));
 
 
         SignatureObject signature = new SignatureObject();
-        signature.SignatureData = new BinaryItem(ByteUtil.toListOfByte(temp));
+        signature.signatureData = new BinaryItem(ByteUtil.toListOfByte(temp));
 
 //            RDCSignatureGenerator generator = new RDCSignatureGenerator();
 //            signatureBytes = generator.ComputeHash(temp);
@@ -164,7 +165,7 @@ public class RDCAnalysisChunking extends AbstractChunking {
      */
     private UInteger[] getHashValues() {
         int hashWindowSize = 48;
-        UInteger[] hashValues = new UInteger[this.FileContent.length];
+        UInteger[] hashValues = new UInteger[this.fileContent.length];
         int shiftAmount = this.getShiftAmount(hashWindowSize);
         int i = 0;
 
@@ -213,11 +214,11 @@ public class RDCAnalysisChunking extends AbstractChunking {
                         0xf45ad809, 0xc7bccae7, 0xac891c35, 0x59db2274, 0xbcd71393, 0x2c9b1705,
                         0xcb536a69, 0xb2800f00, 0x111313fc};
 
-        while (i < this.FileContent.length) {
+        while (i < this.fileContent.length) {
             UInteger hashValue = i == 0 ? uint(0) : hashValues[i - 1];
             int trailingEdgeData = i < hashWindowSize ? ubyte(0).intValue() :
-                    ubyte(this.FileContent[i - hashWindowSize]).intValue();
-            int leadingEdgeData = ubyte(this.FileContent[i]).intValue();
+                    ubyte(this.fileContent[i - hashWindowSize]).intValue();
+            int leadingEdgeData = ubyte(this.fileContent[i]).intValue();
             UInteger val = hashValue.xor(uint(lookupTable[trailingEdgeData]))
                     .xor(uint(lookupTable[leadingEdgeData]));
             hashValues[i] =

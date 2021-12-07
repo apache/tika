@@ -17,13 +17,16 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.tika.exception.TikaException;
+
 public class CellID extends BasicObject {
-    public ExGuid ExtendGUID1;
-    public ExGuid ExtendGUID2;
+    public ExGuid extendGUID1;
+    public ExGuid extendGUID2;
 
     /**
      * Initializes a new instance of the CellID class with specified ExGuids.
@@ -32,8 +35,8 @@ public class CellID extends BasicObject {
      * @param extendGuid2 Specify the second ExGuid.
      */
     public CellID(ExGuid extendGuid1, ExGuid extendGuid2) {
-        this.ExtendGUID1 = extendGuid1;
-        this.ExtendGUID2 = extendGuid2;
+        this.extendGUID1 = extendGuid1;
+        this.extendGUID2 = extendGuid2;
     }
 
     /**
@@ -43,12 +46,12 @@ public class CellID extends BasicObject {
      */
 
     public CellID(CellID cellId) {
-        if (cellId.ExtendGUID1 != null) {
-            this.ExtendGUID1 = new ExGuid(cellId.ExtendGUID1);
+        if (cellId.extendGUID1 != null) {
+            this.extendGUID1 = new ExGuid(cellId.extendGUID1);
         }
 
-        if (cellId.ExtendGUID2 != null) {
-            this.ExtendGUID2 = new ExGuid(cellId.ExtendGUID2);
+        if (cellId.extendGUID2 != null) {
+            this.extendGUID2 = new ExGuid(cellId.extendGUID2);
         }
     }
 
@@ -64,10 +67,10 @@ public class CellID extends BasicObject {
      * @return Return the byte list which store the byte information of CellID.
      */
     @Override
-    public List<Byte> serializeToByteList() {
+    public List<Byte> serializeToByteList() throws IOException {
         java.util.List<Byte> byteList = new ArrayList<>();
-        byteList.addAll(this.ExtendGUID1.serializeToByteList());
-        byteList.addAll(this.ExtendGUID2.serializeToByteList());
+        byteList.addAll(this.extendGUID1.serializeToByteList());
+        byteList.addAll(this.extendGUID2.serializeToByteList());
         return byteList;
     }
 
@@ -85,10 +88,10 @@ public class CellID extends BasicObject {
             return false;
         }
 
-        if (another.ExtendGUID1 != null && another.ExtendGUID2 != null &&
-                this.ExtendGUID1 != null && this.ExtendGUID2 != null) {
-            return another.ExtendGUID1.equals(this.ExtendGUID1) &&
-                    another.ExtendGUID2.equals(this.ExtendGUID2);
+        if (another.extendGUID1 != null && another.extendGUID2 != null &&
+                this.extendGUID1 != null && this.extendGUID2 != null) {
+            return another.extendGUID1.equals(this.extendGUID1) &&
+                    another.extendGUID2.equals(this.extendGUID2);
         }
 
         return false;
@@ -101,7 +104,7 @@ public class CellID extends BasicObject {
      */
     @Override
     public int hashCode() {
-        return this.ExtendGUID1.hashCode() + this.ExtendGUID2.hashCode();
+        return this.extendGUID1.hashCode() + this.extendGUID2.hashCode();
     }
 
     /**
@@ -112,11 +115,12 @@ public class CellID extends BasicObject {
      * @return Return the length in byte of the CellID basic object.
      */
     @Override
-    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex)
+            throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(startIndex);
 
-        this.ExtendGUID1 = BasicObject.parse(byteArray, index, ExGuid.class);
-        this.ExtendGUID2 = BasicObject.parse(byteArray, index, ExGuid.class);
+        this.extendGUID1 = BasicObject.parse(byteArray, index, ExGuid.class);
+        this.extendGUID2 = BasicObject.parse(byteArray, index, ExGuid.class);
 
         return index.get() - startIndex;
     }

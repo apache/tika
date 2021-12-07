@@ -19,11 +19,13 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.util.List;
 
+import org.apache.tika.exception.TikaException;
+
 public abstract class NodeObject extends StreamObject {
-    public org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid ExGuid;
-    public List<LeafNodeObject> IntermediateNodeObjectList;
-    public SignatureObject Signature;
-    public DataSizeObject DataSize;
+    public org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid exGuid;
+    public List<LeafNodeObject> intermediateNodeObjectList;
+    public SignatureObject signature;
+    public DataSizeObject dataSize;
 
     /**
      * Initializes a new instance of the NodeObject class.
@@ -39,5 +41,5 @@ public abstract class NodeObject extends StreamObject {
      *
      * @return Return the byte list of node object content.
      */
-    public abstract List<Byte> getContent();
+    public abstract List<Byte> getContent() throws TikaException;
 }

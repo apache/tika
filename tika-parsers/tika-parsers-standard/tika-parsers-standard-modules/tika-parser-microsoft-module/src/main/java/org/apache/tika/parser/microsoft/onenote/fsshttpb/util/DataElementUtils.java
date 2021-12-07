@@ -17,6 +17,7 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.util;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,6 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.poi.openxml4j.exceptions.InvalidOperationException;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.CellManifestCurrentRevision;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.CellManifestDataElementData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.DataElement;
@@ -62,7 +64,8 @@ public class DataElementUtils {
      * @return List of DataElement objects that are stored in the file content.
      */
     public static List<DataElement> buildDataElements(byte[] fileContent,
-                                                      AtomicReference<ExGuid> storageIndexExGuid) {
+                                                      AtomicReference<ExGuid> storageIndexExGuid)
+            throws TikaException, IOException {
         List<ExGuid> objectDataExGuidList = new ArrayList<>();
         AtomicReference<ExGuid> rootNodeObjectExGuid = new AtomicReference<>();
         List<DataElement> dataElementList =
@@ -99,12 +102,13 @@ public class DataElementUtils {
      */
     public static List<DataElement> createObjectGroupDataElement(byte[] fileContent,
                                                                  AtomicReference<ExGuid> rootNodeExGuid,
-                                                                 List<ExGuid> objectDataExGuidList) {
+                                                                 List<ExGuid> objectDataExGuidList)
+            throws TikaException, IOException {
         NodeObject rootNode = new IntermediateNodeObject.RootNodeObjectBuilder().Build(fileContent);
 
         // Storage the root object node ExGuid
-        rootNodeExGuid.set(new ExGuid(rootNode.ExGuid));
-        List<DataElement> elements = new ObjectGroupDataElementData.Builder().Build(rootNode);
+        rootNodeExGuid.set(new ExGuid(rootNode.exGuid));
+        List<DataElement> elements = new ObjectGroupDataElementData.Builder().build(rootNode);
         elements.stream().filter(element -> element.dataElementType ==
                         DataElementType.ObjectGroupDataElementData)
                 .forEach(element -> objectDataExGuidList.add(element.dataElementExGuid));
@@ -128,14 +132,14 @@ public class DataElementUtils {
                                                                 Map<ExGuid, ExGuid> revisionMapping,
                                                                 AtomicReference<ExGuid> currentRevisionID) {
         RevisionManifestDataElementData data = new RevisionManifestDataElementData();
-        data.RevisionManifest.RevisionID = new ExGuid(1, UUID.randomUUID());
-        data.RevisionManifest.BaseRevisionID = new ExGuid(baseRevisionID);
+        data.revisionManifest.revisionID = new ExGuid(1, UUID.randomUUID());
+        data.revisionManifest.baseRevisionID = new ExGuid(baseRevisionID);
 
         // Set the root object data ExGuid
         RevisionManifestRootDeclare revisionManifestRootDeclare = new RevisionManifestRootDeclare();
-        revisionManifestRootDeclare.RootExGuid = new ExGuid(2, RootExGuid);
-        revisionManifestRootDeclare.ObjectExGuid = new ExGuid(rootObjectExGuid);
-        data.RevisionManifestRootDeclareList.add(revisionManifestRootDeclare);
+        revisionManifestRootDeclare.rootExGuid = new ExGuid(2, RootExGuid);
+        revisionManifestRootDeclare.objectExGuid = new ExGuid(rootObjectExGuid);
+        data.revisionManifestRootDeclareList.add(revisionManifestRootDeclare);
 
         // Set all the reference object data
         if (refferenceObjectDataExGuidList != null) {
@@ -147,8 +151,8 @@ public class DataElementUtils {
 
         DataElement dataElement =
                 new DataElement(DataElementType.RevisionManifestDataElementData, data);
-        revisionMapping.put(data.RevisionManifest.RevisionID, dataElement.dataElementExGuid);
-        currentRevisionID.set(data.RevisionManifest.RevisionID);
+        revisionMapping.put(data.revisionManifest.revisionID, dataElement.dataElementExGuid);
+        currentRevisionID.set(data.revisionManifest.revisionID);
         return dataElement;
     }
 
@@ -185,7 +189,7 @@ public class DataElementUtils {
 
         for (Map.Entry<CellID, ExGuid> kv : cellIDMapping.entrySet()) {
             StorageManifestRootDeclare manifestRootDeclare = new StorageManifestRootDeclare();
-            manifestRootDeclare.RootExGUID = new ExGuid(2, RootExGuid);
+            manifestRootDeclare.rootExGUID = new ExGuid(2, RootExGuid);
             manifestRootDeclare.cellID = new CellID(kv.getKey());
             data.storageManifestRootDeclareList.add(manifestRootDeclare);
         }
@@ -206,28 +210,28 @@ public class DataElementUtils {
                                                             Map<ExGuid, ExGuid> revisionIDMappings) {
         StorageIndexDataElementData data = new StorageIndexDataElementData();
 
-        data.StorageIndexManifestMapping = new StorageIndexManifestMapping();
-        data.StorageIndexManifestMapping.ManifestMappingExGuid = new ExGuid(manifestExGuid);
-        data.StorageIndexManifestMapping.ManifestMappingSerialNumber =
+        data.storageIndexManifestMapping = new StorageIndexManifestMapping();
+        data.storageIndexManifestMapping.manifestMappingExGuid = new ExGuid(manifestExGuid);
+        data.storageIndexManifestMapping.manifestMappingSerialNumber =
                 new SerialNumber(UUID.randomUUID(),
                         SequenceNumberGenerator.GetCurrentSerialNumber());
 
         for (Map.Entry<CellID, ExGuid> kv : cellIDMappings.entrySet()) {
             StorageIndexCellMapping cellMapping = new StorageIndexCellMapping();
-            cellMapping.CellID = kv.getKey();
-            cellMapping.CellMappingExGuid = kv.getValue();
-            cellMapping.CellMappingSerialNumber = new SerialNumber(UUID.randomUUID(),
+            cellMapping.cellID = kv.getKey();
+            cellMapping.cellMappingExGuid = kv.getValue();
+            cellMapping.cellMappingSerialNumber = new SerialNumber(UUID.randomUUID(),
                     SequenceNumberGenerator.GetCurrentSerialNumber());
             data.storageIndexCellMappingList.add(cellMapping);
         }
 
         for (Map.Entry<ExGuid, ExGuid> kv : revisionIDMappings.entrySet()) {
             StorageIndexRevisionMapping revisionMapping = new StorageIndexRevisionMapping();
-            revisionMapping.RevisionExGuid = kv.getKey();
-            revisionMapping.RevisionMappingExGuid = kv.getValue();
-            revisionMapping.RevisionMappingSerialNumber = new SerialNumber(UUID.randomUUID(),
+            revisionMapping.revisionExGuid = kv.getKey();
+            revisionMapping.revisionMappingExGuid = kv.getValue();
+            revisionMapping.revisionMappingSerialNumber = new SerialNumber(UUID.randomUUID(),
                     SequenceNumberGenerator.GetCurrentSerialNumber());
-            data.StorageIndexRevisionMappingList.add(revisionMapping);
+            data.storageIndexRevisionMappingList.add(revisionMapping);
         }
 
         return new DataElement(DataElementType.StorageIndexDataElementData, data);
@@ -243,7 +247,7 @@ public class DataElementUtils {
      */
     public static List<ObjectGroupDataElementData> getDataObjectDataElementData(
             List<DataElement> dataElements, ExGuid storageIndexExGuid,
-            AtomicReference<ExGuid> rootExGuid) {
+            AtomicReference<ExGuid> rootExGuid) throws TikaException {
         AtomicReference<ExGuid> manifestMappingGuid = new AtomicReference<>();
         AtomicReference<HashMap<CellID, ExGuid>> cellIDMappings = new AtomicReference<>();
         AtomicReference<HashMap<ExGuid, ExGuid>> revisionIDMappings = new AtomicReference<>();
@@ -274,7 +278,8 @@ public class DataElementUtils {
      * return true. Otherwise return false.
      */
     public static boolean tryAnalyzeWhetherFullDataElementList(List<DataElement> dataElements,
-                                                               ExGuid storageIndexExGuid) {
+                                                               ExGuid storageIndexExGuid)
+            throws TikaException {
         AtomicReference<ExGuid> manifestMappingGuid = new AtomicReference<>();
         AtomicReference<HashMap<CellID, ExGuid>> cellIDMappings = new AtomicReference<>();
         AtomicReference<HashMap<ExGuid, ExGuid>> revisionIDMappings = new AtomicReference<>();
@@ -353,7 +358,8 @@ public class DataElementUtils {
      * @return If the data elements confirms to the schema defined in the MS-FSSHTTPD returns true, otherwise false.
      */
     public static boolean tryAnalyzeWhetherConfirmSchema(List<DataElement> dataElements,
-                                                         ExGuid storageIndexExGuid) {
+                                                         ExGuid storageIndexExGuid)
+            throws TikaException {
         DataElement storageIndexDataElement = dataElements.stream()
                 .filter(element -> element.dataElementExGuid.equals(storageIndexExGuid)).findAny()
                 .orElse(null);
@@ -364,7 +370,7 @@ public class DataElementUtils {
         StorageIndexDataElementData storageIndexData =
                 storageIndexDataElement.getData(StorageIndexDataElementData.class);
         ExGuid manifestMappingGuid =
-                storageIndexData.StorageIndexManifestMapping.ManifestMappingExGuid;
+                storageIndexData.storageIndexManifestMapping.manifestMappingExGuid;
 
         DataElement storageManifestDataElement = dataElements.stream()
                 .filter(element -> element.dataElementExGuid.equals(manifestMappingGuid)).findAny()
@@ -391,7 +397,8 @@ public class DataElementUtils {
                                                          ExGuid storageIndexExGuid,
                                                          AtomicReference<ExGuid> manifestMappingGuid,
                                                          AtomicReference<HashMap<CellID, ExGuid>> cellIDMappings,
-                                                         AtomicReference<HashMap<ExGuid, ExGuid>> revisionIDMappings) {
+                                                         AtomicReference<HashMap<ExGuid, ExGuid>> revisionIDMappings)
+            throws TikaException {
         manifestMappingGuid.set(null);
         cellIDMappings.set(null);
         revisionIDMappings.set(null);
@@ -405,16 +412,16 @@ public class DataElementUtils {
                 .orElse(null);
         StorageIndexDataElementData storageIndexData =
                 storageIndexDataElement.getData(StorageIndexDataElementData.class);
-        manifestMappingGuid.set(storageIndexData.StorageIndexManifestMapping.ManifestMappingExGuid);
+        manifestMappingGuid.set(storageIndexData.storageIndexManifestMapping.manifestMappingExGuid);
 
         cellIDMappings.set(new HashMap<>());
         for (StorageIndexCellMapping kv : storageIndexData.storageIndexCellMappingList) {
-            cellIDMappings.get().put(kv.CellID, kv.CellMappingExGuid);
+            cellIDMappings.get().put(kv.cellID, kv.cellMappingExGuid);
         }
 
         revisionIDMappings.set(new HashMap<>());
-        for (StorageIndexRevisionMapping kv : storageIndexData.StorageIndexRevisionMappingList) {
-            revisionIDMappings.get().put(kv.RevisionExGuid, kv.RevisionMappingExGuid);
+        for (StorageIndexRevisionMapping kv : storageIndexData.storageIndexRevisionMappingList) {
+            revisionIDMappings.get().put(kv.revisionExGuid, kv.revisionMappingExGuid);
         }
 
         return true;
@@ -428,7 +435,7 @@ public class DataElementUtils {
      * @return Return the storage manifest data element.
      */
     public static StorageManifestDataElementData getStorageManifestDataElementData(
-            List<DataElement> dataElements, ExGuid manifestMapping) {
+            List<DataElement> dataElements, ExGuid manifestMapping) throws TikaException {
         DataElement storageManifestDataElement = dataElements.stream()
                 .filter(element -> element.dataElementExGuid.equals(manifestMapping)).findAny()
                 .orElse(null);
@@ -449,12 +456,12 @@ public class DataElementUtils {
      */
     public static CellManifestDataElementData getCellManifestDataElementData(
             List<DataElement> dataElements, StorageManifestDataElementData manifestDataElementData,
-            HashMap<CellID, ExGuid> cellIDMappings) {
+            HashMap<CellID, ExGuid> cellIDMappings) throws TikaException {
         CellID cellID = new CellID(new ExGuid(1, RootExGuid), new ExGuid(1, CellSecondExGuid));
 
         for (StorageManifestRootDeclare kv :
                 manifestDataElementData.storageManifestRootDeclareList) {
-            if (kv.RootExGUID.equals(new ExGuid(2, RootExGuid)) && kv.cellID.equals(cellID)) {
+            if (kv.rootExGUID.equals(new ExGuid(2, RootExGuid)) && kv.cellID.equals(cellID)) {
                 if (!cellIDMappings.containsKey(kv.cellID)) {
                     throw new InvalidOperationException(String.format(Locale.US,
                             "Cannot fin the Cell ID %s in the cell id mapping", cellID));
@@ -488,7 +495,7 @@ public class DataElementUtils {
      */
     public static RevisionManifestDataElementData getRevisionManifestDataElementData(
             List<DataElement> dataElements, CellManifestDataElementData cellData,
-            HashMap<ExGuid, ExGuid> revisionIDMappings) {
+            HashMap<ExGuid, ExGuid> revisionIDMappings) throws TikaException {
         ExGuid currentRevisionExGuid =
                 cellData.cellManifestCurrentRevision.cellManifestCurrentRevisionExGuid;
 
@@ -521,12 +528,12 @@ public class DataElementUtils {
      */
     public static List<ObjectGroupDataElementData> getDataObjectDataElementData(
             List<DataElement> dataElements, RevisionManifestDataElementData revisionData,
-            AtomicReference<ExGuid> rootExGuid) {
+            AtomicReference<ExGuid> rootExGuid) throws TikaException {
         rootExGuid = null;
 
-        for (RevisionManifestRootDeclare kv : revisionData.RevisionManifestRootDeclareList) {
-            if (kv.RootExGuid.equals(new ExGuid(2, RootExGuid))) {
-                rootExGuid.set(kv.ObjectExGuid);
+        for (RevisionManifestRootDeclare kv : revisionData.revisionManifestRootDeclareList) {
+            if (kv.rootExGuid.equals(new ExGuid(2, RootExGuid))) {
+                rootExGuid.set(kv.objectExGuid);
                 break;
             }
         }

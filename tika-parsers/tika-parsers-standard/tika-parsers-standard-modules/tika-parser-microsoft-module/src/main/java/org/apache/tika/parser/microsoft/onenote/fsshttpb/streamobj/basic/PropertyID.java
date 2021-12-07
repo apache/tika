@@ -17,6 +17,7 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitConverter;
@@ -27,21 +28,21 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitWriter;
  * This class is used to represent a PropertyID.
  */
 public class PropertyID {
-    public int Id;
-    public int Type;
-    public int BoolValue;
-    public int Value;
+    public int id;
+    public int type;
+    public int boolValue;
+    public int value;
 
     /**
      * This method is used to convert the element of PropertyID object into a byte List.
      *
      * @return Return the byte list which store the byte information of PropertyID.
      */
-    public List<Byte> serializeToByteList() {
+    public List<Byte> serializeToByteList() throws IOException {
         BitWriter bitWriter = new BitWriter(4);
-        bitWriter.appendUInit32(this.Id, 26);
-        bitWriter.appendUInit32(this.Type, 5);
-        bitWriter.appendInit32(this.BoolValue, 1);
+        bitWriter.appendUInit32(this.id, 26);
+        bitWriter.appendUInit32(this.type, 5);
+        bitWriter.appendInit32(this.boolValue, 1);
 
         return bitWriter.getByteList();
     }
@@ -53,12 +54,12 @@ public class PropertyID {
      * @param startIndex Specify the start index from the byte array.
      * @return Return the length in byte of the PropertyID object.
      */
-    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException {
         BitReader bitReader = new BitReader(byteArray, startIndex);
-        this.Id = bitReader.readUInt32(26);
-        this.Type = bitReader.readUInt32(5);
-        this.BoolValue = bitReader.readInt32(1);
-        this.Value = BitConverter.toInt32(byteArray, startIndex);
+        this.id = bitReader.readUInt32(26);
+        this.type = bitReader.readUInt32(5);
+        this.boolValue = bitReader.readInt32(1);
+        this.value = BitConverter.toInt32(byteArray, startIndex);
         return 4;
     }
 }

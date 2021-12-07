@@ -17,9 +17,11 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BinaryItem;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.Compact64bitInt;
@@ -28,8 +30,8 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.Compact
  * Specifies an data element hash stream object
  */
 public class DataElementHash extends StreamObject {
-    public Compact64bitInt DataElementHashScheme;
-    public BinaryItem DataElementHashData;
+    public Compact64bitInt dataElementHashScheme;
+    public BinaryItem dataElementHashData;
 
     /**
      * Initializes a new instance of the DataElementHash class.
@@ -47,10 +49,11 @@ public class DataElementHash extends StreamObject {
      */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems) {
+                                                 int lengthOfItems)
+            throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
-        this.DataElementHashScheme = BasicObject.parse(byteArray, index, Compact64bitInt.class);
-        this.DataElementHashData = BasicObject.parse(byteArray, index, BinaryItem.class);
+        this.dataElementHashScheme = BasicObject.parse(byteArray, index, Compact64bitInt.class);
+        this.dataElementHashData = BasicObject.parse(byteArray, index, BinaryItem.class);
 
         if (index.get() - currentIndex.get() != lengthOfItems) {
             throw new StreamObjectParseErrorException(currentIndex.get(), "DataElementHash",
@@ -67,10 +70,10 @@ public class DataElementHash extends StreamObject {
      * @return The number of elements actually contained in the list
      */
     @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) throws IOException {
         int startPoint = byteList.size();
-        byteList.addAll(this.DataElementHashScheme.serializeToByteList());
-        byteList.addAll(this.DataElementHashData.serializeToByteList());
+        byteList.addAll(this.dataElementHashScheme.serializeToByteList());
+        byteList.addAll(this.dataElementHashData.serializeToByteList());
 
         return byteList.size() - startPoint;
     }

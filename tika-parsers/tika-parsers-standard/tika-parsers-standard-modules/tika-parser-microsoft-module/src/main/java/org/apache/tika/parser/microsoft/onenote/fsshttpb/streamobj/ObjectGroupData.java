@@ -17,25 +17,28 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.tika.exception.TikaException;
+
 /**
  * The ObjectGroupData class.
  */
 public class ObjectGroupData extends StreamObject {
-    public List<ObjectGroupObjectData> ObjectGroupObjectDataList;
-    public List<ObjectGroupObjectDataBLOBReference> ObjectGroupObjectDataBLOBReferenceList;
+    public List<ObjectGroupObjectData> objectGroupObjectDataList;
+    public List<ObjectGroupObjectDataBLOBReference> objectGroupObjectDataBLOBReferenceList;
 
     /**
      * Initializes a new instance of the ObjectGroupData class.
      */
     public ObjectGroupData() {
         super(StreamObjectTypeHeaderStart.ObjectGroupData);
-        this.ObjectGroupObjectDataList = new ArrayList<ObjectGroupObjectData>();
-        this.ObjectGroupObjectDataBLOBReferenceList =
+        this.objectGroupObjectDataList = new ArrayList<ObjectGroupObjectData>();
+        this.objectGroupObjectDataBLOBReferenceList =
                 new ArrayList<ObjectGroupObjectDataBLOBReference>();
     }
 
@@ -46,16 +49,16 @@ public class ObjectGroupData extends StreamObject {
      * @return A constant value 0
      */
     @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) {
-        if (this.ObjectGroupObjectDataList != null) {
-            for (ObjectGroupObjectData objectGroupObjectData : this.ObjectGroupObjectDataList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) throws TikaException, IOException {
+        if (this.objectGroupObjectDataList != null) {
+            for (ObjectGroupObjectData objectGroupObjectData : this.objectGroupObjectDataList) {
                 byteList.addAll(objectGroupObjectData.serializeToByteList());
             }
         }
 
-        if (this.ObjectGroupObjectDataBLOBReferenceList != null) {
+        if (this.objectGroupObjectDataBLOBReferenceList != null) {
             for (ObjectGroupObjectDataBLOBReference objectGroupObjectDataBLOBReference :
-                    this.ObjectGroupObjectDataBLOBReferenceList) {
+                    this.objectGroupObjectDataBLOBReferenceList) {
                 byteList.addAll(objectGroupObjectDataBLOBReference.serializeToByteList());
             }
         }
@@ -72,7 +75,8 @@ public class ObjectGroupData extends StreamObject {
      */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems) {
+                                                 int lengthOfItems)
+            throws TikaException, IOException {
         if (lengthOfItems != 0) {
             throw new StreamObjectParseErrorException(currentIndex.get(), "ObjectGroupDeclarations",
                     "Stream object over-parse error", null);
@@ -82,20 +86,20 @@ public class ObjectGroupData extends StreamObject {
         int headerLength = 0;
         AtomicReference<StreamObjectHeaderStart> header = new AtomicReference<>();
 
-        this.ObjectGroupObjectDataList = new ArrayList<>();
-        this.ObjectGroupObjectDataBLOBReferenceList = new ArrayList<>();
+        this.objectGroupObjectDataList = new ArrayList<>();
+        this.objectGroupObjectDataBLOBReferenceList = new ArrayList<>();
 
         while ((headerLength = StreamObjectHeaderStart.tryParse(byteArray, index.get(), header)) !=
                 0) {
             StreamObjectTypeHeaderStart type = header.get().type;
             if (type == StreamObjectTypeHeaderStart.ObjectGroupObjectData) {
                 index.addAndGet(headerLength);
-                this.ObjectGroupObjectDataList.add(
+                this.objectGroupObjectDataList.add(
                         (ObjectGroupObjectData) StreamObject.parseStreamObject(header.get(),
                                 byteArray, index));
             } else if (type == StreamObjectTypeHeaderStart.ObjectGroupObjectDataBLOBReference) {
                 index.addAndGet(headerLength);
-                this.ObjectGroupObjectDataBLOBReferenceList.add(
+                this.objectGroupObjectDataBLOBReferenceList.add(
                         (ObjectGroupObjectDataBLOBReference) StreamObject.parseStreamObject(
                                 header.get(), byteArray, index));
             } else {

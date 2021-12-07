@@ -17,6 +17,7 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -90,7 +91,7 @@ public class ExGuid extends BasicObject {
      * @return Return the byte list which store the byte information of ExGuid.
      */
     @Override
-    public List<Byte> serializeToByteList() {
+    public List<Byte> serializeToByteList() throws IOException {
         BitWriter bitWriter = new BitWriter(21);
 
         if (this.guid.equals(GuidUtil.emptyGuid())) {
@@ -152,7 +153,7 @@ public class ExGuid extends BasicObject {
      * @return Return the length in byte of the ExGuid basic object.
      */
     @Override
-    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException {
         BitReader bitReader = new BitReader(byteArray, startIndex);
         int numberOfContinousZeroBit = 0;
         while (numberOfContinousZeroBit < 8 && bitReader.moveNext()) {

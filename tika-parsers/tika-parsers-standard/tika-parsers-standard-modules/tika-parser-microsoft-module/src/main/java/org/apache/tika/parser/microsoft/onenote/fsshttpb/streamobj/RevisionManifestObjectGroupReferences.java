@@ -17,9 +17,11 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 
@@ -55,7 +57,8 @@ public class RevisionManifestObjectGroupReferences extends StreamObject {
      */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems) {
+                                                 int lengthOfItems)
+            throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.objectGroupExtendedGUID = BasicObject.parse(byteArray, index, ExGuid.class);
         if (index.get() - currentIndex.get() != lengthOfItems) {
@@ -74,7 +77,7 @@ public class RevisionManifestObjectGroupReferences extends StreamObject {
      * @return The number of elements actually contained in the list.
      */
     @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) throws IOException {
         List<Byte> tmpList = this.objectGroupExtendedGUID.serializeToByteList();
         byteList.addAll(tmpList);
         return tmpList.size();

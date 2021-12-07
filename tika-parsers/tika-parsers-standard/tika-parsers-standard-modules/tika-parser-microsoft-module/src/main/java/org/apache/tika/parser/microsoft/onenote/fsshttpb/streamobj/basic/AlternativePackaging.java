@@ -17,10 +17,12 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
+import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.DataElementPackage;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.StreamObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.StreamObjectHeaderEnd;
@@ -48,7 +50,8 @@ public class AlternativePackaging {
      * @param startIndex Specify the start index from the byte array.
      * @return Return the length in byte of the Alternative Packaging object.
      */
-    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex)
+            throws IOException, TikaException {
         AtomicInteger index = new AtomicInteger(startIndex);
         this.guidFileType = AdapterHelper.readGuid(byteArray, index.get());
         index.addAndGet(16);

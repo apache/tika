@@ -17,15 +17,17 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 
 public class RevisionManifest extends StreamObject {
-    public ExGuid RevisionID;
-    public ExGuid BaseRevisionID;
+    public ExGuid revisionID;
+    public ExGuid baseRevisionID;
 
     /**
      * Initializes a new instance of the RevisionManifest class.
@@ -43,10 +45,11 @@ public class RevisionManifest extends StreamObject {
      */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems) {
+                                                 int lengthOfItems)
+            throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
-        this.RevisionID = BasicObject.parse(byteArray, index, ExGuid.class);
-        this.BaseRevisionID = BasicObject.parse(byteArray, index, ExGuid.class);
+        this.revisionID = BasicObject.parse(byteArray, index, ExGuid.class);
+        this.baseRevisionID = BasicObject.parse(byteArray, index, ExGuid.class);
 
         if (index.get() - currentIndex.get() != lengthOfItems) {
             throw new StreamObjectParseErrorException(currentIndex.get(), "RevisionManifest",
@@ -63,10 +66,10 @@ public class RevisionManifest extends StreamObject {
      * @return The length of list
      */
     @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) throws IOException {
         int itemsIndex = byteList.size();
-        byteList.addAll(this.RevisionID.serializeToByteList());
-        byteList.addAll(this.BaseRevisionID.serializeToByteList());
+        byteList.addAll(this.revisionID.serializeToByteList());
+        byteList.addAll(this.baseRevisionID.serializeToByteList());
         return byteList.size() - itemsIndex;
     }
 }

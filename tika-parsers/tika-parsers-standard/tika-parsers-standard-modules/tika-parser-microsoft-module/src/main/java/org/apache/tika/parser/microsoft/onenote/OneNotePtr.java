@@ -931,7 +931,7 @@ class OneNotePtr {
         return data;
     }
 
-    FileNodeListHeader deserializeFileNodeListHeader() throws IOException {
+    FileNodeListHeader deserializeFileNodeListHeader() throws TikaException, IOException {
         long positionOfThisHeader = offset;
         long uintMagic = deserializeLittleEndianLong();
         long fileNodeListId = deserializeLittleEndianInt();
@@ -1147,7 +1147,7 @@ class OneNotePtr {
         }
     }
 
-    private OneNotePropertyId deserializePropertyID() throws IOException {
+    private OneNotePropertyId deserializePropertyID() throws TikaException, IOException {
         long pid = deserializeLittleEndianInt();
         return new OneNotePropertyId(pid);
     }

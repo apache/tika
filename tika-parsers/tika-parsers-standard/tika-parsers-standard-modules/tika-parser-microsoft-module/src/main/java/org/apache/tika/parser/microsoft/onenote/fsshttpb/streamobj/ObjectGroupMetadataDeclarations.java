@@ -17,23 +17,26 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.tika.exception.TikaException;
+
 /**
  * Object Metadata Declaration
  */
 public class ObjectGroupMetadataDeclarations extends StreamObject {
-    public List<ObjectGroupMetadata> ObjectGroupMetadataList;
+    public List<ObjectGroupMetadata> objectGroupMetadataList;
 
     /**
      * Initializes a new instance of the ObjectGroupMetadataDeclarations class.
      */
     public ObjectGroupMetadataDeclarations() {
         super(StreamObjectTypeHeaderStart.ObjectGroupMetadataDeclarations);
-        this.ObjectGroupMetadataList = new ArrayList<>();
+        this.objectGroupMetadataList = new ArrayList<>();
     }
 
     /**
@@ -43,9 +46,9 @@ public class ObjectGroupMetadataDeclarations extends StreamObject {
      * @return A constant value 0
      */
     @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) {
-        if (this.ObjectGroupMetadataList != null) {
-            for (ObjectGroupMetadata objectGroupMetadata : this.ObjectGroupMetadataList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) throws TikaException, IOException {
+        if (this.objectGroupMetadataList != null) {
+            for (ObjectGroupMetadata objectGroupMetadata : this.objectGroupMetadataList) {
                 byteList.addAll(objectGroupMetadata.serializeToByteList());
             }
         }
@@ -62,7 +65,8 @@ public class ObjectGroupMetadataDeclarations extends StreamObject {
      */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems) {
+                                                 int lengthOfItems)
+            throws TikaException, IOException {
         if (lengthOfItems != 0) {
             throw new StreamObjectParseErrorException(currentIndex.get(),
                     "ObjectGroupMetadataDeclarations", "Stream object over-parse error", null);
@@ -71,13 +75,13 @@ public class ObjectGroupMetadataDeclarations extends StreamObject {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         int headerLength;
         AtomicReference<StreamObjectHeaderStart> header = new AtomicReference<>();
-        this.ObjectGroupMetadataList = new ArrayList<>();
+        this.objectGroupMetadataList = new ArrayList<>();
 
         while ((headerLength = StreamObjectHeaderStart.tryParse(byteArray, index.get(), header)) !=
                 0) {
             index.addAndGet(headerLength);
             if (header.get().type == StreamObjectTypeHeaderStart.ObjectGroupMetadata) {
-                this.ObjectGroupMetadataList.add(
+                this.objectGroupMetadataList.add(
                         (ObjectGroupMetadata) StreamObject.parseStreamObject(header.get(),
                                 byteArray, index));
             } else {

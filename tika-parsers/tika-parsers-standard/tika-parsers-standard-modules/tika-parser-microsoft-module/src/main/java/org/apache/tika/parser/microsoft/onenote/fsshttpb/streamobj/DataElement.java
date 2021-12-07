@@ -17,6 +17,7 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -24,6 +25,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.exception.DataElementParseErrorException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.Compact64bitInt;
@@ -37,18 +39,18 @@ public class DataElement extends StreamObject {
     /**
      * Data Element Data Type Mapping
      */
-    private static final Map<DataElementType, Class> dataElementDataTypeMapping;
+    private static final Map<DataElementType, Class> DATA_ELEMENT_DATA_TYPE_MAPPING;
 
     /**
      *  Initializes static members of the DataElement class
      */
     static {
-        dataElementDataTypeMapping = new HashMap<>();
+        DATA_ELEMENT_DATA_TYPE_MAPPING = new HashMap<>();
         for (DataElementType value : DataElementType.values()) {
             String className = DataElement.class.getPackage().getName() + "." + value.name();
 
             try {
-                dataElementDataTypeMapping.put(value, Class.forName(className));
+                DATA_ELEMENT_DATA_TYPE_MAPPING.put(value, Class.forName(className));
             } catch (ClassNotFoundException e) {
                 // This is OK, we are not pulling over every single class
             }
@@ -75,8 +77,8 @@ public class DataElement extends StreamObject {
 
     public DataElement(DataElementType type, DataElementData data) {
         super(StreamObjectTypeHeaderStart.DataElement);
-        if (!dataElementDataTypeMapping.containsKey(type)) {
-            throw new RuntimeException("Invalid argument type value" + type.getIntVal());
+        if (!DATA_ELEMENT_DATA_TYPE_MAPPING.containsKey(type)) {
+            throw new IllegalArgumentException("Invalid argument type value" + type.getIntVal());
         }
 
         this.dataElementType = type;
@@ -100,11 +102,11 @@ public class DataElement extends StreamObject {
      * @return Data of
      * the element
      */
-    public <T extends DataElementData> T getData(Class<T> clazz) {
+    public <T extends DataElementData> T getData(Class<T> clazz) throws TikaException {
         if (this.data.getClass().equals(clazz)) {
             return (T) this.data;
         } else {
-            throw new RuntimeException(String.format(Locale.US,
+            throw new TikaException(String.format(Locale.US,
                     "Unable to cast DataElementData to the type %s, its actual type is %s",
                     clazz.getName(), this.data.getClass().getName()));
         }
@@ -123,7 +125,7 @@ public class DataElement extends StreamObject {
      */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems) {
+                                                 int lengthOfItems) throws TikaException {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
 
         try {
@@ -142,12 +144,12 @@ public class DataElement extends StreamObject {
                             "dataElementExGUID, SerialNumber and DataElementType", null);
         }
 
-        if (dataElementDataTypeMapping.containsKey(this.dataElementType)) {
+        if (DATA_ELEMENT_DATA_TYPE_MAPPING.containsKey(this.dataElementType)) {
             try {
-                this.data = (DataElementData) dataElementDataTypeMapping.get(this.dataElementType)
+                this.data = (DataElementData) DATA_ELEMENT_DATA_TYPE_MAPPING.get(this.dataElementType)
                         .newInstance();
             } catch (InstantiationException | IllegalAccessException e) {
-                throw new RuntimeException("Could not instantiate a " + dataElementType, e);
+                throw new TikaException("Could not instantiate a " + dataElementType, e);
             }
 
             try {
@@ -172,7 +174,7 @@ public class DataElement extends StreamObject {
      * @return The element length
      */
     @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) throws IOException, TikaException {
         int startIndex = byteList.size();
         byteList.addAll(this.dataElementExGuid.serializeToByteList());
         byteList.addAll(this.serialNumber.serializeToByteList());

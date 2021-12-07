@@ -17,16 +17,19 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.tika.exception.TikaException;
+
 public class ExGUIDArray extends BasicObject {
-    public Compact64bitInt Count;
+    public Compact64bitInt count;
     /**
      * Gets or sets an extended GUID array
      */
-    public List<ExGuid> Content;
+    public List<ExGuid> content;
 
     /**
      * Initializes a new instance of the ExGUIDArray class with specified value.
@@ -35,14 +38,14 @@ public class ExGUIDArray extends BasicObject {
      */
     public ExGUIDArray(List<ExGuid> content) {
         this();
-        this.Content = new ArrayList<>();
+        this.content = new ArrayList<>();
         if (content != null) {
             for (ExGuid extendGuid : content) {
-                this.Content.add(new ExGuid(extendGuid));
+                this.content.add(new ExGuid(extendGuid));
             }
         }
 
-        this.Count.setDecodedValue(this.Content.size());
+        this.count.setDecodedValue(this.content.size());
     }
 
     /**
@@ -51,24 +54,24 @@ public class ExGUIDArray extends BasicObject {
      * @param extendGuidArray Specify the ExGUIDArray where copies from.
      */
     public ExGUIDArray(ExGUIDArray extendGuidArray) {
-        this(extendGuidArray.Content);
+        this(extendGuidArray.content);
     }
 
     /**
      * Initializes a new instance of the ExGUIDArray class, this is the default constructor.
      */
     public ExGUIDArray() {
-        this.Count = new Compact64bitInt();
-        this.Content = new ArrayList<>();
+        this.count = new Compact64bitInt();
+        this.content = new ArrayList<>();
     }
 
     public java.util.List<ExGuid> getContent() {
-        return Content;
+        return content;
     }
 
     public void setContent(java.util.List<ExGuid> content) {
-        this.Content = content;
-        this.Count.setDecodedValue(this.Content.size());
+        this.content = content;
+        this.count.setDecodedValue(this.content.size());
     }
 
     /**
@@ -77,12 +80,12 @@ public class ExGUIDArray extends BasicObject {
      * @return Return the byte list which store the byte information of ExGUIDArray.
      */
     @Override
-    public List<Byte> serializeToByteList() {
-        this.Count.setDecodedValue(this.Content.size());
+    public List<Byte> serializeToByteList() throws IOException {
+        this.count.setDecodedValue(this.content.size());
 
-        List<Byte> result = new ArrayList<Byte>();
-        result.addAll(this.Count.serializeToByteList());
-        for (ExGuid extendGuid : this.Content) {
+        List<Byte> result = new ArrayList<>();
+        result.addAll(this.count.serializeToByteList());
+        for (ExGuid extendGuid : this.content) {
             result.addAll(extendGuid.serializeToByteList());
         }
 
@@ -98,15 +101,16 @@ public class ExGUIDArray extends BasicObject {
      */
     @Override
     protected int doDeserializeFromByteArray(byte[] byteArray,
-                                             int startIndex) // return the length consumed
+                                             int startIndex)
+            throws TikaException, IOException // return the length consumed
     {
         AtomicInteger index = new AtomicInteger(startIndex);
-        this.Count = BasicObject.parse(byteArray, index, Compact64bitInt.class);
+        this.count = BasicObject.parse(byteArray, index, Compact64bitInt.class);
 
-        this.Content.clear();
-        for (int i = 0; i < this.Count.getDecodedValue(); i++) {
+        this.content.clear();
+        for (int i = 0; i < this.count.getDecodedValue(); i++) {
             ExGuid temp = BasicObject.parse(byteArray, index, ExGuid.class);
-            this.Content.add(temp);
+            this.content.add(temp);
         }
 
         return index.get() - startIndex;

@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.commons.codec.digest.DigestUtils;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.LeafNodeObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.SignatureObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BinaryItem;
@@ -44,23 +45,23 @@ public class SimpleChunking extends AbstractChunking {
      * @return A list of LeafNodeObjectData.
      */
     @Override
-    public List<LeafNodeObject> chunking() {
+    public List<LeafNodeObject> chunking() throws TikaException {
         int maxChunkSize = 1 * 1024 * 1024;
         java.util.List<LeafNodeObject> list = new ArrayList<>();
         LeafNodeObject.IntermediateNodeObjectBuilder builder =
                 new LeafNodeObject.IntermediateNodeObjectBuilder();
         int chunkStart = 0;
 
-        if (this.FileContent.length <= maxChunkSize) {
-            list.add(builder.Build(this.FileContent, this.getSignature(this.FileContent)));
+        if (this.fileContent.length <= maxChunkSize) {
+            list.add(builder.Build(this.fileContent, this.getSignature(this.fileContent)));
 
             return list;
         }
 
-        while (chunkStart < this.FileContent.length) {
-            int chunkLength = chunkStart + maxChunkSize >= this.FileContent.length ?
-                    this.FileContent.length - chunkStart : maxChunkSize;
-            byte[] temp = Arrays.copyOfRange(this.FileContent, chunkStart, chunkLength);
+        while (chunkStart < this.fileContent.length) {
+            int chunkLength = chunkStart + maxChunkSize >= this.fileContent.length ?
+                    this.fileContent.length - chunkStart : maxChunkSize;
+            byte[] temp = Arrays.copyOfRange(this.fileContent, chunkStart, chunkLength);
             list.add(builder.Build(temp, this.getSignature(temp)));
             chunkStart += chunkLength;
         }
@@ -74,15 +75,15 @@ public class SimpleChunking extends AbstractChunking {
      * @param array The data of the chunk.
      * @return The signature instance.
      */
-    private SignatureObject getSignature(byte[] array) {
-        if (this.FileContent.length <= 250 * 1024 * 1024) {
+    private SignatureObject getSignature(byte[] array) throws TikaException {
+        if (this.fileContent.length <= 250 * 1024 * 1024) {
             byte[] temp = DigestUtils.sha1(array);
 
             SignatureObject signature = new SignatureObject();
-            signature.SignatureData = new BinaryItem(ByteUtil.toListOfByte(temp));
+            signature.signatureData = new BinaryItem(ByteUtil.toListOfByte(temp));
             return signature;
         } else {
-            throw new RuntimeException(
+            throw new TikaException(
                     "When the file size is larger than 250MB, the signature method is not implemented.");
         }
     }

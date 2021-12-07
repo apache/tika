@@ -25,7 +25,7 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
  * This class is used to represent the property contains 2 bytes of data in the PropertySet.rgData stream field.
  */
 public class TwoBytesOfData implements IProperty {
-    public byte[] Data;
+    public byte[] data;
 
 
     /**
@@ -36,7 +36,7 @@ public class TwoBytesOfData implements IProperty {
      * @return Return the length in byte of the TwoBytesOfData.
      */
     public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
-        this.Data = new byte[]{byteArray[startIndex], byteArray[startIndex + 1]};
+        this.data = new byte[]{byteArray[startIndex], byteArray[startIndex + 1]};
 
         return 2;
     }
@@ -47,6 +47,6 @@ public class TwoBytesOfData implements IProperty {
      * @return Return the byte list which store the byte information of TwoBytesOfData.
      */
     public List<Byte> serializeToByteList() {
-        return ByteUtil.toListOfByte(this.Data);
+        return ByteUtil.toListOfByte(this.data);
     }
 }

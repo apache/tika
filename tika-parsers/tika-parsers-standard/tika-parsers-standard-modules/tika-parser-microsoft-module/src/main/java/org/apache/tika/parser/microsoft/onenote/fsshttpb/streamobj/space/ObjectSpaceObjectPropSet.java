@@ -17,6 +17,7 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.space;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,11 +27,11 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.PropertySet;
  * This class is used to represent a ObjectSpaceObjectPropSet.
  */
 public class ObjectSpaceObjectPropSet {
-    public ObjectSpaceObjectStreamOfOIDs OIDs;
-    public ObjectSpaceObjectStreamOfOSIDs OSIDs;
-    public ObjectSpaceObjectStreamOfContextIDs ContextIDs;
-    public PropertySet Body;
-    public byte[] Padding;
+    public ObjectSpaceObjectStreamOfOIDs oids;
+    public ObjectSpaceObjectStreamOfOSIDs osids;
+    public ObjectSpaceObjectStreamOfContextIDs contextIDs;
+    public PropertySet body;
+    public byte[] padding;
 
     /**
      * This method is used to deserialize the ObjectSpaceObjectPropSet from the specified byte array and start index.
@@ -39,29 +40,29 @@ public class ObjectSpaceObjectPropSet {
      * @param startIndex Specify the start index from the byte array.
      * @return Return the length in byte of the ObjectSpaceObjectPropSet.
      */
-    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException {
         int index = startIndex;
-        this.OIDs = new ObjectSpaceObjectStreamOfOIDs();
-        int len = this.OIDs.doDeserializeFromByteArray(byteArray, index);
+        this.oids = new ObjectSpaceObjectStreamOfOIDs();
+        int len = this.oids.doDeserializeFromByteArray(byteArray, index);
         index += len;
-        if (this.OIDs.Header.OsidStreamNotPresent == 0) {
-            this.OSIDs = new ObjectSpaceObjectStreamOfOSIDs();
-            len = this.OSIDs.doDeserializeFromByteArray(byteArray, index);
+        if (this.oids.header.osidStreamNotPresent == 0) {
+            this.osids = new ObjectSpaceObjectStreamOfOSIDs();
+            len = this.osids.doDeserializeFromByteArray(byteArray, index);
             index += len;
 
-            if (this.OSIDs.Header.ExtendedStreamsPresent == 1) {
-                this.ContextIDs = new ObjectSpaceObjectStreamOfContextIDs();
-                len = this.ContextIDs.doDeserializeFromByteArray(byteArray, index);
+            if (this.osids.header.extendedStreamsPresent == 1) {
+                this.contextIDs = new ObjectSpaceObjectStreamOfContextIDs();
+                len = this.contextIDs.doDeserializeFromByteArray(byteArray, index);
                 index += len;
             }
         }
-        this.Body = new PropertySet();
-        len = this.Body.doDeserializeFromByteArray(byteArray, index);
+        this.body = new PropertySet();
+        len = this.body.doDeserializeFromByteArray(byteArray, index);
         index += len;
 
         int paddingLength = 8 - (index - startIndex) % 8;
         if (paddingLength < 8) {
-            this.Padding = new byte[paddingLength];
+            this.padding = new byte[paddingLength];
             index += paddingLength;
         }
         return index - startIndex;
@@ -72,13 +73,13 @@ public class ObjectSpaceObjectPropSet {
      *
      * @return Return the byte list which store the byte information of the ObjectSpaceObjectPropSet.
      */
-    public List<Byte> serializeToByteList() {
+    public List<Byte> serializeToByteList() throws IOException {
         List<Byte> byteList = new ArrayList<>();
-        byteList.addAll(this.OIDs.serializeToByteList());
-        byteList.addAll(this.OSIDs.serializeToByteList());
-        byteList.addAll(this.ContextIDs.serializeToByteList());
-        byteList.addAll(this.Body.serializeToByteList());
-        for (byte b : this.Padding) {
+        byteList.addAll(this.oids.serializeToByteList());
+        byteList.addAll(this.osids.serializeToByteList());
+        byteList.addAll(this.contextIDs.serializeToByteList());
+        byteList.addAll(this.body.serializeToByteList());
+        for (byte b : this.padding) {
             byteList.add(b);
         }
         return byteList;

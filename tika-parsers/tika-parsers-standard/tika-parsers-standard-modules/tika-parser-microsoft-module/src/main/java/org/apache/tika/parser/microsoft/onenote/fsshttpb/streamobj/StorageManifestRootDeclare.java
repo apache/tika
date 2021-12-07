@@ -17,9 +17,11 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.CellID;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
@@ -28,7 +30,7 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
  * Specifies one or more storage manifest root declare.
  */
 public class StorageManifestRootDeclare extends StreamObject {
-    public ExGuid RootExGUID;
+    public ExGuid rootExGUID;
     public CellID cellID;
 
     /**
@@ -47,9 +49,10 @@ public class StorageManifestRootDeclare extends StreamObject {
      */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems) {
+                                                 int lengthOfItems)
+            throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
-        this.RootExGUID = BasicObject.parse(byteArray, index, ExGuid.class);
+        this.rootExGUID = BasicObject.parse(byteArray, index, ExGuid.class);
         this.cellID = BasicObject.parse(byteArray, index, CellID.class);
 
         if (index.get() - currentIndex.get() != lengthOfItems) {
@@ -67,9 +70,9 @@ public class StorageManifestRootDeclare extends StreamObject {
      * @return The length of list
      */
     @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) throws IOException {
         int itemsIndex = byteList.size();
-        byteList.addAll(this.RootExGUID.serializeToByteList());
+        byteList.addAll(this.rootExGUID.serializeToByteList());
         byteList.addAll(this.cellID.serializeToByteList());
         return byteList.size() - itemsIndex;
     }

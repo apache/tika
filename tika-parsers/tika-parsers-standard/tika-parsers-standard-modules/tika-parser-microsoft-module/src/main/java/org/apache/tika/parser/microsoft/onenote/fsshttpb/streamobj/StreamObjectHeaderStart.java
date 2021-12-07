@@ -28,12 +28,12 @@ public abstract class StreamObjectHeaderStart extends BasicObject {
     /**
      * Specify for 16-bit stream object header start.
      */
-    public static final int StreamObjectHeaderStart16bit = 0x0;
+    public static final int STREAM_OBJECT_HEADER_START_16_BIT = 0x0;
 
     /**
      * Specify for 32-bit stream object header start.
      */
-    public static final int StreamObjectHeaderStart32bit = 0x02;
+    public static final int STREAM_OBJECT_HEADER_START_32_BIT = 0x02;
     public StreamObjectTypeHeaderStart type;
     /**
      * Gets or sets the type of the stream object.
@@ -75,10 +75,10 @@ public abstract class StreamObjectHeaderStart extends BasicObject {
     public static int tryParse(byte[] byteArray, int startIndex,
                                AtomicReference<StreamObjectHeaderStart> streamObjectHeader) {
         int headerType = byteArray[startIndex] & 0x03;
-        if (headerType == StreamObjectHeaderStart.StreamObjectHeaderStart16bit) {
+        if (headerType == StreamObjectHeaderStart.STREAM_OBJECT_HEADER_START_16_BIT) {
             streamObjectHeader.set(new StreamObjectHeaderStart16bit());
         } else {
-            if (headerType == StreamObjectHeaderStart.StreamObjectHeaderStart32bit) {
+            if (headerType == StreamObjectHeaderStart.STREAM_OBJECT_HEADER_START_32_BIT) {
                 streamObjectHeader.set(new StreamObjectHeaderStart32bit());
             } else {
                 return 0;

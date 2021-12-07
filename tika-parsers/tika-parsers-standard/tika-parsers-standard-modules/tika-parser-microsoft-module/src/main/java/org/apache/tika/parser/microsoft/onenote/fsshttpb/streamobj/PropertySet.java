@@ -17,6 +17,7 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,27 +38,27 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitConverter;
  * This class is used to represent a PropertySet.
  */
 public class PropertySet implements IProperty {
-    public int CProperties;
+    public int cProperties;
 
-    public PropertyID[] RgPrids;
-    public List<IProperty> RgData;
+    public PropertyID[] rgPrids;
+    public List<IProperty> rgData;
 
     /**
      * This method is used to convert the element of PropertySet into a byte List.
      *
      * @return Return the byte list which store the byte information of PropertySet.
      */
-    public List<Byte> serializeToByteList() {
+    public List<Byte> serializeToByteList() throws IOException {
         List<Byte> byteList = new ArrayList<>();
-        for (byte b : BitConverter.getBytes(this.CProperties)) {
+        for (byte b : BitConverter.getBytes(this.cProperties)) {
             byteList.add(b);
         }
 
-        for (PropertyID propertyId : this.RgPrids) {
+        for (PropertyID propertyId : this.rgPrids) {
             byteList.addAll(propertyId.serializeToByteList());
         }
 
-        for (IProperty property : this.RgData) {
+        for (IProperty property : this.rgData) {
             byteList.addAll(property.serializeToByteList());
         }
 
@@ -71,22 +72,22 @@ public class PropertySet implements IProperty {
      * @param startIndex Specify the start index from the byte array.
      * @return Return the length in byte of the PropertySet.
      */
-    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
+    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException {
         int index = startIndex;
 
-        this.CProperties = BitConverter.toInt16(byteArray, startIndex);
+        this.cProperties = BitConverter.toInt16(byteArray, startIndex);
         index += 2;
-        this.RgPrids = new PropertyID[this.CProperties];
-        for (int i = 0; i < this.CProperties; i++) {
+        this.rgPrids = new PropertyID[this.cProperties];
+        for (int i = 0; i < this.cProperties; i++) {
             PropertyID propertyID = new PropertyID();
             propertyID.doDeserializeFromByteArray(byteArray, index);
-            this.RgPrids[i] = propertyID;
+            this.rgPrids[i] = propertyID;
             index += 4;
         }
-        this.RgData = new ArrayList<>();
-        for (PropertyID propertyID : this.RgPrids) {
+        this.rgData = new ArrayList<>();
+        for (PropertyID propertyID : this.rgPrids) {
             IProperty property = null;
-            switch (PropertyType.fromIntVal(propertyID.Type)) {
+            switch (PropertyType.fromIntVal(propertyID.type)) {
                 case NoData:
                 case Bool:
                 case ObjectID:
@@ -125,7 +126,7 @@ public class PropertySet implements IProperty {
             }
             if (property != null) {
                 int len = property.doDeserializeFromByteArray(byteArray, index);
-                this.RgData.add(property);
+                this.rgData.add(property);
                 index += len;
             }
         }

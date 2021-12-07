@@ -23,7 +23,7 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.exception.TikaMemoryLimitException;
+import org.apache.tika.exception.TikaException;
 
 /**
  * A FileNode structure is the basic unit for holding and referencing data in the file.
@@ -229,7 +229,7 @@ class FileNode {
     }
 
     public void print(OneNoteDocument document, OneNotePtr pointer, int indentLevel)
-            throws IOException, TikaMemoryLimitException {
+            throws IOException, TikaException {
         boolean shouldPrintHeader = FndStructureConstants.nameOf(id).contains("ObjectDec");
         if (gosid.equals(ExtendedGUID.nil()) && shouldPrintHeader) {
             LOG.debug("{}[beg {}]:{}", IndentUtil.getIndent(indentLevel + 1),

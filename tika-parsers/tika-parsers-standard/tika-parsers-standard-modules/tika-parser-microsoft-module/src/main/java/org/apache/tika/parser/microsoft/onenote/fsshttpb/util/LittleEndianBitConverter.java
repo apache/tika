@@ -17,6 +17,8 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.util;
 
+import java.io.IOException;
+
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.unsigned.UByte;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.unsigned.Unsigned;
 
@@ -37,7 +39,7 @@ public class LittleEndianBitConverter {
      * @param index Specify the starting position.
      * @return Returns a 16-bit unsigned integer formed by two bytes beginning at startIndex.
      */
-    public static short ToUInt16(byte[] array, int index) {
+    public static short ToUInt16(byte[] array, int index) throws IOException {
         checkByteArgument(array, index, 2);
         return (short) convertFromBytes(array, index, 2);
     }
@@ -49,7 +51,7 @@ public class LittleEndianBitConverter {
      * @param index Specify the starting position.
      * @return Returns a 32-bit unsigned integer formed by two bytes beginning at startIndex.
      */
-    public static int toUInt32(byte[] array, int index) {
+    public static int toUInt32(byte[] array, int index) throws IOException {
         checkByteArgument(array, index, 4);
         return (int) convertFromBytes(array, index, 4);
     }
@@ -61,7 +63,7 @@ public class LittleEndianBitConverter {
      * @param index Specify the starting position.
      * @return Returns a 32-bit signed integer formed by two bytes beginning at startIndex.
      */
-    public static int toInt32(byte[] array, int index) {
+    public static int toInt32(byte[] array, int index) throws IOException {
         checkByteArgument(array, index, 4);
         return (int) convertFromBytes(array, index, 4);
     }
@@ -73,7 +75,7 @@ public class LittleEndianBitConverter {
      * @param index Specify the starting position.
      * @return Returns a 16-bit signed integer formed by two bytes beginning at startIndex.
      */
-    public static short toInt16(byte[] array, int index) {
+    public static short toInt16(byte[] array, int index) throws IOException {
         checkByteArgument(array, index, 4);
         return (short) convertFromBytes(array, index, 2);
     }
@@ -85,7 +87,7 @@ public class LittleEndianBitConverter {
      * @param index Specify the starting position.
      * @return Returns a 64-bit unsigned integer formed by two bytes beginning at startIndex.
      */
-    public static long toUInt64(byte[] array, int index) {
+    public static long toUInt64(byte[] array, int index) throws IOException {
         checkByteArgument(array, index, 8);
         return convertFromBytes(array, index, 8);
     }
@@ -157,17 +159,17 @@ public class LittleEndianBitConverter {
      * @param startIndex    Specify the start index.
      * @param bytesRequired Specify the number of bytes.
      */
-    private static void checkByteArgument(byte[] value, int startIndex, int bytesRequired) {
+    private static void checkByteArgument(byte[] value, int startIndex, int bytesRequired) throws IOException {
         if (value == null) {
-            throw new RuntimeException("value");
+            throw new IOException("value must be non-null");
         }
 
         if (startIndex < 0) {
-            throw new RuntimeException("The index cannot be less than 0.");
+            throw new IOException("The index cannot be less than 0.");
         }
 
         if (startIndex > value.length - bytesRequired) {
-            throw new RuntimeException(
+            throw new IOException(
                     "startIndex " + startIndex + " is less than value.length (" + value.length +
                             ") minus bytesRequired (" + bytesRequired + ")");
         }

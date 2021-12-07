@@ -17,6 +17,7 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -27,7 +28,7 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.LittleEndianBitCon
  * Data Size Object
  */
 public class DataSizeObject extends StreamObject {
-    public long DataSize;
+    public long dataSize;
 
     /**
      * Initializes a new instance of the DataSizeObject class.
@@ -45,13 +46,13 @@ public class DataSizeObject extends StreamObject {
      */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems) {
+                                                 int lengthOfItems) throws IOException {
         if (lengthOfItems != 8) {
             throw new StreamObjectParseErrorException(currentIndex.get(), "DataSize",
                     "Stream Object over-parse error", null);
         }
 
-        this.DataSize = LittleEndianBitConverter.toUInt64(byteArray, currentIndex.get());
+        this.dataSize = LittleEndianBitConverter.toUInt64(byteArray, currentIndex.get());
         currentIndex.addAndGet(8);
     }
 
@@ -64,7 +65,7 @@ public class DataSizeObject extends StreamObject {
     @Override
     protected int serializeItemsToByteList(List<Byte> byteList) {
         ByteUtil.appendByteArrayToListOfByte(byteList,
-                LittleEndianBitConverter.getBytes(this.DataSize));
+                LittleEndianBitConverter.getBytes(this.dataSize));
         return 8;
     }
 }

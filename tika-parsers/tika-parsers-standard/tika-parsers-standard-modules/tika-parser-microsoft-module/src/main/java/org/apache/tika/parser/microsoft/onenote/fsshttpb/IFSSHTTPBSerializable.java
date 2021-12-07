@@ -17,7 +17,10 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb;
 
+import java.io.IOException;
 import java.util.List;
+
+import org.apache.tika.exception.TikaException;
 
 /**
  * FSSHTTPB Serialize interface.
@@ -29,5 +32,5 @@ public interface IFSSHTTPBSerializable {
      *
      * @return The byte list.
      */
-    List<Byte> serializeToByteList();
+    List<Byte> serializeToByteList() throws IOException, TikaException;
 }

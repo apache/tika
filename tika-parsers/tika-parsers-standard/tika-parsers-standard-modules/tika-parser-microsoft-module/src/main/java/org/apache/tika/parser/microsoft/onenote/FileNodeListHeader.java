@@ -17,6 +17,7 @@
 
 package org.apache.tika.parser.microsoft.onenote;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.utils.StringUtils;
 
 class FileNodeListHeader {
@@ -42,15 +43,15 @@ class FileNodeListHeader {
      *                          this list MUST be sequential.
      */
     public FileNodeListHeader(long position, long uintMagic, long fileNodeListId,
-                              long nFragmentSequence) {
+                              long nFragmentSequence) throws TikaException {
         if (uintMagic != UNIT_MAGIC_CONSTANT) {
-            throw new RuntimeException(
+            throw new TikaException(
                     "unitMagic must always be: 0x" + Long.toHexString(UNIT_MAGIC_CONSTANT));
         }
         this.position = position;
         this.fileNodeListId = fileNodeListId;
         if (fileNodeListId < 0x00000010) {
-            throw new RuntimeException("FileNodeListHeader.fileNodeListId MUST be equal " +
+            throw new TikaException("FileNodeListHeader.fileNodeListId MUST be equal " +
                     "to or greater than 0x00000010");
         }
         this.nFragmentSequence = nFragmentSequence;

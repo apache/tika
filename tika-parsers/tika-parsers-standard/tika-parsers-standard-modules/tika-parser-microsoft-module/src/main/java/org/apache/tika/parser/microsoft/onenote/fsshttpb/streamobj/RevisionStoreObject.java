@@ -27,14 +27,14 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
  */
 public class RevisionStoreObject {
 
-    public ExGuid ObjectID;
-    public ExGuid ObjectGroupID;
-    public JCIDObject JCID;
-    public PropertySetObject PropertySet;
+    public ExGuid objectID;
+    public ExGuid objectGroupID;
+    public JCIDObject jcid;
+    public PropertySetObject propertySet;
     public org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.FileDataObject
-            FileDataObject;
-    public ExGUIDArray ReferencedObjectID;
-    public CellIDArray ReferencedObjectSpacesID;
+            fileDataObject;
+    public ExGUIDArray referencedObjectID;
+    public CellIDArray referencedObjectSpacesID;
 
     /**
      * Initialize the class.

@@ -17,9 +17,11 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.CellID;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
@@ -30,9 +32,9 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.SerialN
  * and cell mapping serial number)
  */
 public class StorageIndexCellMapping extends StreamObject {
-    public org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.CellID CellID;
-    public ExGuid CellMappingExGuid;
-    public SerialNumber CellMappingSerialNumber;
+    public org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.CellID cellID;
+    public ExGuid cellMappingExGuid;
+    public SerialNumber cellMappingSerialNumber;
 
     /**
      * Initializes a new instance of the StorageIndexCellMapping class.
@@ -50,11 +52,12 @@ public class StorageIndexCellMapping extends StreamObject {
      */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems) {
+                                                 int lengthOfItems)
+            throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
-        this.CellID = BasicObject.parse(byteArray, index, CellID.class);
-        this.CellMappingExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
-        this.CellMappingSerialNumber = BasicObject.parse(byteArray, index, SerialNumber.class);
+        this.cellID = BasicObject.parse(byteArray, index, CellID.class);
+        this.cellMappingExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
+        this.cellMappingSerialNumber = BasicObject.parse(byteArray, index, SerialNumber.class);
 
         if (index.get() - currentIndex.get() != lengthOfItems) {
             throw new StreamObjectParseErrorException(currentIndex.get(), "StorageIndexCellMapping",
@@ -71,11 +74,11 @@ public class StorageIndexCellMapping extends StreamObject {
      * @return The length of list
      */
     @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) {
+    protected int serializeItemsToByteList(List<Byte> byteList) throws IOException {
         int itemsIndex = byteList.size();
-        byteList.addAll(this.CellID.serializeToByteList());
-        byteList.addAll(this.CellMappingExGuid.serializeToByteList());
-        byteList.addAll(this.CellMappingSerialNumber.serializeToByteList());
+        byteList.addAll(this.cellID.serializeToByteList());
+        byteList.addAll(this.cellMappingExGuid.serializeToByteList());
+        byteList.addAll(this.cellMappingSerialNumber.serializeToByteList());
         return byteList.size() - itemsIndex;
     }
 }
