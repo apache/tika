@@ -17,6 +17,8 @@
 
 package org.apache.tika.parser.microsoft.onenote.fsshttpb;
 
+import static org.apache.tika.parser.microsoft.onenote.OneNoteParser.ONE_NOTE_PREFIX;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -35,6 +37,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.microsoft.onenote.OneNotePropertyEnum;
 import org.apache.tika.parser.microsoft.onenote.OneNoteTreeWalkerOptions;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.EightBytesOfData;
@@ -178,7 +181,7 @@ public class MSOneStorePackage {
                         if (instant.isAfter(lastModifiedTimestamp)) {
                             lastModifiedTimestamp = instant;
                         }
-                        metadata.set("lastModifiedTimestamp",
+                        metadata.set(ONE_NOTE_PREFIX + "lastModifiedTimestamp",
                                 String.valueOf(lastModifiedTimestamp.toEpochMilli()));
                     } else if (oneNotePropertyEnum == OneNotePropertyEnum.CreationTimeStamp) {
                         // add the TIME32_EPOCH_DIFF_1980 because OneNote TIME32 epoch time is per 1980, not
@@ -188,7 +191,7 @@ public class MSOneStorePackage {
                         if (creationTs < creationTimestamp) {
                             creationTimestamp = creationTs;
                         }
-                        metadata.set("creationTimestamp", String.valueOf(creationTimestamp));
+                        metadata.set(ONE_NOTE_PREFIX + "creationTimestamp", String.valueOf(creationTimestamp));
                     } else if (oneNotePropertyEnum == OneNotePropertyEnum.LastModifiedTime) {
                         // add the TIME32_EPOCH_DIFF_1980 because OneNote TIME32 epoch time is per 1980, not
                         // 1970
@@ -197,7 +200,7 @@ public class MSOneStorePackage {
                         if (lastMod > lastModified) {
                             lastModified = lastMod;
                         }
-                        metadata.set("lastModified", String.valueOf(lastModified));
+                        metadata.set(TikaCoreProperties.MODIFIED, String.valueOf(lastModified));
                     } else if (oneNotePropertyEnum == OneNotePropertyEnum.Author) {
                         String author =
                                 new String(((PrtFourBytesOfLengthFollowedByData) property).data,
@@ -252,14 +255,14 @@ public class MSOneStorePackage {
             }
         }
         if (!authors.isEmpty()) {
-            metadata.set(Property.externalTextBag("authors"), authors.toArray(new String[]{}));
+            metadata.set(TikaCoreProperties.CREATOR, authors.toArray(new String[]{}));
         }
         if (!mostRecentAuthors.isEmpty()) {
-            metadata.set(Property.externalTextBag("mostRecentAuthors"),
+            metadata.set(Property.externalTextBag(ONE_NOTE_PREFIX + "mostRecentAuthors"),
                     mostRecentAuthors.toArray(new String[]{}));
         }
         if (!originalAuthors.isEmpty()) {
-            metadata.set(Property.externalTextBag("originalAuthors"),
+            metadata.set(Property.externalTextBag(ONE_NOTE_PREFIX + "originalAuthors"),
                     originalAuthors.toArray(new String[]{}));
         }
     }
