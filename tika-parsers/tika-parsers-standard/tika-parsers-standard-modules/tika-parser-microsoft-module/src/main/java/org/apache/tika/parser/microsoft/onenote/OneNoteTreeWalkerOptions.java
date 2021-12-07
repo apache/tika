@@ -17,6 +17,7 @@
 package org.apache.tika.parser.microsoft.onenote;
 
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -24,7 +25,7 @@ import java.util.Set;
 /**
  * Options when walking the one note tree.
  */
-public class OneNoteTreeWalkerOptions {
+public class OneNoteTreeWalkerOptions implements Serializable {
     private boolean crawlAllFileNodesFromRoot = true;
     private boolean onlyLatestRevision = true;
     private Set<OneNotePropertyEnum> utf16PropertiesToPrint = new HashSet<>(
