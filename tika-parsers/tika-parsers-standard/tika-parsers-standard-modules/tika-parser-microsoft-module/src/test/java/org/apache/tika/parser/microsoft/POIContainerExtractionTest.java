@@ -21,8 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
