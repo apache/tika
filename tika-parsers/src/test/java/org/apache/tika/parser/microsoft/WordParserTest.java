@@ -48,13 +48,6 @@ import org.xml.sax.ContentHandler;
 public class WordParserTest extends TikaTest {
 
     @Test
-    public void testOneOff() throws Exception {
-        System.out.println(AbstractRecursiveParserWrapperHandler.CONTAINER_EXCEPTION);
-
-        debug(getRecursiveMetadata("testWORD_various.doc"));
-    }
-
-    @Test
     public void testWordParser() throws Exception {
         try (InputStream input = WordParserTest.class.getResourceAsStream(
                 "/test-documents/testWORD.doc")) {

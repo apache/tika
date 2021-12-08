@@ -409,7 +409,6 @@
     <dependency>
       <groupId>org.glassfish.jaxb</groupId>
       <artifactId>jaxb-runtime</artifactId>
-      <version>${jaxb.version}</version>
     </dependency>
     <!-- TIKA-2021: Tesseract OCR Parser dependencies,
     used for executing image processing script -->

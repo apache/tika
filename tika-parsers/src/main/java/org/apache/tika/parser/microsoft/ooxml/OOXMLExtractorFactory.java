@@ -112,7 +112,27 @@ public class OOXMLExtractorFactory {
                                 true, false)) {
                     try {
                         pkg = OPCPackage.open(rereadableInputStream);
-                    } catch (EOFException|UnsupportedZipFeatureException e) {
+                    } catch (UnsupportedZipFeatureException e) {
+                        if (e.getFeature() !=
+                                UnsupportedZipFeatureException.Feature.DATA_DESCRIPTOR) {
+                            throw e;
+                        }
+                        rereadableInputStream.rewind();
+                        tmpRepairedCopy = File.createTempFile("tika-ooxml-repair-", "");
+                        ZipSalvager.salvageCopy(rereadableInputStream, tmpRepairedCopy, false);
+                        //if there isn't enough left to be opened as a package
+                        //throw an exception -- we may want to fall back to streaming
+                        //parsing
+                        pkg = OPCPackage.open(tmpRepairedCopy, PackageAccess.READ);
+                    } catch (IOException e) {
+                        if (e instanceof EOFException) {
+                            //keep going
+                        } else if (e instanceof IOException && e.getMessage() != null &&
+                                e.getMessage().contains("Truncated")) {
+                            //keep going
+                        } else {
+                            throw e;
+                        }
                         rereadableInputStream.rewind();
                         tmpRepairedCopy = File.createTempFile("tika-ooxml-repair-", "");
                         ZipSalvager.salvageCopy(rereadableInputStream, tmpRepairedCopy, false);

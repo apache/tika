@@ -105,6 +105,7 @@ public class EpubParserTest extends TikaTest {
         String xml = metadataList.get(0).get(RecursiveParserWrapperHandler.TIKA_CONTENT);
         int ch1 = xml.indexOf("<h1>Chapter 1");
         int ch2 = xml.indexOf("<h1>Chapter 2");
+        assert(ch1 > -1);
         assert(ch1 < ch2);
     }
 

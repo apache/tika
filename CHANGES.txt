@@ -1,3 +1,8 @@
+Release 1.27.1 - ???
+
+   * General dependency upgrades (TIKA-3613).
+
+
 Release 1.27 - 06/30/2021
 
    * Migrate MP4 parsing to Drew Noakes' metadata-extractor (TIKA-3459).
