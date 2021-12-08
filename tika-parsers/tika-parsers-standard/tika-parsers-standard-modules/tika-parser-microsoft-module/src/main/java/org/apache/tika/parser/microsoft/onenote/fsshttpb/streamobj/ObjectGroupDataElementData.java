@@ -109,18 +109,18 @@ public class ObjectGroupDataElementData extends DataElementData {
     }
 
     /**
-     * The internal class for build a list of DataElement from an node object.
+     * The internal class for build a list of DataElement from a node object.
      */
     public static class Builder {
         /**
-         * This method is used to build  a list of DataElement from an node object
+         * This method is used to build a list of DataElement from a node object
          *
          * @param node Specify the node object.
          * @return Return the list of data elements build from the specified node object.
          */
         public List<DataElement> build(NodeObject node) throws TikaException, IOException {
             List<DataElement> dataElements = new ArrayList<>();
-            this.travelNodeObject(node, dataElements);
+            this.traverseNodeObject(node, dataElements);
             return dataElements;
         }
 
@@ -131,7 +131,7 @@ public class ObjectGroupDataElementData extends DataElementData {
          * @param node         Specify the object node.
          * @param dataElements Specify the list of data elements.
          */
-        private void travelNodeObject(NodeObject node, List<DataElement> dataElements)
+        private void traverseNodeObject(NodeObject node, List<DataElement> dataElements)
                 throws TikaException, IOException {
             if (node instanceof IntermediateNodeObject) {
                 IntermediateNodeObject intermediateNodeObject = (IntermediateNodeObject) node;
@@ -144,7 +144,7 @@ public class ObjectGroupDataElementData extends DataElementData {
                 dataElements.add(new DataElement(DataElementType.ObjectGroupDataElementData, data));
 
                 for (LeafNodeObject child : intermediateNodeObject.intermediateNodeObjectList) {
-                    this.travelNodeObject(child, dataElements);
+                    this.traverseNodeObject(child, dataElements);
                 }
             } else if (node instanceof LeafNodeObject) {
                 LeafNodeObject intermediateNode = (LeafNodeObject) node;
@@ -171,7 +171,7 @@ public class ObjectGroupDataElementData extends DataElementData {
                             new DataElement(DataElementType.ObjectGroupDataElementData, data));
 
                     for (LeafNodeObject child : intermediateNode.intermediateNodeObjectList) {
-                        this.travelNodeObject(child, dataElements);
+                        this.traverseNodeObject(child, dataElements);
                     }
 
                     return;
