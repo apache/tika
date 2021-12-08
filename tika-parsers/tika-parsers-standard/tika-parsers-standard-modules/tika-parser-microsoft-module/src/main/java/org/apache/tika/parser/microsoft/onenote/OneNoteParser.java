@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.onenote;
 
 import java.io.IOException;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -34,9 +36,13 @@ import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.MSOneStorePackage;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.MSOneStoreParser;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.AlternativePackaging;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
@@ -46,19 +52,23 @@ import org.apache.tika.sax.XHTMLContentHandler;
  */
 public class OneNoteParser extends AbstractParser {
 
-    private static final Map<MediaType, List<String>> typesMap = new HashMap<>();
+    public static final String ONE_NOTE_PREFIX = "onenote:";
+    private static final Map<MediaType, List<String>> TYPES_MAP = new HashMap<>();
     /**
      * Serial version UID
      */
     private static final long serialVersionUID = -5504243905998074168L;
     private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.unmodifiableSet(typesMap.keySet());
+            Collections.unmodifiableSet(TYPES_MAP.keySet());
 
     static {
         // All types should be 4 bytes long, space padded as needed
-        typesMap.put(MediaType.application("onenote; format=one"), Collections.singletonList("ONE "));
+        TYPES_MAP.put(MediaType.application("onenote; format=one"),
+                Collections.singletonList("ONE "));
         // TODO - add onetoc and other onenote mime types
     }
+
+    private final OneNoteTreeWalkerOptions options = new OneNoteTreeWalkerOptions();
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -68,98 +78,115 @@ public class OneNoteParser extends AbstractParser {
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
+        byte[] oneStoreFileBytes = IOUtils.toByteArray(stream);
 
         try (TemporaryResources temporaryResources = new TemporaryResources();
-                TikaInputStream tikaInputStream = TikaInputStream.get(stream, temporaryResources);
-                OneNoteDirectFileResource oneNoteDirectFileResource =
-                     new OneNoteDirectFileResource(tikaInputStream.getFile())) {
-
-            temporaryResources.addResource(oneNoteDirectFileResource);
+                TikaInputStream tikaInputStream = TikaInputStream.get(oneStoreFileBytes);
+                OneNoteDirectFileResource oneNoteDirectFileResource = new OneNoteDirectFileResource(
+                        tikaInputStream.getFile())) {
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             xhtml.startDocument();
+            temporaryResources.addResource(oneNoteDirectFileResource);
             OneNoteDocument oneNoteDocument =
                     createOneNoteDocumentFromDirectFileResource(oneNoteDirectFileResource);
 
-            if (!oneNoteDocument.header.isLegacy()) {
-                metadata.set("buildNumberCreated",
+            OneNoteHeader header = oneNoteDocument.header;
+
+            if (header.isMsOneStoreFormat()) {
+                metadata.set(ONE_NOTE_PREFIX + "buildNumberCreated",
                         "0x" + Long.toHexString(oneNoteDocument.header.buildNumberCreated));
-                metadata.set("buildNumberLastWroteToFile",
+                metadata.set(ONE_NOTE_PREFIX + "buildNumberLastWroteToFile",
                         "0x" + Long.toHexString(oneNoteDocument.header.buildNumberLastWroteToFile));
-                metadata.set("buildNumberNewestWritten",
+                metadata.set(ONE_NOTE_PREFIX + "buildNumberNewestWritten",
                         "0x" + Long.toHexString(oneNoteDocument.header.buildNumberNewestWritten));
-                metadata.set("buildNumberOldestWritten",
+                metadata.set(ONE_NOTE_PREFIX + "buildNumberOldestWritten",
                         "0x" + Long.toHexString(oneNoteDocument.header.buildNumberOldestWritten));
-                metadata.set("cbExpectedFileLength",
+                metadata.set(ONE_NOTE_PREFIX + "cbExpectedFileLength",
                         "0x" + Long.toHexString(oneNoteDocument.header.cbExpectedFileLength));
-                metadata.set("cbFreeSpaceInFreeChunkList",
+                metadata.set(ONE_NOTE_PREFIX + "cbFreeSpaceInFreeChunkList",
                         "0x" + Long.toHexString(oneNoteDocument.header.cbFreeSpaceInFreeChunkList));
-                metadata.set("cbLegacyExpectedFileLength",
+                metadata.set(ONE_NOTE_PREFIX + "cbLegacyExpectedFileLength",
                         "0x" + Long.toHexString(oneNoteDocument.header.cbLegacyExpectedFileLength));
-                metadata.set("cbLegacyFreeSpaceInFreeChunkList", "0x" +
+                metadata.set(ONE_NOTE_PREFIX + "cbLegacyFreeSpaceInFreeChunkList", "0x" +
                         Long.toHexString(oneNoteDocument.header.cbLegacyFreeSpaceInFreeChunkList));
-                metadata.set("crcName", "0x" + Long.toHexString(oneNoteDocument.header.crcName));
-                metadata.set("cTransactionsInLog",
+                metadata.set(ONE_NOTE_PREFIX + "crcName", "0x" + Long.toHexString(oneNoteDocument.header.crcName));
+                metadata.set(ONE_NOTE_PREFIX + "cTransactionsInLog",
                         "0x" + Long.toHexString(oneNoteDocument.header.cTransactionsInLog));
-                metadata.set("ffvLastCodeThatWroteToThisFile", "0x" +
+                metadata.set(ONE_NOTE_PREFIX + "ffvLastCodeThatWroteToThisFile", "0x" +
                         Long.toHexString(oneNoteDocument.header.ffvLastCodeThatWroteToThisFile));
-                metadata.set("ffvNewestCodeThatHasWrittenToThisFile", "0x" + Long.toHexString(
+                metadata.set(ONE_NOTE_PREFIX + "ffvNewestCodeThatHasWrittenToThisFile", "0x" + Long.toHexString(
                         oneNoteDocument.header.ffvNewestCodeThatHasWrittenToThisFile));
-                metadata.set("ffvOldestCodeThatMayReadThisFile", "0x" +
+                metadata.set(ONE_NOTE_PREFIX + "ffvOldestCodeThatMayReadThisFile", "0x" +
                         Long.toHexString(oneNoteDocument.header.ffvOldestCodeThatMayReadThisFile));
-                metadata.set("ffvOldestCodeThatHasWrittenToThisFile", "0x" + Long.toHexString(
+                metadata.set(ONE_NOTE_PREFIX + "ffvOldestCodeThatHasWrittenToThisFile", "0x" + Long.toHexString(
                         oneNoteDocument.header.ffvOldestCodeThatHasWrittenToThisFile));
-                metadata.set("grfDebugLogFlags",
+                metadata.set(ONE_NOTE_PREFIX + "grfDebugLogFlags",
                         "0x" + Long.toHexString(oneNoteDocument.header.grfDebugLogFlags));
-                metadata.set("nFileVersionGeneration",
+                metadata.set(ONE_NOTE_PREFIX + "nFileVersionGeneration",
                         "0x" + Long.toHexString(oneNoteDocument.header.nFileVersionGeneration));
-                metadata.set("rgbPlaceholder",
+                metadata.set(ONE_NOTE_PREFIX + "rgbPlaceholder",
                         "0x" + Long.toHexString(oneNoteDocument.header.rgbPlaceholder));
 
                 Pair<Long, ExtendedGUID> roleAndContext = Pair.of(1L, ExtendedGUID.nil());
                 OneNoteTreeWalker oneNoteTreeWalker =
-                        new OneNoteTreeWalker(new OneNoteTreeWalkerOptions(), oneNoteDocument,
-                                oneNoteDirectFileResource, xhtml, metadata, context,
-                                roleAndContext);
+                        new OneNoteTreeWalker(options, oneNoteDocument, oneNoteDirectFileResource,
+                                xhtml, metadata, context, roleAndContext);
 
                 oneNoteTreeWalker.walkTree();
 
                 if (!oneNoteTreeWalker.getAuthors().isEmpty()) {
-                    metadata.set(Property.externalTextBag("authors"),
+                    metadata.set(TikaCoreProperties.CREATOR,
                             oneNoteTreeWalker.getAuthors().toArray(new String[]{}));
                 }
                 if (!oneNoteTreeWalker.getMostRecentAuthors().isEmpty()) {
-                    metadata.set(Property.externalTextBag("mostRecentAuthors"),
+                    metadata.set(Property.externalTextBag(ONE_NOTE_PREFIX + "mostRecentAuthors"),
                             oneNoteTreeWalker.getMostRecentAuthors().toArray(new String[]{}));
                 }
                 if (!oneNoteTreeWalker.getOriginalAuthors().isEmpty()) {
-                    metadata.set(Property.externalTextBag("originalAuthors"),
+                    metadata.set(Property.externalTextBag(ONE_NOTE_PREFIX + "originalAuthors"),
                             oneNoteTreeWalker.getOriginalAuthors().toArray(new String[]{}));
                 }
-                if (!Instant.MAX.equals(oneNoteTreeWalker.getCreationTimestamp())) {
-                    metadata.set("creationTimestamp",
+                if (!Instant.MAX.equals(
+                        Instant.ofEpochMilli(oneNoteTreeWalker.getCreationTimestamp()))) {
+                    metadata.set(ONE_NOTE_PREFIX + "creationTimestamp",
                             String.valueOf(oneNoteTreeWalker.getCreationTimestamp()));
                 }
                 if (!Instant.MIN.equals(oneNoteTreeWalker.getLastModifiedTimestamp())) {
-                    metadata.set("lastModifiedTimestamp", String.valueOf(
+                    metadata.set(ONE_NOTE_PREFIX + "lastModifiedTimestamp", String.valueOf(
                             oneNoteTreeWalker.getLastModifiedTimestamp().toEpochMilli()));
                 }
                 if (oneNoteTreeWalker.getLastModified() > Long.MIN_VALUE) {
-                    metadata.set("lastModified",
+                    metadata.set(TikaCoreProperties.MODIFIED,
                             String.valueOf(oneNoteTreeWalker.getLastModified()));
                 }
+            } else if (header.isLegacyOrAlternativePackaging()) {
+                try {
+                    AlternativePackaging alternatePackageOneStoreFile = new AlternativePackaging();
+                    alternatePackageOneStoreFile.doDeserializeFromByteArray(oneStoreFileBytes, 0);
+
+                    MSOneStoreParser onenoteParser = new MSOneStoreParser();
+                    MSOneStorePackage pkg =
+                            onenoteParser.parse(alternatePackageOneStoreFile.dataElementPackage);
+
+                    pkg.walkTree(options, metadata, xhtml);
+                } catch (Exception e) {
+                    OneNoteLegacyDumpStrings dumpStrings =
+                            new OneNoteLegacyDumpStrings(oneNoteDirectFileResource, xhtml);
+                    dumpStrings.dump();
+                }
             } else {
-                OneNoteLegacyDumpStrings dumpStrings =
-                        new OneNoteLegacyDumpStrings(oneNoteDirectFileResource, xhtml);
-                dumpStrings.dump();
+                throw new TikaException("Invalid OneStore document - could not parse headers");
             }
             xhtml.endDocument();
         }
+
+
     }
 
     /**
      * Create a OneNoteDocument object.
      * <p>
-     * This won't actually have the binary data of any of the sections, but it's more of a
+     * This won't actually have the binary data of the sections, but it's more of a
      * metadata structure that contains
      * the general structure of the container and contains offset positions of where to find the
      * binary data we care about.
@@ -199,7 +226,7 @@ public class OneNoteParser extends AbstractParser {
         // First parse out the header.
         oneNoteDocument.header = oneNotePtr.deserializeHeader();
 
-        if (!oneNoteDocument.header.isLegacy()) {
+        if (oneNoteDocument.header.isMsOneStoreFormat()) {
             // Now that we parsed the header, the "root file node list"
             oneNotePtr.reposition(oneNoteDocument.header.fcrFileNodeListRoot);
             FileNodePtr curPath = new FileNodePtr();

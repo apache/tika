@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.onenote;
 
 import java.io.IOException;
@@ -22,7 +23,7 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.exception.TikaMemoryLimitException;
+import org.apache.tika.exception.TikaException;
 
 /**
  * A FileNode structure is the basic unit for holding and referencing data in the file.
@@ -119,9 +120,8 @@ class FileNode {
 
     @Override
     public int hashCode() {
-        return Objects
-                .hash(id, size, baseType, gosid, gctxid, fileDataStoreReference, ref, propertySet,
-                        isFileData, childFileNodeList, subType);
+        return Objects.hash(id, size, baseType, gosid, gctxid, fileDataStoreReference, ref,
+                propertySet, isFileData, childFileNodeList, subType);
     }
 
     public boolean hasGctxid() {
@@ -229,7 +229,7 @@ class FileNode {
     }
 
     public void print(OneNoteDocument document, OneNotePtr pointer, int indentLevel)
-            throws IOException, TikaMemoryLimitException {
+            throws IOException, TikaException {
         boolean shouldPrintHeader = FndStructureConstants.nameOf(id).contains("ObjectDec");
         if (gosid.equals(ExtendedGUID.nil()) && shouldPrintHeader) {
             LOG.debug("{}[beg {}]:{}", IndentUtil.getIndent(indentLevel + 1),

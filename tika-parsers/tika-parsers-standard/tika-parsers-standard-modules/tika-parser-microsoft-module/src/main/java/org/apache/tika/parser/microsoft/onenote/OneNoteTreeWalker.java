@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.onenote;
 
 import java.io.IOException;
@@ -67,19 +68,17 @@ class OneNoteTreeWalker {
      * .EPOCH.
      */
     private static final long DATETIME_EPOCH_DIFF_1601;
-    private static Pattern HYPERLINK_PATTERN =
+    private static final Pattern HYPERLINK_PATTERN =
             Pattern.compile("\uFDDFHYPERLINK\\s+\"([^\"]+)\"([^\"]+)$");
 
     static {
-        LocalDateTime time32Epoch1980 = LocalDateTime.of(
-                1980, Month.JANUARY, 1, 0, 0);
+        LocalDateTime time32Epoch1980 = LocalDateTime.of(1980, Month.JANUARY, 1, 0, 0);
         Instant instant = time32Epoch1980.atZone(ZoneOffset.UTC).toInstant();
         TIME32_EPOCH_DIFF_1980 = (instant.toEpochMilli() - Instant.EPOCH.toEpochMilli()) / 1000;
     }
 
     static {
-        LocalDateTime time32Epoch1601 = LocalDateTime.of(
-                1601, Month.JANUARY, 1, 0, 0);
+        LocalDateTime time32Epoch1601 = LocalDateTime.of(1601, Month.JANUARY, 1, 0, 0);
         Instant instant = time32Epoch1601.atZone(ZoneOffset.UTC).toInstant();
         DATETIME_EPOCH_DIFF_1601 = (instant.toEpochMilli() - Instant.EPOCH.toEpochMilli()) / 1000;
     }
@@ -89,11 +88,11 @@ class OneNoteTreeWalker {
     private final Set<String> authors = new HashSet<>();
     private final Set<String> mostRecentAuthors = new HashSet<>();
     private final Set<String> originalAuthors = new HashSet<>();
-    private OneNoteTreeWalkerOptions options;
-    private OneNoteDocument oneNoteDocument;
-    private OneNoteDirectFileResource dif;
-    private XHTMLContentHandler xhtml;
-    private Pair<Long, ExtendedGUID> roleAndContext;
+    private final OneNoteTreeWalkerOptions options;
+    private final OneNoteDocument oneNoteDocument;
+    private final OneNoteDirectFileResource dif;
+    private final XHTMLContentHandler xhtml;
+    private final Pair<Long, ExtendedGUID> roleAndContext;
     private Instant lastModifiedTimestamp = Instant.MIN;
     private long creationTimestamp = Long.MAX_VALUE;
     private long lastModified = Long.MIN_VALUE;
@@ -347,9 +346,8 @@ class OneNoteTreeWalker {
         Metadata embeddedMetadata = new Metadata();
         try {
             stream = TikaInputStream.get(buf.array());
-            embeddedDocumentExtractor
-                    .parseEmbedded(stream, new EmbeddedContentHandler(xhtml), embeddedMetadata,
-                            false);
+            embeddedDocumentExtractor.parseEmbedded(stream, new EmbeddedContentHandler(xhtml),
+                    embeddedMetadata, false);
             AttributesImpl attributes = new AttributesImpl();
             attributes.addAttribute("", "class", "class", "CDATA", "embedded");
             xhtml.startElement("div", attributes);
@@ -448,7 +446,7 @@ class OneNoteTreeWalker {
             boolean isBinary = propertyIsBinary(propertyValue.propertyId.propertyEnum);
             propMap.put("isBinary", isBinary);
             if ((content.size() & 1) == 0 && propertyValue.propertyId.propertyEnum !=
-                    OneNotePropertyEnum.TextExtendedAscii && isBinary == false) {
+                    OneNotePropertyEnum.TextExtendedAscii && !isBinary) {
                 if (content.size() > dif.size()) {
                     throw new TikaMemoryLimitException(
                             "File data store cb " + content.size() + " exceeds document size: " +
@@ -475,7 +473,7 @@ class OneNoteTreeWalker {
                 xhtml.startElement(P);
                 xhtml.characters((String) propMap.get("dataAscii"));
                 xhtml.endElement(P);
-            } else if (isBinary == false) {
+            } else if (!isBinary) {
                 if (content.size() > dif.size()) {
                     throw new TikaMemoryLimitException(
                             "File data store cb " + content.size() + " exceeds document size: " +

@@ -16,7 +16,7 @@
  */
 package org.apache.tika.parser.microsoft.onenote;
 
-class ObjectSpaceObjectPropSet {
+public class ObjectSpaceObjectPropSet {
     ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs oids =
             new ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs();
     ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs osids =

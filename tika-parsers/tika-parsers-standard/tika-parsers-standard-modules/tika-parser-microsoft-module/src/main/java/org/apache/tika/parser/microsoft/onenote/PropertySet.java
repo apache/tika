@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.onenote;
 
 import java.io.IOException;
@@ -21,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import org.apache.tika.exception.TikaMemoryLimitException;
+import org.apache.tika.exception.TikaException;
 
 /**
  * A property set is a collection of properties that specify the attributes of an object (section
@@ -72,7 +73,7 @@ class PropertySet {
     List<PropertyValue> rgPridsData = new ArrayList<>();
 
     public void print(OneNoteDocument document, OneNotePtr pointer, int indentLevel)
-            throws IOException, TikaMemoryLimitException {
+            throws IOException, TikaException {
         for (PropertyValue child : rgPridsData) {
             child.print(document, pointer, indentLevel);
         }
