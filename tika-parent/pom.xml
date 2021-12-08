@@ -259,6 +259,7 @@
     <maven.compiler.target>1.8</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
+    <project.build.outputTimestamp>1</project.build.outputTimestamp>
     <!-- plugin versions -->
     <forbiddenapis.version>3.1</forbiddenapis.version>
     <groovy.maven.version>2.1.1</groovy.maven.version>
@@ -292,6 +293,7 @@
     <cli.version>1.5.0</cli.version>
     <lucene.version>8.9.0</lucene.version>
     <mockito.version>3.11.2</mockito.version>
+    <lombok.version>1.18.20</lombok.version>
     <opennlp.version>1.9.4</opennlp.version>
   </properties>
   <dependencyManagement>
