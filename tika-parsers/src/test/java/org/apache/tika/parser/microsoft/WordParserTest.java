@@ -39,12 +39,20 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
 public class WordParserTest extends TikaTest {
+
+    @Test
+    public void testOneOff() throws Exception {
+        System.out.println(AbstractRecursiveParserWrapperHandler.CONTAINER_EXCEPTION);
+
+        debug(getRecursiveMetadata("testWORD_various.doc"));
+    }
 
     @Test
     public void testWordParser() throws Exception {

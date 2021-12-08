@@ -34,10 +34,6 @@
   <name>Apache Tika batch</name>
   <url>http://tika.apache.org/</url>
 
-  <properties>
-    <cli.version>1.4</cli.version>
-  </properties>
-
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>

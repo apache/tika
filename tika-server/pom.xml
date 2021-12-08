@@ -29,7 +29,7 @@
   <url>http://tika.apache.org/</url>
 
   <properties>
-    <cxf.micrometer.version>1.7.1</cxf.micrometer.version>
+    <cxf.micrometer.version>1.8.1</cxf.micrometer.version>
     <micrometer-extras.version>0.2.2</micrometer-extras.version>
   </properties>
 
@@ -76,6 +76,12 @@
       <groupId>org.apache.cxf</groupId>
       <artifactId>cxf-rt-frontend-jaxrs</artifactId>
       <version>${cxf.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.fasterxml.woodstox</groupId>
+          <artifactId>woodstox-core</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.cxf</groupId>

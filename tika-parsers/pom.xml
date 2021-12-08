@@ -50,7 +50,7 @@
     <pdfbox.version>2.0.24</pdfbox.version>
     <jempbox.version>1.8.16</jempbox.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
-    <sis.version>1.0</sis.version>
+    <sis.version>1.1</sis.version>
     <parso.version>2.0.14</parso.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
     <bouncycastle.version>1.69</bouncycastle.version>
@@ -94,7 +94,7 @@
     <dependency>
       <groupId>com.fasterxml.woodstox</groupId>
       <artifactId>woodstox-core</artifactId>
-      <version>6.2.6</version>
+      <version>6.2.7</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -171,7 +171,7 @@
     <dependency>
       <groupId>com.github.luben</groupId>
       <artifactId>zstd-jni</artifactId>
-      <version>1.5.0-2</version>
+      <version>1.5.0-4</version>
       <scope>provided</scope>
     </dependency>
 
@@ -343,6 +343,10 @@
           <groupId>org.jdom</groupId>
           <artifactId>jdom</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.jdom</groupId>
+          <artifactId>jdom2</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -395,6 +399,12 @@
       <groupId>org.apache.cxf</groupId>
       <artifactId>cxf-rt-rs-client</artifactId>
       <version>${cxf.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.fasterxml.woodstox</groupId>
+          <artifactId>woodstox-core</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.glassfish.jaxb</groupId>
@@ -519,7 +529,7 @@
     <dependency>
       <groupId>org.jdom</groupId>
       <artifactId>jdom2</artifactId>
-      <version>2.0.6</version>
+      <version>2.0.6.1</version>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
