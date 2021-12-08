@@ -80,6 +80,9 @@ public class MimeDetectionTest {
         
         //test GCMD Directory Interchange Format (.dif) TIKA-1561
         testFile("application/dif+xml", "brwNIMS_2014.dif");
+
+        // truncated xml should still be detected as xml, See TIKA-3596
+        testFile("application/xml", "truncated-utf16-xml.xyz");
     }
 
     @Test

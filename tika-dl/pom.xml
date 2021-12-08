@@ -365,7 +365,7 @@
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
-      <version>1.18.18</version>
+      <version>${lombok.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
