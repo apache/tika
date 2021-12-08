@@ -545,10 +545,12 @@
           <groupId>edu.ucar</groupId>
           <artifactId>jj2000</artifactId>
         </exclusion>
+        <!-- we don't appear to need this TIKA-3601 -->
         <exclusion>
           <groupId>org.jsoup</groupId>
           <artifactId>jsoup</artifactId>
         </exclusion>
+        <!-- exclude to use updated version -->
         <exclusion>
           <groupId>org.jdom</groupId>
           <artifactId>jdom2</artifactId>
@@ -577,14 +579,6 @@
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna</artifactId>
       <version>5.8.0</version>
-    </dependency>
-
-    <!-- grib's current jsoup is vulnerable to xss
-         exclude and import a more modern version TIKA-2561-->
-    <dependency>
-      <groupId>org.jsoup</groupId>
-      <artifactId>jsoup</artifactId>
-      <version>1.13.1</version>
     </dependency>
     <dependency>
       <groupId>com.google.protobuf</groupId>
