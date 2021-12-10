@@ -17,6 +17,7 @@
 
 package org.apache.tika.parser.microsoft.ooxml.xwpf;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
@@ -33,7 +34,6 @@ import org.apache.poi.ooxml.util.SAXHelper;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
-import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationship;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
@@ -58,36 +58,17 @@ import org.apache.tika.parser.microsoft.ooxml.XWPFListManager;
 /**
  * Experimental class that is based on POI's XSSFEventBasedExcelExtractor
  */
-public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
+public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
 
     private static final Logger LOG = LoggerFactory.getLogger(XWPFEventBasedWordExtractor.class);
 
     private OPCPackage container;
     private POIXMLProperties properties;
 
-    public XWPFEventBasedWordExtractor(String path)
-            throws XmlException, OpenXML4JException, IOException {
-        this(OPCPackage.open(path, PackageAccess.READ));
-    }
-
     public XWPFEventBasedWordExtractor(OPCPackage container)
             throws XmlException, OpenXML4JException, IOException {
-        super((POIXMLDocument) null);
         this.container = container;
         this.properties = new POIXMLProperties(container);
-    }
-
-
-    public static void main(String[] args) throws Exception {
-        if (args.length < 1) {
-            System.err.println("Use:");
-            System.err.println("  XWPFEventBasedWordExtractor <filename.xlsx>");
-            System.exit(1);
-        }
-
-        XWPFEventBasedWordExtractor extractor = new XWPFEventBasedWordExtractor(args[0]);
-        System.out.println(extractor.getText());
-        extractor.close();
     }
 
     public OPCPackage getPackage() {
@@ -104,6 +85,11 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
 
     public POIXMLProperties.CustomProperties getCustomProperties() {
         return this.properties.getCustomProperties();
+    }
+
+    @Override
+    public POIXMLDocument getDocument() {
+        return null;
     }
 
 
@@ -150,6 +136,21 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
         }
 
         return sb.toString();
+    }
+
+    @Override
+    public void setCloseFilesystem(boolean b) {
+
+    }
+
+    @Override
+    public boolean isCloseFilesystem() {
+        return false;
+    }
+
+    @Override
+    public Closeable getFilesystem() {
+        return null;
     }
 
 

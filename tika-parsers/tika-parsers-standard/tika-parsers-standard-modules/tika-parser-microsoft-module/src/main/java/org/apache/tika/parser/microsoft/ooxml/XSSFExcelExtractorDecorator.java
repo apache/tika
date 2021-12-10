@@ -43,10 +43,9 @@ import org.apache.poi.ss.usermodel.HeaderFooter;
 import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.eventusermodel.ReadOnlySharedStringsTable;
 import org.apache.poi.xssf.eventusermodel.XSSFReader;
-import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler;
 import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler.SheetContentsHandler;
 import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
-import org.apache.poi.xssf.model.CommentsTable;
+import org.apache.poi.xssf.model.Comments;
 import org.apache.poi.xssf.model.StylesTable;
 import org.apache.poi.xssf.usermodel.XSSFComment;
 import org.apache.poi.xssf.usermodel.XSSFDrawing;
@@ -159,7 +158,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 addDrawingHyperLinks(sheetPart);
                 sheetParts.add(sheetPart);
 
-                CommentsTable comments = iter.getSheetComments();
+                Comments comments = iter.getSheetComments();
 
                 // Start, and output the sheet name
                 xhtml.startElement("div");
@@ -344,13 +343,13 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
 
     }
 
-    public void processSheet(SheetContentsHandler sheetContentsExtractor, CommentsTable comments,
+    public void processSheet(SheetContentsHandler sheetContentsHandler, Comments comments,
                              StylesTable styles, ReadOnlySharedStringsTable strings,
                              InputStream sheetInputStream) throws IOException, SAXException {
         try {
 
             XSSFSheetInterestingPartsCapturer handler = new XSSFSheetInterestingPartsCapturer(
-                    new XSSFSheetXMLHandler(styles, comments, strings, sheetContentsExtractor,
+                    new TikaXSSFSheetXMLHandler(styles, comments, strings, sheetContentsHandler,
                             formatter, false));
             XMLReaderUtils.parseSAX(sheetInputStream, handler, parseContext);
             sheetInputStream.close();

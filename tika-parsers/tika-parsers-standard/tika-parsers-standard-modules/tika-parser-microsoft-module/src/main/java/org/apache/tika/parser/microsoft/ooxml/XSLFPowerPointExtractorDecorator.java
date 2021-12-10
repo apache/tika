@@ -31,7 +31,7 @@ import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.openxml4j.opc.PackagingURIHelper;
 import org.apache.poi.openxml4j.opc.TargetMode;
 import org.apache.poi.sl.usermodel.Placeholder;
-import org.apache.poi.xslf.extractor.XSLFPowerPointExtractor;
+import org.apache.poi.xslf.extractor.XSLFExtractor;
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
 import org.apache.poi.xslf.usermodel.XSLFComment;
 import org.apache.poi.xslf.usermodel.XSLFCommentAuthors;
@@ -74,26 +74,14 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
     private Metadata metadata;
 
     public XSLFPowerPointExtractorDecorator(Metadata metadata, ParseContext context,
-                                            XSLFPowerPointExtractor extractor) {
+                                            XSLFExtractor extractor) {
         super(context, extractor);
         this.metadata = metadata;
     }
 
-    /**
-     * use {@link XSLFPowerPointExtractorDecorator#XSLFPowerPointExtractorDecorator(Metadata,
-     * ParseContext, XSLFPowerPointExtractor)}
-     *
-     * @param context
-     * @param extractor
-     */
-    @Deprecated
-    public XSLFPowerPointExtractorDecorator(ParseContext context,
-                                            XSLFPowerPointExtractor extractor) {
-        this(new Metadata(), context, extractor);
-    }
 
     /**
-     * @see org.apache.poi.xslf.extractor.XSLFPowerPointExtractor#getText()
+     * @see org.apache.poi.xslf.extractor.XSLFExtractor#getText()
      */
     protected void buildXHTML(XHTMLContentHandler xhtml) throws SAXException, IOException {
         XMLSlideShow slideShow = (XMLSlideShow) extractor.getDocument();

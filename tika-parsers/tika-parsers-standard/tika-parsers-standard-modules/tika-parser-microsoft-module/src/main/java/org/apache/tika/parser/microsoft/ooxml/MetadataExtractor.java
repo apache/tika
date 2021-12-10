@@ -23,7 +23,6 @@ import java.util.Optional;
 import org.apache.poi.ooxml.POIXMLProperties;
 import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.opc.internal.PackagePropertiesPart;
-import org.apache.poi.openxml4j.util.Nullable;
 import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
 import org.apache.xmlbeans.impl.values.XmlValueOutOfRangeException;
 import org.openxmlformats.schemas.officeDocument.x2006.customProperties.CTProperty;
@@ -267,12 +266,6 @@ public class MetadataExtractor {
         } else {
             throw new IllegalArgumentException(
                     "Can't add property of class: " + optionalValue.getClass());
-        }
-    }
-
-    private void setProperty(Metadata metadata, String name, Nullable<?> value) {
-        if (value.getValue() != null) {
-            setProperty(metadata, name, value.getValue().toString());
         }
     }
 
