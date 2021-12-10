@@ -19,7 +19,7 @@
 -->
 
 <mock>
-    <metadata action="add" name="author">Nikolai Lobachevsky</metadata>
-    <write element="p">some content</write>
-    <system_exit />
+  <metadata action="add" name="author">Nikolai Lobachevsky</metadata>
+  <write element="p">some content</write>
+  <system_exit/>
 </mock>

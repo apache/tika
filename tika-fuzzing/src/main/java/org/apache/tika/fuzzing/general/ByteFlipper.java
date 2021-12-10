@@ -16,10 +16,6 @@
  */
 package org.apache.tika.fuzzing.general;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.tika.fuzzing.Transformer;
-import org.apache.tika.mime.MediaType;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -27,13 +23,17 @@ import java.util.Collections;
 import java.util.Random;
 import java.util.Set;
 
+import org.apache.commons.io.IOUtils;
+
+import org.apache.tika.fuzzing.Transformer;
+import org.apache.tika.mime.MediaType;
+
 public class ByteFlipper implements Transformer {
 
-    //TODO add something about protecting first x bytes?
-    private Random random = new Random();
-    private float percentCorrupt = 0.01f;
-
     static Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.OCTET_STREAM);
+    //TODO add something about protecting first x bytes?
+    private final Random random = new Random();
+    private float percentCorrupt = 0.01f;
 
     @Override
     public Set<MediaType> getSupportedTypes() {

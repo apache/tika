@@ -24,9 +24,11 @@ import org.junit.ClassRule;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.utility.DockerImageName;
 
-public class TikaPipesOpenSearchTest extends TikaPipesOpenSearchBase {
+import org.apache.tika.pipes.xsearch.tests.TikaPipesXSearchBase;
 
-    private static final String DOCKER_IMAGE_NAME = "opensearchproject/opensearch:1.1.0";
+public class TikaPipesOpenSearchTest extends TikaPipesXSearchBase {
+
+    private static final String DOCKER_IMAGE_NAME = "opensearchproject/opensearch:1.2.0";
 
     @ClassRule
     public static GenericContainer<?> OPEN_SEARCH_CONTAINER =
@@ -38,6 +40,6 @@ public class TikaPipesOpenSearchTest extends TikaPipesOpenSearchBase {
 
     @BeforeClass
     public static void setupTest() throws Exception {
-        setupOpenSearch(OPEN_SEARCH_CONTAINER, "https://");
+        setupXSearch(OPEN_SEARCH_CONTAINER, "https://");
     }
 }

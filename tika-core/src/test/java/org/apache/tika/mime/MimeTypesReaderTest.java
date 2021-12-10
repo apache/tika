@@ -305,7 +305,7 @@ public class MimeTypesReaderTest {
     @Test
     public void testMultiThreaded() throws Exception {
         MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes();
-        Executors.newSingleThreadExecutor().execute(() -> {
+        Executors.newFixedThreadPool(1).execute(() -> {
             try {
                 for (int i = 0; i < 500 && !stop; i++) {
                     mimeTypes.forName("abc" + i + "/abc");

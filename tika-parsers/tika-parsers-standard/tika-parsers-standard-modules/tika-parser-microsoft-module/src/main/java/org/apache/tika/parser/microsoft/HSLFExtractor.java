@@ -19,7 +19,9 @@ package org.apache.tika.parser.microsoft;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.poi.common.usermodel.Hyperlink;
@@ -44,6 +46,7 @@ import org.apache.poi.hslf.usermodel.HSLFTextParagraph;
 import org.apache.poi.hslf.usermodel.HSLFTextRun;
 import org.apache.poi.hslf.usermodel.HSLFTextShape;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
+import org.apache.poi.poifs.filesystem.FileMagic;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.sl.usermodel.Comment;
 import org.apache.poi.sl.usermodel.ShapeContainer;
@@ -59,12 +62,14 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.StringUtils;
 
 public class HSLFExtractor extends AbstractPOIFSExtractor {
 
     public HSLFExtractor(ParseContext context, Metadata metadata) {
         super(context, metadata);
     }
+    private final Set<Integer> processedEmbeddedObjects = new HashSet<>();
 
     // remove trailing paragraph break
     private static String removePBreak(String fragment) {
@@ -150,6 +155,8 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
             }
 
             handleSlideEmbeddedPictures(ss, xhtml);
+            handleShowEmbeddedResources(ss, xhtml);
+
             if (officeParserConfig.isExtractMacros()) {
                 extractMacros(ss, xhtml);
             }
@@ -158,6 +165,54 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
         }
         // All slides done
         xhtml.endElement("div");
+    }
+
+    /**
+     * This is the catch-all for embedded objects.  If we didn't come across
+     * them in the shapes in the slides, headers/footers, etc, try to
+     * extract them here.
+     **/
+    private void handleShowEmbeddedResources(HSLFSlideShow ss, XHTMLContentHandler xhtml)
+            throws SAXException {
+        
+        HSLFObjectData[] objectData = ss.getEmbeddedObjects();
+        int i = 0;
+        for (HSLFObjectData d : objectData) {
+            if (processedEmbeddedObjects.contains(d.getExOleObjStg().getPersistId())) {
+                continue;
+            }
+            String filename = d.getFileName();
+            if (StringUtils.isBlank(filename)) {
+                filename = "UNKNOWN-" + i;
+            }
+            try (TikaInputStream tis = TikaInputStream.get(d.getInputStream())) {
+                if (FileMagic.valueOf(tis) == FileMagic.OLE2) {
+                    try (POIFSFileSystem pfs = new POIFSFileSystem(tis)) {
+                        //coz ppts can have empty pfs...shrug...
+                        //we may need to add more stringent requirements
+                        if (pfs.getRoot().getEntryNames().size() < 1) {
+                            return;
+                        }
+                        handleEmbeddedOfficeDoc(pfs.getRoot(), filename, xhtml);
+                    }
+                } else {
+                    boolean shouldProcess = false;
+                    try {
+                        tis.mark(1);
+                        int b = tis.read();
+                        shouldProcess = b > -1;
+                    } finally {
+                        tis.reset();
+                    }
+                    if (shouldProcess) {
+                        handleEmbeddedResource(tis, filename, null, null, xhtml, true);
+                    }
+                }
+            } catch (IOException | TikaException e) {
+                EmbeddedDocumentUtil.recordException(e, parentMetadata);
+            }
+            i++;
+        }
     }
 
     private void handleComments(HSLFSlide slide, XHTMLContentHandler xhtml) throws SAXException {
@@ -469,7 +524,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
 
     private void handleSlideEmbeddedResources(ShapeContainer shapeContainer,
                                               XHTMLContentHandler xhtml)
-            throws TikaException, SAXException, IOException {
+            throws TikaException, SAXException {
         List<HSLFShape> shapes = getShapes(shapeContainer);
         if (shapes == null) {
             return;
@@ -478,6 +533,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
             //handle ActiveXShape, movie shape?
             if (shape instanceof HSLFObjectShape) {
                 HSLFObjectShape oleShape = (HSLFObjectShape) shape;
+
                 HSLFObjectData data = null;
                 try {
                     data = oleShape.getObjectData();
@@ -489,7 +545,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
 
                 if (data != null) {
                     String objID = Integer.toString(oleShape.getObjectID());
-
+                    processedEmbeddedObjects.add(data.getExOleObjStg().getPersistId());
                     // Embedded Object: add a <div
                     // class="embedded" id="X"/> so consumer can see where
                     // in the main text each embedded document

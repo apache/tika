@@ -120,7 +120,6 @@ abstract class AbstractPOIFSExtractor {
         try {
 
             if (filename != null) {
-                embeddedMetadata.set(Metadata.TIKA_MIME_FILE, filename);
                 embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
             }
             if (relationshipID != null) {
@@ -157,12 +156,14 @@ abstract class AbstractPOIFSExtractor {
                                            XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
 
+
         // Is it an embedded OLE2 document, or an embedded OOXML document?
+        //first try for ooxml
+        Entry ooxml = dir.hasEntry("Package") ? dir.getEntry("Package") :
+                (dir.hasEntry("package") ? dir.getEntry("package") : null);
 
-        if (dir.hasEntry("Package")) {
+        if (ooxml != null) {
             // It's OOXML (has a ZipFile):
-            Entry ooxml = dir.getEntry("Package");
-
             try (TikaInputStream stream = TikaInputStream
                     .get(new DocumentInputStream((DocumentEntry) ooxml))) {
                 Detector detector = new DefaultZipContainerDetector();
@@ -200,6 +201,8 @@ abstract class AbstractPOIFSExtractor {
                     if (ole.getLabel() != null) {
                         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
                                 rName + '/' + ole.getLabel());
+                    } else {
+                        metadata.add(TikaCoreProperties.RESOURCE_NAME_KEY, rName);
                     }
                     if (ole.getCommand() != null) {
                         metadata.add(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, ole.getCommand());

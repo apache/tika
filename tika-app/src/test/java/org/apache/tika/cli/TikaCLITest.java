@@ -328,7 +328,7 @@ public class TikaCLITest {
     @Test
     public void testExtractSimple() throws Exception {
         String[] expectedChildren =
-                new String[]{"MBD002B040A.cdx", "file4.png", "MBD002B0FA6_file5.bin",
+                new String[]{"MBD002B040A.cdx", "file4.png", "MBD002B0FA6.bin",
                         "MBD00262FE3.txt", "file0.emf"};
         testExtract("/coffee.xls", expectedChildren, 8);
     }

@@ -1,8 +1,19 @@
 Release 2.2.0 - ???
 
-   * Upgraded Apache POI to 5.1.0. NOTE: This results in an increase
+   * Upgrade to Apache POI 5.1.0. NOTE: This results in an increase
      of several orders of magnitude in logging. See http://xyz for an example
      of how to turn off logging for POI. (TIKA-3164).
+
+   * Fix logic bug in PipesServer that prevented concatenation of
+     content from attachments (TIKA-3609).
+
+   * Improve extraction of embedded files from MSOffice files created
+     by non-Microsoft tools (TIKA-3526).
+
+   * Added back ability to ignore load errors in TikaConfig (TIKA-3575).
+
+   * Make SecureContentHandler and other parameters configurable in
+     AutoDetectParser programmatically and via tika-config.xml (TIKA-3594).
 
    * Fix default logging in tika-app in batch mode (TIKA-3589).
 

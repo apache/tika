@@ -368,7 +368,7 @@ public class PipesClient implements Closeable {
                     throw new IllegalArgumentException("pipesClientId=" + pipesClientId +
                             ": PipesClient closed");
                 }
-                executorService = Executors.newSingleThreadExecutor();
+                executorService = Executors.newFixedThreadPool(1);
             }
             LOG.info("pipesClientId={}: restarting process", pipesClientId);
         } else {

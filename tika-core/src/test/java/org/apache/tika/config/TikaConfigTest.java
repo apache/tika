@@ -18,6 +18,7 @@ package org.apache.tika.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -40,6 +41,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeDetectionTest;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.AutoDetectParserConfig;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.EmptyParser;
@@ -360,6 +362,12 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
     }
 
     @Test
+    public void testXMLReaderUtilsUnspecifiedAttribute() throws Exception {
+        TikaConfig tikaConfig = getConfig("TIKA-3551-xmlreaderutils.xml");
+        assertEquals(XMLReaderUtils.DEFAULT_MAX_ENTITY_EXPANSIONS, XMLReaderUtils.getMaxEntityExpansions());
+    }
+
+    @Test
     public void testBadExclude() throws Exception {
         assertThrows(TikaConfigException.class, () -> {
             getConfig("TIKA-3268-bad-parser-exclude.xml");
@@ -374,5 +382,17 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
         TikaConfig tikaConfig =
                 new TikaConfig(TikaConfigTest.class.getResourceAsStream("mock-exclude.xml"));
         assertEquals(1, MockParser.getTimesInitiated());
+    }
+
+    @Test
+    public void testAutoDetectParserConfig() throws Exception {
+        TikaConfig tikaConfig =
+                new TikaConfig(TikaConfigTest.class.getResourceAsStream("TIKA-3594.xml"));
+        AutoDetectParserConfig config = tikaConfig.getAutoDetectParserConfig();
+        assertEquals(12345, config.getSpoolToDisk());
+        assertEquals(6789, config.getOutputThreshold());
+        assertNull(config.getMaximumCompressionRatio());
+        assertNull(config.getMaximumDepth());
+        assertNull(config.getMaximumPackageEntryDepth());
     }
 }

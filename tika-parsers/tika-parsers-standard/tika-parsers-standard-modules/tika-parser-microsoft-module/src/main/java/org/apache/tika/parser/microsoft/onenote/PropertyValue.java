@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.onenote;
 
 import java.io.IOException;
@@ -23,7 +24,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.exception.TikaMemoryLimitException;
+import org.apache.tika.exception.TikaException;
 
 class PropertyValue {
 
@@ -39,7 +40,7 @@ class PropertyValue {
     FileChunkReference rawData = new FileChunkReference(); // FourBytesOfLengthFollowedByData
 
     public void print(OneNoteDocument document, OneNotePtr pointer, int indentLevel)
-            throws IOException, TikaMemoryLimitException {
+            throws IOException, TikaException {
         boolean isRawText =
                 true; //std::string(get_property_id_name(propertyId.id)).find("TextE")!=-1;
 

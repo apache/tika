@@ -14,15 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import org.apache.commons.io.FileUtils;
-import org.apache.tika.fuzzing.cli.FuzzingCLI;
-import org.apache.tika.utils.ProcessUtils;
-import org.junit.Ignore;
-import org.junit.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import org.apache.commons.io.FileUtils;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import org.apache.tika.fuzzing.cli.FuzzingCLI;
+import org.apache.tika.utils.ProcessUtils;
 
 public class TestFuzzingCLI {
 
@@ -32,14 +34,10 @@ public class TestFuzzingCLI {
         //convert to actual unit test
         String inputDir = "";// fill in
         String outputDir = "";//fill in
-        String[] args = new String[] {
-                "-i", inputDir,
-                "-o", outputDir,
-                "-n", "8", // num threads
+        String[] args = new String[]{"-i", inputDir, "-o", outputDir, "-n", "8", // num threads
                 "-t", "1", //max transformers
                 "-p", "100", //per file iterations
-                "-r", "3"
-        };
+                "-r", "3"};
         FuzzingCLI.main(args);
     }
 
@@ -49,15 +47,14 @@ public class TestFuzzingCLI {
         //convert to actual unit test
         Path inputDir = Paths.get(getClass().getResource("/test-documents").toURI());
         Path outputDir = Files.createTempDirectory("tika-fuzzing-");
-        String[] args = new String[] {
-                "-i", ProcessUtils.escapeCommandLine(inputDir.toAbsolutePath().toString()),
-                "-o", ProcessUtils.escapeCommandLine(outputDir.toAbsolutePath().toString()),
-                "-n", "8", // num threads
+        String[] args = new String[]{"-i",
+                ProcessUtils.escapeCommandLine(inputDir.toAbsolutePath().toString()), "-o",
+                ProcessUtils.escapeCommandLine(outputDir.toAbsolutePath().toString()), "-n", "8",
+                // num threads
                 "-t", "0", //max transformers
                 "-p", "10", //per file iterations
                 "-m", "10000", //max ms per file
-                "-r", "3"
-        };
+                "-r", "3"};
         try {
             FuzzingCLI.main(args);
         } finally {

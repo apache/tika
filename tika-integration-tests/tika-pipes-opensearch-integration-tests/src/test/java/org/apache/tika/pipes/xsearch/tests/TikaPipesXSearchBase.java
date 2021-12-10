@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.opensearch.tests;
+package org.apache.tika.pipes.xsearch.tests;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -43,7 +43,7 @@ import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.opensearch.JsonResponse;
 import org.apache.tika.pipes.emitter.opensearch.OpenSearchEmitter;
 
-public class TikaPipesOpenSearchBase {
+public abstract class TikaPipesXSearchBase {
 
     private static final String TEST_INDEX = "tika-pipes-index";
     private static final File TEST_FILE_FOLDER = new File("target", "test-files");
@@ -52,7 +52,7 @@ public class TikaPipesOpenSearchBase {
     private static int OPEN_SEARCH_PORT;
     //this includes only the base, not the collection, e.g. https://localhost:49213
     private static String OPEN_SEARCH_ENDPOINT_BASE;
-    private static OpenSearchTestClient client;
+    private static XSearchTestClient client;
 
 
     @After
@@ -217,7 +217,7 @@ public class TikaPipesOpenSearchBase {
 
     private void sendMappings(String endpoint, String index, String mappingsFile) throws Exception {
         //create the collection with mappings
-        String mappings = IOUtils.toString(TikaPipesOpenSearchBase.class.getResourceAsStream(
+        String mappings = IOUtils.toString(TikaPipesXSearchBase.class.getResourceAsStream(
                 "/opensearch/" + mappingsFile), StandardCharsets.UTF_8);
         int status = -1;
         int tries = 0;
@@ -244,12 +244,12 @@ public class TikaPipesOpenSearchBase {
 
         File tikaConfigFile = new File("target", "ta-opensearch.xml");
         File log4jPropFile = new File("target", "tmp-log4j2.xml");
-        try (InputStream is = TikaPipesOpenSearchBase.class
+        try (InputStream is = TikaPipesXSearchBase.class
                 .getResourceAsStream("/pipes-fork-server-custom-log4j2.xml")) {
             FileUtils.copyInputStreamToFile(is, log4jPropFile);
         }
         String tikaConfigTemplateXml;
-        try (InputStream is = TikaPipesOpenSearchBase.class
+        try (InputStream is = TikaPipesXSearchBase.class
                 .getResourceAsStream("/opensearch/tika-config-opensearch.xml")) {
             tikaConfigTemplateXml = IOUtils.toString(is, StandardCharsets.UTF_8);
         }
@@ -284,7 +284,7 @@ public class TikaPipesOpenSearchBase {
 
     }
 
-    public static void setupOpenSearch(GenericContainer<?> openSearchContainer, String protocol) throws Exception {
+    public static void setupXSearch(GenericContainer<?> openSearchContainer, String protocol) throws Exception {
         OPEN_SEARCH_HOST = openSearchContainer.getHost();
         OPEN_SEARCH_PORT = openSearchContainer.getMappedPort(9200);
         OPEN_SEARCH_ENDPOINT_BASE = protocol + OPEN_SEARCH_HOST + ":" + OPEN_SEARCH_PORT + "/";
@@ -292,7 +292,7 @@ public class TikaPipesOpenSearchBase {
         httpClientFactory.setUserName("admin");
         httpClientFactory.setPassword("admin");
         //attachment strategy is not used here...TODO clean this up
-        client = new OpenSearchTestClient(OPEN_SEARCH_ENDPOINT_BASE,
+        client = new XSearchTestClient(OPEN_SEARCH_ENDPOINT_BASE,
                 httpClientFactory.build(),
                 OpenSearchEmitter.AttachmentStrategy.SEPARATE_DOCUMENTS,
                 OpenSearchEmitter.DEFAULT_EMBEDDED_FILE_FIELD_NAME);
@@ -305,7 +305,7 @@ public class TikaPipesOpenSearchBase {
                     "<html><body>" + bodyContent +  "</body></html>", StandardCharsets.UTF_8);
         }
         File testDocuments =
-                Paths.get(TikaPipesOpenSearchBase.class.getResource("/test-documents").toURI()).toFile();
+                Paths.get(TikaPipesXSearchBase.class.getResource("/test-documents").toURI()).toFile();
         for (File f : testDocuments.listFiles()) {
             Path targ = TEST_FILE_FOLDER.toPath().resolve(f.getName());
             Files.copy(f.toPath(), targ);

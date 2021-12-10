@@ -283,15 +283,23 @@ public class OPCPackageDetector implements ZipContainerDetector {
                 detectContext.set(OOXMLHintCounter.class, cnt);
             }
             cnt.increment();
-            if (cnt.getCount() > 2) {
+            //we used to short-circuit, but ooxml files that are
+            //not created by actual microsoft products do not tend to
+            //put [Content_Types.xml] as the first physical entry in the zip file
+            //so we need to read through the full file
+            /*if (cnt.getCount() > 2) {
                 return TIKA_OOXML;
-            }
+            }*/
         }
         return null;
     }
 
     @Override
     public MediaType streamingDetectFinal(StreamingDetectContext detectContext) {
+        OOXMLHintCounter cnt = detectContext.get(OOXMLHintCounter.class);
+        if (cnt != null && cnt.getCount() > 2) {
+            return TIKA_OOXML;
+        }
         return null;
     }
 

@@ -16,13 +16,13 @@
  */
 package org.apache.tika.fuzzing;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.mime.MediaType;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Set;
+
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.mime.MediaType;
 
 public interface Transformer {
 
@@ -30,8 +30,8 @@ public interface Transformer {
      * Returns the set of media types supported by this parser when used
      * with the given parse context.
      *
-     * @since Apache Tika 1.24.1
      * @return immutable set of media types
+     * @since Apache Tika 1.24.1
      */
     Set<MediaType> getSupportedTypes();
 

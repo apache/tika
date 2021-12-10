@@ -238,6 +238,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                 return;
             }
         }
+
         URI sourceURI = rel.getSourceURI();
         String sourceDesc;
         if (sourceURI != null) {
@@ -265,16 +266,22 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         if (POIXMLDocument.OLE_OBJECT_REL_TYPE.equals(type) &&
                 TYPE_OLE_OBJECT.equals(target.getContentType())) {
             handleEmbeddedOLE(target, handler, sourceDesc + rel.getId(), parentMetadata);
-            handledTarget.add(targetURI.toString());
+            if (targetURI != null) {
+                handledTarget.add(targetURI.toString());
+            }
         } else if (RELATION_MEDIA.equals(type) || RELATION_VIDEO.equals(type) ||
                 RELATION_AUDIO.equals(type) || PackageRelationshipTypes.IMAGE_PART.equals(type) ||
                 POIXMLDocument.PACK_OBJECT_REL_TYPE.equals(type) ||
                 POIXMLDocument.OLE_OBJECT_REL_TYPE.equals(type)) {
             handleEmbeddedFile(target, handler, sourceDesc + rel.getId());
-            handledTarget.add(targetURI.toString());
+            if (targetURI != null) {
+                handledTarget.add(targetURI.toString());
+            }
         } else if (XSSFRelation.VBA_MACROS.getRelation().equals(type)) {
             handleMacros(target, handler);
-            handledTarget.add(targetURI.toString());
+            if (targetURI != null) {
+                handledTarget.add(targetURI.toString());
+            }
         }
     }
 
@@ -307,21 +314,13 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             DirectoryNode root = fs.getRoot();
             POIFSDocumentType type = POIFSDocumentType.detectType(root);
 
-            if (root.hasEntry("\u0001Ole") && root.hasEntry("\u0001CompObj") &&
-                    (root.hasEntry("CONTENTS") || root.hasEntry("Package"))) {
+            String packageEntryName = getPackageEntryName(root);
+            if (packageEntryName != null) {
                 // TIKA-704: OLE 2.0 embedded non-Office document?
                 //TODO: figure out if the equivalent of OLE 1.0's
                 //getCommand() and getFileName() exist for OLE 2.0 to populate
                 //TikaCoreProperties.ORIGINAL_RESOURCE_NAME
-                if (root.hasEntry("CONTENTS")) {
-                    stream = TikaInputStream.get(fs.createDocumentInputStream("CONTENTS"));
-                } else if (root.hasEntry("Package")) {
-                    //TIKA-2588
-                    stream = TikaInputStream.get(fs.createDocumentInputStream("Package"));
-                } else {
-                    throw new IllegalStateException(
-                            "Shouldn't ever arrive here; please open a ticket on our jira");
-                }
+                stream = TikaInputStream.get(fs.createDocumentInputStream(packageEntryName));
                 if (embeddedExtractor.shouldParseEmbedded(metadata)) {
                     embeddedExtractor
                             .parseEmbedded(stream, new EmbeddedContentHandler(handler), metadata,
@@ -366,6 +365,23 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                 stream.close();
             }
         }
+    }
+
+    private String getPackageEntryName(DirectoryNode root) {
+        if (root.hasEntry("\u0001Ole")) {
+            //we used to require this too: root.hasEntry("\u0001CompObj") before TIKA-3526
+            if (root.hasEntry("Package")) {
+                return "Package";
+            } else if (root.hasEntry("CONTENTS")) {
+                return "CONTENTS";
+            } else if (root.hasEntry("package")) {
+                return "package";
+            }
+        }
+        if (root.hasEntry("package")) {
+            return "package";
+        }
+        return null;
     }
 
     /**

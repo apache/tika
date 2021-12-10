@@ -42,9 +42,9 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * The <code>Mp3Parser</code> is used to parse ID3 Version 1 Tag information
  * from an MP3 file, if available.
  *
- * @see <a href="http://www.id3.org/ID3v1">MP3 ID3 Version 1 specification</a>
- * @see <a href="http://www.id3.org/id3v2.4.0-structure">MP3 ID3 Version 2.4 Structure Specification</a>
- * @see <a href="http://www.id3.org/id3v2.4.0-frames">MP3 ID3 Version 2.4 Frames Specification</a>
+ * @see <a href="https://id3.org/ID3v1">MP3 ID3 Version 1 specification</a>
+ * @see <a href="https://id3.org/id3v2.4.0-structure">MP3 ID3 Version 2.4 Structure Specification</a>
+ * @see <a href="https://id3.org/id3v2.4.0-frames">MP3 ID3 Version 2.4 Frames Specification</a>
  */
 public class Mp3Parser extends AbstractParser {
 

@@ -16,10 +16,6 @@
  */
 package org.apache.tika.fuzzing.general;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.tika.fuzzing.Transformer;
-import org.apache.tika.mime.MediaType;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -28,11 +24,16 @@ import java.util.Collections;
 import java.util.Random;
 import java.util.Set;
 
+import org.apache.commons.io.IOUtils;
+
+import org.apache.tika.fuzzing.Transformer;
+import org.apache.tika.mime.MediaType;
+
 public class ByteInjector implements Transformer {
+    static Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.OCTET_STREAM);
     Random random = new Random();
     float injectionFrequency = 0.01f;
     int maxSpan = 100;
-    static Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.OCTET_STREAM);
 
     @Override
     public Set<MediaType> getSupportedTypes() {
@@ -43,7 +44,7 @@ public class ByteInjector implements Transformer {
     public void transform(InputStream is, OutputStream os) throws IOException {
         //TODO -- don't load the full thing into memory
         byte[] input = IOUtils.toByteArray(is);
-        int numInjections = (int) Math.floor((double)injectionFrequency*(double)input.length);
+        int numInjections = (int) Math.floor((double) injectionFrequency * (double) input.length);
         //at least one injection
         numInjections = numInjections == 0 ? 1 : numInjections;
         int[] starts = new int[numInjections];

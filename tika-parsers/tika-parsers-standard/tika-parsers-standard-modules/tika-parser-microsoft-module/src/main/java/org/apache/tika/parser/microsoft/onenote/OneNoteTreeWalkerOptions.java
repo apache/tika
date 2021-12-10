@@ -17,6 +17,7 @@
 package org.apache.tika.parser.microsoft.onenote;
 
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -24,7 +25,7 @@ import java.util.Set;
 /**
  * Options when walking the one note tree.
  */
-class OneNoteTreeWalkerOptions {
+public class OneNoteTreeWalkerOptions implements Serializable {
     private boolean crawlAllFileNodesFromRoot = true;
     private boolean onlyLatestRevision = true;
     private Set<OneNotePropertyEnum> utf16PropertiesToPrint = new HashSet<>(
@@ -79,7 +80,7 @@ class OneNoteTreeWalkerOptions {
      * Print file node data in UTF-16 format when they match these props.
      *
      * @param utf16PropertiesToPrint The set of UTF properties you want to print UTF-16 for.
-     *         Defaults are usually ok here.
+     *                               Defaults are usually ok here.
      * @return Returns this, as per builder pattern.
      */
     public OneNoteTreeWalkerOptions setUtf16PropertiesToPrint(

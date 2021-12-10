@@ -16,10 +16,6 @@
  */
 package org.apache.tika.fuzzing.general;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.tika.fuzzing.Transformer;
-import org.apache.tika.mime.MediaType;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -27,17 +23,20 @@ import java.util.Collections;
 import java.util.Random;
 import java.util.Set;
 
+import org.apache.commons.io.IOUtils;
+
+import org.apache.tika.fuzzing.Transformer;
+import org.apache.tika.mime.MediaType;
+
 /**
  * randomly swaps spans from the input
- *
  */
 public class SpanSwapper implements Transformer {
 
-    Random random = new Random();
-    private float swapProbability = 0.01f;
-    int maxSpanLength = 10000;
-
     static Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.OCTET_STREAM);
+    Random random = new Random();
+    int maxSpanLength = 10000;
+    private final float swapProbability = 0.01f;
 
     @Override
     public Set<MediaType> getSupportedTypes() {
@@ -47,7 +46,7 @@ public class SpanSwapper implements Transformer {
     @Override
     public void transform(InputStream is, OutputStream os) throws IOException {
         byte[] input = IOUtils.toByteArray(is);
-        int numSwaps = (int) Math.floor(swapProbability*input.length);
+        int numSwaps = (int) Math.floor(swapProbability * input.length);
         //at least one swap
         numSwaps = numSwaps == 0 ? 1 : numSwaps;
         byte[] ret = new byte[input.length];
@@ -68,8 +67,7 @@ public class SpanSwapper implements Transformer {
 
         int len = random.nextInt(maxSpanLength);
         int maxStart = Math.max(srcStart, targStart);
-        len = (len+maxStart < ret.length) ? len :
-                ret.length-maxStart;
+        len = (len + maxStart < ret.length) ? len : ret.length - maxStart;
 
         byte[] landingBytes = new byte[len];
         //copy the landing zone

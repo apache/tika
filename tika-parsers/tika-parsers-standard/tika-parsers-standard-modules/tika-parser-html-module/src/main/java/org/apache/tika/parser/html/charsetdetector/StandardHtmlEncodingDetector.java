@@ -41,13 +41,13 @@ import org.apache.tika.mime.MediaType;
  * charset information.
  * <p>
  * This encoding detector may return null if no encoding is detected.
- * It is meant to be used inside a {@link org.apache.tika.detect.CompositeDetector}.
+ * It is meant to be used inside a {@link org.apache.tika.detect.CompositeEncodingDetector}.
  * For instance:
  * <pre> {@code
- *     EncodingDetector detector = new CompositeDetector(
+ *     EncodingDetector detector = new CompositeEncodingDetector(
+ *       Arrays.asList(
  *         new StandardHtmlEncodingDetector(),
- *         new Icu4jEncodingDetector()
- *     );
+ *         new Icu4jEncodingDetector()));
  * }</pre>
  * <p>
  */

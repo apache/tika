@@ -14,7 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.onenote;
+
+import org.apache.tika.exception.TikaException;
 
 /**
  * The JCID structure specifies the type of object and the type of data the object contains.
@@ -69,7 +72,7 @@ class JCID {
                 !isBinary && !isGraphNode && !isFileData && !isReadOnly && index > 0;
     }
 
-    public void loadFrom32BitIndex(long fullIndex) {
+    public void loadFrom32BitIndex(long fullIndex) throws TikaException {
         jcid = fullIndex;
         index = fullIndex & 0xffff;
         isBinary = ((fullIndex >> 16) & 1) == 1;
@@ -78,7 +81,7 @@ class JCID {
         isFileData = ((fullIndex >> 19) & 1) == 1;
         isReadOnly = ((fullIndex >> 20) & 1) == 1;
         if ((fullIndex >> 21) != 0) {
-            throw new RuntimeException("RESERVED_NONZERO");
+            throw new TikaException("RESERVED_NONZERO");
         }
     }
 

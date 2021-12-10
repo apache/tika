@@ -14,9 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import org.apache.tika.fuzzing.general.GeneralTransformer;
-import org.junit.Ignore;
-import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -24,6 +21,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+
+import org.junit.Ignore;
+import org.junit.Test;
+
+import org.apache.tika.fuzzing.general.GeneralTransformer;
 
 public class TestTransformer {
 
@@ -38,8 +40,7 @@ public class TestTransformer {
 
         for (int i = 0; i < 100; i++) {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            transformer.transform(
-                    new ByteArrayInputStream(bytes), bos);
+            transformer.transform(new ByteArrayInputStream(bytes), bos);
 
             if (Arrays.equals(bos.toByteArray(), bytes)) {
                 System.out.println("SAME");

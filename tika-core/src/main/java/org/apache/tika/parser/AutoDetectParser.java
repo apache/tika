@@ -52,6 +52,12 @@ public class AutoDetectParser extends CompositeParser {
     private Detector detector; // always set in the constructor
 
     /**
+     * Configuration used when initializing a SecureContentHandler
+     * and the TikaInputStream.
+     */
+    private AutoDetectParserConfig autoDetectParserConfig;
+
+    /**
      * Creates an auto-detecting parser instance using the default Tika
      * configuration.
      */
@@ -79,11 +85,13 @@ public class AutoDetectParser extends CompositeParser {
     public AutoDetectParser(Detector detector, Parser... parsers) {
         super(MediaTypeRegistry.getDefaultRegistry(), parsers);
         setDetector(detector);
+        setAutoDetectParserConfig(AutoDetectParserConfig.DEFAULT);
     }
 
     public AutoDetectParser(TikaConfig config) {
         super(config.getMediaTypeRegistry(), config.getParser());
         setDetector(config.getDetector());
+        setAutoDetectParserConfig(config.getAutoDetectParserConfig());
     }
 
     /**
@@ -108,12 +116,38 @@ public class AutoDetectParser extends CompositeParser {
         this.detector = detector;
     }
 
+    /**
+     * Sets the configuration that will be used to create SecureContentHandlers
+     * that will be used for parsing.
+     *
+     * @param autoDetectParserConfig type SecureContentHandlerConfig
+     * @since Apache Tika 2.1.1
+     */
+    public void setAutoDetectParserConfig(AutoDetectParserConfig autoDetectParserConfig) {
+        this.autoDetectParserConfig = autoDetectParserConfig;
+    }
+
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         TemporaryResources tmp = new TemporaryResources();
         try {
             TikaInputStream tis = TikaInputStream.get(stream, tmp);
-
+            //figure out if we should spool to disk
+            if (! tis.hasFile() && //if there's already a file, stop now
+                    autoDetectParserConfig.getSpoolToDisk() != null && //if this is not
+                    // configured, stop now
+                    autoDetectParserConfig.getSpoolToDisk() > -1 &&
+                    metadata.get(Metadata.CONTENT_LENGTH) != null) {
+                long len = -1l;
+                try {
+                    len = Long.parseLong(metadata.get(Metadata.CONTENT_LENGTH));
+                    if (len > autoDetectParserConfig.getSpoolToDisk()) {
+                        tis.getPath();
+                    }
+                } catch (NumberFormatException e) {
+                    //swallow...maybe log?
+                }
+            }
             // Automatically detect the MIME type of the document
             MediaType type = detector.detect(tis, metadata);
             //update CONTENT_TYPE as long as it wasn't set by parser override
@@ -132,7 +166,8 @@ public class AutoDetectParser extends CompositeParser {
             }
             // TIKA-216: Zip bomb prevention
             SecureContentHandler sch =
-                    handler != null ? new SecureContentHandler(handler, tis) : null;
+                    handler != null ?
+                        createSecureContentHandler(handler, tis, autoDetectParserConfig) : null;
 
             //pass self to handle embedded documents if
             //the caller hasn't specified one.
@@ -163,6 +198,31 @@ public class AutoDetectParser extends CompositeParser {
         ParseContext context = new ParseContext();
         context.set(Parser.class, this);
         parse(stream, handler, metadata, context);
+    }
+
+    private SecureContentHandler createSecureContentHandler(ContentHandler handler, TikaInputStream tis,
+                                                            AutoDetectParserConfig config) {
+        SecureContentHandler sch = new SecureContentHandler(handler, tis);
+        if (config == null) {
+            return sch;
+        }
+
+        if (config.getOutputThreshold() != null) {
+            sch.setOutputThreshold(config.getOutputThreshold());
+        }
+
+        if (config.getMaximumCompressionRatio() != null) {
+            sch.setMaximumCompressionRatio(config.getMaximumCompressionRatio());
+        }
+
+        if (config.getMaximumDepth() != null) {
+            sch.setMaximumDepth(config.getMaximumDepth());
+        }
+
+        if (config.getMaximumPackageEntryDepth() != null) {
+            sch.setMaximumPackageEntryDepth(config.getMaximumPackageEntryDepth());
+        }
+        return sch;
     }
 
 }

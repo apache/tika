@@ -25,8 +25,7 @@ import org.junit.Ignore;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.utility.DockerImageName;
 
-import org.apache.tika.pipes.opensearch.tests.TikaPipesOpenSearchBase;
-import org.apache.tika.pipes.opensearch.tests.TikaPipesOpenSearchTest;
+import org.apache.tika.pipes.xsearch.tests.TikaPipesXSearchBase;
 
 /**
  * This is used only for devtesting to figure out when the OpenSearch
@@ -34,7 +33,7 @@ import org.apache.tika.pipes.opensearch.tests.TikaPipesOpenSearchTest;
  * &gt; 7.10.x in our unit tests because those versions are not ASL 2.0
  */
 @Ignore
-public class TikaPipesES7Test extends TikaPipesOpenSearchBase {
+public class TikaPipesES7Test extends TikaPipesXSearchBase {
 
     // versions > 7.10.x are no longer ASL 2.0. We should not
     // test with non-ASL 2.0 dependencies
@@ -42,7 +41,7 @@ public class TikaPipesES7Test extends TikaPipesOpenSearchBase {
             ".co/elasticsearch/elasticsearch:7.10.2";
 
     @ClassRule
-    public static GenericContainer<?> OPEN_SEARCH_CONTAINER =
+    public static GenericContainer<?> ELASTIC_SEARCH_CONTAINER =
             new GenericContainer<>(DockerImageName.parse(DOCKER_IMAGE_NAME))
                     .withExposedPorts(9200)
                     .withStartupTimeout(Duration.of(180, ChronoUnit.SECONDS))
@@ -50,6 +49,6 @@ public class TikaPipesES7Test extends TikaPipesOpenSearchBase {
 
     @BeforeClass
     public static void setupTest() throws Exception {
-        setupOpenSearch(OPEN_SEARCH_CONTAINER, "http://");
+        setupXSearch(ELASTIC_SEARCH_CONTAINER, "http://");
     }
 }

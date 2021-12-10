@@ -45,7 +45,6 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         ContainerExtractor extractor = new ParserContainerExtractor();
         TikaTest.TrackingHandler handler;
 
-
         // Excel with a word doc and a powerpoint doc, both of which have images in them
         // Without recursion, should see both documents + the images
         handler = process("testEXCEL_embeded.xls", extractor, false);

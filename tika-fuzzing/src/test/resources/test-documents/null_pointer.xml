@@ -19,7 +19,7 @@
 -->
 
 <mock>
-    <metadata action="add" name="author">Nikolai Lobachevsky</metadata>
-    <write element="p">some content</write>
-    <throw class="java.lang.NullPointerException">another null pointer exception</throw>
+  <metadata action="add" name="author">Nikolai Lobachevsky</metadata>
+  <write element="p">some content</write>
+  <throw class="java.lang.NullPointerException">another null pointer exception</throw>
 </mock>
