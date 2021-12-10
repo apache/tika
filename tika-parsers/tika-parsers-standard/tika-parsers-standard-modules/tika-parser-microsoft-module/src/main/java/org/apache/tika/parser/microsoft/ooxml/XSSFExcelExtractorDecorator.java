@@ -43,7 +43,6 @@ import org.apache.poi.ss.usermodel.HeaderFooter;
 import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.eventusermodel.ReadOnlySharedStringsTable;
 import org.apache.poi.xssf.eventusermodel.XSSFReader;
-import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler;
 import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler.SheetContentsHandler;
 import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
 import org.apache.poi.xssf.model.Comments;
@@ -344,13 +343,13 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
 
     }
 
-    public void processSheet(SheetContentsHandler sheetContentsExtractor, Comments comments,
+    public void processSheet(SheetContentsHandler sheetContentsHandler, Comments comments,
                              StylesTable styles, ReadOnlySharedStringsTable strings,
                              InputStream sheetInputStream) throws IOException, SAXException {
         try {
 
             XSSFSheetInterestingPartsCapturer handler = new XSSFSheetInterestingPartsCapturer(
-                    new XSSFSheetXMLHandler(styles, comments, strings, sheetContentsExtractor,
+                    new TikaXSSFSheetXMLHandler(styles, comments, strings, sheetContentsHandler,
                             formatter, false));
             XMLReaderUtils.parseSAX(sheetInputStream, handler, parseContext);
             sheetInputStream.close();

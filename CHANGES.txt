@@ -1,4 +1,8 @@
-Release 2.1.1 - ???
+Release 2.2.0 - ???
+
+   * Upgraded Apache POI to 5.1.0. NOTE: This results in an increase
+     of several orders of magnitude in logging. See http://xyz for an example
+     of how to turn off logging for POI. (TIKA-3164).
 
    * Fix default logging in tika-app in batch mode (TIKA-3589).
 

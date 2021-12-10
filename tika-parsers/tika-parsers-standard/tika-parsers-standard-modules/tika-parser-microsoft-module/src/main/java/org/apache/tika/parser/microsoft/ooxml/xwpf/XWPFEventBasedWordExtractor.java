@@ -34,7 +34,6 @@ import org.apache.poi.ooxml.util.SAXHelper;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
-import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationship;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
@@ -66,28 +65,10 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
     private OPCPackage container;
     private POIXMLProperties properties;
 
-    public XWPFEventBasedWordExtractor(String path)
-            throws XmlException, OpenXML4JException, IOException {
-        this(OPCPackage.open(path, PackageAccess.READ));
-    }
-
     public XWPFEventBasedWordExtractor(OPCPackage container)
             throws XmlException, OpenXML4JException, IOException {
         this.container = container;
         this.properties = new POIXMLProperties(container);
-    }
-
-
-    public static void main(String[] args) throws Exception {
-        if (args.length < 1) {
-            System.err.println("Use:");
-            System.err.println("  XWPFEventBasedWordExtractor <filename.xlsx>");
-            System.exit(1);
-        }
-
-        XWPFEventBasedWordExtractor extractor = new XWPFEventBasedWordExtractor(args[0]);
-        System.out.println(extractor.getText());
-        extractor.close();
     }
 
     public OPCPackage getPackage() {
