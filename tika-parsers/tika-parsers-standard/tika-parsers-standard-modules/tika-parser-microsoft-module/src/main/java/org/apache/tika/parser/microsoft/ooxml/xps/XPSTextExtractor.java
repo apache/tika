@@ -18,7 +18,6 @@
 package org.apache.tika.parser.microsoft.ooxml.xps;
 
 
-import java.io.Closeable;
 import java.io.IOException;
 
 import org.apache.poi.ooxml.POIXMLDocument;
@@ -33,15 +32,15 @@ import org.apache.xmlbeans.XmlException;
  * and keep the general framework similar to our other POI-integrated
  * extractors.
  */
-public class XPSTextExtractor implements POIXMLTextExtractor {
+public class XPSTextExtractor extends POIXMLTextExtractor {
 
     private final OPCPackage pkg;
     private final POIXMLProperties properties;
 
     public XPSTextExtractor(OPCPackage pkg) throws OpenXML4JException, XmlException, IOException {
+        super((POIXMLDocument)null);
         this.pkg = pkg;
         this.properties = new POIXMLProperties(pkg);
-
     }
 
     @Override
@@ -54,20 +53,6 @@ public class XPSTextExtractor implements POIXMLTextExtractor {
         return null;
     }
 
-    @Override
-    public void setCloseFilesystem(boolean b) {
-
-    }
-
-    @Override
-    public boolean isCloseFilesystem() {
-        return false;
-    }
-
-    @Override
-    public Closeable getFilesystem() {
-        return null;
-    }
 
     public POIXMLProperties.CoreProperties getCoreProperties() {
         return this.properties.getCoreProperties();
@@ -81,8 +66,4 @@ public class XPSTextExtractor implements POIXMLTextExtractor {
         return this.properties.getCustomProperties();
     }
 
-    @Override
-    public POIXMLDocument getDocument() {
-        return null;
-    }
 }

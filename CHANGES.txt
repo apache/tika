@@ -1,9 +1,5 @@
 Release 2.2.0 - ???
 
-   * Upgrade to Apache POI 5.1.0. NOTE: This results in an increase
-     of several orders of magnitude in logging. See https://s.apache.org/3gk46
-     for an example of how to turn off logging for POI. (TIKA-3164).
-
    * Fix logic bug in PipesServer that prevented concatenation of
      content from attachments (TIKA-3609).
 

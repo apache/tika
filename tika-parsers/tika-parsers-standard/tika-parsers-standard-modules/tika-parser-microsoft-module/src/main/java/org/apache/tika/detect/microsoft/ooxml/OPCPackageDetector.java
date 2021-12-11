@@ -51,7 +51,6 @@ import org.apache.tika.detect.zip.ZipContainerDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.microsoft.ooxml.OPCPackageWrapper;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.StoppingEarlyException;
 import org.apache.tika.utils.XMLReaderUtils;
@@ -260,7 +259,7 @@ public class OPCPackageDetector implements ZipContainerDetector {
         }
         ((CloseShieldZipFileZipEntrySource)zipEntrySource).allowClose();
         //only set the open container if we made it here
-        stream.setOpenContainer(new OPCPackageWrapper(pkg));
+        stream.setOpenContainer(pkg);
         return type;
     }
 

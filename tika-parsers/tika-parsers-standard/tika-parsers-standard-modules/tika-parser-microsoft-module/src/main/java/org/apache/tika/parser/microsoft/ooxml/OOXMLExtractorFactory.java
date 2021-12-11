@@ -25,7 +25,7 @@ import java.util.Locale;
 import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.poi.ooxml.POIXMLDocument;
-import org.apache.poi.ooxml.extractor.POIXMLExtractorFactory;
+import org.apache.poi.ooxml.extractor.ExtractorFactory;
 import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.exceptions.InvalidOperationException;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
@@ -34,9 +34,10 @@ import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.util.LocaleUtil;
-import org.apache.poi.xslf.extractor.XSLFExtractor;
+import org.apache.poi.xslf.extractor.XSLFPowerPointExtractor;
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
 import org.apache.poi.xslf.usermodel.XSLFRelation;
+import org.apache.poi.xslf.usermodel.XSLFSlideShow;
 import org.apache.poi.xssf.extractor.XSSFBEventBasedExcelExtractor;
 import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
@@ -73,7 +74,6 @@ public class OOXMLExtractorFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(OOXMLExtractorFactory.class);
     private static final int MAX_BUFFER_LENGTH = 1000000;
-    private static POIXMLExtractorFactory EXTRACTOR_FACTORY = new POIXMLExtractorFactory();
 
     //TODO find what happened to SUPPORTED_TYPES
     private static XSLFRelation[] XSLF_RELATIONS = new XSLFRelation[] {
@@ -81,8 +81,9 @@ public class OOXMLExtractorFactory {
             XSLFRelation.PRESENTATIONML,
             XSLFRelation.PRESENTATIONML_TEMPLATE, XSLFRelation.PRESENTATION_MACRO
     };
+
     static {
-        POIXMLExtractorFactory.setAllThreadsPreferEventExtractors(true);
+        ExtractorFactory.setThreadPrefersEventExtractors(true);
     }
 
     public static void parse(InputStream stream, ContentHandler baseHandler, Metadata metadata,
@@ -99,8 +100,8 @@ public class OOXMLExtractorFactory {
 
             // Locate or Open the OPCPackage for the file
             TikaInputStream tis = TikaInputStream.cast(stream);
-            if (tis != null && tis.getOpenContainer() instanceof OPCPackageWrapper) {
-                pkg = ((OPCPackageWrapper) tis.getOpenContainer()).getOPCPackage();
+            if (tis != null && tis.getOpenContainer() instanceof OPCPackage) {
+                pkg = (OPCPackage) tis.getOpenContainer();
             } else if (tis != null && tis.hasFile()) {
                 try {
                     pkg = OPCPackage.open(tis.getFile().getPath(), PackageAccess.READ);
@@ -109,7 +110,7 @@ public class OOXMLExtractorFactory {
                     ZipSalvager.salvageCopy(tis.getFile(), tmpRepairedCopy);
                     pkg = OPCPackage.open(tmpRepairedCopy, PackageAccess.READ);
                 }
-                tis.setOpenContainer(new OPCPackageWrapper(pkg));
+                tis.setOpenContainer(pkg);
             } else {
                 //OPCPackage slurps rris into memory so we can close rris
                 //without apparent problems
@@ -195,7 +196,7 @@ public class OOXMLExtractorFactory {
             }
 
             if (poiExtractor == null) {
-                poiExtractor = EXTRACTOR_FACTORY.create(pkg);
+                poiExtractor = (POIXMLTextExtractor) ExtractorFactory.createExtractor(pkg);
             }
 
             POIXMLDocument document = poiExtractor.getDocument();
@@ -222,7 +223,7 @@ public class OOXMLExtractorFactory {
                                 "The extractor returned was a " + poiExtractor);
             } else if (document instanceof XMLSlideShow) {
                 extractor = new XSLFPowerPointExtractorDecorator(metadata, context,
-                        (org.apache.poi.xslf.extractor.XSLFExtractor) poiExtractor);
+                        (org.apache.poi.xslf.extractor.XSLFPowerPointExtractor) poiExtractor);
             } else if (document instanceof XWPFDocument) {
                 extractor = new XWPFWordExtractorDecorator(metadata, context,
                         (XWPFWordExtractor) poiExtractor);
@@ -252,7 +253,7 @@ public class OOXMLExtractorFactory {
         } finally {
             if (tmpRepairedCopy != null) {
                 if (pkg != null) {
-                    pkg.revert();
+                    pkg.close();
                 }
                 boolean deleted = tmpRepairedCopy.delete();
                 if (!deleted) {
@@ -313,7 +314,7 @@ public class OOXMLExtractorFactory {
                 if (eventBased) {
                     return new XSLFEventBasedPowerPointExtractor(pkg);
                 } else {
-                    return new XSLFExtractor(new XMLSlideShow(pkg));
+                    return new XSLFPowerPointExtractor(new XSLFSlideShow(pkg));
                 }
             }
         }
@@ -322,7 +323,7 @@ public class OOXMLExtractorFactory {
             if (eventBased) {
                 return new XSLFEventBasedPowerPointExtractor(pkg);
             } else {
-                return new XSLFExtractor(new XMLSlideShow(pkg));
+                return new XSLFPowerPointExtractor(new XMLSlideShow(pkg));
             }
         }
         return null;

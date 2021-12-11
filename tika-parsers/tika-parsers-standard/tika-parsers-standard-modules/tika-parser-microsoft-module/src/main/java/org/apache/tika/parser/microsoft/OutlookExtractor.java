@@ -662,10 +662,10 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
 
         for (RecipientChunks chunks : recipientChunks) {
             Recipient r = new Recipient();
-            r.displayName = (chunks.getRecipientDisplayNameChunk() != null) ?
-                    chunks.getRecipientDisplayNameChunk().toString() : null;
-            r.name = (chunks.getRecipientNameChunk() != null) ?
-                    chunks.getRecipientNameChunk().toString() :
+            r.displayName = (chunks.recipientDisplayNameChunk != null) ?
+                    chunks.recipientDisplayNameChunk.toString() : null;
+            r.name = (chunks.recipientNameChunk != null) ?
+                    chunks.recipientNameChunk.toString() :
                     null;
             r.emailAddress = chunks.getRecipientEmailAddress();
             List<PropertyValue> vals = chunks.getProperties().get(MAPIProperty.RECIPIENT_TYPE);
