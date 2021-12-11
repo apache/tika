@@ -100,6 +100,8 @@ public class BundleIT {
                 //I couldn't find a way to get the build of bundle to work via imports
                 //for this one
                 mavenBundle("commons-io", "commons-io", "2.8.0"),
+                mavenBundle("org.apache.logging.log4j", "log4j-core", "2.15.0"),
+                mavenBundle("org.apache.logging.log4j", "log4j-api", "2.15.0"),
                 mavenBundle("org.ops4j.pax.logging", "pax-logging-api", "1.8.5"),
                 mavenBundle("org.ops4j.pax.logging", "pax-logging-service", "1.8.5"),
                 junitBundles(),

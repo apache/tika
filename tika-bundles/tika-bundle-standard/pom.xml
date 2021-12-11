@@ -221,7 +221,6 @@
               !org.junit.*,
               !junit.*,
               org.apache.tika.fork,
-              org.apache.logging.log4j,
               android.util;resolution:=optional,
               com.apple.eawt;resolution:=optional,
               com.github.luben.zstd;resolution:=optional,
