@@ -757,6 +757,23 @@
               <goal>enforce</goal>
             </goals>
           </execution>
+          <execution>
+            <id>ban-bad-log4j-versions</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <bannedDependencies>
+                  <excludes>
+                    <exclude>org.apache.logging.log4j:log4j-core:(,2.15.0)</exclude>
+                  </excludes>
+                </bannedDependencies>
+              </rules>
+              <fail>true</fail>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
       <plugin>
