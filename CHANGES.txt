@@ -1,5 +1,7 @@
 Release 2.2.0 - ???
 
+   * Add support for OneNote files downloaded from O365 (TIKA-3446).
+
    * Fix logic bug in PipesServer that prevented concatenation of
      content from attachments (TIKA-3609).
 
