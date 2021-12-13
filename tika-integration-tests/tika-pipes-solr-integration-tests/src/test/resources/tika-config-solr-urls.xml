@@ -68,7 +68,7 @@
     <params>
       <maxForEmitBatchBytes>10000</maxForEmitBatchBytes>
       <emitMaxEstimatedBytes>100000</emitMaxEstimatedBytes>
-      <emitWithinMillis>60000</emitWithinMillis>
+      <emitWithinMillis>10</emitWithinMillis>
       <numEmitters>1</numEmitters>
       <numClients>1</numClients>
       <tikaConfig>{TIKA_CONFIG}</tikaConfig>
@@ -97,7 +97,7 @@
         <updateStrategy>{UPDATE_STRATEGY}</updateStrategy>
         <solrCollection>testcol</solrCollection>
         <attachmentStrategy>{ATTACHMENT_STRATEGY}</attachmentStrategy>
-        <commitWithin>10</commitWithin>
+        <commitWithin>1</commitWithin>
         <idField>id</idField>
         <connectionTimeout>10000</connectionTimeout>
         <socketTimeout>60000</socketTimeout>
@@ -119,7 +119,7 @@
       <failCountField>fail_count_i</failCountField>
       <sizeFieldName>size_i</sizeFieldName>
       <parseMode>{PARSE_MODE}</parseMode>
-      <rows>10</rows>
+      <rows>100</rows>
       <fetcherName>fsf</fetcherName>
       <emitterName>se</emitterName>
     </params>
