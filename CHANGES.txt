@@ -1,4 +1,4 @@
-Release 2.2.0 - ???
+Release 2.2.0 - 12/13/2021
 
    * Add support for OneNote files downloaded from O365 (TIKA-3446).
 
