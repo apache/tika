@@ -57,7 +57,7 @@
               <includeTestSourceDirectory>true</includeTestSourceDirectory>
               <testSourceDirectories>${project.basedir}/src/test/java</testSourceDirectories>
               <violationSeverity>error</violationSeverity>
-              <failOnViolation>true</failOnViolation>
+              <failOnViolation>false</failOnViolation>
             </configuration>
             <goals>
               <goal>check</goal>

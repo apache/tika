@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+//CHECKSTYLE:OFF
 package org.apache.tika.server.core.resource;
 
 import static org.apache.tika.server.core.resource.TikaResource.fillMetadata;
@@ -34,6 +34,14 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.slf4j.Logger;
@@ -115,15 +123,19 @@ public class RecursiveMetadataResource {
     @POST
     @Consumes("multipart/form-data")
     @Produces({"application/json"})
-    @Path("form{" + HANDLER_TYPE_PARAM + " : (\\w+)?}")
+    @Path("form{" + HANDLER_TYPE_PARAM + " : (\\w+)?}/{timeout}")
+	//@Path("form/{" + HANDLER_TYPE_PARAM + "}/{timeout}")
     public Response getMetadataFromMultipart(Attachment att, @Context UriInfo info,
-                                             @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName)
+                                             @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName,
+											 @PathParam("timeout") int timeout)
             throws Exception {
-        return Response
+        /*return Response
                 .ok(parseMetadataToMetadataList(att.getObject(InputStream.class), new Metadata(),
                         att.getHeaders(), info,
                         buildHandlerConfig(att.getHeaders(), handlerTypeName,
-                                HandlerConfig.PARSE_MODE.RMETA))).build();
+                                HandlerConfig.PARSE_MODE.RMETA))).build();*/
+								
+		return runTask(att.getObject(InputStream.class), new Metadata(), att.getHeaders(), info, handlerTypeName, timeout);
     }
 
     static HandlerConfig buildHandlerConfig(MultivaluedMap<String, String> httpHeaders,
@@ -169,17 +181,22 @@ public class RecursiveMetadataResource {
 
     @PUT
     @Produces("application/json")
-    @Path("{" + HANDLER_TYPE_PARAM + " : (\\w+)?}")
+    //@Path("{" + HANDLER_TYPE_PARAM + " : (\\w+)?}")
+	@Path("{" + HANDLER_TYPE_PARAM + "}/{timeout}")
     public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders,
                                 @Context UriInfo info,
-                                @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName)
+                                @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName,
+								@PathParam("timeout") int timeout)
             throws Exception {
-        Metadata metadata = new Metadata();
+        /*Metadata metadata = new Metadata();
         return Response.ok(parseMetadataToMetadataList(
                 TikaResource.getInputStream(is, metadata, httpHeaders), metadata,
                 httpHeaders.getRequestHeaders(), info,
                 buildHandlerConfig(httpHeaders.getRequestHeaders(), handlerTypeName,
-                        HandlerConfig.PARSE_MODE.RMETA))).build();
+                        HandlerConfig.PARSE_MODE.RMETA))).build();*/
+						
+		Metadata metadata = new Metadata();
+		return runTask(TikaResource.getInputStream(is, metadata, httpHeaders), metadata, httpHeaders.getRequestHeaders(), info, handlerTypeName, timeout);
     }
 
     private MetadataList parseMetadataToMetadataList(InputStream is, Metadata metadata,
@@ -188,4 +205,80 @@ public class RecursiveMetadataResource {
             throws Exception {
         return new MetadataList(parseMetadata(is, metadata, httpHeaders, info, handlerConfig));
     }
+	
+	/* AIIMI hack to add timeout */
+	//protected Response runTask(InputStream inputStream, MultivaluedMap<String, String> httpHeaders,UriInfo info,String handlerTypeName, int timeout)
+	protected Response runTask(InputStream is,
+								Metadata metadata,
+								MultivaluedMap<String, String> httpHeaders,
+								UriInfo info,
+								String handlerTypeName,
+								int timeout)
+		throws InterruptedException, ExecutionException{
+		
+		RMetaParseTask rMetaParseTask = new RMetaParseTask();
+    	rMetaParseTask.setInputStream(is);
+		rMetaParseTask.setMetadata(metadata);
+    	rMetaParseTask.setHttpHeaders(httpHeaders);
+    	rMetaParseTask.setInfo(info);
+    	rMetaParseTask.setHandlerTypeName(handlerTypeName);
+    	
+		ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<MetadataList> future = executor.submit(rMetaParseTask);
+         
+        try{
+            return Response.ok(future.get(timeout, TimeUnit.SECONDS)).build();
+        }
+        catch(TimeoutException e){            
+            LOG.warn("Cancelled rmeta call as it took longer than [" + timeout + "] seconds");
+            Response response = Response.status(504, "Cancelled rmeta call as it took longer than [" + timeout + "] seconds").build();
+            future.cancel(true);
+            return response;
+        }
+        finally{
+        	 executor.shutdownNow();
+        }
+	}
+	
+	public class RMetaParseTask implements Callable<MetadataList> {
+
+		protected InputStream _is = null;
+		protected Metadata _metadata = null;
+		protected MultivaluedMap<String, String> _httpHeaders = null; 
+		protected UriInfo _info = null;
+		protected String _handlerTypeName = null;
+		
+		public void setInputStream(InputStream is){
+			_is = is;
+		}
+		
+		public void setMetadata(Metadata metadata){
+			_metadata = metadata;
+		}
+		
+		public void setHttpHeaders(MultivaluedMap<String, String> httpHeaders){
+			_httpHeaders = httpHeaders;
+		}
+		
+		public void setInfo(UriInfo info){
+			_info = info;
+		}
+		
+		public void setHandlerTypeName(String handlerTypeName){
+			_handlerTypeName = handlerTypeName;
+		}
+		
+	    @Override
+	    public MetadataList call()
+	    	throws Exception {	    
+	    	//return parseMetadata(_is,_httpHeaders, _info, _handlerTypeName);
+			return parseMetadataToMetadataList(_is,
+											   _metadata,
+											   _httpHeaders,
+											   _info,
+											   buildHandlerConfig(_httpHeaders, _handlerTypeName, HandlerConfig.PARSE_MODE.RMETA)
+											   );
+	    }
+	}
 }
+//CHECKSTYLE:ON
