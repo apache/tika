@@ -331,7 +331,7 @@
     <juniversalchardet.version>1.0.3</juniversalchardet.version>
     <junrar.version>7.4.0</junrar.version>
     <libpst.version>0.9.3</libpst.version>
-    <log4j2.version>2.15.0</log4j2.version>
+    <log4j2.version>2.16.0</log4j2.version>
     <lombok.version>1.18.20</lombok.version>
     <lucene.version>8.11.0</lucene.version>
     <metadata.extractor.version>2.16.0</metadata.extractor.version>
