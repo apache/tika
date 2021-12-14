@@ -544,7 +544,6 @@
               org.apache.http.protocol;resolution:=optional,
               org.apache.http.util;resolution:=optional,
               org.apache.commons.logging;resolution:=optional,
-              org.apache.log4j;resolution:=optional,
               *
             </Import-Package>
           </instructions>

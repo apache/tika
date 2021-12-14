@@ -509,7 +509,7 @@ public class TikaServerIntegrationTest extends TikaTest {
                                 "-p", INTEGRATION_TEST_PORT,
                                 "-taskTimeoutMillis", "10000", "-taskPulseMillis", "500",
                                 "-pingPulseMillis", "100", "-maxRestarts", "0",
-                                "-JDlog4j.configuration=file:"+ LOG_FILE.toAbsolutePath(),
+                                "-JDlog4j.configurationFile="+ LOG_FILE.toAbsolutePath(),
                                 "-tmpFilePrefix", "tika-server-stderrlogging"
                         });
             }

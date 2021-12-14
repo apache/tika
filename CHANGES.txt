@@ -1,4 +1,8 @@
-Release 1.27.1 - ???
+Release 1.28 - ???
+
+   * Upgrade log4j 1.x to log4j2 2.16.0.  Users will likely
+     want to upgrade their logging configurations from log4j
+     to log4j2 (TIKA-3618).
 
    * General dependency upgrades (TIKA-3613).
 

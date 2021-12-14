@@ -301,12 +301,13 @@ public class BatchProcessTest extends FSBatchTestBase {
         args.put("recursiveParserWrapper", "true");
         args.put("basicHandlerType", "text");
 
-        BatchProcessTestExecutor ex = new BatchProcessTestExecutor(args,
-                "/tika-batch-config-MockConsumersBuilder.xml",
-                "/log4j-on.properties");
+        BatchProcessTestExecutor ex =
+                new BatchProcessTestExecutor(args, "/tika-batch-config-MockConsumersBuilder.xml",
+                        "/log4j2-on.properties");
         StreamStrings ss = ex.execute();
         assertFalse(ss.getOutString().contains("error writing xml stream for"));
         assertContains("parse_ex resourceId=\"test0_bad_chars.xml\"", ss.getOutString());
+
     }
 
     @Test
@@ -320,7 +321,7 @@ public class BatchProcessTest extends FSBatchTestBase {
 
         BatchProcessTestExecutor ex = new BatchProcessTestExecutor(args,
                 "/tika-batch-config-test-suffix-override.xml",
-                "/log4j-on.properties");
+                "/log4j2-on.properties");
         ex.execute();
         Path targ = outputDir.resolve("test0.xml.mysuffix");
         assertTrue(Files.isRegularFile(targ));
@@ -339,7 +340,7 @@ public class BatchProcessTest extends FSBatchTestBase {
 
 
         public BatchProcessTestExecutor(Map<String, String> args, String configPath) {
-            this(args, configPath, "/log4j_process.properties");
+            this(args, configPath, "/log4j2_process.properties");
         }
 
         public BatchProcessTestExecutor(Map<String, String> args, String configPath, String loggerProps) {

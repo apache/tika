@@ -21,6 +21,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileVisitResult;
@@ -171,8 +172,7 @@ public abstract class FSBatchTestBase extends TikaTest {
         List<String> commandLine = new ArrayList<>();
         commandLine.add("java");
         commandLine.add("-Djava.awt.headless=true");
-        commandLine.add("-Dlog4j.configuration=file:"+
-            this.getClass().getResource(loggerProps).getFile());
+        commandLine.add("-Dlog4j.configurationFile=" + getResourceAsUrl(loggerProps).getFile());
         commandLine.add("-Xmx128m");
         commandLine.add("-cp");
         String cp = System.getProperty("java.class.path");
@@ -280,5 +280,9 @@ public abstract class FSBatchTestBase extends TikaTest {
             }
         }
         return list;
+    }
+
+    public URL getResourceAsUrl(String name) {
+        return this.getClass().getResource(name);
     }
 }

@@ -82,7 +82,7 @@ public class TikaCLIBatchCommandLineTest {
 
     @Test
     public void testJVMOpts() throws Exception {
-        String[] params = {"-JXmx1g", "-JDlog4j.configuration=batch_process_log4j.xml", "-inputDir",
+        String[] params = {"-JXmx1g", "-JDlog4j.configurationFile=log4j2_batch_process_test.properties", "-inputDir",
                 testInputPathForCommandLine, "-outputDir", "testout-output"};
 
 
@@ -108,7 +108,7 @@ public class TikaCLIBatchCommandLineTest {
     
     @Test
     public void testBasicMappingOfArgs() throws Exception {
-        String[] params = {"-JXmx1g", "-JDlog4j.configuration=batch_process_log4j.xml",
+        String[] params = {"-JXmx1g", "-JDlog4j.configurationFile=log4j2_batch_process_test.properties",
                 "-bc", "batch-config.xml",
                 "-J", "-h", "-inputDir", testInputPathForCommandLine};
 

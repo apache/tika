@@ -89,10 +89,11 @@ public class MetricsResourceTest extends CXFTestBase {
     }
 
     @Test
-    public void testPrometheusContainsLog4j() throws IOException {
+    public void testPrometheusContainsLog4j2() throws IOException {
         String response = getPrometheusResponse();
-        assertContains("log4j_events_total", response);
-        assertTrue(getMetricValue(response, "log4j_events_total{application=\"tika-server\",level=\"info\",}") > 1.0);
+        assertContains("log4j2_events_total", response);
+        assertTrue(getMetricValue(response,
+                "log4j2_events_total{application=\"tika-server\",level=\"info\",}") > 1.0);
     }
 
     private String getPrometheusResponse() throws IOException {

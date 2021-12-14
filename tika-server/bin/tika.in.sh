@@ -64,8 +64,8 @@
 
 # Tika provides a default Log4J configuration properties file in tika-server.jar
 # however, you may want to customize the log settings and file appender location
-# so you can point the script to use a different log4j.properties file
-#LOG4J_PROPS=/var/tika/log4j.properties
+# so you can point the script to use a different log4j2.xml file
+#LOG4J_PROPS=/var/tika/log4j2.xml
 
 # Location where Tika should write logs to.
 #TIKA_LOGS_DIR=/var/tika/logs

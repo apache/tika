@@ -34,8 +34,8 @@ import org.junit.Test;
 
 public class BatchDriverTest extends FSBatchTestBase {
 
-    //for debugging, turn logging off/on via resources/log4j.properties for the driver
-    //and log4j_process.properties for the process.
+    //for debugging, turn logging off/on via resources/log4j2.properties for the driver
+    //and log4j2_process.properties for the process.
 
     @Test(timeout = 15000)
     public void oneHeavyHangTest() throws Exception {

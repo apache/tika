@@ -179,7 +179,7 @@ public class MetricsHelper {
      * Sets up logging metrics.
      */
     private static void setUpLoggingMetrics() {
-        new Log4JMetrics().bindTo(REGISTRY);
+        new Log4j2Metrics().bindTo(REGISTRY);
     }
 
     /**

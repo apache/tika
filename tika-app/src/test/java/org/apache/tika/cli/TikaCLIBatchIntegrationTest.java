@@ -23,45 +23,31 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.Reader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.logging.Handler;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
-import org.apache.tika.metadata.serialization.JsonStreamingSerializer;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
-import org.apache.tika.sax.BasicContentHandlerFactory;
-import org.apache.tika.sax.ContentHandlerFactory;
-import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 public class TikaCLIBatchIntegrationTest {
 
+    private final String propsFileName = "log4j2_batch_process_test.properties";
     private Path testInputDir = Paths.get("src/test/resources/test-data");
     private String testInputDirForCommandLine;
     private Path tempOutputDir;
     private String tempOutputDirForCommandLine;
+    private Path customBatchLogging;
     private OutputStream out = null;
     private OutputStream err = null;
     private ByteArrayOutputStream outBuffer = null;
@@ -79,6 +65,9 @@ public class TikaCLIBatchIntegrationTest {
         System.setErr(errWriter);
         testInputDirForCommandLine = testInputDir.toAbsolutePath().toString();
         tempOutputDirForCommandLine = tempOutputDir.toAbsolutePath().toString();
+        customBatchLogging = tempOutputDir.resolve(propsFileName);
+        Files.copy(this.getClass().getResourceAsStream("/" + propsFileName), customBatchLogging);
+
     }
 
     @After
@@ -152,10 +141,8 @@ public class TikaCLIBatchIntegrationTest {
 
     @Test
     public void testProcessLogFileConfig() throws Exception {
-        String[] params = {"-i", testInputDirForCommandLine,
-                "-o", tempOutputDirForCommandLine,
-                "-numConsumers", "2",
-                "-JDlog4j.configuration=log4j_batch_process_test.properties"};
+        String[] params = {"-i", testInputDirForCommandLine, "-o", tempOutputDirForCommandLine,
+                "-numConsumers", "2", "-JDlog4j.configurationFile=" + customBatchLogging.toUri()};
         TikaCLI.main(params);
 
         assertFileExists(tempOutputDir.resolve("bad_xml.xml.xml"));
