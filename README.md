@@ -12,14 +12,14 @@ Getting Started
 
 Pre-built binaries of Apache Tika standalone applications are available
 from https://tika.apache.org/download.html . Pre-built binaries of all the
-Tika jars can be fetched from Maven Central or your favourite Maven mirror.
+Tika JARs can be fetched from Maven Central or your favourite Maven mirror.
 
 Tika is based on Java 8 and uses the [Maven 3](https://maven.apache.org) build system. 
 To build Tika from source, use the following command in the main directory:
 
     mvn clean install
 
-The build consists of a number of components, including a standalone runnable jar that you can use to try out Tika features. You can run it like this:
+The build consists of a number of components, including a standalone runnable JAR that you can use to try out Tika features. You can run it like this:
 
     java -jar tika-app/target/tika-app-*.jar --help
 
