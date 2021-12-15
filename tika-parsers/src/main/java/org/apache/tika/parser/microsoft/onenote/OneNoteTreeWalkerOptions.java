@@ -17,6 +17,7 @@
 package org.apache.tika.parser.microsoft.onenote;
 
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -24,13 +25,12 @@ import java.util.Set;
 /**
  * Options when walking the one note tree.
  */
-class OneNoteTreeWalkerOptions {
+public class OneNoteTreeWalkerOptions implements Serializable {
     private boolean crawlAllFileNodesFromRoot = true;
     private boolean onlyLatestRevision = true;
     private Set<OneNotePropertyEnum> utf16PropertiesToPrint = new HashSet<>(
-            Arrays.asList(OneNotePropertyEnum.ImageFilename,
-      OneNotePropertyEnum.Author,
-      OneNotePropertyEnum.CachedTitleString));
+            Arrays.asList(OneNotePropertyEnum.ImageFilename, OneNotePropertyEnum.Author,
+                    OneNotePropertyEnum.CachedTitleString));
 
     /**
      * Do this to ignore revisions and just parse all file nodes from the root recursively.
@@ -45,7 +45,8 @@ class OneNoteTreeWalkerOptions {
      * @param crawlAllFileNodesFromRoot
      * @return
      */
-    public OneNoteTreeWalkerOptions setCrawlAllFileNodesFromRoot(boolean crawlAllFileNodesFromRoot) {
+    public OneNoteTreeWalkerOptions setCrawlAllFileNodesFromRoot(
+            boolean crawlAllFileNodesFromRoot) {
         this.crawlAllFileNodesFromRoot = crawlAllFileNodesFromRoot;
         return this;
     }
@@ -78,10 +79,12 @@ class OneNoteTreeWalkerOptions {
     /**
      * Print file node data in UTF-16 format when they match these props.
      *
-     * @param utf16PropertiesToPrint The set of UTF properties you want to print UTF-16 for. Defaults are usually ok here.
+     * @param utf16PropertiesToPrint The set of UTF properties you want to print UTF-16 for.
+     *                               Defaults are usually ok here.
      * @return Returns this, as per builder pattern.
      */
-    public OneNoteTreeWalkerOptions setUtf16PropertiesToPrint(Set<OneNotePropertyEnum> utf16PropertiesToPrint) {
+    public OneNoteTreeWalkerOptions setUtf16PropertiesToPrint(
+            Set<OneNotePropertyEnum> utf16PropertiesToPrint) {
         this.utf16PropertiesToPrint = utf16PropertiesToPrint;
         return this;
     }

@@ -25,55 +25,39 @@ import java.util.Map;
  * specification.
  */
 enum JCIDPropertySetTypeEnum {
-  jcidReadOnlyPersistablePropertyContainerForAuthor(0x00120001),
-  jcidPersistablePropertyContainerForTOC(0x00020001),
-  jcidPersistablePropertyContainerForTOCSection(0x00020001),
-  jcidSectionNode(0x00060007),
-  jcidPageSeriesNode(0x00060008),
-  jcidPageNode(0x0006000B),
-  jcidOutlineNode(0x0006000C),
-  jcidOutlineElementNode(0x0006000D),
-  jcidRichTextOENode(0x0006000E),
-  jcidImageNode(0x00060011),
-  jcidNumberListNode(0x00060012),
-  jcidOutlineGroup(0x00060019),
-  jcidTableNode(0x00060022),
-  jcidTableRowNode(0x00060023),
-  jcidTableCellNode(0x00060024),
-  jcidTitleNode(0x0006002C),
-  jcidPageMetaData(0x00020030),
-  jcidSectionMetaData(0x00020031),
-  jcidEmbeddedFileNode(0x00060035),
-  jcidPageManifestNode(0x00060037),
-  jcidConflictPageMetaData(0x00020038),
-  jcidVersionHistoryContent(0x0006003C),
-  jcidVersionProxy(0x0006003D),
-  jcidNoteTagSharedDefinitionContainer(0x00120043),
-  jcidRevisionMetaData(0x00020044),
-  jcidVersionHistoryMetaData(0x00020046),
-  jcidParagraphStyleObject(0x0012004D),
-  jcidParagraphStyleObjectForText(0x0012004D),
-  unknown(0x0);
+    jcidReadOnlyPersistablePropertyContainerForAuthor(0x00120001),
+    jcidPersistablePropertyContainerForTOC(0x00020001),
+    jcidPersistablePropertyContainerForTOCSection(0x00020001), jcidSectionNode(0x00060007),
+    jcidPageSeriesNode(0x00060008), jcidPageNode(0x0006000B), jcidOutlineNode(0x0006000C),
+    jcidOutlineElementNode(0x0006000D), jcidRichTextOENode(0x0006000E), jcidImageNode(0x00060011),
+    jcidNumberListNode(0x00060012), jcidOutlineGroup(0x00060019), jcidTableNode(0x00060022),
+    jcidTableRowNode(0x00060023), jcidTableCellNode(0x00060024), jcidTitleNode(0x0006002C),
+    jcidPageMetaData(0x00020030), jcidSectionMetaData(0x00020031), jcidEmbeddedFileNode(0x00060035),
+    jcidPageManifestNode(0x00060037), jcidConflictPageMetaData(0x00020038),
+    jcidVersionHistoryContent(0x0006003C), jcidVersionProxy(0x0006003D),
+    jcidNoteTagSharedDefinitionContainer(0x00120043), jcidRevisionMetaData(0x00020044),
+    jcidVersionHistoryMetaData(0x00020046), jcidParagraphStyleObject(0x0012004D),
+    jcidParagraphStyleObjectForText(0x0012004D), unknown(0x0);
 
-  private long jcid;
+    private static final Map<Long, JCIDPropertySetTypeEnum> BY_ID = new HashMap<>();
 
-  JCIDPropertySetTypeEnum(long jcid) {
-    this.jcid = jcid;
-  }
-
-  private static final Map<Long, JCIDPropertySetTypeEnum> BY_ID = new HashMap<>();
-
-  static {
-    for (JCIDPropertySetTypeEnum e : values()) {
-      BY_ID.put(e.jcid, e);
+    static {
+        for (JCIDPropertySetTypeEnum e : values()) {
+            BY_ID.put(e.jcid, e);
+        }
     }
-  }
 
-  public static JCIDPropertySetTypeEnum of(Long id) {
-    JCIDPropertySetTypeEnum result = BY_ID.get(id);
-    if (result == null) {
-      return unknown;
+    private final long jcid;
+
+    JCIDPropertySetTypeEnum(long jcid) {
+        this.jcid = jcid;
     }
-    return result;
-  }
+
+    public static JCIDPropertySetTypeEnum of(Long id) {
+        JCIDPropertySetTypeEnum result = BY_ID.get(id);
+        if (result == null) {
+            return unknown;
+        }
+        return result;
+    }
 }

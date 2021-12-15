@@ -25,10 +25,6 @@ package org.apache.tika.parser.microsoft.onenote;
  * The value of each constant corresponds to the FileNodeID property for the file node.
  */
 final class FndStructureConstants {
-    private FndStructureConstants() {
-        // no op
-    }
-
     static final long ObjectSpaceManifestRootFND = 0x04;
     static final long ObjectSpaceManifestListReferenceFND = 0x08;
     static final long ObjectSpaceManifestListStartFND = 0x0c;
@@ -44,24 +40,6 @@ final class FndStructureConstants {
     static final long GlobalIdTableEntry2FNDX = 0x25;
     static final long GlobalIdTableEntry3FNDX = 0x26;
     static final long GlobalIdTableEndFNDX = 0x28;
-
-    public static final class CanRevise {
-        private CanRevise() {
-            // no op
-        }
-
-        static final long ObjectDeclarationWithRefCountFNDX = 0x2d;
-        static final long ObjectDeclarationWithRefCount2FNDX = 0x2e;
-        static final long ObjectRevisionWithRefCountFNDX = 0x041;
-        static final long ObjectRevisionWithRefCount2FNDX = 0x42;
-        static final long ObjectDeclaration2RefCountFND = 0x0A4;
-        static final long ObjectDeclaration2LargeRefCountFND = 0xA5;
-        static final long ReadOnlyObjectDeclaration2RefCountFND = 0xc4;
-        static final long ReadOnlyObjectDeclaration2LargeRefCountFND = 0xc5;
-        static final long ObjectDeclarationFileData3RefCountFND = 0x72;
-        static final long ObjectDeclarationFileData3LargeRefCountFND = 0x73;
-    }
-
     static final long RootObjectReference2FNDX = 0x59;
     static final long RootObjectReference3FND = 0x5a; // each root object must have a differe
     static final long RevisionRoleDeclarationFND = 0x5c;
@@ -75,8 +53,11 @@ final class FndStructureConstants {
     static final long ObjectGroupStartFND = 0xb4;
     static final long ObjectGroupEndFND = 0xb8;
     static final long HashedChunkDescriptor2FND = 0xc2;
-
     static final long ChunkTerminatorFND = 0xff;
+
+    private FndStructureConstants() {
+        // no op
+    }
 
     static String nameOf(long type) {
         switch (new Long(type).intValue()) {
@@ -161,6 +142,23 @@ final class FndStructureConstants {
                 return "ChunkTerminatorFND";
             default:
                 return "UnknownFND";
+        }
+    }
+
+    public static final class CanRevise {
+        static final long ObjectDeclarationWithRefCountFNDX = 0x2d;
+        static final long ObjectDeclarationWithRefCount2FNDX = 0x2e;
+        static final long ObjectRevisionWithRefCountFNDX = 0x041;
+        static final long ObjectRevisionWithRefCount2FNDX = 0x42;
+        static final long ObjectDeclaration2RefCountFND = 0x0A4;
+        static final long ObjectDeclaration2LargeRefCountFND = 0xA5;
+        static final long ReadOnlyObjectDeclaration2RefCountFND = 0xc4;
+        static final long ReadOnlyObjectDeclaration2LargeRefCountFND = 0xc5;
+        static final long ObjectDeclarationFileData3RefCountFND = 0x72;
+        static final long ObjectDeclarationFileData3LargeRefCountFND = 0x73;
+
+        private CanRevise() {
+            // no op
         }
     }
 }

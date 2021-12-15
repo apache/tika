@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.onenote;
 
 class CompactID {
@@ -49,12 +50,7 @@ class CompactID {
     }
 
     public String getCompactIDString() {
-        return new StringBuilder()
-          .append(guid)
-          .append(", index=")
-          .append(guidIndex)
-          .append(", n=")
-          .append((int) n)
-          .toString();
+        return new StringBuilder().append(guid).append(", index=").append(guidIndex).append(", n=")
+                .append((int) n).toString();
     }
 }
