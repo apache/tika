@@ -41,6 +41,10 @@ Contributing via Github
 =======================
 See the [pull request template](https://github.com/apache/tika/blob/main/.github/pull_request_template.md).
 
+## Thanks to all the people who have contributed
+
+[![contributors](https://contributors-img.web.app/image?repo=apache/tika)](https://github.com/apache/tika/graphs/contributors)
+
 Building from a Specific Tag
 ============================
 Let's assume that you want to build the 1.22 tag:
