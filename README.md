@@ -39,24 +39,7 @@ See our [wiki](https://cwiki.apache.org/confluence/display/TIKA/Migrating+to+Tik
 
 Contributing via Github
 =======================
-To contribute a patch, follow these instructions (note that installing
-[Hub](https://hub.github.com) is not strictly required, but is recommended).
-
-```
-0. Download and install hub.github.com
-1. File JIRA issue for your fix at https://issues.apache.org/jira/browse/TIKA
-- you will get issue id TIKA-xxx where xxx is the issue ID.
-2. git clone https://github.com/apache/tika.git 
-3. cd tika
-4. git checkout -b TIKA-xxx
-5. edit files
-6. git status (make sure it shows what files you expected to edit)
-7. git add <files>
-8. git commit -m “fix for TIKA-xxx contributed by <your username>”
-9. git fork
-10. git push -u <your git username> TIKA-xxx
-11. git pull-request
-```
+See the [pull request template](https://github.com/apache/tika/blob/main/.github/pull_request_template.md).
 
 Building from a Specific Tag
 ============================
