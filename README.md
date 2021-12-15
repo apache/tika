@@ -18,11 +18,11 @@ Pre-built binaries of Apache Tika standalone applications are available
 from https://tika.apache.org/download.html . Pre-built binaries of all the
 Tika jars can be fetched from Maven Central or your favourite Maven mirror.
 
-**Tika 1.X is scheduled for End of Life (EOL) on September 30, 2022** see [Migrating to 2.x](#migrating-to-2x) below for more details.  We will
-continue to make security improvements until the EOL, but we do not plan to back port new functionality from the main/2.x branch.
+**Tika 1.X is scheduled for End of Life (EOL) on September 30, 2022.**  We will
+continue to make security improvements until the EOL, but we do not plan to back port new functionality from the main/2.x branch. See [Migrating to 2.x](#migrating-to-2x) below for more details. 
 
 Tika is based on **Java 8** and uses the [Maven 3](https://maven.apache.org) build system. 
-**N.B.** [Docker](https://www.docker.com/products/personal) is required in the main branch to complete all unit tests. You can pass the `-DskipTests` flag if you wish to skip tests.
+**N.B.** [Docker](https://www.docker.com/products/personal) is required in the main/2.x branch to complete all unit tests. You can pass the `-DskipTests` flag if you wish to skip tests.
 
 To build Tika from source, use the following command in the main directory:
 
@@ -34,7 +34,7 @@ The build consists of a number of components, including a standalone runnable ja
     java -jar tika-app/target/tika-app-*.jar --help
 
 
-To build build a specific project (for example, tika-server-standard):
+To build a specific project (for example, tika-server-standard):
 
     mvn clean install -am -pl :tika-server-standard
 
