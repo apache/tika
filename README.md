@@ -2,8 +2,8 @@ Welcome to Apache Tika  <https://tika.apache.org/>
 =================================================
 
 [![license](https://img.shields.io/github/license/apache/tika.svg?maxAge=2592000)](http://www.apache.org/licenses/LICENSE-2.0)
-[![Jenkins](https://img.shields.io/jenkins/s/https://ci-builds.apache.org/job/Tika/job/tika-main-jdk8.svg?maxAge=3600)](https://ci-builds.apache.org/job/Tika/job/tika-main-jdk8/)
-[![Jenkins tests](https://img.shields.io/jenkins/t/https://ci-builds.apache.org/job/Tika/job/tika-main-jdk8.svg?maxAge=3600)](https://ci-builds.apache.org/job/Tika/job/tika-main-jdk8/lastBuild/testReport/)
+[![Jenkins](https://img.shields.io/jenkins/s/https/ci-builds.apache.org/job/Tika/job/tika-main-jdk8.svg?maxAge=3600)](https://ci-builds.apache.org/job/Tika/job/tika-main-jdk8/)
+[![Jenkins tests](https://img.shields.io/jenkins/t/https/ci-builds.apache.org/job/Tika/job/tika-main-jdk8.svg?maxAge=3600)](https://ci-builds.apache.org/job/Tika/job/tika-main-jdk8/lastBuild/testReport/)
 [![Maven Central](https://img.shields.io/maven-central/v/org.apache.tika/tika.svg?maxAge=86400)](http://search.maven.org/#search|ga|1|g%3A%22org.apache.tika%22)
 
 Apache Tika(TM) is a toolkit for detecting and extracting metadata and structured text content from various documents using existing parser libraries.
