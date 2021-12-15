@@ -16,10 +16,13 @@
  */
 package org.apache.tika.parser.microsoft.onenote;
 
-class ObjectSpaceObjectPropSet {
-    ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs oids = new ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs();
-    ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs osids = new ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs();
-    ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs contextIDs = new ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs();
+public class ObjectSpaceObjectPropSet {
+    ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs oids =
+            new ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs();
+    ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs osids =
+            new ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs();
+    ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs contextIDs =
+            new ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs();
     PropertySet body = new PropertySet();
 
     public ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs getOids() {
@@ -44,7 +47,8 @@ class ObjectSpaceObjectPropSet {
         return contextIDs;
     }
 
-    public ObjectSpaceObjectPropSet setContextIDs(ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs contextIDs) {
+    public ObjectSpaceObjectPropSet setContextIDs(
+            ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs contextIDs) {
         this.contextIDs = contextIDs;
         return this;
     }

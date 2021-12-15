@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.onenote;
 
 import java.util.ArrayList;
@@ -26,6 +27,18 @@ class Revision {
     List<FileNodePtr> manifestList = new ArrayList<>();
     ExtendedGUID gosid = ExtendedGUID.nil();
     ExtendedGUID dependent = ExtendedGUID.nil();
+
+    public Revision() {
+
+    }
+
+    public Revision(Map<Long, GUID> globalId, List<FileNodePtr> manifestList, ExtendedGUID gosid,
+                    ExtendedGUID dependent) {
+        this.globalId = globalId;
+        this.manifestList = manifestList;
+        this.gosid = gosid;
+        this.dependent = dependent;
+    }
 
     public Map<Long, GUID> getGlobalId() {
         return globalId;
@@ -56,17 +69,6 @@ class Revision {
     }
 
     public void setDependent(ExtendedGUID dependent) {
-        this.dependent = dependent;
-    }
-
-    public Revision() {
-
-    }
-
-    public Revision(Map<Long, GUID> globalId, List<FileNodePtr> manifestList, ExtendedGUID gosid, ExtendedGUID dependent) {
-        this.globalId = globalId;
-        this.manifestList = manifestList;
-        this.gosid = gosid;
         this.dependent = dependent;
     }
 }
