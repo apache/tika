@@ -107,12 +107,12 @@
         </sql>
         <sql>
             update exceptions_compared
-            set exc_prcnt_a = cast(exc_cnt_a as decimal)/cast(total as decimal)
+            set exc_prcnt_a = cast(exc_cnt_a as float)/cast(total as float)
             where total > 0;
         </sql>
         <sql>
             update exceptions_compared
-            set exc_prcnt_b = cast(exc_cnt_b as decimal)/cast(total as decimal)
+            set exc_prcnt_b = cast(exc_cnt_b as float)/cast(total as float)
             where total > 0;
         </sql>
 
@@ -217,454 +217,6 @@
             group by mime_id_a, mime_id_b
             );
         </sql>
-
-        <sql>drop table if exists tags_by_mime</sql>
-        <sql>create table tags_by_mime (
-                mime_id_a integer,
-                mime_id_b integer,
-                tags_a_a integer,
-                tags_b_a integer,
-                tags_div_a integer,
-                tags_i_a integer,
-                tags_img_a integer,
-                tags_li_a integer,
-                tags_ol_a integer,
-                tags_p_a integer,
-                tags_table_a integer,
-                tags_td_a integer,
-                tags_title_a integer,
-                tags_tr_a integer,
-                tags_u_a integer,
-                tags_ul_a integer,
-                tags_a_b integer,
-                tags_b_b integer,
-                tags_div_b integer,
-                tags_i_b integer,
-                tags_img_b integer,
-                tags_li_b integer,
-                tags_ol_b integer,
-                tags_p_b integer,
-                tags_table_b integer,
-                tags_td_b integer,
-                tags_title_b integer,
-                tags_tr_b integer,
-                tags_u_b integer,
-                tags_ul_b integer
-            );
-        </sql>
-        <sql>
-            insert into tags_by_mime (mime_id_a, mime_id_b)
-            select ma.mime_id, mb.mime_id
-            from profiles_a a
-            join profiles_b b on a.id=b.id
-            join mimes ma on ma.mime_id=a.mime_id
-            join mimes mb on mb.mime_id=b.mime_id
-            group by ma.mime_id, mb.mime_id
-        </sql>
-        <sql>
-            update tags_by_mime tbm set tags_a_a=(
-            select sum(ta.tags_a) as cnt from tags_a ta
-            join tags_b tb on ta.id=tb.id
-            join profiles_a pa on pa.id=ta.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tbm.mime_id_b
-            and pa.mime_id=tbm.mime_id_a
-            and ta.tags_parse_exception=false
-            and tb.tags_parse_exception=false
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
-        <sql>
-            update tags_by_mime tbm set tags_b_a=(
-            select sum(ta.tags_b) as cnt from tags_a ta
-            join tags_b tb on ta.id=tb.id
-            join profiles_a pa on pa.id=ta.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tbm.mime_id_b
-            and pa.mime_id=tbm.mime_id_a
-            and ta.tags_parse_exception=false
-            and tb.tags_parse_exception=false
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
-        <sql>
-            update tags_by_mime tbm set tags_div_a=(
-            select sum(ta.tags_div) as cnt from tags_a ta
-            join tags_b tb on ta.id=tb.id
-            join profiles_a pa on pa.id=ta.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tbm.mime_id_b
-            and pa.mime_id=tbm.mime_id_a
-            and ta.tags_parse_exception=false
-            and tb.tags_parse_exception=false
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
-        <sql>
-            update tags_by_mime tbm set tags_i_a=(
-            select sum(ta.tags_i) as cnt from tags_a ta
-            join tags_b tb on ta.id=tb.id
-            join profiles_a pa on pa.id=ta.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tbm.mime_id_b
-            and pa.mime_id=tbm.mime_id_a
-            and ta.tags_parse_exception=false
-            and tb.tags_parse_exception=false
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
-        <sql>
-            update tags_by_mime tbm set tags_img_a=(
-            select sum(ta.tags_img) as cnt from tags_a ta
-            join tags_b tb on ta.id=tb.id
-            join profiles_a pa on pa.id=ta.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tbm.mime_id_b
-            and pa.mime_id=tbm.mime_id_a
-            and ta.tags_parse_exception=false
-            and tb.tags_parse_exception=false
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
-        <sql>
-            update tags_by_mime tbm set tags_li_a=(
-            select sum(ta.tags_li) as cnt from tags_a ta
-            join tags_b tb on ta.id=tb.id
-            join profiles_a pa on pa.id=ta.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tbm.mime_id_b
-            and pa.mime_id=tbm.mime_id_a
-            and ta.tags_parse_exception=false
-            and tb.tags_parse_exception=false
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
-        <sql>
-            update tags_by_mime tbm set tags_ol_a=(
-            select sum(ta.tags_ol) as cnt from tags_a ta
-            join tags_b tb on ta.id=tb.id
-            join profiles_a pa on pa.id=ta.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tbm.mime_id_b
-            and pa.mime_id=tbm.mime_id_a
-            and ta.tags_parse_exception=false
-            and tb.tags_parse_exception=false
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
-        <sql>
-            update tags_by_mime tbm set tags_p_a=(
-            select sum(ta.tags_p) as cnt from tags_a ta
-            join tags_b tb on ta.id=tb.id
-            join profiles_a pa on pa.id=ta.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tbm.mime_id_b
-            and pa.mime_id=tbm.mime_id_a
-            and ta.tags_parse_exception=false
-            and tb.tags_parse_exception=false
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
-        <sql>
-            update tags_by_mime tbm set tags_table_a=(
-            select sum(ta.tags_table) as cnt from tags_a ta
-            join tags_b tb on ta.id=tb.id
-            join profiles_a pa on pa.id=ta.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tbm.mime_id_b
-            and pa.mime_id=tbm.mime_id_a
-            and ta.tags_parse_exception=false
-            and tb.tags_parse_exception=false
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
-        <sql>
-            update tags_by_mime tbm set tags_td_a=(
-            select sum(ta.tags_td) as cnt from tags_a ta
-            join tags_b tb on ta.id=tb.id
-            join profiles_a pa on pa.id=ta.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tbm.mime_id_b
-            and pa.mime_id=tbm.mime_id_a
-            and ta.tags_parse_exception=false
-            and tb.tags_parse_exception=false
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
-        <sql>
-            update tags_by_mime tbm set tags_title_a=(
-            select sum(ta.tags_title) as cnt from tags_a ta
-            join tags_b tb on ta.id=tb.id
-            join profiles_a pa on pa.id=ta.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tbm.mime_id_b
-            and pa.mime_id=tbm.mime_id_a
-            and ta.tags_parse_exception=false
-            and tb.tags_parse_exception=false
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
-        <sql>
-            update tags_by_mime tbm set tags_tr_a=(
-            select sum(ta.tags_tr) as cnt from tags_a ta
-            join tags_b tb on ta.id=tb.id
-            join profiles_a pa on pa.id=ta.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tbm.mime_id_b
-            and pa.mime_id=tbm.mime_id_a
-            and ta.tags_parse_exception=false
-            and tb.tags_parse_exception=false
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
-        <sql>
-            update tags_by_mime tbm set tags_u_a=(
-            select sum(ta.tags_u) as cnt from tags_a ta
-            join tags_b tb on ta.id=tb.id
-            join profiles_a pa on pa.id=ta.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tbm.mime_id_b
-            and pa.mime_id=tbm.mime_id_a
-            and ta.tags_parse_exception=false
-            and tb.tags_parse_exception=false
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
-        <sql>
-            update tags_by_mime tbm set tags_ul_a=(
-            select sum(ta.tags_ul) as cnt from tags_a ta
-            join tags_b tb on ta.id=tb.id
-            join profiles_a pa on pa.id=ta.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tbm.mime_id_b
-            and pa.mime_id=tbm.mime_id_a
-            and ta.tags_parse_exception=false
-            and tb.tags_parse_exception=false
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
-        <!-- now update tags_b counts -->
-        <sql>
-            update tags_by_mime tbm set tags_a_b=(
-            select sum(tb.tags_a) as cnt from tags_b tb
-            join tags_a ta on ta.id=tb.id
-            join profiles_a pa on pa.id=ta.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tbm.mime_id_b
-            and pa.mime_id=tbm.mime_id_a
-            and ta.tags_parse_exception=false
-            and tb.tags_parse_exception=false
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
-        <sql>
-            update tags_by_mime tbm set tags_b_b=(
-            select sum(tb.tags_b) as cnt from tags_b tb
-            join tags_a ta on ta.id=tb.id
-            join profiles_a pa on pa.id=ta.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tbm.mime_id_b
-            and pa.mime_id=tbm.mime_id_a
-            and ta.tags_parse_exception=false
-            and tb.tags_parse_exception=false
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
-        <sql>
-            update tags_by_mime tbm set tags_div_b=(
-            select sum(tb.tags_div) as cnt from tags_b tb
-            join tags_a ta on tb.id=ta.id
-            join profiles_a pa on pa.id=ta.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tbm.mime_id_b
-            and pa.mime_id=tbm.mime_id_a
-            and ta.tags_parse_exception=false
-            and tb.tags_parse_exception=false
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
-        <sql>
-            update tags_by_mime tbm set tags_i_b=(
-            select sum(tb.tags_i) as cnt from tags_b tb
-            join tags_a ta on tb.id=ta.id
-            join profiles_a pa on pa.id=ta.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tbm.mime_id_b
-            and pa.mime_id=tbm.mime_id_a
-            and ta.tags_parse_exception=false
-            and tb.tags_parse_exception=false
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
-        <sql>
-            update tags_by_mime tbm set tags_img_b=(
-            select sum(tb.tags_img) as cnt from tags_b tb
-            join tags_a ta on tb.id=ta.id
-            join profiles_a pa on pa.id=ta.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tbm.mime_id_b
-            and pa.mime_id=tbm.mime_id_a
-            and ta.tags_parse_exception=false
-            and tb.tags_parse_exception=false
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
-        <sql>
-            update tags_by_mime tbm set tags_li_b=(
-            select sum(tb.tags_li) as cnt from tags_b tb
-            join tags_a ta on ta.id=tb.id
-            join profiles_a pa on pa.id=ta.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tbm.mime_id_b
-            and pa.mime_id=tbm.mime_id_a
-            and ta.tags_parse_exception=false
-            and tb.tags_parse_exception=false
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
-        <sql>
-            update tags_by_mime tbm set tags_ol_b=(
-            select sum(tb.tags_ol) as cnt from tags_b tb
-            join tags_a ta on tb.id=ta.id
-            join profiles_a pa on pa.id=ta.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tbm.mime_id_b
-            and pa.mime_id=tbm.mime_id_a
-            and ta.tags_parse_exception=false
-            and tb.tags_parse_exception=false
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
-        <sql>
-            update tags_by_mime tbm set tags_p_b=(
-            select sum(tb.tags_p) as cnt from tags_b tb
-            join tags_a ta on tb.id=ta.id
-            join profiles_a pa on pa.id=ta.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tbm.mime_id_b
-            and pa.mime_id=tbm.mime_id_a
-            and ta.tags_parse_exception=false
-            and tb.tags_parse_exception=false
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
-        <sql>
-            update tags_by_mime tbm set tags_table_b=(
-            select sum(tb.tags_table) as cnt from tags_b tb
-            join tags_a ta on tb.id=ta.id
-            join profiles_a pa on pa.id=ta.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tbm.mime_id_b
-            and pa.mime_id=tbm.mime_id_a
-            and ta.tags_parse_exception=false
-            and tb.tags_parse_exception=false
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
-        <sql>
-            update tags_by_mime tbm set tags_td_b=(
-            select sum(tb.tags_td) as cnt from tags_b tb
-            join tags_a ta on tb.id=ta.id
-            join profiles_a pa on pa.id=ta.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tbm.mime_id_b
-            and pa.mime_id=tbm.mime_id_a
-            and ta.tags_parse_exception=false
-            and tb.tags_parse_exception=false
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
-        <sql>
-            update tags_by_mime tbm set tags_title_b=(
-            select sum(tb.tags_title) as cnt from tags_b tb
-            join tags_a ta on tb.id=ta.id
-            join profiles_a pa on pa.id=ta.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tbm.mime_id_b
-            and pa.mime_id=tbm.mime_id_a
-            and ta.tags_parse_exception=false
-            and tb.tags_parse_exception=false
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
-        <sql>
-            update tags_by_mime tbm set tags_tr_b=(
-            select sum(tb.tags_tr) as cnt from tags_b tb
-            join tags_a ta on tb.id=ta.id
-            join profiles_a pa on pa.id=ta.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tbm.mime_id_b
-            and pa.mime_id=tbm.mime_id_a
-            and ta.tags_parse_exception=false
-            and tb.tags_parse_exception=false
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
-        <sql>
-            update tags_by_mime tbm set tags_u_b=(
-            select sum(tb.tags_u) as cnt from tags_b tb
-            join tags_a ta on tb.id=ta.id
-            join profiles_a pa on pa.id=ta.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tbm.mime_id_b
-            and pa.mime_id=tbm.mime_id_a
-            and ta.tags_parse_exception=false
-            and tb.tags_parse_exception=false
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
-        <sql>
-            update tags_by_mime tbm set tags_ul_b=(
-            select sum(tb.tags_ul) as cnt from tags_b tb
-            join tags_a ta on ta.id=tb.id
-            join profiles_a pa on pa.id=ta.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tbm.mime_id_b
-            and pa.mime_id=tbm.mime_id_a
-            and ta.tags_parse_exception=false
-            and tb.tags_parse_exception=false
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
-        <sql>drop table if exists tag_exceptions_by_mime</sql>
-        <sql>create table tag_exceptions_by_mime (
-            mime_id_a integer,
-            mime_id_b integer,
-            tag_exceptions_a integer,
-            tag_exceptions_b integer)
-        </sql>
-        <sql>
-            insert into tag_exceptions_by_mime (mime_id_a, mime_id_b,
-                tag_exceptions_a, tag_exceptions_b)
-            select ma.mime_id, mb.mime_id,0,0
-            from profiles_a a
-            join profiles_b b on a.id=b.id
-            join mimes ma on ma.mime_id=a.mime_id
-            join mimes mb on mb.mime_id=b.mime_id
-            group by ma.mime_id, mb.mime_id
-        </sql>
-        <sql>
-            update tag_exceptions_by_mime tebm set tag_exceptions_a=(
-            select count(1) as cnt from tags_a ta
-            join profiles_a pa on pa.id=ta.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tebm.mime_id_b
-            and pa.mime_id=tebm.mime_id_a
-            and ta.tags_parse_exception=true
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
-        <sql>
-            update tag_exceptions_by_mime tebm set tag_exceptions_b=(
-            select count(1) as cnt from tags_b tb
-            join profiles_a pa on pa.id=tb.id
-            join profiles_b pb on pa.id=pb.id
-            where pb.mime_id= tebm.mime_id_b
-            and pa.mime_id=tebm.mime_id_a
-            and tb.tags_parse_exception=true
-            group by mime_id_a, mime_id_b
-            );
-        </sql>
         <sql>
             drop table if exists parse_time_compared;
         </sql>
@@ -705,7 +257,7 @@
         </sql>
         <sql>
             update parse_time_compared ptc set prcnt_increase=(100.0 *
-            cast(total_b as decimal)/cast(total_a as decimal))
+            cast(total_b as double)/cast(total_a as double))
             where total_a > 0;
         </sql>
     </before>
@@ -1202,6 +754,35 @@
             on e.extract_exception_id=t.extract_exception_id
         </sql>
     </report>
+    <report reportName="fixedCatastrophicExtractExceptions"
+            reportFilename="exceptions/fixed_catastrophic_exceptions_in_b.xlsx"
+            format="xlsx"
+            includeSql="true">
+        <sql>
+            select exa.file_path, ra.extract_exception_description, rb.extract_exception_description
+            from extract_exceptions_a exa
+            left join extract_exceptions_b exb on exa.container_id=exb.container_id
+            join ref_extract_exception_types ra on exa.extract_exception_id = ra.extract_exception_id
+            left join ref_extract_exception_types rb on exb.extract_exception_id = rb.extract_exception_id
+            where exa.extract_exception_id &lt; 4
+            and (exb.extract_exception_id is null or exb.extract_exception_id &gt; 3)
+        </sql>
+    </report>
+    <report reportName="newCatastrophicExtractExceptions"
+            reportFilename="exceptions/new_catastrophic_exceptions_in_b.xlsx"
+            format="xlsx"
+            includeSql="true">
+        <sql>
+            select exb.file_path, rb.extract_exception_description, ra.extract_exception_description
+            from extract_exceptions_b exb
+            left join extract_exceptions_a exa on exb.container_id=exa.container_id
+            join ref_extract_exception_types rb on exb.extract_exception_id = rb.extract_exception_id
+            left join ref_extract_exception_types ra on exa.extract_exception_id = ra.extract_exception_id
+            where exb.extract_exception_id &lt; 4
+            and (exa.extract_exception_id is null or exa.extract_exception_id &gt; 3)
+        </sql>
+    </report>
+
     <report reportName="parseExceptionTypesA"
             reportFilename="exceptions/overall_exception_types_a.xlsx"
             format="xlsx"
@@ -1227,6 +808,51 @@
         </sql>
     </report>
 
+    <report reportName="DiceQuintiles"
+            reportFilename="content/dice_quintiles.xlsx"
+            format="xlsx"
+            includeSql="true">
+        <sql>
+            SELECT
+            case
+            when dice_coefficient &lt; 0.20 then '0&lt;0.20%'
+            when dice_coefficient &lt; 0.40 then '20%&lt;40%'
+            when dice_coefficient &lt; 0.60 then '40%&lt;60%'
+            when dice_coefficient &lt; 0.80 then '60%&lt;80%'
+            when dice_coefficient &lt; 1.01 then '80%-100%'
+            else 'other'
+            end as  range,
+            COUNT(*) AS COUNT,
+            FROM   content_comparisons cc
+            join contents_a ca on cc.id = ca.id
+            join contents_b cb on cc.id = cb.id
+            where ca.num_tokens > 10 or cb.num_tokens > 10
+            GROUP  BY  range
+        </sql>
+    </report>
+
+    <report reportName="OverlapQuintiles"
+            reportFilename="content/overlap_quintiles.xlsx"
+            format="xlsx"
+            includeSql="true">
+        <sql>
+            SELECT
+            case
+            when overlap &lt; 0.20 then '0&lt;0.20%'
+            when overlap &lt; 0.40 then '20%&lt;40%'
+            when overlap &lt; 0.60 then '40%&lt;60%'
+            when overlap &lt; 0.80 then '60%&lt;80%'
+            when overlap &lt; 1.01 then '80%-100%'
+            else 'other'
+            end as  range,
+            COUNT(*) AS COUNT,
+            FROM   content_comparisons cc
+            join contents_a ca on cc.id = ca.id
+            join contents_b cb on cc.id = cb.id
+            where ca.num_tokens > 10 or cb.num_tokens > 10
+            GROUP  BY  range
+        </sql>
+    </report>
     <report reportName="contentDiffsWExceptions"
             reportFilename="content/content_diffs_with_exceptions.xlsx"
             format="xlsx"
@@ -1532,17 +1158,6 @@
             order by cnt desc
         </sql>
     </report>
-    <report reportName="Container files missing in B details"
-            reportFilename="attachments/container_files_missing_in_B_details.xlsx"
-            format="xlsx"
-            includeSql="true">
-        <sql>
-            select pa.file_name from profiles_a pa
-            left join profiles_b pb on pa.id=pb.id
-            where pb.id is null
-            and pa.is_embedded = false
-        </sql>
-    </report>
     <report reportName="Embedded files missing in B by Mime"
             reportFilename="attachments/embedded_files_missing_in_B_by_mime.xlsx"
             format="xlsx"
@@ -1633,94 +1248,6 @@
             limit 100000
         </sql>
     </report>
-    <report reportName="Tag Count Diffs By Mime"
-            reportFilename="tags/tag_count_diffs_by_mime.xlsx"
-            format="xlsx"
-            includeSql="true">
-        <sql>
-            select ma.mime_string as mime_string_a,
-            mb.mime_string as mime_string_b,
-            tags_a_a,
-            tags_a_b,
-            tags_b_a,
-            tags_b_b,
-            tags_div_a,
-            tags_div_b,
-            tags_i_a,
-            tags_i_b,
-            tags_li_a,
-            tags_li_b,
-            tags_ol_a,
-            tags_ol_b,
-            tags_p_a,
-            tags_p_b,
-            tags_table_a,
-            tags_table_b,
-            tags_td_a,
-            tags_td_b,
-            tags_title_a,
-            tags_title_b,
-            tags_tr_a,
-            tags_tr_b,
-            tags_u_a,
-            tags_u_b,
-            tags_ul_a,
-            tags_ul_b
-            from
-            tags_by_mime tbm
-            join mimes ma on tbm.mime_id_a=ma.mime_id
-            join mimes mb on tbm.mime_id_b=mb.mime_id
-            limit 100000
-        </sql>
-
-    </report>
-    <report reportName="Tag Exceptions By Mime"
-            reportFilename="tags/tag_exceptions_by_mime.xlsx"
-            format="xlsx"
-            includeSql="true">
-        <sql>
-            select ma.mime_string as mime_string_a,
-            mb.mime_string as mime_string_b,
-            tag_exceptions_a,
-            tag_exceptions_b,
-            (tag_exceptions_b-tag_exceptions_a) as diff_tag_exceptions_in_b
-            from tag_exceptions_by_mime tebm
-            join mimes ma on tebm.mime_id_a=ma.mime_id
-            join mimes mb on tebm.mime_id_b=mb.mime_id
-            order by diff_tag_exceptions_in_b desc
-        </sql>
-    </report>
-    <report reportName="Tag Exceptions Details A"
-                         reportFilename="tags/tag_exceptions_details_a.xlsx"
-                         format="xlsx"
-                         includeSql="true">
-        <sql>
-            select c.file_path,pa.file_name,mime_string,is_embedded from
-            tags_a ta
-            join profiles_a pa on ta.id=pa.id
-            join containers c on pa.container_id=c.container_id
-            join mimes m on pa.mime_id=m.mime_id
-            where ta.tags_parse_exception=true
-            order by m.mime_string
-            limit 20000
-        </sql>
-    </report>
-    <report reportName="Tag Exceptions Details B"
-            reportFilename="tags/tag_exceptions_details_b.xlsx"
-            format="xlsx"
-            includeSql="true">
-        <sql>
-            select c.file_path,pb.file_name,mime_string,is_embedded from
-            tags_b tb
-            join profiles_b pb on tb.id=pb.id
-            join containers c on pb.container_id=c.container_id
-            join mimes m on pb.mime_id=m.mime_id
-            where tb.tags_parse_exception=true
-            order by m.mime_string
-            limit 20000
-        </sql>
-    </report>
-
     <report reportName="Parse Time (Millis) Compared"
             reportFilename="parse_times/parse_time_millis_by_mime_compared.xlsx"
             format="xlsx"

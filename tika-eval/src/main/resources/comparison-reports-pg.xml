@@ -19,6 +19,8 @@
   under the License.
 -->
 
+<!-- this should be the same as comparison-reports.xml but
+     translated from the H2 dialect to postgres -->
 <reports>
 
 
