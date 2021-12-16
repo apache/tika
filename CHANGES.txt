@@ -1,4 +1,4 @@
-Release 1.28 - ???
+Release 1.28 - 12/16/2021
 
    * Upgrade log4j 1.x to log4j2 2.16.0.  Users will likely
      want to upgrade their logging configurations from log4j
