@@ -24,16 +24,17 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 
 /**
- * This is copied mostly from the {@link org.apache.tika.parser.mp4.DirectFileReadDataSource}.
+ * This is copied mostly from the the
+ * former org.apache.tika.parser.mp4.DirectFileReadDataSource
  * <p>
- * Implements a simple way to encapsulate a {@link org.apache.tika.io.TikaInputStream} that you will have to seek,read,repeat
- * while parsing OneNote contents.
+ * Implements a simple way to encapsulate a {@link org.apache.tika.io.TikaInputStream} that you
+ * will have to seek,read,repeat while parsing OneNote contents.
  */
 class OneNoteDirectFileResource implements Closeable {
 
     private static final int TRANSFER_SIZE = 8192;
 
-    private RandomAccessFile raf;
+    private final RandomAccessFile raf;
 
     public OneNoteDirectFileResource(File f) throws IOException {
         this.raf = new RandomAccessFile(f, "r");

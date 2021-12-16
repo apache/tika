@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.onenote;
 
 import java.util.Objects;
@@ -23,17 +24,21 @@ import java.util.Objects;
  * <p>
  * Each file chunk reference contains an <pre>stp</pre> field and a <pre>cb</pre> field.
  * <p>
- * The <pre>stp</pre> field is a stream pointer that specifies the offset, in bytes, from the beginning of the file where the referenced
+ * The <pre>stp</pre> field is a stream pointer that specifies the offset, in bytes, from the
+ * beginning of the file where the referenced
  * data is located.
  * <p>
- * The <pre>cb</pre> field specifies the size, in bytes, of the referenced data. The sizes, in bytes, of the
+ * The <pre>cb</pre> field specifies the size, in bytes, of the referenced data. The sizes, in
+ * bytes, of the
  * stp and cb fields are specified by the structures in this section.
  * <p>
  * There are some Special values:
  * <p>
- * fcrNil - Specifies a file chunk reference where all bits of the stp field are set to 1, and all bits of the cb field are set to zero.
+ * fcrNil - Specifies a file chunk reference where all bits of the stp field are set to 1, and
+ * all bits of the cb field are set to zero.
  * <p>
- * fcrZero - Specifies a file chunk reference where all bits of the stp and cb fields are set to zero.
+ * fcrZero - Specifies a file chunk reference where all bits of the stp and cb fields are set to
+ * zero.
  */
 class FileChunkReference {
 
@@ -55,10 +60,7 @@ class FileChunkReference {
 
     @Override
     public String toString() {
-        return "FileChunkReference{" +
-          "stp=" + stp +
-          ", cb=" + cb +
-          '}';
+        return "FileChunkReference{" + "stp=" + stp + ", cb=" + cb + '}';
     }
 
     @Override
@@ -70,8 +72,7 @@ class FileChunkReference {
             return false;
         }
         FileChunkReference that = (FileChunkReference) o;
-        return stp == that.stp &&
-          cb == that.cb;
+        return stp == that.stp && cb == that.cb;
     }
 
     @Override

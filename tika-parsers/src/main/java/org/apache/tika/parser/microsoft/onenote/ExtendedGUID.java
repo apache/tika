@@ -14,24 +14,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.onenote;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
-class ExtendedGUID implements Comparable<ExtendedGUID> {
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitConverter;
+
+public class ExtendedGUID implements Comparable<ExtendedGUID> {
     GUID guid;
     long n;
+
+    public ExtendedGUID() {
+
+    }
 
     public ExtendedGUID(GUID guid, long n) {
         this.guid = guid;
         this.n = n;
     }
 
+    public static ExtendedGUID nil() {
+        return new ExtendedGUID(GUID.nil(), 0);
+    }
+
     @Override
     public int compareTo(ExtendedGUID other) {
         if (other.guid.equals(guid)) {
-            new Long(n).compareTo(other.n);
+            return Long.compare(n, other.n);
         }
         return guid.compareTo(other.guid);
     }
@@ -45,17 +58,12 @@ class ExtendedGUID implements Comparable<ExtendedGUID> {
             return false;
         }
         ExtendedGUID that = (ExtendedGUID) o;
-        return n == that.n &&
-          Objects.equals(guid, that.guid);
+        return n == that.n && Objects.equals(guid, that.guid);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(guid, n);
-    }
-
-    public static ExtendedGUID nil() {
-        return new ExtendedGUID(GUID.nil(), 0);
     }
 
     @Override
@@ -83,5 +91,18 @@ class ExtendedGUID implements Comparable<ExtendedGUID> {
     public ExtendedGUID setN(long n) {
         this.n = n;
         return this;
+    }
+
+    /**
+     * This method is used to convert the element of ExtendedGUID object into a byte List.
+     *
+     * @return Return the byte list which store the byte information of ExtendedGUID
+     */
+    public List<Byte> SerializeToByteList() {
+        List<Byte> byteList = new ArrayList<>(guid.toByteArray());
+        for (byte b : BitConverter.getBytes(n)) {
+            byteList.add(b);
+        }
+        return byteList;
     }
 }
