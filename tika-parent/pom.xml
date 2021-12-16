@@ -881,6 +881,34 @@
         </plugins>
       </build>
     </profile>
+    <profile>
+      <id>ossindex-fail</id>
+      <!-- actually fail the build on vulnerabilities -->
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.sonatype.ossindex.maven</groupId>
+            <artifactId>ossindex-maven-plugin</artifactId>
+            <version>3.1.0</version>
+            <configuration>
+              <fail>true</fail>
+              <excludeCoordinates>
+                <!--            <coordinate>            </coordinate> -->
+              </excludeCoordinates>
+            </configuration>
+            <executions>
+              <execution>
+                <id>audit-dependencies</id>
+                <phase>validate</phase>
+                <goals>
+                  <goal>audit</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 
   <scm>
