@@ -1,4 +1,4 @@
-Release 2.2.1 - ???
+Release 2.2.1 - 12/17/2021
 
    * Fix bug that prevented metadata keys in the UnpackerResource
      in tika-server (TIKA-3624).
