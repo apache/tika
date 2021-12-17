@@ -69,8 +69,9 @@ import org.apache.tika.sax.RichTextContentHandler;
 @Path("/unpack")
 public class UnpackerResource {
     public static final String TEXT_FILENAME = "__TEXT__";
+    public static final String META_FILENAME = "__METADATA__";
+
     private static final long MAX_ATTACHMENT_BYTES = 100 * 1024 * 1024;
-    private static final String META_FILENAME = "__METADATA__";
 
     private static final Logger LOG = LoggerFactory.getLogger(UnpackerResource.class);
 

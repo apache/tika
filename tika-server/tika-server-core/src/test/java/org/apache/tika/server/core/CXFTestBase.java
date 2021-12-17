@@ -26,6 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -187,6 +188,23 @@ public abstract class CXFTestBase {
         zip.close();
         Files.delete(tempFile);
         return bos.toString(UTF_8.name());
+    }
+
+    protected String readArchiveMetadataAndText(InputStream inputStream) throws IOException {
+        Path tempFile = writeTemporaryArchiveFile(inputStream, "zip");
+        ZipFile zip = new ZipFile(tempFile.toFile());
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        zip.getEntry(UnpackerResource.META_FILENAME);
+        IOUtils.copy(zip.getInputStream(zip.getEntry(UnpackerResource.META_FILENAME)), bos);
+        String metadata = new String(bos.toByteArray(), UTF_8);
+
+        bos = new ByteArrayOutputStream();
+        zip.getEntry(UnpackerResource.TEXT_FILENAME);
+        IOUtils.copy(zip.getInputStream(zip.getEntry(UnpackerResource.TEXT_FILENAME)), bos);
+        String txt = new String(bos.toByteArray(), UTF_8);
+        zip.close();
+        Files.delete(tempFile);
+        return metadata + "\n\n" + txt;
     }
 
     protected Map<String, String> readArchiveFromStream(ArchiveInputStream zip)
