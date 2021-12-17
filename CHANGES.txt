@@ -1,3 +1,10 @@
+Release 2.2.1 - ???
+
+   * Fix bug that prevented metadata keys in the UnpackerResource
+     in tika-server (TIKA-3624).
+
+   * Upgrade log4j to 2.0.16 (TIKA-3623)
+
 Release 2.2.0 - 12/13/2021
 
    * Add support for OneNote files downloaded from O365 (TIKA-3446).

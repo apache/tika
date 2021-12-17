@@ -84,7 +84,7 @@ public class UnpackerResource {
             ArrayList<String> list = new ArrayList<>(values.length + 1);
             list.add(name);
             list.addAll(Arrays.asList(values));
-            writer.printRecord(values);
+            writer.printRecord(list);
         }
 
         writer.close();
