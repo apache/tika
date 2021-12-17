@@ -913,5 +913,8 @@
 
   <scm>
     <tag>2.2.0-rc1</tag>
+    <connection>scm:git:https://github.com/apache/</connection>
+    <developerConnection>scm:git:https://github.com/apache/</developerConnection>
+    <url>https://github.com/apache/tika</url>
   </scm>
 </project>
