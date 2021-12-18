@@ -1,3 +1,7 @@
+Relesae 2.2.2 - ???
+
+   * Upgrade to PDFBox 2.0.25 (TIKA-3622)
+
 Release 2.2.1 - 12/17/2021
 
    * Fix bug that prevented metadata keys in the UnpackerResource
