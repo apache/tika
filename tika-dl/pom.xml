@@ -37,7 +37,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <dl4j.version>1.0.0-beta6</dl4j.version>
-    <twelvemonkeys.version>3.6.4</twelvemonkeys.version>
+    <twelvemonkeys.version>3.8.0</twelvemonkeys.version>
   </properties>
 
   <dependencies>
@@ -380,7 +380,6 @@
     <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
-      <version>2.8.0</version>
     </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
