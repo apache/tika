@@ -278,8 +278,8 @@
     <rat.version>0.13</rat.version>
 
     <!-- dependency versions -->
-    <aws.s3.version>1.12.128</aws.s3.version>
-    <aws.transcribe.version>1.12.128</aws.transcribe.version>
+    <aws.s3.version>1.12.129</aws.s3.version>
+    <aws.transcribe.version>1.12.129</aws.transcribe.version>
     <asm.version>9.2</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
@@ -313,7 +313,7 @@
     <jackcess.version>4.0.1</jackcess.version>
     <jackcess.encrypt.version>4.0.1</jackcess.encrypt.version>
     <jackrabbit.version>2.21.9</jackrabbit.version>
-    <jackson.version>2.13.0</jackson.version>
+    <jackson.version>2.13.1</jackson.version>
     <javax.annotation.version>1.3.2</javax.annotation.version>
     <javax.jcr.version>2.0</javax.jcr.version>
     <javax.rest.version>2.1.1</javax.rest.version>
@@ -333,12 +333,12 @@
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.17.0</log4j2.version>
     <lombok.version>1.18.20</lombok.version>
-    <lucene.version>8.11.0</lucene.version>
+    <lucene.version>8.11.1</lucene.version>
     <metadata.extractor.version>2.16.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <!-- 0.8.6 is built with java 11 and does not work with Java 8 -->
     <mime4j.version>0.8.4</mime4j.version>
-    <mockito.version>4.1.0</mockito.version>
+    <mockito.version>4.2.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <opencsv.version>2.3</opencsv.version>
     <objenesis.version>3.2</objenesis.version>
@@ -360,20 +360,20 @@
     <sis.version>1.1</sis.version>
     <!-- we'll need to stay on 1.7 until we're java modularized ? -->
     <slf4j.version>1.7.32</slf4j.version>
-    <solrj.version>8.11.0</solrj.version>
+    <solrj.version>8.11.1</solrj.version>
     <spring.version>5.3.13</spring.version>
     <sqlite.version>3.36.0.3</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
     <test.containers.version>1.16.2</test.containers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
     <tukaani.version>1.9</tukaani.version>
-    <twelvemonkeys.version>3.7.0</twelvemonkeys.version>
+    <twelvemonkeys.version>3.8.0</twelvemonkeys.version>
     <uima.version>3.2.0</uima.version>
     <uimafit.version>3.2.0</uimafit.version>
     <vorbis.version>0.8</vorbis.version>
     <xerces.version>2.12.1</xerces.version>
     <xmpcore.version>6.1.11</xmpcore.version>
-    <zstd.version>1.5.0-4</zstd.version>
+    <zstd.version>1.5.0-5</zstd.version>
   </properties>
 
   <dependencyManagement>
@@ -629,6 +629,7 @@
           <generateBackupPoms>false</generateBackupPoms>
         </configuration>
       </plugin>
+      <!-- to run just this: mvn ossindex:audit -Dossindex.fail=(true|false) -->
       <plugin>
         <groupId>org.sonatype.ossindex.maven</groupId>
         <artifactId>ossindex-maven-plugin</artifactId>
