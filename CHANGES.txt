@@ -1,9 +1,8 @@
-Release 1.28.1 - ??
+Release 1.28 - 12/19/2021
+
    * Upgrade log4j to 2.17.0 (TIKA-3625)
 
    * Upgrade PDFBox to 2.0.25 (TIKA-3622)
-
-Release 1.28 - 12/16/2021
 
    * Upgrade log4j 1.x to log4j2 2.16.0.  Users will likely
      want to upgrade their logging configurations from log4j
