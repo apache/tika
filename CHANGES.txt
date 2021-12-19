@@ -1,5 +1,7 @@
 Relesae 2.2.2 - ???
 
+   * Upgrade log4j to 2.17.0 (TIKA-3625).
+
    * Upgrade to PDFBox 2.0.25 (TIKA-3622)
 
 Release 2.2.1 - 12/17/2021
@@ -7,7 +9,7 @@ Release 2.2.1 - 12/17/2021
    * Fix bug that prevented metadata keys in the UnpackerResource
      in tika-server (TIKA-3624).
 
-   * Upgrade log4j to 2.0.16 (TIKA-3623)
+   * Upgrade log4j to 2.16.0 (TIKA-3623)
 
 Release 2.2.0 - 12/13/2021
 
