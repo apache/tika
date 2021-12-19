@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>1.29-SNAPSHOT</version>
+    <version>1.28-SNAPSHOT</version>
     <relativePath>tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -122,7 +122,7 @@ To: dev@tika.apache.org
 Subject: [VOTE] Release Apache Tika ${project.version} Candidate #N
 
 A candidate for the Tika ${project.version} release is available at:
-  https://dist.apache.org/repos/dist/dev/tika/
+  https://dist.apache.org/repos/dist/dev/tika/${project.version}
 
 The release candidate is a zip archive of the sources in:
   https://github.com/apache/tika/tree/{project.version}-rcN/
