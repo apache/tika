@@ -768,7 +768,7 @@
               <rules>
                 <bannedDependencies>
                   <excludes>
-                    <exclude>org.apache.logging.log4j:log4j-core:(,2.16.0)</exclude>
+                    <exclude>org.apache.logging.log4j:log4j-core:(,2.17.0)</exclude>
                   </excludes>
                 </bannedDependencies>
               </rules>
