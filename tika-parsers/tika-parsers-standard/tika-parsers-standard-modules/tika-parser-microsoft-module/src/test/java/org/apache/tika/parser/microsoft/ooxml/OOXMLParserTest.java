@@ -52,7 +52,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
-import org.apache.tika.TikaTest;
+import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
@@ -70,11 +70,12 @@ import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
+import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.microsoft.OfficeParser;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.sax.BodyContentHandler;
 
-public class OOXMLParserTest extends TikaTest {
+public class OOXMLParserTest extends MultiThreadedTikaTest {
 
     private static Locale USER_LOCALE = null;
 
@@ -1740,6 +1741,39 @@ public class OOXMLParserTest extends TikaTest {
         assertEquals(OfficeOpenXMLExtended.SECURITY_READ_ONLY_ENFORCED,
                 getRecursiveMetadata("testWORD_docSecurity.docx").get(0)
                         .get(OfficeOpenXMLExtended.DOC_SECURITY_STRING));
+    }
+
+    @Test
+    public void testMultiThreaded() throws Exception {
+        //TIKA-3627
+        int numThreads = 5;
+        int numIterations = 5;
+        ParseContext[] parseContexts = new ParseContext[numThreads];
+        for (int i = 0; i < parseContexts.length; i++) {
+            parseContexts[i] = new ParseContext();
+        }
+        Set<String> extensions = new HashSet<>();
+        extensions.add(".pptx");
+        extensions.add(".docx");
+        extensions.add(".xlsx");
+        extensions.add(".ppt");
+        extensions.add(".doc");
+        extensions.add(".xls");
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER);
+        testMultiThreaded(wrapper, parseContexts, numThreads, numIterations, path -> {
+            String pathName = path.getName().toLowerCase(Locale.ENGLISH);
+            int i = pathName.lastIndexOf(".");
+            String ext = "";
+            if (i > -1) {
+                ext = pathName.substring(i);
+            }
+            if (extensions.contains(ext)) {
+                return true;
+            } else {
+                return false;
+            }
+        });
+
     }
 }
 

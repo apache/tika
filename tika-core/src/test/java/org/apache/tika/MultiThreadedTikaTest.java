@@ -354,7 +354,7 @@ public class MultiThreadedTikaTest extends TikaTest {
                 Path testFile = files[randIndex];
                 List<Metadata> metadataList = null;
                 boolean success = false;
-                try (InputStream is = Files.newInputStream(testFile)) {
+                try (InputStream is = TikaInputStream.get(testFile)) {
                     metadataList = getRecursiveMetadata(is, parser, new ParseContext());
                     success = true;
                 } catch (Exception e) {
