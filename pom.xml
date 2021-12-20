@@ -112,6 +112,7 @@
                       <fileset dir="${basedir}/target/${project.version}">
                         <include name="*.zip" />
                         <include name="*.?ar" />
+                        <include name="*.tgz" />
                       </fileset>
                     </checksum>
                     <checksum file="${basedir}/target/${project.version}/tika-${project.version}-src.zip" algorithm="SHA-512" property="checksum" />
