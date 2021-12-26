@@ -355,7 +355,7 @@
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
     <poi.version>4.1.2</poi.version>
     <quartz.version>2.3.2</quartz.version>
-    <rome.version>1.16.0</rome.version>
+    <rome.version>1.17.0</rome.version>
     <scm.version>1.12.0</scm.version>
     <sis.version>1.1</sis.version>
     <!-- we'll need to stay on 1.7 until we're java modularized ? -->
