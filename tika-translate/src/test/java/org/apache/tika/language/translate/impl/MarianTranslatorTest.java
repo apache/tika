@@ -60,14 +60,10 @@ public class MarianTranslatorTest {
     @Test
     public void testNoConfig() throws Exception {
         String source = "Apache Tika is a wonderful tool";
-        String expected = "Apache Tika is a wonderful tool";
+        String expected = "Apache Tika is a wonderful tool"; // Pattern from other Translators is to return source
         String translated = translator.translate(source, "en", "zz");
-        if (translator.isAvailable()) {
-            assertTrue("Translate " + source + " to " + expected + " (was " + translated + ")",
-                    expected.equalsIgnoreCase(translated));
-        } else {
-            throw new AssumptionViolatedException("Engine not available");
-        }
+        assertTrue("Translate " + source + " to " + expected + " (was " + translated + ")",
+                   expected.equalsIgnoreCase(translated));
     }
 
 }
