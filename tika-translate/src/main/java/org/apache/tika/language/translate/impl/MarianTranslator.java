@@ -92,8 +92,8 @@ public class MarianTranslator extends AbstractTranslator {
      * @throws IOException on any I/O error performing translation.
      */
     public String translate(String text, String sourceLanguage, String targetLanguage) throws TikaException, IOException {
-        String configPath = config.getProperty(
-                String.format("translator.marian.%s_%s.config", sourceLanguage, targetLanguage));
+        String configPath =
+                config.getProperty("translator.marian." + sourceLanguage + "_" + targetLanguage + ".config");
 
         if (!isAvailable(sourceLanguage, targetLanguage)) return text;
 
@@ -155,7 +155,7 @@ public class MarianTranslator extends AbstractTranslator {
         if (!StringUtils.isEmpty(script) && !script.equals("no-script")) {
             Path scriptPath = Paths.get(script);
             if (!Files.exists(scriptPath) || !Files.isExecutable(scriptPath)) {
-                throw new IOException(String.format("Cannot execute configured script at %s",scriptPath));
+                throw new IOException("Cannot execute configured script at " + scriptPath);
             }
             ProcessBuilder postProcess = new ProcessBuilder();
             postProcess.command(script, file.getAbsolutePath());
@@ -203,8 +203,8 @@ public class MarianTranslator extends AbstractTranslator {
      * @return
      */
     public boolean isAvailable(String sourceLanguage, String targetLanguage) {
-        String configPath = config.getProperty(
-                String.format("translator.marian.%s_%s.config", sourceLanguage, targetLanguage));
+        String configPath =
+                config.getProperty("translator.marian." + sourceLanguage + "_" + targetLanguage + ".config");
         return !marianPath.equals(DEFAULT_PATH) && !StringUtils.isEmpty(configPath);
     }
 
