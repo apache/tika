@@ -83,14 +83,15 @@ public class OpenDocumentMetaParser extends XMLParser {
         return new TeeContentHandler(ch, branch);
     }
 
-    @Deprecated
+    // uncalled
+    /*@Deprecated
     private static ContentHandler getStatistic(ContentHandler ch, Metadata md, String name,
                                                String attribute) {
         Matcher matcher = META_XPATH.parse("//meta:document-statistic/@meta:" + attribute);
         ContentHandler branch = new MatchingContentHandler(
                 new AttributeMetadataHandler(META_NS, attribute, md, name), matcher);
         return new TeeContentHandler(ch, branch);
-    }
+    }*/
 
     private static ContentHandler getStatistic(ContentHandler ch, Metadata md, Property property,
                                                String attribute) {

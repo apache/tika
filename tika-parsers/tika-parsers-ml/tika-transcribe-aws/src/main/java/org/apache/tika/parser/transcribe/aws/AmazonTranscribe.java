@@ -310,9 +310,13 @@ public class AmazonTranscribe extends AbstractParser implements Initializable {
                                 LOG.debug("Received End Event. Result is complete.");
                             }
                         });
-                text = new BufferedReader(
-                        new InputStreamReader(resultInputStream, StandardCharsets.UTF_8)).lines()
-                        .collect(Collectors.joining("\n"));
+                try (InputStreamReader inputStreamReader =
+                             new InputStreamReader(resultInputStream, StandardCharsets.UTF_8);
+                        BufferedReader bufferedReader = new BufferedReader(inputStreamReader)) {
+                    text = bufferedReader
+                            .lines()
+                            .collect(Collectors.joining("\n"));
+                }
             }
             /*
              * The End Event indicates all matching records have been

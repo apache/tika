@@ -42,7 +42,7 @@ public class TrainTestSplit {
 
     private float trainingP = 0.7f;
     private float devTestP = 0.1f;
-    private float testP = 0.2f;
+    //private float testP = 0.2f;
     private Random random = new Random();
 
     public static void main(String[] args) throws Exception {

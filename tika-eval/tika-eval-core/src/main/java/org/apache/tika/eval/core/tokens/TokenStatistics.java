@@ -135,8 +135,8 @@ public class TokenStatistics {
     public int hashCode() {
         int result;
         long temp;
-        result = (int) (totalTokens ^ (totalTokens >>> 32));
-        result = 31 * result + (int) (totalUniqueTokens ^ (totalUniqueTokens >>> 32));
+        result = (int) (totalTokens ^ (totalTokens >>> 32)); // TODO http://findbugs.sourceforge.net/bugDescriptions.html#ICAST_BAD_SHIFT_AMOUNT
+        result = 31 * result + (int) (totalUniqueTokens ^ (totalUniqueTokens >>> 32)); // TODO http://findbugs.sourceforge.net/bugDescriptions.html#ICAST_BAD_SHIFT_AMOUNT
         result = 31 * result + Arrays.hashCode(topN);
         temp = Double.doubleToLongBits(entropy);
         result = 31 * result + (int) (temp ^ (temp >>> 32));

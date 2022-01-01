@@ -18,6 +18,7 @@ package org.apache.tika.langdetect.lingo24;
 
 import java.io.CharArrayWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -74,9 +75,8 @@ public class Lingo24LangDetector extends LanguageDetector {
         this.client = WebClient.create(LINGO24_TRANSLATE_URL_BASE + LINGO24_LANGID_ACTION);
         this.isAvailable = true;
         Properties config = new Properties();
-        try {
-            config.load(
-                    Lingo24LangDetector.class.getResourceAsStream("langdetect.lingo24.properties"));
+        try (InputStream inputStream = Lingo24LangDetector.class.getResourceAsStream("langdetect.lingo24.properties")) {
+            config.load(inputStream);
 
             this.userKey = config.getProperty("api.user-key");
 

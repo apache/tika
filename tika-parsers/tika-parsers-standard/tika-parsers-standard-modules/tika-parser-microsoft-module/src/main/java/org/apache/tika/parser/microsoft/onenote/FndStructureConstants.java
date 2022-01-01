@@ -60,7 +60,8 @@ final class FndStructureConstants {
     }
 
     static String nameOf(long type) {
-        switch (new Long(type).intValue()) {
+        int typeAsInt = (int) type;
+        switch (typeAsInt) {
             case (int) ObjectSpaceManifestRootFND:
                 return "ObjectSpaceManifestRootFND";
             case (int) ObjectSpaceManifestListReferenceFND:

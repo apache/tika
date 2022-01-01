@@ -120,6 +120,8 @@ public class XMLErrorLogUpdater {
                                         AbstractProfiler.PARSE_ERROR_TYPE.OOM);
                             }
                             break;
+                        default:
+                            throw new IllegalArgumentException("unexpected event type " + reader.getEventType());
                     }
                 }
                 reader.close();

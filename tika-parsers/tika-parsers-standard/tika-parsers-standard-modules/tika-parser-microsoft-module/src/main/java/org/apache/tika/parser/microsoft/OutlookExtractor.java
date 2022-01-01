@@ -426,10 +426,10 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         Map<MAPIProperty, List<Chunk>> mainChunks = msg.getMainChunks().getAll();
 
         List<Chunk> senderAddresType = mainChunks.get(MAPIProperty.SENDER_ADDRTYPE);
-        String senderAddressTypeString = "";
+        /*String senderAddressTypeString = ""; // unused variable
         if (senderAddresType != null && senderAddresType.size() > 0) {
             senderAddressTypeString = senderAddresType.get(0).toString();
-        }
+        }*/
 
         //sometimes in SMTP .msg files there is an email in the sender name field.
 

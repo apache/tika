@@ -69,11 +69,11 @@ public class URLEmailNormalizingFilterFactory extends TokenFilterFactory {
                 return false;
             }
             //== is actually substantially faster than .equals(String)
-            if (typeAtt.type() == UAX29URLEmailTokenizer.TOKEN_TYPES[UAX29URLEmailTokenizer.URL]) {
+            if (typeAtt.type().equals(UAX29URLEmailTokenizer.TOKEN_TYPES[UAX29URLEmailTokenizer.URL])) {
                 termAtt.copyBuffer(URL_CHARS, 0, URL_CHARS.length);
                 termAtt.setLength(URL_CHARS.length);
-            } else if (typeAtt.type() ==
-                    UAX29URLEmailTokenizer.TOKEN_TYPES[UAX29URLEmailTokenizer.EMAIL]) {
+            } else if (typeAtt.type().equals(
+                    UAX29URLEmailTokenizer.TOKEN_TYPES[UAX29URLEmailTokenizer.EMAIL])) {
                 termAtt.copyBuffer(EMAIL_CHARS, 0, EMAIL_CHARS.length);
                 termAtt.setLength(EMAIL_CHARS.length);
             }

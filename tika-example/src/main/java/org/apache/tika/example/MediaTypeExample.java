@@ -32,8 +32,8 @@ public class MediaTypeExample {
 
         Map<String, String> parameters = type.getParameters();
         System.out.println("parameters:");
-        for (String name : parameters.keySet()) {
-            System.out.println("  " + name + "=" + parameters.get(name));
+        for (Map.Entry<String,String> entry : parameters.entrySet()) {
+            System.out.println("  " + entry.getKey() + "=" + entry.getValue());
         }
     }
 

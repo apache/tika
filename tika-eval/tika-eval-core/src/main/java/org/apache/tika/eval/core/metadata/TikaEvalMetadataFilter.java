@@ -38,25 +38,25 @@ import org.apache.tika.metadata.filter.MetadataFilter;
 
 public class TikaEvalMetadataFilter extends MetadataFilter {
 
-    public static String TIKA_EVAL_NS = "tika-eval" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    public static final String TIKA_EVAL_NS = "tika-eval" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
-    public static Property NUM_TOKENS = Property.externalInteger(TIKA_EVAL_NS + "numTokens");
+    public static final Property NUM_TOKENS = Property.externalInteger(TIKA_EVAL_NS + "numTokens");
 
-    public static Property NUM_UNIQUE_TOKENS =
+    public static final Property NUM_UNIQUE_TOKENS =
             Property.externalInteger(TIKA_EVAL_NS + "numUniqueTokens");
 
-    public static Property NUM_ALPHA_TOKENS =
+    public static final Property NUM_ALPHA_TOKENS =
             Property.externalInteger(TIKA_EVAL_NS + "numAlphaTokens");
 
-    public static Property NUM_UNIQUE_ALPHA_TOKENS =
+    public static final Property NUM_UNIQUE_ALPHA_TOKENS =
             Property.externalInteger(TIKA_EVAL_NS + "numUniqueAlphaTokens");
 
-    public static Property LANGUAGE = Property.externalText(TIKA_EVAL_NS + "lang");
+    public static final Property LANGUAGE = Property.externalText(TIKA_EVAL_NS + "lang");
 
-    public static Property LANGUAGE_CONFIDENCE =
+    public static final Property LANGUAGE_CONFIDENCE =
             Property.externalReal(TIKA_EVAL_NS + "langConfidence");
 
-    public static Property OUT_OF_VOCABULARY = Property.externalReal(TIKA_EVAL_NS + "oov");
+    public static final Property OUT_OF_VOCABULARY = Property.externalReal(TIKA_EVAL_NS + "oov");
 
 
     static CompositeTextStatsCalculator TEXT_STATS_CALCULATOR;

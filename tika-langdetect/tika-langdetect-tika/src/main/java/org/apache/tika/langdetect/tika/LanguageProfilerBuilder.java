@@ -249,8 +249,9 @@ public class LanguageProfilerBuilder {
                             LanguageProfilerBuilder.create(profilename, fis, encoding);
                     fis.close();
                     f = new File(profilename + "." + FILE_EXTENSION);
-                    FileOutputStream fos = new FileOutputStream(f);
-                    newProfile.save(fos);
+                    try (FileOutputStream fos = new FileOutputStream(f)) {
+                        newProfile.save(fos);
+                    }
                     System.out.println(
                             "new profile " + profilename + "." + FILE_EXTENSION + " was created.");
                     break;

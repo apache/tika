@@ -70,7 +70,7 @@ public class BitConverter {
                     "The length of the byte array must be at least 2 bytes long.");
         }
         byte[] uint16Bytes = Arrays.copyOfRange(bytes, index, index + 2);
-        return LittleEndianBitConverter.ToUInt16(uint16Bytes, 0);
+        return LittleEndianBitConverter.toUInt16(uint16Bytes, 0);
     }
 
     public static int toInt32(byte[] bytes, int index) throws IOException {

@@ -73,8 +73,8 @@ public class TikaMimeTypes {
             }
         }
         h.append("<ul>");
-        for (String section : firstType.keySet()) {
-            h.append("<li><a href=\"#").append(firstType.get(section)).append("\">").append(section)
+        for (Map.Entry<String, String> entry: firstType.entrySet()) {
+            h.append("<li><a href=\"#").append(entry.getValue()).append("\">").append(entry.getKey())
                     .append("</a></li>\n");
         }
         h.append("</ul>");

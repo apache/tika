@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -111,8 +112,9 @@ public abstract class EvalConsumerBuilder {
             Connection connection = dbUtil.getConnection();
             for (TableInfo tableInfo : getRefTableInfos()) {
                 int rows = 0;
-                try (ResultSet rs = connection.createStatement()
-                        .executeQuery("select * from " + tableInfo.getName())) {
+                try (Statement statement = connection.createStatement();
+                        ResultSet rs = statement
+                                .executeQuery("select * from " + tableInfo.getName())) {
                     while (rs.next()) {
                         rows++;
                     }

@@ -482,6 +482,7 @@ class OneNoteTreeWalker {
                 ByteBuffer buf = ByteBuffer.allocate(content.size());
                 dif.read(buf);
                 propMap.put("dataUnicode16LE", new String(buf.array(), StandardCharsets.UTF_16LE));
+                // TODO options can't contain type OneNotePropertyId
                 if (options.getUtf16PropertiesToPrint().contains(propertyValue.propertyId)) {
                     xhtml.startElement(P);
                     xhtml.characters((String) propMap.get("dataUnicode16LE"));

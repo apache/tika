@@ -22,8 +22,6 @@ import java.io.Reader;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -31,7 +29,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.custom.CustomAnalyzer;
 import org.apache.lucene.analysis.util.ClasspathResourceLoader;
-import org.apache.lucene.analysis.util.TokenFilterFactory;
 
 class AnalyzerDeserializer {
 
@@ -157,7 +154,6 @@ class AnalyzerDeserializer {
                             analyzerName);
         }
 
-        List<TokenFilterFactory> ret = new LinkedList<>();
         for (Iterator<JsonNode> it = el.elements(); it.hasNext(); ) {
             JsonNode filterMap = it.next();
             if (!filterMap.isObject()) {

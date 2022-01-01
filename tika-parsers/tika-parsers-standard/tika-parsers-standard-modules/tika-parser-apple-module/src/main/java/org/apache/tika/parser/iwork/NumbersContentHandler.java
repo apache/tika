@@ -36,7 +36,7 @@ class NumbersContentHandler extends DefaultHandler {
 
     private boolean inSheet = false;
 
-    private boolean inText = false;
+    //private boolean inText = false; // unread
     private boolean parseText = false;
 
     private boolean inMetadata = false;
@@ -73,7 +73,7 @@ class NumbersContentHandler extends DefaultHandler {
         }
 
         if ("sf:text".equals(qName)) {
-            inText = true;
+            //inText = true;
             xhtml.startElement("p");
         }
 
@@ -184,7 +184,7 @@ class NumbersContentHandler extends DefaultHandler {
         }
 
         if ("sf:text".equals(qName)) {
-            inText = false;
+            //inText = false;
             xhtml.endElement("p");
         }
 

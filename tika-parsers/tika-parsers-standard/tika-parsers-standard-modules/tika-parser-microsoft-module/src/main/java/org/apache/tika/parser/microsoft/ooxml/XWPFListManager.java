@@ -43,7 +43,7 @@ public class XWPFListManager extends AbstractListManager {
 //if this shows up as the lvlText, don't show a number
 
     static {
-        boolean b = false;
+        boolean b = false; // TODO what's the purpose of b?
         try {
             Class.forName("org.openxmlformats.schemas.wordprocessingml.x2006.main.CTNumLvl");
             b = true;

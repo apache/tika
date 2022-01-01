@@ -95,9 +95,9 @@ public class OptimaizeLangDetector extends LanguageDetector {
 
         if (languageProbabilities != null) {
             Map<LdLocale, Double> languageWeights = new HashMap<>(languageProbabilities.size());
-            for (String language : languageProbabilities.keySet()) {
-                Double priority = (double) languageProbabilities.get(language);
-                languageWeights.put(LdLocale.fromString(language), priority);
+            for (Map.Entry<String, Float> entry : languageProbabilities.entrySet()) {
+                Double priority = (double) entry.getValue();
+                languageWeights.put(LdLocale.fromString(entry.getKey()), priority);
             }
 
             builder.languagePriorities(languageWeights);

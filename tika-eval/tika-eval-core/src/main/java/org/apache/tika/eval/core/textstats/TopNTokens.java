@@ -19,7 +19,6 @@ package org.apache.tika.eval.core.textstats;
 import java.util.Map;
 
 import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 
 import org.apache.tika.eval.core.tokens.TokenCounts;
 import org.apache.tika.eval.core.tokens.TokenIntPair;
@@ -36,7 +35,6 @@ public class TopNTokens implements TokenCountStatsCalculator<TokenIntPair[]> {
     public TokenIntPair[] calculate(TokenCounts tokenCounts) {
         TokenCountPriorityQueue queue = new TokenCountPriorityQueue(topN);
 
-        SummaryStatistics summaryStatistics = new SummaryStatistics();
         for (Map.Entry<String, MutableInt> e : tokenCounts.getTokens().entrySet()) {
             String token = e.getKey();
             int termFreq = e.getValue().intValue();

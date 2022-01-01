@@ -218,7 +218,7 @@ public class TopCommonTokenCounter {
                 Terms terms = wrappedReader.terms(FIELD);
                 TermsEnum termsEnum = terms.iterator();
                 BytesRef bytesRef = termsEnum.next();
-                int docsWThisField = wrappedReader.getDocCount(FIELD);
+
                 while (bytesRef != null) {
                     uniqueTerms++;
                     int df = termsEnum.docFreq();

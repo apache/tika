@@ -784,7 +784,7 @@ class OneNotePtr {
             // ends on an 8-byte boundary.
             ++offset;
         }
-        GUID footer = deserializeGUID();
+        //GUID footer = deserializeGUID();
         // TODO - the expected footer is per version of one note.
 //    if (!footer.equals(FILE_DATA_STORE_OBJ_FOOTER)) {
 //      throw new TikaException("Unexpected file data store object footer: " + footer);
@@ -798,7 +798,7 @@ class OneNotePtr {
                 new ObjectInfoDependencyOverrideData();
         long num_8bit_overrides = deserializeLittleEndianInt();
         long num_32bit_overrides = deserializeLittleEndianInt();
-        long crc = deserializeLittleEndianInt();
+        //long crc = deserializeLittleEndianInt();
         for (int i = 0; i < num_8bit_overrides; ++i) {
             int local = deserializeLittleEndianChar();
             objectInfoDependencyOverrideData.overrides1.add(local);
@@ -885,7 +885,8 @@ class OneNotePtr {
         long local8;
         long local16;
         long local32;
-        switch (new Long(stpFormat).intValue()) {
+        int stpFormatAsInt = (int) stpFormat;
+        switch (stpFormatAsInt) {
             case 0: // 8 bytes, uncompressed
                 data.stp = deserializeLittleEndianLong();
                 break;

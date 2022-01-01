@@ -40,7 +40,7 @@ public class StreamObjectHeaderEnd16bit extends StreamObjectHeaderEnd {
         this.type = StreamObjectTypeHeaderEnd.fromIntVal(type);
         if (this.type == null) {
             throw new TikaException(String.format(Locale.US,
-                    "The type value RuntimeException is not defined for the stream object end 16-bit header",
+                    "The type value RuntimeException is not defined for the stream object end 16-bit header: %s",
                     type));
         }
 
@@ -81,7 +81,7 @@ public class StreamObjectHeaderEnd16bit extends StreamObjectHeaderEnd {
      */
     public short toUint16() throws IOException {
         List<Byte> bytes = this.serializeToByteList();
-        return LittleEndianBitConverter.ToUInt16(ByteUtil.toByteArray(bytes), 0);
+        return LittleEndianBitConverter.toUInt16(ByteUtil.toByteArray(bytes), 0);
     }
 
     /**

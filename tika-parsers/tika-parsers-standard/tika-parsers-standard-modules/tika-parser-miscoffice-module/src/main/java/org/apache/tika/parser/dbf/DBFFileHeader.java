@@ -89,7 +89,7 @@ class DBFFileHeader {
         if (endOfHeader != 13) {
             throw new TikaException("Expected new line at end of header");
         }
-        long totalReadSoFar = 32 + (numCols * 32) + 1;
+        long totalReadSoFar = 32 + (numCols * 32L) + 1;
         //there can be extra bytes in the header
         long extraHeaderBytes = header.numBytesInHeader - totalReadSoFar;
         IOUtils.skipFully(is, extraHeaderBytes);
@@ -105,16 +105,16 @@ class DBFFileHeader {
         System.arraycopy(fieldRecord, 0, col.name, 0, 10);
 
         int colType = fieldRecord[11] & 0xFF;
-        if (colType < 0) {
+        if (colType < 0) { // TODO cond is always false
             throw new IOException("File truncated before coltype in header");
         }
         col.setType(colType);
         col.fieldLength = fieldRecord[16] & 0xFF;
-        if (col.fieldLength < 0) {
+        if (col.fieldLength < 0) { // TODO cond is always false
             throw new TikaException(
                     "Field length for column " + col.getName(StandardCharsets.US_ASCII) +
                             " is < 0");
-        } else if (col.fieldLength > DBFReader.MAX_FIELD_LENGTH) {
+        } else if (col.fieldLength > DBFReader.MAX_FIELD_LENGTH) { // TODO cond is always false
             throw new TikaException("Field length (" + col.fieldLength +
                     ") is greater than DBReader.MAX_FIELD_LENGTH (" + DBFReader.MAX_FIELD_LENGTH +
                     ")");

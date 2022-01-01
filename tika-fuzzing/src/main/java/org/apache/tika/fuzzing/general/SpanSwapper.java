@@ -36,7 +36,7 @@ public class SpanSwapper implements Transformer {
     static Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.OCTET_STREAM);
     Random random = new Random();
     int maxSpanLength = 10000;
-    private final float swapProbability = 0.01f;
+    private static final float swapProbability = 0.01f;
 
     @Override
     public Set<MediaType> getSupportedTypes() {

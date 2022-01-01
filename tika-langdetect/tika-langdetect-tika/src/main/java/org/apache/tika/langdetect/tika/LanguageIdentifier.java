@@ -100,8 +100,10 @@ public class LanguageIdentifier {
             LanguageProfile profile = new LanguageProfile();
 
             try (InputStream stream = LanguageIdentifier.class
-                    .getResourceAsStream(language + PROFILE_SUFFIX)) {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(stream, UTF_8));
+                    .getResourceAsStream(language + PROFILE_SUFFIX);
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(stream, UTF_8));
+            ) {
+
                 String line = reader.readLine();
                 while (line != null) {
                     if (line.length() > 0 && !line.startsWith("#")) {

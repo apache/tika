@@ -82,13 +82,12 @@ public class DumpTikaConfigExample {
             writer = new StringWriter();
         }
 
-        DumpTikaConfigExample ex = new DumpTikaConfigExample();
         TikaConfigSerializer.serialize(TikaConfig.getDefaultConfig(), mode, writer, encoding);
 
         writer.flush();
 
         if (writer instanceof StringWriter) {
-            System.out.println(writer.toString());
+            System.out.println(writer);
         }
         writer.close();
     }

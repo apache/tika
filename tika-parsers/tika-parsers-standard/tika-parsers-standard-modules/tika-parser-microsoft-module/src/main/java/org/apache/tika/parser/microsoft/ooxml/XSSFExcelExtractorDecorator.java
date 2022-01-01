@@ -80,7 +80,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
     /**
      * Allows access to headers/footers from raw xml strings
      */
-    protected static HeaderFooterHelper hfHelper = new HeaderFooterHelper();
+    protected static final HeaderFooterHelper hfHelper = new HeaderFooterHelper();
     protected final DataFormatter formatter;
     protected final List<PackagePart> sheetParts = new ArrayList<>();
     protected final Map<String, String> drawingHyperlinks = new HashMap<>();

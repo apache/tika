@@ -129,7 +129,7 @@ public class IptcAnpaParser implements Parser {
 
         FORMAT = this.scanFormat(is);
 
-        byte[] residual = this.getSection(is, "residual");
+        //byte[] residual = this.getSection(is, "residual");
 
         byte[] header = this.getSection(is, "header");
         parseHeader(header, properties);
@@ -362,7 +362,7 @@ public class IptcAnpaParser implements Parser {
         boolean added = false;
 
         String env_serviceid = "";
-        String env_category = "";
+        String env_category;
         String env_urgency = "";
         String hdr_edcode = "";
         StringBuilder hdr_subject = new StringBuilder();
@@ -371,6 +371,7 @@ public class IptcAnpaParser implements Parser {
 
         int read = 0;
 
+        StringBuilder stringBuilder = new StringBuilder();
         while (read < value.length) {
 
             // pull apart the envelope, getting the service id  (....\x1f)
@@ -388,8 +389,7 @@ public class IptcAnpaParser implements Parser {
             while (read < value.length) {
                 byte val_next = value[read++];
                 if (val_next != XS) {   // the end of the envelope is marked (\x13)
-                    env_category +=
-                            (char) (val_next & 0xff);  // convert the byte to an unsigned int
+                    stringBuilder.append((char) (val_next & 0xff));  // convert the byte to an unsigned int
                 } else {
                     val_next = value[read];  // get the remaining byte (\x11)
                     if (val_next == XQ) {
@@ -448,7 +448,7 @@ public class IptcAnpaParser implements Parser {
         }
 
         // if we were saving any of these values, we would set the properties map here
-
+        env_category = stringBuilder.toString();
         added = (env_serviceid.length() + env_category.length() + hdr_subject.length() +
                 hdr_date.length() + hdr_time.length()) > 0;
         return added;
@@ -775,15 +775,17 @@ public class IptcAnpaParser implements Parser {
                 }  // shouldn't ever hit this, but save a NPE
             }
 
+            StringBuilder stringBuilder = new StringBuilder();
             while ((val_next != LT) && (val_next != CR) && (val_next != LF) &&
                     (val_next != 0)) {  // get as much timedate as possible
                 // this is an american format, so arrives as mm-dd-yy HHiizzz
-                ftr_datetime += (char) (val_next & 0xff);  // convert the byte to an unsigned int
+                stringBuilder.append((char) (val_next & 0xff));  // convert the byte to an unsigned int
                 val_next = (read < value.length) ? value[read++] : 0x00;  // skip the new lines
                 if (read >= value.length) {
                     break;
                 }  // shouldn't ever hit this, but save a NPE
             }
+            ftr_datetime = stringBuilder.toString();
             if (val_next == LT) {
                 // hit the delimiter, carry on
                 val_next = (read < value.length) ? value[read++] : 0x00;

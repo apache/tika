@@ -134,8 +134,7 @@ public class ImageMetadataExtractor {
     public void parseWebP(File file) throws IOException, TikaException {
 
         try {
-            com.drew.metadata.Metadata webPMetadata = new com.drew.metadata.Metadata();
-            webPMetadata = WebpMetadataReader.readMetadata(file);
+            com.drew.metadata.Metadata webPMetadata = WebpMetadataReader.readMetadata(file);
             handle(webPMetadata);
         } catch (IOException e) {
             throw e;

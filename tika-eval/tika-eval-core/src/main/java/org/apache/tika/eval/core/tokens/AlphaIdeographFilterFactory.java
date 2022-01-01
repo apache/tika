@@ -76,8 +76,8 @@ public class AlphaIdeographFilterFactory extends TokenFilterFactory {
         @Override
         protected boolean accept() throws IOException {
             String type = typeAtt.type();
-            if (type == UAX29URLEmailTokenizer.TOKEN_TYPES[UAX29URLEmailTokenizer.EMOJI] ||
-                    type == UAX29URLEmailTokenizer.TOKEN_TYPES[UAX29URLEmailTokenizer.NUM]) {
+            if (type.equals(UAX29URLEmailTokenizer.TOKEN_TYPES[UAX29URLEmailTokenizer.EMOJI]) ||
+                    type.equals(UAX29URLEmailTokenizer.TOKEN_TYPES[UAX29URLEmailTokenizer.NUM])) {
                 return false;
             }
             return isAlphabetic(termAtt.buffer(), termAtt.length());

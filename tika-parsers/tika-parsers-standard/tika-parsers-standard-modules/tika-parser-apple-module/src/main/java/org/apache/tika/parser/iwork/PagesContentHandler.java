@@ -47,7 +47,7 @@ class PagesContentHandler extends DefaultHandler {
     private Annotations annotations = null;
     private Map<String, List<List<String>>> tableData = new HashMap<>();
     private String activeTableId;
-    private int numberOfColumns = 0;
+    //private int numberOfColumns = 0; // unread
     private List<String> activeRow = new ArrayList<>();
     private String metaDataLocalName;
     private String metaDataQName;
@@ -243,7 +243,7 @@ class PagesContentHandler extends DefaultHandler {
     private void parseTableData(String qName, Attributes attributes) {
         if ("sf:grid".equals(qName)) {
             String numberOfColumns = attributes.getValue("sf:numcols");
-            this.numberOfColumns = Integer.parseInt(numberOfColumns);
+            //this.numberOfColumns = Integer.parseInt(numberOfColumns);
         } else if ("sf:ct".equals(qName)) {
             activeRow.add(attributes.getValue("sfa:s"));
 

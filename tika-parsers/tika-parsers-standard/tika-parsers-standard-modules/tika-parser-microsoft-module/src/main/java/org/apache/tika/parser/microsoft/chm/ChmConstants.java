@@ -80,11 +80,11 @@ public class ChmConstants {
     public static final int LZX_ALIGNED_MAXSYMBOLS = LZX_ALIGNED_NUM_ELEMENTS;
     public static final int LZX_ALIGNED_TABLEBITS = 7;
     public static final int LZX_LENTABLE_SAFETY = 64;
-    public static short[] EXTRA_BITS =
+    public static final short[] EXTRA_BITS =
             {0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12,
                     12, 13, 13, 14, 14, 15, 15, 16, 16, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17,
                     17, 17, 17, 17};
-    public static int[] POSITION_BASE =
+    public static final int[] POSITION_BASE =
             {0, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024,
                     1536, 2048, 3072, 4096, 6144, 8192, 12288, 16384, 24576, 32768, 49152, 65536,
                     98304, 131072, 196608, 262144, 393216, 524288, 655360, 786432, 917504, 1048576,

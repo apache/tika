@@ -39,7 +39,7 @@ public class LittleEndianBitConverter {
      * @param index Specify the starting position.
      * @return Returns a 16-bit unsigned integer formed by two bytes beginning at startIndex.
      */
-    public static short ToUInt16(byte[] array, int index) throws IOException {
+    public static short toUInt16(byte[] array, int index) throws IOException {
         checkByteArgument(array, index, 2);
         return (short) convertFromBytes(array, index, 2);
     }

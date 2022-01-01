@@ -76,7 +76,7 @@ public class OOXMLExtractorFactory {
     private static final int MAX_BUFFER_LENGTH = 1000000;
 
     //TODO find what happened to SUPPORTED_TYPES
-    private static XSLFRelation[] XSLF_RELATIONS = new XSLFRelation[] {
+    private static final XSLFRelation[] XSLF_RELATIONS = new XSLFRelation[] {
             XSLFRelation.MAIN, XSLFRelation.MACRO, XSLFRelation.MACRO_TEMPLATE,
             XSLFRelation.PRESENTATIONML,
             XSLFRelation.PRESENTATIONML_TEMPLATE, XSLFRelation.PRESENTATION_MACRO
@@ -133,8 +133,7 @@ public class OOXMLExtractorFactory {
                     } catch (IOException e) {
                         if (e instanceof EOFException) {
                             //keep going
-                        } else if (e instanceof IOException && e.getMessage() != null &&
-                                e.getMessage().contains("Truncated")) {
+                        } else if (e.getMessage() != null && e.getMessage().contains("Truncated")) {
                             //keep going
                         } else {
                             throw e;

@@ -175,7 +175,7 @@ public class FuzzOne {
 
     private static class FuzzOneConfig {
         int perFileIterations;
-        int maxTransformers;
+        //int maxTransformers; // unread field
         int threadNum;
         int retryNum;
         long timeoutMs;
@@ -189,7 +189,7 @@ public class FuzzOne {
             config.inputFile = Paths.get(commandLine.getOptionValue("i"));
             config.outputFileBase = Paths.get(commandLine.getOptionValue("o"));
             config.perFileIterations = Integer.parseInt(commandLine.getOptionValue("p"));
-            config.maxTransformers = Integer.parseInt(commandLine.getOptionValue("t"));
+            //config.maxTransformers = Integer.parseInt(commandLine.getOptionValue("t"));
             config.threadNum = Integer.parseInt(commandLine.getOptionValue("n"));
             config.retryNum = Integer.parseInt(commandLine.getOptionValue("r"));
             config.timeoutMs = Integer.parseInt(commandLine.getOptionValue("m"));
@@ -219,9 +219,9 @@ public class FuzzOne {
             } catch (TikaException e) {
                 if (e.getCause() != null && e.getCause() instanceof RuntimeException) {
                     //handleThrowable(target, e.getCause());
-                    success = true;
+                    success = true; // TODO same code in if and else branches
                 } else {
-                    success = true;
+                    success = true; // TODO same code in if and else branches
                 }
             } catch (SAXException | IOException e) {
                 success = true;

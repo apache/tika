@@ -56,7 +56,7 @@ public class TextStatsFromTikaEval {
          */
 
         CommonTokenResult result = (CommonTokenResult) results.get(CommonTokens.class);
-        result.getLangCode();
+        result.getLangCode(); // returned value ignored, this line van be removed
         return result.getOOV();
     }
 }

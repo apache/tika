@@ -274,7 +274,7 @@ public class TSDParser extends AbstractParser {
     }
 
     private static class TSDMetas {
-        private final String DATE_FORMAT = "dd/MM/yyyy HH:mm:ss";
+        private static final String DATE_FORMAT = "dd/MM/yyyy HH:mm:ss";
 
         private Boolean parseBuilt = false;
         private Date emitDate = new Date();
@@ -343,7 +343,7 @@ public class TSDParser extends AbstractParser {
 
         public String getSerialNumberFormatted() {
             String outsn = String.format(Locale.ROOT, "%12x", getSerialNumber());
-            return outsn != null ? outsn.trim() : "" + getSerialNumber();
+            return outsn.trim();
         }
 
         public GeneralName getTsa() {

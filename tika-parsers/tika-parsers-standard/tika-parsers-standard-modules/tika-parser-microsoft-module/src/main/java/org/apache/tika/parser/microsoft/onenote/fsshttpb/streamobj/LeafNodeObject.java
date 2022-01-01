@@ -122,7 +122,7 @@ public class LeafNodeObject extends NodeObject {
          * @param intermediateGuid Specify the intermediate extended GUID.
          * @return Return the intermediate node object.
          */
-        public LeafNodeObject Build(List<ObjectGroupDataElementData> objectGroupList,
+        public LeafNodeObject build(List<ObjectGroupDataElementData> objectGroupList,
                                     ObjectGroupObjectData dataObj,
                                     ExGuid intermediateGuid) throws TikaException, IOException {
             AtomicReference<LeafNodeObject> node = new AtomicReference<>();
@@ -161,7 +161,7 @@ public class LeafNodeObject extends NodeObject {
                         ObjectGroupObjectData intermediateData =
                                 this.FindByExGuid(objectGroupList, extGuid, intermediateDeclare);
                         node.get().intermediateNodeObjectList.add(
-                                new IntermediateNodeObjectBuilder().Build(objectGroupList,
+                                new IntermediateNodeObjectBuilder().build(objectGroupList,
                                         intermediateData, extGuid));
                     }
                 }
@@ -181,7 +181,7 @@ public class LeafNodeObject extends NodeObject {
                     ObjectGroupObjectData intermediateData =
                             this.FindByExGuid(objectGroupList, extGuid, intermediateDeclare);
                     node.get().intermediateNodeObjectList.add(
-                            new IntermediateNodeObjectBuilder().Build(objectGroupList,
+                            new IntermediateNodeObjectBuilder().build(objectGroupList,
                                     intermediateData, extGuid));
                 }
             } else {
@@ -200,14 +200,14 @@ public class LeafNodeObject extends NodeObject {
          * @param signature Specify the signature.
          * @return Return the intermediate node object.
          */
-        public LeafNodeObject Build(byte[] array, SignatureObject signature) {
+        public LeafNodeObject build(byte[] array, SignatureObject signature) {
             LeafNodeObject nodeObject = new LeafNodeObject();
             nodeObject.dataSize = new DataSizeObject();
             nodeObject.dataSize.dataSize = array.length;
 
             nodeObject.signature = signature;
             nodeObject.exGuid =
-                    new ExGuid(SequenceNumberGenerator.GetCurrentSerialNumber(), UUID.randomUUID());
+                    new ExGuid(SequenceNumberGenerator.getCurrentSerialNumber(), UUID.randomUUID());
 
             nodeObject.dataNodeObjectData = new DataNodeObjectData(array, 0, array.length);
             nodeObject.intermediateNodeObjectList = null;

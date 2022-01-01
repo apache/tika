@@ -197,7 +197,7 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
                 relativeRoot = "";
             }
             String zipPath = (docRef.startsWith("/") ? docRef.substring(1) : docRef);
-            if (pkg instanceof ZipPackage) {
+            if (pkg != null) {
                 try (InputStream stream = getZipStream(zipPath, pkg)) {
                     XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream),
                             new OfflineContentHandler(new EmbeddedContentHandler(

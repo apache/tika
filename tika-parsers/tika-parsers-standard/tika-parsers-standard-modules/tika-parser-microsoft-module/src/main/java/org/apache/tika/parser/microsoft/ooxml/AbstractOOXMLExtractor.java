@@ -297,7 +297,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             return;
         }
 
-        InputStream is = part.getInputStream();
+        //InputStream is = part.getInputStream(); // unused
         // Open the POIFS (OLE2) structure and process
         POIFSFileSystem fs = null;
         try {

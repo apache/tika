@@ -110,7 +110,7 @@ public abstract class AbstractOfficeParser extends AbstractParser {
     }
 
     void getConcatenatePhoneticRuns() {
-        defaultOfficeParserConfig.isConcatenatePhoneticRuns();
+        defaultOfficeParserConfig.isConcatenatePhoneticRuns(); // TODO result is ignored and there is no side effect
     }
 
     public boolean isExtractAllAlternativesFromMSG() {

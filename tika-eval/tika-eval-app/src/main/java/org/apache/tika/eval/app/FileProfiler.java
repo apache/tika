@@ -61,7 +61,7 @@ public class FileProfiler extends AbstractProfiler {
     private static final Logger LOG = LoggerFactory.getLogger(FileProfiler.class);
     private static final Tika TIKA = new Tika();
     private static final FileCommandDetector FILE_COMMAND_DETECTOR = new FileCommandDetector();
-    public static TableInfo FILE_PROFILES = HAS_FILE ? new TableInfo("file_profiles",
+    public static final TableInfo FILE_PROFILES = HAS_FILE ? new TableInfo("file_profiles",
             new ColInfo(Cols.FILE_PATH, Types.VARCHAR, 2048, "PRIMARY KEY"),
             new ColInfo(Cols.FILE_NAME, Types.VARCHAR, 2048),
             new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 24),
@@ -77,7 +77,7 @@ public class FileProfiler extends AbstractProfiler {
                     new ColInfo(Cols.TIKA_MIME_ID, Types.INTEGER));
 
 
-    public static TableInfo FILE_MIME_TABLE =
+    public static final TableInfo FILE_MIME_TABLE =
             new TableInfo("file_mimes", new ColInfo(Cols.MIME_ID, Types.INTEGER, "PRIMARY KEY"),
                     new ColInfo(Cols.MIME_STRING, Types.VARCHAR, 256),
                     new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 12));

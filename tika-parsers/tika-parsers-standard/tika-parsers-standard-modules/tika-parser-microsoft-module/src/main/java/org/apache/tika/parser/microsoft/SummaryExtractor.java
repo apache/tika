@@ -241,10 +241,11 @@ public class SummaryExtractor {
         }
     }
 
-    private void set(String name, long value) {
+    // never called
+    /*private void set(String name, long value) {
         if (value > 0) {
             metadata.set(name, Long.toString(value));
         }
-    }
+    }*/
 
 }

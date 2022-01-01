@@ -155,7 +155,7 @@ class RTFEmbObjHandler {
             throw new TikaException("Requesting I read < 0 bytes ?!");
         }
         if (len > memoryLimitInKb * 1024) {
-            throw new TikaMemoryLimitException(len, (memoryLimitInKb * 1024));
+            throw new TikaMemoryLimitException(len, (memoryLimitInKb * 1024L));
         }
 
         byte[] bytes = new byte[len];

@@ -19,7 +19,6 @@ package org.apache.tika.example;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Date;
 
@@ -35,14 +34,15 @@ import org.apache.tika.metadata.TikaCoreProperties;
 @SuppressWarnings("deprecation")
 public class TrecDocumentGenerator {
     public TrecDocument summarize(File file)
-            throws FileNotFoundException, IOException, TikaException {
+            throws IOException, TikaException {
         Tika tika = new Tika();
         Metadata met = new Metadata();
 
-        String contents = tika.parseToString(new FileInputStream(file), met);
-        return new TrecDocument(met.get(TikaCoreProperties.RESOURCE_NAME_KEY), contents,
-                met.getDate(TikaCoreProperties.CREATED));
-
+        try (FileInputStream fileInputStream = new FileInputStream(file)) {
+            String contents = tika.parseToString(fileInputStream, met);
+            return new TrecDocument(met.get(TikaCoreProperties.RESOURCE_NAME_KEY), contents,
+                    met.getDate(TikaCoreProperties.CREATED));
+        }
     }
 
     // copied from

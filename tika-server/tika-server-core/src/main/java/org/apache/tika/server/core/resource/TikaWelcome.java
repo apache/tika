@@ -90,9 +90,9 @@ public class TikaWelcome {
                 String[] produces = null;
 
                 for (Annotation a : m.getAnnotations()) {
-                    for (Class<? extends Annotation> httpMethAnn : HTTP_METHODS.keySet()) {
-                        if (httpMethAnn.isInstance(a)) {
-                            httpMethod = HTTP_METHODS.get(httpMethAnn);
+                    for (Map.Entry<Class<? extends Annotation>, String> entry : HTTP_METHODS.entrySet()) {
+                        if (entry.getKey().isInstance(a)) {
+                            httpMethod = entry.getValue();
                         }
                     }
                     if (a instanceof Path) {

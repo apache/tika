@@ -98,7 +98,7 @@ public class ExtendedGUID implements Comparable<ExtendedGUID> {
      *
      * @return Return the byte list which store the byte information of ExtendedGUID
      */
-    public List<Byte> SerializeToByteList() {
+    public List<Byte> serializeToByteList() {
         List<Byte> byteList = new ArrayList<>(guid.toByteArray());
         for (byte b : BitConverter.getBytes(n)) {
             byteList.add(b);

@@ -139,7 +139,7 @@ public class ChmDirectoryListingSet {
             throws TikaException {
         try {
             int startPmgl = chmItspHeader.getIndex_head();
-            int stopPmgl = chmItspHeader.getUnknown_0024();
+            //int stopPmgl = chmItspHeader.getUnknown_0024();
             int dir_offset = (int) (chmItsHeader.getDirOffset() + chmItspHeader.getHeader_len());
             setDataOffset(chmItsHeader.getDataOffset());
 
@@ -224,12 +224,12 @@ public class ChmDirectoryListingSet {
                 //get entry name length
                 int strlen = 0;// = getEncint(data);
                 byte temp;
-                while ((temp = dir_chunk[placeHolder++]) >= 0x80) {
+                while ((temp = dir_chunk[placeHolder++]) >= 0x80 /*TODO condition is always false*/) {
                     strlen <<= 7;
                     strlen += temp & 0x7f;
                 }
 
-                strlen = (strlen << 7) + temp & 0x7f;
+                strlen = (strlen << 7 /*TODO that's always 0*/) + temp & 0x7f;
 
                 if (strlen > dir_chunk.length) {
                     throw new ChmParsingException("Bad data of a string length.");

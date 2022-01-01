@@ -102,7 +102,7 @@ public class MSOneStorePackage {
     public List<CellManifestDataElementData> cellManifests;
     public HeaderCell headerCell;
     public List<RevisionStoreObjectGroup> dataRoot;
-    public List<RevisionStoreObjectGroup> OtherFileNodeList;
+    public List<RevisionStoreObjectGroup> otherFileNodeList;
     private boolean mostRecentAuthorProp = false;
     private boolean originalAuthorProp = false;
     private Instant lastModifiedTimestamp = Instant.MIN;
@@ -112,7 +112,7 @@ public class MSOneStorePackage {
     public MSOneStorePackage() {
         this.revisionManifests = new ArrayList<>();
         this.cellManifests = new ArrayList<>();
-        this.OtherFileNodeList = new ArrayList<>();
+        this.otherFileNodeList = new ArrayList<>();
     }
 
     /**
@@ -164,7 +164,7 @@ public class MSOneStorePackage {
     public void walkTree(OneNoteTreeWalkerOptions options, Metadata metadata,
                          XHTMLContentHandler xhtml)
             throws SAXException, TikaException, IOException {
-        for (RevisionStoreObjectGroup revisionStoreObjectGroup : OtherFileNodeList) {
+        for (RevisionStoreObjectGroup revisionStoreObjectGroup : otherFileNodeList) {
             for (RevisionStoreObject revisionStoreObject : revisionStoreObjectGroup.objects) {
                 PropertySet propertySet =
                         revisionStoreObject.propertySet.objectSpaceObjectPropSet.body;

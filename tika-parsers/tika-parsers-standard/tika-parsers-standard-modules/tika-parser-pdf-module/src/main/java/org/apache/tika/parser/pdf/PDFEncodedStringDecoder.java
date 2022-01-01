@@ -81,7 +81,7 @@ class PDFEncodedStringDecoder {
      */
     String decode(String value) {
         try {
-            byte[] bytes = new String("(" + value + ")").getBytes(ISO_8859_1);
+            byte[] bytes = ("(" + value + ")").getBytes(ISO_8859_1);
             InputStream is = new ByteArrayInputStream(bytes);
             COSStringParser p = new COSStringParser(new RandomAccessBuffer(is));
             String parsed = p.myParseCOSString();

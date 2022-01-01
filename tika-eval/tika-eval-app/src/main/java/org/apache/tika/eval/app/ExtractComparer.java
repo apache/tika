@@ -57,14 +57,14 @@ public class ExtractComparer extends AbstractProfiler {
     public static TableInfo REF_PAIR_NAMES =
             new TableInfo("pair_names", new ColInfo(Cols.DIR_NAME_A, Types.VARCHAR, 128),
                     new ColInfo(Cols.DIR_NAME_B, Types.VARCHAR, 128));
-    public static TableInfo COMPARISON_CONTAINERS = new TableInfo("containers",
+    public static final TableInfo COMPARISON_CONTAINERS = new TableInfo("containers",
             new ColInfo(Cols.CONTAINER_ID, Types.INTEGER, "PRIMARY KEY"),
             new ColInfo(Cols.FILE_PATH, Types.VARCHAR, FILE_PATH_MAX_LEN),
             new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 12),
             new ColInfo(Cols.LENGTH, Types.BIGINT),
             new ColInfo(Cols.EXTRACT_FILE_LENGTH_A, Types.BIGINT),
             new ColInfo(Cols.EXTRACT_FILE_LENGTH_B, Types.BIGINT));
-    public static TableInfo CONTENT_COMPARISONS =
+    public static final TableInfo CONTENT_COMPARISONS =
             new TableInfo("content_comparisons", new ColInfo(Cols.ID, Types.INTEGER, "PRIMARY KEY"),
                     new ColInfo(Cols.TOP_10_UNIQUE_TOKEN_DIFFS_A, Types.VARCHAR, 1024),
                     new ColInfo(Cols.TOP_10_UNIQUE_TOKEN_DIFFS_B, Types.VARCHAR, 1024),
@@ -72,29 +72,29 @@ public class ExtractComparer extends AbstractProfiler {
                     new ColInfo(Cols.TOP_10_MORE_IN_B, Types.VARCHAR, 1024),
                     new ColInfo(Cols.DICE_COEFFICIENT, Types.FLOAT),
                     new ColInfo(Cols.OVERLAP, Types.FLOAT));
-    public static TableInfo PROFILES_A =
+    public static final TableInfo PROFILES_A =
             new TableInfo("profiles_a", ExtractProfiler.PROFILE_TABLE.getColInfos());
-    public static TableInfo PROFILES_B =
+    public static final TableInfo PROFILES_B =
             new TableInfo("profiles_b", ExtractProfiler.PROFILE_TABLE.getColInfos());
-    public static TableInfo EMBEDDED_FILE_PATH_TABLE_A =
+    public static final TableInfo EMBEDDED_FILE_PATH_TABLE_A =
             new TableInfo("emb_path_a", ExtractProfiler.EMBEDDED_FILE_PATH_TABLE.getColInfos());
-    public static TableInfo EMBEDDED_FILE_PATH_TABLE_B =
+    public static final TableInfo EMBEDDED_FILE_PATH_TABLE_B =
             new TableInfo("emb_path_b", ExtractProfiler.EMBEDDED_FILE_PATH_TABLE.getColInfos());
-    public static TableInfo CONTENTS_TABLE_A =
+    public static final TableInfo CONTENTS_TABLE_A =
             new TableInfo("contents_a", ExtractProfiler.CONTENTS_TABLE.getColInfos());
-    public static TableInfo CONTENTS_TABLE_B =
+    public static final TableInfo CONTENTS_TABLE_B =
             new TableInfo("contents_b", ExtractProfiler.CONTENTS_TABLE.getColInfos());
-    public static TableInfo TAGS_TABLE_A =
+    public static final TableInfo TAGS_TABLE_A =
             new TableInfo("tags_a", ExtractProfiler.TAGS_TABLE.getColInfos());
-    public static TableInfo TAGS_TABLE_B =
+    public static final TableInfo TAGS_TABLE_B =
             new TableInfo("tags_b", ExtractProfiler.TAGS_TABLE.getColInfos());
-    public static TableInfo EXCEPTION_TABLE_A =
+    public static final TableInfo EXCEPTION_TABLE_A =
             new TableInfo("exceptions_a", ExtractProfiler.EXCEPTION_TABLE.getColInfos());
-    public static TableInfo EXCEPTION_TABLE_B =
+    public static final TableInfo EXCEPTION_TABLE_B =
             new TableInfo("exceptions_b", ExtractProfiler.EXCEPTION_TABLE.getColInfos());
-    public static TableInfo EXTRACT_EXCEPTION_TABLE_A = new TableInfo("extract_exceptions_a",
+    public static final TableInfo EXTRACT_EXCEPTION_TABLE_A = new TableInfo("extract_exceptions_a",
             ExtractProfiler.EXTRACT_EXCEPTION_TABLE.getColInfos());
-    public static TableInfo EXTRACT_EXCEPTION_TABLE_B = new TableInfo("extract_exceptions_b",
+    public static final TableInfo EXTRACT_EXCEPTION_TABLE_B = new TableInfo("extract_exceptions_b",
             ExtractProfiler.EXTRACT_EXCEPTION_TABLE.getColInfos());
     static Options OPTIONS;
 

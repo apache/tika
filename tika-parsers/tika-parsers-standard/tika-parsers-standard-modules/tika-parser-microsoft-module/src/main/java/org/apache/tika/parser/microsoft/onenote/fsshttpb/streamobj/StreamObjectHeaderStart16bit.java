@@ -91,8 +91,8 @@ public class StreamObjectHeaderStart16bit extends StreamObjectHeaderStart {
      *
      * @return Return the ushort value.
      */
-    public short ToUint16() throws IOException {
-        return LittleEndianBitConverter.ToUInt16(ByteUtil.toByteArray(this.serializeToByteList()),
+    public short toUint16() throws IOException {
+        return LittleEndianBitConverter.toUInt16(ByteUtil.toByteArray(this.serializeToByteList()),
                 0);
     }
 

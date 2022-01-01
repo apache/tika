@@ -87,7 +87,7 @@ public class TikaServerProcess {
 
     public static final Set<String> LOG_LEVELS = new HashSet<>(Arrays.asList("debug", "info"));
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerProcess.class);
-    public static int DO_NOT_RESTART_EXIT_VALUE = -100;
+    public static final int DO_NOT_RESTART_EXIT_VALUE = -100;
     public static final int BIND_EXCEPTION = 42;
 
 

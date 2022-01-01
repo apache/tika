@@ -83,8 +83,6 @@ abstract class ZipContainerDetectorBase {
                 return null;
             }
         }
-        if (kmlFound) {
-        }
         return null;
     }
 

@@ -73,6 +73,8 @@ public class XMLLogReader {
                         //do we care any more?
                     }
                     break;
+                default:
+                    throw new IllegalArgumentException("unsupported event type " + reader.getEventType());
             }
         }
     }

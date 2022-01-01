@@ -77,9 +77,6 @@ public class ExtractProfilerBuilder extends EvalConsumerBuilder {
         if (inputDir == null) {
             throw new RuntimeException("Must specify -inputDir");
         }
-        if (extracts == null && inputDir != null) {
-            extracts = inputDir;
-        }
         return parameterizeProfiler(
                 new ExtractProfiler(queue, inputDir, extracts, buildExtractReader(localAttrs),
                         getDBWriter(tableInfos)));

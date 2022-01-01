@@ -75,40 +75,40 @@ import org.apache.tika.utils.StringUtils;
  */
 public class HttpFetcher extends AbstractFetcher implements Initializable, RangeFetcher {
 
-    public static String HTTP_HEADER_PREFIX = "http-header:";
+    public static final String HTTP_HEADER_PREFIX = "http-header:";
 
-    public static String HTTP_FETCH_PREFIX = "http-connection:";
+    public static final String HTTP_FETCH_PREFIX = "http-connection:";
 
     /**
      * http status code
      */
-    public static Property HTTP_STATUS_CODE =
+    public static final Property HTTP_STATUS_CODE =
             Property.externalInteger(HTTP_HEADER_PREFIX + "status-code");
     /**
      * Number of redirects
      */
-    public static Property HTTP_NUM_REDIRECTS =
+    public static final Property HTTP_NUM_REDIRECTS =
             Property.externalInteger(HTTP_FETCH_PREFIX + "num-redirects");
 
     /**
      * If there were redirects, this captures the final URL visited
      */
-    public static Property HTTP_TARGET_URL =
+    public static final Property HTTP_TARGET_URL =
             Property.externalText(HTTP_FETCH_PREFIX + "target-url");
 
-    public static Property HTTP_TARGET_IP_ADDRESS =
+    public static final Property HTTP_TARGET_IP_ADDRESS =
             Property.externalText(HTTP_FETCH_PREFIX + "target-ip-address");
 
-    public static Property HTTP_FETCH_TRUNCATED =
+    public static final Property HTTP_FETCH_TRUNCATED =
             Property.externalBoolean(HTTP_FETCH_PREFIX + "fetch-truncated");
 
-    public static Property HTTP_CONTENT_ENCODING =
+    public static final Property HTTP_CONTENT_ENCODING =
             Property.externalText(HTTP_HEADER_PREFIX + "content-encoding");
 
-    public static Property HTTP_CONTENT_TYPE =
+    public static final Property HTTP_CONTENT_TYPE =
             Property.externalText(HTTP_HEADER_PREFIX + "content-type");
 
-    private static String USER_AGENT = "User-Agent";
+    private static final String USER_AGENT = "User-Agent";
 
     Logger LOG = LoggerFactory.getLogger(HttpFetcher.class);
     private HttpClientFactory httpClientFactory = new HttpClientFactory();

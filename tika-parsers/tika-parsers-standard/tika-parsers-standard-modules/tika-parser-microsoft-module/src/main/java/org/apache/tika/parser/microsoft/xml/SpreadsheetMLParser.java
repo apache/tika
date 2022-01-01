@@ -150,9 +150,6 @@ public class SpreadsheetMLParser extends AbstractXML2003Parser {
                             handler.startElement(XHTMLContentHandler.XHTML, A, A, attrs);
                         }
                         String b = buffer.toString();
-                        if (b == null) {
-                            b = "";
-                        }
                         char[] chars = b.trim().toCharArray();
                         handler.characters(chars, 0, chars.length);
                         if (href != null) {

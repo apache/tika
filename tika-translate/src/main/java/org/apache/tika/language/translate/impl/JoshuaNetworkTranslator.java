@@ -148,14 +148,17 @@ public class JoshuaNetworkTranslator extends AbstractTranslator {
     ObjectNode jsonNode = requestMapper.createObjectNode();
     jsonNode.put("inputLanguage", sourceLanguage);
     jsonNode.put("inputText", inputText);
-    //make the reuest
+    //make the request
     Response response = client.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON).post(jsonNode);
-    BufferedReader reader = new BufferedReader(new InputStreamReader(
-        (InputStream) response.getEntity(), UTF_8));
-    String line;
     StringBuilder responseText = new StringBuilder();
-    while ((line = reader.readLine()) != null) {
-      responseText.append(line);
+    try (InputStreamReader inputStreamReader = new InputStreamReader(
+            (InputStream) response.getEntity(), UTF_8);
+         BufferedReader reader = new BufferedReader(inputStreamReader);
+    ) {
+      String line;
+      while ((line = reader.readLine()) != null) {
+        responseText.append(line);
+      }
     }
 
     try {

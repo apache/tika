@@ -48,9 +48,9 @@ public class GeoTag {
      */
     public void toGeoTag(Map<String, List<Location>> resolvedGeonames, String bestNER) {
 
-        for (String key : resolvedGeonames.keySet()) {
-            List<Location> cur = resolvedGeonames.get(key);
-            if (key.equals(bestNER)) {
+        for (Map.Entry<String, List<Location>> entry : resolvedGeonames.entrySet()) {
+            List<Location> cur = entry.getValue();
+            if (entry.getKey().equals(bestNER)) {
                 this.location = cur.get(0);
 
             } else {

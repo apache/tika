@@ -41,7 +41,7 @@ public class TikaServerCli {
     /**
      * This value is set to the server's id in the forked process.
      */
-    public static String TIKA_SERVER_ID_ENV = "tika.server.id";
+    public static final String TIKA_SERVER_ID_ENV = "tika.server.id";
 
     private static Options getOptions() {
         Options options = new Options();

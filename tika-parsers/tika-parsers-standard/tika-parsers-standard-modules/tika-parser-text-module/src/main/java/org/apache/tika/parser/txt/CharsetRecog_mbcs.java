@@ -490,7 +490,7 @@ abstract class CharsetRecog_mbcs extends CharsetRecognizer {
                 secondByte = it.nextByte(det);
                 it.charValue = (it.charValue << 8) | secondByte;
 
-                if (firstByte >= 0x81 && firstByte <= 0xFE) {
+                if (firstByte <= 0xFE) {
                     // Two byte Char
                     if ((secondByte >= 0x40 && secondByte <= 0x7E) ||
                             (secondByte >= 80 && secondByte <= 0xFE)) {

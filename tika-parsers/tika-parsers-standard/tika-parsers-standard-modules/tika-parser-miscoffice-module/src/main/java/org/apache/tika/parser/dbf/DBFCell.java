@@ -131,7 +131,7 @@ class DBFCell {
         try (InputStream is = new ByteArrayInputStream(getBytes())) {
 
             int date = EndianUtils.readIntLE(is);
-            int time = EndianUtils.readIntLE(is);
+            //int time = EndianUtils.readIntLE(is);
             baseCalendar.add(Calendar.DATE, date);
             DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ROOT);
             return df.format(baseCalendar.getTime());

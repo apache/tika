@@ -88,9 +88,7 @@ public class JsonMetadataList {
             }
 
         }
-        if (ms == null) {
-            return null;
-        }
+
         //if the last object is the main document,
         //as happens with the streaming serializer,
         //flip it to be the first element.

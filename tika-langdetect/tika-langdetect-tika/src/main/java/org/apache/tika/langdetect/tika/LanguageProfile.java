@@ -267,7 +267,7 @@ public class LanguageProfile {
         private List<Map.Entry<String, Counter>> getSortedNgrams() {
             List<Map.Entry<String, Counter>> entries =
                     new ArrayList<>(ngrams.size());
-            entries.addAll(ngrams.entrySet());
+            entries.addAll(ngrams.entrySet()); // TODO http://findbugs.sourceforge.net/bugDescriptions.html#DMI_ENTRY_SETS_MAY_REUSE_ENTRY_OBJECTS
             entries.sort(Map.Entry.comparingByKey());
             return entries;
         }

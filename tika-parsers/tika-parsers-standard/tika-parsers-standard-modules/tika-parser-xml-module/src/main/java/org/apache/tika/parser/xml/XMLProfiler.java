@@ -77,9 +77,9 @@ public class XMLProfiler extends AbstractParser {
                     MediaType.application("rdf+xml"),//xmp
                     //xfa: https://en.wikipedia.org/wiki/XFA
                     MediaType.application("vnd.adobe.xdp+xml"))));
-    public static Property ROOT_ENTITY = Property.internalText("xmlprofiler:root_entity");
-    public static Property ENTITY_URIS = Property.internalTextBag("xmlprofiler:entity_uris");
-    public static Property ENTITY_LOCAL_NAMES =
+    public static final Property ROOT_ENTITY = Property.internalText("xmlprofiler:root_entity");
+    public static final Property ENTITY_URIS = Property.internalTextBag("xmlprofiler:entity_uris");
+    public static final Property ENTITY_LOCAL_NAMES =
             Property.internalTextBag("xmlprofiler:entity_local_names");
 
     @Override

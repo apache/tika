@@ -63,11 +63,12 @@ public class H2Util extends JDBCUtil {
 
     @Override
     public boolean dropTableIfExists(Connection conn, String tableName) throws SQLException {
-        Statement st = conn.createStatement();
-        String sql = "drop table if exists " + tableName;
-        boolean success = st.execute(sql);
-        st.close();
-        return success;
+        try (Statement st = conn.createStatement()) {
+            String sql = "drop table if exists " + tableName;
+            boolean success = st.execute(sql);
+            st.close();
+            return success;
+        }
     }
 
     @Override
@@ -78,13 +79,14 @@ public class H2Util extends JDBCUtil {
     @Override
     public Set<String> getTables(Connection connection) throws SQLException {
         String sql = "SHOW TABLES";
-        Statement st = connection.createStatement();
-        ResultSet rs = st.executeQuery(sql);
-        Set<String> tables = new HashSet<>();
-        while (rs.next()) {
-            String table = rs.getString(1);
-            tables.add(table);
+        try (Statement st = connection.createStatement();
+                ResultSet rs = st.executeQuery(sql)) {
+            Set<String> tables = new HashSet<>();
+            while (rs.next()) {
+                String table = rs.getString(1);
+                tables.add(table);
+            }
+            return tables;
         }
-        return tables;
     }
 }

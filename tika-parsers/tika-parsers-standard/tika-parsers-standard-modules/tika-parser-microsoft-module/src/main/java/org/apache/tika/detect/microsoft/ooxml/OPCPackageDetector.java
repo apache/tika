@@ -304,7 +304,7 @@ public class OPCPackageDetector implements ZipContainerDetector {
 
     private static class RelsHandler extends DefaultHandler {
         Set<String> rels = new HashSet<>();
-        private MediaType mediaType = null;
+        //private MediaType mediaType = null; // unused variable
 
         @Override
         public void startElement(String uri, String localName, String name, Attributes attrs)
@@ -314,9 +314,9 @@ public class OPCPackageDetector implements ZipContainerDetector {
                 if (attrName.equals("Type")) {
                     String contentType = attrs.getValue(i);
                     rels.add(contentType);
-                    if (OOXML_CONTENT_TYPES.containsKey(contentType)) {
+                    /*if (OOXML_CONTENT_TYPES.containsKey(contentType)) {
                         mediaType = OOXML_CONTENT_TYPES.get(contentType);
-                    }
+                    }*/
                 }
             }
         }

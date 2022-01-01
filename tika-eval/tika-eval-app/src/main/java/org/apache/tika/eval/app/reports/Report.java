@@ -27,9 +27,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -97,14 +95,14 @@ public class Report {
 
             int rowCount = 0;
             ResultSetMetaData meta = rs.getMetaData();
-            Set<String> colNames = new HashSet<>();
+            //Set<String> colNames = new HashSet<>(); // unused
 
             Row xssfRow = sheet.createRow(rowCount++);
             //write headers and cache them to check against styles
             for (int i = 1; i <= meta.getColumnCount(); i++) {
                 Cell cell = xssfRow.createCell(i - 1);
                 cell.setCellValue(meta.getColumnLabel(i));
-                colNames.add(meta.getColumnLabel(i));
+                //colNames.add(meta.getColumnLabel(i));
             }
 
             ResultSetMetaData resultSetMetaData = rs.getMetaData();

@@ -44,7 +44,7 @@ public class XWPFStylesShim {
     /**
      * Empty singleton to be used when there is no style info
      */
-    public static XWPFStylesShim EMPTY_STYLES = new EmptyXWPFStyles();
+    public static final XWPFStylesShim EMPTY_STYLES = new EmptyXWPFStyles();
 
     private Map<String, String> styles = new HashMap<>();
 

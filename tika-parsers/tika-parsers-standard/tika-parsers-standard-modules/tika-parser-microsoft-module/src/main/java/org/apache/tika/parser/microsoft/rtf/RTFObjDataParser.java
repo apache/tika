@@ -156,12 +156,12 @@ class RTFObjDataParser {
             if (root.hasEntry("Package")) {
                 Entry ooxml = root.getEntry("Package");
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
-                try (BoundedInputStream bis = new BoundedInputStream(memoryLimitInKb * 1024,
+                try (BoundedInputStream bis = new BoundedInputStream(memoryLimitInKb * 1024L,
                         new DocumentInputStream((DocumentEntry) ooxml))) {
                     IOUtils.copy(bis, out);
                     if (bis.hasHitBound()) {
-                        throw new TikaMemoryLimitException((memoryLimitInKb * 1024 + 1),
-                                (memoryLimitInKb * 1024));
+                        throw new TikaMemoryLimitException((memoryLimitInKb * 1024L + 1),
+                                (memoryLimitInKb * 1024L));
                     }
                 }
                 ret = out.toByteArray();
@@ -271,8 +271,8 @@ class RTFObjDataParser {
             fileNameToUse = p;
             pathToUse = p;
         } else {
-            fileNameToUse = displayName == null ? "" : displayName;
-            pathToUse = ansiFilePath == null ? "" : ansiFilePath;
+            fileNameToUse = displayName;
+            pathToUse = ansiFilePath;
         }
         metadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, fileNameToUse);
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, FilenameUtils.getName(fileNameToUse));

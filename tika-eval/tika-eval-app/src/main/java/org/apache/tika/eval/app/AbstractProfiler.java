@@ -99,23 +99,23 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
             Pattern.compile("org\\.apache\\.tika\\.exception\\.AccessPermissionException");
     private final static Pattern ENCRYPTION_EXCEPTION =
             Pattern.compile("org\\.apache\\.tika.exception\\.EncryptedDocumentException");
-    public static TableInfo REF_EXTRACT_EXCEPTION_TYPES =
+    public static final TableInfo REF_EXTRACT_EXCEPTION_TYPES =
             new TableInfo("ref_extract_exception_types",
                     new ColInfo(Cols.EXTRACT_EXCEPTION_ID, Types.INTEGER),
                     new ColInfo(Cols.EXTRACT_EXCEPTION_DESCRIPTION, Types.VARCHAR, 128));
-    public static TableInfo REF_PARSE_ERROR_TYPES =
+    public static final TableInfo REF_PARSE_ERROR_TYPES =
             new TableInfo("ref_parse_error_types", new ColInfo(Cols.PARSE_ERROR_ID, Types.INTEGER),
                     new ColInfo(Cols.PARSE_ERROR_DESCRIPTION, Types.VARCHAR, 128));
-    public static TableInfo REF_PARSE_EXCEPTION_TYPES = new TableInfo("ref_parse_exception_types",
+    public static final TableInfo REF_PARSE_EXCEPTION_TYPES = new TableInfo("ref_parse_exception_types",
             new ColInfo(Cols.PARSE_EXCEPTION_ID, Types.INTEGER),
             new ColInfo(Cols.PARSE_EXCEPTION_DESCRIPTION, Types.VARCHAR, 128));
-    public static TableInfo MIME_TABLE =
+    public static final TableInfo MIME_TABLE =
             new TableInfo("mimes", new ColInfo(Cols.MIME_ID, Types.INTEGER, "PRIMARY KEY"),
                     new ColInfo(Cols.MIME_STRING, Types.VARCHAR, 256),
                     new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 12));
     private static CommonTokenCountManager COMMON_TOKEN_COUNT_MANAGER;
-    private static Pattern FILE_NAME_CLEANER = Pattern.compile("\\.(json|txt)(\\.(bz2|gz|zip))?$");
-    private static LanguageIDWrapper LANG_ID = new LanguageIDWrapper();
+    private static final Pattern FILE_NAME_CLEANER = Pattern.compile("\\.(json|txt)(\\.(bz2|gz|zip))?$");
+    private static final LanguageIDWrapper LANG_ID = new LanguageIDWrapper();
     protected IDBWriter writer;
     AnalyzerManager analyzerManager;
     int maxContentLength = 10000000;

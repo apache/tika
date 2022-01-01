@@ -33,6 +33,8 @@ public class TableInfo {
 
     public TableInfo(String name, ColInfo... cols) {
         Collections.addAll(colInfos, cols);
+
+        // TODO returned value ignored! this line has no effect and can be removed
         Collections.unmodifiableList(colInfos);
         this.name = name;
         for (ColInfo c : colInfos) {
@@ -43,6 +45,8 @@ public class TableInfo {
 
     public TableInfo(String name, List<ColInfo> cols) {
         colInfos.addAll(cols);
+
+        // TODO returned value ignored! this line has no effect and can be removed
         Collections.unmodifiableList(colInfos);
         this.name = name;
         for (ColInfo c : colInfos) {

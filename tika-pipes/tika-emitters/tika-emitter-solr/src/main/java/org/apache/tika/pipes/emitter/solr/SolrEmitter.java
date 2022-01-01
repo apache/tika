@@ -48,7 +48,7 @@ import org.apache.tika.pipes.emitter.TikaEmitterException;
 
 public class SolrEmitter extends AbstractEmitter implements Initializable {
 
-    public static String DEFAULT_EMBEDDED_FILE_FIELD_NAME = "embedded";
+    public static final String DEFAULT_EMBEDDED_FILE_FIELD_NAME = "embedded";
     private static final Logger LOG = LoggerFactory.getLogger(SolrEmitter.class);
     private final HttpClientFactory httpClientFactory;
     private AttachmentStrategy attachmentStrategy = AttachmentStrategy.PARENT_CHILD;

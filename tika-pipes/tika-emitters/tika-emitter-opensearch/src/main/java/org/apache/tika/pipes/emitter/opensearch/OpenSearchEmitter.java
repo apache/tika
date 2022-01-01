@@ -46,7 +46,7 @@ public class OpenSearchEmitter extends AbstractEmitter implements Initializable 
         //anything else?
     }
 
-    public static String DEFAULT_EMBEDDED_FILE_FIELD_NAME = "embedded";
+    public static final String DEFAULT_EMBEDDED_FILE_FIELD_NAME = "embedded";
     private static final Logger LOG = LoggerFactory.getLogger(OpenSearchEmitter.class);
     private AttachmentStrategy attachmentStrategy = AttachmentStrategy.PARENT_CHILD;
 

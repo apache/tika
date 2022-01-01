@@ -130,7 +130,7 @@ public class JDBCUtil {
         try {
             switch (colInfo.getType()) {
                 case Types.VARCHAR:
-                    if (value != null && value.length() > colInfo.getPrecision()) {
+                    if (value.length() > colInfo.getPrecision()) {
                         value = value.substring(0, colInfo.getPrecision());
                         LOG.warn("truncated varchar value in {} : {}", colInfo.getName(), value);
                     }

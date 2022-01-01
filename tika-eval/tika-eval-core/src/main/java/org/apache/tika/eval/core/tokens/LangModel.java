@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class LangModel {
-    public static LangModel EMPTY_MODEL = new LangModel(-1);
+    public static final LangModel EMPTY_MODEL = new LangModel(-1);
 
     private final long totalTokens;
     private final double unseenPercentage;

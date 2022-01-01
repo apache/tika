@@ -44,7 +44,7 @@ class XLSXNumFormatter implements XSLXCellFormatter {
     @Override
     public void applyStyleAndValue(int dbColNum, ResultSet resultSet, Cell cell)
             throws SQLException {
-        double d = resultSet.getDouble(dbColNum);
+        //double d = resultSet.getDouble(dbColNum);
         if (resultSet.wasNull()) {
 
         } else {
