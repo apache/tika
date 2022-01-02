@@ -18,6 +18,15 @@
 package org.apache.tika.language.translate.impl;
 
 
+import jakarta.websocket.ClientEndpoint;
+import jakarta.websocket.ContainerProvider;
+import jakarta.websocket.DeploymentException;
+import jakarta.websocket.OnClose;
+import jakarta.websocket.OnMessage;
+import jakarta.websocket.OnOpen;
+import jakarta.websocket.Session;
+import jakarta.websocket.WebSocketContainer;
+import org.apache.commons.io.FileUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.utils.StringUtils;
 import org.slf4j.Logger;
@@ -30,6 +39,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -50,6 +61,8 @@ public class MarianTranslator extends AbstractTranslator {
     private static final String DEFAULT_PATH = "dummy-path";
     private static final String INPUT_TMP_NAME = "tika.marian.input";
     private static final String OUTPUT_TMP_NAME = "tika.marian.translation";
+    private long maxWaitForMarianServerResponse = 120000;
+    private long pulseCheckMarianServerResponse = 1000;
 
     private final String marianPath;
     private final Properties config;
@@ -62,6 +75,14 @@ public class MarianTranslator extends AbstractTranslator {
         try {
             config.load(MarianTranslator.class.getResourceAsStream("translator.marian.properties"));
             marianPath = config.getProperty("translator.marian.path", DEFAULT_PATH);
+            if (config.containsKey("translator.marian.server.responseTimeout")) {
+                maxWaitForMarianServerResponse =
+                        Long.parseLong(config.getProperty("translator.marian.server.responseTimeout"));
+            }
+            if (config.containsKey("translator.marian.server.responsePulse")) {
+                pulseCheckMarianServerResponse =
+                        Long.parseLong(config.getProperty("translator.marian.server.responsePulse"));
+            }
         } catch (IOException e) {
             throw new AssertionError("Failed to read translator.marian.properties.");
         }
@@ -94,6 +115,8 @@ public class MarianTranslator extends AbstractTranslator {
     public String translate(String text, String sourceLanguage, String targetLanguage) throws TikaException, IOException {
         String configPath =
                 config.getProperty("translator.marian." + sourceLanguage + "_" + targetLanguage + ".config");
+        String serverSocket =
+                config.getProperty("translator.marian." + sourceLanguage + "_" + targetLanguage + ".server");
 
         if (!isAvailable(sourceLanguage, targetLanguage)) return text;
 
@@ -110,18 +133,11 @@ public class MarianTranslator extends AbstractTranslator {
             String preProcessScript = config.getProperty("translator.marian.preprocess");
             executeScript(preProcessScript, tmpFile);
 
-            ProcessBuilder builder = new ProcessBuilder();
-            String device = config.getProperty("translator.marian.device", "cpu");
-            builder.command(buildMarianCommand(configPath, tmpFile, tmpTranslatedFile, device));
-            builder.directory(new File(configPath).getParentFile());
-            builder.redirectErrorStream(true);
-            Process process = builder.start();
-            process.waitFor();
-
-            BufferedReader stdOutReader =
-                    new BufferedReader(new InputStreamReader(process.getInputStream(), Charset.defaultCharset()));
-            stdOutReader.lines().forEach(LOG::debug);
-            stdOutReader.close();
+            if (!StringUtils.isEmpty(configPath)) {
+                processWithLocalMarian(configPath, tmpFile, tmpTranslatedFile);
+            } else {
+                processWithMarianServer(serverSocket, tmpFile, tmpTranslatedFile);
+            }
 
             String postProcessScript = config.getProperty("translator.marian.postprocess");
             executeScript(postProcessScript, tmpTranslatedFile);
@@ -133,7 +149,7 @@ public class MarianTranslator extends AbstractTranslator {
             fileReader.close();
 
         } catch (InterruptedException e) {
-            throw new TikaException("Failed perform translation");
+            throw new TikaException("Failed perform translation", e);
         }
 
         if (!tmpFile.delete() || !tmpTranslatedFile.delete()){
@@ -141,6 +157,59 @@ public class MarianTranslator extends AbstractTranslator {
         }
 
         return translation.toString();
+    }
+
+    /**
+     * Process the translation request using a local instance of Marian - i.e. either </i>marian-decoder</i>
+     * or <i>marian</i> command line applications.
+     * @param configPath the path of the configuaration to use.
+     * @param sourceFile the file containing the source text to read from.
+     * @param targetFile the file to write the translated text to.
+     * @throws IOException on any I/O error.
+     * @throws InterruptedException on any process error.
+     */
+    private void processWithLocalMarian(String configPath, File sourceFile, File targetFile)
+            throws IOException, InterruptedException {
+        ProcessBuilder builder = new ProcessBuilder();
+        String device = config.getProperty("translator.marian.device", "cpu");
+        builder.command(buildMarianCommand(configPath, sourceFile, targetFile, device));
+        builder.directory(new File(configPath).getParentFile());
+        builder.redirectErrorStream(true);
+        Process process = builder.start();
+        process.waitFor();
+
+        BufferedReader stdOutReader =
+                new BufferedReader(new InputStreamReader(process.getInputStream(), Charset.defaultCharset()));
+        stdOutReader.lines().forEach(LOG::debug);
+        stdOutReader.close();
+    }
+
+    /**
+     * Process the translation request using a Marian-Server instance. Marian Server is Marian NMT's WebSocket
+     * based server application (<i>marian-server</i>.
+     * @param serverURI the Web Socket URI of the Marian Server instance.
+     * @param sourceFile the file containing the source text to read from.
+     * @param targetFile the file to write the translated text to.
+     * @throws TikaException on any error translating via the server.
+     */
+    private void processWithMarianServer(String serverURI, File sourceFile, File targetFile) throws TikaException {
+        try {
+            MarianServerClient clientEndpoint = new MarianServerClient(new URI(serverURI), targetFile);
+            clientEndpoint.translate(FileUtils.readFileToString(sourceFile, Charset.defaultCharset()));
+            long start = System.currentTimeMillis();
+            long elapsed = System.currentTimeMillis() - start;
+            while (!clientEndpoint.receivedResponse && elapsed < maxWaitForMarianServerResponse) {
+                try {
+                    Thread.sleep(pulseCheckMarianServerResponse);
+                } catch (InterruptedException e) {
+                    // Swallow
+                }
+                elapsed = System.currentTimeMillis() - start;
+            }
+            clientEndpoint.close();
+        } catch (IOException | URISyntaxException e) {
+            throw new TikaException("Failed perform translation", e);
+        }
     }
 
     /**
@@ -205,7 +274,73 @@ public class MarianTranslator extends AbstractTranslator {
     public boolean isAvailable(String sourceLanguage, String targetLanguage) {
         String configPath =
                 config.getProperty("translator.marian." + sourceLanguage + "_" + targetLanguage + ".config");
-        return !marianPath.equals(DEFAULT_PATH) && !StringUtils.isEmpty(configPath);
+        String serverSocket =
+                config.getProperty("translator.marian." + sourceLanguage + "_" + targetLanguage + ".server");
+        return (!marianPath.equals(DEFAULT_PATH)
+                && !StringUtils.isEmpty(configPath)) || !StringUtils.isEmpty(serverSocket);
+    }
+
+    /**
+     * Internal Client for <i>marian-server</i> Web Socket Server.
+     */
+    @ClientEndpoint
+    public static class MarianServerClient {
+
+        Session session;
+        File translationResult;
+        volatile boolean receivedResponse = false;
+
+        /**
+         * Marian Server Web Socket Client.
+         * @param endpointURI the endpoint URI for the Marian Server instance.
+         * @param file the location of the file to write the translation response to.
+         */
+        public MarianServerClient(URI endpointURI, File file) throws TikaException {
+            try {
+                WebSocketContainer container = ContainerProvider.getWebSocketContainer();
+                container.connectToServer(this, endpointURI);
+                this.translationResult = file;
+            } catch (DeploymentException | IOException e) {
+                throw new TikaException("Failed to create connection to Marian NMT Server", e);
+            }
+        }
+
+        @OnOpen
+        public void onOpen(Session session){
+            LOG.debug("Opened connection, Session ID: " + session.getId());
+            this.session = session;
+        }
+
+        @OnMessage
+        public void processMessage(String message) throws IOException {
+            LOG.debug("Message received: " + message);
+            FileUtils.writeStringToFile(translationResult, message, Charset.defaultCharset());
+            receivedResponse = true;
+        }
+
+        @OnClose
+        public void onClose(Session session){
+            LOG.debug("Closed connection, Session ID: " + session.getId());
+            receivedResponse = true;
+        }
+
+        /**
+         * Translate the passed text using the Marian Server.
+         * @param sourceText the source text to translate.
+         * @throws IOException on any I/O error calling the server.
+         */
+        public void translate(String sourceText) throws IOException {
+            this.session.getBasicRemote().sendText(sourceText);
+        }
+
+        /**
+         * Close the connection to the Marian Server.
+         * @throws IOException on any I/O error calling the server.
+         */
+        public void close() throws IOException {
+            this.session.close();
+        }
+
     }
 
 }
