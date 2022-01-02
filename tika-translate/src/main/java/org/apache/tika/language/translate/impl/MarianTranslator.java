@@ -120,6 +120,11 @@ public class MarianTranslator extends AbstractTranslator {
 
         if (!isAvailable(sourceLanguage, targetLanguage)) return text;
 
+        if (!StringUtils.isEmpty(configPath) && !StringUtils.isEmpty(serverSocket)) {
+            LOG.info("Both local and server configurations exist for " + sourceLanguage + " to " + targetLanguage
+                    + "\nDefaulting to use local engine.");
+        }
+
         StringBuilder translation = new StringBuilder();
         File tmpFile = File.createTempFile(INPUT_TMP_NAME, ".tmp");
         tmpFile.deleteOnExit();
@@ -276,8 +281,8 @@ public class MarianTranslator extends AbstractTranslator {
                 config.getProperty("translator.marian." + sourceLanguage + "_" + targetLanguage + ".config");
         String serverSocket =
                 config.getProperty("translator.marian." + sourceLanguage + "_" + targetLanguage + ".server");
-        return (!marianPath.equals(DEFAULT_PATH)
-                && !StringUtils.isEmpty(configPath)) || !StringUtils.isEmpty(serverSocket);
+        return (!marianPath.equals(DEFAULT_PATH) && !StringUtils.isEmpty(configPath))
+                || !StringUtils.isEmpty(serverSocket);
     }
 
     /**
