@@ -260,7 +260,7 @@ public class MarianTranslator extends AbstractTranslator {
         command.add(output.getAbsolutePath());
         if (device.equalsIgnoreCase("cpu")) {
             command.add("--cpu-threads");
-            command.add("1");
+            command.add(config.getProperty("translator.marian.device.cpuThreads", "1"));
         }
         return command;
     }
