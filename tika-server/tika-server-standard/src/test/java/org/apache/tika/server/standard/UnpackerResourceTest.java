@@ -200,9 +200,10 @@ public class UnpackerResourceTest extends CXFTestBase {
                 .header(CONTENT_TYPE, APPLICATION_XML).accept("application/zip")
                 .put(ClassLoader.getSystemResourceAsStream("test-documents/test.doc"));
 
-        String responseMsg = readArchiveText((InputStream) response.getEntity());
+        String responseMsg = readArchiveMetadataAndText((InputStream) response.getEntity());
         assertNotNull(responseMsg);
-        assertTrue(responseMsg.contains("test"));
+        assertContains("test", responseMsg);
+        assertContains("dc:creator,Maxim Valyanskiy", responseMsg);
     }
 
     @Test

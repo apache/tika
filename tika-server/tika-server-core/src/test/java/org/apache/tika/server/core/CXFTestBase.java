@@ -189,6 +189,23 @@ public abstract class CXFTestBase {
         return bos.toString(UTF_8.name());
     }
 
+    protected String readArchiveMetadataAndText(InputStream inputStream) throws IOException {
+        Path tempFile = writeTemporaryArchiveFile(inputStream, "zip");
+        ZipFile zip = new ZipFile(tempFile.toFile());
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        zip.getEntry(UnpackerResource.META_FILENAME);
+        IOUtils.copy(zip.getInputStream(zip.getEntry(UnpackerResource.META_FILENAME)), bos);
+        String metadata = new String(bos.toByteArray(), UTF_8);
+
+        bos = new ByteArrayOutputStream();
+        zip.getEntry(UnpackerResource.TEXT_FILENAME);
+        IOUtils.copy(zip.getInputStream(zip.getEntry(UnpackerResource.TEXT_FILENAME)), bos);
+        String txt = new String(bos.toByteArray(), UTF_8);
+        zip.close();
+        Files.delete(tempFile);
+        return metadata + "\n\n" + txt;
+    }
+
     protected Map<String, String> readArchiveFromStream(ArchiveInputStream zip)
             throws IOException {
         Map<String, String> data = new HashMap<>();

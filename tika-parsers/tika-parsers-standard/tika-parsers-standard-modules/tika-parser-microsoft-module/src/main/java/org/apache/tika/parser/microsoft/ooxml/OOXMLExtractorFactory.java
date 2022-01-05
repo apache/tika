@@ -83,7 +83,7 @@ public class OOXMLExtractorFactory {
     };
 
     static {
-        ExtractorFactory.setThreadPrefersEventExtractors(true);
+        ExtractorFactory.setAllThreadsPreferEventExtractors(true);
     }
 
     public static void parse(InputStream stream, ContentHandler baseHandler, Metadata metadata,

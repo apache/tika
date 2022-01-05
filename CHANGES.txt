@@ -1,4 +1,19 @@
-Release 2.2.0 - ???
+Release 2.2.1 - 12/19/2021
+
+   * Fix multithreading bug for ooxml files (TIKA-3627).
+
+   * Upgrade log4j to 2.17.0 (TIKA-3625).
+
+   * Upgrade to PDFBox 2.0.25 (TIKA-3622)
+
+   * Fix bug that prevented metadata keys in the UnpackerResource
+     in tika-server (TIKA-3624).
+
+   * Upgrade log4j to 2.16.0 (TIKA-3623)
+
+Release 2.2.0 - 12/13/2021
+
+   * Add support for OneNote files downloaded from O365 (TIKA-3446).
 
    * Fix logic bug in PipesServer that prevented concatenation of
      content from attachments (TIKA-3609).

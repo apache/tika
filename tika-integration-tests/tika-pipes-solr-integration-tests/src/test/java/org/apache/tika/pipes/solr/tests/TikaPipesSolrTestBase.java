@@ -30,6 +30,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.impl.LBHttpSolrClient;
+import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.tika.cli.TikaCLI;
 import org.apache.tika.pipes.HandlerConfig;
@@ -121,7 +122,7 @@ public abstract class TikaPipesSolrTestBase {
             embeddedDoc.setField("id", filename);
             embeddedDoc.setField("path", filename);
             solrClient.add(collection, embeddedDoc);
-            solrClient.commit(collection);
+            solrClient.commit(collection, true, true);
         }
     }
 
@@ -170,7 +171,7 @@ public abstract class TikaPipesSolrTestBase {
 
         try (SolrClient solrClient = new LBHttpSolrClient.Builder().withBaseSolrUrls(solrEndpoint)
                 .build()) {
-            solrClient.commit(collection);
+            solrClient.commit(collection, true, true);
             Assert.assertEquals(numDocs, solrClient
                     .query(collection, new SolrQuery("mime_s:\"text/html; charset=ISO-8859-1\""))
                     .getResults().getNumFound());
@@ -205,7 +206,7 @@ public abstract class TikaPipesSolrTestBase {
 
         try (SolrClient solrClient = new LBHttpSolrClient.Builder().withBaseSolrUrls(solrEndpoint)
                 .build()) {
-            solrClient.commit(collection);
+            solrClient.commit(collection, true, true);
             Assert.assertEquals(numDocs, solrClient
                     .query(collection, new SolrQuery("mime_s:\"text/html; charset=ISO-8859-1\""))
                     .getResults().getNumFound());

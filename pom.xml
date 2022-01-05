@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>2.2.0-SNAPSHOT</version>
+    <version>2.2.2-SNAPSHOT</version>
     <relativePath>tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -118,30 +118,31 @@
                       </fileset>
                     </checksum>
                     <checksum file="${basedir}/target/${project.version}/tika-${project.version}-src.zip" algorithm="SHA-512" property="checksum" />
+<!-- this spacing is less than ideal, but if you indent here, the vote.txt file will have the leading spaces -->
                     <echo file="${basedir}/target/vote.txt">
-                      From: ${username}@apache.org
-                      To: dev@tika.apache.org
-                      user@tika.apache.org
-                      Subject: [VOTE] Release Apache Tika ${project.version} Candidate #N
+From: ${username}@apache.org
+To: dev@tika.apache.org
+user@tika.apache.org
+Subject: [VOTE] Release Apache Tika ${project.version} Candidate #N
 
-                      A candidate for the Tika ${project.version} release is available at:
-                      https://dist.apache.org/repos/dist/dev/tika/
+A candidate for the Tika ${project.version} release is available at:
+https://dist.apache.org/repos/dist/dev/tika/${project.version}
 
-                      The release candidate is a zip archive of the sources in:
-                      https://github.com/apache/tika/tree/{project.version}-rcN/
+The release candidate is a zip archive of the sources in:
+https://github.com/apache/tika/tree/{project.version}-rcN/
 
-                      The SHA-512 checksum of the archive is
-                      ${checksum}.
+The SHA-512 checksum of the archive is
+${checksum}.
 
-                      In addition, a staged maven repository is available here:
-                      https://repository.apache.org/content/repositories/orgapachetika-.../org/apache/tika
+In addition, a staged maven repository is available here:
+https://repository.apache.org/content/repositories/orgapachetika-.../org/apache/tika
 
-                      Please vote on releasing this package as Apache Tika ${project.version}.
-                      The vote is open for the next 72 hours and passes if a majority of at
-                      least three +1 Tika PMC votes are cast.
+Please vote on releasing this package as Apache Tika ${project.version}.
+The vote is open for the next 72 hours and passes if a majority of at
+least three +1 Tika PMC votes are cast.
 
-                      [ ] +1 Release this package as Apache Tika ${project.version}
-                      [ ] -1 Do not release this package because...${line.separator}
+[ ] +1 Release this package as Apache Tika ${project.version}
+[ ] -1 Do not release this package because...${line.separator}
                     </echo>
                     <echo />
                     <echo>
@@ -209,6 +210,6 @@
   </ciManagement>
 
   <scm>
-    <tag>2.1.0-rc2</tag>
+    <tag>2.2.1-rc2</tag>
   </scm>
 </project>
