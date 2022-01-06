@@ -137,9 +137,9 @@ public class NameDetector implements Detector {
             name = name.trim();
             if (name.length() > 0) {
                 // Match the name against the registered patterns
-                for (Pattern pattern : patterns.keySet()) {
-                    if (pattern.matcher(name).matches()) {
-                        return patterns.get(pattern);
+                for (Map.Entry<Pattern, MediaType> entry : patterns.entrySet()) {
+                    if (entry.getKey().matcher(name).matches()) {
+                        return entry.getValue();
                     }
                 }
             }

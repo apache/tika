@@ -49,7 +49,7 @@ public class MockEmitter extends AbstractEmitter {
 
     @Override
     public void emit(List<? extends EmitData> emitData) throws IOException, TikaEmitterException {
-        int inserted = 0;
+        //int inserted = 0;
         for (EmitData d : emitData) {
             EMIT_DATA.offer(d);
         }

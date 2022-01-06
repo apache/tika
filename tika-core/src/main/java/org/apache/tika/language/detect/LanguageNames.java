@@ -42,13 +42,13 @@ public class LanguageNames {
     }
 
     public static boolean isMacroLanguage(String languageTag) {
-        Locale locale = Locale.forLanguageTag(languageTag);
+        // Locale locale = Locale.forLanguageTag(languageTag); unused
         // TODO make it so.
         return false;
     }
 
     public static boolean hasMacroLanguage(String languageTag) {
-        Locale locale = Locale.forLanguageTag(languageTag);
+        // Locale locale = Locale.forLanguageTag(languageTag); // unused
         // TODO make it so
         return false;
     }
