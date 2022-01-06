@@ -118,6 +118,17 @@
       <artifactId>jackson-databind</artifactId>
       <version>${jackson.version}</version>
     </dependency>
+    <!-- web sockets -->
+    <dependency>
+      <groupId>jakarta.websocket</groupId>
+      <artifactId>jakarta.websocket-api</artifactId>
+      <version>2.0.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish.tyrus.bundles</groupId>
+      <artifactId>tyrus-standalone-client</artifactId>
+      <version>2.0.1</version>
+    </dependency>
     <!-- after we migrate everything to junit5, we can get rid of this -->
     <dependency>
       <groupId>org.junit.vintage</groupId>
