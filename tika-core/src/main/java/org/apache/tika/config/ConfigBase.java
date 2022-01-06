@@ -267,7 +267,7 @@ public abstract class ConfigBase {
                     tryToSet(object, localName, txt);
                 }
 
-                if (localName != null && txt != null) {
+                if (txt != null) {
                     settings.add(localName);
                 }
             }

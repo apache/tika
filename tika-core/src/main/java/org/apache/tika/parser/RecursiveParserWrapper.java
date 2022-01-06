@@ -145,7 +145,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
         int writeLimit = -1;
         //TODO -- rely on a new interface WriteLimiting...?
         //It'd be better not to tie this to a specific class
-        if (recursiveParserWrapperHandler instanceof BasicContentHandlerFactory) {
+        if (recursiveParserWrapperHandler instanceof BasicContentHandlerFactory) { // TODO this cond is always false
             writeLimit =
                     ((BasicContentHandlerFactory)recursiveParserWrapperHandler).getWriteLimit();
         }

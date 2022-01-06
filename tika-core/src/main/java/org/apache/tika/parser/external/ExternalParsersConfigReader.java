@@ -87,7 +87,7 @@ public final class ExternalParsersConfigReader implements ExternalParsersConfigR
         } else {
             throw new MimeTypeException(
                     "Not a <" + EXTERNAL_PARSERS_TAG + "/> configuration document: " +
-                            element.getTagName());
+                            (element != null ? element.getTagName() : "n/a"));
         }
 
         return parsers;
@@ -121,6 +121,8 @@ public final class ExternalParsersConfigReader implements ExternalParsersConfigR
                     case METADATA_TAG:
                         parser.setMetadataExtractionPatterns(readMetadataPatterns(child));
                         break;
+                    default:
+                        throw new IllegalArgumentException("reaction not defined for " + child.getTagName());
                 }
             }
         }
