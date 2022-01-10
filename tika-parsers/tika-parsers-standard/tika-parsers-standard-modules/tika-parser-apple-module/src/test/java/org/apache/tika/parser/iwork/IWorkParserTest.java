@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -28,9 +29,15 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.detect.CompositeDetector;
+import org.apache.tika.detect.Detector;
+import org.apache.tika.detect.apple.IWorkDetector;
+import org.apache.tika.detect.zip.DefaultZipContainerDetector;
+import org.apache.tika.detect.zip.ZipContainerDetector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.BodyContentHandler;
 
 /**
@@ -406,6 +413,18 @@ public class IWorkParserTest extends TikaTest {
         String xml = getXML("testKeynote.key", iWorkParser).xml;
         xml = xml.replaceAll("[\r\n]", "");
         assertContains(expected, xml);
+    }
 
+    @Test
+    public void testNPEInDetection() throws Exception {
+        //TIKA-3639
+        List<ZipContainerDetector> zips = new ArrayList<>();
+        zips.add(new IWorkDetector());
+        Detector d = new CompositeDetector(new DefaultZipContainerDetector(zips));
+        try (InputStream is = this.getClass()
+                .getResourceAsStream("/test-documents/testIWorksNPEDetector.zip")) {
+            MediaType mt = d.detect(is, new Metadata());
+            assertEquals(MediaType.application("zip"), mt);
+        }
     }
 }

@@ -182,6 +182,10 @@ public class IWorkPackageParser extends AbstractParser {
                 String local = qname.getLocalPart();
 
                 for (IWORKDocumentType type : values()) {
+                    if (ENCRYPTED == type) {
+                        //namespace and part are null for ENCRYPTED.
+                        continue;
+                    }
                     if (type.getNamespace().equals(uri) && type.getPart().equals(local)) {
                         return type;
                     }
