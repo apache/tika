@@ -1,5 +1,8 @@
 Release 2.2.2 - ???
 
+   * Improve configuration of maps as params for parsers in
+     TikaConfig (TIKA-3645).
+
    * Improve identification of iWorks 13 files and add parsing
      for thumbnails, some metadata and attachments (TIKA-3634).
 

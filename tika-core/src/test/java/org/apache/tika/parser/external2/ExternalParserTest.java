@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
@@ -30,6 +31,7 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -77,6 +79,24 @@ public class ExternalParserTest extends TikaTest {
 
             XMLResult xmlResult = getXML("example.xml", externalParser);
             assertContains("<body>text/xml</body>", xmlResult.xml.replaceAll("[\r\n]", ""));
+        }
+    }
+
+    @Test
+    public void testExifTool() throws Exception {
+        assumeTrue(org.apache.tika.parser.external.ExternalParser.check(new String[]{"exiftool",
+                "-ver"}));
+        try (InputStream is =
+                     TikaConfig.class.getResourceAsStream("TIKA-3557-exiftool-example.xml")) {
+            TikaConfig config = new TikaConfig(is);
+            Parser p = new AutoDetectParser(config);
+            //this was the smallest pdf we had
+            List<Metadata> metadataList = getRecursiveMetadata("testOverlappingText.pdf", p);
+            assertEquals(1, metadataList.size());
+            Metadata m = metadataList.get(0);
+            assertEquals("application/pdf", m.get("mime"));
+            assertEquals("1", m.get("pages"));
+            assertEquals("1.4", m.get("pdf:version"));
         }
     }
 }

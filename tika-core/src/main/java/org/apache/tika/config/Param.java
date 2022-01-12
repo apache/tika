@@ -233,8 +233,19 @@ public class Param<T> implements Serializable {
         ret.actualValue = (T) new HashMap<>();
         while (child != null) {
             if (child.getNodeType() == Node.ELEMENT_NODE) {
-                String key = child.getLocalName();
-                String value = child.getTextContent();
+                String key = "";
+                String value = "";
+                if (child.getAttributes().getNamedItem("key") != null) {
+                    key = child.getAttributes().getNamedItem("key").getNodeValue();
+                    if (child.getAttributes().getNamedItem("value") != null) {
+                        value = child.getAttributes().getNamedItem("value").getNodeValue();
+                    } else {
+                        value = child.getTextContent();
+                    }
+                } else {
+                    key = child.getLocalName();
+                    value = child.getTextContent();
+                }
                 if (((Map)ret.actualValue).containsKey(key)) {
                     throw new TikaConfigException("Duplicate keys are not allowed: " + key);
                 }
