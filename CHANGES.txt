@@ -6,6 +6,9 @@ Release 2.2.2 - ???
    * Improve identification of iWorks 13 files and add parsing
      for thumbnails, some metadata and attachments (TIKA-3634).
 
+   * Limit the default in-memory processing (maxMainMemoryBytes) in
+     the PDFParser to 512MB as in the 1.x branch (TIKA-3642).
+
 Release 2.2.1 - 12/19/2021
 
    * Fix multithreading bug for ooxml files (TIKA-3627).

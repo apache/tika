@@ -124,7 +124,7 @@ public class PDFParserConfig implements Serializable {
 
     private boolean extractFontNames = false;
 
-    private long maxMainMemoryBytes = -1;
+    private long maxMainMemoryBytes = 512 * 1024 * 1024;
 
     private boolean setKCMS = false;
 
@@ -689,7 +689,7 @@ public class PDFParserConfig implements Serializable {
 
     /**
      * The maximum amount of memory to use when loading a pdf into a PDDocument. Additional
-     * buffering is done using a temp file.
+     * buffering is done using a temp file. The default is 512MB.
      *
      * @return
      */
