@@ -176,7 +176,7 @@ public class ODFParserTest extends TikaTest {
 
             // Note - contents of maths files not currently supported
             String content = handler.toString().trim();
-            assertEquals("", content);
+            assertEquals("Thumbnails/thumbnail.png", content.trim());
         }
     }
 

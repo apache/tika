@@ -323,7 +323,7 @@ class HtmlHandler extends TextContentHandler {
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
             try (InputStream stream = dataURIScheme.getInputStream()) {
-                embeddedDocumentExtractor.parseEmbedded(stream, xhtml, m, false);
+                embeddedDocumentExtractor.parseEmbedded(stream, xhtml, m, true);
             } catch (IOException e) {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
             }
@@ -357,7 +357,7 @@ class HtmlHandler extends TextContentHandler {
             if (embeddedDocumentExtractor.shouldParseEmbedded(dataUriMetadata)) {
                 try (InputStream dataURISchemeInputStream = dataURIScheme.getInputStream()) {
                     embeddedDocumentExtractor
-                            .parseEmbedded(dataURISchemeInputStream, xhtml, dataUriMetadata, false);
+                            .parseEmbedded(dataURISchemeInputStream, xhtml, dataUriMetadata, true);
                 } catch (IOException e) {
                     //swallow
                 }
@@ -366,7 +366,7 @@ class HtmlHandler extends TextContentHandler {
 
         try (InputStream stream = new ByteArrayInputStream(
                 script.toString().getBytes(StandardCharsets.UTF_8))) {
-            embeddedDocumentExtractor.parseEmbedded(stream, xhtml, m, false);
+            embeddedDocumentExtractor.parseEmbedded(stream, xhtml, m, true);
         } catch (IOException e) {
             //shouldn't ever happen
         } finally {

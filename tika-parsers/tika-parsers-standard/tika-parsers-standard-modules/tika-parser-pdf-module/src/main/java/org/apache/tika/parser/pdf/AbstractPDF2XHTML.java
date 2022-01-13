@@ -289,7 +289,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         try {
             embeddedDocumentExtractor
                     .parseEmbedded(stream, new EmbeddedContentHandler(xhtml), embeddedMetadata,
-                            false);
+                            true);
         } catch (IOException e) {
             handleCatchableIOE(e);
         }
@@ -424,7 +424,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         try {
             embeddedDocumentExtractor
                     .parseEmbedded(stream, new EmbeddedContentHandler(xhtml), embeddedMetadata,
-                            false);
+                            true);
 
             attributes.addAttribute("", "class", "class", "CDATA", "embedded");
             attributes.addAttribute("", "id", "id", "CDATA", fileName);
@@ -746,7 +746,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             js = (js == null) ? "" : js;
             if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
                 try (InputStream is = TikaInputStream.get(js.getBytes(StandardCharsets.UTF_8))) {
-                    embeddedDocumentExtractor.parseEmbedded(is, xhtml, m, false);
+                    embeddedDocumentExtractor.parseEmbedded(is, xhtml, m, true);
                 }
             }
             addNonNullAttribute("class", "javascript", attributes);

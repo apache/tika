@@ -1,5 +1,8 @@
 Release 2.2.2 - ???
 
+   * Improve consistency in reporting package-entry divs across
+     all parsers for embedded files (TIKA-3644).
+
    * Improve configuration of maps as params for parsers in
      TikaConfig (TIKA-3645).
 

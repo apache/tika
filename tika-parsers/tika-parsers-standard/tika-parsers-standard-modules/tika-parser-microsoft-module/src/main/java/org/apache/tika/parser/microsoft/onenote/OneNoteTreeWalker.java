@@ -347,7 +347,7 @@ class OneNoteTreeWalker {
         try {
             stream = TikaInputStream.get(buf.array());
             embeddedDocumentExtractor.parseEmbedded(stream, new EmbeddedContentHandler(xhtml),
-                    embeddedMetadata, false);
+                    embeddedMetadata, true);
             AttributesImpl attributes = new AttributesImpl();
             attributes.addAttribute("", "class", "class", "CDATA", "embedded");
             xhtml.startElement("div", attributes);

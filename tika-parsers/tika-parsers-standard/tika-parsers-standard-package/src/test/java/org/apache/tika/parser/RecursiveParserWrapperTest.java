@@ -95,7 +95,7 @@ public class RecursiveParserWrapperTest extends TikaTest {
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER);
         InputStream stream = getResourceAsStream("/test-documents/test_recursive_embedded.docx");
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, 60));
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, 70));
         wrapper.parse(stream, handler, metadata, context);
         List<Metadata> list = handler.getMetadataList();
 

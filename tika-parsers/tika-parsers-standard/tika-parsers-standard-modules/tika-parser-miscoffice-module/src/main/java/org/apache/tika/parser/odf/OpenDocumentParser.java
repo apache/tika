@@ -256,7 +256,9 @@ public class OpenDocumentParser extends AbstractParser {
                                 EmbeddedDocumentUtil embeddedDocumentUtil)
             throws IOException, SAXException, TikaException {
 
-
+        if (entry.isDirectory()) {
+            return;
+        }
         if (entry.getName().contains("manifest.xml")) {
             checkForEncryption(zip, context);
         } else if (entry.getName().equals("mimetype")) {
@@ -308,7 +310,7 @@ public class OpenDocumentParser extends AbstractParser {
 
                 if (embeddedDocumentUtil.shouldParseEmbedded(embeddedMetadata)) {
                     embeddedDocumentUtil.parseEmbedded(stream, new EmbeddedContentHandler(handler),
-                            embeddedMetadata, false);
+                            embeddedMetadata, true);
                 }
             } else if (extractMacros && embeddedName.contains("Basic/")) {
                 //process all files under Basic/; let maybeHandleMacro figure

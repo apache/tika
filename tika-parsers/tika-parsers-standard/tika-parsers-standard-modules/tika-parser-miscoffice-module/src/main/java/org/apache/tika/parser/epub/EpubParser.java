@@ -359,7 +359,7 @@ public class EpubParser extends AbstractParser {
         try {
             embeddedDocumentExtractor
                     .parseEmbedded(stream, new EmbeddedContentHandler(xhtml), embeddedMetadata,
-                            false);
+                            true);
 
         } finally {
             IOUtils.closeQuietly(stream);

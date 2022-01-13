@@ -222,7 +222,7 @@ class RTFEmbObjHandler {
             try {
                 embeddedDocumentUtil
                         .parseEmbedded(stream, new EmbeddedContentHandler(handler), metadata,
-                                false);
+                                true);
             } catch (IOException e) {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
             } finally {

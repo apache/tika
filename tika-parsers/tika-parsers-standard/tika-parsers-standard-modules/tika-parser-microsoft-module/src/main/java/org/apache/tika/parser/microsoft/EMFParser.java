@@ -67,7 +67,7 @@ public class EMFParser extends AbstractParser {
             if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
                 embeddedDocumentExtractor
                         .parseEmbedded(is, new EmbeddedContentHandler(handler), embeddedMetadata,
-                                false);
+                                true);
             }
         } catch (IOException e) {
             //swallow
@@ -155,7 +155,7 @@ public class EMFParser extends AbstractParser {
             try (InputStream is = TikaInputStream.get(bytes)) {
                 embeddedDocumentExtractor
                         .parseEmbedded(is, new EmbeddedContentHandler(contentHandler),
-                                embeddedMetadata, false);
+                                embeddedMetadata, true);
 
             }
 

@@ -42,7 +42,8 @@ public class XML2003ParserTest extends TikaTest {
         assertContains("<meta name=\"meta:character-count-with-spaces\" content=\"256\"", xml);
         //do not allow nested <p> elements
         assertContains(
-                "<p /> <img href=\"02000003.jpg\" /><p /> <p><img href=\"02000004.jpg\" /></p>",
+                "<img href=\"02000003.jpg\" /><div class=\"package-entry\"><h1>02000003.jpg</h1> " +
+                        "</div> <p /> <p><img href=\"02000004.jpg\" />",
                 xml);
         assertContains("<table><tbody>", xml);
         assertContains("</tbody></table>", xml);

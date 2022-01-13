@@ -249,7 +249,7 @@ public class OOXMLExtractorFactory {
         } catch (OpenXML4JException | XmlException e) {
             throw new TikaException("Error creating OOXML extractor", e);
         } catch (RuntimeSAXException e) {
-            throw(SAXException) e.getCause();
+            throw (SAXException) e.getCause();
         } finally {
             if (tmpRepairedCopy != null) {
                 if (pkg != null) {

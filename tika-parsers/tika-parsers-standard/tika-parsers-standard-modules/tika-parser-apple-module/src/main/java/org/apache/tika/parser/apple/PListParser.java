@@ -199,7 +199,7 @@ public class PListParser extends AbstractParser {
 
         try (TikaInputStream tis = TikaInputStream.get(value.bytes())) {
             state.embeddedDocumentExtractor
-                    .parseEmbedded(tis, state.xhtml, embeddedMetadata, false);
+                    .parseEmbedded(tis, state.xhtml, embeddedMetadata, true);
         }
     }
 
