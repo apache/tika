@@ -269,8 +269,8 @@
     <maven.bundle.version>5.1.2</maven.bundle.version>
     <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
     <maven.failsafe.version>3.0.0-M5</maven.failsafe.version>
-    <maven.javadoc.version>3.2.0</maven.javadoc.version>
-    <maven.jar.version>3.2.0</maven.jar.version>
+    <maven.javadoc.version>3.3.1</maven.javadoc.version>
+    <maven.jar.version>3.2.2</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.surefire.version>3.0.0-M5</maven.surefire.version>
     <maven.shade.version>3.2.4</maven.shade.version>
@@ -359,9 +359,9 @@
     <scm.version>1.12.2</scm.version>
     <sis.version>1.1</sis.version>
     <!-- we'll need to stay on 1.7 until we're java modularized ? -->
-    <slf4j.version>1.7.32</slf4j.version>
+    <slf4j.version>1.7.33</slf4j.version>
     <solrj.version>8.11.1</solrj.version>
-    <spring.version>5.3.14</spring.version>
+    <spring.version>5.3.15</spring.version>
     <sqlite.version>3.36.0.3</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
     <test.containers.version>1.16.2</test.containers.version>
