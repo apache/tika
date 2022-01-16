@@ -36,6 +36,11 @@
       <artifactId>jempbox</artifactId>
       <version>${jempbox.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.pdfbox</groupId>
+      <artifactId>xmpbox</artifactId>
+      <version>${xmpbox.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>

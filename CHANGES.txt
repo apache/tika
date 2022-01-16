@@ -12,6 +12,9 @@ Release 2.2.2 - ???
    * Limit the default in-memory processing (maxMainMemoryBytes) in
      the PDFParser to 512MB as in the 1.x branch (TIKA-3642).
 
+   * Added IDML Parser from 1.x series to 2.x series (TIKA-3188).
+
+
 Release 2.2.1 - 12/19/2021
 
    * Fix multithreading bug for ooxml files (TIKA-3627).
