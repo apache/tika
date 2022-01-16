@@ -3168,6 +3168,12 @@
     </magic>
   </mime-type>
 
+  <mime-type type="application/vnd.adobe.indesign-idml-package">
+    <sub-class-of type="application/zip"/>
+    <_comment>IDML</_comment>
+    <glob pattern="*.idml"/>
+  </mime-type>
+
   <mime-type type="application/x-adobe-indesign-interchange">
     <acronym>INX</acronym>
     <_comment>Adobe InDesign Interchange format</_comment>

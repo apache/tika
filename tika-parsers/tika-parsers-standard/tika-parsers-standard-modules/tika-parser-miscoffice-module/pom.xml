@@ -65,6 +65,11 @@
       <artifactId>commons-codec</artifactId>
       <version>${commons.codec.version}</version>
     </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-parser-xmp-commons</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 
   <build>
