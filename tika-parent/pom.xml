@@ -636,10 +636,7 @@
         <artifactId>ossindex-maven-plugin</artifactId>
         <version>3.1.0</version>
         <configuration>
-          <fail>false</fail>
-          <excludeCoordinates>
-            <!--            <coordinate>            </coordinate> -->
-          </excludeCoordinates>
+          <fail>true</fail>
         </configuration>
         <executions>
           <execution>
@@ -651,18 +648,6 @@
           </execution>
         </executions>
       </plugin>
-      <!-- example of how to ignore coordinates
-                <configuration>
-                    <excludeCoordinates>
-                        <exclude>
-                            <groupId>com.h2database</groupId>
-                            <artifactId>h2</artifactId>
-                            <version>1.4.197</version>
-                        </exclude>
-                    </excludeCoordinates>
-                </configuration>
-      -->
-
       <plugin>
         <groupId>de.thetaphi</groupId>
         <artifactId>forbiddenapis</artifactId>
