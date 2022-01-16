@@ -66,6 +66,11 @@
       <version>${commons.codec.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.glassfish.jaxb</groupId>
+      <artifactId>jaxb-runtime</artifactId>
+      <version>${jaxb.version}</version>
+    </dependency>
+    <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-parser-xmp-commons</artifactId>
       <version>${project.version}</version>
