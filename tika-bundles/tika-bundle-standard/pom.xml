@@ -207,7 +207,8 @@
               jmatio|
               guava|
               age-predictor-api|
-              SparseBitSet
+              SparseBitSet|
+              xmpbox
             </Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
