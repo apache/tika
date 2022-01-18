@@ -39,7 +39,7 @@
     <dependency>
       <groupId>org.apache.pdfbox</groupId>
       <artifactId>xmpbox</artifactId>
-      <version>${xmpbox.version}</version>
+      <version>${pdfbox.version}</version>
     </dependency>
   </dependencies>
   <build>
