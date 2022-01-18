@@ -165,6 +165,7 @@
               bcprov-jdk15on|
               bcpkix-jdk15on|
               bcutil-jdk15on|
+              log4j-api|
               poi|
               poi-scratchpad|
               poi-ooxml|
@@ -235,6 +236,7 @@
               com.sun.xml.internal.bind.marshaller;resolution:=optional,
               com.sun.msv.datatype;resolution:=optional,
               com.sun.msv.datatype.xsd;resolution:=optional,
+              com.sun.org.apache.xpath.internal.jaxp;resolution:=optional,
               com.sun.tools.javadoc;resolution:=optional,
               de.rototor.pdfbox.graphics2d;resolution:=optional,
               javax.annotation;resolution:=optional,
@@ -289,6 +291,7 @@
               org.w3c.dom.ranges;resolution:=optional,
               org.w3c.dom.traversal;resolution:=optional,
               sun.io;resolution:=optional,
+              org.apache.logging.log4j;resolution:=optional,
               org.apache.xml.resolver.tools;resolution:=optional,
               org.apache.xml.security;resolution:=optional,
               org.apache.xml.security.c14n;resolution:=optional,
