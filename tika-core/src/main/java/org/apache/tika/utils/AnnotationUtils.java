@@ -107,10 +107,7 @@ public class AnnotationUtils {
 
         List<ParamField> fields = PARAM_INFO.get(beanClass);
 
-        //Set<String> validFieldNames = new HashSet<>(); // unused
-
         for (ParamField field : fields) {
-            //validFieldNames.add(field.getName());
             Param<?> param = params.get(field.getName());
             if (param != null) {
                 if (field.getType().isAssignableFrom(param.getType())) {
