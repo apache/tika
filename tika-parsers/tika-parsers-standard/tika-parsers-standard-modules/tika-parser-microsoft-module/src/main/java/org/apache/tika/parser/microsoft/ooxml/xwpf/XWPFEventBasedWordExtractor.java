@@ -47,11 +47,14 @@ import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 
 import org.apache.tika.exception.RuntimeSAXException;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLWordAndPowerPointTextHandler;
 import org.apache.tika.parser.microsoft.ooxml.ParagraphProperties;
 import org.apache.tika.parser.microsoft.ooxml.RunProperties;
 import org.apache.tika.parser.microsoft.ooxml.XWPFListManager;
+import org.apache.tika.utils.XMLReaderUtils;
 
 //TODO: move this into POI?
 
@@ -112,6 +115,8 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
                     }
                     //swallow this because we don't actually call it
                     LOG.warn("SAXException handling document part", e);
+                } catch (TikaException e) {
+                    LOG.warn("ParseException handling document part", e);
                 }
             }
         }
@@ -131,6 +136,8 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
                     }
                     //swallow this because we don't actually call it
                     LOG.warn("SAXException handling glossary document part", e);
+                } catch (TikaException e) {
+                    LOG.warn("ParseException handling document part", e);
                 }
             }
         }
@@ -155,7 +162,7 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
 
 
     private void handleDocumentPart(PackagePart documentPart, StringBuilder sb)
-            throws IOException, SAXException {
+            throws IOException, SAXException, TikaException {
         //load the numbering/list manager and styles from the main document part
         XWPFNumbering numbering = loadNumbering(documentPart);
         XWPFListManager xwpfListManager = new XWPFListManager(numbering);
@@ -198,18 +205,13 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
     }
 
     private void handlePart(PackagePart packagePart, XWPFListManager xwpfListManager,
-                            StringBuilder buffer) throws IOException, SAXException {
+                            StringBuilder buffer) throws IOException, SAXException, TikaException {
 
         Map<String, String> hyperlinks = loadHyperlinkRelationships(packagePart);
         try (InputStream stream = packagePart.getInputStream()) {
-            XMLReader reader = SAXHelper.newXMLReader();
-            reader.setContentHandler(
+            XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
                     new OOXMLWordAndPowerPointTextHandler(new XWPFToTextContentHandler(buffer),
-                            hyperlinks));
-            reader.parse(new InputSource(CloseShieldInputStream.wrap(stream)));
-
-        } catch (ParserConfigurationException e) {
-            LOG.warn("Can't configure XMLReader", e);
+                    hyperlinks), new ParseContext());
         }
 
     }
