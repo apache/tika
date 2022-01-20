@@ -1,4 +1,7 @@
-Release 2.2.2 - ???
+Release 2.3.0 - ???
+
+   * Upgrade to Apache POI 5.2.0. This is the first upgrade to POI
+     5.x and represents a major refactoring (TIKA-3164).
 
    * Improve consistency in reporting package-entry divs across
      all parsers for embedded files (TIKA-3644).
