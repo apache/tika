@@ -577,7 +577,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                             POIFSFileSystem poifs = null;
 
                             try {
-                                poifs = new POIFSFileSystem(new CloseShieldInputStream(stream));
+                                poifs = new POIFSFileSystem(CloseShieldInputStream.wrap(stream));
                             } catch (RuntimeException e) {
                                 throw new IOException(e);
                             }

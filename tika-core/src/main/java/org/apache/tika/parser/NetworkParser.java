@@ -92,7 +92,7 @@ public class NetworkParser extends AbstractParser {
             connection.connect();
             try (InputStream input = connection.getInputStream()) {
                 new ParsingTask(stream, connection.getOutputStream())
-                        .parse(new CloseShieldInputStream(input), handler, metadata, context);
+                        .parse(CloseShieldInputStream.wrap(input), handler, metadata, context);
             }
         }
 

@@ -191,7 +191,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         Map<String, String> linkedRelationships =
                 loadLinkedRelationships(packagePart, true, metadata);
         try (InputStream stream = packagePart.getInputStream()) {
-            XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream),
+            XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
                     new EmbeddedContentHandler(new OOXMLWordAndPowerPointTextHandler(
                             new OOXMLTikaBodyPartHandler(xhtml, styles, listManager, config),
                             linkedRelationships, config.isIncludeShapeBasedContent(),

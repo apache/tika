@@ -66,7 +66,7 @@ public class XLIFF12Parser extends AbstractParser {
 
         final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
 
-        XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream),
+        XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
                 new XLIFF12ContentHandler(xhtml, metadata), context);
 
     }

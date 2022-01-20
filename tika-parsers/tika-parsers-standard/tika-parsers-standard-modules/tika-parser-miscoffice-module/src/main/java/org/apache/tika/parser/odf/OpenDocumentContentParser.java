@@ -54,7 +54,7 @@ public class OpenDocumentContentParser extends AbstractParser {
         DefaultHandler dh = new OpenDocumentBodyHandler(handler, context);
 
 
-        XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream),
+        XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
                 new NSNormalizerContentHandler(dh), context);
     }
 

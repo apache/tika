@@ -206,7 +206,7 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
             reader.setContentHandler(
                     new OOXMLWordAndPowerPointTextHandler(new XWPFToTextContentHandler(buffer),
                             hyperlinks));
-            reader.parse(new InputSource(new CloseShieldInputStream(stream)));
+            reader.parse(new InputSource(CloseShieldInputStream.wrap(stream)));
 
         } catch (ParserConfigurationException e) {
             LOG.warn("Can't configure XMLReader", e);

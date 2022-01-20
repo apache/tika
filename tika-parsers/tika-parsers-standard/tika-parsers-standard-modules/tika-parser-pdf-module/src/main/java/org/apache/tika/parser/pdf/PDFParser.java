@@ -146,7 +146,7 @@ public class PDFParser extends AbstractParser implements Initializable {
                         getPDDocument(tstream.getPath(), password,
                                 memoryUsageSetting, metadata, context);
             } else {
-                pdfDocument = getPDDocument(new CloseShieldInputStream(stream), password,
+                pdfDocument = getPDDocument(CloseShieldInputStream.wrap(stream), password,
                         memoryUsageSetting, metadata, context);
             }
             metadata.set(PDF.IS_ENCRYPTED, Boolean.toString(pdfDocument.isEncrypted()));
