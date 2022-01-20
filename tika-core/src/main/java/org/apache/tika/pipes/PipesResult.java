@@ -35,14 +35,14 @@ public class PipesResult {
         INTERRUPTED_EXCEPTION, NO_FETCHER_FOUND;
     }
 
-    public static PipesResult CLIENT_UNAVAILABLE_WITHIN_MS =
+    public static final PipesResult CLIENT_UNAVAILABLE_WITHIN_MS =
             new PipesResult(STATUS.CLIENT_UNAVAILABLE_WITHIN_MS);
-    public static PipesResult TIMEOUT = new PipesResult(STATUS.TIMEOUT);
-    public static PipesResult OOM = new PipesResult(STATUS.OOM);
-    public static PipesResult UNSPECIFIED_CRASH = new PipesResult(STATUS.UNSPECIFIED_CRASH);
-    public static PipesResult EMIT_SUCCESS = new PipesResult(STATUS.EMIT_SUCCESS);
-    public static PipesResult INTERRUPTED_EXCEPTION = new PipesResult(STATUS.INTERRUPTED_EXCEPTION);
-    public static PipesResult EMPTY_OUTPUT =
+    public static final PipesResult TIMEOUT = new PipesResult(STATUS.TIMEOUT);
+    public static final PipesResult OOM = new PipesResult(STATUS.OOM);
+    public static final PipesResult UNSPECIFIED_CRASH = new PipesResult(STATUS.UNSPECIFIED_CRASH);
+    public static final PipesResult EMIT_SUCCESS = new PipesResult(STATUS.EMIT_SUCCESS);
+    public static final PipesResult INTERRUPTED_EXCEPTION = new PipesResult(STATUS.INTERRUPTED_EXCEPTION);
+    public static final PipesResult EMPTY_OUTPUT =
             new PipesResult(STATUS.EMPTY_OUTPUT);
     private final STATUS status;
     private final EmitData emitData;
@@ -64,6 +64,7 @@ public class PipesResult {
 
     /**
      * This assumes parse success with no parse exception
+     *
      * @param emitData
      */
     public PipesResult(EmitData emitData) {
@@ -73,6 +74,7 @@ public class PipesResult {
     /**
      * This assumes that the message is a stack trace (container
      * parse exception).
+     *
      * @param emitData
      * @param message
      */

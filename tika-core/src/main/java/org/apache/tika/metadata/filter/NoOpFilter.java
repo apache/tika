@@ -25,7 +25,7 @@ import org.apache.tika.metadata.Metadata;
  */
 public class NoOpFilter extends MetadataFilter {
 
-    public static NoOpFilter NOOP_FILTER = new NoOpFilter();
+    public static final NoOpFilter NOOP_FILTER = new NoOpFilter();
 
     @Override
     public void filter(Metadata metadata) throws TikaException {

@@ -30,7 +30,6 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.tika.io.TemporaryResources;
@@ -55,19 +54,19 @@ public abstract class TrainedModelDetector implements Detector {
             input.mark(getMinLength());
             float[] histogram = readByteFrequencies(input);
             // writeHisto(histogram); //on testing purpose
+
+            // threshold will be considered as
+            // MediaType.OCTET_STREAM
+            float maxprob = 0.5f;
+            MediaType maxType = MediaType.OCTET_STREAM;
+
             /*
              * iterate the map to find out the one that gives the higher
              * prediction value.
              */
-            Iterator<MediaType> iter = MODEL_MAP.keySet().iterator();
-            float threshold = 0.5f;// probability threshold, any value below the
-            // threshold will be considered as
-            // MediaType.OCTET_STREAM
-            float maxprob = threshold;
-            MediaType maxType = MediaType.OCTET_STREAM;
-            while (iter.hasNext()) {
-                MediaType key = iter.next();
-                TrainedModel model = MODEL_MAP.get(key);
+            for (Map.Entry<MediaType, TrainedModel> entry : MODEL_MAP.entrySet()) {
+                MediaType key = entry.getKey();
+                TrainedModel model = entry.getValue();
                 float prob = model.predict(histogram);
                 if (maxprob < prob) {
                     maxprob = prob;

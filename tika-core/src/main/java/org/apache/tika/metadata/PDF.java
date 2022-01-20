@@ -108,4 +108,13 @@ public interface PDF {
 
     Property EMBEDDED_FILE_DESCRIPTION = Property.externalText(PDF_PREFIX +
             "embeddedFileDescription");
+
+    /**
+     * If the PDF has an annotation of type 3D
+     */
+    Property HAS_3D = Property.internalBoolean(PDF_PREFIX + "has3D");
+
+    Property ANNOTATION_TYPES = Property.internalTextBag(PDF_PREFIX + "annotationTypes");
+
+    Property ANNOTATION_SUBTYPES = Property.internalTextBag(PDF_PREFIX + "annotationSubtypes");
 }

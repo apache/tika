@@ -24,11 +24,9 @@ import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -109,10 +107,7 @@ public class AnnotationUtils {
 
         List<ParamField> fields = PARAM_INFO.get(beanClass);
 
-        Set<String> validFieldNames = new HashSet<>();
-
         for (ParamField field : fields) {
-            validFieldNames.add(field.getName());
             Param<?> param = params.get(field.getName());
             if (param != null) {
                 if (field.getType().isAssignableFrom(param.getType())) {

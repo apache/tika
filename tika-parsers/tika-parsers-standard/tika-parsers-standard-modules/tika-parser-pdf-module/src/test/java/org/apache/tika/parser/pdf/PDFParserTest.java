@@ -1355,6 +1355,8 @@ public class PDFParserTest extends TikaTest {
         assertEquals("application/x-shockwave-flash", metadata.get(1).get(Metadata.CONTENT_TYPE));
         assertEquals("TestMovie02.swf", metadata.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals("15036", metadata.get(1).get(Metadata.CONTENT_LENGTH));
+        assertEquals("RichMedia", metadata.get(0).getValues(PDF.ANNOTATION_SUBTYPES)[0]);
+        assertEquals("RM1", metadata.get(0).getValues(PDF.ANNOTATION_TYPES)[0]);
     }
 
     /**

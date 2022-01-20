@@ -21,7 +21,7 @@ import java.io.IOException;
 
 public abstract class PipesReporter implements Closeable {
 
-    public static PipesReporter NO_OP_REPORTER = new PipesReporter() {
+    public static final PipesReporter NO_OP_REPORTER = new PipesReporter() {
 
         @Override
         public void report(FetchEmitTuple t, PipesResult result, long elapsed) {

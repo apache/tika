@@ -44,6 +44,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import javax.xml.stream.XMLStreamException;
 
 import org.apache.commons.io.IOUtils;
@@ -126,6 +127,9 @@ class AbstractPDF2XHTML extends PDFTextStripper {
      */
     private final static int MAX_RECURSION_DEPTH = 100;
     private final static int MAX_BOOKMARK_ITEMS = 10000;
+    private static final String THREE_D = "3D";
+    private static final COSName THREE_DD = COSName.getPDFName("3DD");
+    private static final String NULL_STRING = "null";
     private static final MediaType XFA_MEDIA_TYPE = MediaType.application("vnd.adobe.xdp+xml");
     private static final MediaType XMP_MEDIA_TYPE = MediaType.application("rdf+xml");
     final List<IOException> exceptions = new ArrayList<>();
@@ -142,7 +146,9 @@ class AbstractPDF2XHTML extends PDFTextStripper {
      */
     private final SimpleDateFormat dateFormat =
             new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.ROOT);
-    private final Set<String> fontNames = new HashSet<>();
+    private final Set<String> fontNames = new TreeSet<>();
+    private final Set<String> annotationTypes = new TreeSet<>();
+    private final Set<String> annotationSubtypes = new TreeSet<>();
     //zero-based pageIndex
     int pageIndex = 0;
     int startPage = -1;
@@ -523,7 +529,18 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
         try {
             for (PDAnnotation annotation : page.getAnnotations()) {
-
+                String annotationName = annotation.getAnnotationName();
+                if (annotationName != null) {
+                    annotationTypes.add(annotationName);
+                } else {
+                    annotationTypes.add(NULL_STRING);
+                }
+                String annotationSubtype = annotation.getSubtype();
+                if (annotationSubtype != null) {
+                    annotationSubtypes.add(annotationSubtype);
+                } else {
+                    annotationSubtypes.add(NULL_STRING);
+                }
                 if (annotation instanceof PDAnnotationFileAttachment) {
                     PDAnnotationFileAttachment fann = (PDAnnotationFileAttachment) annotation;
                     if (fann.getFile() instanceof PDComplexFileSpecification) {
@@ -534,15 +551,17 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 } else if (annotation instanceof PDAnnotationWidget) {
                     handleWidget((PDAnnotationWidget) annotation);
                 } else {
-                    String annotationType = annotation.getSubtype();
-                    if (annotationType == null) {
-                        annotationType = "unknown";
+                    if (annotationSubtype == null) {
+                        annotationSubtype = "unknown";
+                    } else if (annotationSubtype.equals(THREE_D) ||
+                            annotation.getCOSObject().containsKey(THREE_DD)) {
+                        metadata.set(PDF.HAS_3D, true);
                     }
                     for (COSDictionary fileSpec :
                             findFileSpecs(annotation.getCOSObject())) {
                         PDComplexFileSpecification cfs = new PDComplexFileSpecification(fileSpec);
                         handlePDComplexFileSpec(cfs.getFilename(),
-                                annotationType, cfs);
+                                annotationSubtype, cfs);
                     }
                 }
                 // TODO: remove once PDFBOX-1143 is fixed:
@@ -800,6 +819,13 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                     ActionTrigger.BEFORE_DOCUMENT_PRINT);
             handleDestinationOrAction(additionalActions.getWS(),
                     ActionTrigger.BEFORE_DOCUMENT_SAVE);
+            //now record annotationtypes and subtypes
+            for (String annotationType : annotationTypes) {
+                metadata.add(PDF.ANNOTATION_TYPES, annotationType);
+            }
+            for (String annotationSubtype : annotationSubtypes) {
+                metadata.add(PDF.ANNOTATION_SUBTYPES, annotationSubtype);
+            }
             xhtml.endDocument();
         } catch (TikaException | SAXException e) {
             throw new IOException("Unable to end a document", e);
