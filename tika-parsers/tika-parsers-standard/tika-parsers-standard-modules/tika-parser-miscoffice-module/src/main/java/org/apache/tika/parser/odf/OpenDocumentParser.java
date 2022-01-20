@@ -51,7 +51,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.EndDocumentShieldingContentHandler;
-import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -335,15 +334,15 @@ public class OpenDocumentParser extends AbstractParser {
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
         handler = new OpenDocumentMacroHandler(handler, context);
         XMLReaderUtils.parseSAX(new CloseShieldInputStream(is),
-                new OfflineContentHandler(new EmbeddedContentHandler(handler)), context);
+                new EmbeddedContentHandler(handler), context);
     }
 
     private void checkForEncryption(InputStream stream, ParseContext context)
             throws SAXException, TikaException, IOException {
         try {
             XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream),
-                    new OfflineContentHandler(new EmbeddedContentHandler(
-                            new OpenDocumentManifestHandler())), context);
+                    new EmbeddedContentHandler(
+                            new OpenDocumentManifestHandler()), context);
         } catch (SAXException e) {
             if (e.getCause() != null
                     && e.getCause() instanceof EncryptedDocumentException) {

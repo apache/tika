@@ -51,7 +51,6 @@ import org.apache.tika.detect.zip.ZipContainerDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.StoppingEarlyException;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -222,8 +221,7 @@ public class OPCPackageDetector implements ZipContainerDetector {
     private static MediaType parseOOXMLContentTypes(InputStream is) {
         ContentTypeHandler contentTypeHandler = new ContentTypeHandler();
         try {
-            XMLReaderUtils.parseSAX(is, new OfflineContentHandler(contentTypeHandler),
-                    new ParseContext());
+            XMLReaderUtils.parseSAX(is, contentTypeHandler, new ParseContext());
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {

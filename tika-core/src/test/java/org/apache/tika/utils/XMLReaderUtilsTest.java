@@ -14,40 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.sax;
+package org.apache.tika.utils;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.StringReader;
+import java.io.ByteArrayInputStream;
 import java.net.ConnectException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
+import java.nio.charset.StandardCharsets;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.xml.sax.InputSource;
-import org.xml.sax.helpers.DefaultHandler;
 
-/**
- * Unit tests for the {@link OfflineContentHandler} class.
- */
-public class OfflineContentHandlerTest {
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.ToTextContentHandler;
 
-    private SAXParser parser;
-
-    private DefaultHandler offline;
-
-    @BeforeEach
-    public void setUp() throws Exception {
-        parser = SAXParserFactory.newInstance().newSAXParser();
-        offline = new OfflineContentHandler(new DefaultHandler());
-    }
-
+public class XMLReaderUtilsTest {
+    //make sure that parseSAX actually defends against external entities
     @Test
     public void testExternalDTD() throws Exception {
         String xml = "<!DOCTYPE foo SYSTEM \"http://127.234.172.38:7845/bar\"><foo/>";
         try {
-            parser.parse(new InputSource(new StringReader(xml)), offline);
+            XMLReaderUtils.parseSAX(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)),
+                    new ToTextContentHandler(), new ParseContext());
         } catch (ConnectException e) {
             fail("Parser tried to access the external DTD:" + e);
         }
@@ -59,11 +46,10 @@ public class OfflineContentHandlerTest {
                 "<!DOCTYPE foo [" + " <!ENTITY bar SYSTEM \"http://127.234.172.38:7845/bar\">" +
                         " ]><foo>&bar;</foo>";
         try {
-            parser.parse(new InputSource(new StringReader(xml)), offline);
+            XMLReaderUtils.parseSAX(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)),
+                    new ToTextContentHandler(), new ParseContext());
         } catch (ConnectException e) {
             fail("Parser tried to access the external DTD:" + e);
         }
     }
-
-
 }

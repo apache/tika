@@ -72,7 +72,6 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.TikaExcelDataFormatter;
-import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -202,7 +201,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         //consider adding this back to POI
         try (InputStream wbData = xssfReader.getWorkbookData()) {
             XMLReaderUtils
-                    .parseSAX(wbData, new OfflineContentHandler(new AbsPathExtractorHandler()),
+                    .parseSAX(wbData, new AbsPathExtractorHandler(),
                             parseContext);
         } catch (InvalidFormatException | TikaException e) {
             //swallow

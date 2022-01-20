@@ -28,7 +28,6 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
 
 /**
@@ -72,7 +71,7 @@ public class XmlRootExtractor {
         ExtractorHandler handler = new ExtractorHandler();
         try {
             XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream),
-                    new OfflineContentHandler(handler), EMPTY_CONTEXT);
+                    handler, EMPTY_CONTEXT);
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {

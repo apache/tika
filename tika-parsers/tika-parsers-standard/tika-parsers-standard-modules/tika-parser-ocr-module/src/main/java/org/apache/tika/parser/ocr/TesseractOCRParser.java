@@ -72,7 +72,6 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractExternalProcessParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.external.ExternalParser;
-import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
@@ -496,7 +495,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         AttributesImpl attrs = new AttributesImpl();
         attrs.addAttribute("", "class", "class", "CDATA", "ocr");
         xhtml.startElement(XHTML, "div", "div", attrs);
-        XMLReaderUtils.parseSAX(is, new OfflineContentHandler(new HOCRPassThroughHandler(xhtml)),
+        XMLReaderUtils.parseSAX(is, new HOCRPassThroughHandler(xhtml),
                 parseContext);
         xhtml.endElement(XHTML, "div", "div");
 

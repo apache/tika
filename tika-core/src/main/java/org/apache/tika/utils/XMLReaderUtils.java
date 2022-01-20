@@ -59,10 +59,9 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.OfflineContentHandler;
 
+
 /**
- * Utility functions for reading XML.  If you are doing SAX parsing, make sure
- * to use the {@link OfflineContentHandler} to guard against
- * XML External Entity attacks.
+ * Utility functions for reading XML.
  */
 public class XMLReaderUtils implements Serializable {
 
@@ -179,10 +178,6 @@ public class XMLReaderUtils implements Serializable {
      * is not explicitly specified, then one is created using the specified
      * or the default SAX parser factory.
      * <p>
-     * Make sure to wrap your handler in the {@link OfflineContentHandler} to
-     * prevent XML External Entity attacks
-     * </p>
-     * <p>
      * If you call reset() on the parser, make sure to replace the
      * SecurityManager which will be cleared by xerces2 on reset().
      * </p>
@@ -210,10 +205,6 @@ public class XMLReaderUtils implements Serializable {
      * instance is created and returned. The default factory instance is
      * configured to be namespace-aware, not validating, and to use
      * {@link XMLConstants#FEATURE_SECURE_PROCESSING secure XML processing}.
-     * <p>
-     * Make sure to wrap your handler in the {@link OfflineContentHandler} to
-     * prevent XML External Entity attacks
-     * </p>
      *
      * @return SAX parser factory
      * @since Apache Tika 0.8
@@ -466,7 +457,9 @@ public class XMLReaderUtils implements Serializable {
      * If one is not found, this reuses a SAXParser from the pool.
      *
      * @param is             InputStream to parse
-     * @param contentHandler handler to use
+     * @param contentHandler handler to use; this wraps a {@link OfflineContentHandler}
+     *                       to the content handler as an extra layer of defense against
+     *                       external entity vulnerabilities
      * @param context        context to use
      * @return
      * @throws TikaException
@@ -474,7 +467,7 @@ public class XMLReaderUtils implements Serializable {
      * @throws SAXException
      * @since Apache Tika 1.19
      */
-    public static void parseSAX(InputStream is, DefaultHandler contentHandler, ParseContext context)
+    public static void parseSAX(InputStream is, ContentHandler contentHandler, ParseContext context)
             throws TikaException, IOException, SAXException {
         SAXParser saxParser = context.get(SAXParser.class);
         PoolSAXParser poolSAXParser = null;
@@ -483,7 +476,7 @@ public class XMLReaderUtils implements Serializable {
             saxParser = poolSAXParser.getSAXParser();
         }
         try {
-            saxParser.parse(is, contentHandler);
+            saxParser.parse(is, new OfflineContentHandler(contentHandler));
         } finally {
             if (poolSAXParser != null) {
                 releaseParser(poolSAXParser);

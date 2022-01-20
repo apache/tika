@@ -37,7 +37,6 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.xml.ElementMetadataHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
-import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.TaggedContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -96,8 +95,8 @@ public abstract class AbstractXML2003Parser extends AbstractParser {
             //an attachment might require another SAXParser
             //mid-parse
             XMLReaderUtils.getSAXParser().parse(new CloseShieldInputStream(stream),
-                    new OfflineContentHandler(new EmbeddedContentHandler(
-                            getContentHandler(tagged, metadata, context))));
+                    new EmbeddedContentHandler(
+                            getContentHandler(tagged, metadata, context)));
         } catch (SAXException e) {
             WriteLimitReachedException.throwIfWriteLimitReached(e);
             throw new TikaException("XML parse error", e);

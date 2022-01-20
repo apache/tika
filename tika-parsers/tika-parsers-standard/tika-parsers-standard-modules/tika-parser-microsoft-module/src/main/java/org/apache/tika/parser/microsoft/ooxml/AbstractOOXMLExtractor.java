@@ -62,7 +62,6 @@ import org.apache.tika.parser.microsoft.OfficeParser;
 import org.apache.tika.parser.microsoft.OfficeParser.POIFSDocumentType;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.sax.EmbeddedContentHandler;
-import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.XMLReaderUtils;
@@ -535,8 +534,8 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                     PackagePart relatedPartPart =
                             parentPart.getRelatedPart(relatedPartPackageRelationship);
                     try (InputStream stream = relatedPartPart.getInputStream()) {
-                        XMLReaderUtils.parseSAX(stream, new OfflineContentHandler(
-                                new EmbeddedContentHandler(contentHandler)), context);
+                        XMLReaderUtils.parseSAX(stream,
+                                new EmbeddedContentHandler(contentHandler), context);
 
                     } catch (IOException | TikaException e) {
                         parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,

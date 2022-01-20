@@ -34,7 +34,6 @@ import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.StoppingEarlyException;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -61,7 +60,7 @@ public class StarOfficeDetector implements ZipContainerDetector {
     static MediaType detectStarOfficeX(InputStream is) {
         StarOfficeXHandler handler = new StarOfficeXHandler();
         try {
-            XMLReaderUtils.parseSAX(is, new OfflineContentHandler(handler), new ParseContext());
+            XMLReaderUtils.parseSAX(is, handler, new ParseContext());
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {

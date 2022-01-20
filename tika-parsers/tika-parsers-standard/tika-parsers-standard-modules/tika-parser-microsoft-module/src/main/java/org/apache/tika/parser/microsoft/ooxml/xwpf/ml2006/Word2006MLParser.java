@@ -32,7 +32,6 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.AbstractOfficeParser;
 import org.apache.tika.sax.EmbeddedContentHandler;
-import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -61,8 +60,8 @@ public class Word2006MLParser extends AbstractOfficeParser {
             //an attachment might require another SAXParser
             //mid-parse
             XMLReaderUtils.getSAXParser().parse(new CloseShieldInputStream(stream),
-                    new OfflineContentHandler(new EmbeddedContentHandler(
-                            new Word2006MLDocHandler(xhtml, metadata, context))));
+                    new EmbeddedContentHandler(
+                            new Word2006MLDocHandler(xhtml, metadata, context)));
         } catch (SAXException e) {
             throw new TikaException("XML parse error", e);
         }

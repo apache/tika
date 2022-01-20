@@ -39,7 +39,6 @@ import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.TaggedContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
@@ -118,7 +117,7 @@ public class NetworkParser extends AbstractParser {
             thread.start();
 
             TaggedContentHandler tagged =
-                    new TaggedContentHandler(new OfflineContentHandler(handler));
+                    new TaggedContentHandler(handler);
             try {
                 XMLReaderUtils
                         .parseSAX(stream, new TeeContentHandler(tagged, new MetaHandler(metadata)),

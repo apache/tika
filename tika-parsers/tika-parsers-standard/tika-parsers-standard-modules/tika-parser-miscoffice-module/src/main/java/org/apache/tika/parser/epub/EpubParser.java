@@ -59,7 +59,6 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.xml.DcXMLParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
-import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.ParserUtils;
 import org.apache.tika.utils.XMLReaderUtils;
@@ -233,7 +232,7 @@ public class EpubParser extends AbstractParser {
 
         ContentOrderScraper contentOrderScraper = new ContentOrderScraper();
         try (InputStream is = zipFile.getInputStream(zae)) {
-            XMLReaderUtils.parseSAX(is, new OfflineContentHandler(contentOrderScraper), context);
+            XMLReaderUtils.parseSAX(is, contentOrderScraper, context);
         }
         //if no content items, false
         if (contentOrderScraper.contentItems.size() == 0) {
@@ -389,7 +388,7 @@ public class EpubParser extends AbstractParser {
         if (container != null) {
             RootFinder rootFinder = new RootFinder();
             try (InputStream is = zipFile.getInputStream(container)) {
-                XMLReaderUtils.parseSAX(is, new OfflineContentHandler(rootFinder), context);
+                XMLReaderUtils.parseSAX(is, rootFinder, context);
             }
             return rootFinder.root;
         } else {
