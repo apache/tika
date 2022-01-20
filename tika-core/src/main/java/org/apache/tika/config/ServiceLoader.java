@@ -363,8 +363,8 @@ public class ServiceLoader {
 
     private void collectServiceClassNames(URL resource, Collection<String> names)
             throws IOException {
-        try (InputStream stream = resource.openStream()) {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(stream, UTF_8));
+        try (InputStream stream = resource.openStream();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(stream, UTF_8))) {
             String line = reader.readLine();
             while (line != null) {
                 line = COMMENT.matcher(line).replaceFirst("");

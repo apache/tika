@@ -82,7 +82,7 @@ import org.apache.tika.utils.XMLReaderUtils;
 public class TikaConfig {
 
     //use this to look for unneeded instantiations of TikaConfig
-    protected static AtomicInteger TIMES_INSTANTIATED = new AtomicInteger();
+    protected static final AtomicInteger TIMES_INSTANTIATED = new AtomicInteger();
     private final ServiceLoader serviceLoader;
     private final CompositeParser parser;
     private final CompositeDetector detector;

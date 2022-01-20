@@ -29,7 +29,7 @@ public class HandlerConfig implements Serializable {
      */
     private static final long serialVersionUID = -3861669115439125268L;
 
-    public static HandlerConfig DEFAULT_HANDLER_CONFIG =
+    public static final HandlerConfig DEFAULT_HANDLER_CONFIG =
             new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, PARSE_MODE.RMETA,
                     -1, -1);
 

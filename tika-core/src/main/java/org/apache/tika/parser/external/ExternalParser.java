@@ -346,7 +346,9 @@ public class ExternalParser extends AbstractParser {
 
         // Grab the output if we haven't already
         if (!outputFromStdOut) {
-            extractOutput(new FileInputStream(output), xhtml);
+            try (FileInputStream fileInputStream = new FileInputStream(output)) {
+                extractOutput(fileInputStream, xhtml);
+            }
         }
     }
 
@@ -408,13 +410,13 @@ public class ExternalParser extends AbstractParser {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     boolean consumed = false;
-                    for (Pattern p : metadataPatterns.keySet()) {
-                        Matcher m = p.matcher(line);
+                    for (Map.Entry<Pattern, String> entry : metadataPatterns.entrySet()) {
+                        Matcher m = entry.getKey().matcher(line);
                         if (m.find()) {
                             consumed = true;
-                            if (metadataPatterns.get(p) != null &&
-                                    !metadataPatterns.get(p).equals("")) {
-                                metadata.add(metadataPatterns.get(p), m.group(1));
+                            if (entry.getValue() != null &&
+                                    !entry.getValue().equals("")) {
+                                metadata.add(entry.getValue(), m.group(1));
                             } else {
                                 metadata.add(m.group(1), m.group(2));
                             }
