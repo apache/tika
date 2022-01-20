@@ -14,6 +14,10 @@ Release 2.2.2 - ???
 
    * Added IDML Parser from 1.x series to 2.x series (TIKA-3188).
 
+   * Extract annotation types and subtypes for PDFs into metadata (TIKA-3653).
+
+   * Add metadata value for PDFs that contain 3D annotations (TIKA-3653).
+
 
 Release 2.2.1 - 12/19/2021
 
