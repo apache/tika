@@ -35,4 +35,4 @@ jobs:
         with:
           java-version: ${{ matrix.java }}
       - name: Build with Maven
-        run: mvn clean javadoc:aggregate test
+        run: mvn clean javadoc:aggregate test verify

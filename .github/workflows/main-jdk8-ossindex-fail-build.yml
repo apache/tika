@@ -38,4 +38,4 @@ jobs:
         with:
           java-version: ${{ matrix.java }}
       - name: Build with Maven
-        run: mvn -Possindex-fail validate
+        run: mvn -Possindex-fail validate verify
