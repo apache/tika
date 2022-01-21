@@ -333,14 +333,14 @@ public class OpenDocumentParser extends AbstractParser {
         embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
         handler = new OpenDocumentMacroHandler(handler, context);
-        XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(is),
+        XMLReaderUtils.parseSAX(new CloseShieldInputStream(is),
                 new EmbeddedContentHandler(handler), context);
     }
 
     private void checkForEncryption(InputStream stream, ParseContext context)
             throws SAXException, TikaException, IOException {
         try {
-            XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
+            XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream),
                     new EmbeddedContentHandler(
                             new OpenDocumentManifestHandler()), context);
         } catch (SAXException e) {

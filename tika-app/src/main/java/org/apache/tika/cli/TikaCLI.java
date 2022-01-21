@@ -491,7 +491,7 @@ public class TikaCLI {
 
             if (arg.equals("-")) {
                 try (InputStream stream = TikaInputStream
-                        .get(CloseShieldInputStream.wrap(System.in))) {
+                        .get(new CloseShieldInputStream(System.in))) {
                     type.process(stream, System.out, new Metadata());
                 }
             } else {

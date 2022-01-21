@@ -74,7 +74,7 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
 
         // The following code was taken from the TXTParser
         // Automatically detect the character encoding
-        try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(stream),
+        try (AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(stream),
                 metadata, getEncodingDetector(context))) {
             Charset charset = reader.getCharset();
             // deprecated, see TIKA-431

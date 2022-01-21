@@ -59,7 +59,7 @@ public class Word2006MLParser extends AbstractOfficeParser {
             //need to get new SAXParser because
             //an attachment might require another SAXParser
             //mid-parse
-            XMLReaderUtils.getSAXParser().parse(CloseShieldInputStream.wrap(stream),
+            XMLReaderUtils.getSAXParser().parse(new CloseShieldInputStream(stream),
                     new EmbeddedContentHandler(
                             new Word2006MLDocHandler(xhtml, metadata, context)));
         } catch (SAXException e) {

@@ -259,7 +259,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
             // any associated resources, but the underlying document stream
             // should not be closed
 
-            ais = factory.createArchiveInputStream(CloseShieldInputStream.wrap(stream));
+            ais = factory.createArchiveInputStream(new CloseShieldInputStream(stream));
 
         } catch (StreamingNotSupportedException sne) {
             // Most archive formats work on streams, but a few need files
@@ -319,7 +319,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 ais.close();
                 // An exception would be thrown if MARK_LIMIT is not big enough
                 stream.reset();
-                ais = new ZipArchiveInputStream(CloseShieldInputStream.wrap(stream), encoding, true,
+                ais = new ZipArchiveInputStream(new CloseShieldInputStream(stream), encoding, true,
                         true);
                 parseEntries(ais, metadata, extractor, xhtml, true, entryCnt);
             }

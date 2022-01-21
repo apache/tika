@@ -70,7 +70,7 @@ public class XmlRootExtractor {
     private QName extractRootElement(InputStream stream, boolean throwMalformed) {
         ExtractorHandler handler = new ExtractorHandler();
         try {
-            XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
+            XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream),
                     handler, EMPTY_CONTEXT);
         } catch (SecurityException e) {
             throw e;
