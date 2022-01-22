@@ -103,12 +103,15 @@ public class YandexTranslator implements Translator {
         Response response = client.accept(MediaType.APPLICATION_JSON)
                 .query("key", this.apiKey).query("lang", langCode)
                 .query("text", text).get();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(
-                (InputStream) response.getEntity(), UTF_8));
-        String line = null;
-        StringBuffer responseText = new StringBuffer();
-        while ((line = reader.readLine()) != null) {
-            responseText.append(line);
+        StringBuilder responseText = new StringBuilder();
+        try (InputStreamReader inputStreamReader = new InputStreamReader(
+                (InputStream) response.getEntity(), UTF_8);
+             BufferedReader reader = new BufferedReader(inputStreamReader);
+        ) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                responseText.append(line);
+            }
         }
 
         try {
