@@ -21,6 +21,8 @@ Release 2.3.0 - ???
 
    * Add metadata value for PDFs that contain 3D annotations (TIKA-3653).
 
+   * Add parser for Translation Memory eXchange (TMX) files (TIKA-3660).
+
 
 Release 2.2.1 - 12/19/2021
 

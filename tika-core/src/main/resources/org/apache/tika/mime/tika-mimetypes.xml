@@ -2848,6 +2848,18 @@
   <mime-type type="application/vnd.tmobile-livetv">
     <glob pattern="*.tmo"/>
   </mime-type>
+
+  <mime-type type="application/x-tmx">
+    <sub-class-of type="application/xml"/>
+    <_comment>TMX Translation Memory</_comment>
+    <tika:link>https://www.gala-global.org/tmx-14b</tika:link>
+    <acronym>TMX</acronym>
+    <magic priority="80">
+      <match value="&lt;tmx" type="string" offset="0:256"/>
+    </magic>
+    <glob pattern="*.tmx"/>
+  </mime-type>
+
   <mime-type type="application/vnd.trid.tpt">
     <glob pattern="*.tpt"/>
   </mime-type>
