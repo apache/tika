@@ -74,6 +74,15 @@ public class AsyncProcessor implements Closeable {
                 asyncConfig.getNumClients() + asyncConfig.getNumEmitters() + 1);
         this.executorCompletionService =
                 new ExecutorCompletionService<>(executorService);
+        if (!tikaConfigPath.toAbsolutePath()
+                .equals(asyncConfig.getTikaConfig().toAbsolutePath())) {
+            LOG.warn("TikaConfig for AsyncProcessor ({}) is different " +
+                    "from TikaConfig for workers ({}). If this is intended," +
+                    " please ignore this warning.",
+                    tikaConfigPath.toAbsolutePath(),
+                    asyncConfig.getTikaConfig().toAbsolutePath()
+            );
+        }
         this.executorCompletionService.submit(() -> {
             while (true) {
                 try {
@@ -90,7 +99,7 @@ public class AsyncProcessor implements Closeable {
                     emitData));
         }
 
-        EmitterManager emitterManager = EmitterManager.load(tikaConfigPath);
+        EmitterManager emitterManager = EmitterManager.load(asyncConfig.getTikaConfig());
         for (int i = 0; i < asyncConfig.getNumEmitters(); i++) {
             executorCompletionService.submit(new AsyncEmitter(asyncConfig, emitData,
                     emitterManager));
