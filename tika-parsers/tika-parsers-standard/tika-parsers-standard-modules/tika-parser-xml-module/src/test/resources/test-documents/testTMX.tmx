@@ -1,0 +1,14 @@
+<tmx version="1.4">
+    <header creationtool="apache-tika" creationtoolversion="2.1.1" datatype="PlainText" segtype="sentence"
+            adminlang="en-us" srclang="en-us" o-tmf="apache-tika"/>
+    <body>
+        <tu>
+            <tuv xml:lang="en-us">
+                <seg>Hello world!</seg>
+            </tuv>
+            <tuv xml:lang="ro-ro">
+                <seg>Salut lume!</seg>
+            </tuv>
+        </tu>
+    </body>
+</tmx>
