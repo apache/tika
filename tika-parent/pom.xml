@@ -350,7 +350,7 @@
     <parso.version>2.0.14</parso.version>
     <!-- some conflict with slf4j with >= 4.12.0
           causes failure in testForkParser -->
-    <pax.exam.version>4.11.0</pax.exam.version>
+    <pax.exam.version>4.13.1</pax.exam.version>
     <pdfbox.version>2.0.25</pdfbox.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
     <poi.version>5.2.0</poi.version>
