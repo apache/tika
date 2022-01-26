@@ -41,19 +41,18 @@ public class StreamingZipContainerDetector extends DefaultZipContainerDetector {
      */
     private static final long serialVersionUID = 2891763938430295453L;
 
-    List<ZipContainerDetector> zipDetectors;
 
     public StreamingZipContainerDetector() {
-        this(new ServiceLoader(StreamingZipContainerDetector.class.getClassLoader()));
+        this(new ServiceLoader(StreamingZipContainerDetector.class.getClassLoader(), true));
     }
 
     public StreamingZipContainerDetector(ServiceLoader loader) {
-        this(loader.loadServiceProviders(ZipContainerDetector.class));
+        super(loader);
     }
 
     public StreamingZipContainerDetector(List<ZipContainerDetector> zipDetectors) {
         //TODO: OPCBased needs to be last!!!
-        this.zipDetectors = zipDetectors;
+        super(zipDetectors);
     }
 
 
