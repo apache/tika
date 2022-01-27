@@ -33,6 +33,8 @@ import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.Field;
 import org.apache.tika.config.LoadErrorHandler;
@@ -56,6 +58,8 @@ public class DefaultZipContainerDetector implements Detector {
      */
     private static final long serialVersionUID = 2891763938430295453L;
 
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultZipContainerDetector.class);
+
     static {
         TIFF_SIGNATURES[0] = new byte[]{'M', 'M', 0x00, 0x2a};
         TIFF_SIGNATURES[1] = new byte[]{'I', 'I', 0x2a, 0x00};
@@ -73,7 +77,7 @@ public class DefaultZipContainerDetector implements Detector {
 
     public DefaultZipContainerDetector() {
         this(new ServiceLoader(DefaultZipContainerDetector.class.getClassLoader(),
-                LoadErrorHandler.WARN, true));
+                LoadErrorHandler.WARN, false));
     }
 
     public DefaultZipContainerDetector(ServiceLoader loader) {
@@ -200,6 +204,10 @@ public class DefaultZipContainerDetector implements Detector {
             for (ZipContainerDetector zipDetector : getDetectors()) {
                 MediaType type = zipDetector.detect(zip, tis);
                 if (type != null) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("{} detected {}", zipDetector.getClass(),
+                                type.toString());
+                    }
                     //e.g. if OPCPackage has already been set
                     //don't overwrite it with the zip
                     if (tis.getOpenContainer() == null) {
@@ -208,6 +216,10 @@ public class DefaultZipContainerDetector implements Detector {
                         tis.addCloseableResource(zip);
                     }
                     return type;
+                } else {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("{} detected null", zipDetector.getClass());
+                    }
                 }
             }
         } catch (IOException e) {
@@ -283,10 +295,16 @@ public class DefaultZipContainerDetector implements Detector {
     }
 
     private List<ZipContainerDetector> getDetectors() {
-        if (loader != null) {
-            List<ZipContainerDetector> zipDetectors = new ArrayList<>(staticZipDetectors);
-            zipDetectors.addAll(loader.loadDynamicServiceProviders(ZipContainerDetector.class));
-            return zipDetectors;
+        if (loader != null && loader.isDynamic()) {
+            List<ZipContainerDetector> dynamicDetectors =
+                    loader.loadDynamicServiceProviders(ZipContainerDetector.class);
+            if (dynamicDetectors.size() > 0) {
+                List<ZipContainerDetector> zipDetectors = new ArrayList<>(staticZipDetectors);
+                zipDetectors.addAll(dynamicDetectors);
+                return zipDetectors;
+            } else {
+                return staticZipDetectors;
+            }
         }
         return staticZipDetectors;
     }

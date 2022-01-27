@@ -170,6 +170,7 @@
               poi-scratchpad|
               poi-ooxml|
               poi-ooxml-lite|
+              log4j-core|
               log4j-api|
               commons-math3|
               curvesapi|
@@ -210,6 +211,9 @@
               !org.junit.*,
               !junit.*,
               org.apache.tika.fork,
+              org.slf4j,
+              org.slf4j.event,
+              org.slf4j.helpers,
               android.util;resolution:=optional,
               com.apple.eawt;resolution:=optional,
               com.github.luben.zstd;resolution:=optional,
@@ -311,8 +315,6 @@
               org.jaxen.util;resolution:=optional,
               org.openxmlformats.schemas.officeDocument.x2006.math;resolution:=optional,
               org.openxmlformats.schemas.schemaLibrary.x2006.main;resolution:=optional,
-              org.slf4j;resolution:=optional,
-              org.slf4j.helpers;resolution:=optional,
               org.w3c.dom;resolution:=optional,
               org.w3c.dom.svg;resolution:=optional,
               org.xml.sax;resolution:=optional,

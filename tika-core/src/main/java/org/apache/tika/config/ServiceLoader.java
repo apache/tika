@@ -47,7 +47,7 @@ public class ServiceLoader {
      * source of service instances in the {@link #loadServiceProviders(Class)}
      * method.
      */
-    private static final Map<Object, RankedService> services = new HashMap<>();
+    private static final Map<Object, RankedService> SERVICES = new HashMap<>();
     private static final Pattern COMMENT = Pattern.compile("#.*");
     private static final Pattern WHITESPACE = Pattern.compile("\\s+");
     /**
@@ -121,14 +121,14 @@ public class ServiceLoader {
     }
 
     static void addService(Object reference, Object service, int rank) {
-        synchronized (services) {
-            services.put(reference, new RankedService(service, rank));
+        synchronized (SERVICES) {
+            SERVICES.put(reference, new RankedService(service, rank));
         }
     }
 
     static Object removeService(Object reference) {
-        synchronized (services) {
-            return services.remove(reference);
+        synchronized (SERVICES) {
+            return SERVICES.remove(reference);
         }
     }
 
@@ -262,8 +262,8 @@ public class ServiceLoader {
     @SuppressWarnings("unchecked")
     public <T> List<T> loadDynamicServiceProviders(Class<T> iface) {
         if (dynamic) {
-            synchronized (services) {
-                List<RankedService> list = new ArrayList<>(services.values());
+            synchronized (SERVICES) {
+                List<RankedService> list = new ArrayList<>(SERVICES.values());
                 Collections.sort(list);
 
                 List<T> providers = new ArrayList<>(list.size());
@@ -275,7 +275,7 @@ public class ServiceLoader {
                 return providers;
             }
         } else {
-            return new ArrayList<>(0);
+            return Collections.EMPTY_LIST;
         }
     }
 
