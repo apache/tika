@@ -102,8 +102,8 @@ public class OOXMLExtractorFactory {
 
             // Locate or Open the OPCPackage for the file
             TikaInputStream tis = TikaInputStream.cast(stream);
-            if (tis != null && tis.getOpenContainer() instanceof OPCPackage) {
-                pkg = (OPCPackage) tis.getOpenContainer();
+            if (tis != null && tis.getOpenContainer() instanceof OPCPackageWrapper) {
+                pkg = ((OPCPackageWrapper) tis.getOpenContainer()).getOPCPackage();
             } else if (tis != null && tis.hasFile()) {
                 try {
                     pkg = OPCPackage.open(tis.getFile().getPath(), PackageAccess.READ);
@@ -112,7 +112,7 @@ public class OOXMLExtractorFactory {
                     ZipSalvager.salvageCopy(tis.getFile(), tmpRepairedCopy);
                     pkg = OPCPackage.open(tmpRepairedCopy, PackageAccess.READ);
                 }
-                tis.setOpenContainer(pkg);
+                tis.setOpenContainer(new OPCPackageWrapper(pkg));
             } else {
                 //OPCPackage slurps rris into memory so we can close rris
                 //without apparent problems
@@ -255,7 +255,7 @@ public class OOXMLExtractorFactory {
         } finally {
             if (tmpRepairedCopy != null) {
                 if (pkg != null) {
-                    pkg.close();
+                    pkg.revert();
                 }
                 boolean deleted = tmpRepairedCopy.delete();
                 if (!deleted) {
