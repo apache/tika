@@ -23,6 +23,8 @@ Release 2.3.0 - ???
 
    * Add parser for Translation Memory eXchange (TMX) files (TIKA-3660).
 
+   * Add Bill of Materials (Maven BOM) for centralized module version management (TIKA-3367).
+
 
 Release 2.2.1 - 12/19/2021
 
