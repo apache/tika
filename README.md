@@ -38,6 +38,47 @@ To build a specific project (for example, tika-server-standard):
 
     mvn clean install -am -pl :tika-server-standard
 
+Maven Dependencies
+==================
+
+Apache Tika provides *Bill of Material* (BOM) artifact to align Tika module versions and simplify version management.
+
+If you use Apache Maven:
+
+```xml
+<project>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+       <groupId>org.apache.tika</groupId>
+       <artifactId>tika-bom</artifactId>
+       <version>2.x.y</version>
+       <type>pom</type>
+       <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-parsers-standard-package</artifactId>
+      <!-- version not required since BOM included -->
+    </dependency>
+  </dependencies>
+</project>
+```
+
+For Gradle:
+
+```kotlin
+dependencies {
+  implementation(platform("org.apache.tika:tika-bom:2.x.y"))
+
+  // version not required since bom (platform in Gradle terms)
+  implementation("org.apache.tika:tika-parsers-standard-package")
+}
+```
 
 Migrating to 2.x
 ================
