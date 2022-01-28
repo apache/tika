@@ -294,6 +294,7 @@
     <mockito.version>3.11.2</mockito.version>
     <lombok.version>1.18.20</lombok.version>
     <opennlp.version>1.9.4</opennlp.version>
+    <xerces.version>2.12.2</xerces.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -377,6 +378,11 @@
         <groupId>org.jvnet.staxex</groupId>
         <artifactId>stax-ex</artifactId>
         <version>2.0.1</version>
+      </dependency>
+      <dependency>
+        <groupId>xerces</groupId>
+        <artifactId>xercesImpl</artifactId>
+        <version>${xerces.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
