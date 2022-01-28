@@ -305,7 +305,7 @@ public class BundleIT {
         // Package extraction
         ContentHandler handler = new BodyContentHandler();
 
-        Parser parser = new AutoDetectParser(defaultParser);
+        Parser parser = new AutoDetectParser(contentTypeDetector, defaultParser);
         ParseContext context = new ParseContext();
         context.set(Parser.class, parser);
 
