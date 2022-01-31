@@ -279,7 +279,7 @@
 
     <!-- dependency versions -->
     <aws.s3.version>1.12.140</aws.s3.version>
-    <aws.transcribe.version>1.12.140</aws.transcribe.version>
+    <aws.transcribe.version>1.12.150</aws.transcribe.version>
     <asm.version>9.2</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
