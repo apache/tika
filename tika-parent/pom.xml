@@ -337,7 +337,7 @@
     <metadata.extractor.version>2.16.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <!-- 0.8.6 is built with java 11 and does not work with Java 8 -->
-    <mime4j.version>0.8.4</mime4j.version>
+    <mime4j.version>0.8.6</mime4j.version>
     <mockito.version>4.3.1</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <opencsv.version>2.3</opencsv.version>
