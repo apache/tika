@@ -4,6 +4,8 @@ Release 2.3.0 - ???
      5.x and represents a major refactoring. Users may experience
      significantly more logging (TIKA-3164).
 
+   * Upgrade to log4j2 2.17.1 (TIKA-3638).
+
    * Improve consistency in reporting package-entry divs across
      all parsers for embedded files (TIKA-3644).
 
