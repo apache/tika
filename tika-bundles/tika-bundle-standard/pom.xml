@@ -24,12 +24,12 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-bundles</artifactId>
-    <version>2.3.0</version>
+    <version>2.3.1-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>tika-bundle-standard</artifactId>
-  <version>2.3.0</version>
+  <version>2.3.1-SNAPSHOT</version>
   <packaging>bundle</packaging>
   <name>Apache Tika OSGi standard bundle</name>
 
@@ -438,7 +438,7 @@
   </ciManagement>
 
   <scm>
-    <tag>2.3.0-rc1</tag>
+    <tag>2.2.1-rc2</tag>
   </scm>
 </project>
 
