@@ -1,4 +1,4 @@
-Release 2.3.0 - ???
+Release 2.3.0 - 02/02/2022
 
    * Upgrade to Apache POI 5.2.0. This is the first upgrade to POI
      5.x and represents a major refactoring. Users may experience
@@ -7,13 +7,16 @@ Release 2.3.0 - ???
    * Upgrade to log4j2 2.17.1 (TIKA-3638).
 
    * Improve consistency in reporting package-entry divs across
-     all parsers for embedded files (TIKA-3644).
+     all parsers for embedded files (TIKA-3644). This leads
+     to some more text (embedded file names) in files with
+     many embedded attachments.
 
    * Improve configuration of maps as params for parsers in
      TikaConfig (TIKA-3645).
 
    * Improve identification of iWorks 13 files and add parsing
      for thumbnails, some metadata and attachments (TIKA-3634).
+     Skip handling of .iwa files, which are not yet supported.
 
    * Limit the default in-memory processing (maxMainMemoryBytes) in
      the PDFParser to 512MB as in the 1.x branch (TIKA-3642).
