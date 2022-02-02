@@ -166,13 +166,6 @@
       </roles>
     </developer>
     <developer>
-      <name>Jukka Zitting</name>
-      <id>jukka</id>
-      <roles>
-        <role>committer</role>
-      </roles>
-    </developer>
-    <developer>
       <name>Nick Burch</name>
       <id>nick</id>
       <organization>Alfresco</organization>
@@ -232,6 +225,27 @@
         <role>committer</role>
       </roles>
     </developer>
+    <developer>
+      <name>Jukka Zitting</name>
+      <id>jukka</id>
+      <roles>
+        <role>emeritus</role>
+      </roles>
+    </developer>
+    <developer>
+      <name>Julien Nioche</name>
+      <id>jnioche</id>
+      <roles>
+        <role>emeritus</role>
+      </roles>
+    </developer>
+    <developer>
+      <name>Niall Pemberton</name>
+      <id>niallp</id>
+      <roles>
+        <role>emeritus</role>
+      </roles>
+    </developer>
   </developers>
   <contributors>
     <contributor>
@@ -241,15 +255,9 @@
       </roles>
     </contributor>
     <contributor>
-      <name>Bertrand Delacretaz</name>
+      <name>Bertrand Delacrétaz</name>
       <roles>
         <role>mentor</role>
-      </roles>
-    </contributor>
-    <contributor>
-      <name>Niall Pemberton</name>
-      <roles>
-        <role>emeritus</role>
       </roles>
     </contributor>
   </contributors>
