@@ -93,7 +93,7 @@
     <dependency>
       <groupId>com.fasterxml.woodstox</groupId>
       <artifactId>woodstox-core</artifactId>
-      <version>6.2.7</version>
+      <version>6.2.8</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -336,7 +336,7 @@
     <dependency>
       <groupId>com.rometools</groupId>
       <artifactId>rome</artifactId>
-      <version>1.16.0</version>
+      <version>1.18.0</version>
       <exclusions>
         <exclusion>
           <groupId>org.jdom</groupId>
@@ -377,7 +377,7 @@
     <dependency>
       <groupId>com.github.junrar</groupId>
       <artifactId>junrar</artifactId>
-      <version>7.4.0</version>
+      <version>7.4.1</version>
       <exclusions>
         <exclusion>
           <groupId>commons-logging</groupId>
@@ -422,7 +422,7 @@
     <dependency>
       <groupId>org.xerial</groupId>
       <artifactId>sqlite-jdbc</artifactId>
-      <version>3.36.0</version>
+      <version>3.36.0.3</version>
       <scope>provided</scope>
     </dependency>
 
@@ -569,19 +569,19 @@
     <dependency>
       <groupId>com.beust</groupId>
       <artifactId>jcommander</artifactId>
-      <version>1.81</version>
+      <version>1.82</version>
     </dependency>
     <!--TIKA 2672 include a later version of jna as a direct dependency to resolve dependency convergence with tika-dl's
     deeplearning4j-nn:1.0.0-SNAPSHOT -->
     <dependency>
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna</artifactId>
-      <version>5.8.0</version>
+      <version>5.10.0</version>
     </dependency>
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
-      <version>3.15.6</version>
+      <version>3.19.4</version>
     </dependency>
     <dependency>
       <groupId>edu.ucar</groupId>
