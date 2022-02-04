@@ -1,3 +1,7 @@
+Release 2.3.1 - ???
+
+   * Upgrade deeplearning4j to 1.0.0-M1.1 (TIKA-3458)
+
 Release 2.3.0 - 02/02/2022
 
    * Upgrade to Apache POI 5.2.0. This is the first upgrade to POI
