@@ -81,12 +81,15 @@ public class Lingo24Translator extends AbstractTranslator {
         Response response = client.accept(MediaType.APPLICATION_JSON)
                 .query("user_key", userKey).query("source", sourceLanguage)
                 .query("target", targetLanguage).query("q", text).get();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(
-                (InputStream) response.getEntity(), UTF_8));
-        String line = null;
-        StringBuffer responseText = new StringBuffer();
-        while ((line = reader.readLine()) != null) {
-            responseText.append(line);
+        StringBuilder responseText = new StringBuilder();
+        try (InputStreamReader inputStreamReader = new InputStreamReader(
+                (InputStream) response.getEntity(), UTF_8);
+             BufferedReader reader = new BufferedReader(inputStreamReader);
+        ) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                responseText.append(line);
+            }
         }
 
         ObjectMapper mapper = new ObjectMapper();
