@@ -55,7 +55,6 @@ public class MSOneStoreParser {
     // The DataElements of Object Group Data
     private List<DataElement> objectGroupDataElements;
     // The DataElements of Object BLOB
-    private List<DataElement> objectBlOBElements;
 
     public MSOneStorePackage parse(DataElementPackage dataElementPackage) throws IOException {
         MSOneStorePackage msOneStorePackage = new MSOneStorePackage();
@@ -74,9 +73,6 @@ public class MSOneStoreParser {
                 .collect(Collectors.toList());
         objectGroupDataElements = dataElementPackage.dataElements.stream()
                 .filter(d -> d.dataElementType == DataElementType.ObjectGroupDataElementData)
-                .collect(Collectors.toList());
-        objectBlOBElements = dataElementPackage.dataElements.stream()
-                .filter(d -> d.dataElementType == DataElementType.ObjectDataBLOBDataElementData)
                 .collect(Collectors.toList());
 
         msOneStorePackage.storageIndex =
@@ -112,7 +108,7 @@ public class MSOneStoreParser {
             for (StorageIndexCellMapping storageIndexCellMapping : msOneStorePackage.storageIndex
                     .storageIndexCellMappingList) {
                 if (!storageIndexHashTab.contains(storageIndexCellMapping.cellID)) {
-                    msOneStorePackage.OtherFileNodeList.addAll(
+                    msOneStorePackage.otherFileNodeList.addAll(
                             this.parseObjectGroup(storageIndexCellMapping.cellID,
                                     msOneStorePackage));
                     storageIndexHashTab.add(storageIndexCellMapping.cellID);

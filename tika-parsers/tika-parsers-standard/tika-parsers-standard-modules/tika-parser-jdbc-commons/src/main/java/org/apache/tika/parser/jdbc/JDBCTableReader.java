@@ -221,11 +221,10 @@ public class JDBCTableReader {
                 return;
             }
             is = TikaInputStream.get(blob, m);
-            Attributes attrs = new AttributesImpl();
-            ((AttributesImpl) attrs).addAttribute("", "type", "type", "CDATA", "blob");
-            ((AttributesImpl) attrs)
-                    .addAttribute("", "column_name", "column_name", "CDATA", columnName);
-            ((AttributesImpl) attrs).addAttribute("", "row_number", "row_number", "CDATA",
+            AttributesImpl attrs = new AttributesImpl();
+            attrs.addAttribute("", "type", "type", "CDATA", "blob");
+            attrs.addAttribute("", "column_name", "column_name", "CDATA", columnName);
+            attrs.addAttribute("", "row_number", "row_number", "CDATA",
                     Integer.toString(rowNum));
             handler.startElement("", "span", "span", attrs);
             String extension = embeddedDocumentUtil.getExtension(is, m);

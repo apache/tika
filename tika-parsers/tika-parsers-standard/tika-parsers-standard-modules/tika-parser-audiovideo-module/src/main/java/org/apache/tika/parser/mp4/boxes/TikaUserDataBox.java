@@ -50,7 +50,7 @@ public class TikaUserDataBox extends Box {
     @Nullable
     private String coordinateString;
 
-    private boolean isQuickTime = false;
+    //private boolean isQuickTime = false; // unread field
     private final Metadata metadata;
     private final XHTMLContentHandler xhtml;
     public TikaUserDataBox(@NotNull Box box, byte[] payload, Metadata metadata,
@@ -85,9 +85,9 @@ public class TikaUserDataBox extends Box {
                 // then the MetaBox is formatted according to QuickTime File Format.
                 // See https://developer.apple.com/library/content/documentation
                 // /QuickTime/QTFF/Metadata/Metadata.html
-                if (HDLR.equals(hdlr) && MDTA.equals(subtype)) {
+                /*if (HDLR.equals(hdlr) && MDTA.equals(subtype)) {
                     isQuickTime = true;
-                }
+                }*/
                 int read = 16;//bytes read so far
                 parseUserDataBox(reader, subtype, read, (int)lengthToStartOfList);
             } else {

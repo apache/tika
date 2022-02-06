@@ -49,23 +49,13 @@ public class ChmLzxState implements Cloneable {
 
     public ChmLzxState(int window) throws TikaException {
         if (window >= 0) {
-            int position_slots;
             int win = ChmCommons.getWindowSize(window);
-            setWindowSize(1 << win);
+            setWindowSize(1L << win);
             /* LZX supports window sizes of 2^15 (32Kb) through 2^21 (2Mb) */
             if (win < 15 || win > 21) {
                 throw new ChmParsingException("window less than 15 or window greater than 21");
             }
 
-            /* Calculates required position slots */
-            if (win == 20) {
-                position_slots = 42;
-            } else if (win == 21) {
-                position_slots = 50;
-            } else {
-                position_slots = win << 1;
-            }
-            //TODO: position_slots is not used ?
             setR0(1);
             setR1(1);
             setR2(1);

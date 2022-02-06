@@ -231,9 +231,9 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                 writeString(state.hrefAnchorBuilder.toString());
                 xhtml.endElement("p");
             }
-            for (MCID mcid : paragraphs.keySet()) {
-                if (!state.processedMCIDs.contains(mcid)) {
-                    if (mcid.mcid > -1) {
+            for (Map.Entry<MCID, String> entry: paragraphs.entrySet()) {
+                if (!state.processedMCIDs.contains(entry.getKey())) {
+                    if (entry.getKey().mcid > -1) {
                         //TODO: LOG! piece of text that wasn't referenced  in the marked content
                         // tree
                         // but should have been.  If mcid == -1, this was a known item not part of
@@ -241,7 +241,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                     }
 
                     xhtml.startElement("p");
-                    writeString(paragraphs.get(mcid));
+                    writeString(entry.getValue());
                     xhtml.endElement("p");
                 }
             }
@@ -474,10 +474,10 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
     private static class State {
         Set<MCID> processedMCIDs = new HashSet<>();
         boolean inLink = false;
-        int tableDepth = 0;
+        //int tableDepth = 0;
         private StringBuilder hrefAnchorBuilder = new StringBuilder();
         private String uri = null;
-        private int tdDepth = 0;
+        //private int tdDepth = 0;
     }
 
     private static class HtmlTag {

@@ -40,7 +40,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 
 public abstract class AbstractImageParser extends AbstractParser {
 
-    public static String OCR_MEDIATYPE_PREFIX = "ocr-";
+    public static final String OCR_MEDIATYPE_PREFIX = "ocr-";
 
     /**
      *

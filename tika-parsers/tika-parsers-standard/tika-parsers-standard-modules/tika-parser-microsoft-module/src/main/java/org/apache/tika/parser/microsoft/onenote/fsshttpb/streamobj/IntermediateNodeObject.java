@@ -99,13 +99,13 @@ public class IntermediateNodeObject extends NodeObject {
          * @param fileContent Specify the byte array.
          * @return Return a root node object build from the byte array.
          */
-        public IntermediateNodeObject Build(byte[] fileContent) throws TikaException, IOException {
+        public IntermediateNodeObject build(byte[] fileContent) throws TikaException, IOException {
             IntermediateNodeObject rootNode = new IntermediateNodeObject();
             rootNode.signature = new SignatureObject();
             rootNode.dataSize = new DataSizeObject();
             rootNode.dataSize.dataSize = fileContent.length;
             rootNode.exGuid =
-                    new ExGuid(SequenceNumberGenerator.GetCurrentSerialNumber(), UUID.randomUUID());
+                    new ExGuid(SequenceNumberGenerator.getCurrentSerialNumber(), UUID.randomUUID());
             rootNode.intermediateNodeObjectList =
                     ChunkingFactory.createChunkingInstance(fileContent).chunking();
             return rootNode;

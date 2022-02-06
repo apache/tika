@@ -18,6 +18,8 @@ package org.apache.tika.parser.microsoft.chm;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import java.util.Arrays;
+
 import org.apache.tika.exception.TikaException;
 
 /**
@@ -118,10 +120,10 @@ public class ChmItspHeader implements ChmAccessor<ChmItspHeader> {
                 .append(ChmCommons.getLanguage(getLang_id()))
                 .append(System.getProperty("line.separator"));
         sb.append("system_uuid:=")
-                .append(getSystem_uuid())
+                .append(Arrays.toString(getSystem_uuid()))
                 .append(System.getProperty("line.separator"));
         sb.append("unknown_0044:=")
-                .append(getUnknown_0044())
+                .append(Arrays.toString(getUnknown_0044()))
                 .append(" ]");
         return sb.toString();
     }

@@ -33,7 +33,6 @@ import org.apache.tika.sax.XHTMLContentHandler;
 
 class PagesContentHandler extends DefaultHandler {
 
-    private static String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private final XHTMLContentHandler xhtml;
     private final Metadata metadata;
     private DocumentPart inPart = null;
@@ -45,9 +44,8 @@ class PagesContentHandler extends DefaultHandler {
     private HeaderFooter footers = null;
     private Footnotes footnotes = null;
     private Annotations annotations = null;
-    private Map<String, List<List<String>>> tableData = new HashMap<>();
+    private final Map<String, List<List<String>>> tableData = new HashMap<>();
     private String activeTableId;
-    private int numberOfColumns = 0;
     private List<String> activeRow = new ArrayList<>();
     private String metaDataLocalName;
     private String metaDataQName;
@@ -241,10 +239,7 @@ class PagesContentHandler extends DefaultHandler {
     }
 
     private void parseTableData(String qName, Attributes attributes) {
-        if ("sf:grid".equals(qName)) {
-            String numberOfColumns = attributes.getValue("sf:numcols");
-            this.numberOfColumns = Integer.parseInt(numberOfColumns);
-        } else if ("sf:ct".equals(qName)) {
+        if ("sf:ct".equals(qName)) {
             activeRow.add(attributes.getValue("sfa:s"));
 
             if (activeRow.size() >= 3) {

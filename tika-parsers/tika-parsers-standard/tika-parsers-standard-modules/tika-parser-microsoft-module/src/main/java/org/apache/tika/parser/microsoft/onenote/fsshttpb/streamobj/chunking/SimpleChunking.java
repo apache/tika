@@ -53,7 +53,7 @@ public class SimpleChunking extends AbstractChunking {
         int chunkStart = 0;
 
         if (this.fileContent.length <= maxChunkSize) {
-            list.add(builder.Build(this.fileContent, this.getSignature(this.fileContent)));
+            list.add(builder.build(this.fileContent, this.getSignature(this.fileContent)));
 
             return list;
         }
@@ -62,7 +62,7 @@ public class SimpleChunking extends AbstractChunking {
             int chunkLength = chunkStart + maxChunkSize >= this.fileContent.length ?
                     this.fileContent.length - chunkStart : maxChunkSize;
             byte[] temp = Arrays.copyOfRange(this.fileContent, chunkStart, chunkLength);
-            list.add(builder.Build(temp, this.getSignature(temp)));
+            list.add(builder.build(temp, this.getSignature(temp)));
             chunkStart += chunkLength;
         }
 

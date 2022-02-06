@@ -109,9 +109,9 @@ public abstract class AbstractOfficeParser extends AbstractParser {
         defaultOfficeParserConfig.setConcatenatePhoneticRuns(concatenatePhoneticRuns);
     }
 
-    void getConcatenatePhoneticRuns() {
-        defaultOfficeParserConfig.isConcatenatePhoneticRuns();
-    }
+    /*void getConcatenatePhoneticRuns() {
+        defaultOfficeParserConfig.isConcatenatePhoneticRuns(); // TODO result is ignored and there is no side effect
+    }*/
 
     public boolean isExtractAllAlternativesFromMSG() {
         return defaultOfficeParserConfig.isExtractAllAlternativesFromMSG();

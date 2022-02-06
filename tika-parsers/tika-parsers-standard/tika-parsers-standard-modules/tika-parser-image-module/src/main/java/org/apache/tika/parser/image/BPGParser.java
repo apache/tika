@@ -74,7 +74,7 @@ public class BPGParser extends AbstractImageParser {
         int pdf = stream.read();
 
         // Pixel format: Greyscale / 4:2:0 / 4:2:2 / 4:4:4
-        int pixelFormat = pdf & 0x7;
+        //int pixelFormat = pdf & 0x7; // unused
         // TODO Identify a suitable metadata key for this
 
         // Is there an alpha plane as well as a colour plane?
@@ -106,6 +106,8 @@ public class BPGParser extends AbstractImageParser {
             case 4:
                 metadata.set(Photoshop.COLOR_MODE, "CMYK Colour");
                 break;
+            default:
+                throw new IllegalArgumentException("unexpected colourSpace " + colourSpace);
         }
 
         // Are there extensions or not?
@@ -129,12 +131,6 @@ public class BPGParser extends AbstractImageParser {
         long extensionDataLength = 0;
         if (hasExtensions) {
             extensionDataLength = EndianUtils.readUE7(stream);
-        }
-
-        // Alpha Data Length, if alpha used
-        long alphaDataLength = 0;
-        if (hasAlphaPlane1 || hasAlphaPlane2) {
-            alphaDataLength = EndianUtils.readUE7(stream);
         }
 
         // Extension Data

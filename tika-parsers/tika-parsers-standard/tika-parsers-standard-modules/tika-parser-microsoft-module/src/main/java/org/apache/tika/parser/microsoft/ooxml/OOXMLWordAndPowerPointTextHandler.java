@@ -121,11 +121,8 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private boolean inRPr = false;
     private boolean inNumPr = false;
     private boolean inRt = false;
-    private boolean inPic = false;
-    private boolean inPict = false;
     private String picDescription = null;
     private String picRId = null;
-    private String picFilename = null;
     //mechanism used to determine when to
     //signal the start of the p, and still
     //handle p with pPr and those without
@@ -289,7 +286,6 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         } else if ("cNvPr".equals(localName)) { //check for PIC_NS?
             picDescription = atts.getValue("", "descr");
         } else if (PIC.equals(localName)) {
-            inPic = true; //check for PIC_NS?
         } //TODO: add sdt, sdtPr, sdtContent goes here statistically
         else if (FOOTNOTE_REFERENCE.equals(localName)) {
             String id = atts.getValue(W_NS, "id");
@@ -386,7 +382,6 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         }
         if (PIC.equals(localName)) { //PIC_NS
             handlePict();
-            inPic = false;
             return;
         } else if (RPR.equals(localName)) {
             inRPr = false;
@@ -467,7 +462,6 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         bodyContentsHandler.embeddedPicRef(picFileName, picDescription);
         picDescription = null;
         picRId = null;
-        inPic = false;
     }
 
     @Override

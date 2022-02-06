@@ -61,11 +61,11 @@ public class JackcessParser extends AbstractParser {
 
     //TODO: figure out how to get this info
     // public static Property LINKED_DATABASES = Property.externalTextBag("LinkedDatabases");
-    public static String MDB_PROPERTY_PREFIX =
+    public static final String MDB_PROPERTY_PREFIX =
             "MDB_PROP" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
-    public static String USER_DEFINED_PROPERTY_PREFIX =
+    public static final String USER_DEFINED_PROPERTY_PREFIX =
             "MDB_USER_PROP" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
-    public static Property MDB_PW = Property.externalText("Password");
+    public static final Property MDB_PW = Property.externalText("Password");
     private Locale locale = Locale.ROOT;
 
     @Override

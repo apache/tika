@@ -70,11 +70,12 @@ public class ImageParser extends AbstractImageParser {
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.unmodifiableSet(TMP_SUPPORTED);
 
-    private static void setIfPresent(Metadata metadata, String imageIOkey, String tikaKey) {
+    // uncalled method
+    /*private static void setIfPresent(Metadata metadata, String imageIOkey, String tikaKey) {
         if (metadata.get(imageIOkey) != null) {
             metadata.set(tikaKey, metadata.get(imageIOkey));
         }
-    }
+    }*/
 
     private static void setIfPresent(Metadata metadata, String imageIOkey, Property tikaProp) {
         if (metadata.get(imageIOkey) != null) {

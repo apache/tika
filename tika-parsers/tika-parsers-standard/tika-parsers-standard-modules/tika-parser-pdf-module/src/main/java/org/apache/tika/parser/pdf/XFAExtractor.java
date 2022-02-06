@@ -294,7 +294,7 @@ class XFAExtractor {
         String fieldName;
         String toolTip;
         String pdfObjRef;
-        String value;
+        //String value; // http://findbugs.sourceforge.net/bugDescriptions.html#UWF_UNWRITTEN_FIELD
 
         public XFAField(String fieldName, String toolTip, String pdfObjRef) {
             this.fieldName = fieldName;
@@ -305,7 +305,7 @@ class XFAExtractor {
         @Override
         public String toString() {
             return "XFAField{" + "fieldName='" + fieldName + '\'' + ", toolTip='" + toolTip + '\'' +
-                    ", pdfObjRef='" + pdfObjRef + '\'' + ", value='" + value + '\'' + '}';
+                    ", pdfObjRef='" + pdfObjRef + '\'' + '}';
         }
     }
 }
