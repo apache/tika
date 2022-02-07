@@ -104,13 +104,6 @@
       </roles>
     </developer>
     <developer>
-      <name>Keith Bennett</name>
-      <id>kbennett</id>
-      <roles>
-        <role>committer</role>
-      </roles>
-    </developer>
-    <developer>
       <name>Mark Harwood</name>
       <id>mharwood</id>
       <roles>
@@ -235,6 +228,13 @@
     <developer>
       <name>Julien Nioche</name>
       <id>jnioche</id>
+      <roles>
+        <role>emeritus</role>
+      </roles>
+    </developer>
+    <developer>
+      <name>Keith Bennett</name>
+      <id>kbennett</id>
       <roles>
         <role>emeritus</role>
       </roles>
