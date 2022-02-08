@@ -52,6 +52,7 @@ import org.apache.tika.fork.ForkParser;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.ParseContext;
@@ -298,7 +299,7 @@ public class BundleIT {
         // Package extraction
         ContentHandler handler = new BodyContentHandler();
 
-        Parser parser = tika.getParser();
+        Parser parser = new AutoDetectParser(contentTypeDetector, defaultParser);
         ParseContext context = new ParseContext();
         context.set(Parser.class, parser);
 
