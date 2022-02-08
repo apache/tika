@@ -1,6 +1,9 @@
-Release 1.28.1 - ???
+Release 1.28.1 - 2/8/2022
+
    * Security upgrades: xerces, log4j2, junrar and protobuf
      (TIKA-3671 and TIKA-3638).
+
+   * General dependency upgrades (TIKA-3671).
 
 Release 1.28 - 12/19/2021
 
