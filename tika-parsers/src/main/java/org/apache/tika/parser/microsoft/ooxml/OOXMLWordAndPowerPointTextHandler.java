@@ -447,6 +447,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             handlePict();
         } else if (V.equals(localName) && C_NS.equals(uri)) { // in value in a chart
             inV = false;
+            appendToBuffer(TAB_CHAR, 0, 1);
             handleEndOfRun();
         } else if (RT.equals(localName)) {
             inRt = false;
@@ -491,7 +492,6 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
 
     @Override
     public void characters(char[] ch, int start, int length) throws SAXException {
-
         if (inACChoiceDepth > 0) {
             return;
         } else if (! includeTextBox && inTextBox) {
@@ -508,7 +508,6 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             appendToBuffer(ch, start, length);
         } else if (inV) {
             appendToBuffer(ch, start, length);
-            appendToBuffer(TAB_CHAR, 0, 1);
         }
     }
 
