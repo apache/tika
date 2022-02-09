@@ -329,7 +329,7 @@
     <jbig2.version>3.0.3</jbig2.version>
     <jdom2.version>2.0.6.1</jdom2.version>
     <jempbox.version>1.8.16</jempbox.version>
-    <jetty.version>9.4.44.v20210927</jetty.version>
+    <jetty.version>10.0.8</jetty.version>
     <jhighlight.version>1.0.3</jhighlight.version>
     <jna.version>5.10.0</jna.version>
     <joda.time.version>2.10.10</joda.time.version>
