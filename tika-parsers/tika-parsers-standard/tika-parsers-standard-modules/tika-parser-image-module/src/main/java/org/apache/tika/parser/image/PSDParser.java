@@ -32,6 +32,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Photoshop;
@@ -234,7 +235,7 @@ public class PSDParser extends AbstractParser {
             // Do we have use for the data segment?
             if (captureData(id)) {
                 if (dataLen > maxDataLengthBytes) {
-                    throw new TikaException(
+                    throw new TikaMemoryLimitException(
                             "data length must be < " + maxDataLengthBytes + ": " + dataLen);
                 }
                 data = new byte[dataLen];

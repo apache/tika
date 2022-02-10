@@ -43,6 +43,7 @@ class DBFCell {
     DBFCell(DBFColumnHeader.ColType colType, int fieldLength, int decimalCount) {
         this.colType = colType;
         this.decimalCount = decimalCount;
+        //field length is limit-checked in DBFFileHeader
         this.bytes = new byte[fieldLength];
     }
 
@@ -78,6 +79,7 @@ class DBFCell {
      * @return copy of bytes that were read on the last read
      */
     byte[] getBytes() {
+        //bytesReadLast is effectively limit checked by DBFFileHeader
         byte[] ret = new byte[bytesReadLast];
         System.arraycopy(bytes, 0, ret, 0, bytesReadLast);
         return ret;

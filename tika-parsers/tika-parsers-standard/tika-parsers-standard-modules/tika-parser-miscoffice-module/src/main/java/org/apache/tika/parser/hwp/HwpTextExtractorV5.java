@@ -54,6 +54,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.exception.UnsupportedFormatException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -66,6 +67,7 @@ public class HwpTextExtractorV5 implements Serializable {
     private static final byte[] HWP_V5_SIGNATURE =
             "HWP Document File".getBytes(StandardCharsets.US_ASCII);
     private static final int HWPTAG_BEGIN = 0x010;
+    private static final int MAX_TAG_LENGTH = 50 * 1024 * 1024;
     private static final int I = 1; // INLINE
     private static final int C = 2; // CONTROL
     private static final int X = 3; // EXTENDED
@@ -240,7 +242,7 @@ public class HwpTextExtractorV5 implements Serializable {
      * @throws SAXException
      */
     private void parseBodyText(FileHeader header, DirectoryNode root, XHTMLContentHandler xhtml)
-            throws IOException, SAXException {
+            throws IOException, SAXException, TikaException {
         // read BodyText
         Entry bodyText = root.getEntry("BodyText");
         if (bodyText == null || !bodyText.isDirectoryEntry()) {
@@ -278,7 +280,7 @@ public class HwpTextExtractorV5 implements Serializable {
      * @throws IOException
      */
     private void parseViewText(FileHeader header, DirectoryNode root, XHTMLContentHandler xhtml)
-            throws IOException {
+            throws IOException, TikaException {
         // read BodyText
         Entry bodyText = root.getEntry("ViewText");
         if (bodyText == null || !bodyText.isDirectoryEntry()) {
@@ -361,7 +363,7 @@ public class HwpTextExtractorV5 implements Serializable {
      * @throws SAXException
      */
     private void parse(HwpStreamReader reader, XHTMLContentHandler xhtml)
-            throws IOException, SAXException {
+            throws IOException, TikaException, SAXException {
         StringBuilder buf = new StringBuilder();
         TagInfo tag = new TagInfo();
 
@@ -373,6 +375,9 @@ public class HwpTextExtractorV5 implements Serializable {
             if (HWPTAG_BEGIN + 51 == tag.id) {
                 if (tag.length % 2 != 0) {
                     throw new IOException("Invalid block size");
+                }
+                if (tag.length > MAX_TAG_LENGTH) {
+                    throw new TikaMemoryLimitException("Tags myst be smaller than " + MAX_TAG_LENGTH);
                 }
                 buf.setLength(0);
                 writeParaText(reader, tag.length, buf);
@@ -401,6 +406,7 @@ public class HwpTextExtractorV5 implements Serializable {
      */
     private void writeParaText(HwpStreamReader reader, long datasize, StringBuilder buf)
             throws IOException {
+        //datasize is bounds checked before calling writeParaText
         int[] chars = reader.uint16((int) (datasize / 2));
 
         for (int index = 0; index < chars.length; index++) {

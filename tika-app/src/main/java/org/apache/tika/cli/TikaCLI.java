@@ -884,7 +884,7 @@ public class TikaCLI {
         Set<String> tikaLacking = new TreeSet<>();
         Set<String> tikaNoMagic = new TreeSet<>();
 
-        // Sanity check
+        // Plausibility check
         File dir = new File(magicDir);
         if ((new File(dir, "elf")).exists() && (new File(dir, "mime")).exists() &&
                 (new File(dir, "vorbis")).exists()) {

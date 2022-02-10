@@ -84,9 +84,10 @@ public class FLVParser extends AbstractParser {
     }
 
     private int readUInt24(DataInputStream input) throws IOException {
-        int uint = input.read() << 16;
-        uint += input.read() << 8;
-        uint += input.read();
+        //readUnsignedByte ensures EOFException
+        int uint = input.readUnsignedByte() << 16;
+        uint += input.readUnsignedByte() << 8;
+        uint += input.readUnsignedByte();
         return uint;
     }
 
@@ -206,7 +207,7 @@ public class FLVParser extends AbstractParser {
                 break;
             }
 
-            int datalen = readUInt24(datainput); //body length
+            final int datalen = readUInt24(datainput); //body length
             readUInt32(datainput); // timestamp
             readUInt24(datainput); // streamid
 
