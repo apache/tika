@@ -1,3 +1,9 @@
+Release 1.28.2 - ???
+
+   * Upgrade to Apache POI 5.2.0. This is the first upgrade to POI
+      5.x and represents a major refactoring. Users will experience
+      significantly more logging (TIKA-3678).
+
 Release 1.28.1 - 2/8/2022
 
    * Security upgrades: xerces, log4j2, junrar and protobuf

@@ -57,6 +57,11 @@
       <artifactId>tika-parsers</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-api</artifactId>
+      <version>${log4j2.version}</version>
+    </dependency>
 
     <!-- Test dependencies -->
     <dependency>
@@ -201,9 +206,12 @@
               bcmail-jdk15on|
               bcprov-jdk15on|
               bcpkix-jdk15on|
-              poi|poi-scratchpad|
+              poi|
+              poi-scratchpad|
               poi-ooxml|
-              poi-ooxml-schemas|
+              poi-ooxml-lite|
+              log4j-core|
+              log4j-api|
               commons-math3|
               curvesapi|
               xmlbeans|
@@ -275,6 +283,13 @@
               com.dd.plist;resolution:=optional,
               com.adobe.xmp.properties;resolution:=optional,
               com.github.luben.zstd;resolution:=optional,
+              com.github.javaparser;resolution:=optional,
+              com.github.javaparser.ast;resolution:=optional,
+              com.github.javaparser.ast.body;resolution:=optional,
+              com.github.javaparser.ast.expr;resolution:=optional,
+              com.github.javaparser.ast.nodeTypes;resolution:=optional,
+              com.github.javaparser.ast.type;resolution:=optional,
+              com.github.javaparser.utils;resolution:=optional,
               com.github.openjson;resolution:=optional,
               com.github.jaiimageio.*;resolution:=optional,
               com.google.appengine.api.*;resolution:=optional,
@@ -287,11 +302,16 @@
               com.parso;resolution:=optional,
               com.sleepycat.je;resolution:=optional,
               com.sun.javadoc;resolution:=optional,
+              com.sun.org.apache.xalan.internal;resolution:=optional,
+              com.sun.org.apache.xml.internal.resolver;resolution:=optional,
+              com.sun.org.apache.xml.internal.resolver.tools;resolution:=optional,
+              com.sun.org.apache.xpath.internal.jaxp;resolution:=optional,
               com.sun.xml.bind.marshaller;resolution:=optional,
               com.sun.xml.internal.bind.marshaller;resolution:=optional,
               com.sun.msv.datatype;resolution:=optional,
               com.sun.msv.datatype.xsd;resolution:=optional,
               com.sun.tools.javadoc;resolution:=optional,
+              de.rototor.pdfbox.graphics2d;resolution:=optional,
               edu.mit.ll.mitie;resolution:=optional,
               edu.stanford.nlp.*;resolution:=optional,
               edu.wisc.ssec.mcidas;resolution:=optional,
@@ -321,19 +341,27 @@
               opendap.dap.parser;resolution:=optional,
               opennlp.maxent;resolution:=optional,
               opennlp.tools.namefind;resolution:=optional,
-	          opennlp.tools.authorage;resolution:=optional,
+	            opennlp.tools.authorage;resolution:=optional,
               net.didion.jwnl;resolution:=optional,
               net.sf.saxon;resolution:=optional,
               net.sf.saxon.dom;resolution:=optional,
+              net.sf.saxon.lib;resolution:=optional,
+              net.sf.saxon.ma.map;resolution:=optional,
               net.sf.saxon.om;resolution:=optional,
               net.sf.saxon.query;resolution:=optional,
               net.sf.saxon.sxpath;resolution:=optional,
+              net.sf.saxon.trans;resolution:=optional,
+              net.sf.saxon.tree.wrapper;resolution:=optional,
+              net.sf.saxon.type;resolution:=optional,
               net.sf.saxon.value;resolution:=optional,
               org.apache.batik.anim.dom;resolution:=optional,
               org.apache.batik.bridge;resolution:=optional,
+              org.apache.batik.dom;resolution:=optional,
               org.apache.batik.ext.awt;resolution:=optional,
               org.apache.batik.ext.awt.image.renderable;resolution:=optional,
               org.apache.batik.gvt;resolution:=optional,
+              org.apache.batik.parser;resolution:=optional,
+              org.apache.batik.svggen;resolution:=optional,
               org.apache.batik.util;resolution:=optional,
               org.apache.cxf.jaxrs.client;resolution:=optional,
               org.apache.cxf.jaxrs.ext.multipart;resolution:=optional,
@@ -350,6 +378,14 @@
               org.apache.commons.vfs2.util;resolution:=optional,
               org.apache.crimson.jaxp;resolution:=optional,
               org.apache.jcp.xml.dsig.internal.dom;resolution:=optional,
+              org.apache.logging.log4j;resolution:=optional,
+              org.apache.logging.log4j.util;resolution:=optional,
+              org.apache.logging.log4j.util.internal;resolution:=optional,
+              org.apache.logging.log4j.spi;resolution:=optional,
+              org.apache.maven.model;resolution:=optional,
+              org.apache.maven.plugin;resolution:=optional,
+              org.apache.maven.plugin.logging;resolution:=optional,
+              org.apache.maven.project;resolution:=optional,
               org.apache.pdfbox.debugger;resolution:=optional,
               org.apache.pdfbox.preflight.*;resolution:=optional,
               org.apache.sis;resolution:=optional,
@@ -449,6 +485,9 @@
               org.slf4j.helpers;resolution:=optional,
               org.sqlite;resolution:=optional,
               org.w3c.dom;resolution:=optional,
+              org.w3c.dom.ranges;resolution:=optional,
+              org.w3c.dom.svg;resolution:=optional,
+              org.w3c.dom.traversal;resolution:=optional,
               org.relaxng.datatype;resolution:=optional,
               org.xml.sax;resolution:=optional,
               org.xml.sax.ext;resolution:=optional,

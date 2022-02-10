@@ -33,9 +33,9 @@ import org.apache.tika.sax.XHTMLContentHandler;
 public class OOXMLTikaBodyPartHandler
         implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
 
-    private final static String P = "p";
+    private static final String P = "p";
 
-    private final static char[] NEWLINE = new char[]{'\n'};
+    private static final char[] NEWLINE = new char[]{'\n'};
 
     private final XHTMLContentHandler xhtml;
     private final XWPFListManager listManager;
@@ -83,6 +83,7 @@ public class OOXMLTikaBodyPartHandler
 
     @Override
     public void run(RunProperties runProperties, String contents) throws SAXException {
+
         // True if we are currently in the named style tag:
         if (runProperties.isBold() != isBold) {
             if (isStrikeThrough) {
@@ -92,7 +93,6 @@ public class OOXMLTikaBodyPartHandler
             if (isUnderline) {
                 xhtml.endElement("u");
                 isUnderline = false;
-                ;
             }
             if (isItalics) {
                 xhtml.endElement("i");
@@ -214,6 +214,7 @@ public class OOXMLTikaBodyPartHandler
         } else if (tableCellDepth == 0) {
             xhtml.characters(NEWLINE, 0, 1);
         }
+
         if (tableCellDepth > 0) {
             pWithinCell++;
         }
@@ -222,14 +223,18 @@ public class OOXMLTikaBodyPartHandler
 
     @Override
     public void startTable() throws SAXException {
+
         xhtml.startElement("table");
         tableDepth++;
+
     }
 
     @Override
     public void endTable() throws SAXException {
+
         xhtml.endElement("table");
         tableDepth--;
+
     }
 
     @Override
@@ -278,7 +283,7 @@ public class OOXMLTikaBodyPartHandler
     }
 
     @Override
-    public boolean getIncludeDeletedText() {
+    public boolean isIncludeDeletedText() {
         return includeDeletedText;
     }
 
@@ -301,7 +306,7 @@ public class OOXMLTikaBodyPartHandler
     }
 
     @Override
-    public boolean getIncludeMoveFromText() {
+    public boolean isIncludeMoveFromText() {
         return includeMoveFromText;
     }
 
@@ -330,6 +335,7 @@ public class OOXMLTikaBodyPartHandler
 
         xhtml.startElement("img", attr);
         xhtml.endElement("img");
+
 
     }
 

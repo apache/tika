@@ -24,8 +24,9 @@ import java.util.Locale;
 
 import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException;
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.poi.extractor.ExtractorFactory;
 import org.apache.poi.ooxml.POIXMLDocument;
-import org.apache.poi.ooxml.extractor.ExtractorFactory;
+import org.apache.poi.ooxml.extractor.POIXMLExtractorFactory;
 import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.exceptions.InvalidOperationException;
@@ -35,7 +36,7 @@ import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.util.LocaleUtil;
-import org.apache.poi.xslf.extractor.XSLFPowerPointExtractor;
+import org.apache.poi.xslf.extractor.XSLFExtractor;
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
 import org.apache.poi.xslf.usermodel.XSLFRelation;
 import org.apache.poi.xslf.usermodel.XSLFSlideShow;
@@ -75,13 +76,24 @@ public class OOXMLExtractorFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(OOXMLExtractorFactory.class);
     private static final int MAX_BUFFER_LENGTH = 1000000;
+    private static POIXMLExtractorFactory EXTRACTOR_FACTORY = new POIXMLExtractorFactory();
+
+    //TODO find what happened to SUPPORTED_TYPES
+    private static XSLFRelation[] XSLF_RELATIONS = new XSLFRelation[] {
+            XSLFRelation.MAIN, XSLFRelation.MACRO, XSLFRelation.MACRO_TEMPLATE,
+            XSLFRelation.PRESENTATIONML,
+            XSLFRelation.PRESENTATIONML_TEMPLATE, XSLFRelation.PRESENTATION_MACRO
+    };
+
+    static {
+        ExtractorFactory.setAllThreadsPreferEventExtractors(true);
+    }
 
     public static void parse(
             InputStream stream, ContentHandler baseHandler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         Locale locale = context.get(Locale.class, LocaleUtil.getUserLocale());
-        ExtractorFactory.setThreadPrefersEventExtractors(true);
 
         //if there's a problem opening the zip file;
         //create a tmp file, and copy what you can read of it.
@@ -190,7 +202,7 @@ public class OOXMLExtractorFactory {
             }
 
             if (poiExtractor == null) {
-                poiExtractor = (POIXMLTextExtractor) ExtractorFactory.createExtractor(pkg);
+                poiExtractor = EXTRACTOR_FACTORY.create(pkg);
             }
 
             POIXMLDocument document = poiExtractor.getDocument();
@@ -215,8 +227,8 @@ public class OOXMLExtractorFactory {
                                 "The extractor returned was a " + poiExtractor
                 );
             } else if (document instanceof XMLSlideShow) {
-                extractor = new XSLFPowerPointExtractorDecorator(
-                        context, (org.apache.poi.xslf.extractor.XSLFPowerPointExtractor) poiExtractor);
+                extractor = new XSLFPowerPointExtractorDecorator(metadata, context,
+                        (org.apache.poi.xslf.extractor.XSLFExtractor) poiExtractor);
             } else if (document instanceof XWPFDocument) {
                 extractor = new XWPFWordExtractorDecorator( metadata,
                         context, (XWPFWordExtractor) poiExtractor);
@@ -304,15 +316,13 @@ public class OOXMLExtractorFactory {
         }
         String targetContentType = corePart.getContentType();
 
-        XSLFRelation[] xslfRelations = org.apache.poi.xslf.extractor.XSLFPowerPointExtractor.SUPPORTED_TYPES;
-
-        for (int i = 0; i < xslfRelations.length; i++) {
-            XSLFRelation xslfRelation = xslfRelations[i];
+        for (int i = 0; i < XSLF_RELATIONS.length; i++) {
+            XSLFRelation xslfRelation = XSLF_RELATIONS[i];
             if (xslfRelation.getContentType().equals(targetContentType)) {
                 if (eventBased) {
                     return new XSLFEventBasedPowerPointExtractor(pkg);
                 } else {
-                    return new XSLFPowerPointExtractor(new XSLFSlideShow(pkg));
+                    return new XSLFExtractor(new XMLSlideShow(pkg));
                 }
             }
         }
@@ -321,7 +331,7 @@ public class OOXMLExtractorFactory {
             if (eventBased) {
                 return new XSLFEventBasedPowerPointExtractor(pkg);
             } else {
-                return new XSLFPowerPointExtractor(new XSLFSlideShow(pkg));
+                return new XSLFExtractor(new XMLSlideShow(pkg));
             }
         }
         return null;
