@@ -28,5 +28,13 @@
     <Root level="info">
       <AppenderRef ref="Console"/>
     </Root>
+    <!-- effectively turn off the logging for POI 5.x but leave the xmlhelper
+     to warn-->
+    <Logger name="org.apache.poi.util.XMLHelper" level="INFO" additivity="false">
+      <AppenderRef ref="Console"/>
+    </Logger>
+    <Logger name="org.apache.poi" level="ERROR" additivity="false">
+      <AppenderRef ref="Console"/>
+    </Logger>
   </Loggers>
 </Configuration>

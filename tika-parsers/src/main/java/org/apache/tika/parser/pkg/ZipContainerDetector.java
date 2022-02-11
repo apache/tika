@@ -54,6 +54,7 @@ import org.apache.tika.parser.iwork.IWorkPackageParser;
 import org.apache.tika.parser.iwork.IWorkPackageParser.IWORKDocumentType;
 import org.apache.tika.parser.iwork.iwana.IWork13PackageParser;
 import org.apache.tika.parser.iwork.iwana.IWork18PackageParser;
+import org.apache.tika.parser.microsoft.ooxml.OPCPackageWrapper;
 
 /**
  * A detector that works on Zip documents and other archive and compression
@@ -281,12 +282,17 @@ public class ZipContainerDetector implements Detector {
         //as of 4.x, POI throws an exception for non-POI OPC file types
         //unless we change POI, we can't rely on POI for non-POI files
         ZipEntrySource zipEntrySource = new ZipFileZipEntrySource(zipFile);
-
+        MediaType type = null;
+        //in POI 5.2.0, if there's an exception during detection,
+        //close() is called on the pkg instead of revert(), which leads
+        //to needless logging. Do a preliminary test for OPC now.
+        if (zipEntrySource.getEntry("[Content_Types].xml") == null) {
+            return type;
+        }
         // Use POI to open and investigate it for us
         //Unfortunately, POI can throw a RuntimeException...so we
         //have to catch that.
         OPCPackage pkg = null;
-        MediaType type = null;
         try {
             pkg = OPCPackage.open(zipEntrySource);
             type = detectOfficeOpenXML(pkg);
@@ -301,7 +307,7 @@ public class ZipContainerDetector implements Detector {
             return null;
         }
         //only set the open container if we made it here
-        stream.setOpenContainer(pkg);
+        stream.setOpenContainer(new OPCPackageWrapper(pkg));
         return type;
     }
 
