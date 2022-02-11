@@ -28,6 +28,7 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
@@ -36,7 +37,6 @@ import org.apache.poi.poifs.filesystem.FileMagic;
 import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
-import org.apache.poi.util.IOUtils;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
@@ -65,7 +65,7 @@ class RTFObjDataParser {
     /**
      * Parses the embedded object/pict string
      *
-     * @param bytes actual bytes (already converted from the
+     * @param is actual bytes (already converted from the
      *              hex pair string stored in the embedded object data into actual bytes or read
      *              as raw binary bytes)
      * @return a SimpleRTFEmbObj or null

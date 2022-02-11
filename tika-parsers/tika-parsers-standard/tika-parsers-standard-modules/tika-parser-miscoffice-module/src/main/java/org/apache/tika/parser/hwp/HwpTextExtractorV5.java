@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.hwp;
 
-import java.io.EOFException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,6 +35,7 @@ import javax.crypto.CipherInputStream;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.poi.hpsf.NoPropertySetStreamException;
 import org.apache.poi.hpsf.Property;
@@ -46,7 +46,6 @@ import org.apache.poi.poifs.filesystem.DocumentEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
-import org.apache.poi.util.IOUtils;
 import org.apache.poi.util.LittleEndian;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -318,13 +317,9 @@ public class HwpTextExtractorV5 implements Serializable {
     private Key readKey(InputStream input) throws IOException {
         byte[] data = new byte[260];
 
-        if (IOUtils.readFully(input, data, 0, 4) != 4) { // TAG,
-            throw new EOFException();
-        }
+        IOUtils.readFully(input, data, 0, 4);
 
-        if (IOUtils.readFully(input, data, 0, 256) != 256) {
-            throw new EOFException();
-        }
+        IOUtils.readFully(input, data, 0, 256);
 
         SRand srand = new SRand(LittleEndian.getInt(data));
         byte xor = 0;
@@ -390,7 +385,7 @@ public class HwpTextExtractorV5 implements Serializable {
                     xhtml.endElement("p");
                 }
             } else {
-                reader.ensureSkip(tag.length);
+                reader.skipFully(tag.length);
             }
         }
     }

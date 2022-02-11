@@ -21,7 +21,7 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
-import org.apache.poi.util.IOUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.poi.util.StringUtil;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -279,11 +279,8 @@ public class DWGParser extends AbstractParser {
         if (offsetToSection == 0) {
             return false;
         }
-        long skipped = IOUtils.skipFully(stream, toSkip);
-        if (skipped != toSkip) {
-            throw new TikaException("Failed to skip: " + toSkip +
-                    " bytes; skipped: " + skipped);
-        }
+        IOUtils.skipFully(stream, toSkip);
+
         return true;
     }
 

@@ -20,11 +20,11 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.poi.util.IOUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.poi.util.LittleEndian;
 
 public class HwpStreamReader {
-    private byte[] skipBuffer = new byte[4096];
+
     private InputStream input;
     private byte[] buf;
 
@@ -41,12 +41,7 @@ public class HwpStreamReader {
      * @throws IOException
      */
     public short uint8() throws IOException {
-        int read = IOUtils.readFully(input, buf, 0, 1);
-
-        if (read == -1) {
-            return -1;
-        }
-
+        IOUtils.readFully(input, buf, 0, 1);
         return LittleEndian.getUByte(buf);
     }
 
@@ -57,15 +52,7 @@ public class HwpStreamReader {
      * @throws IOException
      */
     public int uint16() throws IOException {
-        int read = IOUtils.readFully(input, buf, 0, 2);
-
-        if (read == -1) {
-            return -1;
-        }
-
-        if (read < 2) {
-            throw new EOFException();
-        }
+        IOUtils.readFully(input, buf, 0, 2);
         return LittleEndian.getUShort(buf);
     }
 
@@ -81,11 +68,8 @@ public class HwpStreamReader {
             throw new IllegalArgumentException();
         }
         byte[] buf = new byte[i * 2];
-        int read = IOUtils.readFully(input, buf, 0, i * 2);
+        IOUtils.readFully(input, buf, 0, i * 2);
 
-        if (read != i * 2) {
-            throw new EOFException();
-        }
         int[] uints = new int[i];
         for (int ii = 0; ii < i; ii++) {
             uints[ii] = LittleEndian.getUShort(buf, ii * 2);
@@ -101,7 +85,9 @@ public class HwpStreamReader {
      * @throws IOException
      */
     public long uint32() throws IOException {
-        int read = IOUtils.readFully(input, buf, 0, 4);
+        //uint32 is used to try to read the next record.
+        //if nothing is read, we should not throw an EOF, we should return -1
+        int read = org.apache.poi.util.IOUtils.readFully(input, buf, 0, 4);
 
         if (read == -1) {
             return -1;
@@ -114,19 +100,7 @@ public class HwpStreamReader {
         return LittleEndian.getUInt(buf);
     }
 
-    /**
-     * ensure skip of n byte
-     *
-     * @param n
-     * @throws IOException
-     */
-    public void ensureSkip(long n) throws IOException {
-        //Leaving this for anyone who can figure out why this doesn't
-        //work.  See HwpV5ParserTest#testMultiThreadedSkipFully
-        //long skipped = org.apache.tika.io.IOUtils.skip(input, n);
-        long skipped = org.apache.tika.io.IOUtils.skip(input, n, skipBuffer);
-        if (skipped != n) {
-            throw new EOFException();
-        }
+    public void skipFully(long toSkip) throws IOException {
+        IOUtils.skipFully(input, toSkip);
     }
 }
