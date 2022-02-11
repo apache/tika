@@ -1,6 +1,12 @@
 Release 2.3.1 - ???
 
-   * Upgrade deeplearning4j to 1.0.0-M1.1 (TIKA-3458)
+   * NOTE: To save on resources, we no longer include the
+     deeplearning4j dependencies in the tika-dl jar. The dependencies for the
+     tika-dl package must be provided by users.  See:
+     https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-ml/tika-dl/pom.xml
+     for the dependencies that must be provided at run-time (TIKA-3676).
+
+   * Upgrade deeplearning4j to 1.0.0-M1.1 (TIKA-3458).
 
 Release 2.3.0 - 02/02/2022
 

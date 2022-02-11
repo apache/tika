@@ -65,36 +65,43 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-parser-advancedmedia-module</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.datavec</groupId>
       <artifactId>datavec-data-image</artifactId>
       <version>${dl4j.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.deeplearning4j</groupId>
       <artifactId>deeplearning4j-zoo</artifactId>
       <version>${dl4j.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.deeplearning4j</groupId>
       <artifactId>deeplearning4j-modelimport</artifactId>
       <version>${dl4j.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.deeplearning4j</groupId>
       <artifactId>deeplearning4j-nn</artifactId>
       <version>${dl4j.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.nd4j</groupId>
       <artifactId>nd4j-api</artifactId>
       <version>${dl4j.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.nd4j</groupId>
       <artifactId>nd4j-native-platform</artifactId>
       <version>${dl4j.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
