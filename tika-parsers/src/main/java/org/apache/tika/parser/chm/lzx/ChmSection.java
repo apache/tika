@@ -20,6 +20,7 @@ import java.math.BigInteger;
 import java.util.Arrays;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.parser.chm.core.ChmCommons;
 
 public class ChmSection {
@@ -94,8 +95,11 @@ public class ChmSection {
     public byte[] getPrevContent() {
         return prevcontent;
     }
-    
-    public BigInteger getBigInteger(int i) {
+
+    public BigInteger getBigInteger(int i) throws TikaException {
+        if (i > 8) {
+            throw new TikaMemoryLimitException("Big integer can't be > 8");
+        }
         if (getData() == null)
             return BigInteger.ZERO;
         if (getData().length - getSwath() < i)
@@ -115,16 +119,16 @@ public class ChmSection {
             byteval[i] = (byte) c[i];
         return byteval;
     }
-
+/*
     public BigInteger unmarshalUlong() {
         return getBigInteger(8);
     }
 
     public long unmarshalUInt() {
         return getBigInteger(4).longValue();
-    }
+    }*/
 
-    public int unmarshalInt() {
+    public int unmarshalInt() throws TikaException {
         return getBigInteger(4).intValue();
     }
 

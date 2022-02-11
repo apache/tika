@@ -19,6 +19,7 @@ package org.apache.tika.parser.chm.lzx;
 import java.math.BigInteger;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.parser.chm.core.ChmCommons;
 import org.apache.tika.parser.chm.core.ChmCommons.IntelState;
 import org.apache.tika.parser.chm.core.ChmCommons.LzxState;
@@ -36,6 +37,9 @@ import org.apache.tika.parser.chm.exception.ChmParsingException;
  * 
  */
 public class ChmLzxBlock {
+
+    private static int MAX_CONTENT_SIZE = 50 * 1024 * 1024;
+
     private int block_number;
     private long block_length;
     private ChmLzxState state;
@@ -856,7 +860,11 @@ public class ChmLzxBlock {
                 start, getContent().length) : new byte[1];
     }
 
-    private void setContent(int contentLength) {
+    private void setContent(int contentLength) throws TikaMemoryLimitException {
+        if (contentLength > MAX_CONTENT_SIZE) {
+            throw new TikaMemoryLimitException("content length (" + contentLength +
+                    " bytes) is > MAX_CONTENT_SIZE");
+        }
         this.content = new byte[contentLength];
     }
 

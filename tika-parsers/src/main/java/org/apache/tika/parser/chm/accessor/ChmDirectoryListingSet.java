@@ -141,7 +141,6 @@ public class ChmDirectoryListingSet {
             byte[] dir_chunk = null;
             Set<Integer> processed = new HashSet<>();
             for (int i = startPmgl; i>=0; ) {
-                dir_chunk = new byte[(int) chmItspHeader.getBlock_len()];
                 int start = i * (int) chmItspHeader.getBlock_len() + dir_offset;
                 dir_chunk = ChmCommons
                         .copyOfRange(getData(), start,

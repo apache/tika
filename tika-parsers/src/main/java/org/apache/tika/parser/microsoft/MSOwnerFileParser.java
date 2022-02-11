@@ -66,7 +66,7 @@ public class MSOwnerFileParser extends AbstractParser {
         byte[] asciiNameBytes = new byte[ASCII_CHUNK_LENGTH];
         IOUtils.readFully(stream, asciiNameBytes);
         int asciiNameLength = (int)asciiNameBytes[0];//don't need to convert to unsigned int because it can't be that long
-        //sanity check name length
+        //check name length
         if (asciiNameLength < 0) {
             throw new TikaException("ascii name length must be >= 0");
         } else if (asciiNameLength > ASCII_CHUNK_LENGTH) {
@@ -79,6 +79,7 @@ public class MSOwnerFileParser extends AbstractParser {
         int unicodeCharLength = stream.read();
         if (asciiNameLength == unicodeCharLength) {
             stream.read();//zero after the char length
+            //this is effectively bounds checked by asciiNameLength
             byte[] unicodeBytes = new byte[unicodeCharLength * 2];
             IOUtils.readFully(stream, unicodeBytes);
             String unicodeName = new String(unicodeBytes, StandardCharsets.UTF_16LE);

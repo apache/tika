@@ -144,7 +144,7 @@ public class PRTParser extends AbstractParser {
        
        int length = EndianUtils.readUShortLE(stream);
        if(length <= MAX_SANE_TEXT_LENGTH) {
-          // Length sanity check passed
+          // Length check passed
           handleText(length, stream, xhtml);
        }
     }
@@ -170,7 +170,7 @@ public class PRTParser extends AbstractParser {
           IOUtils.readFully(stream, b2);
           int length = EndianUtils.getUShortLE(b2);
           if(length > 1 && length <= MAX_SANE_TEXT_LENGTH) {
-             // Length sanity check passed
+             // Length check passed
              handleText(length, stream, xhtml);
           } else {
              // Was probably something else

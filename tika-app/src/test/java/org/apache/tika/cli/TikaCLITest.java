@@ -290,7 +290,7 @@ public class TikaCLITest {
         String[] expectedChildren = new String[]{
                 "MBD002B040A.cdx",
                 "file4.png",
-                "MBD002B0FA6_file5.bin",
+                "MBD002B0FA6.bin",
                 "MBD00262FE3.txt",
                 "file0.emf"
         };

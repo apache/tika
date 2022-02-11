@@ -219,7 +219,9 @@ public class EndianUtils {
     public static long readUE7(InputStream stream) throws IOException {
         int i;
         long v = 0;
-        while ((i = stream.read()) >= 0) {
+        final int max = 6;
+        int read = 0;
+        while ((i = stream.read()) >= 0 && read++ < max) {
             v = v << 7;
             if ((i & 128) == 128) {
                 // Continues

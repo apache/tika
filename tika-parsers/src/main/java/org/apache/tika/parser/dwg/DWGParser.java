@@ -276,7 +276,7 @@ public class DWGParser extends AbstractParser {
         // The offset is stored in the header from 0x20 onwards
         long offsetToSection = EndianUtils.getLongLE(header, 0x20);
         
-        // Sanity check the offset. Some files seem to use a different format,
+        // Check the offset. Some files seem to use a different format,
         //  and the offset isn't available at 0x20. Until we can work out how
         //  to find the offset in those files, skip them if detected
         if (offsetToSection > 0xa00000l) {
@@ -284,15 +284,15 @@ public class DWGParser extends AbstractParser {
            offsetToSection = 0;
         }
         
-        // Work out how far to skip, and sanity check
+        // Work out how far to skip, and check plausibility
         long toSkip = offsetToSection - header.length;
         if(offsetToSection == 0){
             return false;
-        }        
-        while (toSkip > 0) {
-            byte[] skip = new byte[Math.min((int) toSkip, 0x4000)];
-            IOUtils.readFully(stream, skip);
-            toSkip -= skip.length;
+        }
+        long skipped = IOUtils.skipFully(stream, toSkip);
+        if (skipped != toSkip) {
+            throw new TikaException("Failed to skip: " + toSkip +
+                    " bytes; skipped: " + skipped);
         }
         return true;
     }
@@ -339,7 +339,7 @@ public class DWGParser extends AbstractParser {
           // We should now have the count
           int count = EndianUtils.readUShortLE(stream);
           
-          // Sanity check it
+          // Plausibility check
           if(count > 0 && count < 0x7f) {
              // Looks plausible
              return count;

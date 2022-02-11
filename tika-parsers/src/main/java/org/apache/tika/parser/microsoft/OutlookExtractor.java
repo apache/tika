@@ -587,7 +587,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
      */
     private void guess7BitEncoding(MAPIMessage msg) {
         Chunks mainChunks = msg.getMainChunks();
-        //sanity check
+        //can be null...¯\_(ツ)_/¯
         if (mainChunks == null) {
             return;
         }

@@ -97,7 +97,7 @@ public class ExecutableParser extends AbstractParser implements MachineMetadata 
        // Grab the PE header offset
        int peOffset = LittleEndian.readInt(stream);
        
-       // Sanity check - while it may go anywhere, it's normally in the first few kb
+       // Plausibility check: while it may go anywhere, it's normally in the first few kb
        if (peOffset > 4096 || peOffset < 0x3f) return;
        
        // Skip the rest of the MS-DOS stub (if PE), until we reach what should

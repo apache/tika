@@ -1307,7 +1307,7 @@ public class PDFParserTest extends TikaTest {
         context.set(PDFParserConfig.class, config);
 
         List<Metadata> metadataList = getRecursiveMetadata("testPDF_childAttachments.pdf", context);
-        //sanity check
+        //plausibility check
         assertEquals(5, metadataList.size());
         //inlined jpeg metadata
         Metadata jpegMetadata = metadataList.get(1);

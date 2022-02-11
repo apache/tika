@@ -62,9 +62,16 @@ public class ICNSParser extends AbstractParser {
         int image_length = java.nio.ByteBuffer.wrap(header).getInt();
         if (image_length > MAX_IMAGE_LENGTH_BYTES) {
             throw new TikaMemoryLimitException(image_length, MAX_IMAGE_LENGTH_BYTES);
+        } else if (image_length < 0) {
+            throw new TikaException("image length must be >= 0");
         }
-        byte[] full_file = new byte[image_length];
-        IOUtils.readFully(stream, full_file);
+        //image_length includes the initial 8 bytes.
+        int actualImageLength = image_length - 8;
+        byte[] full_file = new byte[actualImageLength];
+        long read = IOUtils.readFully(stream, full_file);
+        if (read != actualImageLength) {
+            throw new IOException("file not fully read from stream");
+        }
         ArrayList<ICNSType> icons = new ArrayList<>();
         ArrayList<ICNSType> icon_masks = new ArrayList<>();
         byte[] tempByteArray = new byte[4];
