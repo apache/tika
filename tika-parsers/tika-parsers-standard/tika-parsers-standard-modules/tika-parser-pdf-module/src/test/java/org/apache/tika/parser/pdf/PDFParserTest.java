@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.File;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -1359,6 +1360,19 @@ public class PDFParserTest extends TikaTest {
         assertEquals("RM1", metadata.get(0).getValues(PDF.ANNOTATION_TYPES)[0]);
     }
 
+    @Test
+    public void test3d() throws Exception {
+        File dir  = new File("/home/tallison/Downloads/3d_pdfs");
+        for (File f : dir.listFiles()) {
+            List<Metadata> metadataList = getRecursiveMetadata(f.toPath());
+            String[] vlas = metadataList.get(0).getValues(PDF.HAS_3D);
+            if (vlas != null && vlas.length > 0) {
+                System.out.println("vlas: " + vlas[0]);
+            } else {
+                System.out.println("no: " + f);
+            }
+        }
+    }
     /**
     @Test
     public void testWriteLimit() throws Exception {

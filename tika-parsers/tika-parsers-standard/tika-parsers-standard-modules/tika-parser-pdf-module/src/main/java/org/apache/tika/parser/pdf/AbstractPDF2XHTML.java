@@ -555,6 +555,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                         annotationSubtype = "unknown";
                     } else if (annotationSubtype.equals(THREE_D) ||
                             annotation.getCOSObject().containsKey(THREE_DD)) {
+                        //To make this stricter, we could get the 3DD stream object and see if the
+                        //subtype is U3D or PRC or model/ (prefix for model mime type)
                         metadata.set(PDF.HAS_3D, true);
                     }
                     for (COSDictionary fileSpec :
