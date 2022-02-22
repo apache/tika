@@ -40,6 +40,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.imageio.spi.ServiceRegistry;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -83,6 +85,9 @@ public class TikaConfig {
 
     //use this to look for unneeded instantiations of TikaConfig
     protected static final AtomicInteger TIMES_INSTANTIATED = new AtomicInteger();
+
+    private static final Logger LOG = LoggerFactory.getLogger(TikaConfig.class);
+
     private final ServiceLoader serviceLoader;
     private final CompositeParser parser;
     private final CompositeDetector detector;
@@ -1292,7 +1297,8 @@ public class TikaConfig {
                     c = encodingDetectorClass.getConstructor(ServiceLoader.class, Collection.class);
                     encodingDetector = c.newInstance(loader, excludeDetectors);
                 } catch (NoSuchMethodException me) {
-                    me.printStackTrace();
+                    LOG.debug("couldn't find constructor for service loader + collection for {}",
+                            encodingDetectorClass);
                 }
             }
             if (encodingDetector == null) {
@@ -1300,7 +1306,8 @@ public class TikaConfig {
                     c = encodingDetectorClass.getConstructor(List.class);
                     encodingDetector = c.newInstance(childEncodingDetectors);
                 } catch (NoSuchMethodException me) {
-                    me.printStackTrace();
+                    LOG.debug("couldn't find constructor for EncodingDetecto(List) for {}",
+                            encodingDetectorClass);
                 }
             }
 

@@ -65,7 +65,6 @@ public class TikaServerCli {
         try {
             execute(args);
         } catch (Exception e) {
-            e.printStackTrace();
             LOG.error("Can't start: ", e);
             System.exit(-1);
         }
@@ -87,8 +86,8 @@ public class TikaServerCli {
             try {
                 mainLoop(tikaServerConfig);
             } catch (InterruptedException e) {
-                e.printStackTrace();
                 //swallow
+                LOG.debug("interrupted", e);
             }
         }
     }

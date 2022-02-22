@@ -38,6 +38,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -55,6 +57,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * text content and metadata from a given document.
  */
 public class ExternalParser extends AbstractParser {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ExternalParser.class);
 
     /**
      * The token, which if present in the Command string, will
@@ -307,7 +311,7 @@ public class ExternalParser extends AbstractParser {
                 process = Runtime.getRuntime().exec(cmd);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.warn("problem with process exec", e);
         }
 
         try {

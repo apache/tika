@@ -124,9 +124,9 @@ public class AsyncProcessor implements Closeable {
                     fetchEmitTuples.addAll(newFetchEmitTuples);
                     return true;
                 } catch (IllegalStateException e) {
-                    e.printStackTrace();
                     //this means that the add all failed because the queue couldn't
                     //take the full list
+                    LOG.debug("couldn't add full list", e);
                 }
             }
             Thread.sleep(100);

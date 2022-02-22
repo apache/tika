@@ -387,7 +387,7 @@ public class TikaServerProcess {
                 try {
                     localAsyncResource.shutdownNow();
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    LOG.warn("problem shutting down local async resource", e);
                 }
             }));
             resourceProviders.add(new SingletonResourceProvider(localAsyncResource));
@@ -399,7 +399,7 @@ public class TikaServerProcess {
                 try {
                     localPipesResource.close();
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    LOG.warn("exception closing local pipes resource", e);
                 }
             }));
             resourceProviders.add(new SingletonResourceProvider(localPipesResource));

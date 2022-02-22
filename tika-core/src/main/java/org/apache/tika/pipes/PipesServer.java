@@ -204,7 +204,6 @@ public class PipesServer implements Runnable {
             }
             LOG.debug("pipes server initialized");
         } catch (Throwable t) {
-            t.printStackTrace();
             LOG.error("couldn't initialize parser", t);
             try {
                 output.writeByte(STATUS.FAILED_TO_START.getByte());

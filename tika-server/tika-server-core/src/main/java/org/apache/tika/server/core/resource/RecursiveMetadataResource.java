@@ -78,11 +78,12 @@ public class RecursiveMetadataResource {
             TikaResource.parse(wrapper, LOG, "/rmeta", is, handler, metadata, context);
         } catch (TikaServerParseException e) {
             //do nothing
+            LOG.debug("server parse exception", e);
         } catch (SecurityException | WebApplicationException e) {
             throw e;
         } catch (Exception e) {
             //we shouldn't get here?
-            e.printStackTrace();
+            LOG.error("something went seriously wrong", e);
         }
 
         return handler.getMetadataList();
