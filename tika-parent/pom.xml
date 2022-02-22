@@ -653,7 +653,7 @@
       <plugin>
         <groupId>org.sonatype.ossindex.maven</groupId>
         <artifactId>ossindex-maven-plugin</artifactId>
-        <version>3.1.0</version>
+        <version>3.2.0</version>
         <configuration>
           <fail>true</fail>
         </configuration>
@@ -895,7 +895,7 @@
           <plugin>
             <groupId>org.sonatype.ossindex.maven</groupId>
             <artifactId>ossindex-maven-plugin</artifactId>
-            <version>3.1.0</version>
+            <version>3.2.0</version>
             <configuration>
               <fail>true</fail>
               <excludeCoordinates>
