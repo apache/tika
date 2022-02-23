@@ -37,7 +37,7 @@
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-transcribe</artifactId>
-      <version>${aws.transcribe.version}</version>
+      <version>${aws.version}</version>
       <exclusions>
         <exclusion>
           <groupId>commons-logging</groupId>
@@ -80,7 +80,7 @@
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-s3</artifactId>
-      <version>${aws.s3.version}</version>
+      <version>${aws.version}</version>
     </dependency>
     <dependency>
       <groupId>com.googlecode.json-simple</groupId>
