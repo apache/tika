@@ -35,6 +35,15 @@
   <modules>
     <module>tika-bundle-standard</module>
   </modules>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.osgi</groupId>
+        <artifactId>org.osgi.compendium</artifactId>
+        <version>4.3.1</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
   <dependencies>
     <!-- after we migrate everything to junit5, we can get rid of this -->
     <dependency>
