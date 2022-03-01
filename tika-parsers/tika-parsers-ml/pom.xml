@@ -34,10 +34,12 @@
 
   <modules>
     <module>tika-parser-nlp-module</module>
+    <module>tika-parser-nlp-package</module>
     <!-- needs to come after tika-parser-nlp-module because tika-parser-nlp-module
          downloads model files -->
     <module>tika-age-recogniser</module>
     <module>tika-parser-advancedmedia-module</module>
+    <module>tika-parser-advancedmedia-package</module>
     <module>tika-dl</module>
     <module>tika-transcribe-aws</module>
   </modules>
