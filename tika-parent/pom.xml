@@ -287,7 +287,7 @@
     <rat.version>0.13</rat.version>
 
     <!-- dependency versions -->
-    <aws.version>1.12.164</aws.version>
+    <aws.version>1.12.169</aws.version>
     <asm.version>9.2</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
