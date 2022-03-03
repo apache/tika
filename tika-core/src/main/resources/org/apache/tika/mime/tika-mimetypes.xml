@@ -6418,6 +6418,9 @@
         <match value="\nUser-Agent:" type="string" offset="0:1024"/>
         <match value="\nX-Mailer:" type="string" offset="0:1024"/>
         <match value="\nX-Originating-IP:" type="stringignorecase" offset="0:1024"/>
+        <match value="\nX-" type="string" offset="0:1024"/>
+        <match value="\nDKIM-" type="string" offset="0:1024"/>
+        <match value="\nARC-" type="string" offset="0:1024"/>        
       </match>
       <!-- match X- DKIM- ARC- at start of file and then require at least one
            of the usual: from, received, date...but look farther into the file

@@ -1,0 +1,90 @@
+Received: from PR1P264MB1613.FRAP264.PROD.OUTLOOK.COM
+ ([fe80::84c8:cd64:fe3e:8fc1]) by PR1P264MB1613.FRAP264.PROD.OUTLOOK.COM
+ ([fe80::84c8:cd64:fe3e:8fc1%4]) with mapi id 15.20.4930.015; Wed, 26 Jan 2022
+ 08:14:37 +0000
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=Sr2OMNGtNc7s2butUewmIFPhRpdbMSZfIpqWE4mK0Bq/3lsZq7UUUUUUUUUUYTlYMKdIHu7+Jfk4H0nB2QA70/H+L2suKMPgVGEp8UQkgxBcDRz77RJkgQYrp3/o0ZupDE5G+FSXVfvestOx0D8JE2loqDXGcCCF2pLqE8FD05DeTLPrApXXerdpvmsLMSHXHZ3xQD65yVg9HRFnCvKNTIGXnsOQfAHkCG9hco0nBaVdRQWKxVvU1AxG37chlXGE3PAEatepzpAZgndXglmiD2hf42BSw8l5DSoE58DwO/UxZD466n/R7bv1GVdxe7UgtgCWYBq5DHrc2PzOHPNvNA==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=wEuQiRgrogSR8Yuuuu17RIZFydHUwx78Ibooqbq2B00=;
+ b=ZCMHAp7d52ghcG1hjEBl3zGJlHgf19dxHUtVVcKERzaIfq7rLP4Oo3ishEMX+nCz+XV0iyRc1u72+/OE1B3jithvUUUUUUUUUUOtV1SL2XKEjA+H3KpVvG0lSnC8RNfCVHBTCYtiKbCzhMCJiwwrSi+cde8VsrEBodam3y4OaT9we79ytJJBTX/Xo0OqZgKstWdmL+KSGef4yLgcD7H4KSz4zVOA80L+RwM4yJnkfFXt/7639maUucyVAq5STsXDavyd8febeqiOnl59UhdxcL+d0vpsriYQaShrAZ+v1O9MK8NlZKrGIRCp0y/VZuUL2rjSOhlVkwqNFnLQw8iCuQ==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=none; dmarc=none;
+ dkim=none; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fooo.ba; s=selector2;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=wEuQiRgrogSRUUUUUUUUUUZFydHUwx78Ibooqbq2B00=;
+ b=ihQ7DYpbIMb4TUUUUUUUUUUwSoZv+9nfA+Df+3BnFRNT+Xz29HNzpv69vQwLwPYhLNLnIGmL1RXux/8nMKFJgSiRYGA8jlDX7jnYNegD75LL4DlCAEYgMXr0V8Etc2KfUfQnhPR56Vh+qolyERTzwCMXPR+tY5tg8aXdrOPqM64=
+From: fooooooo.baaaaar@fooo.ba
+To: fooooooooo.baaaaaar@fooo.ba
+CC: foooooooooo@fooo.ba
+Subject: Facture à regler pour le cabinet ABC Avocats - Stage RC des avocats
+Thread-Topic:  Facture à regler pour le cabinet ABC Avocats - Stage RC des avocats
+Thread-Index: AdgSjKthoDPmiUM4Twu3A64tG47MDw==
+Date: Wed, 26 Jan 2022 09:14:37 +0100 (CET)
+Message-ID: <PR1P264MB1613BDD83232UUUUUB981DCF87209@PR1P264MB1613.FRAP264.PROD.OUTLOOK.COM>
+Accept-Language: fr-FR, en-US
+Content-Language: fr-FR
+X-MS-Has-Attach: yes
+X-MS-TNEF-Correlator: 
+authentication-results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=fooo.ba;
+x-ms-publictraffictype: Email
+x-ms-office365-filtering-correlation-id: 9f47717f-776f-402b-c48e-08d9e0a3e4d0
+x-ms-traffictypediagnostic: MR1P264MB3924:EE_
+x-ld-processed: 9c9d8823-ab9e-4ac4-8251-32c4a7ae50d5,ExtAddr
+x-ms-oob-tlc-oobclassifiers: OLM:227;
+x-microsoft-antispam: BCL:0;
+x-microsoft-antispam-message-info: 7Go/5xNjnIJUaBXf4v+ab9Ir8K5/5PgmsUUUUUq+jhNduFTxz5nqlfHxt/6xKX8OzIWUvB9WOufRfRq00Gx5u/xCktydUBNWm/NPFhhIN5++XEUliNuzu9SnlslYO0gXZQ6QyLNRP2xwYcvjKenZ/tASOFy+xnwrzXBs503T+j6g/Cv/72AEfjfOfim8LEotEYXoz6e2GYo6gutH3mbY9XgOIvun7wJDqIRMBlX77j2/f3MYQoKjhBZxxuAVECQTh/M0NRL6G6thVjGODzKv2DLVSMQ153WNRmz2ZgUlZpQbPghEunco5rLfabRrhSkslrfiZsrooX3ufCyZ4qx7oDjMmf+cUXiuIS87jYaTA/OfckRBqWRdIFS3lHzUBmiJD0a9eN/D5M6PhomJk8KB9mQ5omHjxOQXaEUfNXTfHwSf1MWAuMVjK8KMMp21HZJxpPY++RL+OhYFnW3IwGmTsZZQYPrWU90rv246F6YO68TPPXUABRYLRMnV0KhrVJC23m+KvGKigYDARM360toaDLqCUYvBmutqdkg8besT6E6iPU/AYEwlf+80llOZahjK2RcjDZExIfEcsuOhbjdMawNJVlc3Q3sXyUJ8SGoXPDaJBOCRomi1LezTFDNlLL2B2cyRucaZf6l84qhC5ts7jcq3nAhUb8YsZcNut1wPrBk=
+x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:fr;SCL:-1;SRV:;IPV:NLI;SFV:SKI;H:PR1P264MB1613.FRAP264.PROD.OUTLOOK.COM;PTR:;CAT:NONE;SFS:;DIR:INB;
+Content-Type: multipart/mixed;
+    boundary="_009_PR1P264MB1613BDD83232C1F0AB981DCF87209PR1P264MB1613FRAP_"
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-AuthSource: PR1P264MB1613.FRAP264.PROD.OUTLOOK.COM
+X-MS-Exchange-CrossTenant-Network-Message-Id: 9f47717f-776f-402b-c48e-08d9e0a3e4d0
+X-MS-Exchange-CrossTenant-originalarrivaltime: 26 Jan 2022 08:14:37.1875
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: 9c9d8823-ab9e-4ac4-8251-32c4a7ae50d5
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: krZPSCydVb1VY92MQhWJkFieP/R9DjOKt1TUUUUU6pinRMy7AaFCrhwDPcAtnL6AmU1yLWu8PhlsNyj/+TNatWZYIQ0AfiHRbbthPdUO2kk=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: MR1P264MB3924
+Return-Path: fooooooo.baaaaar@fooo.ba
+X-MS-Exchange-Organization-Network-Message-Id: 75f89c94-2a94-42a5-a1e6-08d9e0a3e55b
+X-MS-Exchange-Organization-AuthSource: SW101199.fooo.local
+X-MS-Exchange-Organization-AuthAs: Anonymous
+X-MS-Exchange-Transport-EndToEndLatency: 00:00:01.8942046
+X-MS-Exchange-Processed-By-BccFoldering: 15.01.2242.012
+MIME-Version: 1.0
+Reply-To: FOOOOOO Baaaaaar <fooooooo.baaaaar@fooo.ba>
+
+--_009_PR1P264MB1613BDD83232C1F0AB981DCF87209PR1P264MB1613FRAP_
+Content-Type: multipart/related;
+    boundary="_008_PR1P264MB1613BDD83232C1F0AB981DCF87209PR1P264MB1613FRAP_";
+    type="multipart/alternative"
+
+--_008_PR1P264MB1613BDD83232C1F0AB981DCF87209PR1P264MB1613FRAP_
+Content-Type: multipart/alternative;
+    boundary="_000_PR1P264MB1613BDD83232C1F0AB981DCF87209PR1P264MB1613FRAP_"
+
+--_000_PR1P264MB1613BDD83232C1F0AB981DCF87209PR1P264MB1613FRAP_
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+
+Simple body
+
+--_000_PR1P264MB1613BDD83232C1F0AB981DCF87209PR1P264MB1613FRAP_
+Content-Type: text/html; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+
+<html>
+<body>
+Simple <b>body</b>
+</body>
+</html>
+
+--_000_PR1P264MB1613BDD83232C1F0AB981DCF87209PR1P264MB1613FRAP_--
+
+--_008_PR1P264MB1613BDD83232C1F0AB981DCF87209PR1P264MB1613FRAP_--
+
+--_009_PR1P264MB1613BDD83232C1F0AB981DCF87209PR1P264MB1613FRAP_--
