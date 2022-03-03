@@ -600,6 +600,17 @@ public class RFC822ParserTest extends TikaTest {
     }
 
     @Test
+    public void testArc() throws Exception {
+        /*
+        This tests an email with ARC-* headers but that does not begin 
+        with one, and was detected as HTML
+        */
+        List<Metadata> metadataList = getRecursiveMetadata("testRFC822-ARC");
+        assertEquals(1, metadataList.size());
+        assertEquals("message/rfc822", metadataList.get(0).get(Metadata.CONTENT_TYPE));
+    }
+
+    @Test
     public void testSimpleBodyInlined() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testRFC822_simple_inline_body.txt");
         assertEquals(1, metadataList.size());
