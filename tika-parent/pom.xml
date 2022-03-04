@@ -326,7 +326,7 @@
     <javax.jcr.version>2.0</javax.jcr.version>
     <javax.rest.version>2.1.1</javax.rest.version>
     <jaxb.version>2.3.6</jaxb.version>
-    <jbig2.version>3.0.3</jbig2.version>
+    <jbig2.version>3.0.4</jbig2.version>
     <jdom2.version>2.0.6.1</jdom2.version>
     <jempbox.version>1.8.16</jempbox.version>
     <jetty.version>9.4.45.v20220203</jetty.version>
@@ -361,7 +361,7 @@
     <pax.exam.version>4.13.1</pax.exam.version>
     <pdfbox.version>2.0.25</pdfbox.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
-    <poi.version>5.2.0</poi.version>
+    <poi.version>5.2.1</poi.version>
     <quartz.version>2.3.2</quartz.version>
     <rome.version>1.18.0</rome.version>
     <scm.version>1.12.2</scm.version>
