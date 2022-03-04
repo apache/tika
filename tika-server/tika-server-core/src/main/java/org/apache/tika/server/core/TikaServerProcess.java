@@ -404,7 +404,7 @@ public class TikaServerProcess {
             }));
             resourceProviders.add(new SingletonResourceProvider(localPipesResource));
         }
-        resourceProviders.addAll(loadResourceServices());
+        resourceProviders.addAll(loadResourceServices(serverStatus));
         return resourceProviders;
     }
 
@@ -468,13 +468,16 @@ public class TikaServerProcess {
         }
     }
 
-    private static Collection<? extends ResourceProvider> loadResourceServices() {
+    private static Collection<? extends ResourceProvider> loadResourceServices(ServerStatus serverStatus) {
         List<TikaServerResource> resources =
                 new ServiceLoader(TikaServerProcess.class.getClassLoader())
                         .loadServiceProviders(TikaServerResource.class);
         List<ResourceProvider> providers = new ArrayList<>();
-
         for (TikaServerResource r : resources) {
+            LOG.info("loading resource from SPI: " + r.getClass());
+            if (r instanceof ServerStatusResource) {
+                ((ServerStatusResource)r).setServerStatus(serverStatus);
+            }
             providers.add(new SingletonResourceProvider(r));
         }
         return providers;
