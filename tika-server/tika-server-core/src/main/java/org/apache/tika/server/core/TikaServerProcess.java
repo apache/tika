@@ -100,7 +100,7 @@ public class TikaServerProcess {
         options.addOption("i", "id", true,
                 "id to use for server in server status endpoint");
         options.addOption("?", "help", false, "this help message");
-        options.addOption("noFork", "--noFork", false, "if launched in no fork mode");
+        options.addOption("noFork", "noFork", false, "if launched in no fork mode");
         options.addOption("forkedStatusFile", true,
                 "Not allowed in -noFork: temporary file used to communicate " +
                         "with forking process -- do not use this! " +
