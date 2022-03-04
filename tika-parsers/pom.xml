@@ -170,7 +170,7 @@
     <dependency>
       <groupId>com.github.luben</groupId>
       <artifactId>zstd-jni</artifactId>
-      <version>1.5.2-1</version>
+      <version>1.5.2-2</version>
       <scope>provided</scope>
     </dependency>
 
@@ -912,7 +912,7 @@
     <dependency>
       <groupId>org.apache.pdfbox</groupId>
       <artifactId>jbig2-imageio</artifactId>
-      <version>3.0.3</version>
+      <version>3.0.4</version>
     </dependency>
 
     <!-- jai-imageio-core is allowed since LEGAL-304 -->
