@@ -24,6 +24,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -37,6 +40,9 @@ import org.apache.tika.pipes.fetcher.AbstractFetcher;
 
 public class FileSystemFetcher extends AbstractFetcher implements Initializable {
 
+    private static final Logger LOG = LoggerFactory.getLogger(FileSystemFetcher.class);
+
+    //Warning! basePath can be null!
     private Path basePath = null;
 
     static boolean isDescendant(Path root, Path descendant) {
@@ -46,25 +52,27 @@ public class FileSystemFetcher extends AbstractFetcher implements Initializable 
 
     @Override
     public InputStream fetch(String fetchKey, Metadata metadata) throws IOException, TikaException {
-        if (basePath == null) {
-            throw new IllegalStateException("must set 'basePath' before calling fetch");
 
-        }
         if (fetchKey.contains("\u0000")) {
             throw new IllegalArgumentException("Path must not contain \u0000. " +
                     "Please review the life decisions that led you to requesting " +
                     "a file name with this character in it.");
         }
-        Path p = basePath.resolve(fetchKey);
-        if (!p.toRealPath().startsWith(basePath.toRealPath())) {
-            throw new IllegalArgumentException(
-                    "fetchKey must resolve to be a" + " descendant of the 'basePath'");
+        Path p = null;
+        if (basePath != null) {
+            p = basePath.resolve(fetchKey);
+            if (!p.toRealPath().startsWith(basePath.toRealPath())) {
+                throw new IllegalArgumentException(
+                        "fetchKey must resolve to be a descendant of the 'basePath'");
+            }
+        } else {
+            p = Paths.get(fetchKey);
         }
 
         metadata.set(TikaCoreProperties.SOURCE_PATH, fetchKey);
 
         if (!Files.isRegularFile(p)) {
-            if (!Files.isDirectory(basePath)) {
+            if (basePath != null && !Files.isDirectory(basePath)) {
                 throw new IOException("BasePath is not a directory: " + basePath);
             } else {
                 throw new FileNotFoundException(p.toAbsolutePath().toString());
@@ -74,12 +82,16 @@ public class FileSystemFetcher extends AbstractFetcher implements Initializable 
         return TikaInputStream.get(p, metadata);
     }
 
+    /**
+     *
+     * @return the basePath or <code>null</code> if no base path was set
+     */
     public Path getBasePath() {
         return basePath;
     }
 
     /**
-     * If clients will send in relative paths, this
+     * Default behavior si that clients will send in relative paths, this
      * must be set to allow this fetcher to fetch the
      * full path.
      *
@@ -99,8 +111,14 @@ public class FileSystemFetcher extends AbstractFetcher implements Initializable 
     public void checkInitialization(InitializableProblemHandler problemHandler)
             throws TikaConfigException {
         if (basePath == null || basePath.toString().trim().length() == 0) {
-            throw new TikaConfigException("'basePath' must be specified");
-        } else if (basePath.toString().startsWith("http://")) {
+            LOG.warn("'basePath' has not been set. " +
+                    "This means that client code or clients can read from any file that this " +
+                    "process has permissions to read. If you are running tika-server, make " +
+                    "absolutely certain that you've locked down " +
+                    "access to tika-server and file-permissions for the tika-server process.");
+            return;
+        }
+        if (basePath.toString().startsWith("http://")) {
             throw new TikaConfigException("FileSystemFetcher only works with local file systems. " +
                     " Please use the tika-fetcher-http module for http calls");
         } else if (basePath.toString().startsWith("ftp://")) {
@@ -115,5 +133,9 @@ public class FileSystemFetcher extends AbstractFetcher implements Initializable 
             throw new TikaConfigException(
                     "base path must not contain \u0000. " + "Seriously, what were you thinking?");
         }
+        LOG.info("A FileSystemFetcher ({}) has been initialized. Clients will be able to read " +
+                "all files under '{}' if this process has permission to read them.",
+                getName(),
+                basePath.toAbsolutePath());
     }
 }

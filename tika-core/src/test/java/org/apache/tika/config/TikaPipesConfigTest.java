@@ -63,10 +63,11 @@ public class TikaPipesConfigTest extends AbstractTikaConfigTest {
 
     @Test
     public void testNoBasePathFetchers() throws Exception {
-        //can't have an fs fetcher with no basepath specified
-        assertThrows(TikaConfigException.class, () -> {
-            FetcherManager.load(getConfigFilePath("fetchers-nobasepath-config.xml"));
-        });
+        //no basepath is allowed as of > 2.3.0
+        //test that this does not throw an exception.
+
+        FetcherManager fetcherManager = FetcherManager.load(
+                getConfigFilePath("fetchers-nobasepath-config.xml"));
     }
 
     @Test
