@@ -76,7 +76,9 @@ public class TikaMimeTypesTest extends CXFTestBase {
         assertContains("Super Type: <a href=\"#video/ogg\">video/ogg", text);
 
         assertContains("Alias: image/x-ms-bmp", text);
+        assertContains("Description: Ogg Vorbis", text);
+        assertContains("Extension: .ogg", text);
     }
 
-
+// TODO Type Specific
 }

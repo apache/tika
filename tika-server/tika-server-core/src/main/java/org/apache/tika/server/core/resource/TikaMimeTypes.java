@@ -17,6 +17,7 @@
 package org.apache.tika.server.core.resource;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -82,21 +83,22 @@ public class TikaMimeTypes {
         h.append("<ul>");
         for (String section : firstType.keySet()) {
             h.append("<li><a href=\"#").append(firstType.get(section)).append("\">").append(section)
-                    .append("</a></li>\n");
+             .append("</a></li>\n");
         }
         h.append("</ul>");
 
         // Output all of them
         for (MediaTypeDetails type : types) {
             h.append("<a name=\"").append(type.type).append("\"></a>\n");
-            h.append("<h2>").append(type.type).append("</h2>\n");
+            h.append("<h2><a href=\"mime-types/").append(type.type)
+             .append("\">").append(type.type).append("</a></h2>\n");
 
             for (MediaType alias : type.aliases) {
                 h.append("<div>Alias: ").append(alias).append("</div>\n");
             }
             if (type.supertype != null) {
                 h.append("<div>Super Type: <a href=\"#").append(type.supertype).append("\">")
-                        .append(type.supertype).append("</a></div>\n");
+                 .append(type.supertype).append("</a></div>\n");
             }
             if (type.mime != null) {
                if (!type.mime.getDescription().isEmpty()) {
@@ -113,6 +115,53 @@ public class TikaMimeTypes {
             if (type.parser != null) {
                 h.append("<div>Parser: ").append(type.parser).append("</div>\n");
             }
+        }
+
+        html.generateFooter(h);
+        return h.toString();
+    }
+
+    @GET
+    @Path("/{type}/{subtype}")
+    @Produces("text/html")
+    public String getMimeTypeDetailsHTML(@PathParam("type") String typePart,
+                                         @PathParam("subtype") String subtype) {
+        MediaTypeDetails type = getMediaType(typePart, subtype);
+
+        StringBuffer h = new StringBuffer();
+        html.generateHeader(h, "Apache Tika Details on Mime Type " + type.type);
+        h.append("<h2>").append(type.type).append("</h2>\n");
+
+        for (MediaType alias : type.aliases) {
+           h.append("<div>Alias: ").append(alias).append("</div>\n");
+        }
+        if (type.supertype != null) {
+           h.append("<div>Super Type: <a href=\"#").append(type.supertype).append("\">")
+            .append(type.supertype).append("</a></div>\n");
+        }
+        if (type.mime != null) {
+           if (!type.mime.getDescription().isEmpty()) {
+              h.append("<div>Description: ").append(type.mime.getDescription()).append("</div>\n");
+           }
+           if (!type.mime.getAcronym().isEmpty()) {
+              h.append("<div>Acronym: ").append(type.mime.getAcronym()).append("</div>\n");
+           }
+           if (!type.mime.getUniformTypeIdentifier().isEmpty()) {
+              h.append("<div>Uniform Type Identifier: ").append(type.mime.getUniformTypeIdentifier()).append("</div>\n");
+           }
+           for (URI uri : type.mime.getLinks()) {
+              h.append("<div>Link: ").append(uri).append("</div>\n");
+           }
+           if (!type.mime.getExtension().isEmpty()) {
+              h.append("<div>Default Extension: ").append(type.mime.getExtension()).append("</div>\n");
+           }
+           for (String ext : type.mime.getExtensions()) {
+              h.append("<div>Extension: ").append(ext).append("</div>\n");
+           }
+        }
+
+        if (type.parser != null) {
+           h.append("<div>Parser: ").append(type.parser).append("</div>\n");
         }
 
         html.generateFooter(h);
@@ -157,7 +206,26 @@ public class TikaMimeTypes {
         if (type.parser != null) {
            details.put("parser", type.parser);
         }
-        // TODO Additional details from Mime
+        if (type.mime != null) {
+           if (! type.mime.getDescription().isEmpty()) {
+              details.put("description", type.mime.getDescription());
+           }
+           if (! type.mime.getAcronym().isEmpty()) {
+              details.put("acronym", type.mime.getAcronym());
+           }
+           if (! type.mime.getUniformTypeIdentifier().isEmpty()) {
+              details.put("uniformTypeIdentifier", type.mime.getUniformTypeIdentifier());
+           }
+           if (! type.mime.getLinks().isEmpty()) {
+              details.put("links", type.mime.getLinks());
+           }
+           if (! type.mime.getExtension().isEmpty()) {
+              details.put("defaultExtension", type.mime.getExtension());
+           }
+           if (! type.mime.getExtensions().isEmpty()) {
+              details.put("extensions", type.mime.getExtensions());
+           }
+        }
 
         return new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(details);
     }
