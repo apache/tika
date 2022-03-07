@@ -277,7 +277,9 @@ public class TikaMimeTypes {
 
             try {
                details.mime = mimeTypes.getRegisteredMimeType(type.toString());
-            } catch (MimeTypeException e) {}
+            } catch (MimeTypeException e) {
+               // Ignore if invalid
+            }
 
             MediaType supertype = registry.getSupertype(type);
             if (supertype != null && !MediaType.OCTET_STREAM.equals(supertype)) {
