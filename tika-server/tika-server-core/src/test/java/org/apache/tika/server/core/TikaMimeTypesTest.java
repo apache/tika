@@ -83,16 +83,16 @@ public class TikaMimeTypesTest extends CXFTestBase {
 
     @Test
     public void testGetHTMLDetails() throws Exception {
-       Response response =
-             WebClient.create(endPoint + MIMETYPES_PATH + "/application/cbor")
-                      .type("text/html").accept("text/html").get();
+        Response response =
+                WebClient.create(endPoint + MIMETYPES_PATH + "/application/cbor").type("text/html")
+                        .accept("text/html").get();
 
-       String text = getStringFromInputStream((InputStream) response.getEntity());
-       assertNotFound("text/plain", text);
-       assertContains("application/cbor", text);
+        String text = getStringFromInputStream((InputStream) response.getEntity());
+        assertNotFound("text/plain", text);
+        assertContains("application/cbor", text);
 
-       assertContains("Acronym: CBOR", text);
-       assertContains("Link: http://tools.ietf.org/html/rfc7049", text);
-       assertContains("Extension: .cbor", text);
+        assertContains("Acronym: CBOR", text);
+        assertContains("Link: http://tools.ietf.org/html/rfc7049", text);
+        assertContains("Extension: .cbor", text);
     }
 }

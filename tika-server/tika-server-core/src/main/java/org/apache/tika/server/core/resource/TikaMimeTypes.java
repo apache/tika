@@ -36,8 +36,8 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.mime.MimeType;
-import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.mime.MimeTypeException;
+import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.server.core.HTMLHelper;
@@ -83,33 +83,35 @@ public class TikaMimeTypes {
         h.append("<ul>");
         for (String section : firstType.keySet()) {
             h.append("<li><a href=\"#").append(firstType.get(section)).append("\">").append(section)
-             .append("</a></li>\n");
+                    .append("</a></li>\n");
         }
         h.append("</ul>");
 
         // Output all of them
         for (MediaTypeDetails type : types) {
             h.append("<a name=\"").append(type.type).append("\"></a>\n");
-            h.append("<h2><a href=\"mime-types/").append(type.type)
-             .append("\">").append(type.type).append("</a></h2>\n");
+            h.append("<h2><a href=\"mime-types/").append(type.type).append("\">").append(type.type)
+                    .append("</a></h2>\n");
 
             for (MediaType alias : type.aliases) {
                 h.append("<div>Alias: ").append(alias).append("</div>\n");
             }
             if (type.supertype != null) {
                 h.append("<div>Super Type: <a href=\"#").append(type.supertype).append("\">")
-                 .append(type.supertype).append("</a></div>\n");
+                        .append(type.supertype).append("</a></div>\n");
             }
             if (type.mime != null) {
-               if (!type.mime.getDescription().isEmpty()) {
-                  h.append("<div>Description: ").append(type.mime.getDescription()).append("</div>\n");
-               }
-               if (!type.mime.getAcronym().isEmpty()) {
-                  h.append("<div>Acronym: ").append(type.mime.getAcronym()).append("</div>\n");
-               }
-               if (!type.mime.getExtension().isEmpty()) {
-                  h.append("<div>Default Extension: ").append(type.mime.getExtension()).append("</div>\n");
-               }
+                if (!type.mime.getDescription().isEmpty()) {
+                    h.append("<div>Description: ").append(type.mime.getDescription())
+                            .append("</div>\n");
+                }
+                if (!type.mime.getAcronym().isEmpty()) {
+                    h.append("<div>Acronym: ").append(type.mime.getAcronym()).append("</div>\n");
+                }
+                if (!type.mime.getExtension().isEmpty()) {
+                    h.append("<div>Default Extension: ").append(type.mime.getExtension())
+                            .append("</div>\n");
+                }
             }
 
             if (type.parser != null) {
@@ -133,35 +135,38 @@ public class TikaMimeTypes {
         h.append("<h2>").append(type.type).append("</h2>\n");
 
         for (MediaType alias : type.aliases) {
-           h.append("<div>Alias: ").append(alias).append("</div>\n");
+            h.append("<div>Alias: ").append(alias).append("</div>\n");
         }
         if (type.supertype != null) {
-           h.append("<div>Super Type: <a href=\"#").append(type.supertype).append("\">")
-            .append(type.supertype).append("</a></div>\n");
+            h.append("<div>Super Type: <a href=\"#").append(type.supertype).append("\">")
+                    .append(type.supertype).append("</a></div>\n");
         }
         if (type.mime != null) {
-           if (!type.mime.getDescription().isEmpty()) {
-              h.append("<div>Description: ").append(type.mime.getDescription()).append("</div>\n");
-           }
-           if (!type.mime.getAcronym().isEmpty()) {
-              h.append("<div>Acronym: ").append(type.mime.getAcronym()).append("</div>\n");
-           }
-           if (!type.mime.getUniformTypeIdentifier().isEmpty()) {
-              h.append("<div>Uniform Type Identifier: ").append(type.mime.getUniformTypeIdentifier()).append("</div>\n");
-           }
-           for (URI uri : type.mime.getLinks()) {
-              h.append("<div>Link: ").append(uri).append("</div>\n");
-           }
-           if (!type.mime.getExtension().isEmpty()) {
-              h.append("<div>Default Extension: ").append(type.mime.getExtension()).append("</div>\n");
-           }
-           for (String ext : type.mime.getExtensions()) {
-              h.append("<div>Extension: ").append(ext).append("</div>\n");
-           }
+            if (!type.mime.getDescription().isEmpty()) {
+                h.append("<div>Description: ").append(type.mime.getDescription())
+                        .append("</div>\n");
+            }
+            if (!type.mime.getAcronym().isEmpty()) {
+                h.append("<div>Acronym: ").append(type.mime.getAcronym()).append("</div>\n");
+            }
+            if (!type.mime.getUniformTypeIdentifier().isEmpty()) {
+                h.append("<div>Uniform Type Identifier: ")
+                        .append(type.mime.getUniformTypeIdentifier()).append("</div>\n");
+            }
+            for (URI uri : type.mime.getLinks()) {
+                h.append("<div>Link: ").append(uri).append("</div>\n");
+            }
+            if (!type.mime.getExtension().isEmpty()) {
+                h.append("<div>Default Extension: ").append(type.mime.getExtension())
+                        .append("</div>\n");
+            }
+            for (String ext : type.mime.getExtensions()) {
+                h.append("<div>Extension: ").append(ext).append("</div>\n");
+            }
         }
 
         if (type.parser != null) {
-           h.append("<div>Parser: ").append(type.parser).append("</div>\n");
+            h.append("<div>Parser: ").append(type.parser).append("</div>\n");
         }
 
         html.generateFooter(h);
@@ -201,30 +206,30 @@ public class TikaMimeTypes {
         details.put("type", type.type.toString());
         details.put("alias", copyToStringArray(type.aliases));
         if (type.supertype != null) {
-           details.put("supertype", type.supertype.toString());
+            details.put("supertype", type.supertype.toString());
         }
         if (type.parser != null) {
-           details.put("parser", type.parser);
+            details.put("parser", type.parser);
         }
         if (type.mime != null) {
-           if (! type.mime.getDescription().isEmpty()) {
-              details.put("description", type.mime.getDescription());
-           }
-           if (! type.mime.getAcronym().isEmpty()) {
-              details.put("acronym", type.mime.getAcronym());
-           }
-           if (! type.mime.getUniformTypeIdentifier().isEmpty()) {
-              details.put("uniformTypeIdentifier", type.mime.getUniformTypeIdentifier());
-           }
-           if (! type.mime.getLinks().isEmpty()) {
-              details.put("links", type.mime.getLinks());
-           }
-           if (! type.mime.getExtension().isEmpty()) {
-              details.put("defaultExtension", type.mime.getExtension());
-           }
-           if (! type.mime.getExtensions().isEmpty()) {
-              details.put("extensions", type.mime.getExtensions());
-           }
+            if (!type.mime.getDescription().isEmpty()) {
+                details.put("description", type.mime.getDescription());
+            }
+            if (!type.mime.getAcronym().isEmpty()) {
+                details.put("acronym", type.mime.getAcronym());
+            }
+            if (!type.mime.getUniformTypeIdentifier().isEmpty()) {
+                details.put("uniformTypeIdentifier", type.mime.getUniformTypeIdentifier());
+            }
+            if (!type.mime.getLinks().isEmpty()) {
+                details.put("links", type.mime.getLinks());
+            }
+            if (!type.mime.getExtension().isEmpty()) {
+                details.put("defaultExtension", type.mime.getExtension());
+            }
+            if (!type.mime.getExtensions().isEmpty()) {
+                details.put("extensions", type.mime.getExtensions());
+            }
         }
 
         return new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(details);
@@ -255,20 +260,22 @@ public class TikaMimeTypes {
     }
 
     protected MediaTypeDetails getMediaType(String type, String subtype) throws NotFoundException {
-       MediaType mt = MediaType.parse(type+"/"+subtype);
-       for (MediaTypeDetails mtd : getMediaTypes()) {
-          if (mtd.type.equals(mt)) return mtd;
-       }
-       throw new NotFoundException("No Media Type registered in Tika for " + mt);
+        MediaType mt = MediaType.parse(type + "/" + subtype);
+        for (MediaTypeDetails mtd : getMediaTypes()) {
+            if (mtd.type.equals(mt)) {
+                return mtd;
+            }
+        }
+        throw new NotFoundException("No Media Type registered in Tika for " + mt);
     }
+
     protected List<MediaTypeDetails> getMediaTypes() {
         TikaConfig config = TikaResource.getConfig();
         MimeTypes mimeTypes = config.getMimeRepository();
         MediaTypeRegistry registry = config.getMediaTypeRegistry();
-        Map<MediaType, Parser> parsers = ((CompositeParser)config.getParser()).getParsers();
+        Map<MediaType, Parser> parsers = ((CompositeParser) config.getParser()).getParsers();
 
-        List<MediaTypeDetails> types =
-                new ArrayList<>(registry.getTypes().size());
+        List<MediaTypeDetails> types = new ArrayList<>(registry.getTypes().size());
 
         for (MediaType type : registry.getTypes()) {
             MediaTypeDetails details = new MediaTypeDetails();
@@ -276,9 +283,9 @@ public class TikaMimeTypes {
             details.aliases = registry.getAliases(type).toArray(new MediaType[0]);
 
             try {
-               details.mime = mimeTypes.getRegisteredMimeType(type.toString());
+                details.mime = mimeTypes.getRegisteredMimeType(type.toString());
             } catch (MimeTypeException e) {
-               // Ignore if invalid
+                // Ignore if invalid
             }
 
             MediaType supertype = registry.getSupertype(type);
