@@ -307,7 +307,7 @@
     <ctakes.version>4.0.0.1</ctakes.version>
     <cxf.version>3.5.0</cxf.version>
     <ddplist.version>1.23</ddplist.version>
-    <dl4j.version>1.0.0-M1.1</dl4j.version>
+    <dl4j.version>1.0.0-M2</dl4j.version>
     <!-- fakeload versions &gt; 0.4.0 require java > 8 -->
     <fakeload.version>0.4.0</fakeload.version>
     <geoapi.version>3.0.1</geoapi.version>
