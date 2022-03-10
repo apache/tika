@@ -70,13 +70,29 @@ public class TikaMimeTypesTest extends CXFTestBase {
         assertContains("application/xml", text);
         assertContains("video/x-ogm", text);
 
-        assertContains("<h2>text/plain", text);
+        assertContains("<h2>", text);
+        assertContains("/text/plain\">", text);
         assertContains("name=\"text/plain", text);
 
         assertContains("Super Type: <a href=\"#video/ogg\">video/ogg", text);
 
         assertContains("Alias: image/x-ms-bmp", text);
+        assertContains("Description: Ogg Vorbis", text);
+        assertContains("Extension: .ogg", text);
     }
 
+    @Test
+    public void testGetHTMLDetails() throws Exception {
+        Response response =
+                WebClient.create(endPoint + MIMETYPES_PATH + "/application/cbor").type("text/html")
+                        .accept("text/html").get();
 
+        String text = getStringFromInputStream((InputStream) response.getEntity());
+        assertNotFound("text/plain", text);
+        assertContains("application/cbor", text);
+
+        assertContains("Acronym: CBOR", text);
+        assertContains("Link: http://tools.ietf.org/html/rfc7049", text);
+        assertContains("Extension: .cbor", text);
+    }
 }
