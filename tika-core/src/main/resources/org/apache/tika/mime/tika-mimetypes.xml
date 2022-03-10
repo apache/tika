@@ -1214,6 +1214,22 @@
     <glob pattern="*.pcurl"/>
   </mime-type>
   <mime-type type="application/vnd.cybank"/>
+  <mime-type type="application/x-wacz">
+    <_comment>web archive frictionless zip</_comment>
+    <sub-class-of type="application/x-vnd.datapackage+zip"/>
+  </mime-type>
+  <mime-type type="application/x-vnd.datapackage+zip">
+    <_comment>frictionless data package zip package</_comment>
+    <sub-class-of type="application/zip"/>
+  </mime-type>
+  <mime-type type="application/x-vnd.datapackage+json">
+    <_comment>frictionless data package - standalong datapackage.json</_comment>
+    <sub-class-of type="application/json"/>
+  </mime-type>
+  <mime-type type="application/x-vnd.datapackage+gz">
+    <_comment>frictionless data package - gzip of standalone datapackage.json</_comment>
+    <sub-class-of type="application/gzip"/>
+  </mime-type>
   <mime-type type="application/vnd.data-vision.rdz">
     <glob pattern="*.rdz"/>
   </mime-type>

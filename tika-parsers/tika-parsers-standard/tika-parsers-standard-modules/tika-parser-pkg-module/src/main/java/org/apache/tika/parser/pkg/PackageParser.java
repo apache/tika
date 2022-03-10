@@ -171,7 +171,8 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 "application/vnd.oasis.opendocument.chart-template",
                 "application/vnd.oasis.opendocument.text-master",
                 "application/vnd.adobe.indesign-idml-package",
-                "application/x-gtar" //specialization of tar
+                "application/x-gtar", //specialization of tar
+                "application/x-wacz", "application/x-vnd.datapackage+zip"
         }) {
             zipSpecializations.add(MediaType.parse(mediaTypeString));
         }
