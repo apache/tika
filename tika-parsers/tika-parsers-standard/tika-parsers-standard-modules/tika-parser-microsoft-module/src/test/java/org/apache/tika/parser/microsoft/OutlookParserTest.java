@@ -146,6 +146,10 @@ public class OutlookParserTest extends TikaTest {
         assertEquals("application/vnd.ms-outlook", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Welcome to Microsoft Office Outlook 2003",
                 metadata.get(TikaCoreProperties.TITLE));
+        assertEquals("Welcome to Microsoft Office Outlook 2003",
+                metadata.get(TikaCoreProperties.SUBJECT));
+        assertEquals("Welcome to Microsoft Office Outlook 2003",
+                metadata.get(TikaCoreProperties.DESCRIPTION));
 
         String content = handler.toString();
         assertContains("Outlook 2003", content);

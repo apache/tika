@@ -181,7 +181,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             handleFromTo(headers, metadata);
 
             metadata.set(TikaCoreProperties.TITLE, subject);
-            // TODO: Move to description in Tika 2.0
+            metadata.set(TikaCoreProperties.SUBJECT, msg.getConversationTopic());
             metadata.set(TikaCoreProperties.DESCRIPTION, msg.getConversationTopic());
 
             try {
