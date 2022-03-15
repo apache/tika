@@ -16,10 +16,12 @@
  */
 package org.apache.tika.detect.zip;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -177,7 +179,7 @@ public class DefaultZipContainerDetector implements Detector {
                     tis.getFile();
                 }
                 if (tis.hasFile()) {
-                    return detectZipFormatOnFile(tis);
+                    return detectZipFormatOnFile(tis, metadata);
                 }
             }
             return detectStreaming(input, metadata);
@@ -196,7 +198,7 @@ public class DefaultZipContainerDetector implements Detector {
      * @param tis
      * @return
      */
-    private MediaType detectZipFormatOnFile(TikaInputStream tis) {
+    private MediaType detectZipFormatOnFile(TikaInputStream tis, Metadata metadata) {
         ZipFile zip = null;
         try {
             zip = new ZipFile(tis.getFile()); // TODO: hasFile()?
@@ -228,8 +230,21 @@ public class DefaultZipContainerDetector implements Detector {
         // Fallback: it's still a zip file, we just don't know what kind of one
         if (zip != null) {
             IOUtils.closeQuietly(zip);
+            return MediaType.APPLICATION_ZIP;
+        }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("zip file failed to open; attempting streaming detect");
+        }
+        if (zip == null) {
+            //problem opening zip file (truncated?)
+            try (InputStream is = new BufferedInputStream(Files.newInputStream(tis.getPath()))) {
+                return detectStreaming(is, metadata);
+            } catch (IOException e) {
+                //swallow
+            }
         }
         return MediaType.APPLICATION_ZIP;
+
     }
 
     MediaType detectStreaming(InputStream input, Metadata metadata) throws IOException {

@@ -42,6 +42,7 @@ import java.util.Set;
 import org.apache.commons.io.IOUtils;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.extractor.EmbeddedResourceHandler;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -62,8 +63,16 @@ import org.apache.tika.sax.ToXMLContentHandler;
  */
 public abstract class TikaTest {
 
+    protected static TikaConfig DEFAULT_TIKA_CONFIG;
     protected static Parser AUTO_DETECT_PARSER = new AutoDetectParser();
 
+    static {
+        try {
+            DEFAULT_TIKA_CONFIG = new TikaConfig();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
     public static void assertContainsCount(String needle, String haystack, int targetCount) {
         int i = haystack.indexOf(needle);
         int count = 0;
