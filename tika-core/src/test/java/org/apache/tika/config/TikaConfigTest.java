@@ -412,7 +412,7 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
         AutoDetectParser parser = new AutoDetectParser(tikaConfig);
         String mock = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" +
                 "<mock>";
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 20; i++) {
             mock += "<metadata action=\"add\" name=\"dc:creator\">01234567890123456789</metadata>";
         }
         mock += "<write element=\"p\" times=\"30\"> hello </write>\n";
@@ -427,6 +427,39 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
         String[] creators = metadata.getValues("dc:creator");
         assertEquals(9, creators.length);
         assertEquals("0123456", creators[8]);
+        assertContainsCount(" hello ", metadata.get(TikaCoreProperties.TIKA_CONTENT), 30);
+        assertEquals("true", metadata.get(TikaCoreProperties.METADATA_LIMIT_REACHED));
+    }
+
+    @Test
+    public void testMetadataFactoryFieldsConfig() throws Exception {
+        TikaConfig tikaConfig =
+                new TikaConfig(TikaConfigTest.class.getResourceAsStream("TIKA-3695-fields.xml"));
+        AutoDetectParserConfig config = tikaConfig.getAutoDetectParserConfig();
+        MetadataWriteFilterFactory factory = config.getMetadataWriteFilterFactory();
+        assertEquals(241, ((StandardWriteFilterFactory) factory).getMaxEstimatedBytes());
+        AutoDetectParser parser = new AutoDetectParser(tikaConfig);
+        String mock = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" +
+                "<mock>";
+        mock += "<metadata action=\"add\" name=\"dc:subject\">this is not a title</metadata>";
+        mock += "<metadata action=\"add\" name=\"dc:title\">this is a title</metadata>";
+        for (int i = 0; i < 20; i++) {
+            mock += "<metadata action=\"add\" name=\"dc:creator\">01234567890123456789</metadata>";
+        }
+        mock += "<write element=\"p\" times=\"30\"> hello </write>\n";
+        mock += "</mock>";
+        Metadata metadata = new Metadata();
+        List<Metadata> metadataList =
+                getRecursiveMetadata(new ByteArrayInputStream(mock.getBytes(StandardCharsets.UTF_8)),
+                        parser, metadata, new ParseContext(), true);
+        assertEquals(1, metadataList.size());
+        metadata = metadataList.get(0);
+
+        String[] creators = metadata.getValues("dc:creator");
+        assertNull(metadata.get("dc:subject"));
+        //this gets more than the other test because this is filtering out X-TIKA:Parsed-By"
+        assertEquals(12, creators.length);
+        assertEquals("012345", creators[11]);
         assertContainsCount(" hello ", metadata.get(TikaCoreProperties.TIKA_CONTENT), 30);
         assertEquals("true", metadata.get(TikaCoreProperties.METADATA_LIMIT_REACHED));
     }

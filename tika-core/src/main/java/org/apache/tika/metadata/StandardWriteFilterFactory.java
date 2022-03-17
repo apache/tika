@@ -17,6 +17,7 @@
 package org.apache.tika.metadata;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -31,7 +32,7 @@ public class StandardWriteFilterFactory implements MetadataWriteFilterFactory {
         return new StandardWriteFilter(maxEstimatedBytes, includeFields, includeEmpty);
     }
 
-    public void setIncludeFields(Set<String> includeFields) {
+    public void setIncludeFields(List<String> includeFields) {
         Set<String> keys = ConcurrentHashMap.newKeySet(includeFields.size());
         keys.addAll(includeFields);
         this.includeFields = Collections.unmodifiableSet(keys);
