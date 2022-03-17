@@ -283,6 +283,7 @@
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.surefire.version>3.0.0-M5</maven.surefire.version>
     <maven.shade.version>3.2.4</maven.shade.version>
+    <!-- need above java 8 for 10.0 -->
     <puppycrawl.version>9.3</puppycrawl.version>
     <rat.version>0.13</rat.version>
 
@@ -313,7 +314,7 @@
     <geoapi.version>3.0.1</geoapi.version>
     <google.cloud.version>2.4.1</google.cloud.version>
     <gson.version>2.9.0</gson.version>
-    <guava.version>31.0.1-jre</guava.version>
+    <guava.version>31.1-jre</guava.version>
     <h2.version>2.1.210</h2.version>
     <httpcomponents.version>4.5.13</httpcomponents.version>
     <httpcore.version>4.4.15</httpcore.version>
@@ -342,11 +343,11 @@
     <log4j2.version>2.17.2</log4j2.version>
     <lombok.version>1.18.20</lombok.version>
     <lucene.version>8.11.1</lucene.version>
-    <metadata.extractor.version>2.16.0</metadata.extractor.version>
+    <metadata.extractor.version>2.17.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <!-- 0.8.6 is built with java 11 and does not work with Java 8 -->
     <mime4j.version>0.8.4</mime4j.version>
-    <mockito.version>4.3.1</mockito.version>
+    <mockito.version>4.4.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <opencsv.version>2.3</opencsv.version>
     <objenesis.version>3.2</objenesis.version>
@@ -381,7 +382,7 @@
     <vorbis.version>0.8</vorbis.version>
     <xerces.version>2.12.2</xerces.version>
     <xmpcore.version>6.1.11</xmpcore.version>
-    <zstd.version>1.5.2-1</zstd.version>
+    <zstd.version>1.5.2-2</zstd.version>
   </properties>
 
   <dependencyManagement>
