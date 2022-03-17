@@ -23,6 +23,7 @@ import org.w3c.dom.Element;
 
 import org.apache.tika.config.ConfigBase;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.metadata.MetadataWriteFilterFactory;
 
 /**
  * This config object can be used to tune how conservative we want to be
@@ -68,6 +69,8 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
      * SecureContentHandler -- Desired maximum package entry nesting level.
      */
     private Integer maximumPackageEntryDepth = null;
+
+    private MetadataWriteFilterFactory metadataWriteFilterFactory = null;
 
     /**
      *  Creates a SecureContentHandlerConfig using the passed in parameters.
@@ -130,6 +133,14 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
 
     public void setMaximumPackageEntryDepth(int maximumPackageEntryDepth) {
         this.maximumPackageEntryDepth = maximumPackageEntryDepth;
+    }
+
+    public MetadataWriteFilterFactory getMetadataWriteFilterFactory() {
+        return this.metadataWriteFilterFactory;
+    }
+
+    public void setMetadataWriteFilterFactory(MetadataWriteFilterFactory metadataWriteFilterFactory) {
+        this.metadataWriteFilterFactory = metadataWriteFilterFactory;
     }
 }
 

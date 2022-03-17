@@ -129,6 +129,9 @@ public class AutoDetectParser extends CompositeParser {
 
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
+        if (autoDetectParserConfig.getMetadataWriteFilterFactory() != null) {
+            metadata.setMetadataWriteFilter(autoDetectParserConfig.getMetadataWriteFilterFactory().newInstance());
+        }
         TemporaryResources tmp = new TemporaryResources();
         try {
             TikaInputStream tis = TikaInputStream.get(stream, tmp);

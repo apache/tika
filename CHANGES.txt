@@ -6,6 +6,9 @@ Release 2.4.0 - ???
      https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-ml/tika-dl/pom.xml
      for the dependencies that must be provided at run-time (TIKA-3676).
 
+   * Add MetadataWriteFilter capability to improve memory profile in
+     Metadata objects (TIKA-3695).
+
    * Add detection for Frictionless Data packages and WACZ (TIKA-3696).
 
    * Upgrade deeplearning4j to 1.0.0-M2 (TIKA-3458 and PR#527).

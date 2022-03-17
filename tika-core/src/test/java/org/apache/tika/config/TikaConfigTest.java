@@ -374,7 +374,6 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
         });
     }
 
-
     @Test
     public void testTimesInitiated() throws Exception {
         //this prevents multi-threading tests, but we aren't doing that now...
