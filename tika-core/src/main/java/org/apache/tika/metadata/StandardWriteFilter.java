@@ -22,7 +22,9 @@ import java.nio.CharBuffer;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -53,9 +55,16 @@ public class StandardWriteFilter implements MetadataWriteFilter, Serializable {
     static {
         ALWAYS_INCLUDE_FIELDS.add(Metadata.CONTENT_LENGTH);
         ALWAYS_INCLUDE_FIELDS.add(Metadata.CONTENT_TYPE);
+        ALWAYS_INCLUDE_FIELDS.add(Metadata.CONTENT_ENCODING);
+        ALWAYS_INCLUDE_FIELDS.add(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE.getName());
         ALWAYS_INCLUDE_FIELDS.add(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE.getName());
         ALWAYS_INCLUDE_FIELDS.add(TikaCoreProperties.CONTENT_TYPE_HINT.getName());
         ALWAYS_INCLUDE_FIELDS.add(TikaCoreProperties.TIKA_CONTENT.getName());
+        ALWAYS_INCLUDE_FIELDS.add(TikaCoreProperties.RESOURCE_NAME_KEY);
+        ALWAYS_INCLUDE_FIELDS.add(AccessPermissions.EXTRACT_CONTENT.getName());
+        ALWAYS_INCLUDE_FIELDS.add(AccessPermissions.EXTRACT_FOR_ACCESSIBILITY.getName());
+        ALWAYS_INCLUDE_FIELDS.add(Metadata.CONTENT_DISPOSITION);
+        //Metadata.CONTENT_LOCATION? used by the html parser
     }
 
     private final boolean includeEmpty;
@@ -86,7 +95,36 @@ public class StandardWriteFilter implements MetadataWriteFilter, Serializable {
 
     @Override
     public void filterExisting(Map<String, String[]> data) {
+        //this is somewhat costly, but it ensures that
+        //metadata that was placed in the metadata object before this
+        //filter was applied is removed.
+        //It should only be called once, and probably not on that
+        //many fields.
+        Set<String> toRemove = new HashSet<>();
+        for (String n : data.keySet()) {
+            if (! includeField(n)) {
+                toRemove.add(n);
+            }
+        }
 
+        for (String n : toRemove) {
+            data.remove(n);
+        }
+
+        for (String n : data.keySet()) {
+            String[] vals = data.get(n);
+            List<String> filteredVals = new ArrayList<>();
+            for (int i = 0; i < vals.length; i++) {
+                String v = vals[i];
+                if (include(n, v)) {
+                    String filtered = filter(n, v, data);
+                    if (filtered != null) {
+                        filteredVals.add(filtered);
+                    }
+                }
+            }
+            data.put(n, filteredVals.toArray(new String[0]));
+        }
     }
 
     @Override
@@ -122,7 +160,7 @@ public class StandardWriteFilter implements MetadataWriteFilter, Serializable {
         ByteBuffer bb = ByteBuffer.wrap(bytes, 0, available);
         CharBuffer cb = CharBuffer.allocate(available);
         CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder();
-        // Ignore an incomplete character
+        // Ignore last (potentially) incomplete character
         decoder.onMalformedInput(CodingErrorAction.IGNORE);
         decoder.decode(bb, cb, true);
         decoder.flush(cb);

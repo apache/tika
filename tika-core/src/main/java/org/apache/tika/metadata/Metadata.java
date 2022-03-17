@@ -60,6 +60,7 @@ public class Metadata
      */
     private Map<String, String[]> metadata = null;
 
+    //TODO: transient?
     private MetadataWriteFilter writeFilter = ACCEPT_ALL;
     /**
      * Constructs a new, empty metadata.
@@ -144,8 +145,9 @@ public class Metadata
      * will not function properly.
      *
      * @param writeFilter
+     * @since 2.4.0
      */
-    public void setWriteFilter(MetadataWriteFilter writeFilter) {
+    public void setMetadataWriteFilter(MetadataWriteFilter writeFilter) {
         this.writeFilter = writeFilter;
         this.writeFilter.filterExisting(metadata);
     }
