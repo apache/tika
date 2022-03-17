@@ -23,9 +23,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -38,6 +40,9 @@ import org.apache.tika.ResourceLoggingClassLoader;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.MetadataWriteFilterFactory;
+import org.apache.tika.metadata.StandardWriteFilterFactory;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeDetectionTest;
 import org.apache.tika.parser.AutoDetectParser;
@@ -46,6 +51,7 @@ import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ErrorParser;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.mock.MockParser;
@@ -394,5 +400,34 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
         assertNull(config.getMaximumCompressionRatio());
         assertNull(config.getMaximumDepth());
         assertNull(config.getMaximumPackageEntryDepth());
+    }
+
+    @Test
+    public void testMetadataFactoryConfig() throws Exception {
+        TikaConfig tikaConfig =
+                new TikaConfig(TikaConfigTest.class.getResourceAsStream("TIKA-3695.xml"));
+        AutoDetectParserConfig config = tikaConfig.getAutoDetectParserConfig();
+        MetadataWriteFilterFactory factory = config.getMetadataWriteFilterFactory();
+        assertEquals(241, ((StandardWriteFilterFactory) factory).getMaxEstimatedBytes());
+        AutoDetectParser parser = new AutoDetectParser(tikaConfig);
+        String mock = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" +
+                "<mock>";
+        for (int i = 0; i < 10; i++) {
+            mock += "<metadata action=\"add\" name=\"dc:creator\">01234567890123456789</metadata>";
+        }
+        mock += "<write element=\"p\" times=\"30\"> hello </write>\n";
+        mock += "</mock>";
+        Metadata metadata = new Metadata();
+        List<Metadata> metadataList =
+                getRecursiveMetadata(new ByteArrayInputStream(mock.getBytes(StandardCharsets.UTF_8)),
+                parser, metadata, new ParseContext(), true);
+        assertEquals(1, metadataList.size());
+        metadata = metadataList.get(0);
+
+        String[] creators = metadata.getValues("dc:creator");
+        assertEquals(9, creators.length);
+        assertEquals("0123456", creators[8]);
+        assertContainsCount(" hello ", metadata.get(TikaCoreProperties.TIKA_CONTENT), 30);
+        assertEquals("true", metadata.get(TikaCoreProperties.METADATA_LIMIT_REACHED));
     }
 }

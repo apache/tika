@@ -44,6 +44,8 @@ public class Metadata
         implements CreativeCommons, Geographic, HttpHeaders, Message, ClimateForcast, TIFF,
         TikaMimeKeys, Serializable {
 
+    private static final MetadataWriteFilter ACCEPT_ALL = new AcceptAll();
+
     /**
      * Serial version UID
      */
@@ -58,6 +60,7 @@ public class Metadata
      */
     private Map<String, String[]> metadata = null;
 
+    private MetadataWriteFilter writeFilter = ACCEPT_ALL;
     /**
      * Constructs a new, empty metadata.
      */
@@ -129,6 +132,22 @@ public class Metadata
         } else {
             return values[0];
         }
+    }
+
+    /**
+     * Sets the writeFilter that is called before {@link #set(String, String)}
+     * {@link #set(String, String[])}, {@link #add(String, String)},
+     * {@link #add(String, String[])}.  The default is {@link #ACCEPT_ALL}.
+     *
+     * This is intended for expert use only.  Some parsers rely on metadata
+     * during the parse, and if the metadata they need is excluded, they
+     * will not function properly.
+     *
+     * @param writeFilter
+     */
+    public void setWriteFilter(MetadataWriteFilter writeFilter) {
+        this.writeFilter = writeFilter;
+        this.writeFilter.filterExisting(metadata);
     }
 
     /**
@@ -236,11 +255,35 @@ public class Metadata
      * @param value the metadata value.
      */
     public void add(final String name, final String value) {
+        if (!writeFilter.include(name, value)) {
+            return;
+        }
         String[] values = metadata.get(name);
         if (values == null) {
             set(name, value);
         } else {
-            metadata.put(name, appendedValues(values, value));
+            String filtered = writeFilter.filter(name, value, metadata);
+            if (filtered != null) {
+                metadata.put(name, appendedValues(values, filtered));
+            }
+        }
+    }
+
+    /**
+     * Add a metadata name/value mapping. Add the specified value to the list of
+     * values associated to the specified metadata name.
+     *
+     * @param name  the metadata name.
+     * @param newValues the metadata values
+     */
+    protected void add(final String name, final String[] newValues) {
+        String[] values = metadata.get(name);
+        if (values == null) {
+            set(name, newValues);
+        } else {
+            for (String val : newValues) {
+                add(name, val);
+            }
         }
     }
 
@@ -270,7 +313,7 @@ public class Metadata
                 set(property, value);
             } else {
                 if (property.isMultiValuePermitted()) {
-                    set(property, appendedValues(values, value));
+                    add(property.getName(), value);
                 } else {
                     throw new PropertyTypeException(
                             property.getName() + " : " + property.getPropertyType());
@@ -303,8 +346,28 @@ public class Metadata
      * @param value the metadata value, or <code>null</code>
      */
     public void set(String name, String value) {
+        if (! writeFilter.include(name, value)) {
+            return;
+        }
         if (value != null) {
-            metadata.put(name, new String[]{value});
+            metadata.remove(name);
+            String filtered = writeFilter.filter(name, value, metadata);
+            if (filtered != null) {
+                metadata.put(name, new String[]{filtered});
+            }
+        } else {
+            metadata.remove(name);
+        }
+    }
+
+    protected void set(String name, String[] values) {
+        //TODO: optimize this to not copy if all
+        //values are to be included "as is"
+        if (values != null) {
+            metadata.remove(name);
+            for (String v : values) {
+                add(name, v);
+            }
         } else {
             metadata.remove(name);
         }
@@ -352,7 +415,7 @@ public class Metadata
                 }
             }
         } else {
-            metadata.put(property.getName(), values);
+            set(property.getName(), values);
         }
     }
 
@@ -597,6 +660,27 @@ public class Metadata
             }
         }
         return buf.toString();
+    }
+
+    /**
+     * NO-OP write filter that accepts everything without modification.
+     */
+    private static class AcceptAll implements MetadataWriteFilter, Serializable {
+
+        @Override
+        public void filterExisting(Map<String, String[]> data) {
+            return;
+        }
+
+        @Override
+        public boolean include(String field, String value) {
+            return true;
+        }
+
+        @Override
+        public String filter(String field, String value, Map<String, String[]> data) {
+            return value;
+        }
     }
 
 }
