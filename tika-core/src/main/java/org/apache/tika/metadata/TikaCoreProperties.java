@@ -63,6 +63,11 @@ public interface TikaCoreProperties {
      */
     String TIKA_META_EXCEPTION_PREFIX = TIKA_META_PREFIX + "EXCEPTION" + NAMESPACE_PREFIX_DELIMITER;
 
+    /**
+     * Use this to store warnings that happened during the parse.
+     */
+    String TIKA_META_WARN_PREFIX = TIKA_META_PREFIX + "WARN" + NAMESPACE_PREFIX_DELIMITER;
+
     //exception in main file
     Property CONTAINER_EXCEPTION =
             Property.internalText(TIKA_META_EXCEPTION_PREFIX + "container_exception");
@@ -83,7 +88,7 @@ public interface TikaCoreProperties {
             Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX + "warn");
 
     Property METADATA_LIMIT_REACHED =
-            Property.internalBoolean(TIKA_META_EXCEPTION_PREFIX + "metadata_limit_reached");
+            Property.internalBoolean(TIKA_META_WARN_PREFIX + "metadata_limit_reached");
 
     /**
      * Use this to store exceptions caught while trying to read the
