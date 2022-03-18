@@ -321,7 +321,7 @@
     <imageio.version>1.4.0</imageio.version>
     <jackcess.version>4.0.1</jackcess.version>
     <jackcess.encrypt.version>4.0.1</jackcess.encrypt.version>
-    <jackrabbit.version>2.21.9</jackrabbit.version>
+    <jackrabbit.version>2.21.10</jackrabbit.version>
     <jackson.version>2.13.2</jackson.version>
     <javax.annotation.version>1.3.2</javax.annotation.version>
     <javax.jcr.version>2.0</javax.jcr.version>
