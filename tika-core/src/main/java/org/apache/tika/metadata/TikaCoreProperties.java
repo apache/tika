@@ -81,6 +81,10 @@ public interface TikaCoreProperties {
      */
     Property TIKA_META_EXCEPTION_WARNING =
             Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX + "warn");
+
+    Property METADATA_LIMIT_REACHED =
+            Property.internalBoolean(TIKA_META_EXCEPTION_PREFIX + "metadata_limit_reached");
+
     /**
      * Use this to store exceptions caught while trying to read the
      * stream of an embedded resource.  Do not use this if there is
