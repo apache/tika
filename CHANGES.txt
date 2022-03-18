@@ -9,6 +9,8 @@ Release 2.4.0 - ???
    * Add MetadataWriteFilter capability to improve memory profile in
      Metadata objects (TIKA-3695).
 
+   * Add basic parsers for WARC and WACZ in tika-parsers-standard (TIKA-3697).
+
    * Add detection for Frictionless Data packages and WACZ (TIKA-3696).
 
    * Upgrade deeplearning4j to 1.0.0-M2 (TIKA-3458 and PR#527).
