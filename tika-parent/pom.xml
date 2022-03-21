@@ -362,7 +362,7 @@
     <pax.exam.version>4.13.1</pax.exam.version>
     <pdfbox.version>2.0.25</pdfbox.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
-    <poi.version>5.2.1</poi.version>
+    <poi.version>5.2.2</poi.version>
     <quartz.version>2.3.2</quartz.version>
     <rome.version>1.18.0</rome.version>
     <scm.version>1.12.2</scm.version>
