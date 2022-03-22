@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.metadata;
+package org.apache.tika.metadata.writefilter;
 
 import java.util.Map;
 
@@ -22,11 +22,9 @@ public interface MetadataWriteFilter {
 
     void filterExisting(Map<String, String[]> data);
 
-    boolean include(String field, String value);
-
     /**
-     * Based on the field and value, this filter modifies the value
-     * to something that should be set or added to the Metadata object.
+     * Based on the field and value, this filter modifies the field
+     * and/or the value to something that should be added to the Metadata object.
      *
      * If the value is <code>null</code>, no value is set or added.
      *
@@ -38,5 +36,16 @@ public interface MetadataWriteFilter {
      * @param data
      * @return
      */
-    String filter(String field, String value, Map<String, String[]> data);
+    void add(String field, String value, Map<String, String[]> data);
+
+    /**
+     * Based on the field and the value, this filter modifies
+     * the field and/or the value to something that should be set in the
+     * Metadata object.
+     *
+     * @param field
+     * @param value
+     * @param data
+     */
+    void set(String field, String value, Map<String, String[]> data);
 }

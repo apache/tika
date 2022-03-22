@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.metadata;
+package org.apache.tika.metadata.writefilter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -22,12 +22,18 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.config.TikaConfigTest;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.OfficeOpenXMLExtended;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.writefilter.MetadataWriteFilterFactory;
+import org.apache.tika.metadata.writefilter.StandardWriteFilterFactory;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.AutoDetectParserConfig;
 import org.apache.tika.parser.ParseContext;
@@ -41,7 +47,7 @@ public class MetadataWriteFilterTest extends TikaTest {
                 new TikaConfig(TikaConfigTest.class.getResourceAsStream("TIKA-3695.xml"));
         AutoDetectParserConfig config = tikaConfig.getAutoDetectParserConfig();
         MetadataWriteFilterFactory factory = config.getMetadataWriteFilterFactory();
-        assertEquals(241, ((StandardWriteFilterFactory) factory).getMaxEstimatedBytes());
+        assertEquals(241, ((StandardWriteFilterFactory) factory).getMaxTotalEstimatedBytes());
         AutoDetectParser parser = new AutoDetectParser(tikaConfig);
         String mock = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" +
                 "<mock>";
@@ -58,10 +64,10 @@ public class MetadataWriteFilterTest extends TikaTest {
         metadata = metadataList.get(0);
 
         String[] creators = metadata.getValues("dc:creator");
-        assertEquals(9, creators.length);
-        assertEquals("0123456", creators[8]);
+        assertEquals(2, creators.length);
+        assertEquals("0123", creators[1]);
         assertContainsCount(" hello ", metadata.get(TikaCoreProperties.TIKA_CONTENT), 30);
-        assertEquals("true", metadata.get(TikaCoreProperties.METADATA_LIMIT_REACHED));
+        assertEquals("true", metadata.get(TikaCoreProperties.TRUNCATED_METADATA));
     }
 
     @Test
@@ -70,7 +76,9 @@ public class MetadataWriteFilterTest extends TikaTest {
                 new TikaConfig(TikaConfigTest.class.getResourceAsStream("TIKA-3695-fields.xml"));
         AutoDetectParserConfig config = tikaConfig.getAutoDetectParserConfig();
         MetadataWriteFilterFactory factory = config.getMetadataWriteFilterFactory();
-        assertEquals(241, ((StandardWriteFilterFactory) factory).getMaxEstimatedBytes());
+        assertEquals(241, ((StandardWriteFilterFactory) factory).getMaxTotalEstimatedBytes());
+        assertEquals(999, ((StandardWriteFilterFactory) factory).getMaxKeySize());
+        assertEquals(10001, ((StandardWriteFilterFactory) factory).getMaxFieldSize());
         AutoDetectParser parser = new AutoDetectParser(tikaConfig);
         String mock = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" +
                 "<mock>";
@@ -97,10 +105,78 @@ public class MetadataWriteFilterTest extends TikaTest {
         String[] creators = metadata.getValues("dc:creator");
         assertEquals("abcdefghijabcdefghij", creators[0]);
 
-        //this gets more than the other test because this is filtering out X-TIKA:Parsed-By", etc.
-        assertEquals(12, creators.length);
-        assertEquals("012345", creators[11]);
+        //this gets more than the other test because this is filtering out some fields
+        assertEquals(3, creators.length);
+        assertEquals("012345678901234", creators[2]);
         assertContainsCount(" hello ", metadata.get(TikaCoreProperties.TIKA_CONTENT), 30);
-        assertEquals("true", metadata.get(TikaCoreProperties.METADATA_LIMIT_REACHED));
+        assertEquals("true", metadata.get(TikaCoreProperties.TRUNCATED_METADATA));
     }
+
+    @Test
+    public void testKeySizeFilter() throws Exception {
+        Metadata metadata = filter(10, 1000, 10000, null, true);
+        //test that must add keys are not truncated
+        metadata.add(TikaCoreProperties.TIKA_PARSED_BY, "some-long-parser1");
+        metadata.add(TikaCoreProperties.TIKA_PARSED_BY, "some-long-parser2");
+        metadata.add(TikaCoreProperties.TIKA_PARSED_BY, "some-long-parser3");
+        assertEquals(3, metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY).length);
+
+        metadata.add(OfficeOpenXMLExtended.DOC_SECURITY_STRING, "some doc-security-string");
+        //truncated to 10 bytes in UTF-16 = 5 characters
+        assertEquals("some doc-security-string", metadata.getValues("exten")[0]);
+
+        metadata.set(OfficeOpenXMLExtended.APP_VERSION, "some other string");
+        assertEquals("some other string", metadata.getValues("exten")[0]);
+    }
+
+    @Test
+    public void testAfterMaxHit() throws Exception {
+        String k = "dc:creator";//20 bytes
+        //key is > maxTotalBytes, so the value isn't even added
+        Metadata metadata = filter(100, 10000, 10, null, false);
+        metadata.set(k, "ab");
+        assertEquals(1, metadata.names().length);
+        assertEquals("true", metadata.get(TikaCoreProperties.TRUNCATED_METADATA));
+
+        metadata = filter(100, 10000, 50, null, false);
+        for (int i = 0; i < 10; i++) {
+            metadata.set(k, "abcde");
+        }
+
+        assertEquals(1, metadata.names().length);
+        assertEquals("abcde", metadata.getValues(k)[0]);
+        assertNull(metadata.get(TikaCoreProperties.TRUNCATED_METADATA));
+
+        metadata.add(k, "abcde");//40
+        metadata.add(k, "abc");//46
+        metadata.add(k, "abcde");//only the first character is taken from this
+        metadata.add(k, "abcde");//this shouldn't even be countenanced
+
+        assertEquals(2, metadata.names().length);
+        assertEquals(4, metadata.getValues(k).length);
+        assertEquals("abcde", metadata.getValues(k)[0]);
+        assertEquals("abcde", metadata.getValues(k)[1]);
+        assertEquals("abc", metadata.getValues(k)[2]);
+        assertEquals("a", metadata.getValues(k)[3]);
+        assertEquals("true", metadata.get(TikaCoreProperties.TRUNCATED_METADATA));
+
+        //this will force a reset of the total max bytes because
+        //this is a set, not an add.  This should get truncated at 15 chars = 30 bytes
+        metadata.set(k, "abcdefghijklmnopqrstuvwx");
+        assertEquals(2, metadata.names().length);
+        assertEquals(1, metadata.getValues(k).length);
+        assertEquals("abcdefghijklmno", metadata.getValues(k)[0]);
+        assertEquals("true", metadata.get(TikaCoreProperties.TRUNCATED_METADATA));
+    }
+
+    private Metadata filter(int maxKeySize, int maxFieldSize, int maxTotalBytes,
+                            Set<String> includeFields, boolean includeEmpty) {
+        MetadataWriteFilter filter = new StandardWriteFilter(maxKeySize, maxFieldSize,
+                maxTotalBytes, includeFields, includeEmpty);
+        Metadata metadata = new Metadata();
+        metadata.setMetadataWriteFilter(filter);
+        return metadata;
+    }
+
+
 }

@@ -35,6 +35,7 @@ import java.util.Properties;
 import java.util.TimeZone;
 
 import org.apache.tika.metadata.Property.PropertyType;
+import org.apache.tika.metadata.writefilter.MetadataWriteFilter;
 import org.apache.tika.utils.DateUtils;
 
 /**
@@ -242,13 +243,6 @@ public class Metadata
         return values;
     }
 
-    private String[] appendedValues(String[] values, final String value) {
-        String[] newValues = new String[values.length + 1];
-        System.arraycopy(values, 0, newValues, 0, values.length);
-        newValues[newValues.length - 1] = value;
-        return newValues;
-    }
-
     /**
      * Add a metadata name/value mapping. Add the specified value to the list of
      * values associated to the specified metadata name.
@@ -257,18 +251,7 @@ public class Metadata
      * @param value the metadata value.
      */
     public void add(final String name, final String value) {
-        if (!writeFilter.include(name, value)) {
-            return;
-        }
-        String[] values = metadata.get(name);
-        if (values == null) {
-            set(name, value);
-        } else {
-            String filtered = writeFilter.filter(name, value, metadata);
-            if (filtered != null) {
-                metadata.put(name, appendedValues(values, filtered));
-            }
-        }
+        writeFilter.add(name, value, metadata);
     }
 
     /**
@@ -348,18 +331,7 @@ public class Metadata
      * @param value the metadata value, or <code>null</code>
      */
     public void set(String name, String value) {
-        if (! writeFilter.include(name, value)) {
-            return;
-        }
-        if (value != null) {
-            metadata.remove(name);
-            String filtered = writeFilter.filter(name, value, metadata);
-            if (filtered != null) {
-                metadata.put(name, new String[]{filtered});
-            }
-        } else {
-            metadata.remove(name);
-        }
+        writeFilter.set(name, value, metadata);
     }
 
     protected void set(String name, String[] values) {
@@ -675,14 +647,35 @@ public class Metadata
         }
 
         @Override
-        public boolean include(String field, String value) {
-            return true;
+        public void add(String field, String value, Map<String, String[]> data) {
+            String[] values = data.get(field);
+            if (values == null) {
+                set(field, value, data);
+            } else {
+                data.put(field, appendValues(values, value));
+            }
         }
 
+        //legacy behavior -- remove the field if value is null
         @Override
-        public String filter(String field, String value, Map<String, String[]> data) {
-            return value;
+        public void set(String field, String value, Map<String, String[]> data) {
+            if (value != null) {
+                data.put(field, new String[]{ value });
+            } else {
+                data.remove(field);
+            }
         }
+
+        private String[] appendValues(String[] values, final String value) {
+            if (value == null) {
+                return values;
+            }
+            String[] newValues = new String[values.length + 1];
+            System.arraycopy(values, 0, newValues, 0, values.length);
+            newValues[newValues.length - 1] = value;
+            return newValues;
+        }
+
     }
 
 }

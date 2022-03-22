@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.metadata;
+package org.apache.tika.metadata.writefilter;
 
 public interface MetadataWriteFilterFactory {
     MetadataWriteFilter newInstance();
