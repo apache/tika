@@ -211,6 +211,7 @@
               !org.junit.*,
               !junit.*,
               org.apache.tika.fork,
+              org.apache.tika.metadata.writefilter,
               org.slf4j,
               org.slf4j.event,
               org.slf4j.helpers,

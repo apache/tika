@@ -86,9 +86,10 @@ public class StandardWriteFilter implements MetadataWriteFilter, Serializable {
         ALWAYS_ADD_FIELDS.add(TikaCoreProperties.TIKA_PARSED_BY.getName());
     }
 
-    private static String METADATA_TRUNCATED_KEY = TikaCoreProperties.TRUNCATED_METADATA.getName();
-    private static String TIKA_CONTENT_KEY = TikaCoreProperties.TIKA_CONTENT.getName();
-    private static String[] TRUE = new String[]{"true"};
+    private static final String METADATA_TRUNCATED_KEY =
+            TikaCoreProperties.TRUNCATED_METADATA.getName();
+    private static final String TIKA_CONTENT_KEY = TikaCoreProperties.TIKA_CONTENT.getName();
+    private static final String[] TRUE = new String[]{"true"};
 
     private final boolean includeEmpty;
     private final int maxTotalEstimatedSize;

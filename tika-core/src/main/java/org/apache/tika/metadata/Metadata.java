@@ -45,7 +45,43 @@ public class Metadata
         implements CreativeCommons, Geographic, HttpHeaders, Message, ClimateForcast, TIFF,
         TikaMimeKeys, Serializable {
 
-    private static final MetadataWriteFilter ACCEPT_ALL = new AcceptAll();
+
+    private static final MetadataWriteFilter ACCEPT_ALL = new MetadataWriteFilter() {
+        @Override
+        public void filterExisting(Map<String, String[]> data) {
+            //no-op
+        }
+
+        @Override
+        public void add(String field, String value, Map<String, String[]> data) {
+            String[] values = data.get(field);
+            if (values == null) {
+                set(field, value, data);
+            } else {
+                data.put(field, appendValues(values, value));
+            }
+        }
+
+        //legacy behavior -- remove the field if value is null
+        @Override
+        public void set(String field, String value, Map<String, String[]> data) {
+            if (value != null) {
+                data.put(field, new String[]{ value });
+            } else {
+                data.remove(field);
+            }
+        }
+
+        private String[] appendValues(String[] values, final String value) {
+            if (value == null) {
+                return values;
+            }
+            String[] newValues = new String[values.length + 1];
+            System.arraycopy(values, 0, newValues, 0, values.length);
+            newValues[newValues.length - 1] = value;
+            return newValues;
+        }
+    };
 
     /**
      * Serial version UID
@@ -61,7 +97,7 @@ public class Metadata
      */
     private Map<String, String[]> metadata = null;
 
-    //TODO: transient?
+
     private MetadataWriteFilter writeFilter = ACCEPT_ALL;
     /**
      * Constructs a new, empty metadata.
@@ -635,47 +671,4 @@ public class Metadata
         }
         return buf.toString();
     }
-
-    /**
-     * NO-OP write filter that accepts everything without modification.
-     */
-    private static class AcceptAll implements MetadataWriteFilter, Serializable {
-
-        @Override
-        public void filterExisting(Map<String, String[]> data) {
-            return;
-        }
-
-        @Override
-        public void add(String field, String value, Map<String, String[]> data) {
-            String[] values = data.get(field);
-            if (values == null) {
-                set(field, value, data);
-            } else {
-                data.put(field, appendValues(values, value));
-            }
-        }
-
-        //legacy behavior -- remove the field if value is null
-        @Override
-        public void set(String field, String value, Map<String, String[]> data) {
-            if (value != null) {
-                data.put(field, new String[]{ value });
-            } else {
-                data.remove(field);
-            }
-        }
-
-        private String[] appendValues(String[] values, final String value) {
-            if (value == null) {
-                return values;
-            }
-            String[] newValues = new String[values.length + 1];
-            System.arraycopy(values, 0, newValues, 0, values.length);
-            newValues[newValues.length - 1] = value;
-            return newValues;
-        }
-
-    }
-
 }

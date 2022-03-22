@@ -16,9 +16,10 @@
  */
 package org.apache.tika.metadata.writefilter;
 
+import java.io.Serializable;
 import java.util.Map;
 
-public interface MetadataWriteFilter {
+public interface MetadataWriteFilter extends Serializable {
 
     void filterExisting(Map<String, String[]> data);
 
