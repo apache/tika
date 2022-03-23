@@ -31,16 +31,31 @@ public class StandardWriteFilterFactory implements MetadataWriteFilterFactory {
     public static int DEFAULT_MAX_KEY_SIZE = 1024;
     public static int DEFAULT_MAX_FIELD_SIZE = 100 * 1024;
     public static int DEFAULT_TOTAL_ESTIMATED_BYTES = 10 * 1024 * 1024;
+    public static int DEFAULT_MAX_VALUES_PER_FIELD = 10;
 
     private Set<String> includeFields = null;
     private int maxKeySize = DEFAULT_MAX_KEY_SIZE;
     private int maxFieldSize = DEFAULT_MAX_FIELD_SIZE;
     private int maxTotalEstimatedBytes = DEFAULT_TOTAL_ESTIMATED_BYTES;
+    private int maxValuesPerField = DEFAULT_MAX_VALUES_PER_FIELD;
     private boolean includeEmpty = false;
 
     public MetadataWriteFilter newInstance() {
+
+        if (maxFieldSize < 0) {
+            throw new IllegalArgumentException("maxFieldSize must be > 0");
+        }
+
+        if (maxValuesPerField < 1) {
+            throw new IllegalArgumentException("maxValuesPerField must be > 0");
+        }
+
+        if (maxTotalEstimatedBytes < 0) {
+            throw new IllegalArgumentException("max estimated size must be > 0");
+        }
+
         return new StandardWriteFilter(maxKeySize, maxFieldSize,
-                maxTotalEstimatedBytes, includeFields, includeEmpty);
+                maxTotalEstimatedBytes, maxValuesPerField, includeFields, includeEmpty);
     }
 
     public void setIncludeFields(List<String> includeFields) {
@@ -65,8 +80,8 @@ public class StandardWriteFilterFactory implements MetadataWriteFilterFactory {
         this.includeEmpty = includeEmpty;
     }
 
-    public int getMaxTotalEstimatedBytes() {
-        return maxTotalEstimatedBytes;
+    public void setMaxValuesPerField(int maxValuesPerField) {
+        this.maxValuesPerField = maxValuesPerField;
     }
 
     public Set<String> getIncludeFields() {
@@ -81,6 +96,14 @@ public class StandardWriteFilterFactory implements MetadataWriteFilterFactory {
         return maxFieldSize;
     }
 
+    public int getMaxTotalEstimatedBytes() {
+        return maxTotalEstimatedBytes;
+    }
+
+    public int getMaxValuesPerField() {
+        return maxValuesPerField;
+    }
+
     public boolean isIncludeEmpty() {
         return includeEmpty;
     }
@@ -89,6 +112,7 @@ public class StandardWriteFilterFactory implements MetadataWriteFilterFactory {
     public String toString() {
         return "StandardWriteFilterFactory{" + "includeFields=" + includeFields + ", maxKeySize=" +
                 maxKeySize + ", maxFieldSize=" + maxFieldSize + ", maxTotalEstimatedBytes=" +
-                maxTotalEstimatedBytes + ", includeEmpty=" + includeEmpty + '}';
+                maxTotalEstimatedBytes + ", maxValuesPerField=" + maxValuesPerField +
+                ", includeEmpty=" + includeEmpty + '}';
     }
 }

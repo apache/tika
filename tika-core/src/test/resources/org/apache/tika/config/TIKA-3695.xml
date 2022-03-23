@@ -26,7 +26,7 @@
     </params>
     <metadataWriteFilterFactory class="org.apache.tika.metadata.writefilter.StandardWriteFilterFactory">
       <params>
-        <maxTotalEstimatedBytes>241</maxTotalEstimatedBytes>
+        <maxTotalEstimatedBytes>350</maxTotalEstimatedBytes>
       </params>
     </metadataWriteFilterFactory>
   </autoDetectParserConfig>

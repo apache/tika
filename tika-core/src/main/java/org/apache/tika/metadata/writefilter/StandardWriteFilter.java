@@ -34,19 +34,21 @@ import org.apache.tika.utils.StringUtils;
 
 /**
  * This is to be used to limit the amount of metadata that a
- * parser can add based on the {@link #maxTotalEstimatedSize}. The
- * maxEstimatedSize is measured in UTF-16 bytes.
+ * parser can add based on the {@link #maxTotalEstimatedSize},
+ * {@link #maxFieldSize}, {@link #maxValuesPerField}, and
+ * {@link #maxKeySize}.  This can also be used to limit which
+ * fields are stored in the metadata object at write-time
+ * with {@link #includeFields}.
  *
- * The size is estimated as a rough order of magnitude of what is
+ * All sizes are measured in UTF-16 bytes. The size is estimated
+ * as a rough order of magnitude of what is
  * required to store the string in memory in Java.  We recognize
  * that Java uses more bytes to store length, offset etc. for strings. But
- * the extra overhead varies by java version and implementation,
+ * the extra overhead varies by Java version and implementation,
  * and we just need a basic estimate.  We also recognize actual
  * memory usage is affected by interning strings, etc.
- * Please forgive us or consider writing your own write filter. :)
+ * Please forgive us ... or consider writing your own write filter. :)
  *
- * This can also be used to limit which fields are stored
- * in the metadata object at write-time with {@link #includeFields}.
  *
  * <b>NOTE:</b> Fields in {@link #ALWAYS_SET_FIELDS} are
  * always set no matter the current state of {@link #maxTotalEstimatedSize}.
@@ -57,6 +59,12 @@ import org.apache.tika.utils.StringUtils;
  * always added no matter the current state of {@link #maxTotalEstimatedSize}.
  * Except for {@link TikaCoreProperties#TIKA_CONTENT}, each addition is truncated at
  * {@link #maxFieldSize}, and their sizes contribute to the {@link #maxTotalEstimatedSize}.
+ *
+ * This class {@link #minimumMaxFieldSizeInAlwaysFields} to protect the
+ * {@link #ALWAYS_ADD_FIELDS} and {@link #ALWAYS_SET_FIELDS}. If we didn't
+ * have this and a user sets the {@link #maxFieldSize} to, say, 10 bytes,
+ * the internal parser behavior would be broken because parsers rely on
+ * {@link Metadata#CONTENT_TYPE} to determine which parser to call.
  *
  * <b>NOTE:</b> as with {@link Metadata}, this object is not thread safe.
  */
@@ -91,10 +99,18 @@ public class StandardWriteFilter implements MetadataWriteFilter, Serializable {
     private static final String TIKA_CONTENT_KEY = TikaCoreProperties.TIKA_CONTENT.getName();
     private static final String[] TRUE = new String[]{"true"};
 
+    //allow at least these many bytes in the "always" fields.
+    //As of 2022-03, the longest mime is 146.  Doubling that gives
+    //us some leeway.  If a mime is truncated, bad things will happen.
+    private final int minimumMaxFieldSizeInAlwaysFields = 300;
+
+
     private final boolean includeEmpty;
     private final int maxTotalEstimatedSize;
+    private final int maxValuesPerField;
     private final int maxFieldSize;
     private final int maxKeySize;
+
 
     private final Set<String> includeFields;
 
@@ -112,16 +128,15 @@ public class StandardWriteFilter implements MetadataWriteFilter, Serializable {
      * @param includeEmpty if <code>true</code>, this will set or add an empty value to the
      *                     metadata object.
      */
-    public StandardWriteFilter(int maxKeySize, int maxFieldSize, int maxEstimatedSize,
+    protected StandardWriteFilter(int maxKeySize, int maxFieldSize, int maxEstimatedSize,
+                               int maxValuesPerField,
                                Set<String> includeFields,
                                boolean includeEmpty) {
 
         this.maxKeySize = maxKeySize;
         this.maxFieldSize = maxFieldSize;
-        if (maxEstimatedSize < 0) {
-            throw new IllegalArgumentException("max estimated size must be > 0");
-        }
         this.maxTotalEstimatedSize = maxEstimatedSize;
+        this.maxValuesPerField = maxValuesPerField;
         this.includeFields = includeFields;
         this.includeEmpty = includeEmpty;
     }
@@ -170,14 +185,17 @@ public class StandardWriteFilter implements MetadataWriteFilter, Serializable {
             data.put(field, new String[]{ value });
             return;
         }
-        int addedSize = estimateSize(value);
+        int sizeToAdd = estimateSize(value);
+        //if the maxFieldSize is < minimumMaxFieldSizeInAlwaysFields, use the minmax
+        //we do not want to truncate a mime!
+        int alwaysMaxFieldLength = Math.max(minimumMaxFieldSizeInAlwaysFields, maxFieldSize);
         String toSet = value;
-        if (addedSize > maxFieldSize) {
-            toSet = truncate(value, maxFieldSize, data);
-            addedSize = estimateSize(toSet);
+        if (sizeToAdd > alwaysMaxFieldLength) {
+            toSet = truncate(value, alwaysMaxFieldLength, data);
+            sizeToAdd = estimateSize(toSet);
         }
         int totalAdded = data.containsKey(field) ? 0 : estimateSize(field);
-        totalAdded += addedSize;
+        totalAdded += sizeToAdd;
         if (data.containsKey(field)) {
             String[] vals = data.get(field);
             //this should only ever be single valued!!!
@@ -198,24 +216,22 @@ public class StandardWriteFilter implements MetadataWriteFilter, Serializable {
             setAlwaysInclude(field, value, data);
             return;
         }
-        int addedSize = estimateSize(value);
-        String toSet = value;
-        if (addedSize > maxFieldSize) {
-            toSet = truncate(value, maxFieldSize, data);
-            addedSize = estimateSize(toSet);
+        //TODO: should we limit the number of field values?
+
+        int toAddSize = estimateSize(value);
+        //if the maxFieldSize is < minimumMaxFieldSizeInAlwaysFields, use the minmax
+        //we do not want to truncate a mime!
+        int alwaysMaxFieldLength = Math.max(minimumMaxFieldSizeInAlwaysFields, maxFieldSize);
+        String toAddValue = value;
+        if (toAddSize > alwaysMaxFieldLength) {
+            toAddValue = truncate(value, alwaysMaxFieldLength, data);
+            toAddSize = estimateSize(toAddValue);
         }
         int totalAdded = data.containsKey(field) ? 0 : estimateSize(field);
-        totalAdded += addedSize;
-        if (data.containsKey(field)) {
-            String[] vals = data.get(field);
-            //this should only ever be single valued!!!
-            if (vals.length > 0) {
-                totalAdded -= estimateSize(vals[0]);
-            }
-        }
+        totalAdded += toAddSize;
         estimatedSize += totalAdded;
 
-        data.put(field, appendValue(data.get(field), toSet));
+        data.put(field, appendValue(data.get(field), toAddValue));
     }
 
 
@@ -253,6 +269,13 @@ public class StandardWriteFilter implements MetadataWriteFilter, Serializable {
         StringSizePair filterKey = filterKey(field, value, data);
         if (! data.containsKey(filterKey.string)) {
             setFilterKey(filterKey, value, data);
+            return;
+        }
+
+        String[] vals = data.get(filterKey.string);
+
+        if (vals != null && vals.length >= maxValuesPerField) {
+            setTruncated(data);
             return;
         }
 

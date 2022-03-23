@@ -29,6 +29,7 @@
         <maxKeySize>999</maxKeySize>
         <maxFieldSize>10001</maxFieldSize>
         <maxTotalEstimatedBytes>241</maxTotalEstimatedBytes>
+        <maxValuesPerField>100</maxValuesPerField>
         <includeFields>
           <field>dc:creator</field>
           <field>dc:title</field>
