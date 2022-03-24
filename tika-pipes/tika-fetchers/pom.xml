@@ -35,6 +35,7 @@
     <module>tika-fetcher-http</module>
     <module>tika-fetcher-s3</module>
     <module>tika-fetcher-gcs</module>
+    <module>tika-fetcher-az-blob</module>
   </modules>
 
   <scm>

@@ -6465,6 +6465,22 @@
     <sub-class-of type="text/x-tika-text-based-message"/>
   </mime-type>
 
+  <mime-type type="application/x-httpresponse">
+    <!-- sometimes PDFs and other files may include the http headers
+        from their retrieval.
+        -->
+    <magic priority="60">
+      <match value="HTTP/" type="string" offset="0">
+        <match value="\nCache-Control:" type="string" offset="0:1000"/>
+        <match value="\nContent-Type:" type="string" offset="0:1000"/>
+        <match value="\nContent-Length:" type="string" offset="0:1000"/>
+        <match value="\nContent-Disposition:" type="string" offset="0:1000"/>
+        <match value="\nDate:" type="string" offset="0:1000"/>
+        <match value="\nServer:" type="string" offset="0:1000"/>
+      </match>
+      <sub-class-of type="text/x-tika-text-based-message"/>
+    </magic>
+  </mime-type>
   <!-- TODO See TIKA-2723 for discussions on the mime type hierarchy -->
   <!--  and best parser structure for these email-like formats -->
   <mime-type type="multipart/related">

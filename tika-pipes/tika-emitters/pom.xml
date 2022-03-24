@@ -37,6 +37,7 @@
     <module>tika-emitter-solr</module>
     <module>tika-emitter-opensearch</module>
     <module>tika-emitter-gcs</module>
+    <module>tika-emitter-az-blob</module>
   </modules>
 
   <scm>
