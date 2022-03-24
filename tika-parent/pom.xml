@@ -398,6 +398,13 @@
         <version>0.9.1.2</version>
       </dependency>
       <dependency>
+        <groupId>com.azure</groupId>
+        <artifactId>azure-storage-blob</artifactId>
+        <!-- 12.15.0 introduces reams of convergence errors with
+             all sorts of netty components -->
+        <version>12.14.4</version>
+      </dependency>
+      <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-annotations</artifactId>
         <version>${jackson.version}</version>

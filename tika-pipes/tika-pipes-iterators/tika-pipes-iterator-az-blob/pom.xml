@@ -19,24 +19,19 @@
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <parent>
-    <artifactId>tika-emitters</artifactId>
     <groupId>org.apache.tika</groupId>
+    <artifactId>tika-pipes-iterators</artifactId>
     <version>2.4.0-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>tika-emitter-az-blob</artifactId>
-  <name>Apache Tika Azure blob</name>
+  <artifactId>tika-pipes-iterator-az-blob</artifactId>
 
+  <name>Apache Tika Pipes Iterator - Azure Blob Storage</name>
+  <url>https://tika.apache.org/</url>
 
   <dependencies>
-    <!-- should serialization be provided or bundled? -->
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-serialization</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-core</artifactId>
@@ -48,7 +43,6 @@
       <artifactId>azure-storage-blob</artifactId>
     </dependency>
   </dependencies>
-
   <build>
     <plugins>
       <plugin>
@@ -57,7 +51,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Automatic-Module-Name>org.apache.tika.pipes.emitter.azblob</Automatic-Module-Name>
+              <Automatic-Module-Name>org.apache.tika.pipes.pipesiterator.azblob</Automatic-Module-Name>
             </manifestEntries>
           </archive>
         </configuration>

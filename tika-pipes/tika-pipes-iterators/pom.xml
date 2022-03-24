@@ -39,6 +39,7 @@
     <module>tika-pipes-iterator-s3</module>
     <module>tika-pipes-iterator-solr</module>
     <module>tika-pipes-iterator-gcs</module>
+    <module>tika-pipes-iterator-az-blob</module>
   </modules>
 
   <scm>

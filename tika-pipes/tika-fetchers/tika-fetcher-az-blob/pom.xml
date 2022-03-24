@@ -38,7 +38,6 @@
         <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-storage-blob</artifactId>
-            <version>12.14.4</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -63,7 +62,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Automatic-Module-Name>org.apache.tika.pipes.fetcher.gcs</Automatic-Module-Name>
+                            <Automatic-Module-Name>org.apache.tika.pipes.fetcher.azblob</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
                 </configuration>

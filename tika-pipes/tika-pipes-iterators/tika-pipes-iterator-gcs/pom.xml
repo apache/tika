@@ -52,7 +52,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Automatic-Module-Name>org.apache.tika.pipes.pipesiterator.s3</Automatic-Module-Name>
+              <Automatic-Module-Name>org.apache.tika.pipes.pipesiterator.gcs</Automatic-Module-Name>
             </manifestEntries>
           </archive>
         </configuration>
