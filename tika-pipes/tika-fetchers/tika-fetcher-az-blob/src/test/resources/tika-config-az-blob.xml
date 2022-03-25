@@ -20,7 +20,9 @@
         <fetcher class="org.apache.tika.pipes.fetcher.azblob.AZBlobFetcher">
             <params>
                 <name>az-blob</name>
-                <!-- these have to be non-null -->
+                <!-- Either configure these three and send in the path for the blob OR
+                     do not configure any of these and send in the full SAS url for the blob
+                     as the fetchkey-->
                 <endpoint></endpoint>
                 <container></container>
                 <sasToken></sasToken>

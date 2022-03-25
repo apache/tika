@@ -26,6 +26,7 @@ import java.nio.file.Path;
 import java.util.Map;
 
 import com.azure.storage.blob.BlobClient;
+import com.azure.storage.blob.BlobClientBuilder;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
@@ -43,9 +44,17 @@ import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
+import org.apache.tika.utils.StringUtils;
 
 /**
- * Fetches files from Azure blob storage. Must set endpoint, sasToken and container via config.
+ * Fetches files from Azure blob storage.
+ *
+ * There are two modes:
+ * 1) If you are only using one endpoint and one sas token and one container,
+ *    configure those in the config file.  In this case, your fetchKey will
+ *    be the path in the container to the blob.
+ * 2) If you have different endpoints or sas tokens or containers across
+ *    your requests, your fetchKey will be the complete SAS url pointing to the blob.
  */
 public class AZBlobFetcher extends AbstractFetcher implements Initializable {
 
@@ -54,6 +63,7 @@ public class AZBlobFetcher extends AbstractFetcher implements Initializable {
     private String sasToken;
     private String container;
     private String endpoint;
+    private BlobClientFactory blobClientFactory;
     private boolean extractUserMetadata = true;
     private BlobServiceClient blobServiceClient;
     private BlobContainerClient blobContainerClient;
@@ -65,8 +75,7 @@ public class AZBlobFetcher extends AbstractFetcher implements Initializable {
         LOGGER.debug("about to fetch fetchkey={} from endpoint ({})", fetchKey, endpoint);
 
         try {
-            BlobClient blobClient = blobContainerClient.getBlobClient(fetchKey);
-            //TODO: extract other metadata, eg. md5, crc, etc.
+            BlobClient blobClient = blobClientFactory.getClient(fetchKey);
 
             if (extractUserMetadata) {
                 BlobProperties properties = blobClient.getProperties();
@@ -133,19 +142,54 @@ public class AZBlobFetcher extends AbstractFetcher implements Initializable {
      */
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
-        //TODO -- allow authentication via other methods
-        blobServiceClient = new BlobServiceClientBuilder()
-                .endpoint(endpoint)
-                .sasToken(sasToken)
-                .buildClient();
-        blobContainerClient = blobServiceClient.getBlobContainerClient(container);
+        if (!StringUtils.isBlank(sasToken)) {
+            LOGGER.debug("Setting up immutable endpoint, token and container");
+            blobClientFactory = new SingleBlobContainerFactory(endpoint, sasToken, container);
+        } else {
+            LOGGER.debug("Setting up blobclientfactory to recieve the full sas url for the blob");
+            blobClientFactory = new SASUrlFactory();
+        }
     }
 
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler)
             throws TikaConfigException {
-        mustNotBeEmpty("sasToken", this.sasToken);
-        mustNotBeEmpty("endpoint", this.endpoint);
-        mustNotBeEmpty("container", this.container);
+        //if the user has set one of these, they need to have set all of them
+        if (!StringUtils.isBlank(this.sasToken) ||
+                !StringUtils.isBlank(this.endpoint) || !StringUtils.isBlank(this.container)) {
+            mustNotBeEmpty("sasToken", this.sasToken);
+            mustNotBeEmpty("endpoint", this.endpoint);
+            mustNotBeEmpty("container", this.container);
+        }
+    }
+
+    private interface BlobClientFactory {
+        BlobClient getClient(String fetchKey);
+    }
+
+    private static class SingleBlobContainerFactory implements BlobClientFactory {
+        private final BlobContainerClient blobContainerClient;
+
+        private SingleBlobContainerFactory(String endpoint, String sasToken, String container) {
+            //TODO -- allow authentication via other methods
+            BlobServiceClient blobServiceClient = new BlobServiceClientBuilder()
+                    .endpoint(endpoint)
+                    .sasToken(sasToken)
+                    .buildClient();
+            blobContainerClient = blobServiceClient.getBlobContainerClient(container);
+        }
+
+        @Override
+        public BlobClient getClient(String fetchKey) {
+            return blobContainerClient.getBlobClient(fetchKey);
+        }
+    }
+
+    private static class SASUrlFactory implements BlobClientFactory {
+
+        @Override
+        public BlobClient getClient(String fetchKey) {
+            return new BlobClientBuilder().connectionString(fetchKey).buildClient();
+        }
     }
 }
