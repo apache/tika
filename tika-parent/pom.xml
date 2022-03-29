@@ -288,7 +288,7 @@
     <rat.version>0.13</rat.version>
 
     <!-- dependency versions -->
-    <aws.version>1.12.178</aws.version>
+    <aws.version>1.12.188</aws.version>
     <asm.version>9.2</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
@@ -312,7 +312,7 @@
     <!-- fakeload versions &gt; 0.4.0 require java > 8 -->
     <fakeload.version>0.4.0</fakeload.version>
     <geoapi.version>3.0.1</geoapi.version>
-    <google.cloud.version>2.4.1</google.cloud.version>
+    <google.cloud.version>2.5.1</google.cloud.version>
     <gson.version>2.9.0</gson.version>
     <guava.version>31.1-jre</guava.version>
     <h2.version>2.1.210</h2.version>
@@ -332,7 +332,7 @@
     <jempbox.version>1.8.16</jempbox.version>
     <jetty.version>9.4.45.v20220203</jetty.version>
     <jhighlight.version>1.0.3</jhighlight.version>
-    <jna.version>5.10.0</jna.version>
+    <jna.version>5.11.0</jna.version>
     <joda.time.version>2.10.10</joda.time.version>
     <json.simple.version>1.1.1</json.simple.version>
     <junit4.version>4.13.2</junit4.version>
@@ -370,7 +370,7 @@
     <!-- we'll need to stay on 1.7 until we're java modularized ? -->
     <slf4j.version>1.7.36</slf4j.version>
     <solrj.version>8.11.1</solrj.version>
-    <spring.version>5.3.16</spring.version>
+    <spring.version>5.3.17</spring.version>
     <sqlite.version>3.36.0.3</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
     <test.containers.version>1.16.3</test.containers.version>
@@ -623,7 +623,7 @@
       <dependency>
         <groupId>org.netpreserve</groupId>
         <artifactId>jwarc</artifactId>
-        <version>0.17.0</version>
+        <version>0.17.2</version>
       </dependency>
       <dependency>
         <groupId>org.ops4j.base</groupId>
