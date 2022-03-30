@@ -15,6 +15,9 @@ Release 2.4.0 - ???
 
    * Add a fetcher and emitter for Azure blob storage (TIKA-3707).
 
+   * Add an optional /eval endpoint for tika-eval profile or compare
+     capabilities in tika-server (TIKA-3689).
+
    * Upgrade deeplearning4j to 1.0.0-M2 (TIKA-3458 and PR#527).
 
    * Various dependency upgrades, including POI, dl4j, gson, jackson,
