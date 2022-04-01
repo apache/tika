@@ -24,9 +24,12 @@
       <spoolToDisk>12345</spoolToDisk>
       <outputThreshold>6789</outputThreshold>
     </params>
-    <metadataWriteFilterFactory class="org.apache.tika.metadata.StandardWriteFilterFactory">
+    <metadataWriteFilterFactory class="org.apache.tika.metadata.writefilter.StandardWriteFilterFactory">
       <params>
-        <maxEstimatedBytes>241</maxEstimatedBytes>
+        <maxKeySize>999</maxKeySize>
+        <maxFieldSize>10001</maxFieldSize>
+        <maxTotalEstimatedBytes>241</maxTotalEstimatedBytes>
+        <maxValuesPerField>100</maxValuesPerField>
         <includeFields>
           <field>dc:creator</field>
           <field>dc:title</field>

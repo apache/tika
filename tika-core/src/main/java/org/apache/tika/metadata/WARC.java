@@ -16,27 +16,16 @@
  */
 package org.apache.tika.metadata;
 
-import java.util.Map;
+public interface WARC {
+    String PREFIX = "warc" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
-public interface MetadataWriteFilter {
+    Property WARC_WARNING = Property.externalTextBag(PREFIX + "warning");
 
-    void filterExisting(Map<String, String[]> data);
+    Property WARC_RECORD_CONTENT_TYPE = Property.externalText(PREFIX + "record-content-type");
 
-    boolean include(String field, String value);
+    Property WARC_PAYLOAD_CONTENT_TYPE = Property.externalText(PREFIX + "payload-content-type");
 
-    /**
-     * Based on the field and value, this filter modifies the value
-     * to something that should be set or added to the Metadata object.
-     *
-     * If the value is <code>null</code>, no value is set or added.
-     *
-     * Status updates (e.g. write limit reached) can be added directly to the
-     * underlying metadata.
-     *
-     * @param field
-     * @param value
-     * @param data
-     * @return
-     */
-    String filter(String field, String value, Map<String, String[]> data);
+    Property WARC_RECORD_ID = Property.externalText(PREFIX + "WARC-Record-ID");
+
+    //TODO: lots
 }

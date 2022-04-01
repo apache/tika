@@ -23,7 +23,7 @@ import org.w3c.dom.Element;
 
 import org.apache.tika.config.ConfigBase;
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.metadata.MetadataWriteFilterFactory;
+import org.apache.tika.metadata.writefilter.MetadataWriteFilterFactory;
 
 /**
  * This config object can be used to tune how conservative we want to be

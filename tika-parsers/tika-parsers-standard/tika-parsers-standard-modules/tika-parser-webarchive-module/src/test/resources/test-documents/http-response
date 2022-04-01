@@ -1,0 +1,18 @@
+HTTP/1.1 200 OK
+Cache-Control: private
+Pragma: Public
+Content-Type: text/html; charset=UTF-8
+Server: Microsoft-IIS/7.5
+Content-Disposition: inline; filename=something.html
+X-AspNet-Version: 2.0.50727
+X-Powered-By: ASP.NET
+Date: Fri, 18 Sep 2015 17:30:08 GMT
+Content-Length: 136
+
+
+<html>
+ <head>
+ <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+ </head>
+ <body>this is some content</body>
+</html>

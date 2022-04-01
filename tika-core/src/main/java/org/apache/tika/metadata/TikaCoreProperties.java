@@ -63,6 +63,11 @@ public interface TikaCoreProperties {
      */
     String TIKA_META_EXCEPTION_PREFIX = TIKA_META_PREFIX + "EXCEPTION" + NAMESPACE_PREFIX_DELIMITER;
 
+    /**
+     * Use this to store warnings that happened during the parse.
+     */
+    String TIKA_META_WARN_PREFIX = TIKA_META_PREFIX + "WARN" + NAMESPACE_PREFIX_DELIMITER;
+
     //exception in main file
     Property CONTAINER_EXCEPTION =
             Property.internalText(TIKA_META_EXCEPTION_PREFIX + "container_exception");
@@ -82,8 +87,13 @@ public interface TikaCoreProperties {
     Property TIKA_META_EXCEPTION_WARNING =
             Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX + "warn");
 
-    Property METADATA_LIMIT_REACHED =
-            Property.internalBoolean(TIKA_META_EXCEPTION_PREFIX + "metadata_limit_reached");
+    /**
+     * This means that metadata keys or metadata values were truncated.
+     * If there is an "include" filter, this should not be set if
+     * a field is not in the "include" set.
+     */
+    Property TRUNCATED_METADATA =
+            Property.internalBoolean(TIKA_META_WARN_PREFIX + "truncated_metadata");
 
     /**
      * Use this to store exceptions caught while trying to read the

@@ -24,9 +24,9 @@
       <spoolToDisk>12345</spoolToDisk>
       <outputThreshold>6789</outputThreshold>
     </params>
-    <metadataWriteFilterFactory class="org.apache.tika.metadata.StandardWriteFilterFactory">
+    <metadataWriteFilterFactory class="org.apache.tika.metadata.writefilter.StandardWriteFilterFactory">
       <params>
-        <maxEstimatedBytes>241</maxEstimatedBytes>
+        <maxTotalEstimatedBytes>350</maxTotalEstimatedBytes>
       </params>
     </metadataWriteFilterFactory>
   </autoDetectParserConfig>
