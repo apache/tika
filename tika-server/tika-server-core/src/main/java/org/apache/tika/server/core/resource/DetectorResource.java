@@ -73,7 +73,7 @@ public class DetectorResource {
             LOG.error("OOM while detecting: ({})", filename, e);
             serverStatus.setStatus(ServerStatus.STATUS.ERROR);
             throw e;
-        } catch (Throwable e){
+        } catch (Throwable e) {
             LOG.error("Exception while detecting: ({})", filename, e);
             throw e;
         } finally {
