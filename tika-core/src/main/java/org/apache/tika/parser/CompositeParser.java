@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -280,11 +281,19 @@ public class CompositeParser extends AbstractParser {
                       ParseContext context) throws IOException, SAXException, TikaException {
         Parser parser = getParser(metadata, context);
         TemporaryResources tmp = new TemporaryResources();
+        ParserRecord parserRecord = context.get(ParserRecord.class);
+        if (parserRecord == null) {
+            parserRecord = new ParserRecord();
+            context.set(ParserRecord.class, parserRecord);
+        }
         try {
             TikaInputStream taggedStream = TikaInputStream.get(stream, tmp);
             TaggedContentHandler taggedHandler =
                     handler != null ? new TaggedContentHandler(handler) : null;
-            ParserUtils.recordParserDetails(parser, metadata);
+            String parsreClassName = ParserUtils.getParserClassname(parser);
+            parserRecord.add(parsreClassName);
+            ParserUtils.recordParserDetails(parsreClassName, metadata);
+            parserRecord.beforeParse();
             try {
                 parser.parse(taggedStream, taggedHandler, metadata, context);
             } catch (SecurityException e) {
@@ -304,7 +313,35 @@ public class CompositeParser extends AbstractParser {
             }
         } finally {
             tmp.dispose();
+            parserRecord.afterParse();
+            if (parserRecord.getDepth() == 0) {
+                metadata.set(TikaCoreProperties.TIKA_PARSED_BY_FULL_SET, parserRecord.getParsers());
+            }
         }
     }
 
+    private static class ParserRecord {
+        int depth = 0;
+        Set<String> parsers = new LinkedHashSet<>();
+
+        void beforeParse() {
+            depth++;
+        }
+
+        void afterParse() {
+            depth--;
+        }
+
+        int getDepth() {
+            return depth;
+        }
+
+        String[] getParsers() {
+            return parsers.toArray(new String[0]);
+        }
+
+        void add(String parserClass) {
+            parsers.add(parserClass);
+        }
+    }
 }

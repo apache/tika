@@ -103,6 +103,13 @@ public interface TikaCoreProperties {
     Property TIKA_META_EXCEPTION_EMBEDDED_STREAM =
             Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX + "embedded_stream_exception");
     Property TIKA_PARSED_BY = Property.internalTextBag(TIKA_META_PREFIX + "Parsed-By");
+
+    /**
+     * Use this to store a record of all parsers that touched a given file
+     * in the container file's metadata.
+     */
+    Property TIKA_PARSED_BY_FULL_SET = Property.internalTextBag(TIKA_META_PREFIX + "Parsed-By-Full-Set");
+
     String RESOURCE_NAME_KEY = "resourceName";
     String PROTECTED = "protected";
     String EMBEDDED_RELATIONSHIP_ID = "embeddedRelationshipId";
