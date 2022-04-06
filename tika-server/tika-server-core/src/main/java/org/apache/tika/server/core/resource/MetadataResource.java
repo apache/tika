@@ -65,7 +65,8 @@ public class MetadataResource {
                                 @Context UriInfo info) throws Exception {
         Metadata metadata = new Metadata();
         return Response
-                .ok(parseMetadata(TikaResource.getInputStream(is, metadata, httpHeaders), metadata,
+                .ok(parseMetadata(TikaResource.getInputStream(is, metadata, httpHeaders, info),
+                        metadata,
                         httpHeaders.getRequestHeaders(), info)).build();
     }
 
@@ -105,7 +106,7 @@ public class MetadataResource {
         Metadata metadata = new Metadata();
         boolean success = false;
         try {
-            parseMetadata(TikaResource.getInputStream(is, metadata, httpHeaders), metadata,
+            parseMetadata(TikaResource.getInputStream(is, metadata, httpHeaders, info), metadata,
                     httpHeaders.getRequestHeaders(), info);
             // once we've parsed the document successfully, we should use NOT_FOUND
             // if we did not see the field

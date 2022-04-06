@@ -63,7 +63,7 @@ public class DetectorResource {
         long taskId = serverStatus.start(ServerStatus.TASK.DETECT, filename, timeoutMillis);
 
         try (TikaInputStream tis = TikaInputStream
-                .get(TikaResource.getInputStream(is, met, httpHeaders))) {
+                .get(TikaResource.getInputStream(is, met, httpHeaders, info))) {
             return TikaResource.getConfig().getDetector().detect(tis, met).toString();
         } catch (IOException e) {
             LOG.warn("Unable to detect MIME type for file. Reason: {} ({})", e.getMessage(),

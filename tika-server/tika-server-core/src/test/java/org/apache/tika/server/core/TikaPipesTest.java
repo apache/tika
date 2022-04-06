@@ -48,7 +48,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -169,7 +168,7 @@ public class TikaPipesTest extends CXFTestBase {
     }
 
     @Override
-    protected InputStreamFactory getInputStreamFactory(TikaConfig tikaConfig) {
+    protected InputStreamFactory getInputStreamFactory(InputStream tikaConfigInputStream) {
         return new FetcherStreamFactory(FETCHER_MANAGER);
     }
 

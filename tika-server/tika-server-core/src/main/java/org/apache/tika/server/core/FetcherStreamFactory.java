@@ -19,6 +19,8 @@ package org.apache.tika.server.core;
 import java.io.IOException;
 import java.io.InputStream;
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.UriInfo;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -52,12 +54,13 @@ public class FetcherStreamFactory implements InputStreamFactory {
     }
 
     @Override
-    public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders)
-            throws IOException {
-        String fetcherName = httpHeaders.getHeaderString("fetcherName");
-        String fetchKey = httpHeaders.getHeaderString("fetchKey");
-        long fetchRangeStart = getLong(httpHeaders.getHeaderString("fetchRangeStart"));
-        long fetchRangeEnd = getLong(httpHeaders.getHeaderString("fetchRangeEnd"));
+    public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders,
+                                      UriInfo uriInfo) throws IOException {
+        MultivaluedMap params = (uriInfo == null) ? null : uriInfo.getQueryParameters();
+        String fetcherName = getParam("fetcherName", httpHeaders, params);
+        String fetchKey = getParam("fetchKey", httpHeaders, params);
+        long fetchRangeStart = getLong(getParam("fetchRangeStart", httpHeaders, params));
+        long fetchRangeEnd = getLong(getParam("fetchRangeEnd", httpHeaders, params));
         if (StringUtils.isBlank(fetcherName) != StringUtils.isBlank(fetchKey)) {
             throw new IOException("Must specify both a 'fetcherName' and a 'fetchKey'. I see: " +
                     " fetcherName:" + fetcherName + " and fetchKey:" + fetchKey);
@@ -91,6 +94,21 @@ public class FetcherStreamFactory implements InputStreamFactory {
             }
         }
         return is;
+    }
+
+    private String getParam(String paramName, HttpHeaders httpHeaders, MultivaluedMap uriParams) {
+        if (uriParams == null || ! uriParams.containsKey(paramName)) {
+            return httpHeaders.getHeaderString(paramName);
+        }
+
+        return (String)uriParams.getFirst(paramName);
+    }
+
+    @Override
+    public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders)
+            throws IOException {
+        return getInputStream(is, metadata, httpHeaders, null);
+
     }
 
     /**

@@ -9,6 +9,9 @@ Release 2.4.0 - ???
    * Add MetadataWriteFilter capability to improve memory profile in
      Metadata objects (TIKA-3695).
 
+   * Allow specification of fetcherName and fetchKey via query parameters
+     in request URI in tika-server (TIKA-3714).
+
    * Add basic parsers for WARC and WACZ in tika-parsers-standard (TIKA-3697).
 
    * Add detection for Frictionless Data packages and WACZ (TIKA-3696).

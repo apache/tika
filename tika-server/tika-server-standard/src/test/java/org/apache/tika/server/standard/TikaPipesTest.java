@@ -42,7 +42,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -95,6 +94,8 @@ public class TikaPipesTest extends CXFTestBase {
         TIKA_PIPES_LOG4j2_PATH = Files.createTempFile(TMP_DIR, "log4j2-", ".xml");
         Files.copy(TikaPipesTest.class.getResourceAsStream("/log4j2.xml"), TIKA_PIPES_LOG4j2_PATH,
                 StandardCopyOption.REPLACE_EXISTING);
+
+        //TODO: templatify this config
         TIKA_CONFIG_XML =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" +
                         "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" +
@@ -157,7 +158,8 @@ public class TikaPipesTest extends CXFTestBase {
     }
 
     @Override
-    protected InputStreamFactory getInputStreamFactory(TikaConfig tikaConfig) {
+    protected InputStreamFactory getInputStreamFactory(InputStream is) {
+        //TODO: fix this to read from the is
         return new FetcherStreamFactory(FETCHER_MANAGER);
     }
 

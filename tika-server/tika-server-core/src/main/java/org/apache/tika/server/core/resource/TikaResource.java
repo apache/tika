@@ -153,9 +153,9 @@ public class TikaResource {
     }
 
     public static InputStream getInputStream(InputStream is, Metadata metadata,
-                                             HttpHeaders headers) {
+                                             HttpHeaders headers, UriInfo uriInfo) {
         try {
-            return INPUTSTREAM_FACTORY.getInputStream(is, metadata, headers);
+            return INPUTSTREAM_FACTORY.getInputStream(is, metadata, headers, uriInfo);
         } catch (IOException e) {
             throw new TikaServerParseException(e);
         }
@@ -473,7 +473,7 @@ public class TikaResource {
     public StreamingOutput getText(final InputStream is, @Context HttpHeaders httpHeaders,
                                    @Context final UriInfo info) {
         final Metadata metadata = new Metadata();
-        return produceText(getInputStream(is, metadata, httpHeaders), metadata,
+        return produceText(getInputStream(is, metadata, httpHeaders, info), metadata,
                 httpHeaders.getRequestHeaders(), info);
     }
 
@@ -515,7 +515,7 @@ public class TikaResource {
     public StreamingOutput getHTML(final InputStream is, @Context HttpHeaders httpHeaders,
                                    @Context final UriInfo info) {
         Metadata metadata = new Metadata();
-        return produceOutput(getInputStream(is, metadata, httpHeaders), metadata,
+        return produceOutput(getInputStream(is, metadata, httpHeaders, info), metadata,
                 httpHeaders.getRequestHeaders(), info, "html");
     }
 
@@ -536,7 +536,7 @@ public class TikaResource {
     public StreamingOutput getXML(final InputStream is, @Context HttpHeaders httpHeaders,
                                   @Context final UriInfo info) {
         Metadata metadata = new Metadata();
-        return produceOutput(getInputStream(is, metadata, httpHeaders), metadata,
+        return produceOutput(getInputStream(is, metadata, httpHeaders, info), metadata,
                 httpHeaders.getRequestHeaders(), info, "xml");
     }
 
@@ -551,7 +551,8 @@ public class TikaResource {
                                                      String handlerTypeName)
             throws IOException, TikaException {
         Metadata metadata = new Metadata();
-        parseToMetadata(getInputStream(att.getObject(InputStream.class), metadata, httpHeaders),
+        parseToMetadata(getInputStream(
+                att.getObject(InputStream.class), metadata, httpHeaders, info),
                 metadata, preparePostHeaderMap(att, httpHeaders), info, handlerTypeName);
         TikaResource.getConfig().getMetadataFilter().filter(metadata);
         return metadata;
@@ -567,7 +568,7 @@ public class TikaResource {
                                                String handlerTypeName)
             throws IOException, TikaException {
         Metadata metadata = new Metadata();
-        parseToMetadata(getInputStream(is, metadata, httpHeaders), metadata,
+        parseToMetadata(getInputStream(is, metadata, httpHeaders, info), metadata,
                 httpHeaders.getRequestHeaders(), info, handlerTypeName);
         TikaResource.getConfig().getMetadataFilter().filter(metadata);
         return metadata;
