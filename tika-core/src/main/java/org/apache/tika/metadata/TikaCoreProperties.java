@@ -110,6 +110,15 @@ public interface TikaCoreProperties {
      */
     Property TIKA_PARSED_BY_FULL_SET = Property.internalTextBag(TIKA_META_PREFIX + "Parsed-By-Full-Set");
 
+    Property TIKA_DETECTED_LANGUAGE = Property.externalTextBag(TIKA_META_PREFIX +
+            "detected_language");
+
+    Property TIKA_DETECTED_LANGUAGE_CONFIDENCE = Property.externalTextBag(TIKA_META_PREFIX +
+            "detected_language_confidence");
+
+    Property TIKA_DETECTED_LANGUAGE_CONFIDENCE_RAW = Property.externalRealSeq(TIKA_META_PREFIX +
+            "detected_language_confidence_raw");
+
     String RESOURCE_NAME_KEY = "resourceName";
     String PROTECTED = "protected";
     String EMBEDDED_RELATIONSHIP_ID = "embeddedRelationshipId";

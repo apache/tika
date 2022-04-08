@@ -27,6 +27,8 @@ Release 2.4.0 - ???
    * Add a Parsed-By-Full-Set metadata item to record all parsers that processed
      a file (TIKA-3716).
 
+   * Add metadata filters for Optimaize and OpenNLP language detectors (TIKA-3717).
+
    * Upgrade deeplearning4j to 1.0.0-M2 (TIKA-3458 and PR#527).
 
    * Various dependency upgrades, including POI, dl4j, gson, jackson,

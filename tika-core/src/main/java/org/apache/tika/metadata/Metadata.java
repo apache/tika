@@ -536,10 +536,6 @@ public class Metadata
      * @since Apache Tika 0.8
      */
     public void set(Property property, double value) {
-        if (property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
-            throw new PropertyTypeException(Property.PropertyType.SIMPLE,
-                    property.getPrimaryProperty().getPropertyType());
-        }
         if (property.getPrimaryProperty().getValueType() != Property.ValueType.REAL &&
                 property.getPrimaryProperty().getValueType() != Property.ValueType.RATIONAL) {
             throw new PropertyTypeException(Property.ValueType.REAL,
