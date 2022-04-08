@@ -286,7 +286,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                 }
                 if (attachment.getAttachmentDirectory() != null) {
                     handleEmbeddedOfficeDoc(attachment.getAttachmentDirectory().getDirectory(),
-                            xhtml);
+                            xhtml, true);
                 }
 
                 xhtml.endElement("div");

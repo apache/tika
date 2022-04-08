@@ -28,10 +28,14 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.microsoft.ooxml.OOXMLParserTest;
 import org.apache.tika.sax.BodyContentHandler;
 
 /**
@@ -88,6 +92,27 @@ public class ZipParserTest extends AbstractPkgTest {
 
         assertTrue(relIDs.allRelIDs.contains("test1.txt"));
         assertTrue(relIDs.allRelIDs.contains("test2.txt"));
+    }
+
+    @Test
+    public void testConfiguringEmbeddedDocExtractor() throws Exception {
+
+        TikaConfig tikaConfig = null;
+        try (InputStream is = OOXMLParserTest.class.getResourceAsStream(
+                "/configs/tika-config-no-names.xml")) {
+            tikaConfig = new TikaConfig(is);
+        }
+        Parser p = new AutoDetectParser(tikaConfig);
+        String xml = getXML("testEmbedded.zip", p).xml;
+        assertNotContained("<h1>image3.jpg</h1>", xml);
+
+        try (InputStream is = OOXMLParserTest.class.getResourceAsStream(
+                "/configs/tika-config-with-names.xml")) {
+            tikaConfig = new TikaConfig(is);
+        }
+        p = new AutoDetectParser(tikaConfig);
+        xml = getXML("testPPT_EmbeddedPDF.pptx", p).xml;
+        assertContains("<h1>image3.jpg</h1>", xml);
     }
 
     @Test

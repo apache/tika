@@ -16,19 +16,15 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
-import java.io.InputStream;
 import java.util.List;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 
 public class OOXMLParserTest extends TikaTest {
@@ -69,27 +65,5 @@ public class OOXMLParserTest extends TikaTest {
     public void testCorruptedZip() throws Exception {
         //TIKA_2446
         getRecursiveMetadata("testZIP_corrupted_oom.zip");
-    }
-
-    @Test
-    public void testConfiguringEmbeddedDocExtractor() throws Exception {
-
-        TikaConfig tikaConfig = null;
-        try (InputStream is = OOXMLParserTest.class.getResourceAsStream(
-                "/configs/tika-config-no-names.xml")) {
-            tikaConfig = new TikaConfig(is);
-        }
-        Parser p = new AutoDetectParser(tikaConfig);
-        String xml = getXML("testPPT_EmbeddedPDF.pptx", p).xml;
-        assertNotContained("<h1>/docProps/thumbnail.jpeg</h1>", xml);
-
-        try (InputStream is = OOXMLParserTest.class.getResourceAsStream(
-                "/configs/tika-config-with-names.xml")) {
-            tikaConfig = new TikaConfig(is);
-        }
-        p = new AutoDetectParser(tikaConfig);
-        xml = getXML("testPPT_EmbeddedPDF.pptx", p).xml;
-        assertContains("<h1>/docProps/thumbnail.jpeg</h1>", xml);
-        System.out.println(xml);
     }
 }

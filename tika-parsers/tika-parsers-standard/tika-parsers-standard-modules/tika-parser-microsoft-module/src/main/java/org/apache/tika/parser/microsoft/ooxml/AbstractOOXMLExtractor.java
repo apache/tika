@@ -184,7 +184,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
                 if (embeddedExtractor.shouldParseEmbedded(thumbnailMetadata)) {
                     embeddedExtractor.parseEmbedded(TikaInputStream.get(tStream),
-                            new EmbeddedContentHandler(handler), thumbnailMetadata, true);
+                            new EmbeddedContentHandler(handler), thumbnailMetadata, false);
                 }
 
                 tStream.close();

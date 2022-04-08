@@ -18,6 +18,12 @@ Release 2.4.0 - ???
 
    * Add a fetcher and emitter for Azure blob storage (TIKA-3707).
 
+   * Allow configurability of the EmbeddedDocumentExtractor used
+     by the AutoDetectParser (TIKA-3711).
+
+   * Fixed regression in 2.3.0 that led to more embedded filenames
+     than appropriate being written to the content (TIKA-3711).
+
    * tika-server now clones forking process' environment variables
      into forked process (TIKA-3715).
 

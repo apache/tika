@@ -255,7 +255,7 @@ public class WordMLParser extends AbstractXML2003Parser {
                 }
                 handler.startElement(XHTMLContentHandler.XHTML, IMG, IMG, attrs);
                 handler.endElement(XHTMLContentHandler.XHTML, IMG, IMG);
-                handleEmbedded();
+                handleEmbedded(false);
             } else if (BIN_DATA.equals(localName)) {
                 inBin = false;
                 boolean success = false;
@@ -269,12 +269,12 @@ public class WordMLParser extends AbstractXML2003Parser {
                     buffer.setLength(0);
                 }
                 if (success && !inPict) {
-                    handleEmbedded();
+                    handleEmbedded(true);
                 }
             }
         }
 
-        private void handleEmbedded() throws SAXException {
+        private void handleEmbedded(boolean outputHtml) throws SAXException {
             if (rawBytes != null) {
                 try (TikaInputStream is = TikaInputStream.get(rawBytes)) {
                     Metadata metadata = new Metadata();
@@ -285,7 +285,7 @@ public class WordMLParser extends AbstractXML2003Parser {
                         metadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, pictSource);
                     }
                     if (embeddedDocumentExtractor.shouldParseEmbedded(metadata)) {
-                        embeddedDocumentExtractor.parseEmbedded(is, handler, metadata, true);
+                        embeddedDocumentExtractor.parseEmbedded(is, handler, metadata, outputHtml);
                     }
                 } catch (IOException e) {
                     //log

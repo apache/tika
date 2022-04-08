@@ -221,7 +221,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             DirectoryEntry op = (DirectoryEntry) root.getEntry("ObjectPool");
             for (Entry entry : op) {
                 if (entry.getName().startsWith("_") && entry instanceof DirectoryEntry) {
-                    handleEmbeddedOfficeDoc((DirectoryEntry) entry, xhtml);
+                    handleEmbeddedOfficeDoc((DirectoryEntry) entry, xhtml, true);
                 }
             }
 
