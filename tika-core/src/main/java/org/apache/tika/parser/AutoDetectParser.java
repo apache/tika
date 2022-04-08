@@ -28,7 +28,6 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.ZeroByteFileException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -172,16 +171,7 @@ public class AutoDetectParser extends CompositeParser {
                     handler != null ?
                         createSecureContentHandler(handler, tis, autoDetectParserConfig) : null;
 
-            //pass self to handle embedded documents if
-            //the caller hasn't specified one.
-            if (context.get(EmbeddedDocumentExtractor.class) == null) {
-                Parser p = context.get(Parser.class);
-                if (p == null) {
-                    context.set(Parser.class, this);
-                }
-                context.set(EmbeddedDocumentExtractor.class,
-                        new ParsingEmbeddedDocumentExtractor(context));
-            }
+            initializeEmbeddedDocumentExtractor(metadata, context);
 
             try {
                 // Parse the document
@@ -194,6 +184,22 @@ public class AutoDetectParser extends CompositeParser {
         } finally {
             tmp.dispose();
         }
+    }
+
+    private void initializeEmbeddedDocumentExtractor(Metadata metadata, ParseContext context) {
+        if (context.get(EmbeddedDocumentExtractor.class) != null) {
+            return;
+        }
+        //pass self to handle embedded documents if
+        //the caller hasn't specified one.
+        Parser p = context.get(Parser.class);
+        if (p == null) {
+            context.set(Parser.class, this);
+        }
+        EmbeddedDocumentExtractor edx =
+                autoDetectParserConfig.getEmbeddedDocumentExtractorFactory()
+                        .newInstance(metadata, context);
+        context.set(EmbeddedDocumentExtractor.class, edx);
     }
 
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata)

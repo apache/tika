@@ -23,6 +23,8 @@ import org.w3c.dom.Element;
 
 import org.apache.tika.config.ConfigBase;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
+import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractorFactory;
 import org.apache.tika.metadata.writefilter.MetadataWriteFilterFactory;
 
 /**
@@ -71,6 +73,9 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
     private Integer maximumPackageEntryDepth = null;
 
     private MetadataWriteFilterFactory metadataWriteFilterFactory = null;
+
+    private EmbeddedDocumentExtractorFactory embeddedDocumentExtractorFactory =
+            new ParsingEmbeddedDocumentExtractorFactory();
 
     /**
      *  Creates a SecureContentHandlerConfig using the passed in parameters.
@@ -141,6 +146,15 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
 
     public void setMetadataWriteFilterFactory(MetadataWriteFilterFactory metadataWriteFilterFactory) {
         this.metadataWriteFilterFactory = metadataWriteFilterFactory;
+    }
+    
+    public void setEmbeddedDocumentExtractorFactory(
+            EmbeddedDocumentExtractorFactory embeddedDocumentExtractorFactory) {
+        this.embeddedDocumentExtractorFactory = embeddedDocumentExtractorFactory;
+    }
+
+    public EmbeddedDocumentExtractorFactory getEmbeddedDocumentExtractorFactory() {
+        return embeddedDocumentExtractorFactory;
     }
 }
 
