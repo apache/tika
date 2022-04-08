@@ -283,13 +283,13 @@
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.surefire.version>3.0.0-M5</maven.surefire.version>
     <maven.shade.version>3.2.4</maven.shade.version>
-    <!-- need above java 8 for 10.0 -->
+    <!-- need above java 8 for 10.[0-1] -->
     <puppycrawl.version>9.3</puppycrawl.version>
     <rat.version>0.13</rat.version>
 
     <!-- dependency versions -->
-    <aws.version>1.12.188</aws.version>
-    <asm.version>9.2</asm.version>
+    <aws.version>1.12.195</aws.version>
+    <asm.version>9.3</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
     <bouncycastle.version>1.70</bouncycastle.version>
@@ -312,7 +312,7 @@
     <!-- fakeload versions &gt; 0.4.0 require java > 8 -->
     <fakeload.version>0.4.0</fakeload.version>
     <geoapi.version>3.0.1</geoapi.version>
-    <google.cloud.version>2.5.1</google.cloud.version>
+    <google.cloud.version>2.6.0</google.cloud.version>
     <gson.version>2.9.0</gson.version>
     <guava.version>31.1-jre</guava.version>
     <h2.version>2.1.210</h2.version>
@@ -330,7 +330,7 @@
     <jbig2.version>3.0.4</jbig2.version>
     <jdom2.version>2.0.6.1</jdom2.version>
     <jempbox.version>1.8.16</jempbox.version>
-    <jetty.version>9.4.45.v20220203</jetty.version>
+    <jetty.version>9.4.46.v20220331</jetty.version>
     <jhighlight.version>1.0.3</jhighlight.version>
     <jna.version>5.11.0</jna.version>
     <joda.time.version>2.10.10</joda.time.version>
@@ -342,6 +342,7 @@
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.17.2</log4j2.version>
     <lombok.version>1.18.20</lombok.version>
+    <!-- lucene >= 9.x requires Java 11 -->
     <lucene.version>8.11.1</lucene.version>
     <metadata.extractor.version>2.17.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
@@ -623,7 +624,7 @@
       <dependency>
         <groupId>org.netpreserve</groupId>
         <artifactId>jwarc</artifactId>
-        <version>0.17.2</version>
+        <version>0.18.1</version>
       </dependency>
       <dependency>
         <groupId>org.ops4j.base</groupId>
