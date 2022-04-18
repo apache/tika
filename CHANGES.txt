@@ -21,6 +21,9 @@ Release 2.4.0 - ???
    * Allow configurability of the EmbeddedDocumentExtractor used
      by the AutoDetectParser (TIKA-3711).
 
+   * Add detection for files encrypted by Microsoft's Rights Management Service
+     (TIKA-3666).
+
    * Fixed regression in 2.3.0 that led to more embedded filenames
      than appropriate being written to the content (TIKA-3711).
 

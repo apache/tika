@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
@@ -73,6 +74,7 @@ public class OfficeParser extends AbstractOfficeParser {
             new HashSet<>(Arrays.asList(POIFSDocumentType.WORKBOOK.type,
                     POIFSDocumentType.OLE10_NATIVE.type, POIFSDocumentType.WORDDOCUMENT.type,
                     POIFSDocumentType.UNKNOWN.type, POIFSDocumentType.ENCRYPTED.type,
+                    POIFSDocumentType.DRMENCRYPTED.type,
                     POIFSDocumentType.POWERPOINT.type, POIFSDocumentType.PUBLISHER.type,
                     POIFSDocumentType.PROJECT.type, POIFSDocumentType.VISIO.type,
                     // Works isn't supported
@@ -270,6 +272,10 @@ public class OfficeParser extends AbstractOfficeParser {
                 } catch (GeneralSecurityException ex) {
                     throw new EncryptedDocumentException(ex);
                 }
+                break;
+            case DRMENCRYPTED:
+                throw new EncryptedDocumentException("DRM encrypted document is not yet supported" +
+                        " by Apache POI");
             default:
                 // For unsupported / unhandled types, just the metadata
                 //  is extracted, which happened above
@@ -287,6 +293,7 @@ public class OfficeParser extends AbstractOfficeParser {
         COMP_OBJ("ole", POIFSContainerDetector.COMP_OBJ),
         WORDDOCUMENT("doc", MediaType.application("msword")),
         UNKNOWN("unknown", MediaType.application("x-tika-msoffice")),
+        DRMENCRYPTED("ole", MediaType.application("x-tika-ole-drm-encrypted")),
         ENCRYPTED("ole", MediaType.application("x-tika-ooxml-protected")),
         POWERPOINT("ppt", MediaType.application("vnd.ms-powerpoint")),
         PUBLISHER("pub", MediaType.application("x-mspublisher")),
@@ -300,6 +307,13 @@ public class OfficeParser extends AbstractOfficeParser {
         SOLIDWORKS_DRAWING("slddrw", MediaType.application("sldworks")),
         GRAPH("", MediaType.application("vnd.ms-graph"));
 
+        static Map<MediaType, POIFSDocumentType> TYPE_MAP = new HashMap<>();
+
+        static {
+            for (POIFSDocumentType t : values()) {
+                TYPE_MAP.put(t.type, t);
+            }
+        }
         private final String extension;
         private final MediaType type;
 
@@ -318,10 +332,8 @@ public class OfficeParser extends AbstractOfficeParser {
                 names.add(entry.getName());
             }
             MediaType type = POIFSContainerDetector.detect(names, node);
-            for (POIFSDocumentType poifsType : values()) {
-                if (type.equals(poifsType.type)) {
-                    return poifsType;
-                }
+            if (TYPE_MAP.containsKey(type)) {
+                return TYPE_MAP.get(type);
             }
             return UNKNOWN;
         }
