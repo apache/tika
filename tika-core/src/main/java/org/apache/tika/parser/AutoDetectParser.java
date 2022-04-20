@@ -166,6 +166,8 @@ public class AutoDetectParser extends CompositeParser {
                 }
                 tis.reset();
             }
+            handler = autoDetectParserConfig.getContentHandlerDecoratorFactory()
+                    .decorate(handler, metadata);
             // TIKA-216: Zip bomb prevention
             SecureContentHandler sch =
                     handler != null ?

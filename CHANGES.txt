@@ -6,20 +6,23 @@ Release 2.4.0 - ???
      https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-ml/tika-dl/pom.xml
      for the dependencies that must be provided at run-time (TIKA-3676).
 
-   * Add MetadataWriteFilter capability to improve memory profile in
-     Metadata objects (TIKA-3695).
-
    * Allow specification of fetcherName and fetchKey via query parameters
      in request URI in tika-server (TIKA-3714).
 
    * Add basic parsers for WARC and WACZ in tika-parsers-standard (TIKA-3697).
 
-   * Add detection for Frictionless Data packages and WACZ (TIKA-3696).
+   * Add MetadataWriteFilter capability to improve memory profile in
+     Metadata objects (TIKA-3695).
 
-   * Add a fetcher and emitter for Azure blob storage (TIKA-3707).
+   * Allow configurability of the ContentHandlerDecorator used
+     by the AutoDetectParser (TIKA-3723).
 
    * Allow configurability of the EmbeddedDocumentExtractor used
      by the AutoDetectParser (TIKA-3711).
+
+   * Add detection for Frictionless Data packages and WACZ (TIKA-3696).
+
+   * Add a fetcher and emitter for Azure blob storage (TIKA-3707).
 
    * Add detection for files encrypted by Microsoft's Rights Management Service
      (TIKA-3666).
