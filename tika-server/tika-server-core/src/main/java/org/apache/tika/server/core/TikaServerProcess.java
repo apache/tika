@@ -40,6 +40,7 @@ import org.apache.cxf.configuration.jsse.TLSParameterJaxBUtils;
 import org.apache.cxf.configuration.jsse.TLSServerParameters;
 import org.apache.cxf.configuration.security.KeyManagersType;
 import org.apache.cxf.configuration.security.KeyStoreType;
+import org.apache.cxf.configuration.security.TrustManagersType;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
@@ -291,6 +292,17 @@ public class TikaServerProcess {
         kmt.setKeyPassword(tlsConfig.getKeyStorePassword());
         TLSServerParameters parameters = new TLSServerParameters();
         parameters.setKeyManagers(TLSParameterJaxBUtils.getKeyManagers(kmt));
+
+        if (tlsConfig.hasTrustStore()) {
+            KeyStoreType trustKeyStore = new KeyStoreType();
+            trustKeyStore.setType(tlsConfig.getTrustStoreType());
+            trustKeyStore.setPassword(tlsConfig.getTrustStorePassword());
+            trustKeyStore.setResource(tlsConfig.getTrustStoreFile());
+
+            TrustManagersType tmt = new TrustManagersType();
+            tmt.setKeyStore(trustKeyStore);
+            parameters.setTrustManagers(TLSParameterJaxBUtils.getTrustManagers(tmt, true));
+        }
         return parameters;
     }
 

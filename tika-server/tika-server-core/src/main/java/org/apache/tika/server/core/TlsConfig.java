@@ -111,12 +111,18 @@ public class TlsConfig implements Initializable {
                 throw new TikaConfigException("must initialize keyStoreFile");
             } else if (StringUtils.isBlank(keyStorePassword)) {
                 throw new TikaConfigException("must initialize keyStorePassword");
-            } else if (StringUtils.isBlank(trustStoreType)) {
-                throw new TikaConfigException("must initialize trustStoreType");
-            } else if (StringUtils.isBlank(trustStoreFile)) {
-                throw new TikaConfigException("must initialize trustStoreFile");
-            } else if (StringUtils.isBlank(trustStorePassword)) {
-                throw new TikaConfigException("must initialize trustStorePassword");
+            }
+            if (hasTrustStore()) {
+                if (StringUtils.isBlank(trustStoreType)) {
+                    throw new TikaConfigException("must initialize trustStoreType " +
+                            "if there's any trustStore info");
+                } else if (StringUtils.isBlank(trustStoreFile)) {
+                    throw new TikaConfigException("must initialize trustStoreFile " +
+                            "if there's any trustStore info");
+                } else if (StringUtils.isBlank(trustStorePassword)) {
+                    throw new TikaConfigException("must initialize trustStorePassword " +
+                            "if there's any trustStore info");
+                }
             }
         }
     }
@@ -129,5 +135,11 @@ public class TlsConfig implements Initializable {
                 keyStoreFile + '\'' + ", trustStoreType='" + trustStoreType + '\'' +
                 ", trustStorePassword='" + trustStorePassword + '\'' + ", trustStoreFile='" +
                 trustStoreFile + '\'' + '}';
+    }
+
+    public boolean hasTrustStore() {
+        return ! StringUtils.isBlank(trustStoreType) &&
+                ! StringUtils.isBlank(trustStorePassword) &&
+                ! StringUtils.isBlank(trustStoreFile);
     }
 }
