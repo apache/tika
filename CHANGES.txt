@@ -46,6 +46,8 @@ Release 2.4.0 - ???
    * Various dependency upgrades, including POI, dl4j, gson, jackson,
      twelvemonkeys, log4j2 and others (TIKA-3675 and many PRs from dependabot).
 
+   * Switch cipher from ECB to GCM in HttpClientFactory (TIKA-3724).
+
 Release 2.3.0 - 02/02/2022
 
    * Upgrade to Apache POI 5.2.0. This is the first upgrade to POI

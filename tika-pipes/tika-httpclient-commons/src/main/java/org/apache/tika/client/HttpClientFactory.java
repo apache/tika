@@ -88,6 +88,8 @@ import org.apache.tika.utils.StringUtils;
 public class HttpClientFactory {
 
     public static final String AES_ENV_VAR = "AES_KEY";
+
+    private static final String CIPHER_TYPE = "AES/GCM/PKCS5Padding";
     private static final Logger LOG = LoggerFactory.getLogger(HttpClientFactory.class);
 
     private AES aes = null;
@@ -446,7 +448,7 @@ public class HttpClientFactory {
 
         public String encrypt(String strToEncrypt) throws TikaConfigException {
             try {
-                Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+                Cipher cipher = Cipher.getInstance(CIPHER_TYPE);
                 cipher.init(Cipher.ENCRYPT_MODE, secretKey);
                 return Base64.getEncoder().encodeToString(
                         cipher.doFinal(strToEncrypt.getBytes(StandardCharsets.UTF_8)));
@@ -458,7 +460,7 @@ public class HttpClientFactory {
 
         public String decrypt(String strToDecrypt) throws TikaConfigException {
             try {
-                Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5PADDING");
+                Cipher cipher = Cipher.getInstance(CIPHER_TYPE);
                 cipher.init(Cipher.DECRYPT_MODE, secretKey);
                 return new String(cipher.doFinal(Base64.getDecoder().decode(strToDecrypt)),
                         StandardCharsets.UTF_8);
