@@ -277,6 +277,10 @@ public class OfficeParser extends AbstractOfficeParser {
                 throw new EncryptedDocumentException("DRM encrypted document is not yet supported" +
                         " by Apache POI");
             default:
+                if (root.hasEntry("EncryptedPackage")) {
+                    throw new EncryptedDocumentException("OLE2 file with an unrecognized " +
+                            "EncryptedPackage entry");
+                }
                 // For unsupported / unhandled types, just the metadata
                 //  is extracted, which happened above
                 break;
