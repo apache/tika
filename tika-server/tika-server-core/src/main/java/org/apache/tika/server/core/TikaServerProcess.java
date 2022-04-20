@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.BindException;
 import java.nio.file.Paths;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -35,15 +36,21 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.cxf.binding.BindingFactoryManager;
+import org.apache.cxf.configuration.jsse.TLSParameterJaxBUtils;
+import org.apache.cxf.configuration.jsse.TLSServerParameters;
+import org.apache.cxf.configuration.security.KeyManagersType;
+import org.apache.cxf.configuration.security.KeyStoreType;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.apache.cxf.jaxrs.utils.JAXRSServerFactoryCustomizationUtils;
 import org.apache.cxf.rs.security.cors.CrossOriginResourceSharingFilter;
 import org.apache.cxf.service.factory.ServiceConstructionException;
 import org.apache.cxf.transport.common.gzip.GZIPInInterceptor;
 import org.apache.cxf.transport.common.gzip.GZIPOutInterceptor;
+import org.apache.cxf.transport.http_jetty.JettyHTTPServerEngineFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -248,19 +255,43 @@ public class TikaServerProcess {
         sf.setOutInterceptors(Collections.singletonList(new GZIPOutInterceptor()));
         sf.setInInterceptors(Collections.singletonList(new GZIPInInterceptor()));
 
-        String url = "http://" + host + ":" + port + "/";
+        String protocol = tikaServerConfig.getTlsConfig().isActive() ? "https" : "http";
+        String url = protocol + "://" + host + ":" + port + "/";
         sf.setAddress(url);
         sf.setResourceComparator(new ProduceTypeResourceComparator());
         BindingFactoryManager manager = sf.getBus().getExtension(BindingFactoryManager.class);
-        JAXRSBindingFactory factory = new JAXRSBindingFactory();
-        factory.setBus(sf.getBus());
-        manager.registerBindingFactory(JAXRSBindingFactory.JAXRS_BINDING_ID, factory);
+        if (tikaServerConfig.getTlsConfig().isActive()) {
+            TLSServerParameters tlsParams = getTlsParams(tikaServerConfig.getTlsConfig());
+            JettyHTTPServerEngineFactory factory = new JettyHTTPServerEngineFactory();
+            factory.setBus(sf.getBus());
+            factory.setTLSServerParametersForPort(host, port, tlsParams);
+            JAXRSServerFactoryCustomizationUtils.customize(sf);
+        } else {
+            JAXRSBindingFactory factory = new JAXRSBindingFactory();
+            factory.setBus(sf.getBus());
+            manager.registerBindingFactory(JAXRSBindingFactory.JAXRS_BINDING_ID, factory);
+        }
         ServerDetails details = new ServerDetails();
         details.sf = sf;
         details.url = url;
         details.serverId = serverId;
         details.serverStatus = serverStatus;
         return details;
+    }
+
+    private static TLSServerParameters getTlsParams(TlsConfig tlsConfig)
+            throws GeneralSecurityException, IOException {
+        KeyStoreType keyStore = new KeyStoreType();
+        keyStore.setType(tlsConfig.getKeyStoreType());
+        keyStore.setPassword(tlsConfig.getKeyStorePassword());
+        keyStore.setResource(tlsConfig.getKeyStoreFile());
+
+        KeyManagersType kmt = new KeyManagersType();
+        kmt.setKeyStore(keyStore);
+        kmt.setKeyPassword(tlsConfig.getKeyStorePassword());
+        TLSServerParameters parameters = new TLSServerParameters();
+        parameters.setKeyManagers(TLSParameterJaxBUtils.getKeyManagers(kmt));
+        return parameters;
     }
 
     private static void loadAllProviders(TikaServerConfig tikaServerConfig,
