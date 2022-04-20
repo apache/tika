@@ -427,17 +427,16 @@ public class HttpClientFactory {
 
     private static class AES {
         private final SecretKeySpec secretKey;
-        private byte[] key;
 
         private AES() throws TikaConfigException {
             secretKey = setKey(System.getenv(AES_ENV_VAR));
         }
 
-        private SecretKeySpec setKey(String myKey) throws TikaConfigException {
-            MessageDigest sha = null;
+        private static SecretKeySpec setKey(String myKey) throws TikaConfigException {
+            //TODO: sha-256?
             try {
-                key = myKey.getBytes(StandardCharsets.UTF_8);
-                sha = MessageDigest.getInstance("SHA-1");
+                byte[] key = myKey.getBytes(StandardCharsets.UTF_8);
+                MessageDigest sha = MessageDigest.getInstance("SHA-1");
                 key = sha.digest(key);
                 key = Arrays.copyOf(key, 16);
                 return new SecretKeySpec(key, "AES");
