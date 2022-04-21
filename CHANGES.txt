@@ -41,6 +41,8 @@ Release 2.4.0 - ???
 
    * Add metadata filters for Optimaize and OpenNLP language detectors (TIKA-3717).
 
+   * Upgrade to PDFBox 2.0.26 (TIKA-3726).
+
    * Upgrade deeplearning4j to 1.0.0-M2 (TIKA-3458 and PR#527).
 
    * Various dependency upgrades, including POI, dl4j, gson, jackson,
