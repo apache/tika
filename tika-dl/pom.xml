@@ -37,7 +37,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <dl4j.version>1.0.0-beta6</dl4j.version>
-    <twelvemonkeys.version>3.8.1</twelvemonkeys.version>
+    <twelvemonkeys.version>3.8.2</twelvemonkeys.version>
   </properties>
 
   <dependencies>
@@ -375,7 +375,7 @@
     <dependency>
       <groupId>joda-time</groupId>
       <artifactId>joda-time</artifactId>
-      <version>2.10.13</version>
+      <version>2.10.14</version>
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>

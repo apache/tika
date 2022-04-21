@@ -280,10 +280,11 @@
     <guava.version>31.1-jre</guava.version>
     <osgi.core.version>6.0.0</osgi.core.version>
 
-    <cxf.version>3.5.1</cxf.version>
+    <cxf.version>3.5.2</cxf.version>
     <slf4j.version>1.7.36</slf4j.version>
     <log4j2.version>2.17.2</log4j2.version>
-    <jackson.version>2.13.1</jackson.version>
+    <jackson.version>2.13.2</jackson.version>
+    <jackson.databind.version>2.13.2.2</jackson.databind.version>
     <!-- when this is next upgraded, see if we can get rid of
          javax.activation dependency in tika-server.
          Until then, DO NOT go above 2.x unless you know what you're doing.

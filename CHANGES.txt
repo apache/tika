@@ -1,5 +1,9 @@
 Release 1.28.2 - ???
 
+   * General dependency upgrades (TIKA-3688).
+
+   * Upgrade to PDFBox 2.0.26 (TIKA-3726).
+
    * Upgrade to Apache POI 5.2.0. This is the first upgrade to POI
       5.x and represents a major refactoring. Users will experience
       significantly more logging (TIKA-3678).

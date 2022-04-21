@@ -47,7 +47,7 @@
     <brotli.version>0.1.2</brotli.version>
     <mime4j.version>0.8.4</mime4j.version>
     <vorbis.version>0.8</vorbis.version>
-    <pdfbox.version>2.0.25</pdfbox.version>
+    <pdfbox.version>2.0.26</pdfbox.version>
     <jempbox.version>1.8.16</jempbox.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <sis.version>1.1</sis.version>
@@ -312,7 +312,7 @@
     <dependency>
       <groupId>org.ow2.asm</groupId>
       <artifactId>asm</artifactId>
-      <version>9.2</version>
+      <version>9.3</version>
     </dependency>
     <dependency>
       <groupId>org.tallison</groupId>
@@ -361,7 +361,7 @@
     <dependency>
       <groupId>org.codelibs</groupId>
       <artifactId>jhighlight</artifactId>
-      <version>1.0.3</version>
+      <version>1.1.0</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
@@ -377,7 +377,7 @@
     <dependency>
       <groupId>com.github.junrar</groupId>
       <artifactId>junrar</artifactId>
-      <version>7.4.1</version>
+      <version>7.5.0</version>
       <exclusions>
         <exclusion>
           <groupId>commons-logging</groupId>
@@ -576,7 +576,7 @@
     <dependency>
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna</artifactId>
-      <version>5.10.0</version>
+      <version>5.11.0</version>
     </dependency>
     <dependency>
       <groupId>com.google.protobuf</groupId>
@@ -900,7 +900,7 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>${jackson.version}</version>
+      <version>${jackson.databind.version}</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
