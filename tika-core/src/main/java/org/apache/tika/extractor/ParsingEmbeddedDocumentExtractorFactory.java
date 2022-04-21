@@ -14,30 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.extractor;
 
-package org.apache.tika.server.core;
-
-import java.io.IOException;
-import java.io.InputStream;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.UriInfo;
-
+import org.apache.tika.config.Field;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 
-/**
- * Passthrough -- returns InputStream as is
- */
-public class DefaultInputStreamFactory implements InputStreamFactory {
+public class ParsingEmbeddedDocumentExtractorFactory
+        implements EmbeddedDocumentExtractorFactory {
 
-    @Override
-    public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders)
-            throws IOException {
-        return is;
+    private boolean writeFileNameToContent = true;
+
+    @Field
+    public void setWriteFileNameToContent(boolean writeFileNameToContent) {
+        this.writeFileNameToContent = writeFileNameToContent;
     }
 
     @Override
-    public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders,
-                                      UriInfo uriInfo) throws IOException {
-        return is;
+    public EmbeddedDocumentExtractor newInstance(Metadata metadata, ParseContext parseContext) {
+        ParsingEmbeddedDocumentExtractor ex =
+                new ParsingEmbeddedDocumentExtractor(parseContext);
+        ex.setWriteFileNameToContent(writeFileNameToContent);
+        return ex;
     }
 }

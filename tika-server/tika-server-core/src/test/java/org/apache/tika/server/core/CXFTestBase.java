@@ -84,7 +84,7 @@ public abstract class CXFTestBase {
         return new ByteArrayInputStream(out.toByteArray());
     }
 
-    protected static String getStringFromInputStream(InputStream in) throws Exception {
+    protected static String getStringFromInputStream(InputStream in) throws IOException {
         return IOUtils.toString(in, UTF_8);
     }
 
@@ -105,7 +105,8 @@ public abstract class CXFTestBase {
         TikaResource.init(tika, tikaServerConfig,
                 new CommonsDigester(DIGESTER_READ_LIMIT, "md5," +
                         "sha1:32"),
-                getInputStreamFactory(tika), new ServerStatus("", 0, true));
+                getInputStreamFactory(getTikaConfigInputStream()),
+                new ServerStatus("", 0, true));
         JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
         //set compression interceptors
         sf.setOutInterceptors(Collections.singletonList(new GZIPOutInterceptor()));
@@ -131,11 +132,11 @@ public abstract class CXFTestBase {
         return tikaServerConfig;
     }
 
-    protected InputStreamFactory getInputStreamFactory(TikaConfig tikaConfig) {
+    protected InputStreamFactory getInputStreamFactory(InputStream tikaConfig) {
         return new DefaultInputStreamFactory();
     }
 
-    protected InputStream getTikaConfigInputStream() {
+    protected InputStream getTikaConfigInputStream() throws IOException {
         return new ByteArrayInputStream(new String(
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + "<properties>\n" +
                         "    <parsers>\n" +

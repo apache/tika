@@ -345,13 +345,13 @@ class OneNoteTreeWalker {
         }
         Metadata embeddedMetadata = new Metadata();
         try {
-            stream = TikaInputStream.get(buf.array());
-            embeddedDocumentExtractor.parseEmbedded(stream, new EmbeddedContentHandler(xhtml),
-                    embeddedMetadata, true);
             AttributesImpl attributes = new AttributesImpl();
             attributes.addAttribute("", "class", "class", "CDATA", "embedded");
             xhtml.startElement("div", attributes);
             xhtml.endElement("div");
+            stream = TikaInputStream.get(buf.array());
+            embeddedDocumentExtractor.parseEmbedded(stream, new EmbeddedContentHandler(xhtml),
+                    embeddedMetadata, false);
         } finally {
             IOUtils.closeQuietly(stream);
         }

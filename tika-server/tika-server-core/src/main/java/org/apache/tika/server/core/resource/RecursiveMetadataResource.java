@@ -177,7 +177,7 @@ public class RecursiveMetadataResource {
             throws Exception {
         Metadata metadata = new Metadata();
         return Response.ok(parseMetadataToMetadataList(
-                TikaResource.getInputStream(is, metadata, httpHeaders), metadata,
+                TikaResource.getInputStream(is, metadata, httpHeaders, info), metadata,
                 httpHeaders.getRequestHeaders(), info,
                 buildHandlerConfig(httpHeaders.getRequestHeaders(), handlerTypeName,
                         HandlerConfig.PARSE_MODE.RMETA))).build();

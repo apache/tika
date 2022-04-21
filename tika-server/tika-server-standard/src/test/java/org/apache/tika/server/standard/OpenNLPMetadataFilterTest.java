@@ -27,75 +27,81 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.ws.rs.core.Response;
 
-import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.serialization.JsonMetadata;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
-import org.apache.tika.pipes.fetcher.FetcherManager;
 import org.apache.tika.server.core.CXFTestBase;
-import org.apache.tika.server.core.FetcherStreamFactory;
-import org.apache.tika.server.core.InputStreamFactory;
 import org.apache.tika.server.core.resource.RecursiveMetadataResource;
+import org.apache.tika.server.core.resource.TikaResource;
+import org.apache.tika.server.core.writer.JSONMessageBodyWriter;
 import org.apache.tika.server.core.writer.MetadataListMessageBodyWriter;
 
+public class OpenNLPMetadataFilterTest extends CXFTestBase {
 
-@Disabled("turn into actual unit tests -- this relies on network connectivity...bad")
-public class FetcherTest extends CXFTestBase {
-
+    private static final String TIKA_PATH = "/tika";
     private static final String META_PATH = "/rmeta";
-    private static final String TEXT_PATH = "/text";
-
     private static final String TEST_RECURSIVE_DOC = "test-documents/test_recursive_embedded.docx";
 
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
-        sf.setResourceClasses(RecursiveMetadataResource.class);
+        sf.setResourceClasses(RecursiveMetadataResource.class, TikaResource.class);
         sf.setResourceProvider(RecursiveMetadataResource.class,
                 new SingletonResourceProvider(new RecursiveMetadataResource()));
+        sf.setResourceProvider(TikaResource.class,
+                new SingletonResourceProvider(new TikaResource()));
+
     }
 
     @Override
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
         List<Object> providers = new ArrayList<>();
         providers.add(new MetadataListMessageBodyWriter());
+        providers.add(new JSONMessageBodyWriter());
         sf.setProviders(providers);
     }
 
     @Override
     protected InputStream getTikaConfigInputStream() {
-        return getClass().getResourceAsStream("/config/tika-config-url-fetcher.xml");
-    }
-
-    @Override
-    protected InputStreamFactory getInputStreamFactory(InputStream tikaConfigInputStream) {
-        try (TikaInputStream tis = TikaInputStream.get(tikaConfigInputStream)) {
-            FetcherManager fetcherManager = FetcherManager.load(tis.getPath());
-            return new FetcherStreamFactory(fetcherManager);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return getClass().getResourceAsStream(
+                "/config/tika-config-langdetect-opennlp-filter.xml");
     }
 
     @Test
-    public void testBasic() throws Exception {
+    public void testMeta() throws Exception {
         Response response = WebClient.create(endPoint + META_PATH).accept("application/json")
-                .acceptEncoding("gzip").header("fetcherName", "url")
-                .header("fetchKey", "https://tika.apache.org").put("");
+                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
 
-        Reader reader = new InputStreamReader(
-                new GzipCompressorInputStream((InputStream) response.getEntity()), UTF_8);
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-        Metadata parent = metadataList.get(0);
-        String txt = parent.get(TikaCoreProperties.TIKA_CONTENT);
-        assertContains("toolkit detects and extracts metadata", txt);
-        assertEquals("Apache Tika – Apache Tika", parent.get(TikaCoreProperties.TITLE));
+
+        assertEquals(12, metadataList.size());
+        assertEquals("Microsoft Office Word",
+                metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
+        assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
+
+        assertEquals("a38e6c7b38541af87148dee9634cb811",
+                metadataList.get(10).get("X-TIKA:digest:MD5"));
+
+        assertEquals("eng", metadataList.get(6).get(TikaCoreProperties.TIKA_DETECTED_LANGUAGE));
+        assertEquals("LOW",
+                metadataList.get(6).get(TikaCoreProperties.TIKA_DETECTED_LANGUAGE_CONFIDENCE));
     }
 
+    @Test
+    public void testTika() throws Exception {
+        Response response = WebClient.create(endPoint + TIKA_PATH).accept("application/json")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        Metadata metadata = JsonMetadata.fromJson(reader);
+        assertEquals("eng", metadata.get(TikaCoreProperties.TIKA_DETECTED_LANGUAGE));
+        assertEquals("LOW", metadata.get(TikaCoreProperties.TIKA_DETECTED_LANGUAGE_CONFIDENCE));
+    }
 }

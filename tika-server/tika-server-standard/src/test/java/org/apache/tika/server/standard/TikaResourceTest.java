@@ -28,6 +28,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import javax.ws.rs.ProcessingException;
@@ -45,6 +46,7 @@ import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -571,6 +573,9 @@ public class TikaResourceTest extends CXFTestBase {
         assertContains("General Congress", metadata.get(TikaCoreProperties.TIKA_CONTENT));
         assertNotFound("<p", metadata.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("Microsoft Office Word", metadata.get(OfficeOpenXMLExtended.APPLICATION));
+        //test that embedded parsers are appearing in full set of "parsed bys"
+        TikaTest.assertContains("org.apache.tika.parser.microsoft.EMFParser",
+                Arrays.asList(metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY_FULL_SET)));
     }
 
     @Test

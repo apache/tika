@@ -14,30 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.sax;
 
-package org.apache.tika.server.core;
+import java.util.Locale;
 
-import java.io.IOException;
-import java.io.InputStream;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.UriInfo;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 import org.apache.tika.metadata.Metadata;
 
-/**
- * Passthrough -- returns InputStream as is
- */
-public class DefaultInputStreamFactory implements InputStreamFactory {
-
+public class UpcasingContentHandlerDecoratorFactory implements ContentHandlerDecoratorFactory {
     @Override
-    public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders)
-            throws IOException {
-        return is;
-    }
-
-    @Override
-    public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders,
-                                      UriInfo uriInfo) throws IOException {
-        return is;
+    public ContentHandler decorate(ContentHandler contentHandler, Metadata metadata) {
+        return new ContentHandlerDecorator(contentHandler) {
+            @Override
+            public void characters(char[] ch, int start, int length) throws SAXException {
+                String content = new String(ch, start, length).toUpperCase(Locale.US);
+                contentHandler.characters(content.toCharArray(), start, length);
+            }
+        };
     }
 }

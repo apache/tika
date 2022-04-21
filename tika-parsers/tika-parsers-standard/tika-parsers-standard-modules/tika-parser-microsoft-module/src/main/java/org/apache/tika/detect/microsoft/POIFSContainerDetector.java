@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -58,6 +59,12 @@ public class POIFSContainerDetector implements Detector {
      * The protected OOXML base file format
      */
     public static final MediaType OOXML_PROTECTED = application("x-tika-ooxml-protected");
+
+    /**
+     * TIKA-3666 MSOffice or other file encrypted with DRM in an OLE container
+     */
+    public static final MediaType DRM_ENCRYPTED = application("x-tika-ole-drm-encrypted");
+
     /**
      * General embedded document type within an OLE2 container
      */
@@ -238,18 +245,33 @@ public class POIFSContainerDetector implements Detector {
         } else if (names.contains("Book")) {
             // Excel 95 or older, we won't be able to parse this....
             return XLS;
-        } else if (names.contains("EncryptedPackage") && names.contains("EncryptionInfo")) {
-            // This is a protected OOXML document, which is an OLE2 file
-            //  with an Encrypted Stream which holds the OOXML data
-            // Without decrypting the stream, we can't tell what kind of
-            //  OOXML file we have. Return a general OOXML Protected type,
-            //  and hope the name based detection can guess the rest!
-
-            //Until Tika 1.23, we also required: && names.contains("\u0006DataSpaces")
-            //See TIKA-2982
-            return OOXML_PROTECTED;
         } else if (names.contains("EncryptedPackage")) {
-            return OLE;
+            if (names.contains("EncryptionInfo")) {
+                // This is a protected OOXML document, which is an OLE2 file
+                //  with an Encrypted Stream which holds the OOXML data
+                // Without decrypting the stream, we can't tell what kind of
+                //  OOXML file we have. Return a general OOXML Protected type,
+                //  and hope the name based detection can guess the rest!
+
+                // This is the standard issue method of encryption for ooxml and
+                // is supported by POI
+
+                //Until Tika 1.23, we also required: && names.contains("\u0006DataSpaces")
+                //See TIKA-2982
+                return OOXML_PROTECTED;
+            } else if (names.contains("\u0006DataSpaces")) {
+                //Try to look for the DRMEncrypted type (TIKA-3666); as of 5.2.0, this is not
+                // supported by POI, but we should still detect it.
+
+                //Do we also want to look for "DRMEncryptedTransform"?
+                if (findRecursively(root, "DRMEncryptedDataSpace", 0, 10)) {
+                    return DRM_ENCRYPTED;
+                } else {
+                    return OLE;
+                }
+            } else {
+                return OLE;
+            }
         } else if (names.contains("WordDocument")) {
             return DOC;
         } else if (names.contains("Quill")) {
@@ -315,6 +337,28 @@ public class POIFSContainerDetector implements Detector {
 
         // Couldn't detect a more specific type
         return OLE;
+    }
+
+    private static boolean findRecursively(Entry entry, String targetName, int depth,
+                                           int maxDepth) {
+        if (entry == null) {
+            return false;
+        }
+        if (entry.getName().equals(targetName)) {
+            return true;
+        }
+        if (depth >= maxDepth) {
+            return false;
+        }
+        if (entry instanceof DirectoryEntry) {
+            for (Iterator<Entry> it = ((DirectoryEntry)entry).getEntries(); it.hasNext(); ) {
+                Entry child = it.next();
+                if (findRecursively(child, targetName, depth + 1, maxDepth)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**

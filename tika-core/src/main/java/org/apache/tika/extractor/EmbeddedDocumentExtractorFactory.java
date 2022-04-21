@@ -15,29 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.tika.server.core;
+package org.apache.tika.extractor;
 
-import java.io.IOException;
-import java.io.InputStream;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.UriInfo;
+import java.io.Serializable;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 
-/**
- * Passthrough -- returns InputStream as is
- */
-public class DefaultInputStreamFactory implements InputStreamFactory {
+public interface EmbeddedDocumentExtractorFactory extends Serializable {
 
-    @Override
-    public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders)
-            throws IOException {
-        return is;
-    }
-
-    @Override
-    public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders,
-                                      UriInfo uriInfo) throws IOException {
-        return is;
-    }
+    EmbeddedDocumentExtractor newInstance(Metadata metadata, ParseContext parseContext);
 }

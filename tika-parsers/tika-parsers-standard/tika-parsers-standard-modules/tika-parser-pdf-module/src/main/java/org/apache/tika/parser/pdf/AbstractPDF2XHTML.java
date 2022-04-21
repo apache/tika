@@ -427,15 +427,16 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
             return;
         }
+
+        attributes.addAttribute("", "class", "class", "CDATA", "embedded");
+        attributes.addAttribute("", "id", "id", "CDATA", fileName);
+        xhtml.startElement("div", attributes);
+        xhtml.endElement("div");
+
         try {
             embeddedDocumentExtractor
                     .parseEmbedded(stream, new EmbeddedContentHandler(xhtml), embeddedMetadata,
-                            true);
-
-            attributes.addAttribute("", "class", "class", "CDATA", "embedded");
-            attributes.addAttribute("", "id", "id", "CDATA", fileName);
-            xhtml.startElement("div", attributes);
-            xhtml.endElement("div");
+                            false);
         } finally {
             IOUtils.closeQuietly(stream);
         }

@@ -49,8 +49,8 @@ public class OptimaizeLangDetector extends LanguageDetector {
     private static final List<LanguageProfile> DEFAULT_LANGUAGE_PROFILES;
     private static final ImmutableSet<String> DEFAULT_LANGUAGES;
     private static final com.optimaize.langdetect.LanguageDetector DEFAULT_DETECTOR;
-    private static final int MAX_CHARS_FOR_DETECTION = 20000;
-    private static final int MAX_CHARS_FOR_SHORT_DETECTION = 200;
+    public static final int DEFAULT_MAX_CHARS_FOR_DETECTION = 20000;
+    public static final int DEFAULT_MAX_CHARS_FOR_SHORT_DETECTION = 200;
 
     static {
         try {
@@ -73,11 +73,14 @@ public class OptimaizeLangDetector extends LanguageDetector {
     private CharArrayWriter writer;
     private Set<String> languages;
     private Map<String, Float> languageProbabilities;
+    private int maxCharsForDetection = DEFAULT_MAX_CHARS_FOR_DETECTION;
 
     public OptimaizeLangDetector() {
-        super();
+        this(DEFAULT_MAX_CHARS_FOR_DETECTION);
+    }
 
-        writer = new CharArrayWriter(MAX_CHARS_FOR_DETECTION);
+    public OptimaizeLangDetector(int maxCharsForDetection) {
+        writer = new CharArrayWriter(maxCharsForDetection);
     }
 
     private static String makeLanguageName(LdLocale locale) {
@@ -220,7 +223,7 @@ public class OptimaizeLangDetector extends LanguageDetector {
     }
 
     private int getTextLimit() {
-        int limit = (shortText ? MAX_CHARS_FOR_SHORT_DETECTION : MAX_CHARS_FOR_DETECTION);
+        int limit = (shortText ? DEFAULT_MAX_CHARS_FOR_SHORT_DETECTION : maxCharsForDetection);
 
         // We want more text if we're processing documents that have a mixture of languages.
         // FUTURE - figure out right amount to bump up the limit.

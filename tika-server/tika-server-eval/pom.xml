@@ -26,6 +26,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-server-eval</artifactId>
+  <name>Apache Tika server tika-eval handler</name>
 
   <properties>
     <maven.compiler.source>8</maven.compiler.source>

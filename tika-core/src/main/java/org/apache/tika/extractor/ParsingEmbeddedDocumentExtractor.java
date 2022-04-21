@@ -53,6 +53,8 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
 
     private static final Parser DELEGATING_PARSER = new DelegatingParser();
 
+    private boolean writeFileNameToContent = true;
+
     private final ParseContext context;
 
     public ParsingEmbeddedDocumentExtractor(ParseContext context) {
@@ -86,7 +88,7 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
         }
 
         String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
-        if (name != null && name.length() > 0 && outputHtml) {
+        if (writeFileNameToContent && name != null && name.length() > 0 && outputHtml) {
             handler.startElement(XHTML, "h1", "h1", new AttributesImpl());
             char[] chars = name.toCharArray();
             handler.characters(chars, 0, chars.length);
@@ -124,5 +126,9 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
 
     public Parser getDelegatingParser() {
         return DELEGATING_PARSER;
+    }
+
+    public void setWriteFileNameToContent(boolean writeFileNameToContent) {
+        this.writeFileNameToContent = writeFileNameToContent;
     }
 }

@@ -155,7 +155,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
             }
 
             handleSlideEmbeddedPictures(ss, xhtml);
-            handleShowEmbeddedResources(ss, xhtml);
+            handleShowEmbeddedResources(ss, xhtml, true);
 
             if (officeParserConfig.isExtractMacros()) {
                 extractMacros(ss, xhtml);
@@ -172,7 +172,8 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
      * them in the shapes in the slides, headers/footers, etc, try to
      * extract them here.
      **/
-    private void handleShowEmbeddedResources(HSLFSlideShow ss, XHTMLContentHandler xhtml)
+    private void handleShowEmbeddedResources(HSLFSlideShow ss, XHTMLContentHandler xhtml,
+                                             boolean outputHtml)
             throws SAXException {
         
         HSLFObjectData[] objectData = ss.getEmbeddedObjects();
@@ -193,7 +194,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                         if (pfs.getRoot().getEntryNames().size() < 1) {
                             return;
                         }
-                        handleEmbeddedOfficeDoc(pfs.getRoot(), filename, xhtml);
+                        handleEmbeddedOfficeDoc(pfs.getRoot(), filename, xhtml, outputHtml);
                     }
                 } else {
                     boolean shouldProcess = false;
@@ -582,7 +583,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                                 throw new IOException(e);
                             }
                             try {
-                                handleEmbeddedOfficeDoc(poifs.getRoot(), objID, xhtml);
+                                handleEmbeddedOfficeDoc(poifs.getRoot(), objID, xhtml, false);
                             } finally {
                                 if (poifs != null) {
                                     poifs.close();

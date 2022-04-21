@@ -143,16 +143,17 @@ abstract class AbstractPOIFSExtractor {
     /**
      * Handle an office document that's embedded at the POIFS level
      */
-    protected void handleEmbeddedOfficeDoc(DirectoryEntry dir, XHTMLContentHandler xhtml)
+    protected void handleEmbeddedOfficeDoc(DirectoryEntry dir, XHTMLContentHandler xhtml,
+                                           boolean outputHtml)
             throws IOException, SAXException, TikaException {
-        handleEmbeddedOfficeDoc(dir, null, xhtml);
+        handleEmbeddedOfficeDoc(dir, null, xhtml, outputHtml);
     }
 
     /**
      * Handle an office document that's embedded at the POIFS level
      */
     protected void handleEmbeddedOfficeDoc(DirectoryEntry dir, String resourceName,
-                                           XHTMLContentHandler xhtml)
+                                           XHTMLContentHandler xhtml, boolean outputHtml)
             throws IOException, SAXException, TikaException {
 
 
@@ -181,7 +182,7 @@ abstract class AbstractPOIFSExtractor {
                     return;
                 }
                 handleEmbeddedResource(stream, metadata,null, dir.getName(), dir.getStorageClsid(),
-                        type.toString(), xhtml, true);
+                        type.toString(), xhtml, outputHtml);
                 return;
             }
         }
@@ -198,19 +199,19 @@ abstract class AbstractPOIFSExtractor {
         POIFSDocumentType type = POIFSDocumentType.detectType(dir);
         String rName = (resourceName == null) ? dir.getName() : resourceName;
         if (type == POIFSDocumentType.OLE10_NATIVE) {
-            handleOLENative(dir, type, rName, metadata, xhtml);
+            handleOLENative(dir, type, rName, metadata, xhtml, outputHtml);
         } else if (type == POIFSDocumentType.COMP_OBJ) {
-            handleCompObj(dir, type, rName, metadata, xhtml);
+            handleCompObj(dir, type, rName, metadata, xhtml, outputHtml);
         } else {
             metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
                     rName + '.' + type.getExtension());
-            parseEmbedded(dir, xhtml, metadata);
+            parseEmbedded(dir, xhtml, metadata, outputHtml);
         }
     }
 
     private void handleCompObj(DirectoryEntry dir, POIFSDocumentType type, String rName,
-                               Metadata metadata, XHTMLContentHandler xhtml)
+                               Metadata metadata, XHTMLContentHandler xhtml, boolean outputHtml)
             throws IOException, SAXException {
         //TODO: figure out if the equivalent of OLE 1.0's
         //getCommand() and getFileName() exist for OLE 2.0 to populate
@@ -253,7 +254,7 @@ abstract class AbstractPOIFSExtractor {
             metadata.set(Metadata.CONTENT_TYPE, mediaType.getType());
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, rName + extension);
             metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(length));
-            parseEmbedded(dir, tis, xhtml, metadata);
+            parseEmbedded(dir, tis, xhtml, metadata, outputHtml);
         } finally {
             inp.close();
         }
@@ -261,7 +262,7 @@ abstract class AbstractPOIFSExtractor {
 
 
     private void handleOLENative(DirectoryEntry dir, POIFSDocumentType type, String rName,
-                                 Metadata metadata, XHTMLContentHandler xhtml)
+                                 Metadata metadata, XHTMLContentHandler xhtml, boolean outputHtml)
             throws IOException, SAXException {
         byte[] data = null;
         try {
@@ -289,12 +290,13 @@ abstract class AbstractPOIFSExtractor {
             return;
         }
         try (TikaInputStream tis = TikaInputStream.get(data)) {
-            parseEmbedded(dir, tis, xhtml, metadata);
+            parseEmbedded(dir, tis, xhtml, metadata, outputHtml);
         }
     }
 
     private void parseEmbedded(DirectoryEntry dir, TikaInputStream tis, XHTMLContentHandler xhtml,
-                               Metadata metadata) throws IOException, SAXException {
+                               Metadata metadata, boolean outputHtml) throws IOException,
+            SAXException {
         if (!embeddedDocumentUtil.shouldParseEmbedded(metadata)) {
             return;
         }
@@ -302,10 +304,11 @@ abstract class AbstractPOIFSExtractor {
             metadata.set(TikaCoreProperties.EMBEDDED_STORAGE_CLASS_ID,
                     dir.getStorageClsid().toString());
         }
-        embeddedDocumentUtil.parseEmbedded(tis, xhtml, metadata, true);
+        embeddedDocumentUtil.parseEmbedded(tis, xhtml, metadata, outputHtml);
     }
 
-    private void parseEmbedded(DirectoryEntry dir, XHTMLContentHandler xhtml, Metadata metadata)
+    private void parseEmbedded(DirectoryEntry dir, XHTMLContentHandler xhtml, Metadata metadata,
+                               boolean outputHtml)
             throws IOException, SAXException {
         if (!embeddedDocumentUtil.shouldParseEmbedded(metadata)) {
             return;
@@ -316,7 +319,7 @@ abstract class AbstractPOIFSExtractor {
                 metadata.set(TikaCoreProperties.EMBEDDED_STORAGE_CLASS_ID,
                         dir.getStorageClsid().toString());
             }
-            embeddedDocumentUtil.parseEmbedded(tis, xhtml, metadata, true);
+            embeddedDocumentUtil.parseEmbedded(tis, xhtml, metadata, outputHtml);
         }
     }
 }

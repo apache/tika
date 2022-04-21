@@ -77,12 +77,21 @@ public class ParserUtils {
      */
     public static void recordParserDetails(Parser parser, Metadata metadata) {
         String className = getParserClassname(parser);
+        recordParserDetails(className, metadata);
+    }
+
+    /**
+     * Records details of the {@link Parser} used to the {@link Metadata},
+     * typically wanted where multiple parsers could be picked between
+     * or used.
+     */
+    public static void recordParserDetails(String parserClassName, Metadata metadata) {
         String[] parsedBys = metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY);
         if (parsedBys == null || parsedBys.length == 0) {
-            metadata.add(TikaCoreProperties.TIKA_PARSED_BY, className);
-        } else if (Arrays.stream(parsedBys).noneMatch(className::equals)) {
+            metadata.add(TikaCoreProperties.TIKA_PARSED_BY, parserClassName);
+        } else if (Arrays.stream(parsedBys).noneMatch(parserClassName::equals)) {
             //only add parser once
-            metadata.add(TikaCoreProperties.TIKA_PARSED_BY, className);
+            metadata.add(TikaCoreProperties.TIKA_PARSED_BY, parserClassName);
         }
     }
 

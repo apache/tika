@@ -386,7 +386,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                 return;
             }
 
-            handleEmbeddedOfficeDoc(fileSystem.getRoot(), xhtml);
+            handleEmbeddedOfficeDoc(fileSystem.getRoot(), xhtml, true);
 
         } finally {
             if (fileSystem != null) {

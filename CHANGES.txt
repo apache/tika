@@ -6,22 +6,47 @@ Release 2.4.0 - ???
      https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-ml/tika-dl/pom.xml
      for the dependencies that must be provided at run-time (TIKA-3676).
 
+   * Allow specification of fetcherName and fetchKey via query parameters
+     in request URI in tika-server (TIKA-3714).
+
+   * Add basic parsers for WARC and WACZ in tika-parsers-standard (TIKA-3697).
+
    * Add MetadataWriteFilter capability to improve memory profile in
      Metadata objects (TIKA-3695).
 
-   * Add basic parsers for WARC and WACZ in tika-parsers-standard (TIKA-3697).
+   * Allow configurability of the ContentHandlerDecorator used
+     by the AutoDetectParser (TIKA-3723).
+
+   * Allow configurability of the EmbeddedDocumentExtractor used
+     by the AutoDetectParser (TIKA-3711).
 
    * Add detection for Frictionless Data packages and WACZ (TIKA-3696).
 
    * Add a fetcher and emitter for Azure blob storage (TIKA-3707).
 
+   * Add detection for files encrypted by Microsoft's Rights Management Service
+     (TIKA-3666).
+
+   * Fixed regression in 2.3.0 that led to more embedded filenames
+     than appropriate being written to the content (TIKA-3711).
+
+   * tika-server now clones forking process' environment variables
+     into forked process (TIKA-3715).
+
    * Add an optional /eval endpoint for tika-eval profile or compare
      capabilities in tika-server (TIKA-3689).
+
+   * Add a Parsed-By-Full-Set metadata item to record all parsers that processed
+     a file (TIKA-3716).
+
+   * Add metadata filters for Optimaize and OpenNLP language detectors (TIKA-3717).
 
    * Upgrade deeplearning4j to 1.0.0-M2 (TIKA-3458 and PR#527).
 
    * Various dependency upgrades, including POI, dl4j, gson, jackson,
      twelvemonkeys, log4j2 and others (TIKA-3675 and many PRs from dependabot).
+
+   * Switch cipher from ECB to GCM in HttpClientFactory (TIKA-3724).
 
 Release 2.3.0 - 02/02/2022
 
