@@ -21,11 +21,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.GeneralSecurityException;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -35,7 +39,16 @@ import javax.ws.rs.core.Response;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.io.IOUtils;
+import org.apache.cxf.configuration.jsse.TLSClientParameters;
+import org.apache.cxf.configuration.jsse.TLSParameterJaxBUtils;
+import org.apache.cxf.configuration.security.KeyManagersType;
+import org.apache.cxf.configuration.security.KeyStoreType;
+import org.apache.cxf.configuration.security.TrustManagersType;
 import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.cxf.transport.http.HTTPConduit;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -50,6 +63,28 @@ import org.apache.tika.utils.ProcessUtils;
 public class TikaServerIntegrationTest extends IntegrationTestBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerIntegrationTest.class);
+    private static Path SSL;
+    private static Path TIKA_SSL_CONFIG;
+    @BeforeAll
+    public static void setUpSSL() throws Exception {
+        SSL =
+                Paths.get(TikaServerIntegrationTest.class.getResource("/ssl-keys").toURI());
+        String xml = IOUtils.resourceToString("/configs/tika-config-server-tls-template.xml",
+                UTF_8);
+        xml = xml.replaceAll("\\$\\{SSL_KEYS\\}", SSL.toAbsolutePath().toString());
+
+        TIKA_SSL_CONFIG = Files.createTempFile("tika-config-tls-", ".xml");
+        try {
+            Files.write(TIKA_SSL_CONFIG, xml.getBytes(UTF_8));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @AfterAll
+    public static void cleanUpSSL() throws IOException {
+        Files.delete(TIKA_SSL_CONFIG);
+    }
 
     @Test
     public void testBasic() throws Exception {
@@ -260,6 +295,16 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         }
     }
 
+    private String getSSL(String file) {
+        try {
+            return ProcessUtils.escapeCommandLine(Paths.get(TikaServerIntegrationTest.class.
+                    getResource("/ssl-keys/" + file).toURI()).toAbsolutePath().toString());
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
     @Test
     public void testStdErrOutBasic() throws Exception {
         startProcess(
@@ -273,6 +318,69 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         assertEquals(1, metadataList.size());
         assertContains("quick brown fox", metadataList.get(0).get("X-TIKA:content"));
         testBaseline();
+
+    }
+
+    @Test
+    public void testTLS() throws Exception {
+        startProcess(
+                new String[]{"-config",
+                        ProcessUtils.escapeCommandLine(TIKA_SSL_CONFIG.toAbsolutePath().toString())});
+
+        String httpsEndpoint = "https://localhost:" + INTEGRATION_TEST_PORT;
+        WebClient webClient = WebClient.create(httpsEndpoint);
+        configureTLS(webClient);
+
+        awaitServerStartup(webClient);
+
+        webClient.close();
+        webClient = WebClient.create(httpsEndpoint + RMETA_PATH);
+        configureTLS(webClient);
+
+        Response response = webClient.accept("application/json")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+
+        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+        assertEquals(1, metadataList.size());
+        assertEquals("Nikolai Lobachevsky", metadataList.get(0).get("author"));
+        assertContains("hello world", metadataList.get(0).get("X-TIKA:content"));
+
+        //now test no tls config
+        webClient = WebClient.create(httpsEndpoint + RMETA_PATH);
+
+        try {
+            response = webClient.accept("application/json").put(
+                    ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
+            fail("bad, bad, bad. this should have failed!");
+        } catch (Exception e) {
+            assertContains("javax.net.ssl.SSLHandshakeException", e.getMessage());
+        }
+    }
+
+    private void configureTLS(WebClient webClient) throws GeneralSecurityException, IOException {
+        HTTPConduit conduit = WebClient.getConfig(webClient)
+                .getHttpConduit();
+        KeyStoreType keystore = new KeyStoreType();
+        keystore.setType("PKCS12");
+        keystore.setPassword("tika-secret");
+        keystore.setFile(getSSL("tika-client-keystore.p12"));
+        KeyManagersType kmt = new KeyManagersType();
+        kmt.setKeyStore(keystore);
+        kmt.setKeyPassword("tika-secret");
+        TLSClientParameters parameters = new TLSClientParameters();
+        parameters.setKeyManagers(TLSParameterJaxBUtils.getKeyManagers(kmt));
+
+        KeyStoreType trustKeyStore = new KeyStoreType();
+        trustKeyStore.setType("PKCS12");
+        trustKeyStore.setPassword("tika-secret");
+        trustKeyStore.setFile(getSSL("tika-client-truststore.p12"));
+
+        TrustManagersType tmt = new TrustManagersType();
+        tmt.setKeyStore(trustKeyStore);
+        parameters.setTrustManagers(TLSParameterJaxBUtils.getTrustManagers(tmt, true));
+
+        conduit.setTlsClientParameters(parameters);
 
     }
 

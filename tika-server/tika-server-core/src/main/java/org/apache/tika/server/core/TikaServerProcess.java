@@ -285,8 +285,7 @@ public class TikaServerProcess {
         KeyStoreType keyStore = new KeyStoreType();
         keyStore.setType(tlsConfig.getKeyStoreType());
         keyStore.setPassword(tlsConfig.getKeyStorePassword());
-        keyStore.setResource(tlsConfig.getKeyStoreFile());
-
+        keyStore.setFile(tlsConfig.getKeyStoreFile());
         KeyManagersType kmt = new KeyManagersType();
         kmt.setKeyStore(keyStore);
         kmt.setKeyPassword(tlsConfig.getKeyStorePassword());
@@ -297,8 +296,7 @@ public class TikaServerProcess {
             KeyStoreType trustKeyStore = new KeyStoreType();
             trustKeyStore.setType(tlsConfig.getTrustStoreType());
             trustKeyStore.setPassword(tlsConfig.getTrustStorePassword());
-            trustKeyStore.setResource(tlsConfig.getTrustStoreFile());
-
+            trustKeyStore.setFile(tlsConfig.getTrustStoreFile());
             TrustManagersType tmt = new TrustManagersType();
             tmt.setKeyStore(trustKeyStore);
             parameters.setTrustManagers(TLSParameterJaxBUtils.getTrustManagers(tmt, true));
