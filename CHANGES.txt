@@ -6,6 +6,8 @@ Release 2.4.0 - ???
      https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-ml/tika-dl/pom.xml
      for the dependencies that must be provided at run-time (TIKA-3676).
 
+   * Add initial TLS encryption option for tika-server (TIKA-3719).
+
    * Allow specification of fetcherName and fetchKey via query parameters
      in request URI in tika-server (TIKA-3714).
 
