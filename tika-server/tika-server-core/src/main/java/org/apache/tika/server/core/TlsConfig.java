@@ -128,6 +128,10 @@ public class TlsConfig implements Initializable {
                             "if there's any trustStore info");
                 }
             }
+            if (!hasTrustStore() && isClientAuthenticationRequired()) {
+                throw new TikaConfigException("requiring client authentication, but no trust " +
+                        "store has been specified?!");
+            }
         }
     }
 
