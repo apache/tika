@@ -38,6 +38,8 @@
         <trustStoreType>PKCS12</trustStoreType>
         <trustStorePassword>tika-secret</trustStorePassword>
         <trustStoreFile>${SSL_KEYS}/tika-server-truststore.p12</trustStoreFile>
+        <clientAuthenticationWanted>true</clientAuthenticationWanted>
+        <clientAuthenticationRequired>true</clientAuthenticationRequired>
       </params>
     </tlsConfig>
   </server>

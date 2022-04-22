@@ -63,27 +63,36 @@ import org.apache.tika.utils.ProcessUtils;
 public class TikaServerIntegrationTest extends IntegrationTestBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerIntegrationTest.class);
-    private static Path SSL;
-    private static Path TIKA_SSL_CONFIG;
+    private static Path TLS_KEYS;
+    private static Path TIKA_TLS_ONE_WAY_CONFIG;
+    private static Path TIKA_TLS_TWO_WAY_CONFIG;
     @BeforeAll
     public static void setUpSSL() throws Exception {
-        SSL =
+        TLS_KEYS =
                 Paths.get(TikaServerIntegrationTest.class.getResource("/ssl-keys").toURI());
-        String xml = IOUtils.resourceToString("/configs/tika-config-server-tls-template.xml",
-                UTF_8);
-        xml = xml.replaceAll("\\$\\{SSL_KEYS\\}", SSL.toAbsolutePath().toString());
 
-        TIKA_SSL_CONFIG = Files.createTempFile("tika-config-tls-", ".xml");
-        try {
-            Files.write(TIKA_SSL_CONFIG, xml.getBytes(UTF_8));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        String xml = IOUtils.resourceToString(
+                "/configs/tika-config-server-tls-two-way-template.xml",
+                UTF_8);
+        xml = xml.replaceAll("\\$\\{SSL_KEYS\\}", TLS_KEYS.toAbsolutePath().toString());
+
+        TIKA_TLS_TWO_WAY_CONFIG = Files.createTempFile("tika-config-tls-", ".xml");
+        Files.write(TIKA_TLS_TWO_WAY_CONFIG, xml.getBytes(UTF_8));
+
+        xml = IOUtils.resourceToString(
+                "/configs/tika-config-server-tls-one-way-template.xml",
+                UTF_8);
+        xml = xml.replaceAll("\\$\\{SSL_KEYS\\}", TLS_KEYS.toAbsolutePath().toString());
+
+        TIKA_TLS_ONE_WAY_CONFIG = Files.createTempFile("tika-config-tls-", ".xml");
+        Files.write(TIKA_TLS_ONE_WAY_CONFIG, xml.getBytes(UTF_8));
+
     }
 
     @AfterAll
     public static void cleanUpSSL() throws IOException {
-        Files.delete(TIKA_SSL_CONFIG);
+        Files.delete(TIKA_TLS_TWO_WAY_CONFIG);
+        Files.delete(TIKA_TLS_ONE_WAY_CONFIG);
     }
 
     @Test
@@ -322,20 +331,20 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    public void testTLS() throws Exception {
+    public void test1WayTLS() throws Exception {
         startProcess(
                 new String[]{"-config",
-                        ProcessUtils.escapeCommandLine(TIKA_SSL_CONFIG.toAbsolutePath().toString())});
+                        ProcessUtils.escapeCommandLine(TIKA_TLS_ONE_WAY_CONFIG.toAbsolutePath().toString())});
 
         String httpsEndpoint = "https://localhost:" + INTEGRATION_TEST_PORT;
         WebClient webClient = WebClient.create(httpsEndpoint);
-        configureTLS(webClient);
+        configure1WayTLS(webClient);
 
         awaitServerStartup(webClient);
 
         webClient.close();
         webClient = WebClient.create(httpsEndpoint + RMETA_PATH);
-        configureTLS(webClient);
+        configure1WayTLS(webClient);
 
         Response response = webClient.accept("application/json")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
@@ -357,8 +366,55 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
             assertContains("javax.net.ssl.SSLHandshakeException", e.getMessage());
         }
     }
+    @Test
+    public void test2WayTLS() throws Exception {
+        startProcess(
+                new String[]{"-config",
+                        ProcessUtils.escapeCommandLine(TIKA_TLS_TWO_WAY_CONFIG.toAbsolutePath().toString())});
 
-    private void configureTLS(WebClient webClient) throws GeneralSecurityException, IOException {
+        String httpsEndpoint = "https://localhost:" + INTEGRATION_TEST_PORT;
+        WebClient webClient = WebClient.create(httpsEndpoint);
+        configure2WayTLS(webClient);
+
+        awaitServerStartup(webClient);
+
+        webClient.close();
+        webClient = WebClient.create(httpsEndpoint + RMETA_PATH);
+        configure2WayTLS(webClient);
+
+        Response response = webClient.accept("application/json")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+
+        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+        assertEquals(1, metadataList.size());
+        assertEquals("Nikolai Lobachevsky", metadataList.get(0).get("author"));
+        assertContains("hello world", metadataList.get(0).get("X-TIKA:content"));
+
+        //now test that no tls config fails
+        webClient = WebClient.create(httpsEndpoint + RMETA_PATH);
+
+        try {
+            response = webClient.accept("application/json").put(
+                    ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
+            fail("bad, bad, bad. this should have failed!");
+        } catch (Exception e) {
+            assertContains("javax.net.ssl.SSLHandshakeException", e.getMessage());
+        }
+
+        //now test that 1 way fails
+        webClient = WebClient.create(httpsEndpoint + RMETA_PATH);
+        configure1WayTLS(webClient);
+        try {
+            response = webClient.accept("application/json").put(
+                    ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
+            fail("bad, bad, bad. this should have failed!");
+        } catch (Exception e) {
+            assertContains("readHandshakeRecord", e.getMessage());
+        }
+    }
+
+    private void configure2WayTLS(WebClient webClient) throws GeneralSecurityException, IOException {
         HTTPConduit conduit = WebClient.getConfig(webClient)
                 .getHttpConduit();
         KeyStoreType keystore = new KeyStoreType();
@@ -382,6 +438,23 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
 
         conduit.setTlsClientParameters(parameters);
 
+    }
+
+    private void configure1WayTLS(WebClient webClient) throws GeneralSecurityException,
+            IOException {
+        HTTPConduit conduit = WebClient.getConfig(webClient)
+                .getHttpConduit();
+        TLSClientParameters parameters = new TLSClientParameters();
+
+        KeyStoreType trustKeyStore = new KeyStoreType();
+        trustKeyStore.setType("PKCS12");
+        trustKeyStore.setPassword("tika-secret");
+        trustKeyStore.setFile(getSSL("tika-client-truststore.p12"));
+
+        TrustManagersType tmt = new TrustManagersType();
+        tmt.setKeyStore(trustKeyStore);
+        parameters.setTrustManagers(TLSParameterJaxBUtils.getTrustManagers(tmt, true));
+        conduit.setTlsClientParameters(parameters);
     }
 
     @Test

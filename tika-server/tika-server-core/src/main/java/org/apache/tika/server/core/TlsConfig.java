@@ -36,6 +36,10 @@ public class TlsConfig implements Initializable {
     private String trustStorePassword = null;
     private String trustStoreFile = null;
 
+    private boolean clientAuthenticationWanted = false;
+
+    private boolean clientAuthenticationRequired = false;
+
     public boolean isActive() {
         return active;
     }
@@ -127,6 +131,22 @@ public class TlsConfig implements Initializable {
         }
     }
 
+    public boolean isClientAuthenticationWanted() {
+        return clientAuthenticationWanted;
+    }
+
+    public void setClientAuthenticationWanted(boolean clientAuthenticationWanted) {
+        this.clientAuthenticationWanted = clientAuthenticationWanted;
+    }
+
+    public boolean isClientAuthenticationRequired() {
+        return clientAuthenticationRequired;
+    }
+
+    public void setClientAuthenticationRequired(boolean clientAuthenticationRequired) {
+        this.clientAuthenticationRequired = clientAuthenticationRequired;
+    }
+
     @Override
     public String toString() {
         return "TlsConfig{" + "active=" + active + ", passwordsAESEncrypted=" +
@@ -134,7 +154,9 @@ public class TlsConfig implements Initializable {
                 ", keyStorePassword='" + keyStorePassword + '\'' + ", keyStoreFile='" +
                 keyStoreFile + '\'' + ", trustStoreType='" + trustStoreType + '\'' +
                 ", trustStorePassword='" + trustStorePassword + '\'' + ", trustStoreFile='" +
-                trustStoreFile + '\'' + '}';
+                trustStoreFile + '\'' + ", clientAuthenticationWanted=" +
+                clientAuthenticationWanted + ", isClientAuthenticationRequired=" +
+                clientAuthenticationRequired + '}';
     }
 
     public boolean hasTrustStore() {
