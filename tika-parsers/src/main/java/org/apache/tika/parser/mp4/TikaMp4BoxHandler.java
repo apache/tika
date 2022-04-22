@@ -24,7 +24,6 @@ import com.drew.lang.annotations.Nullable;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.mp4.Mp4BoxHandler;
 import com.drew.metadata.mp4.Mp4Context;
-import com.drew.metadata.mp4.boxes.Box;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.parser.mp4.boxes.TikaUserDataBox;
@@ -42,35 +41,36 @@ public class TikaMp4BoxHandler extends Mp4BoxHandler {
     }
 
     @Override
-    public boolean shouldAcceptBox(@NotNull Box box) {
-        if (box.type.equals("udta")) {
+    public boolean shouldAcceptBox(@NotNull String type) {
+        if (type.equals("udta")) {
             return true;
         }
-        return super.shouldAcceptBox(box);
+        return super.shouldAcceptBox(type);
     }
 
     @Override
-    public boolean shouldAcceptContainer(@NotNull Box box) {
-        return super.shouldAcceptContainer(box);
+    public boolean shouldAcceptContainer(@NotNull String type) {
+        return super.shouldAcceptContainer(type);
     }
 
     @Override
-    public Mp4Handler<?> processBox(@NotNull Box box, @Nullable byte[] payload, Mp4Context context)
+    public Mp4Handler<?> processBox(@NotNull String type, @Nullable byte[] payload, long boxSize,
+                                    Mp4Context context)
             throws IOException {
-        if (box.type.equals("udta")) {
-            return processUserData(box, payload, context);
+        if (type.equals("udta")) {
+            return processUserData(type, payload, boxSize);
         }
 
-        return super.processBox(box, payload, context);
+        return super.processBox(type, payload, boxSize, context);
     }
 
 
-    private Mp4Handler<?> processUserData(Box box, byte[] payload, Mp4Context context) throws IOException {
+    private Mp4Handler<?> processUserData(String type, byte[] payload, long length) throws IOException {
         if (payload == null) {
             return this;
         }
         try {
-            new TikaUserDataBox(box, payload, tikaMetadata, xhtml).addMetadata(directory);
+            new TikaUserDataBox(type, payload, tikaMetadata, xhtml).addMetadata(directory);
         } catch (SAXException e) {
             throw new IOException(e);
         }
