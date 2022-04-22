@@ -98,4 +98,20 @@ public class TikaServerConfigTest {
         assertEquals(9994, ports[0]);
         assertEquals(9999, ports[5]);
     }
+
+    @Test
+    public void testTlsConfig() throws Exception {
+        Set<String> settings = new HashSet<>();
+        CommandLineParser parser = new DefaultParser();
+        CommandLine emptyCommandLine = parser.parse(new Options(), new String[]{});
+        Path path = Paths.get(TikaConfigTest.class.getResource(
+                "/configs/tika-config-server-tls.xml").toURI());
+        TikaServerConfig config = TikaServerConfig
+                .load(path,
+                        emptyCommandLine,
+                        settings);
+        TlsConfig tlsConfig = config.getTlsConfig();
+        System.out.println(tlsConfig);
+    }
+
 }

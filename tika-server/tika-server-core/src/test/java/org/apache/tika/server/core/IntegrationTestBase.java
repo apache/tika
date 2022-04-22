@@ -126,9 +126,14 @@ public class IntegrationTestBase extends TikaTest {
     }
 
     void awaitServerStartup() throws Exception {
+        WebClient client = WebClient.create(endPoint + "/").accept("text/html");
+        awaitServerStartup(client);
+
+    }
+
+    void awaitServerStartup(WebClient client) throws Exception {
         Instant started = Instant.now();
         long elapsed = Duration.between(started, Instant.now()).toMillis();
-        WebClient client = WebClient.create(endPoint + "/").accept("text/html");
         while (elapsed < MAX_WAIT_MS) {
             try {
                 Response response = client.get();

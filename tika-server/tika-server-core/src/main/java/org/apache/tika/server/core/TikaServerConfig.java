@@ -130,6 +130,7 @@ public class TikaServerConfig extends ConfigBase {
     private String forkedStatusFile;
     private int numRestarts = 0;
 
+    private TlsConfig tlsConfig = new TlsConfig();
     /**
      * Config with only the defaults
      */
@@ -525,6 +526,12 @@ public class TikaServerConfig extends ConfigBase {
         this.returnStackTrace = returnStackTrace;
     }
 
+    public void setTlsConfig(TlsConfig tlsConfig) {
+        this.tlsConfig = tlsConfig;
+    }
+    public TlsConfig getTlsConfig() {
+        return tlsConfig;
+    }
     public List<String> getEndpoints() {
         return endpoints;
     }
