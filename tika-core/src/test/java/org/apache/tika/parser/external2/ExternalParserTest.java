@@ -22,8 +22,6 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
@@ -38,7 +36,6 @@ import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RegexCaptureParser;
-import org.apache.tika.utils.ProcessUtils;
 
 public class ExternalParserTest extends TikaTest {
 
