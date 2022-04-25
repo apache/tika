@@ -410,11 +410,8 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
                     ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
             fail("bad, bad, bad. this should have failed!");
         } catch (Exception e) {
-            assertTrue(
-                    //linux
-                    e.getMessage().contains("readHandshakeRecord") ||
-                    //windows
-                    e.getMessage().contains("SocketException"));
+            //the messages vary too much between operating systems and
+            //java versions to make a reliable assertion
         }
     }
 
