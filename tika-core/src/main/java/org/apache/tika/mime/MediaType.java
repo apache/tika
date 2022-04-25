@@ -39,15 +39,15 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
      */
     private static final long serialVersionUID = -3831000556189036392L;
 
-    private static final Pattern SPECIAL = Pattern.compile("[\\(\\)<>@,;:\\\\\"/\\[\\]\\?=]");
+    private static final Pattern SPECIAL = Pattern.compile("[()<>@,;:\\\\\"/\\[\\]?=]");
 
     private static final Pattern SPECIAL_OR_WHITESPACE =
-            Pattern.compile("[\\(\\)<>@,;:\\\\\"/\\[\\]\\?=\\s]");
+            Pattern.compile("[()<>@,;:\\\\\"/\\[\\]?=\\s]");
 
     /**
      * See http://www.ietf.org/rfc/rfc2045.txt for valid mime-type characters.
      */
-    private static final String VALID_CHARS = "([^\\c\\(\\)<>@,;:\\\\\"/\\[\\]\\?=\\s]+)";
+    private static final String VALID_CHARS = "([^\\c\\()<>@,;:\\\\\"/\\[\\]?=\\s]+)";
 
     private static final Pattern TYPE_PATTERN =
             Pattern.compile("(?s)\\s*" + VALID_CHARS + "\\s*/\\s*" + VALID_CHARS + "\\s*($|;.*)");
@@ -341,6 +341,14 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
         }
         while (s.endsWith("\"") || s.endsWith("'")) {
             s = s.substring(0, s.length() - 1);
+        }
+        for (int i = 0; i < s.length() - 1; i++) {
+            if (s.charAt(i) == '\\' && !('0' <= s.charAt(i + 1) && s.charAt(i + 1) <= '9') &&
+                    !('a' <= s.charAt(i + 1) && s.charAt(i + 1) <= 'z') &&
+                    s.charAt(i + 1) != '-' && s.charAt(i + 1) != '+' &&
+                    s.charAt(i + 1) != '.' && s.charAt(i + 1) != '_') {
+                s = s.substring(0, i) + s.substring(i + 1);
+            }
         }
         return s;
     }
