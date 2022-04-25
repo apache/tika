@@ -34,10 +34,10 @@
         <active>true</active>
         <keyStoreType>PKCS12</keyStoreType>
         <keyStorePassword>tika-secret</keyStorePassword>
-        <keyStoreFile>${SSL_KEYS}/tika-server-keystore.p12</keyStoreFile>
+        <keyStoreFile>{SSL_KEYS}/tika-server-keystore.p12</keyStoreFile>
         <trustStoreType>PKCS12</trustStoreType>
         <trustStorePassword>tika-secret</trustStorePassword>
-        <trustStoreFile>${SSL_KEYS}/tika-server-truststore.p12</trustStoreFile>
+        <trustStoreFile>{SSL_KEYS}/tika-server-truststore.p12</trustStoreFile>
         <clientAuthenticationWanted>true</clientAuthenticationWanted>
         <clientAuthenticationRequired>true</clientAuthenticationRequired>
       </params>

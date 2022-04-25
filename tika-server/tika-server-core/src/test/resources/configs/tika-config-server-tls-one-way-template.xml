@@ -34,7 +34,7 @@
         <active>true</active>
         <keyStoreType>PKCS12</keyStoreType>
         <keyStorePassword>tika-secret</keyStorePassword>
-        <keyStoreFile>${SSL_KEYS}/tika-server-keystore.p12</keyStoreFile>
+        <keyStoreFile>{SSL_KEYS}/tika-server-keystore.p12</keyStoreFile>
         <clientAuthenticationWanted>false</clientAuthenticationWanted>
         <clientAuthenticationRequired>false</clientAuthenticationRequired>
       </params>
