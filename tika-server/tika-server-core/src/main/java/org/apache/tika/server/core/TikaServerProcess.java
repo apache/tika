@@ -263,6 +263,8 @@ public class TikaServerProcess {
         sf.setResourceComparator(new ProduceTypeResourceComparator());
         BindingFactoryManager manager = sf.getBus().getExtension(BindingFactoryManager.class);
         if (tikaServerConfig.getTlsConfig().isActive()) {
+            LOG.warn("The TLS configuration is in BETA and might change " +
+                    "dramatically in future releases.");
             TLSServerParameters tlsParams = getTlsParams(tikaServerConfig.getTlsConfig());
             JettyHTTPServerEngineFactory factory = new JettyHTTPServerEngineFactory();
             factory.setBus(sf.getBus());
