@@ -306,8 +306,8 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
 
     private String getSSL(String file) {
         try {
-            return ProcessUtils.escapeCommandLine(Paths.get(TikaServerIntegrationTest.class.
-                    getResource("/ssl-keys/" + file).toURI()).toAbsolutePath().toString());
+            return Paths.get(TikaServerIntegrationTest.class.
+                    getResource("/ssl-keys/" + file).toURI()).toAbsolutePath().toString();
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
