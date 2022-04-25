@@ -414,7 +414,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
                     //linux
                     e.getMessage().contains("readHandshakeRecord") ||
                     //windows
-                    e.getMessage().contains("Error writing to server"));
+                    e.getMessage().contains("SocketException"));
         }
     }
 
