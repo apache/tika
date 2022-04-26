@@ -30,6 +30,8 @@ Release 2.4.0 - ???
    * Add detection for DGN files with gratitude and credit
      to Steven Frew's tika-dgn-detector (TIKA-3721).
 
+   * Add parser for metadata from DGN 8 files via Dan Coldrick (TIKA-3721).
+
    * Add a fetcher and emitter for Azure blob storage (TIKA-3707).
 
    * Add detection for files encrypted by Microsoft's Rights Management Service

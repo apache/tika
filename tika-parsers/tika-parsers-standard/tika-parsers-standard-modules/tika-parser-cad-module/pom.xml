@@ -32,9 +32,9 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.apache.poi</groupId>
-      <artifactId>poi</artifactId>
-      <version>${poi.version}</version>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-parser-microsoft-module</artifactId>
+      <version>${project.version}</version>
     </dependency>
   </dependencies>
   <build>
