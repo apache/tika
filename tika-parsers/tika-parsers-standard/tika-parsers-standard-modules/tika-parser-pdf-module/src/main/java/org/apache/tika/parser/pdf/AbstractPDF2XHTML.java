@@ -109,6 +109,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.renderer.RenderResults;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -140,6 +141,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     final EmbeddedDocumentExtractor embeddedDocumentExtractor;
     final PDFParserConfig config;
     final Parser ocrParser;
+
+    final RenderResults renderResults;
     /**
      * Format used for signature dates
      * TODO Make this thread-safe
@@ -157,11 +160,12 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     int totalCharsPerPage = 0;
 
     AbstractPDF2XHTML(PDDocument pdDocument, ContentHandler handler, ParseContext context,
-                      Metadata metadata, PDFParserConfig config) throws IOException {
+                      Metadata metadata, RenderResults renderResults, PDFParserConfig config) throws IOException {
         this.pdDocument = pdDocument;
         this.xhtml = new XHTMLContentHandler(handler, metadata);
         this.context = context;
         this.metadata = metadata;
+        this.renderResults = renderResults;
         this.config = config;
         embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         if (config.getOcrStrategy() == NO_OCR) {
@@ -482,6 +486,23 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             }
         }
 
+        try (TemporaryResources tmp = new TemporaryResources()) {
+            Path tmpFile = renderPage(tmp);
+
+            try (InputStream is = TikaInputStream.get(tmpFile)) {
+                metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
+                        ocrImageMediaType.toString());
+                ocrParser.parse(is, new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
+                        metadata, context);
+            }
+        } catch (IOException e) {
+            handleCatchableIOE(e);
+        } catch (SAXException e) {
+            throw new IOException("error writing OCR content from PDF", e);
+        }
+    }
+
+    private Path renderPage(TemporaryResources tmpResources) {
         PDFRenderer renderer =
                 config.getOcrRenderingStrategy() == PDFParserConfig.OCR_RENDERING_STRATEGY.NO_TEXT ?
                         new NoTextPDFRenderer(pdDocument) : new PDFRenderer(pdDocument);
@@ -509,17 +530,6 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                         ExceptionUtils.getStackTrace(e));
                 return;
             }
-            try (InputStream is = TikaInputStream.get(tmpFile)) {
-                metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
-                        ocrImageMediaType.toString());
-                ocrParser.parse(is, new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
-                        metadata, context);
-            }
-        } catch (IOException e) {
-            handleCatchableIOE(e);
-        } catch (SAXException e) {
-            throw new IOException("error writing OCR content from PDF", e);
-        }
     }
 
     @Override

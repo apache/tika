@@ -40,6 +40,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.renderer.RenderResults;
 
 /**
  * Utility class that overrides the {@link PDFTextStripper} functionality
@@ -64,8 +65,8 @@ class PDF2XHTML extends AbstractPDF2XHTML {
     private AtomicInteger inlineImageCounter = new AtomicInteger(0);
 
     PDF2XHTML(PDDocument document, ContentHandler handler, ParseContext context, Metadata metadata,
-              PDFParserConfig config) throws IOException {
-        super(document, handler, context, metadata, config);
+              RenderResults renderResults, PDFParserConfig config) throws IOException {
+        super(document, handler, context, metadata, renderResults, config);
     }
 
     /**
@@ -79,7 +80,8 @@ class PDF2XHTML extends AbstractPDF2XHTML {
      * @throws TikaException if there was an exception outside of per page processing
      */
     public static void process(PDDocument document, ContentHandler handler, ParseContext context,
-                               Metadata metadata, PDFParserConfig config)
+                               Metadata metadata, RenderResults renderResults,
+                               PDFParserConfig config)
             throws SAXException, TikaException {
         PDF2XHTML pdf2XHTML = null;
         try {
@@ -90,7 +92,8 @@ class PDF2XHTML extends AbstractPDF2XHTML {
                 pdf2XHTML =
                         new AngleDetectingPDF2XHTML(document, handler, context, metadata, config);
             } else {
-                pdf2XHTML = new PDF2XHTML(document, handler, context, metadata, config);
+                pdf2XHTML = new PDF2XHTML(document, handler, context, metadata, renderResults,
+                        config);
             }
             config.configure(pdf2XHTML);
 

@@ -29,6 +29,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.renderer.RenderResults;
 
 
 /**
@@ -38,7 +39,7 @@ import org.apache.tika.parser.ParseContext;
 class OCR2XHTML extends AbstractPDF2XHTML {
 
     private OCR2XHTML(PDDocument document, ContentHandler handler, ParseContext context,
-                      Metadata metadata, PDFParserConfig config) throws IOException {
+                      Metadata metadata, RenderResults renderResults, PDFParserConfig config) throws IOException {
         super(document, handler, context, metadata, config);
     }
 
@@ -53,11 +54,12 @@ class OCR2XHTML extends AbstractPDF2XHTML {
      * @throws TikaException if there was an exception outside of per page processing
      */
     public static void process(PDDocument document, ContentHandler handler, ParseContext context,
-                               Metadata metadata, PDFParserConfig config)
+                               Metadata metadata, RenderResults renderResults,
+                               PDFParserConfig config)
             throws SAXException, TikaException {
         OCR2XHTML ocr2XHTML = null;
         try {
-            ocr2XHTML = new OCR2XHTML(document, handler, context, metadata, config);
+            ocr2XHTML = new OCR2XHTML(document, handler, context, metadata, renderResults, config);
             ocr2XHTML.writeText(document, new Writer() {
                 @Override
                 public void write(char[] cbuf, int off, int len) {

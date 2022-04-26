@@ -29,6 +29,7 @@ import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.text.PDFTextStripper;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.renderer.Renderer;
 
 /**
  * Config for PDFParser.
@@ -129,6 +130,8 @@ public class PDFParserConfig implements Serializable {
     private boolean setKCMS = false;
 
     private boolean detectAngles = false;
+
+    private Renderer renderer;
 
     /**
      * @return whether or not to extract only inline image metadata and not render the images
@@ -855,6 +858,14 @@ public class PDFParserConfig implements Serializable {
             return false;
         }
         return getMaxMainMemoryBytes() == config.getMaxMainMemoryBytes();
+    }
+
+    public void setRenderer(Renderer renderer) {
+        this.renderer = renderer;
+    }
+
+    public Renderer getRenderer() {
+        return renderer;
     }
 
     @Override

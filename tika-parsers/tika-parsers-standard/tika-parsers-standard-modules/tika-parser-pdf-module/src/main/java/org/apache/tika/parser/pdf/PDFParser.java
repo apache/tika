@@ -64,6 +64,9 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
+import org.apache.tika.parser.RenderingParser;
+import org.apache.tika.renderer.RenderResults;
+import org.apache.tika.renderer.Renderer;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
@@ -96,7 +99,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * If your PDFs contain marked content or tags, consider
  * {@link PDFParserConfig#setExtractMarkedContent(boolean)}
  */
-public class PDFParser extends AbstractParser implements Initializable {
+public class PDFParser extends AbstractParser implements RenderingParser, Initializable {
 
     /**
      * Metadata key for giving the document password to the parser.
@@ -149,12 +152,17 @@ public class PDFParser extends AbstractParser implements Initializable {
                 pdfDocument = getPDDocument(new CloseShieldInputStream(stream), password,
                         memoryUsageSetting, metadata, context);
             }
+            tstream.setOpenContainer(pdfDocument);
             metadata.set(PDF.IS_ENCRYPTED, Boolean.toString(pdfDocument.isEncrypted()));
 
             metadata.set(Metadata.CONTENT_TYPE, MEDIA_TYPE.toString());
             extractMetadata(pdfDocument, metadata, context);
             AccessChecker checker = localConfig.getAccessChecker();
             checker.check(metadata);
+            RenderResults renderResults = null;
+            if (localConfig.getRenderer().getSupportedTypes(context).contains(MEDIA_TYPE)) {
+                renderResults = renderPDF(tstream, context, localConfig);
+            }
             if (handler != null) {
                 boolean hasXFA = hasXFA(pdfDocument);
                 metadata.set(PDF.HAS_XFA, Boolean.toString(hasXFA));
@@ -166,12 +174,15 @@ public class PDFParser extends AbstractParser implements Initializable {
                     handleXFAOnly(pdfDocument, handler, metadata, context);
                 } else if (localConfig.getOcrStrategy()
                         .equals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY)) {
-                    OCR2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
+                    OCR2XHTML.process(pdfDocument, handler, context, metadata, renderResults,
+                            localConfig);
                 } else if (hasMarkedContent && localConfig.isExtractMarkedContent()) {
                     PDFMarkedContent2XHTML
-                            .process(pdfDocument, handler, context, metadata, localConfig);
+                            .process(pdfDocument, handler, context, metadata, renderResults,
+                                    localConfig);
                 } else {
-                    PDF2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
+                    PDF2XHTML.process(pdfDocument, handler, context, metadata, renderResults,
+                            localConfig);
                 }
             }
         } catch (InvalidPasswordException e) {
@@ -182,6 +193,14 @@ public class PDFParser extends AbstractParser implements Initializable {
                 pdfDocument.close();
             }
         }
+    }
+
+    private RenderResults renderPDF(TikaInputStream tstream,
+                                    ParseContext parseContext, PDFParserConfig localConfig)
+            throws IOException, TikaException {
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.TYPE, MEDIA_TYPE.toString());
+        return localConfig.getRenderer().render(tstream, metadata, parseContext);
     }
 
 
@@ -620,6 +639,11 @@ public class PDFParser extends AbstractParser implements Initializable {
     public void checkInitialization(InitializableProblemHandler handler)
             throws TikaConfigException {
         //no-op
+    }
+
+    @Override
+    public void setRenderer(Renderer renderer) {
+        defaultConfig.setRenderer(renderer);
     }
 
     /**
