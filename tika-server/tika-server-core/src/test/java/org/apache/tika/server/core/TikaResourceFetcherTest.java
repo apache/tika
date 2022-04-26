@@ -72,10 +72,10 @@ public class TikaResourceFetcherTest extends CXFTestBase {
         String configXML = getStringFromInputStream(
                 TikaResourceFetcherTest.class.getResourceAsStream(
                         "/configs/tika-config-server-fetcher-template.xml"));
-        configXML = configXML.replaceAll("\\$\\{FETCHER_BASE_PATH\\}",
+        configXML = configXML.replace("{FETCHER_BASE_PATH}",
                 inputDir.toAbsolutePath().toString());
 
-        configXML = configXML.replaceAll("\\$\\{PORT\\}", "9998");
+        configXML = configXML.replace("{PORT}", "9998");
         return new ByteArrayInputStream(configXML.getBytes(StandardCharsets.UTF_8));
     }
 

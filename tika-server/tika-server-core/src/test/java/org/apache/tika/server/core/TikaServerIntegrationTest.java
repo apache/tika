@@ -74,7 +74,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         String xml = IOUtils.resourceToString(
                 "/configs/tika-config-server-tls-two-way-template.xml",
                 UTF_8);
-        xml = xml.replaceAll("\\$\\{SSL_KEYS\\}", TLS_KEYS.toAbsolutePath().toString());
+        xml = xml.replace("{SSL_KEYS}", TLS_KEYS.toAbsolutePath().toString());
 
         TIKA_TLS_TWO_WAY_CONFIG = Files.createTempFile("tika-config-tls-", ".xml");
         Files.write(TIKA_TLS_TWO_WAY_CONFIG, xml.getBytes(UTF_8));
@@ -82,7 +82,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         xml = IOUtils.resourceToString(
                 "/configs/tika-config-server-tls-one-way-template.xml",
                 UTF_8);
-        xml = xml.replaceAll("\\$\\{SSL_KEYS\\}", TLS_KEYS.toAbsolutePath().toString());
+        xml = xml.replace("{SSL_KEYS}", TLS_KEYS.toAbsolutePath().toString());
 
         TIKA_TLS_ONE_WAY_CONFIG = Files.createTempFile("tika-config-tls-", ".xml");
         Files.write(TIKA_TLS_ONE_WAY_CONFIG, xml.getBytes(UTF_8));
@@ -306,8 +306,8 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
 
     private String getSSL(String file) {
         try {
-            return ProcessUtils.escapeCommandLine(Paths.get(TikaServerIntegrationTest.class.
-                    getResource("/ssl-keys/" + file).toURI()).toAbsolutePath().toString());
+            return Paths.get(TikaServerIntegrationTest.class.
+                    getResource("/ssl-keys/" + file).toURI()).toAbsolutePath().toString();
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
@@ -410,7 +410,8 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
                     ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
             fail("bad, bad, bad. this should have failed!");
         } catch (Exception e) {
-            assertContains("readHandshakeRecord", e.getMessage());
+            //the messages vary too much between operating systems and
+            //java versions to make a reliable assertion
         }
     }
 

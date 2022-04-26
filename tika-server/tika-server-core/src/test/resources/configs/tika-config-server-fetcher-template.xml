@@ -20,13 +20,13 @@
     <fetcher class="org.apache.tika.pipes.fetcher.fs.FileSystemFetcher">
       <params>
         <name>fsf</name>
-        <basePath>${FETCHER_BASE_PATH}</basePath>
+        <basePath>{FETCHER_BASE_PATH}</basePath>
       </params>
     </fetcher>
   </fetchers>
   <server>
     <params>
-      <port>${PORT}</port>
+      <port>{PORT}</port>
       <taskTimeoutMillis>54321</taskTimeoutMillis>
       <enableUnsecureFeatures>true</enableUnsecureFeatures>
       <noFork>true</noFork>
