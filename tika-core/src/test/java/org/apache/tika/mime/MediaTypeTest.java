@@ -32,7 +32,7 @@ import org.xml.sax.SAXException;
 public class MediaTypeTest {
 
     @Test
-    //CS304 (manually written) Issue link: https://issues.apache.org/jira/projects/TIKA/issues/TIKA-1800
+    //Issue link: https://issues.apache.org/jira/projects/TIKA/issues/TIKA-1800
     public void testEscapedSpecialChar() {
         MediaType mType = new MediaType(MediaType.APPLICATION_XML, "x-report", "#report?");
         String cType = mType.toString();

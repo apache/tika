@@ -331,6 +331,7 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
     /**
      * Fuzzy unquoting mechanism that works also with somewhat malformed
      * quotes.
+     * TIKA-1800: get rid of the escape characters which are in front of special characters for further usage (.e.g to parse on to a new MediaType as parameters)
      *
      * @param s string to unquote
      * @return unquoted string
