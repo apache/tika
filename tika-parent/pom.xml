@@ -288,7 +288,7 @@
     <rat.version>0.13</rat.version>
 
     <!-- dependency versions -->
-    <aws.version>1.12.200</aws.version>
+    <aws.version>1.12.206</aws.version>
     <asm.version>9.3</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
@@ -306,16 +306,16 @@
     <commons.logging.version>1.2</commons.logging.version>
     <commons.math3.version>3.6.1</commons.math3.version>
     <ctakes.version>4.0.0.1</ctakes.version>
-    <cxf.version>3.5.1</cxf.version>
+    <cxf.version>3.5.2</cxf.version>
     <ddplist.version>1.23</ddplist.version>
     <dl4j.version>1.0.0-M2</dl4j.version>
     <!-- fakeload versions &gt; 0.4.0 require java > 8 -->
     <fakeload.version>0.4.0</fakeload.version>
     <geoapi.version>3.0.1</geoapi.version>
-    <google.cloud.version>2.6.0</google.cloud.version>
+    <google.cloud.version>2.6.1</google.cloud.version>
     <gson.version>2.9.0</gson.version>
     <guava.version>31.1-jre</guava.version>
-    <h2.version>2.1.210</h2.version>
+    <h2.version>2.1.212</h2.version>
     <httpcomponents.version>4.5.13</httpcomponents.version>
     <httpcore.version>4.4.15</httpcore.version>
     <imageio.version>1.4.0</imageio.version>
@@ -331,7 +331,7 @@
     <jdom2.version>2.0.6.1</jdom2.version>
     <jempbox.version>1.8.16</jempbox.version>
     <jetty.version>9.4.46.v20220331</jetty.version>
-    <jhighlight.version>1.0.3</jhighlight.version>
+    <jhighlight.version>1.1.0</jhighlight.version>
     <jna.version>5.11.0</jna.version>
     <joda.time.version>2.10.10</joda.time.version>
     <json.simple.version>1.1.1</json.simple.version>
@@ -348,7 +348,7 @@
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <!-- 0.8.6 is built with java 11 and does not work with Java 8 -->
     <mime4j.version>0.8.4</mime4j.version>
-    <mockito.version>4.4.0</mockito.version>
+    <mockito.version>4.5.1</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <opencsv.version>2.3</opencsv.version>
     <objenesis.version>3.2</objenesis.version>
@@ -371,10 +371,10 @@
     <!-- we'll need to stay on 1.7 until we're java modularized ? -->
     <slf4j.version>1.7.36</slf4j.version>
     <solrj.version>8.11.1</solrj.version>
-    <spring.version>5.3.18</spring.version>
+    <spring.version>5.3.19</spring.version>
     <sqlite.version>3.36.0.3</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
-    <test.containers.version>1.16.3</test.containers.version>
+    <test.containers.version>1.17.1</test.containers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
     <tukaani.version>1.9</tukaani.version>
     <twelvemonkeys.version>3.8.2</twelvemonkeys.version>
