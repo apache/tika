@@ -96,12 +96,41 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
     private final ParseContext parseContext;
     private final boolean extractAllAlternatives;
     HtmlEncodingDetector detector = new HtmlEncodingDetector();
+
+    /**
+     * @deprecated use {@link OutlookExtractor#OutlookExtractor(DirectoryNode, Metadata, ParseContext)}
+     *      Will be removed after 2.4.0
+     * @param filesystem
+     * @param context
+     * @throws TikaException
+     */
+    @Deprecated
     public OutlookExtractor(POIFSFileSystem filesystem, ParseContext context) throws TikaException {
         this(filesystem.getRoot(), context);
     }
 
+    /**
+     * @deprecated use {@link OutlookExtractor#OutlookExtractor(DirectoryNode, Metadata, ParseContext)}
+     *              Will be removed after 2.4.0
+     * @param root
+     * @param context
+     * @throws TikaException
+     */
+    @Deprecated
     public OutlookExtractor(DirectoryNode root, ParseContext context) throws TikaException {
         super(context);
+        this.parseContext = context;
+        this.extractAllAlternatives =
+                context.get(OfficeParserConfig.class).isExtractAllAlternativesFromMSG();
+        try {
+            this.msg = new MAPIMessage(root);
+        } catch (IOException e) {
+            throw new TikaException("Failed to parse Outlook message", e);
+        }
+    }
+
+    public OutlookExtractor(DirectoryNode root, Metadata metadata, ParseContext context) throws TikaException {
+        super(context, metadata);
         this.parseContext = context;
         this.extractAllAlternatives =
                 context.get(OfficeParserConfig.class).isExtractAllAlternativesFromMSG();
@@ -156,6 +185,19 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         }
     }
 
+    public void parse(XHTMLContentHandler xhtml) throws TikaException, SAXException, IOException {
+        parse(xhtml, parentMetadata);
+    }
+
+    /**
+     * @deprecated use {@link #parse(XHTMLContentHandler), will be removed after 2.4.0}
+     * @param xhtml
+     * @param metadata
+     * @throws TikaException
+     * @throws SAXException
+     * @throws IOException
+     */
+    @Deprecated
     public void parse(XHTMLContentHandler xhtml, Metadata metadata)
             throws TikaException, SAXException, IOException {
         try {
