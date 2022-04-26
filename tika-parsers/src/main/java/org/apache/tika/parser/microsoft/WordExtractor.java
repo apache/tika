@@ -83,11 +83,8 @@ public class WordExtractor extends AbstractPOIFSExtractor {
 
     private final Deque<FormattingUtils.Tag> formattingState = new ArrayDeque<>();
 
-    private final Metadata metadata;
-
     public WordExtractor(ParseContext context, Metadata metadata) {
-        super(context);
-        this.metadata = metadata;
+        super(context, metadata);
     }
 
     private static int countParagraphs(Range... ranges) {
@@ -239,7 +236,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             return;
         }
         for (SavedByEntry sbe : savedByTable.getEntries()) {
-            metadata.add(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, sbe.getSaveLocation());
+            parentMetadata.add(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, sbe.getSaveLocation());
         }
     }
 

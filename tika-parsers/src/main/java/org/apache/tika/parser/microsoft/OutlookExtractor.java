@@ -126,12 +126,13 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
 
     private final boolean extractAllAlternatives;
 
-    public OutlookExtractor(POIFSFileSystem filesystem, ParseContext context) throws TikaException {
-        this(filesystem.getRoot(), context);
+    public OutlookExtractor(POIFSFileSystem filesystem,
+                            Metadata parentMetadata, ParseContext context) throws TikaException {
+        this(filesystem.getRoot(), parentMetadata, context);
     }
 
-    public OutlookExtractor(DirectoryNode root, ParseContext context) throws TikaException {
-        super(context);
+    public OutlookExtractor(DirectoryNode root, Metadata parentMetadata, ParseContext context) throws TikaException {
+        super(context, parentMetadata);
         this.parseContext = context;
         this.extractAllAlternatives = context.get(OfficeParserConfig.class).getExtractAllAlternativesFromMSG();
         try {

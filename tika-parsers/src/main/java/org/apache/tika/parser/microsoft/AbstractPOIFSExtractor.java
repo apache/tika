@@ -52,10 +52,6 @@ abstract class AbstractPOIFSExtractor {
     protected final OfficeParserConfig officeParserConfig;
     protected final ParseContext context;
 
-    protected AbstractPOIFSExtractor(ParseContext context) {
-        this(context, null);
-    }
-
     protected AbstractPOIFSExtractor(ParseContext context, Metadata parentMetadata) {
         embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
 
