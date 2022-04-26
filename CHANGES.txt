@@ -6,6 +6,8 @@ Release 2.4.0 - ???
      https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-ml/tika-dl/pom.xml
      for the dependencies that must be provided at run-time (TIKA-3676).
 
+   * NOTE: Added prefix "dwg-custom:" to DWG custom metadata properties (TIKA-3731).
+
    * Add initial, BETA-grade TLS encryption option for tika-server;
      configuration may change in future releases (TIKA-3719).
 
