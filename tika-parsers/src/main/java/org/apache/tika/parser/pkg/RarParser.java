@@ -83,16 +83,16 @@ public class RarParser extends AbstractParser {
             FileHeader header = rar.nextFileHeader();
             while (header != null && !Thread.currentThread().isInterrupted()) {
                 if (!header.isDirectory()) {
-                    try (InputStream subFile = rar.getInputStream(header)) {
-                        Metadata entrydata = PackageParser.handleEntryMetadata(
-                                "".equals(header.getFileNameW()) ? header.getFileNameString() : header.getFileNameW(),
-                                header.getCTime(), header.getMTime(),
-                                header.getFullUnpackSize(),
-                                xhtml
-                        );
+                    if (header.getFullUnpackSize() > 0) {
+                        try (InputStream subFile = rar.getInputStream(header)) {
+                            Metadata entrydata = PackageParser.handleEntryMetadata(
+                                    "".equals(header.getFileNameW()) ? header.getFileNameString() :
+                                            header.getFileNameW(), header.getCTime(), header.getMTime(),
+                                    header.getFullUnpackSize(), xhtml);
 
-                        if (extractor.shouldParseEmbedded(entrydata)) {
-                            extractor.parseEmbedded(subFile, handler, entrydata, true);
+                            if (extractor.shouldParseEmbedded(entrydata)) {
+                                extractor.parseEmbedded(subFile, handler, entrydata, true);
+                            }
                         }
                     }
                 }
