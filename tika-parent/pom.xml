@@ -637,6 +637,15 @@
           </plugin>
         </plugins>
       </build>
+      <dependencyManagement>
+        <dependencies>
+          <dependency>
+            <groupId>jakarta.activation</groupId>
+            <artifactId>jakarta.activation-api</artifactId>
+            <version>1.2.2</version>
+          </dependency>
+        </dependencies>
+      </dependencyManagement>
       <!-- keep these at 2.x -->
       <dependencies>
         <dependency>
@@ -647,7 +656,6 @@
         <dependency>
           <groupId>jakarta.activation</groupId>
           <artifactId>jakarta.activation-api</artifactId>
-          <version>1.2.2</version>
         </dependency>
       </dependencies>
     </profile>
