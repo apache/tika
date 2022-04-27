@@ -503,44 +503,49 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                     InputStream dataStream = null;
                     try {
                         dataStream = data.getInputStream();
+                    } catch (SecurityException e) {
+                        throw e;
                     } catch (Exception e) {
                         EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
                         continue;
                     }
-                    try (TikaInputStream stream = TikaInputStream.get(dataStream)) {
-                        String mediaType = null;
-                        if ("Excel.Chart.8".equals(oleShape.getProgId())) {
-                            mediaType = "application/vnd.ms-excel";
-                        } else {
-                            MediaType mt = getTikaConfig().getDetector().detect(stream, new Metadata());
-                            mediaType = mt.toString();
-                        }
-                        if (mediaType.equals("application/x-tika-msoffice-embedded; format=comp_obj")
-                                || mediaType.equals("application/x-tika-msoffice")) {
-                            POIFSFileSystem poifs = null;
-
-                            try {
-                                poifs = new POIFSFileSystem(new CloseShieldInputStream(stream));
-                            } catch (RuntimeException e) {
-                                throw new IOExceptionWithCause(e);
-                            }
-                            try {
-                                handleEmbeddedOfficeDoc(poifs.getRoot(), objID, xhtml);
-                            } finally {
-                                if (poifs != null) {
-                                    poifs.close();
-                                }
-                            }
-                        } else {
-                            handleEmbeddedResource(
-                                    stream, objID, objID,
-                                    mediaType, xhtml, false);
-                        }
-                    } catch (IOException e) {
-                        EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
-                    }
+                    handleData(objID, oleShape.getProgId(), dataStream, xhtml);
                 }
             }
+        }
+    }
+
+    private void handleData(String objID, String progId, InputStream dataStream,
+                            XHTMLContentHandler xhtml) {
+
+        try (TikaInputStream stream = TikaInputStream.get(dataStream)) {
+            String mediaType = null;
+            if ("Excel.Chart.8".equals(progId)) {
+                mediaType = "application/vnd.ms-excel";
+            } else {
+                MediaType mt = getTikaConfig().getDetector().detect(stream, new Metadata());
+                mediaType = mt.toString();
+            }
+            if (mediaType.equals("application/x-tika-msoffice-embedded; format=comp_obj")
+                    || mediaType.equals("application/x-tika-msoffice")) {
+                POIFSFileSystem poifs = new POIFSFileSystem(new CloseShieldInputStream(stream));
+
+                try {
+                    handleEmbeddedOfficeDoc(poifs.getRoot(), objID, xhtml);
+                } finally {
+                    if (poifs != null) {
+                        poifs.close();
+                    }
+                }
+            } else {
+                handleEmbeddedResource(
+                        stream, objID, objID,
+                        mediaType, xhtml, false);
+            }
+        } catch (SecurityException e) {
+            throw e;
+        } catch (Exception e) {
+            EmbeddedDocumentUtil.recordException(e, parentMetadata);
         }
     }
 
