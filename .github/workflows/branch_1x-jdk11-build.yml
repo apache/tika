@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-name: main jdk11 build
+name: branch_1x jdk11 build
 
 on:
   push:
