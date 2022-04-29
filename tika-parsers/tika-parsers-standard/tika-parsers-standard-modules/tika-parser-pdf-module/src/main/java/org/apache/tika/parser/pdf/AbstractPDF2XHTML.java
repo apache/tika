@@ -105,11 +105,16 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Font;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
+import org.apache.tika.metadata.Rendering;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.renderer.PageRangeRequest;
+import org.apache.tika.renderer.RenderResult;
 import org.apache.tika.renderer.RenderResults;
+import org.apache.tika.renderer.RenderingState;
+import org.apache.tika.renderer.pdf.PDFRenderingState;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -141,8 +146,6 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     final EmbeddedDocumentExtractor embeddedDocumentExtractor;
     final PDFParserConfig config;
     final Parser ocrParser;
-
-    final RenderResults renderResults;
     /**
      * Format used for signature dates
      * TODO Make this thread-safe
@@ -159,13 +162,12 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     int unmappedUnicodeCharsPerPage = 0;
     int totalCharsPerPage = 0;
 
-    AbstractPDF2XHTML(PDDocument pdDocument, ContentHandler handler, ParseContext context,
-                      Metadata metadata, RenderResults renderResults, PDFParserConfig config) throws IOException {
+    AbstractPDF2XHTML(PDDocument pdDocument, XHTMLContentHandler xhtml, ParseContext context,
+                      Metadata metadata, PDFParserConfig config) throws IOException {
         this.pdDocument = pdDocument;
-        this.xhtml = new XHTMLContentHandler(handler, metadata);
+        this.xhtml = xhtml;
         this.context = context;
         this.metadata = metadata;
-        this.renderResults = renderResults;
         this.config = config;
         embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         if (config.getOcrStrategy() == NO_OCR) {
@@ -481,19 +483,19 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                                 "Please set the OCR_STRATEGY to NO_OCR or configure your" +
                                 "OCR parser correctly");
             } else if (ocrStrategy == AUTO) {
-                //silently skip
+                //silently skip if there's no parser to run ocr
                 return;
             }
         }
 
         try (TemporaryResources tmp = new TemporaryResources()) {
-            Path tmpFile = renderPage(tmp);
-
-            try (InputStream is = TikaInputStream.get(tmpFile)) {
-                metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
+            RenderResult renderResult = renderCurrentPage(context, tmp);
+            Metadata renderMetadata = renderResult.getMetadata();
+            try (InputStream is = TikaInputStream.get(renderResult.getPath())) {
+                renderMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
                         ocrImageMediaType.toString());
                 ocrParser.parse(is, new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
-                        metadata, context);
+                        renderMetadata, context);
             }
         } catch (IOException e) {
             handleCatchableIOE(e);
@@ -502,34 +504,68 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
     }
 
-    private Path renderPage(TemporaryResources tmpResources) {
+    private RenderResult renderCurrentPage(ParseContext parseContext,
+                                           TemporaryResources tmpResources)
+            throws IOException, TikaException {
+        PDFRenderingState renderingState = parseContext.get(PDFRenderingState.class);
+        if (renderingState == null) {
+            noContextRenderCurrentPage(parseContext, tmpResources);
+        }
+        //if the full document has already been rendered, then reuse that file
+        RenderResults results = renderingState.getRenderResults();
+        if (results != null) {
+            for (RenderResult result : results.getResults()) {
+                int pageNo = result.getMetadata().getInt(Rendering.PAGE_NUMBER);
+                if (getCurrentPageNo() == pageNo) {
+                    return result;
+                }
+            }
+        }
+        //use the regular renderer if it isn't "no_text"
+        if (config.getOcrRenderingStrategy() != PDFParserConfig.OCR_RENDERING_STRATEGY.NO_TEXT) {
+            PageRangeRequest pageRangeRequest =
+                    new PageRangeRequest(getCurrentPageNo(), getCurrentPageNo());
+            try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
+                tis.setOpenContainer(pdDocument);
+                return config.getRenderer().render(tis, metadata, parseContext, pageRangeRequest)
+                        .getResults().get(0);
+            }
+        } else {
+            return noContextRenderCurrentPage(parseContext, tmpResources);
+        }
+    }
+
+
+    private RenderResult noContextRenderCurrentPage(ParseContext parseContext,
+                                           TemporaryResources tmpResources)
+            throws IOException, TikaException {
         PDFRenderer renderer =
                 config.getOcrRenderingStrategy() == PDFParserConfig.OCR_RENDERING_STRATEGY.NO_TEXT ?
                         new NoTextPDFRenderer(pdDocument) : new PDFRenderer(pdDocument);
 
-        try (TemporaryResources tmp = new TemporaryResources()) {
-            int dpi = config.getOcrDPI();
-            Path tmpFile = null;
-            try {
-                BufferedImage image =
-                        renderer.renderImageWithDPI(pageIndex, dpi, config.getOcrImageType());
-                tmpFile = tmp.createTempFile();
-                try (OutputStream os = Files.newOutputStream(tmpFile)) {
-                    //TODO: get output format from TesseractConfig
-                    ImageIOUtil.writeImage(image, config.getOcrImageFormatName(), os, dpi,
-                            config.getOcrImageQuality());
-                }
-            } catch (SecurityException e) {
-                //throw SecurityExceptions immediately
-                throw e;
-            } catch (IOException | RuntimeException e) {
-                //image rendering can throw a variety of runtime exceptions, not just
-                // IOExceptions...
-                //need to have a wide catch
-                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM,
-                        ExceptionUtils.getStackTrace(e));
-                return;
+        int dpi = config.getOcrDPI();
+        Path tmpFile = null;
+        try {
+            BufferedImage image =
+                    renderer.renderImageWithDPI(pageIndex, dpi, config.getOcrImageType());
+            tmpFile = tmpResources.createTempFile();
+            try (OutputStream os = Files.newOutputStream(tmpFile)) {
+                //TODO: get output format from TesseractConfig
+                ImageIOUtil.writeImage(image, config.getOcrImageFormatName(), os, dpi,
+                        config.getOcrImageQuality());
             }
+        } catch (SecurityException e) {
+            //throw SecurityExceptions immediately
+            throw e;
+        } catch (IOException | RuntimeException e) {
+            //image rendering can throw a variety of runtime exceptions, not just
+            // IOExceptions...
+            //need to have a wide catch
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM,
+                    ExceptionUtils.getStackTrace(e));
+            return null;
+        }
+        return null;
     }
 
     @Override

@@ -29,11 +29,15 @@ public class RenderResult {
     }
     private final STATUS status;
 
+    private final int id;
     private final Path path;
+    //TODO: we're relying on metadata to bring in a bunch of info.
+    //Might be cleaner to add specific parameters for page number, embedded path, etc.?
     private final Metadata metadata;
 
-    public RenderResult(STATUS status, Path path, Metadata metadata) {
+    public RenderResult(STATUS status, int id, Path path, Metadata metadata) {
         this.status = status;
+        this.id = id;
         this.path = path;
         this.metadata = metadata;
     }
@@ -49,4 +53,10 @@ public class RenderResult {
     public STATUS getStatus() {
         return status;
     }
+
+    public int getId() {
+        return id;
+    }
+
+
 }

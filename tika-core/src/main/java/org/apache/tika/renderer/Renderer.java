@@ -34,6 +34,7 @@ import org.apache.tika.parser.ParseContext;
 public interface Renderer extends Serializable {
 
 
+
     /**
      * Returns the set of media types supported by this renderer when used
      * with the given parse context.
@@ -44,6 +45,18 @@ public interface Renderer extends Serializable {
      */
     Set<MediaType> getSupportedTypes(ParseContext context);
 
-    RenderResults render(InputStream is, Metadata metadata, ParseContext parseContext) throws IOException,
+    RenderResults render(InputStream is, Metadata metadata, ParseContext parseContext,
+                         RenderRequest ... requests) throws IOException,
             TikaException;
+
+    /*
+    At some point, we might need/want to add something like this, where for a given
+    page the requestor or the parser determines that they only want to render e.g. a
+    box within a page.
+
+    RenderResults render(InputStream is, int page, Coordinates coordinates, Metadata metadata,
+                         ParseContext parseContext) throws IOException,
+            TikaException;
+
+     */
 }

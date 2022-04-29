@@ -23,6 +23,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.IOExceptionWithCause;
@@ -31,6 +32,10 @@ import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.tools.imageio.ImageIOUtil;
 
+import org.apache.tika.config.Initializable;
+import org.apache.tika.config.InitializableProblemHandler;
+import org.apache.tika.config.Param;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
@@ -41,11 +46,14 @@ import org.apache.tika.metadata.Rendering;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.renderer.PageRangeRequest;
+import org.apache.tika.renderer.RenderRequest;
 import org.apache.tika.renderer.RenderResult;
 import org.apache.tika.renderer.RenderResults;
 import org.apache.tika.renderer.Renderer;
+import org.apache.tika.renderer.RenderingTracker;
 
-public class PDFBoxRenderer implements Renderer {
+public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
 
     Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.application("pdf"));
 
@@ -72,9 +80,10 @@ public class PDFBoxRenderer implements Renderer {
     private ImageType imageType = ImageType.GRAY;
     private String imageFormatName = "tiff";
 
+
     @Override
-    public RenderResults render(InputStream is, Metadata metadata, ParseContext parseContext) throws IOException,
-            TikaException {
+    public RenderResults render(InputStream is, Metadata metadata, ParseContext parseContext,
+                                RenderRequest... requests) throws IOException, TikaException {
 
 
         PDDocument pdDocument;
@@ -88,21 +97,8 @@ public class PDFBoxRenderer implements Renderer {
         }
         RenderResults results = new RenderResults(new TemporaryResources());
         try {
-
-            PDFRenderer renderer = new PDFRenderer(pdDocument);
-
-            for (int i = 0; i < pdDocument.getNumberOfPages(); i++) {
-                Metadata m = new Metadata();
-                m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                        TikaCoreProperties.EmbeddedResourceType.RENDERING.name());
-                try {
-                    m.set(Rendering.PAGE_NUMBER, i + 1);
-                    Path imagePath = renderPage(renderer, i, m);
-                    results.add(new RenderResult(RenderResult.STATUS.SUCCESS, imagePath, m));
-                } catch (IOException e) {
-                    EmbeddedDocumentUtil.recordException(e, m);
-                    results.add(new RenderResult(RenderResult.STATUS.EXCEPTION, null, m));
-                }
+            for (RenderRequest renderRequest : requests) {
+                processRequest(renderRequest, pdDocument, metadata, parseContext, results);
             }
         } finally {
             if (mustClose) {
@@ -112,14 +108,52 @@ public class PDFBoxRenderer implements Renderer {
         return results;
     }
 
-    private Path renderPage(PDFRenderer renderer, int pageIndex, Metadata metadata)
+    private void processRequest(RenderRequest renderRequest, PDDocument pdDocument,
+                                Metadata metadata, ParseContext parseContext,
+                                RenderResults results) {
+        if (renderRequest == PageRangeRequest.RENDER_ALL || renderRequest.equals(PageRangeRequest.RENDER_ALL)) {
+            renderRange(pdDocument, 1, pdDocument.getNumberOfPages(),
+                    metadata, parseContext, results);
+        } else if (renderRequest instanceof PageRangeRequest) {
+            int start = ((PageRangeRequest)renderRequest).getFrom();
+            int toInclusive = ((PageRangeRequest)renderRequest).getTo();
+            renderRange(pdDocument, start, toInclusive, metadata, parseContext, results);
+        }
+    }
+
+    private void renderRange(PDDocument pdDocument, int start, int endInclusive, Metadata metadata,
+                                    ParseContext parseContext, RenderResults results) {
+        PDFRenderer renderer = new PDFRenderer(pdDocument);
+        RenderingTracker tracker = parseContext.get(RenderingTracker.class);
+        if (tracker == null) {
+            tracker = new RenderingTracker();
+            parseContext.set(RenderingTracker.class, tracker);
+        }
+        for (int i = start; i <= endInclusive; i++) {
+            int id = tracker.getNextId();
+            Metadata m = new Metadata();
+            m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                    TikaCoreProperties.EmbeddedResourceType.RENDERING.name());
+            try {
+                m.set(Rendering.PAGE_NUMBER, i);
+                Path imagePath = renderPage(renderer, id, i, m);
+                results.add(new RenderResult(RenderResult.STATUS.SUCCESS, id, imagePath, m));
+            } catch (IOException e) {
+                EmbeddedDocumentUtil.recordException(e, m);
+                results.add(new RenderResult(RenderResult.STATUS.EXCEPTION, id, null, m));
+            }
+        }
+    }
+
+
+    private Path renderPage(PDFRenderer renderer, int id, int pageNumber, Metadata metadata)
             throws IOException {
 
         Path tmpFile = Files.createTempFile("tika-pdfbox-rendering-",
-                "-" + (pageIndex + 1) + "." + imageFormatName);
+                "-" + id + "-" + pageNumber + "." + imageFormatName);
         try {
             long start = System.currentTimeMillis();
-            BufferedImage image = renderer.renderImageWithDPI(pageIndex, dpi, imageType);
+            BufferedImage image = renderer.renderImageWithDPI(pageNumber - 1, dpi, imageType);
             long renderingElapsed = System.currentTimeMillis() - start;
             metadata.set(PDFBOX_RENDERING_TIME_MS, renderingElapsed);
             start = System.currentTimeMillis();
@@ -138,4 +172,27 @@ public class PDFBoxRenderer implements Renderer {
         return tmpFile;
     }
 
+    @Override
+    public void initialize(Map<String, Param> params) throws TikaConfigException {
+        //check file format names
+    }
+
+    @Override
+    public void checkInitialization(InitializableProblemHandler problemHandler)
+            throws TikaConfigException {
+
+    }
+
+    public void setDPI(int dpi) {
+        this.dpi = dpi;
+    }
+
+
+    public void setImageType(ImageType imageType) {
+        this.imageType = imageType;
+    }
+
+    public void setImageFormatName(String imageFormatName) {
+        this.imageFormatName = imageFormatName;
+    }
 }

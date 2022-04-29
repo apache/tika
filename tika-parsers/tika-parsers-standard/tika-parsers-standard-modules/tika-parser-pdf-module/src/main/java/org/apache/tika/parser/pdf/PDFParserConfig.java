@@ -113,6 +113,10 @@ public class PDFParserConfig implements Serializable {
     private String ocrImageFormatName = "png";
     private float ocrImageQuality = 1.0f;
 
+    /**
+     * Should the entire document be rendered?
+     */
+    private IMAGE_STRATEGY imageStrategy = IMAGE_STRATEGY.NONE;
     private AccessChecker accessChecker = new AccessChecker();
 
     //The PDFParser can throw IOExceptions if there is a problem
@@ -868,47 +872,20 @@ public class PDFParserConfig implements Serializable {
         return renderer;
     }
 
-    @Override
-    public int hashCode() {
-        int result = (isEnableAutoSpace() ? 1 : 0);
-        result = 31 * result + (isSuppressDuplicateOverlappingText() ? 1 : 0);
-        result = 31 * result + (isExtractAnnotationText() ? 1 : 0);
-        result = 31 * result + (isSortByPosition() ? 1 : 0);
-        result = 31 * result + (isExtractAcroFormContent() ? 1 : 0);
-        result = 31 * result + (isExtractBookmarksText() ? 1 : 0);
-        result = 31 * result + (isExtractInlineImages() ? 1 : 0);
-        result = 31 * result + (isExtractUniqueInlineImagesOnly() ? 1 : 0);
-        result = 31 * result + getAverageCharTolerance().hashCode();
-        result = 31 * result + getSpacingTolerance().hashCode();
-        result = 31 * result + getDropThreshold().hashCode();
-        result = 31 * result + (isIfXFAExtractOnlyXFA() ? 1 : 0);
-        result = 31 * result + ocrStrategy.hashCode();
-        result = 31 * result + getOcrDPI();
-        result = 31 * result + getOcrImageType().hashCode();
-        result = 31 * result + getOcrImageFormatName().hashCode();
-        result = 31 * result + getAccessChecker().hashCode();
-        result = 31 * result + (isCatchIntermediateIOExceptions() ? 1 : 0);
-        result = 31 * result + (isExtractActions() ? 1 : 0);
-        result = 31 * result + Long.valueOf(getMaxMainMemoryBytes()).hashCode();
-        return result;
+    public void setImageStrategy(String imageStrategy) {
+        setImageStrategy(PDFParserConfig.IMAGE_STRATEGY.parse(imageStrategy));
     }
 
-    @Override
-    public String toString() {
-        return "PDFParserConfig{" + "enableAutoSpace=" + enableAutoSpace +
-                ", suppressDuplicateOverlappingText=" + suppressDuplicateOverlappingText +
-                ", extractAnnotationText=" + extractAnnotationText + ", sortByPosition=" +
-                sortByPosition + ", extractAcroFormContent=" + extractAcroFormContent +
-                ", extractBookmarksText=" + extractBookmarksText + ", extractInlineImages=" +
-                extractInlineImages + ", extractUniqueInlineImagesOnly=" +
-                extractUniqueInlineImagesOnly + ", averageCharTolerance=" + averageCharTolerance +
-                ", spacingTolerance=" + spacingTolerance + ", dropThreshold=" + dropThreshold +
-                ", ifXFAExtractOnlyXFA=" + ifXFAExtractOnlyXFA + ", ocrStrategy=" + ocrStrategy +
-                ", ocrDPI=" + ocrDPI + ", ocrImageType=" + ocrImageType + ", ocrImageFormatName='" +
-                ocrImageFormatName + '\'' + ", accessChecker=" + accessChecker +
-                ", extractActions=" + extractActions + ", catchIntermediateIOExceptions=" +
-                catchIntermediateIOExceptions + ", maxMainMemoryBytes=" + maxMainMemoryBytes + '}';
+    public void setImageStrategy(IMAGE_STRATEGY imageStrategy) {
+        this.imageStrategy = imageStrategy;
+        userConfigured.add("imageStrategy");
     }
+
+    public IMAGE_STRATEGY getImageStrategy() {
+        return imageStrategy;
+    }
+
+
 
     public enum OCR_STRATEGY {
         AUTO, NO_OCR, OCR_ONLY, OCR_AND_TEXT_EXTRACTION;
@@ -972,8 +949,8 @@ public class PDFParserConfig implements Serializable {
 
     public enum OCR_RENDERING_STRATEGY {
         NO_TEXT, ALL; //AUTO?
-        // Would TEXT_ONLY be useful in instances where the unicode mappings
-        // are corrupt/non-existent?
+        // TODO: TEXT_ONLY be useful in instances where the unicode mappings are
+        //  corrupt/non-existent
 
         private static OCR_RENDERING_STRATEGY parse(String s) {
             if (s == null) {
@@ -993,6 +970,36 @@ public class PDFParserConfig implements Serializable {
                 }
                 sb.append(strategy.toString());
 
+            }
+            throw new IllegalArgumentException(sb.toString());
+        }
+    }
+
+    public enum IMAGE_STRATEGY {
+        NONE, RAW_IMAGES, RENDERED_PAGES;//TODO: add LOGICAL_IMAGES
+
+        private static IMAGE_STRATEGY parse(String s) {
+            String lc = s.toLowerCase(Locale.US);
+            switch (lc) {
+                case "rawImages" :
+                    return RAW_IMAGES;
+                case "renderedPages":
+                    return RENDERED_PAGES;
+                case "none":
+                    return NONE;
+                default:
+                    //fall through to exception
+                    break;
+            }
+            StringBuilder sb = new StringBuilder();
+            sb.append("I regret that I don't recognize '").append(s);
+            sb.append("' as an IMAGE_STRATEGY. I only recognize:");
+            int i = 0;
+            for (IMAGE_STRATEGY strategy : IMAGE_STRATEGY.values()) {
+                if (i++ > 0) {
+                    sb.append(", ");
+                }
+                sb.append(strategy.toString());
             }
             throw new IllegalArgumentException(sb.toString());
         }

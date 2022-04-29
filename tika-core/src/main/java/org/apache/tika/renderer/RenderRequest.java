@@ -13,15 +13,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
+package org.apache.tika.renderer;
 
-package org.apache.tika.metadata;
-
-public interface Rendering {
-    String RENDERING_PREFIX = "rendering:";
-
-    Property PAGE_NUMBER = Property.externalInteger(RENDERING_PREFIX + "page_number");
-    Property RENDERED_BY = Property.externalTextBag(RENDERING_PREFIX + "Rendered-By");
-    Property RENDERED_MS = Property.externalReal(RENDERING_PREFIX + "rendering-time-ms");
+/**
+ * Empty interface for requests to a renderer.
+ */
+public interface RenderRequest {
 }

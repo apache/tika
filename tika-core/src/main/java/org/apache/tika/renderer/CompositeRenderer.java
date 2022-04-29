@@ -39,14 +39,20 @@ import org.apache.tika.utils.ServiceLoaderUtils;
 public class CompositeRenderer implements Renderer, Initializable {
 
     private Map<MediaType, Renderer> rendererMap = new HashMap<>();
-    private List<Renderer> renderers;
 
     public CompositeRenderer(ServiceLoader serviceLoader) {
         this(getDefaultRenderers(serviceLoader));
     }
 
     public CompositeRenderer(List<Renderer> renderers) {
-        this.renderers = renderers;
+        Map<MediaType, Renderer> tmp = new ConcurrentHashMap<>();
+        ParseContext empty = new ParseContext();
+        for (Renderer renderer : renderers) {
+            for (MediaType mt : renderer.getSupportedTypes(empty)) {
+                tmp.put(mt, renderer);
+            }
+        }
+        rendererMap = Collections.unmodifiableMap(tmp);
     }
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -54,8 +60,9 @@ public class CompositeRenderer implements Renderer, Initializable {
     }
 
     @Override
-    public RenderResults render(InputStream is, Metadata metadata, ParseContext parseContext)
-            throws IOException, TikaException {
+    public RenderResults render(InputStream is, Metadata metadata, ParseContext parseContext,
+                                RenderRequest... requests) throws IOException, TikaException {
+
         String mediaTypeString = metadata.get(TikaCoreProperties.TYPE);
         if (mediaTypeString == null) {
             throw new TikaException("need to specify file type in metadata");
@@ -68,19 +75,12 @@ public class CompositeRenderer implements Renderer, Initializable {
         if (renderer == null) {
             throw new TikaException("I regret I can't find a renderer for " + mt);
         }
-        return renderer.render(is, metadata, parseContext);
+        return renderer.render(is, metadata, parseContext, requests);
     }
 
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
-        Map<MediaType, Renderer> tmp = new ConcurrentHashMap<>();
-        ParseContext empty = new ParseContext();
-        for (Renderer renderer : renderers) {
-            for (MediaType mt : renderer.getSupportedTypes(empty)) {
-                tmp.put(mt, renderer);
-            }
-        }
-        rendererMap = Collections.unmodifiableMap(tmp);
+
     }
 
     @Override
