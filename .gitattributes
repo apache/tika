@@ -2,3 +2,4 @@ tika-parsers/src/test/resources/test-documents/testARofText.ar eol=lf
 tika-parsers/src/test/resources/test-documents/testEMLX.emlx eol=lf
 tika-parsers/src/test/resources/test-documents/testTXT.txt eol=lf
 tika-parsers/src/test/resources/test-documents/testHTML.html eol=lf
+tika-parsers/src/test/resources/test-documents/testVCalendar.vcs eol=lf
