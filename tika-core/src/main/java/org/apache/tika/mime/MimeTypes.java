@@ -234,7 +234,7 @@ public final class MimeTypes implements Detector, Serializable {
                 break;
             }
             if (magic.eval(data)) {
-                result.add(magic.getType());
+                result.add(0, magic.getType());
                 currentPriority = magic.getPriority();
             }
         }
