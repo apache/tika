@@ -21,6 +21,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,6 +30,7 @@ import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.text.PDFTextStripper;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.renderer.Renderer;
 
 /**
  * Config for PDFParser.
@@ -112,6 +114,10 @@ public class PDFParserConfig implements Serializable {
     private String ocrImageFormatName = "png";
     private float ocrImageQuality = 1.0f;
 
+    /**
+     * Should the entire document be rendered?
+     */
+    private IMAGE_STRATEGY imageStrategy = IMAGE_STRATEGY.NONE;
     private AccessChecker accessChecker = new AccessChecker();
 
     //The PDFParser can throw IOExceptions if there is a problem
@@ -129,6 +135,8 @@ public class PDFParserConfig implements Serializable {
     private boolean setKCMS = false;
 
     private boolean detectAngles = false;
+
+    private Renderer renderer;
 
     /**
      * @return whether or not to extract only inline image metadata and not render the images
@@ -791,113 +799,75 @@ public class PDFParserConfig implements Serializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof PDFParserConfig)) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         PDFParserConfig config = (PDFParserConfig) o;
-
-        if (isEnableAutoSpace() != config.isEnableAutoSpace()) {
-            return false;
-        }
-        if (isSuppressDuplicateOverlappingText() != config.isSuppressDuplicateOverlappingText()) {
-            return false;
-        }
-        if (isExtractAnnotationText() != config.isExtractAnnotationText()) {
-            return false;
-        }
-        if (isSortByPosition() != config.isSortByPosition()) {
-            return false;
-        }
-        if (isExtractAcroFormContent() != config.isExtractAcroFormContent()) {
-            return false;
-        }
-        if (isExtractBookmarksText() != config.isExtractBookmarksText()) {
-            return false;
-        }
-        if (isExtractInlineImages() != config.isExtractInlineImages()) {
-            return false;
-        }
-        if (isExtractUniqueInlineImagesOnly() != config.isExtractUniqueInlineImagesOnly()) {
-            return false;
-        }
-        if (isIfXFAExtractOnlyXFA() != config.isIfXFAExtractOnlyXFA()) {
-            return false;
-        }
-        if (getOcrDPI() != config.getOcrDPI()) {
-            return false;
-        }
-        if (isCatchIntermediateIOExceptions() != config.isCatchIntermediateIOExceptions()) {
-            return false;
-        }
-        if (!getAverageCharTolerance().equals(config.getAverageCharTolerance())) {
-            return false;
-        }
-        if (!getSpacingTolerance().equals(config.getSpacingTolerance())) {
-            return false;
-        }
-        if (!getDropThreshold().equals(config.getDropThreshold())) {
-            return false;
-        }
-        if (!getOcrStrategy().equals(config.getOcrStrategy())) {
-            return false;
-        }
-        if (getOcrImageType() != config.getOcrImageType()) {
-            return false;
-        }
-        if (!getOcrImageFormatName().equals(config.getOcrImageFormatName())) {
-            return false;
-        }
-        if (isExtractActions() != config.isExtractActions()) {
-            return false;
-        }
-        if (!getAccessChecker().equals(config.getAccessChecker())) {
-            return false;
-        }
-        return getMaxMainMemoryBytes() == config.getMaxMainMemoryBytes();
+        return enableAutoSpace == config.enableAutoSpace &&
+                suppressDuplicateOverlappingText == config.suppressDuplicateOverlappingText &&
+                extractAnnotationText == config.extractAnnotationText &&
+                sortByPosition == config.sortByPosition &&
+                extractAcroFormContent == config.extractAcroFormContent &&
+                extractBookmarksText == config.extractBookmarksText &&
+                extractInlineImages == config.extractInlineImages &&
+                extractInlineImageMetadataOnly == config.extractInlineImageMetadataOnly &&
+                extractUniqueInlineImagesOnly == config.extractUniqueInlineImagesOnly &&
+                extractMarkedContent == config.extractMarkedContent &&
+                Float.compare(config.dropThreshold, dropThreshold) == 0 &&
+                ifXFAExtractOnlyXFA == config.ifXFAExtractOnlyXFA && ocrDPI == config.ocrDPI &&
+                Float.compare(config.ocrImageQuality, ocrImageQuality) == 0 &&
+                catchIntermediateIOExceptions == config.catchIntermediateIOExceptions &&
+                extractActions == config.extractActions &&
+                extractFontNames == config.extractFontNames &&
+                maxMainMemoryBytes == config.maxMainMemoryBytes && setKCMS == config.setKCMS &&
+                detectAngles == config.detectAngles &&
+                Objects.equals(userConfigured, config.userConfigured) &&
+                Objects.equals(averageCharTolerance, config.averageCharTolerance) &&
+                Objects.equals(spacingTolerance, config.spacingTolerance) &&
+                ocrStrategy == config.ocrStrategy &&
+                Objects.equals(ocrStrategyAuto, config.ocrStrategyAuto) &&
+                ocrRenderingStrategy == config.ocrRenderingStrategy &&
+                ocrImageType == config.ocrImageType &&
+                Objects.equals(ocrImageFormatName, config.ocrImageFormatName) &&
+                imageStrategy == config.imageStrategy &&
+                Objects.equals(accessChecker, config.accessChecker) &&
+                Objects.equals(renderer, config.renderer);
     }
 
     @Override
     public int hashCode() {
-        int result = (isEnableAutoSpace() ? 1 : 0);
-        result = 31 * result + (isSuppressDuplicateOverlappingText() ? 1 : 0);
-        result = 31 * result + (isExtractAnnotationText() ? 1 : 0);
-        result = 31 * result + (isSortByPosition() ? 1 : 0);
-        result = 31 * result + (isExtractAcroFormContent() ? 1 : 0);
-        result = 31 * result + (isExtractBookmarksText() ? 1 : 0);
-        result = 31 * result + (isExtractInlineImages() ? 1 : 0);
-        result = 31 * result + (isExtractUniqueInlineImagesOnly() ? 1 : 0);
-        result = 31 * result + getAverageCharTolerance().hashCode();
-        result = 31 * result + getSpacingTolerance().hashCode();
-        result = 31 * result + getDropThreshold().hashCode();
-        result = 31 * result + (isIfXFAExtractOnlyXFA() ? 1 : 0);
-        result = 31 * result + ocrStrategy.hashCode();
-        result = 31 * result + getOcrDPI();
-        result = 31 * result + getOcrImageType().hashCode();
-        result = 31 * result + getOcrImageFormatName().hashCode();
-        result = 31 * result + getAccessChecker().hashCode();
-        result = 31 * result + (isCatchIntermediateIOExceptions() ? 1 : 0);
-        result = 31 * result + (isExtractActions() ? 1 : 0);
-        result = 31 * result + Long.valueOf(getMaxMainMemoryBytes()).hashCode();
-        return result;
+        return Objects.hash(userConfigured, enableAutoSpace, suppressDuplicateOverlappingText,
+                extractAnnotationText, sortByPosition, extractAcroFormContent, extractBookmarksText,
+                extractInlineImages, extractInlineImageMetadataOnly, extractUniqueInlineImagesOnly,
+                extractMarkedContent, averageCharTolerance, spacingTolerance, dropThreshold,
+                ifXFAExtractOnlyXFA, ocrStrategy, ocrStrategyAuto, ocrRenderingStrategy, ocrDPI,
+                ocrImageType, ocrImageFormatName, ocrImageQuality, imageStrategy, accessChecker,
+                catchIntermediateIOExceptions, extractActions, extractFontNames, maxMainMemoryBytes,
+                setKCMS, detectAngles, renderer);
     }
 
-    @Override
-    public String toString() {
-        return "PDFParserConfig{" + "enableAutoSpace=" + enableAutoSpace +
-                ", suppressDuplicateOverlappingText=" + suppressDuplicateOverlappingText +
-                ", extractAnnotationText=" + extractAnnotationText + ", sortByPosition=" +
-                sortByPosition + ", extractAcroFormContent=" + extractAcroFormContent +
-                ", extractBookmarksText=" + extractBookmarksText + ", extractInlineImages=" +
-                extractInlineImages + ", extractUniqueInlineImagesOnly=" +
-                extractUniqueInlineImagesOnly + ", averageCharTolerance=" + averageCharTolerance +
-                ", spacingTolerance=" + spacingTolerance + ", dropThreshold=" + dropThreshold +
-                ", ifXFAExtractOnlyXFA=" + ifXFAExtractOnlyXFA + ", ocrStrategy=" + ocrStrategy +
-                ", ocrDPI=" + ocrDPI + ", ocrImageType=" + ocrImageType + ", ocrImageFormatName='" +
-                ocrImageFormatName + '\'' + ", accessChecker=" + accessChecker +
-                ", extractActions=" + extractActions + ", catchIntermediateIOExceptions=" +
-                catchIntermediateIOExceptions + ", maxMainMemoryBytes=" + maxMainMemoryBytes + '}';
+    public void setRenderer(Renderer renderer) {
+        this.renderer = renderer;
     }
+
+    public Renderer getRenderer() {
+        return renderer;
+    }
+
+    public void setImageStrategy(String imageStrategy) {
+        setImageStrategy(PDFParserConfig.IMAGE_STRATEGY.parse(imageStrategy));
+    }
+
+    public void setImageStrategy(IMAGE_STRATEGY imageStrategy) {
+        this.imageStrategy = imageStrategy;
+        userConfigured.add("imageStrategy");
+    }
+
+    public IMAGE_STRATEGY getImageStrategy() {
+        return imageStrategy;
+    }
+
+
 
     public enum OCR_STRATEGY {
         AUTO, NO_OCR, OCR_ONLY, OCR_AND_TEXT_EXTRACTION;
@@ -960,18 +930,22 @@ public class PDFParserConfig implements Serializable {
     }
 
     public enum OCR_RENDERING_STRATEGY {
-        NO_TEXT, ALL; //AUTO?
-        // Would TEXT_ONLY be useful in instances where the unicode mappings
-        // are corrupt/non-existent?
+        NO_TEXT, TEXT_ONLY, ALL; //AUTO?
 
         private static OCR_RENDERING_STRATEGY parse(String s) {
             if (s == null) {
-                return NO_TEXT;
-            } else if ("no_text".equals(s.toLowerCase(Locale.ROOT))) {
-                return NO_TEXT;
-            } else if ("all".equals(s.toLowerCase(Locale.ROOT))) {
                 return ALL;
             }
+            String lc = s.toLowerCase(Locale.US);
+            switch (lc) {
+                case "text_only":
+                    return TEXT_ONLY;
+                case "no_text":
+                    return NO_TEXT;
+                case "all":
+                    return ALL;
+            }
+
             StringBuilder sb = new StringBuilder();
             sb.append("I regret that I don't recognize '").append(s);
             sb.append("' as an OCR_STRATEGY. I only recognize:");
@@ -982,6 +956,36 @@ public class PDFParserConfig implements Serializable {
                 }
                 sb.append(strategy.toString());
 
+            }
+            throw new IllegalArgumentException(sb.toString());
+        }
+    }
+
+    public enum IMAGE_STRATEGY {
+        NONE, RAW_IMAGES, RENDERED_PAGES;//TODO: add LOGICAL_IMAGES
+
+        private static IMAGE_STRATEGY parse(String s) {
+            String lc = s.toLowerCase(Locale.US);
+            switch (lc) {
+                case "rawImages" :
+                    return RAW_IMAGES;
+                case "renderedPages":
+                    return RENDERED_PAGES;
+                case "none":
+                    return NONE;
+                default:
+                    //fall through to exception
+                    break;
+            }
+            StringBuilder sb = new StringBuilder();
+            sb.append("I regret that I don't recognize '").append(s);
+            sb.append("' as an IMAGE_STRATEGY. I only recognize:");
+            int i = 0;
+            for (IMAGE_STRATEGY strategy : IMAGE_STRATEGY.values()) {
+                if (i++ > 0) {
+                    sb.append(", ");
+                }
+                sb.append(strategy.toString());
             }
             throw new IllegalArgumentException(sb.toString());
         }
