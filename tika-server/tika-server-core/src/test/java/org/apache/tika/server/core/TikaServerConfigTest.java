@@ -17,6 +17,7 @@
 package org.apache.tika.server.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
@@ -113,7 +114,15 @@ public class TikaServerConfigTest {
                         emptyCommandLine,
                         settings);
         TlsConfig tlsConfig = config.getTlsConfig();
-        System.out.println(tlsConfig);
+        assertTrue(tlsConfig.isActive());
+        assertFalse(tlsConfig.isClientAuthenticationWanted());
+        assertFalse(tlsConfig.isClientAuthenticationRequired());
+        assertEquals("myType", tlsConfig.getKeyStoreType());
+        assertEquals("pass", tlsConfig.getKeyStorePassword());
+        assertEquals("/something/or/other", tlsConfig.getKeyStoreFile());
+        assertEquals("myType2", tlsConfig.getTrustStoreType());
+        assertEquals("pass2", tlsConfig.getTrustStorePassword());
+        assertEquals("/something/or/other2", tlsConfig.getTrustStoreFile());
     }
 
     @Test
