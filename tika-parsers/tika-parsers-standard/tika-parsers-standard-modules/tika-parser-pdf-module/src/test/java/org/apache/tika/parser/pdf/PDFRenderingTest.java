@@ -23,10 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.nio.file.OpenOption;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +59,8 @@ public class PDFRenderingTest extends TikaTest {
 
         assertEquals(1, embedded.size());
         assertTrue(embedded.containsKey(0));
+        //what else can we do to test this?  File type == tiff? Run OCR?
+        assertTrue(embedded.get(0).length > 1000);
 
         assertEquals(2, metadataList.size());
         Metadata tiffMetadata = metadataList.get(1);

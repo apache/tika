@@ -46,11 +46,11 @@ import org.apache.tika.metadata.Rendering;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.renderer.PageBasedRenderResults;
 import org.apache.tika.renderer.PageRangeRequest;
 import org.apache.tika.renderer.RenderRequest;
 import org.apache.tika.renderer.RenderResult;
 import org.apache.tika.renderer.RenderResults;
-import org.apache.tika.renderer.Renderer;
 import org.apache.tika.renderer.RenderingTracker;
 
 public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
@@ -95,7 +95,7 @@ public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
             pdDocument = PDDocument.load(is);
             mustClose = true;
         }
-        RenderResults results = new RenderResults(new TemporaryResources());
+        PageBasedRenderResults results = new PageBasedRenderResults(new TemporaryResources());
         try {
             for (RenderRequest renderRequest : requests) {
                 processRequest(renderRequest, pdDocument, metadata, parseContext, results);
@@ -110,7 +110,7 @@ public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
 
     private void processRequest(RenderRequest renderRequest, PDDocument pdDocument,
                                 Metadata metadata, ParseContext parseContext,
-                                RenderResults results) {
+                                PageBasedRenderResults results) {
         if (renderRequest == PageRangeRequest.RENDER_ALL || renderRequest.equals(PageRangeRequest.RENDER_ALL)) {
             renderRange(pdDocument, 1, pdDocument.getNumberOfPages(),
                     metadata, parseContext, results);
@@ -122,7 +122,7 @@ public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
     }
 
     private void renderRange(PDDocument pdDocument, int start, int endInclusive, Metadata metadata,
-                                    ParseContext parseContext, RenderResults results) {
+                                    ParseContext parseContext, PageBasedRenderResults results) {
         PDFRenderer renderer = new PDFRenderer(pdDocument);
         RenderingTracker tracker = parseContext.get(RenderingTracker.class);
         if (tracker == null) {

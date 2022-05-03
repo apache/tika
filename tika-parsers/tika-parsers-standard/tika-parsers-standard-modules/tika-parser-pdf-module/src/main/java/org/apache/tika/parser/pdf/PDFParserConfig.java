@@ -21,6 +21,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -798,70 +799,51 @@ public class PDFParserConfig implements Serializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof PDFParserConfig)) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         PDFParserConfig config = (PDFParserConfig) o;
+        return enableAutoSpace == config.enableAutoSpace &&
+                suppressDuplicateOverlappingText == config.suppressDuplicateOverlappingText &&
+                extractAnnotationText == config.extractAnnotationText &&
+                sortByPosition == config.sortByPosition &&
+                extractAcroFormContent == config.extractAcroFormContent &&
+                extractBookmarksText == config.extractBookmarksText &&
+                extractInlineImages == config.extractInlineImages &&
+                extractInlineImageMetadataOnly == config.extractInlineImageMetadataOnly &&
+                extractUniqueInlineImagesOnly == config.extractUniqueInlineImagesOnly &&
+                extractMarkedContent == config.extractMarkedContent &&
+                Float.compare(config.dropThreshold, dropThreshold) == 0 &&
+                ifXFAExtractOnlyXFA == config.ifXFAExtractOnlyXFA && ocrDPI == config.ocrDPI &&
+                Float.compare(config.ocrImageQuality, ocrImageQuality) == 0 &&
+                catchIntermediateIOExceptions == config.catchIntermediateIOExceptions &&
+                extractActions == config.extractActions &&
+                extractFontNames == config.extractFontNames &&
+                maxMainMemoryBytes == config.maxMainMemoryBytes && setKCMS == config.setKCMS &&
+                detectAngles == config.detectAngles &&
+                Objects.equals(userConfigured, config.userConfigured) &&
+                Objects.equals(averageCharTolerance, config.averageCharTolerance) &&
+                Objects.equals(spacingTolerance, config.spacingTolerance) &&
+                ocrStrategy == config.ocrStrategy &&
+                Objects.equals(ocrStrategyAuto, config.ocrStrategyAuto) &&
+                ocrRenderingStrategy == config.ocrRenderingStrategy &&
+                ocrImageType == config.ocrImageType &&
+                Objects.equals(ocrImageFormatName, config.ocrImageFormatName) &&
+                imageStrategy == config.imageStrategy &&
+                Objects.equals(accessChecker, config.accessChecker) &&
+                Objects.equals(renderer, config.renderer);
+    }
 
-        if (isEnableAutoSpace() != config.isEnableAutoSpace()) {
-            return false;
-        }
-        if (isSuppressDuplicateOverlappingText() != config.isSuppressDuplicateOverlappingText()) {
-            return false;
-        }
-        if (isExtractAnnotationText() != config.isExtractAnnotationText()) {
-            return false;
-        }
-        if (isSortByPosition() != config.isSortByPosition()) {
-            return false;
-        }
-        if (isExtractAcroFormContent() != config.isExtractAcroFormContent()) {
-            return false;
-        }
-        if (isExtractBookmarksText() != config.isExtractBookmarksText()) {
-            return false;
-        }
-        if (isExtractInlineImages() != config.isExtractInlineImages()) {
-            return false;
-        }
-        if (isExtractUniqueInlineImagesOnly() != config.isExtractUniqueInlineImagesOnly()) {
-            return false;
-        }
-        if (isIfXFAExtractOnlyXFA() != config.isIfXFAExtractOnlyXFA()) {
-            return false;
-        }
-        if (getOcrDPI() != config.getOcrDPI()) {
-            return false;
-        }
-        if (isCatchIntermediateIOExceptions() != config.isCatchIntermediateIOExceptions()) {
-            return false;
-        }
-        if (!getAverageCharTolerance().equals(config.getAverageCharTolerance())) {
-            return false;
-        }
-        if (!getSpacingTolerance().equals(config.getSpacingTolerance())) {
-            return false;
-        }
-        if (!getDropThreshold().equals(config.getDropThreshold())) {
-            return false;
-        }
-        if (!getOcrStrategy().equals(config.getOcrStrategy())) {
-            return false;
-        }
-        if (getOcrImageType() != config.getOcrImageType()) {
-            return false;
-        }
-        if (!getOcrImageFormatName().equals(config.getOcrImageFormatName())) {
-            return false;
-        }
-        if (isExtractActions() != config.isExtractActions()) {
-            return false;
-        }
-        if (!getAccessChecker().equals(config.getAccessChecker())) {
-            return false;
-        }
-        return getMaxMainMemoryBytes() == config.getMaxMainMemoryBytes();
+    @Override
+    public int hashCode() {
+        return Objects.hash(userConfigured, enableAutoSpace, suppressDuplicateOverlappingText,
+                extractAnnotationText, sortByPosition, extractAcroFormContent, extractBookmarksText,
+                extractInlineImages, extractInlineImageMetadataOnly, extractUniqueInlineImagesOnly,
+                extractMarkedContent, averageCharTolerance, spacingTolerance, dropThreshold,
+                ifXFAExtractOnlyXFA, ocrStrategy, ocrStrategyAuto, ocrRenderingStrategy, ocrDPI,
+                ocrImageType, ocrImageFormatName, ocrImageQuality, imageStrategy, accessChecker,
+                catchIntermediateIOExceptions, extractActions, extractFontNames, maxMainMemoryBytes,
+                setKCMS, detectAngles, renderer);
     }
 
     public void setRenderer(Renderer renderer) {
@@ -948,18 +930,22 @@ public class PDFParserConfig implements Serializable {
     }
 
     public enum OCR_RENDERING_STRATEGY {
-        NO_TEXT, ALL; //AUTO?
-        // TODO: TEXT_ONLY be useful in instances where the unicode mappings are
-        //  corrupt/non-existent
+        NO_TEXT, TEXT_ONLY, ALL; //AUTO?
 
         private static OCR_RENDERING_STRATEGY parse(String s) {
             if (s == null) {
-                return NO_TEXT;
-            } else if ("no_text".equals(s.toLowerCase(Locale.ROOT))) {
-                return NO_TEXT;
-            } else if ("all".equals(s.toLowerCase(Locale.ROOT))) {
                 return ALL;
             }
+            String lc = s.toLowerCase(Locale.US);
+            switch (lc) {
+                case "text_only":
+                    return TEXT_ONLY;
+                case "no_text":
+                    return NO_TEXT;
+                case "all":
+                    return ALL;
+            }
+
             StringBuilder sb = new StringBuilder();
             sb.append("I regret that I don't recognize '").append(s);
             sb.append("' as an OCR_STRATEGY. I only recognize:");

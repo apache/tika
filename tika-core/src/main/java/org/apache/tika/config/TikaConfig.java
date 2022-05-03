@@ -898,6 +898,15 @@ public class TikaConfig {
             if (parser == null) {
                 try {
                     c = parserClass.getConstructor(MediaTypeRegistry.class, ServiceLoader.class,
+                            Collection.class, EncodingDetector.class, Renderer.class);
+                    parser = c.newInstance(registry, loader, excludeParsers, encodingDetector, renderer);
+                } catch (NoSuchMethodException me) {
+                    //swallow
+                }
+            }
+            if (parser == null) {
+                try {
+                    c = parserClass.getConstructor(MediaTypeRegistry.class, ServiceLoader.class,
                             Collection.class, EncodingDetector.class);
                     parser = c.newInstance(registry, loader, excludeParsers, encodingDetector);
                 } catch (NoSuchMethodException me) {

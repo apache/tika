@@ -70,7 +70,6 @@ import org.apache.tika.renderer.PageRangeRequest;
 import org.apache.tika.renderer.RenderResult;
 import org.apache.tika.renderer.RenderResults;
 import org.apache.tika.renderer.Renderer;
-import org.apache.tika.renderer.pdf.PDDocumentRenderer;
 import org.apache.tika.renderer.pdf.PDFBoxRenderer;
 import org.apache.tika.renderer.pdf.PDFRenderingState;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -114,7 +113,7 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
      * @deprecated Supply a {@link PasswordProvider} on the {@link ParseContext} instead
      */
     public static final String PASSWORD = "org.apache.tika.parser.pdf.password";
-    private static final MediaType MEDIA_TYPE = MediaType.application("pdf");
+    protected static final MediaType MEDIA_TYPE = MediaType.application("pdf");
     /**
      * Serial version UID
      */
@@ -193,10 +192,17 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
             metadata.set(PDF.IS_ENCRYPTED, "true");
             throw new EncryptedDocumentException(e);
         } finally {
-            //replace the one that was here
-            context.set(PDFRenderingState.class, incomingRenderingState);
-            if (pdfDocument != null) {
-                pdfDocument.close();
+            PDFRenderingState currState = context.get(PDFRenderingState.class);
+            try {
+                if (currState != null && currState.getRenderResults() != null) {
+                    currState.getRenderResults().close();
+                }
+                if (pdfDocument != null) {
+                    pdfDocument.close();
+                }
+            } finally {
+                //replace the one that was here
+                context.set(PDFRenderingState.class, incomingRenderingState);
             }
         }
     }
@@ -219,7 +225,6 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
         if (config.getImageStrategy() != PDFParserConfig.IMAGE_STRATEGY.RENDERED_PAGES) {
             return;
         }
-        Renderer renderer = config.getRenderer();
         RenderResults renderResults = null;
         try {
             renderResults = renderPDF(tstream, context, config);

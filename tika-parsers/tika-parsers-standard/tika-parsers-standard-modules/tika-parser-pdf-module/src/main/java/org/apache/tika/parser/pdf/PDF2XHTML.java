@@ -34,13 +34,11 @@ import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.pdfbox.text.TextPosition;
 import org.apache.pdfbox.util.Matrix;
-import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.renderer.RenderResults;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**

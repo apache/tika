@@ -41,7 +41,6 @@ import org.apache.pdfbox.pdmodel.documentinterchange.logicalstructure.PDStructur
 import org.apache.pdfbox.pdmodel.documentinterchange.markedcontent.PDMarkedContent;
 import org.apache.pdfbox.text.PDFMarkedContentExtractor;
 import org.apache.pdfbox.text.TextPosition;
-import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;

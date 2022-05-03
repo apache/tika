@@ -78,6 +78,9 @@ public class CompositeRenderer implements Renderer, Initializable {
         return renderer.render(is, metadata, parseContext, requests);
     }
 
+    public Renderer getLeafRenderer(MediaType mt) {
+        return rendererMap.get(mt);
+    }
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
 
