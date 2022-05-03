@@ -646,7 +646,7 @@ public class TikaServerConfig extends ConfigBase {
                 LOG.warn("no system property set for {}, falling back to {}", m.group(1), arg);
                 return arg;
             }
-            m.appendReplacement(sb, prop);
+            m.appendReplacement(sb, Matcher.quoteReplacement(prop));
         }
         m.appendTail(sb);
         return sb.toString();

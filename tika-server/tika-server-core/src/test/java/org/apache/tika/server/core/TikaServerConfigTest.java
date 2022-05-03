@@ -129,18 +129,21 @@ public class TikaServerConfigTest {
     public void testInterpolation() throws Exception {
         List<String> input = new ArrayList<>();
         System.setProperty("logpath", "qwertyuiop");
+        System.setProperty("logslash", "qwerty\\uiop");
         try {
             input.add("-Dlogpath=\"${sys:logpath}\"");
             input.add("-Dlogpath=no-interpolation");
             input.add("-Xlogpath=\"${sys:logpath}\"");
+            input.add("-Dlogpath=\"${sys:logslash}\"");
 
             List<String> output = TikaServerConfig.interpolateSysProps(input);
             assertEquals("-Dlogpath=\"qwertyuiop\"", output.get(0));
             assertEquals("-Dlogpath=no-interpolation", output.get(1));
             assertEquals("-Xlogpath=\"${sys:logpath}\"", output.get(2));
-
+            assertEquals("-Dlogpath=\"qwerty\\uiop\"", output.get(3));
         } finally {
             System.clearProperty("logpath");
+            System.clearProperty("logslash");
         }
     }
 }
