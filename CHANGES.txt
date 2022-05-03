@@ -1,4 +1,9 @@
-Release 2.4.0 - ???
+Release 2.4.1 - ???
+
+   * Users can expand system properties from the forking
+     process into forked tika-server processes (TIKA-3748).
+
+Release 2.4.0 - 04/23/2022
 
    * NOTE: To save on resources, we no longer include the
      deeplearning4j dependencies in the tika-dl jar. The dependencies for the

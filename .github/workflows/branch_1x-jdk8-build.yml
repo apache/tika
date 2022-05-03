@@ -15,18 +15,18 @@
 # limitations under the License.
 #
 
-name: main jdk17 build
+name: branch_1x jdk8 build
 
 on:
   push:
-    branches: [ main ]
+    branches: [ branch_1x ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ '17' ]
+        java: [ '1.8' ]
 
     steps:
       - uses: actions/checkout@v2

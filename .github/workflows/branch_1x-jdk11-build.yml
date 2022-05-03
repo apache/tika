@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-name: main jdk17 build
+name: branch_1x jdk11 build
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ '17' ]
+        java: [ '11' ]
 
     steps:
       - uses: actions/checkout@v2

@@ -21,7 +21,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.cli.CommandLine;
@@ -114,4 +116,22 @@ public class TikaServerConfigTest {
         System.out.println(tlsConfig);
     }
 
+    @Test
+    public void testInterpolation() throws Exception {
+        List<String> input = new ArrayList<>();
+        System.setProperty("logpath", "qwertyuiop");
+        try {
+            input.add("-Dlogpath=\"${sys:logpath}\"");
+            input.add("-Dlogpath=no-interpolation");
+            input.add("-Xlogpath=\"${sys:logpath}\"");
+
+            List<String> output = TikaServerConfig.interpolateSysProps(input);
+            assertEquals("-Dlogpath=\"qwertyuiop\"", output.get(0));
+            assertEquals("-Dlogpath=no-interpolation", output.get(1));
+            assertEquals("-Xlogpath=\"${sys:logpath}\"", output.get(2));
+
+        } finally {
+            System.clearProperty("logpath");
+        }
+    }
 }
