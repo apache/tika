@@ -115,6 +115,9 @@ public class DefaultParser extends CompositeParser {
             }
         }
         ServiceLoaderUtils.sortLoadedClasses(parsers);
+        //reverse the order of parsers so that custom ones come last
+        //this will prevent them from being overwritten in getParsers(ParseContext ..)
+        Collections.reverse(parsers);
         return parsers;
     }
 

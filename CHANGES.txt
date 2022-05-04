@@ -1,5 +1,7 @@
 Release 2.4.1 - ???
 
+   * Fixed bug in ordering of Parsers during service loading (TIKA-3750).
+
    * Users can expand system properties from the forking
      process into forked tika-server processes (TIKA-3748).
 
