@@ -930,7 +930,12 @@ public class PDFParserConfig implements Serializable {
     }
 
     public enum OCR_RENDERING_STRATEGY {
-        NO_TEXT, TEXT_ONLY, ALL; //AUTO?
+
+        NO_TEXT, //includes vector graphics and image
+        TEXT_ONLY, //renders only glyphs
+        VECTOR_GRAPHICS_ONLY, //renders only vector graphics
+        ALL;
+        //TODO: add AUTO?
 
         private static OCR_RENDERING_STRATEGY parse(String s) {
             if (s == null) {
@@ -938,6 +943,8 @@ public class PDFParserConfig implements Serializable {
             }
             String lc = s.toLowerCase(Locale.US);
             switch (lc) {
+                case "vector_graphics_only":
+                    return VECTOR_GRAPHICS_ONLY;
                 case "text_only":
                     return TEXT_ONLY;
                 case "no_text":

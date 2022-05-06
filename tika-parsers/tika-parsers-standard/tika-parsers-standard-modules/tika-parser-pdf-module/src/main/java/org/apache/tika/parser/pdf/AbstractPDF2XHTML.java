@@ -579,6 +579,9 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             case TEXT_ONLY:
                 renderer = new TextOnlyPDFRenderer(pdDocument);
                 break;
+            case VECTOR_GRAPHICS_ONLY:
+                renderer = new VectorGraphicsOnlyPDFRenderer(pdDocument);
+                break;
             case ALL:
                 renderer = new PDFRenderer(pdDocument);
                 break;
