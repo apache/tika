@@ -1,10 +1,22 @@
-Release 2.4.0 - ???
+Release 2.4.1 - ???
+
+   * Fixed bug in ordering of Parsers during service loading (TIKA-3750).
+
+   * Users can expand system properties from the forking
+     process into forked tika-server processes (TIKA-3748).
+
+Release 2.4.0 - 04/23/2022
 
    * NOTE: To save on resources, we no longer include the
      deeplearning4j dependencies in the tika-dl jar. The dependencies for the
      tika-dl package must be provided by users.  See:
      https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-ml/tika-dl/pom.xml
      for the dependencies that must be provided at run-time (TIKA-3676).
+
+   * NOTE: Added prefix "dwg-custom:" to DWG custom metadata properties (TIKA-3731).
+
+   * Add initial, BETA-grade TLS encryption option for tika-server;
+     configuration may change in future releases (TIKA-3719).
 
    * Allow specification of fetcherName and fetchKey via query parameters
      in request URI in tika-server (TIKA-3714).
@@ -21,6 +33,11 @@ Release 2.4.0 - ???
      by the AutoDetectParser (TIKA-3711).
 
    * Add detection for Frictionless Data packages and WACZ (TIKA-3696).
+
+   * Add detection for DGN files with gratitude and credit
+     to Steven Frew's tika-dgn-detector (TIKA-3721).
+
+   * Add parser for metadata from DGN 8 files via Dan Coldrick (TIKA-3721).
 
    * Add a fetcher and emitter for Azure blob storage (TIKA-3707).
 
@@ -40,6 +57,8 @@ Release 2.4.0 - ???
      a file (TIKA-3716).
 
    * Add metadata filters for Optimaize and OpenNLP language detectors (TIKA-3717).
+
+   * Upgrade to PDFBox 2.0.26 (TIKA-3726).
 
    * Upgrade deeplearning4j to 1.0.0-M2 (TIKA-3458 and PR#527).
 

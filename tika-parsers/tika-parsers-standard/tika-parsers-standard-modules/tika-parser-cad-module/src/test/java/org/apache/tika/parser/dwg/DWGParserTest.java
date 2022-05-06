@@ -26,11 +26,12 @@ import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.BodyContentHandler;
 
-public class DWGParserTest {
+public class DWGParserTest extends TikaTest {
 
     @Test
     public void testDWG2000Parser() throws Exception {
@@ -81,8 +82,10 @@ public class DWGParserTest {
             ContentHandler handler = new BodyContentHandler();
             new DWGParser().parse(input, handler, metadata, null);
 
-            assertEquals("valueforcustomprop1", metadata.get("customprop1"));
-            assertEquals("valueforcustomprop2", metadata.get("customprop2"));
+            assertEquals("valueforcustomprop1",
+                    metadata.get(DWGParser.DWG_CUSTOM_META_PREFIX + "customprop1"));
+            assertEquals("valueforcustomprop2",
+                    metadata.get(DWGParser.DWG_CUSTOM_META_PREFIX + "customprop2"));
         }
     }
 
@@ -165,7 +168,8 @@ public class DWGParserTest {
             assertEquals("This is a comment", metadata.get(TikaCoreProperties.COMMENTS));
             assertEquals("bejanpol", metadata.get(TikaCoreProperties.MODIFIER));
             assertEquals("http://mycompany/drawings", metadata.get(TikaCoreProperties.RELATION));
-            assertEquals("MyCustomPropertyValue", metadata.get("MyCustomProperty"));
+            assertEquals("MyCustomPropertyValue",
+                    metadata.get(DWGParser.DWG_CUSTOM_META_PREFIX + "MyCustomProperty"));
 
             String content = handler.toString();
             assertContains("This is a comment", content);
@@ -173,5 +177,18 @@ public class DWGParserTest {
         } finally {
             input.close();
         }
+    }
+
+    @Test
+    public void testAC1027() throws Exception {
+        Metadata metadata = getXML("testDWG-AC1027.dwg").metadata;
+        assertEquals("hlu", metadata.get(TikaCoreProperties.MODIFIER));
+    }
+
+    @Test
+    public void testAC1032() throws Exception {
+        Metadata metadata = getXML("testDWG-AC1032.dwg").metadata;
+        assertEquals("jlakshvi", metadata.get(TikaCoreProperties.MODIFIER));
+        assertEquals("CUSTOMER'S ADDRESS", metadata.get("dwg-custom:CUSTOMER'S ADDRESS"));
     }
 }

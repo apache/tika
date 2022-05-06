@@ -398,8 +398,6 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
             argList.add(Integer.toString(numRestarts));
             LOG.debug("forked process commandline: " + argList.toString());
             builder.command(argList);
-            //copy forking processes' env variables
-            builder.environment().putAll(System.getenv());
             //now overwrite with the specific server id
             //this is mostly for log4j 2.x so that different processes
             //can log to different log files via {env:tika.server.id}

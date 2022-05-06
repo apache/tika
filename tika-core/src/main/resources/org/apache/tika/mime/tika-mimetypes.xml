@@ -5869,6 +5869,27 @@
   </mime-type>
 
   <mime-type type="image/vnd.cns.inf2"/>
+
+  <!-- credit: peeveen's tika-dgn-detector https://github.com/peeveen/tika-dgn-detector/ -->
+  <mime-type type="image/vnd.dgn">
+    <glob pattern="*.dgn" />
+    <glob pattern="*.dgnlib" />
+    <glob pattern="*.cel" />
+  </mime-type>
+  <mime-type type="image/vnd.dgn;version=7">
+    <_comment>MicroStation v7 drawing</_comment>
+    <_comment>Sometimes first byte is C8, sometimes it is 08.</_comment>
+    <magic priority="50">
+      <match value="0x0809FE02" type="string" offset="0" mask="0x0FFFFFFF" />
+    </magic>
+    <sub-class-of type="image/vnd.dgn"/>
+  </mime-type>
+  <mime-type type="image/vnd.dgn;version=8">
+    <_comment>MicroStation v8 drawing; requires ole2 detector</_comment>
+    <alias type="image/vnd.dgn;ver=8"/>
+    <sub-class-of type="application/x-tika-msoffice"/>
+  </mime-type>
+
   <mime-type type="image/vnd.djvu">
     <glob pattern="*.djvu"/>
     <glob pattern="*.djv"/>

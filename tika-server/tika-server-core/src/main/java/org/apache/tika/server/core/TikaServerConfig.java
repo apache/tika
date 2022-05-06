@@ -31,6 +31,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.cli.CommandLine;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -43,6 +45,10 @@ import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
 
 public class TikaServerConfig extends ConfigBase {
+
+    private static final Logger LOG = LoggerFactory.getLogger(TikaServerConfig.class);
+
+    private static Pattern SYS_PROPS = Pattern.compile("\\$\\{sys:([-_0-9A-Za-z]+)\\}");
 
     public static final int DEFAULT_PORT = 9998;
     public static final String DEFAULT_HOST = "localhost";
@@ -130,6 +136,7 @@ public class TikaServerConfig extends ConfigBase {
     private String forkedStatusFile;
     private int numRestarts = 0;
 
+    private TlsConfig tlsConfig = new TlsConfig();
     /**
      * Config with only the defaults
      */
@@ -393,8 +400,9 @@ public class TikaServerConfig extends ConfigBase {
     }
 
     public void setForkedJvmArgs(List<String> forkedJvmArgs) {
-        this.forkedJvmArgs = new ArrayList<>(forkedJvmArgs);
+        this.forkedJvmArgs = new ArrayList<>(interpolateSysProps(forkedJvmArgs));
     }
+
 
     public String getTempFilePrefix() {
         return tempFilePrefix;
@@ -525,6 +533,12 @@ public class TikaServerConfig extends ConfigBase {
         this.returnStackTrace = returnStackTrace;
     }
 
+    public void setTlsConfig(TlsConfig tlsConfig) {
+        this.tlsConfig = tlsConfig;
+    }
+    public TlsConfig getTlsConfig() {
+        return tlsConfig;
+    }
     public List<String> getEndpoints() {
         return endpoints;
     }
@@ -608,4 +622,34 @@ public class TikaServerConfig extends ConfigBase {
     public Set<String> getSupportedEmitters() {
         return supportedEmitters;
     }
+
+    protected static List<String> interpolateSysProps(List<String> forkedJvmArgs) {
+        List<String> ret = new ArrayList<>();
+        for (String arg : forkedJvmArgs) {
+            if (arg.startsWith("-D")) {
+                String interpolated = interpolate(arg);
+                ret.add(interpolated);
+            } else {
+                ret.add(arg);
+            }
+        }
+        return ret;
+    }
+
+    private static String interpolate(String arg) {
+        StringBuffer sb = new StringBuffer();
+        Matcher m = SYS_PROPS.matcher(arg);
+        while (m.find()) {
+            String prop = System.getProperty(m.group(1));
+            LOG.debug("interpolating {} -> {}", m.group(1), prop);
+            if (prop == null) {
+                LOG.warn("no system property set for {}, falling back to {}", m.group(1), arg);
+                return arg;
+            }
+            m.appendReplacement(sb, Matcher.quoteReplacement(prop));
+        }
+        m.appendTail(sb);
+        return sb.toString();
+    }
+
 }

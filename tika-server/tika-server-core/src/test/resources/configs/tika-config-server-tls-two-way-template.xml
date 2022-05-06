@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<properties>
+  <server>
+    <params>
+      <port>9999</port>
+      <taskTimeoutMillis>1000000</taskTimeoutMillis>
+      <minimumTimeoutMillis>10000</minimumTimeoutMillis>
+      <maxFiles>10000</maxFiles>
+      <forkedJvmArgs>
+        <arg>-Xmx1g</arg>
+      </forkedJvmArgs>
+      <endpoints>
+        <endpoint>rmeta</endpoint>
+      </endpoints>
+    </params>
+    <tlsConfig>
+      <params>
+        <active>true</active>
+        <keyStoreType>PKCS12</keyStoreType>
+        <keyStorePassword>tika-secret</keyStorePassword>
+        <keyStoreFile>{SSL_KEYS}/tika-server-keystore.p12</keyStoreFile>
+        <trustStoreType>PKCS12</trustStoreType>
+        <trustStorePassword>tika-secret</trustStorePassword>
+        <trustStoreFile>{SSL_KEYS}/tika-server-truststore.p12</trustStoreFile>
+        <clientAuthenticationWanted>true</clientAuthenticationWanted>
+        <clientAuthenticationRequired>true</clientAuthenticationRequired>
+      </params>
+    </tlsConfig>
+  </server>
+</properties>

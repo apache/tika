@@ -163,6 +163,7 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         // With a filename of a totally different type, data will trump filename
         assertTypeByNameAndData("testEXCEL.xls", "notPDF.pdf", "application/vnd.ms-excel");
         assertTypeByNameAndData("testEXCEL.xls", "notPNG.png", "application/vnd.ms-excel");
+        assertTypeByData("testDGN8.dgn", "image/vnd.dgn; version=8");
     }
 
     /**

@@ -169,6 +169,7 @@ public class ExternalParser extends AbstractParser {
                 throw new TimeoutException();
             }
             int result = process.exitValue();
+            LOG.debug("exit value for {}: {}", checkCmd[0], result);
             for (int err : errorValue) {
                 if (result == err) {
                     return false;
@@ -176,6 +177,7 @@ public class ExternalParser extends AbstractParser {
             }
             return true;
         } catch (IOException | InterruptedException | TimeoutException e) {
+            LOG.debug("exception trying to run  " + checkCmd[0], e);
             // Some problem, command is there or is broken
             return false;
         } catch (SecurityException se) {
@@ -184,6 +186,7 @@ public class ExternalParser extends AbstractParser {
         } catch (Error err) {
             if (err.getMessage() != null && (err.getMessage().contains("posix_spawn") ||
                     err.getMessage().contains("UNIXProcess"))) {
+                LOG.debug("(TIKA-1526): exception trying to run: " + checkCmd[0], err);
                 //"Error forking command due to JVM locale bug
                 //(see TIKA-1526 and SOLR-6387)"
                 return false;

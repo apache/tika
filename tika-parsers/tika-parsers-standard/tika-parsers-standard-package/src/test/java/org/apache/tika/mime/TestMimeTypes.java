@@ -651,6 +651,13 @@ public class TestMimeTypes {
     }
 
     @Test
+    public void testDGN() throws Exception {
+        assertTypeByName("image/vnd.dgn", "testDGN7.dgn");
+        assertTypeByName("image/vnd.dgn", "testDGN8.dgn");
+        assertTypeByData("image/vnd.dgn; version=7", "testDGN7.dgn");
+    }
+
+    @Test
     public void testprtDetection() throws Exception {
         assertTypeByName("application/x-prt", "x.prt");
         assertTypeByData("application/x-prt", "testCADKEY.prt");

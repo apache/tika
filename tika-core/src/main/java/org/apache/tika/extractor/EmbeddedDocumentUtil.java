@@ -92,7 +92,9 @@ public class EmbeddedDocumentUtil implements Serializable {
                 context.set(Parser.class, new AutoDetectParser(tikaConfig));
             }
         }
-        return new ParsingEmbeddedDocumentExtractor(context);
+        EmbeddedDocumentExtractor ex = new ParsingEmbeddedDocumentExtractor(context);
+        context.set(EmbeddedDocumentExtractor.class, ex);
+        return ex;
     }
 
     /**

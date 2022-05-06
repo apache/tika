@@ -17,6 +17,7 @@
 package org.apache.tika.detect.microsoft;
 
 import static org.apache.tika.mime.MediaType.application;
+import static org.apache.tika.mime.MediaType.image;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -147,6 +148,7 @@ public class POIFSContainerDetector implements Detector {
 
     public static final MediaType ESRI_LAYER = application("x-esri-layer");
 
+    public static final MediaType DGN_8 = image("vnd.dgn;version=8");
     /**
      * Serial version UID
      */
@@ -326,6 +328,9 @@ public class POIFSContainerDetector implements Detector {
             //maybe add those if we get false positives?
             //in other test files there was a single entry for "Layer"
             return ESRI_LAYER;
+        } else if (names.contains("Dgn~Mf") && names.contains("Dgn~S") &&
+                names.contains("Dgn~H")) {
+            return DGN_8;
         } else {
             for (String name : names) {
                 if (name.startsWith("__substg1.0_")) {
