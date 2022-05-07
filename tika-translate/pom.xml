@@ -139,7 +139,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-project-info-reports-plugin</artifactId>
-          <version>3.2.2l</version>
+          <version>3.3.0</version>
           <reportSets>
             <reportSet>
               <reports>
@@ -153,7 +153,7 @@
           <artifactId>findbugs-maven-plugin</artifactId>
           <version>3.0.5</version>
           <configuration>
-            <jvmArgs>-Xmx256m,-XX:MaxPermSize=256m</jvmArgs>
+            <jvmArgs>-Xmx256m</jvmArgs>
             <timeout>240000</timeout>
             <effort>max</effort>
             <failOnError>true</failOnError>
