@@ -270,18 +270,18 @@
     <project.build.outputTimestamp>1651168422</project.build.outputTimestamp>
     <!-- plugin versions -->
     <checkstyle.plugin.version>3.1.2</checkstyle.plugin.version>
-    <forbiddenapis.version>3.2</forbiddenapis.version>
+    <forbiddenapis.version>3.3</forbiddenapis.version>
     <groovy.maven.version>2.1.1</groovy.maven.version>
-    <maven.antrun.version>3.0.0</maven.antrun.version>
+    <maven.antrun.version>3.1.0</maven.antrun.version>
     <maven.assembly.version>3.3.0</maven.assembly.version>
-    <maven.bundle.version>5.1.4</maven.bundle.version>
-    <maven.compiler.plugin.version>3.10.0</maven.compiler.plugin.version>
-    <maven.failsafe.version>3.0.0-M5</maven.failsafe.version>
-    <maven.javadoc.version>3.3.2</maven.javadoc.version>
+    <maven.bundle.version>5.1.5</maven.bundle.version>
+    <maven.compiler.plugin.version>3.10.1</maven.compiler.plugin.version>
+    <maven.failsafe.version>3.0.0-M6</maven.failsafe.version>
+    <maven.javadoc.version>3.4.0</maven.javadoc.version>
     <maven.jar.version>3.2.2</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.surefire.version>3.0.0-M6</maven.surefire.version>
-    <maven.shade.version>3.2.4</maven.shade.version>
+    <maven.shade.version>3.3.0</maven.shade.version>
     <!-- need above java 8 for 10.[0-2] -->
     <puppycrawl.version>9.3</puppycrawl.version>
     <rat.version>0.13</rat.version>
