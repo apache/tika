@@ -48,19 +48,19 @@ import org.apache.tika.mime.MediaType;
 public class BPListDetector implements Detector {
 
     //xml versions
-    public static MediaType MEMGRAPH = MediaType.application("x-plist-memgraph");
-    public static MediaType WEBARCHIVE = MediaType.application("x-plist-webarchive");
-    public static MediaType PLIST = MediaType.application("x-plist");
-    public static MediaType ITUNES = MediaType.application("x-plist-itunes");
+    public static final MediaType MEMGRAPH = MediaType.application("x-plist-memgraph");
+    public static final MediaType WEBARCHIVE = MediaType.application("x-plist-webarchive");
+    public static final MediaType PLIST = MediaType.application("x-plist");
+    public static final MediaType ITUNES = MediaType.application("x-plist-itunes");
 
 
     //binary versions
-    public static MediaType BMEMGRAPH = MediaType.application("x-bplist-memgraph");
-    public static MediaType BWEBARCHIVE = MediaType.application("x-bplist-webarchive");
-    public static MediaType BPLIST = MediaType.application("x-bplist");
-    public static MediaType BITUNES = MediaType.application("x-bplist-itunes");
+    public static final MediaType BMEMGRAPH = MediaType.application("x-bplist-memgraph");
+    public static final MediaType BWEBARCHIVE = MediaType.application("x-bplist-webarchive");
+    public static final MediaType BPLIST = MediaType.application("x-bplist");
+    public static final MediaType BITUNES = MediaType.application("x-bplist-itunes");
 
-    private static Map<MediaType, MediaType> BINARY_TO_XML = new HashMap<>();
+    private static final Map<MediaType, MediaType> BINARY_TO_XML = new HashMap<>();
 
     static {
         BINARY_TO_XML.put(BMEMGRAPH, MEMGRAPH);

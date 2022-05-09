@@ -219,7 +219,7 @@ public class ChmLzxBlock {
             getState().setBlockRemaining(getState().getBlockRemaining() - (int) getBlockLength());
             int i = 0;
             while (i < getBlockLength() - 10) {
-                if (content[i] != 0xe8) {
+                if (content[i] != 0xe8 /* TODO cond always true http://findbugs.sourceforge.net/bugDescriptions.html#INT_BAD_COMPARISON_WITH_SIGNED_BYTE*/) {
                     i++;
                     continue;
                 }
@@ -524,7 +524,7 @@ public class ChmLzxBlock {
                 if (runsrc < 0) {
                     if (matchlen + runsrc <= 0) {
                         runsrc = prevcontent.length + runsrc;
-                        while ((matchlen-- > 0) && (prevcontent != null) && ((runsrc + 1) > 0))
+                        while (matchlen-- > 0 && runsrc + 1 > 0)
                             if ((rundest < content.length) && (runsrc < content.length)) {
                                 content[rundest++] = prevcontent[runsrc++];
                             }
@@ -541,9 +541,8 @@ public class ChmLzxBlock {
 
                 } else {
                     /* copies any wrapped source data */
-                    while ((runsrc < 0) && (matchlen-- > 0)) {
-                        content[rundest++] = content[(int) (runsrc + getBlockLength())];
-                        runsrc++;
+                    if ((runsrc < 0)) {
+                        matchlen--;
                     }
                     /* copies match data - no worries about destination wraps */
                     while (matchlen-- > 0) {
@@ -559,8 +558,7 @@ public class ChmLzxBlock {
 
     private void createLengthTreeLenTable(int offset, int tablelen, short[] pretreetable,
                                           short[] prelentable) throws TikaException {
-        if (prelentable == null || getChmSection() == null || pretreetable == null ||
-                prelentable == null) {
+        if (prelentable == null || getChmSection() == null || pretreetable == null) {
             throw new ChmParsingException("is null");
         }
 

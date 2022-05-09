@@ -47,6 +47,6 @@ public class DataNodeObjectData {
      */
     DataNodeObjectData() {
         this.exGuid =
-                new ExGuid(SequenceNumberGenerator.GetCurrentSerialNumber(), UUID.randomUUID());
+                new ExGuid(SequenceNumberGenerator.getCurrentSerialNumber(), UUID.randomUUID());
     }
 }

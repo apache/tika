@@ -68,18 +68,18 @@ public class ZipFilesChunking extends AbstractChunking {
             int compressedSize = (int) this.getCompressedSize(dataFileSignatureBytes.get());
 
             if (headerLength + compressedSize <= 4096) {
-                list.add(builder.Build(
+                list.add(builder.build(
                         Arrays.copyOfRange(this.fileContent, index, headerLength + compressedSize),
                         this.getSingleChunkSignature(header, dataFileSignatureBytes.get())));
                 index += headerLength += compressedSize;
             } else {
-                list.add(builder.Build(header, this.getSHA1Signature(header)));
+                list.add(builder.build(header, this.getSHA1Signature(header)));
                 index += headerLength;
 
                 byte[] dataFile = Arrays.copyOfRange(this.fileContent, index, compressedSize);
 
                 if (dataFile.length <= 1048576) {
-                    list.add(builder.Build(dataFile,
+                    list.add(builder.build(dataFile,
                             this.getDataFileSignature(dataFileSignatureBytes.get())));
                 } else {
                     list.addAll(this.getSubChunkList(dataFile));
@@ -97,7 +97,7 @@ public class ZipFilesChunking extends AbstractChunking {
                 Arrays.copyOfRange(this.fileContent, index, this.fileContent.length - index);
 
         if (finalRes.length <= 1048576) {
-            list.add(builder.Build(finalRes, this.getSHA1Signature(finalRes)));
+            list.add(builder.build(finalRes, this.getSHA1Signature(finalRes)));
         } else {
             // In current, it has no idea about how to compute the signature for final part larger than 1MB.
             throw new TikaException(
@@ -114,12 +114,12 @@ public class ZipFilesChunking extends AbstractChunking {
      * @return A list of LeafNodeObjectData.
      */
     private List<LeafNodeObject> getSubChunkList(byte[] chunkData) {
-        List<LeafNodeObject> subChunkList = new ArrayList<LeafNodeObject>();
+        List<LeafNodeObject> subChunkList = new ArrayList<>();
         int index = 0;
         while (index < chunkData.length) {
-            int length = chunkData.length - index < 1048576 ? chunkData.length - index : 1048576;
+            int length = Math.min(chunkData.length - index, 1048576);
             byte[] temp = Arrays.copyOfRange(chunkData, index, length);
-            subChunkList.add(new LeafNodeObject.IntermediateNodeObjectBuilder().Build(temp,
+            subChunkList.add(new LeafNodeObject.IntermediateNodeObjectBuilder().build(temp,
                     this.getSubChunkSignature()));
             index += length;
         }

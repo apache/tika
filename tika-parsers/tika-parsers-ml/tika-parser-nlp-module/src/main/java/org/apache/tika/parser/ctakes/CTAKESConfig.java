@@ -96,12 +96,10 @@ public class CTAKESConfig implements Serializable {
         } catch (IOException e) {
             // TODO warning
         } finally {
-            if (stream != null) {
-                try {
-                    stream.close();
-                } catch (IOException ioe) {
-                    // TODO warning
-                }
+            try {
+                stream.close();
+            } catch (IOException ioe) {
+                // TODO warning
             }
         }
 

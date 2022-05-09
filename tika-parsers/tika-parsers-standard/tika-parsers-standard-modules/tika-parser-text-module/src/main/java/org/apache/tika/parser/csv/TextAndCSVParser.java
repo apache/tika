@@ -312,7 +312,7 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
         }
         if (STRING_TO_CHAR_DELIMITER_MAP.containsKey(delimiterString)) {
             return new CSVParams(mediaType, charset,
-                    (char) STRING_TO_CHAR_DELIMITER_MAP.get(delimiterString));
+                    STRING_TO_CHAR_DELIMITER_MAP.get(delimiterString));
         }
         if (delimiterString.length() == 1) {
             return new CSVParams(mediaType, charset, delimiterString.charAt(0));

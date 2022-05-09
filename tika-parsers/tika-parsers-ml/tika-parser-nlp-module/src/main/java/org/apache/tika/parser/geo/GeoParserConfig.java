@@ -55,12 +55,10 @@ public class GeoParserConfig implements Serializable {
         } catch (IOException e) {
             LOG.warn("GeoTopicConfig.properties not found in class path");
         } finally {
-            if (stream != null) {
-                try {
-                    stream.close();
-                } catch (IOException ioe) {
-                    LOG.error("Unable to close stream: {}", ioe.getMessage());
-                }
+            try {
+                stream.close();
+            } catch (IOException ioe) {
+                LOG.error("Unable to close stream: {}", ioe.getMessage());
             }
         }
         setGazetteerRestEndpoint(props.getProperty("gazetter.rest.api", "http://localhost:8765"));

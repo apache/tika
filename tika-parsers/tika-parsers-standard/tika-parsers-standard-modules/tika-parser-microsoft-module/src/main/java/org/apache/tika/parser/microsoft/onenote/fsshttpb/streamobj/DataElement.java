@@ -84,9 +84,9 @@ public class DataElement extends StreamObject {
         this.dataElementType = type;
         this.data = data;
         this.dataElementExGuid =
-                new ExGuid(SequenceNumberGenerator.GetCurrentSerialNumber(), UUID.randomUUID());
+                new ExGuid(SequenceNumberGenerator.getCurrentSerialNumber(), UUID.randomUUID());
         this.serialNumber = new SerialNumber(UUID.randomUUID(),
-                SequenceNumberGenerator.GetCurrentSerialNumber());
+                SequenceNumberGenerator.getCurrentSerialNumber());
     }
 
     /**

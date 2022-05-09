@@ -49,8 +49,8 @@ public class AdapterHelper {
      */
     public static ExGuid xorExtendedGUID(ExtendedGUID exGuid1, ExtendedGUID exGuid2)
             throws IOException {
-        List<Byte> exGuid1Buffer = exGuid1.SerializeToByteList();
-        List<Byte> exGuid2Buffer = exGuid2.SerializeToByteList();
+        List<Byte> exGuid1Buffer = exGuid1.serializeToByteList();
+        List<Byte> exGuid2Buffer = exGuid2.serializeToByteList();
         List<Byte> resultBuffer = new ArrayList<>(exGuid1Buffer.size());
 
         for (int i = 0; i < exGuid1Buffer.size(); i++) {

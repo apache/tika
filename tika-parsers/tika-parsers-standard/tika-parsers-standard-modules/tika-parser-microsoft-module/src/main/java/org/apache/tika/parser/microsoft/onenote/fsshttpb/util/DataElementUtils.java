@@ -104,7 +104,7 @@ public class DataElementUtils {
                                                                  AtomicReference<ExGuid> rootNodeExGuid,
                                                                  List<ExGuid> objectDataExGuidList)
             throws TikaException, IOException {
-        NodeObject rootNode = new IntermediateNodeObject.RootNodeObjectBuilder().Build(fileContent);
+        NodeObject rootNode = new IntermediateNodeObject.RootNodeObjectBuilder().build(fileContent);
 
         // Storage the root object node ExGuid
         rootNodeExGuid.set(new ExGuid(rootNode.exGuid));
@@ -214,14 +214,14 @@ public class DataElementUtils {
         data.storageIndexManifestMapping.manifestMappingExGuid = new ExGuid(manifestExGuid);
         data.storageIndexManifestMapping.manifestMappingSerialNumber =
                 new SerialNumber(UUID.randomUUID(),
-                        SequenceNumberGenerator.GetCurrentSerialNumber());
+                        SequenceNumberGenerator.getCurrentSerialNumber());
 
         for (Map.Entry<CellID, ExGuid> kv : cellIDMappings.entrySet()) {
             StorageIndexCellMapping cellMapping = new StorageIndexCellMapping();
             cellMapping.cellID = kv.getKey();
             cellMapping.cellMappingExGuid = kv.getValue();
             cellMapping.cellMappingSerialNumber = new SerialNumber(UUID.randomUUID(),
-                    SequenceNumberGenerator.GetCurrentSerialNumber());
+                    SequenceNumberGenerator.getCurrentSerialNumber());
             data.storageIndexCellMappingList.add(cellMapping);
         }
 
@@ -230,7 +230,7 @@ public class DataElementUtils {
             revisionMapping.revisionExGuid = kv.getKey();
             revisionMapping.revisionMappingExGuid = kv.getValue();
             revisionMapping.revisionMappingSerialNumber = new SerialNumber(UUID.randomUUID(),
-                    SequenceNumberGenerator.GetCurrentSerialNumber());
+                    SequenceNumberGenerator.getCurrentSerialNumber());
             data.storageIndexRevisionMappingList.add(revisionMapping);
         }
 
@@ -533,7 +533,7 @@ public class DataElementUtils {
 
         for (RevisionManifestRootDeclare kv : revisionData.revisionManifestRootDeclareList) {
             if (kv.rootExGuid.equals(new ExGuid(2, RootExGuid))) {
-                rootExGuid.set(kv.objectExGuid);
+                rootExGuid.set(kv.objectExGuid); // TODO rootExGuid is always null
                 break;
             }
         }

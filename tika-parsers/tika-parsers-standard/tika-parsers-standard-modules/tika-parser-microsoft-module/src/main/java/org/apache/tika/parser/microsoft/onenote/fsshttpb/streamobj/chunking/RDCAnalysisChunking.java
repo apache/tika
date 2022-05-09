@@ -155,7 +155,7 @@ public class RDCAnalysisChunking extends AbstractChunking {
 //            SignatureObject signature = new SignatureObject();
 //            signature.SignatureData = new BinaryItem(signatureBytes);
 
-        return new LeafNodeObject.IntermediateNodeObjectBuilder().Build(temp, signature);
+        return new LeafNodeObject.IntermediateNodeObjectBuilder().build(temp, signature);
     }
 
     /**

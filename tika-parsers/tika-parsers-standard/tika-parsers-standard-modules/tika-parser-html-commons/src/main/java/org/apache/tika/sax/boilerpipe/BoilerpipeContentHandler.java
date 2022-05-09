@@ -53,7 +53,7 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
      * The newline character that gets inserted after block elements.
      */
     private static final char[] NL = new char[]{'\n'};
-    private static Set<Character> ALLOWABLE_CHARS;
+    private static final Set<Character> ALLOWABLE_CHARS;
 
     static {
         ALLOWABLE_CHARS = new HashSet<>();

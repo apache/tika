@@ -276,11 +276,13 @@ public class GDALParser extends AbstractParser {
         try (Scanner scanner = new Scanner(output)) {
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine();
-                for (Pattern p : metadataPatterns.keySet()) {
+                for (Map.Entry<Pattern, String> entry : metadataPatterns.entrySet()) {
+                    Pattern p = entry.getKey();
                     Matcher m = p.matcher(line);
                     if (m.find()) {
-                        if (metadataPatterns.get(p) != null && !metadataPatterns.get(p).equals("")) {
-                            metadata.add(metadataPatterns.get(p), m.group(1));
+                        String value = entry.getValue();
+                        if (value != null && !value.equals("")) {
+                            metadata.add(value, m.group(1));
                         } else {
                             metadata.add(m.group(1), m.group(2));
                         }

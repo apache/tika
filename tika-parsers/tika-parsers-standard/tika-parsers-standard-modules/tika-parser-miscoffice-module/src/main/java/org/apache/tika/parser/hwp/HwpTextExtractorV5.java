@@ -74,7 +74,7 @@ public class HwpTextExtractorV5 implements Serializable {
             C, X, X, C, X, X, X, X, X, I, // 10-19
             I, X, X, X, C, C, C, C, C, C, // 20-29
             C, C}; // 30-31
-    protected static Logger LOG = LoggerFactory.getLogger(HwpTextExtractorV5.class);
+    protected static final Logger LOG = LoggerFactory.getLogger(HwpTextExtractorV5.class);
 
     /**
      * extract Text from HWP Stream.

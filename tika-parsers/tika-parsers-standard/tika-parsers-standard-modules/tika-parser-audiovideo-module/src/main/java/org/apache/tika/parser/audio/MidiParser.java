@@ -82,7 +82,7 @@ public class MidiParser extends AbstractParser {
             float type = sequence.getDivisionType();
             if (type == Sequence.PPQ) {
                 metadata.set("divisionType", "PPQ");
-            } else if (type == Sequence.SMPTE_24) {
+            } else if (type == Sequence.SMPTE_24) { // TODO duplicate branch
                 metadata.set("divisionType", "SMPTE_24");
             } else if (type == Sequence.SMPTE_25) {
                 metadata.set("divisionType", "SMPTE_25");
@@ -90,7 +90,7 @@ public class MidiParser extends AbstractParser {
                 metadata.set("divisionType", "SMPTE_30");
             } else if (type == Sequence.SMPTE_30DROP) {
                 metadata.set("divisionType", "SMPTE_30DROP");
-            } else if (type == Sequence.SMPTE_24) {
+            } else if (type == Sequence.SMPTE_24) { // TODO duplicate branch
                 metadata.set("divisionType", String.valueOf(type));
             }
 

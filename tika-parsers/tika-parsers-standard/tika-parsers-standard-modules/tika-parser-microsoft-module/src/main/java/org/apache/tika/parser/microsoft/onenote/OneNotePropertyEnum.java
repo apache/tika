@@ -108,7 +108,6 @@ public enum OneNotePropertyEnum {
 
     public static boolean getInlineBool(OneNotePropertyEnum propertyEnum) {
         long pid = propertyEnum.id;
-        long id = (pid & 0x3ffffff);
         long type = pid >> 26 & 0x1f;
         boolean inlineBool = false;
         if (type == 0x2) {

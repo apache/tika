@@ -85,7 +85,7 @@ public class ChmCommons {
         byte[] t = ChmCommons.copyOfRange(data,
                 (int) (lzxcBlockOffset + resetTable.getBlockAddress()[blockNumber]),
                 (int) (lzxcBlockOffset + resetTable.getBlockAddress()[blockNumber] + blockLength));
-        return (t != null) ? t : new byte[1];
+        return t;
     }
 
     /**

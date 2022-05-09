@@ -77,6 +77,7 @@ public class StreamingDetectContext {
     }
 
     public void remove(Class key) {
-        context.remove(key);
+        context.remove(key); // TODO Class is incompatible with expected argument type String.
+        // Need to use key.toString()?
     }
 }

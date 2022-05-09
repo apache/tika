@@ -275,11 +275,12 @@ public class MetadataExtractor {
         }
     }
 
-    private void setProperty(Metadata metadata, String name, String value) {
+    // never called
+    /*private void setProperty(Metadata metadata, String name, String value) {
         if (value != null) {
             metadata.set(name, value);
         }
-    }
+    }*/
 
     private void setProperty(Metadata metadata, Property property, int value) {
         if (value > 0) {
@@ -287,11 +288,12 @@ public class MetadataExtractor {
         }
     }
 
-    private void setProperty(Metadata metadata, String name, int value) {
+    //never called
+    /*private void setProperty(Metadata metadata, String name, int value) {
         if (value > 0) {
             metadata.set(name, Integer.toString(value));
         }
-    }
+    }*/
 
     private void addMultiProperty(Metadata metadata, Property property, Optional<String> value) {
         if (!value.isPresent()) {

@@ -40,7 +40,7 @@ import org.apache.tika.sax.ContentHandlerDecorator;
  */
 public class CTAKESContentHandler extends ContentHandlerDecorator {
     // Prefix used for metadata including cTAKES annotations
-    public static String CTAKES_META_PREFIX = "ctakes:";
+    public static final String CTAKES_META_PREFIX = "ctakes:";
 
     // Configuration object for CTAKESContentHandler
     private CTAKESConfig config = null;

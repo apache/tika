@@ -97,7 +97,7 @@ public class BitReader {
 
     public int readUInt16(int readingLength) throws IOException {
         byte[] uint16Bytes = this.getBytes(readingLength, 2);
-        return LittleEndianBitConverter.ToUInt16(uint16Bytes, 0);
+        return LittleEndianBitConverter.toUInt16(uint16Bytes, 0);
     }
 
     /**

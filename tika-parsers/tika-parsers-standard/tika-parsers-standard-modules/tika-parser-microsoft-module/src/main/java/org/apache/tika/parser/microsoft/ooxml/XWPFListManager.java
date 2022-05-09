@@ -38,21 +38,7 @@ public class XWPFListManager extends AbstractListManager {
      * Always returns empty string.
      */
     public final static XWPFListManager EMPTY_LIST = new EmptyListManager();
-    private final static boolean OVERRIDE_AVAILABLE;
-    private final static String SKIP_FORMAT = Character.toString((char) 61623);
-//if this shows up as the lvlText, don't show a number
 
-    static {
-        boolean b = false;
-        try {
-            Class.forName("org.openxmlformats.schemas.wordprocessingml.x2006.main.CTNumLvl");
-            b = true;
-        } catch (ClassNotFoundException e) {
-            //swallow
-        }
-        b = OVERRIDE_AVAILABLE = false;
-
-    }
 
     private final XWPFNumbering numbering;
 

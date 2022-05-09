@@ -35,8 +35,7 @@ class KeynoteContentHandler extends DefaultHandler {
 
     private boolean inSlide = false;
     private boolean inTheme = false;
-    private boolean inTitle = false;
-    private boolean inBody = false;
+
     private String tableId;
     private Integer numberOfColumns = null;
     private Integer currentColumn = null;
@@ -72,7 +71,6 @@ class KeynoteContentHandler extends DefaultHandler {
             inSlide = true;
             xhtml.startElement("div");
         } else if ("key:title-placeholder".equals(qName) && inSlide) {
-            inTitle = true;
             xhtml.startElement("h1");
         } else if ("sf:sticky-note".equals(qName) && inSlide) {
             xhtml.startElement("p");
@@ -80,7 +78,6 @@ class KeynoteContentHandler extends DefaultHandler {
             xhtml.startElement("p");
         } else if ("key:body-placeholder".equals(qName) && inSlide) {
             xhtml.startElement("p");
-            inBody = true;
         } else if ("key:size".equals(qName) && !inTheme) {
             String width = attributes.getValue("sfa:w");
             String height = attributes.getValue("sfa:h");
@@ -124,7 +121,6 @@ class KeynoteContentHandler extends DefaultHandler {
             inSlide = false;
             xhtml.endElement("div");
         } else if ("key:title-placeholder".equals(qName) && inSlide) {
-            inTitle = false;
             xhtml.endElement("h1");
         } else if ("sf:sticky-note".equals(qName) && inSlide) {
             xhtml.endElement("p");
@@ -132,7 +128,6 @@ class KeynoteContentHandler extends DefaultHandler {
             xhtml.endElement("p");
         } else if ("key:body-placeholder".equals(qName) && inSlide) {
             xhtml.endElement("p");
-            inBody = false;
         } else if ("sf:text-body".equals(qName)) {
             inParsableText = false;
         } else if ("key:metadata".equals(qName)) {

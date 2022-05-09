@@ -85,7 +85,7 @@ public class SequenceNumberGenerator {
      *
      * @return Return the current serial number.
      */
-    public static int GetCurrentSerialNumber() {
+    public static int getCurrentSerialNumber() {
         // Thread safety increase the token by 1.
         long currentID = serialNumber.incrementAndGet();
         return (int) currentID;

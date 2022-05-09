@@ -37,7 +37,7 @@ public class ObjectGroupMetadata extends StreamObject {
      * 2, if the object is known to change infrequently.
      * 3, if the object is known to change independently of any other objects.
      */
-    public Compact64bitInt ObjectChangeFrequency;
+    public Compact64bitInt objectChangeFrequency;
 
     /**
      * Initializes a new instance of the ObjectGroupMetadata class.
@@ -58,7 +58,7 @@ public class ObjectGroupMetadata extends StreamObject {
                                                  int lengthOfItems)
             throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
-        this.ObjectChangeFrequency = BasicObject.parse(byteArray, index, Compact64bitInt.class);
+        this.objectChangeFrequency = BasicObject.parse(byteArray, index, Compact64bitInt.class);
 
         if (index.get() - currentIndex.get() != lengthOfItems) {
             throw new StreamObjectParseErrorException(currentIndex.get(), "ObjectGroupMetadata",
@@ -76,7 +76,7 @@ public class ObjectGroupMetadata extends StreamObject {
      */
     @Override
     protected int serializeItemsToByteList(List<Byte> byteList) throws IOException {
-        List<Byte> tmpList = this.ObjectChangeFrequency.serializeToByteList();
+        List<Byte> tmpList = this.objectChangeFrequency.serializeToByteList();
         byteList.addAll(tmpList);
         return tmpList.size();
     }
