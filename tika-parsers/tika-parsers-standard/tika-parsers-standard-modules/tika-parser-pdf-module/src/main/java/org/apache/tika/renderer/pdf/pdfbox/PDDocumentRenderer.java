@@ -13,14 +13,15 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
+package org.apache.tika.renderer.pdf.pdfbox;
 
-package org.apache.tika.metadata;
+import org.apache.tika.renderer.Renderer;
 
-public interface Rendering {
-    String RENDERING_PREFIX = "rendering:";
-
-    Property RENDERED_BY = Property.externalTextBag(RENDERING_PREFIX + "Rendered-By");
-    Property RENDERED_MS = Property.externalReal(RENDERING_PREFIX + "rendering-time-ms");
+/**
+ * stub interface for the PDFParser to use to figure out if it needs
+ * to pass on the PDDocument or create a temp file to be used
+ * by a file-based renderer down the road.
+ */
+public interface PDDocumentRenderer extends Renderer {
 }

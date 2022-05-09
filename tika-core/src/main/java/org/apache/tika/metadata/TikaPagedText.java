@@ -14,14 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.renderer.pdf;
-
-import org.apache.tika.renderer.Renderer;
+package org.apache.tika.metadata;
 
 /**
- * stub interface for the PDFParser to use to figure out if it needs
- * to pass on the PDDocument or create a temp file to be used
- * by a file-based renderer down the road.
+ * Metadata properties for paged text, metadata appropriate
+ * for an individual page (useful for embedded document handlers
+ * called on individual pages).
+ *
+ * Use {@link PagedText} where possible
  */
-public interface PDDocumentRenderer extends Renderer {
+public interface TikaPagedText {
+    String TIKA_PAGED_TEXT_PREFIX = "tika_pg:";
+    /**
+     * 1-based page number for a specific page
+     */
+    Property PAGE_NUMBER = Property.internalInteger(TIKA_PAGED_TEXT_PREFIX + "page_number");
+
+    Property PAGE_ROTATION = Property.internalRational(TIKA_PAGED_TEXT_PREFIX + "page_rotation");
+
 }

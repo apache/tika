@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.renderer.pdf;
+package org.apache.tika.renderer.pdf.mutool;
 
 import java.io.Closeable;
 import java.io.File;
@@ -33,8 +33,8 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Rendering;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.renderer.PageBasedRenderResults;
@@ -111,7 +111,7 @@ public class MuPDFRenderer implements Renderer {
             if (m.reset(n).find()) {
                 int pageIndex = Integer.parseInt(m.group(1));
                 Metadata renderMetadata = new Metadata();
-                renderMetadata.set(Rendering.PAGE_NUMBER, pageIndex);
+                renderMetadata.set(TikaPagedText.PAGE_NUMBER, pageIndex);
                 renderMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                         TikaCoreProperties.EmbeddedResourceType.RENDERING.name());
                 results.add(new RenderResult(RenderResult.STATUS.SUCCESS, tracker.getNextId(),

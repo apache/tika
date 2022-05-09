@@ -34,12 +34,12 @@ import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.pdfbox.text.TextPosition;
 import org.apache.pdfbox.util.Matrix;
+import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Utility class that overrides the {@link PDFTextStripper} functionality
@@ -63,9 +63,9 @@ class PDF2XHTML extends AbstractPDF2XHTML {
     private Map<COSStream, Integer> processedInlineImages = new HashMap<>();
     private AtomicInteger inlineImageCounter = new AtomicInteger(0);
 
-    PDF2XHTML(PDDocument document, XHTMLContentHandler xhtml, ParseContext context, Metadata metadata,
+    PDF2XHTML(PDDocument document, ContentHandler handler, ParseContext context, Metadata metadata,
               PDFParserConfig config) throws IOException {
-        super(document, xhtml, context, metadata, config);
+        super(document, handler, context, metadata, config);
     }
 
     /**
@@ -73,12 +73,12 @@ class PDF2XHTML extends AbstractPDF2XHTML {
      * of XHTML SAX events sent to the given content handler.
      *
      * @param document PDF document
-     * @param xhtml  SAX content handler
+     * @param handler  SAX content handler
      * @param metadata PDF metadata
      * @throws SAXException  if the content handler fails to process SAX events
      * @throws TikaException if there was an exception outside of per page processing
      */
-    public static void process(PDDocument document, XHTMLContentHandler xhtml, ParseContext context,
+    public static void process(PDDocument document, ContentHandler handler, ParseContext context,
                                Metadata metadata, PDFParserConfig config)
             throws SAXException, TikaException {
         PDF2XHTML pdf2XHTML = null;
@@ -88,9 +88,9 @@ class PDF2XHTML extends AbstractPDF2XHTML {
             // handler.
             if (config.isDetectAngles()) {
                 pdf2XHTML =
-                        new AngleDetectingPDF2XHTML(document, xhtml, context, metadata, config);
+                        new AngleDetectingPDF2XHTML(document, handler, context, metadata, config);
             } else {
-                pdf2XHTML = new PDF2XHTML(document, xhtml, context, metadata, config);
+                pdf2XHTML = new PDF2XHTML(document, handler, context, metadata, config);
             }
             config.configure(pdf2XHTML);
 
@@ -225,10 +225,10 @@ class PDF2XHTML extends AbstractPDF2XHTML {
 
     private static class AngleDetectingPDF2XHTML extends PDF2XHTML {
 
-        private AngleDetectingPDF2XHTML(PDDocument document, XHTMLContentHandler xhtml,
+        private AngleDetectingPDF2XHTML(PDDocument document, ContentHandler handler,
                                         ParseContext context, Metadata metadata,
                                         PDFParserConfig config) throws IOException {
-            super(document, xhtml, context, metadata, config);
+            super(document, handler, context, metadata, config);
         }
 
         @Override

@@ -38,8 +38,8 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Rendering;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -65,7 +65,29 @@ public class PDFRenderingTest extends TikaTest {
         assertEquals(2, metadataList.size());
         Metadata tiffMetadata = metadataList.get(1);
         assertEquals("RENDERING", tiffMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
-        assertEquals(1, tiffMetadata.getInt(Rendering.PAGE_NUMBER));
+        assertEquals(1, tiffMetadata.getInt(TikaPagedText.PAGE_NUMBER));
+    }
+
+    @Test
+    public void testRotated() throws Exception {
+        ParseContext parseContext = configureParseContext();
+        TikaConfig config = getConfig("tika-rendering-config.xml");
+        Parser p = new AutoDetectParser(config);
+        List<Metadata> metadataList = getRecursiveMetadata("testPDF_rotated.pdf", p, parseContext);
+        Map<Integer, byte[]> embedded =
+                ((RenderCaptureExtractor)parseContext.get(EmbeddedDocumentExtractor.class))
+                        .getEmbedded();
+
+        assertEquals(1, embedded.size());
+        assertTrue(embedded.containsKey(0));
+        //what else can we do to test this?  File type == tiff? Run OCR?
+        assertTrue(embedded.get(0).length > 1000);
+
+        assertEquals(2, metadataList.size());
+        Metadata tiffMetadata = metadataList.get(1);
+        assertEquals("RENDERING", tiffMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals(1, tiffMetadata.getInt(TikaPagedText.PAGE_NUMBER));
+        assertEquals(90.0, Double.parseDouble(tiffMetadata.get(TikaPagedText.PAGE_ROTATION)), 0.1);
     }
 
     private TikaConfig getConfig(String path) throws TikaException, IOException, SAXException {

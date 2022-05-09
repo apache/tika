@@ -20,6 +20,6 @@
         <parser class="org.apache.tika.parser.DefaultParser"/>
     </parsers>
     <renderers>
-        <renderer class="org.apache.tika.renderer.pdf.PDFBoxRenderer"/>
+        <renderer class="org.apache.tika.renderer.pdf.pdfbox.PDFBoxRenderer"/>
     </renderers>
 </properties>

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.renderer.pdf;
+package org.apache.tika.renderer.pdf.pdfbox;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -44,6 +44,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.Rendering;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.renderer.PageBasedRenderResults;
@@ -135,7 +136,8 @@ public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
             m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.RENDERING.name());
             try {
-                m.set(Rendering.PAGE_NUMBER, i);
+                m.set(TikaPagedText.PAGE_NUMBER, i);
+                m.set(TikaPagedText.PAGE_ROTATION, (double)pdDocument.getPage(i - 1).getRotation());
                 Path imagePath = renderPage(renderer, id, i, m);
                 results.add(new RenderResult(RenderResult.STATUS.SUCCESS, id, imagePath, m));
             } catch (IOException e) {
@@ -153,6 +155,7 @@ public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
                 "-" + id + "-" + pageNumber + "." + imageFormatName);
         try {
             long start = System.currentTimeMillis();
+            //TODO: parameterize whether or not to un-rotate page?
             BufferedImage image = renderer.renderImageWithDPI(pageNumber - 1, dpi, imageType);
             long renderingElapsed = System.currentTimeMillis() - start;
             metadata.set(PDFBOX_RENDERING_TIME_MS, renderingElapsed);

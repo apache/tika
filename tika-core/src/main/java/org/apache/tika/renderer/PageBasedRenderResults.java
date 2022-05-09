@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.tika.io.TemporaryResources;
-import org.apache.tika.metadata.Rendering;
+import org.apache.tika.metadata.TikaPagedText;
 
 public class PageBasedRenderResults extends RenderResults {
 
@@ -32,7 +32,7 @@ public class PageBasedRenderResults extends RenderResults {
         super(tmp);
     }
     public void add(RenderResult result) {
-        Integer page = result.getMetadata().getInt(Rendering.PAGE_NUMBER);
+        Integer page = result.getMetadata().getInt(TikaPagedText.PAGE_NUMBER);
         if (page != null) {
             List<RenderResult> pageResults = results.get(page);
             if (pageResults == null) {

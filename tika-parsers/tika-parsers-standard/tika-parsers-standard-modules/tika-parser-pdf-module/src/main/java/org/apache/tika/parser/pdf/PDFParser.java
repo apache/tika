@@ -70,8 +70,8 @@ import org.apache.tika.renderer.PageRangeRequest;
 import org.apache.tika.renderer.RenderResult;
 import org.apache.tika.renderer.RenderResults;
 import org.apache.tika.renderer.Renderer;
-import org.apache.tika.renderer.pdf.PDFBoxRenderer;
-import org.apache.tika.renderer.pdf.PDFRenderingState;
+import org.apache.tika.renderer.pdf.pdfbox.PDFBoxRenderer;
+import org.apache.tika.renderer.pdf.pdfbox.PDFRenderingState;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
@@ -170,21 +170,21 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
             extractMetadata(pdfDocument, metadata, context);
             AccessChecker checker = localConfig.getAccessChecker();
             checker.check(metadata);
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             tstream.setOpenContainer(pdfDocument);
-            handleRendering(pdfDocument, tstream, xhtml, metadata, context, localConfig);
+            handleRendering(pdfDocument, tstream, handler, metadata, context, localConfig);
             if (handler != null) {
                 if (shouldHandleXFAOnly(hasXFA, localConfig)) {
-                    handleXFAOnly(pdfDocument, xhtml, metadata, context);
+                    handleXFAOnly(pdfDocument, handler, metadata, context);
                 } else if (localConfig.getOcrStrategy()
                         .equals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY)) {
-                    OCR2XHTML.process(pdfDocument, xhtml, context, metadata, localConfig);
+                    OCR2XHTML.process(pdfDocument, handler, context, metadata,
+                            localConfig);
                 } else if (hasMarkedContent && localConfig.isExtractMarkedContent()) {
                     PDFMarkedContent2XHTML
-                            .process(pdfDocument, xhtml, context, metadata,
+                            .process(pdfDocument, handler, context, metadata,
                                     localConfig);
                 } else {
-                    PDF2XHTML.process(pdfDocument, xhtml, context, metadata,
+                    PDF2XHTML.process(pdfDocument, handler, context, metadata,
                             localConfig);
                 }
             }
@@ -478,10 +478,11 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
         return config.isIfXFAExtractOnlyXFA() && hasXFA;
     }
 
-    private void handleXFAOnly(PDDocument pdDocument, XHTMLContentHandler xhtml, Metadata metadata,
+    private void handleXFAOnly(PDDocument pdDocument, ContentHandler handler, Metadata metadata,
                                ParseContext context)
             throws SAXException, IOException, TikaException {
         XFAExtractor ex = new XFAExtractor();
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         try (InputStream is = new ByteArrayInputStream(
                 pdDocument.getDocumentCatalog().getAcroForm(null).getXFA().getBytes())) {

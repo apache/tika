@@ -1210,6 +1210,15 @@ public class PDFParserTest extends TikaTest {
         assertContains("transport mined materials", xml);
     }
 
+    @Test
+    public void testAnglesOnPageRotation() throws Exception {
+        PDFParserConfig pdfParserConfig = new PDFParserConfig();
+        pdfParserConfig.setDetectAngles(true);
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(PDFParserConfig.class, pdfParserConfig);
+        String xml = getXML("testPDF_rotated.pdf", parseContext).xml;
+        assertContains("until a further review indicates that the infrastructure", xml);
+    }
 
     @Test
     public void testUnmappedUnicodeStats() throws Exception {

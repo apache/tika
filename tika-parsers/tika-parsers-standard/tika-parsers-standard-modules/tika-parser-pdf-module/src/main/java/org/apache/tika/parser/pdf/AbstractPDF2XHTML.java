@@ -92,6 +92,7 @@ import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.pdfbox.tools.imageio.ImageIOUtil;
 import org.apache.pdfbox.util.Matrix;
 import org.apache.pdfbox.util.Vector;
+import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
@@ -104,8 +105,8 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Font;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
-import org.apache.tika.metadata.Rendering;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -115,8 +116,11 @@ import org.apache.tika.renderer.PageRangeRequest;
 import org.apache.tika.renderer.RenderResult;
 import org.apache.tika.renderer.Renderer;
 import org.apache.tika.renderer.RenderingTracker;
-import org.apache.tika.renderer.pdf.PDDocumentRenderer;
-import org.apache.tika.renderer.pdf.PDFRenderingState;
+import org.apache.tika.renderer.pdf.pdfbox.NoTextPDFRenderer;
+import org.apache.tika.renderer.pdf.pdfbox.PDDocumentRenderer;
+import org.apache.tika.renderer.pdf.pdfbox.PDFRenderingState;
+import org.apache.tika.renderer.pdf.pdfbox.TextOnlyPDFRenderer;
+import org.apache.tika.renderer.pdf.pdfbox.VectorGraphicsOnlyPDFRenderer;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -164,10 +168,10 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     int unmappedUnicodeCharsPerPage = 0;
     int totalCharsPerPage = 0;
 
-    AbstractPDF2XHTML(PDDocument pdDocument, XHTMLContentHandler xhtml, ParseContext context,
+    AbstractPDF2XHTML(PDDocument pdDocument, ContentHandler handler, ParseContext context,
                       Metadata metadata, PDFParserConfig config) throws IOException {
         this.pdDocument = pdDocument;
-        this.xhtml = xhtml;
+        this.xhtml = new XHTMLContentHandler(handler, metadata);
         this.context = context;
         this.metadata = metadata;
         this.config = config;
@@ -470,7 +474,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
     }
 
-    void doOCROnCurrentPage(PDFParserConfig.OCR_STRATEGY ocrStrategy)
+    void doOCROnCurrentPage(PDPage pdPage, PDFParserConfig.OCR_STRATEGY ocrStrategy)
             throws IOException, TikaException, SAXException {
         if (ocrStrategy.equals(NO_OCR)) {
             return;
@@ -490,7 +494,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
 
         try (TemporaryResources tmp = new TemporaryResources()) {
-            RenderResult renderResult = renderCurrentPage(context, tmp);
+            RenderResult renderResult = renderCurrentPage(pdPage, context, tmp);
             Metadata renderMetadata = renderResult.getMetadata();
             try (InputStream is = TikaInputStream.get(renderResult.getPath())) {
                 renderMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
@@ -505,12 +509,13 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
     }
 
-    private RenderResult renderCurrentPage(ParseContext parseContext,
+    private RenderResult renderCurrentPage(PDPage pdPage, ParseContext parseContext,
                                            TemporaryResources tmpResources)
             throws IOException, TikaException {
         PDFRenderingState renderingState = parseContext.get(PDFRenderingState.class);
         if (renderingState == null) {
-            noContextRenderCurrentPage(parseContext, tmpResources);
+            Metadata pageMetadata = getCurrentPageMetadata(pdPage);
+            noContextRenderCurrentPage(pageMetadata, parseContext, tmpResources);
         }
         //if the full document has already been rendered, then reuse that file
         //TODO: we need to prevent this if only a portion of the page or portions
@@ -525,6 +530,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 return pageResults.get(0);
             }
         }
+        Metadata pageMetadata = getCurrentPageMetadata(pdPage);
         Renderer thisRenderer = getPDFRenderer(config.getRenderer());
         //if there's a configured renderer and if the rendering strategy is "all"
         if (thisRenderer != null &&
@@ -533,25 +539,21 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                     new PageRangeRequest(getCurrentPageNo(), getCurrentPageNo());
             if (thisRenderer instanceof PDDocumentRenderer) {
                 try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
-                    Metadata m = new Metadata();
-                    m.set(TikaCoreProperties.TYPE, PDFParser.MEDIA_TYPE.toString());
                     tis.setOpenContainer(pdDocument);
-                    return thisRenderer.render(tis, m, parseContext, pageRangeRequest)
+                    return thisRenderer.render(tis, pageMetadata, parseContext, pageRangeRequest)
                             .getResults().get(0);
                 }
             } else {
-                Metadata m = new Metadata();
-                m.set(TikaCoreProperties.TYPE, PDFParser.MEDIA_TYPE.toString());
                 PDFRenderingState state = context.get(PDFRenderingState.class);
                 if (state == null) {
                     throw new IllegalArgumentException("RenderingState must not be null");
                 }
                 return thisRenderer
-                        .render(state.getTikaInputStream(), m, parseContext, pageRangeRequest)
+                        .render(state.getTikaInputStream(), pageMetadata, parseContext, pageRangeRequest)
                         .getResults().get(0);
             }
         } else {
-            return noContextRenderCurrentPage(parseContext, tmpResources);
+            return noContextRenderCurrentPage(pageMetadata, parseContext, tmpResources);
         }
     }
 
@@ -568,7 +570,16 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     }
 
 
-    private RenderResult noContextRenderCurrentPage(ParseContext parseContext,
+    private Metadata getCurrentPageMetadata(PDPage pdPage) {
+        Metadata pageMetadata = new Metadata();
+        pageMetadata.set(TikaCoreProperties.TYPE, PDFParser.MEDIA_TYPE.toString());
+        pageMetadata.set(TikaPagedText.PAGE_NUMBER, getCurrentPageNo());
+        pageMetadata.set(TikaPagedText.PAGE_ROTATION, (float)pdPage.getRotation());
+        return pageMetadata;
+    }
+
+    private RenderResult noContextRenderCurrentPage(Metadata pageMetadata,
+                                                    ParseContext parseContext,
                                                     TemporaryResources tmpResources)
             throws IOException, TikaException {
         PDFRenderer renderer = null;
@@ -589,8 +600,6 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
         int dpi = config.getOcrDPI();
         Path tmpFile = null;
-        Metadata m = new Metadata();
-        m.set(Rendering.PAGE_NUMBER, pageIndex + 1);
 
         RenderingTracker renderingTracker = parseContext.get(RenderingTracker.class);
         if (renderingTracker == null) {
@@ -602,6 +611,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         try {
             BufferedImage image =
                     renderer.renderImageWithDPI(pageIndex, dpi, config.getOcrImageType());
+
             tmpFile = tmpResources.createTempFile();
             try (OutputStream os = Files.newOutputStream(tmpFile)) {
                 //TODO: get output format from TesseractConfig
@@ -618,9 +628,9 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM,
                     ExceptionUtils.getStackTrace(e));
 
-            return new RenderResult(RenderResult.STATUS.EXCEPTION, id, null, m);
+            return new RenderResult(RenderResult.STATUS.EXCEPTION, id, null, pageMetadata);
         }
-        return new RenderResult(RenderResult.STATUS.SUCCESS, id, tmpFile, m);
+        return new RenderResult(RenderResult.STATUS.SUCCESS, id, tmpFile, pageMetadata);
     }
 
     @Override
@@ -713,7 +723,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 }
             }
             if (config.getOcrStrategy() == PDFParserConfig.OCR_STRATEGY.OCR_AND_TEXT_EXTRACTION) {
-                doOCROnCurrentPage(OCR_AND_TEXT_EXTRACTION);
+                doOCROnCurrentPage(page, OCR_AND_TEXT_EXTRACTION);
             } else if (config.getOcrStrategy() == PDFParserConfig.OCR_STRATEGY.AUTO) {
                 boolean unmappedExceedsLimit = false;
                 if (totalCharsPerPage > config.getOcrStrategyAuto().getTotalCharsPerPage()) {
@@ -728,7 +738,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 }
                 if (totalCharsPerPage <= config.getOcrStrategyAuto().getTotalCharsPerPage() ||
                         unmappedExceedsLimit) {
-                    doOCROnCurrentPage(AUTO);
+                    doOCROnCurrentPage(page, AUTO);
                 }
             }
 

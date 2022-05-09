@@ -114,7 +114,7 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
     }
 
     //nearly directly copied from PDFBox ExtractImages
-    private static void writeToBuffer(PDImage pdImage, String suffix, boolean directJPEG,
+    protected BufferedImage writeToBuffer(PDImage pdImage, String suffix, boolean directJPEG,
                                       OutputStream out) throws IOException, TikaException {
 
         if ("jpg".equals(suffix)) {
@@ -129,12 +129,14 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
                 } finally {
                     IOUtils.closeQuietly(data);
                 }
+                return null;
             } else {
                 BufferedImage image = pdImage.getImage();
                 if (image != null) {
                     // for CMYK and other "unusual" colorspaces, the JPEG will be converted
                     ImageIOUtil.writeImage(image, suffix, out);
                 }
+                return image;
             }
         } else if ("jp2".equals(suffix)) {
             String colorSpaceName = pdImage.getColorSpace().getName();
@@ -148,6 +150,7 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
                 } finally {
                     IOUtils.closeQuietly(data);
                 }
+                return null;
             } else {
                 // for CMYK and other "unusual" colorspaces, the image will be converted
                 BufferedImage image = pdImage.getImage();
@@ -155,11 +158,13 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
                     // for CMYK and other "unusual" colorspaces, the JPEG will be converted
                     ImageIOUtil.writeImage(image, "jpeg2000", out);
                 }
+                return image;
             }
         } else if ("tif".equals(suffix) && pdImage.getColorSpace().equals(PDDeviceGray.INSTANCE)) {
             BufferedImage image = pdImage.getImage();
+            //TODO: log or otherwise report
             if (image == null) {
-                return;
+                return null;
             }
             // CCITT compressed images can have a different colorspace, but this one is B/W
             // This is a bitonal image, so copy to TYPE_BYTE_BINARY
@@ -174,6 +179,7 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
                 }
             }
             ImageIOUtil.writeImage(bitonalImage, suffix, out);
+            return image;
         } else if ("jb2".equals(suffix)) {
             InputStream data = pdImage.createInputStream(JB2);
             try {
@@ -184,12 +190,14 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         } else {
             BufferedImage image = pdImage.getImage();
             if (image == null) {
-                return;
+                return null;
             }
             ImageIOUtil.writeImage(image, suffix, out);
+            return image;
         }
 
         out.flush();
+        return null;
     }
 
     private static void copyUpToMaxLength(InputStream is, OutputStream os)
@@ -254,6 +262,7 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
             }
 
             PDImageXObject xobject = (PDImageXObject) pdImage;
+            //TODO: handle image metadata: xobject.getMetadata()
             Integer cachedNumber = processedInlineImages.get(xobject.getCOSObject());
             if (cachedNumber != null && pdfParserConfig.isExtractUniqueInlineImagesOnly()) {
                 // skip duplicate image
@@ -365,7 +374,7 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         }
     }
 
-    private void processImage(PDImage pdImage, int imageNumber)
+    protected void processImage(PDImage pdImage, int imageNumber)
             throws IOException, TikaException, SAXException {
         //this is the metadata for this particular image
         Metadata metadata = new Metadata();
@@ -392,12 +401,13 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         if (embeddedDocumentExtractor.shouldParseEmbedded(metadata)) {
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
             if (pdImage instanceof PDImageXObject) {
+                //extract the metadata contained outside of the image
                 PDMetadataExtractor
                         .extract(((PDImageXObject) pdImage).getMetadata(), metadata, parseContext);
             }
-            //extract the metadata contained outside of the image
+            BufferedImage bufferedImage = null;
             try {
-                writeToBuffer(pdImage, suffix, useDirectJPEG, buffer);
+                bufferedImage = writeToBuffer(pdImage, suffix, useDirectJPEG, buffer);
             } catch (MissingImageReaderException e) {
                 EmbeddedDocumentUtil.recordException(e, parentMetadata);
                 return;
@@ -405,9 +415,12 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
                 return;
             }
-            try (InputStream embeddedIs = TikaInputStream.get(buffer.toByteArray())) {
+            try (TikaInputStream tis = TikaInputStream.get(buffer.toByteArray())) {
+                if (bufferedImage != null) {
+                    tis.setOpenContainer(bufferedImage);
+                }
                 embeddedDocumentExtractor
-                        .parseEmbedded(embeddedIs, new EmbeddedContentHandler(xhtml), metadata,
+                        .parseEmbedded(tis, new EmbeddedContentHandler(xhtml), metadata,
                                 false);
             }
         }
