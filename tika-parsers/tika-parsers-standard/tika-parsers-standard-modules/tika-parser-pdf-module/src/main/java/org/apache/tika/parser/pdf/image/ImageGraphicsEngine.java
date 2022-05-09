@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser.pdf;
+package org.apache.tika.parser.pdf.image;
 
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
@@ -65,13 +65,15 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.pdf.PDFParserConfig;
+import org.apache.tika.parser.pdf.PDMetadataExtractor;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Copied nearly verbatim from PDFBox
  */
-class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
+public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
 
     //We're currently copying images to byte[].  We should
     //limit the length to avoid OOM on crafted files.
@@ -219,7 +221,7 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         return false;
     }
 
-    void run() throws IOException {
+    public void run() throws IOException {
         PDPage page = getPage();
 
         //TODO: is there a better way to do this rather than reprocessing the page
@@ -498,7 +500,7 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         }
     }
 
-    List<IOException> getExceptions() {
+    public List<IOException> getExceptions() {
         return exceptions;
     }
 }

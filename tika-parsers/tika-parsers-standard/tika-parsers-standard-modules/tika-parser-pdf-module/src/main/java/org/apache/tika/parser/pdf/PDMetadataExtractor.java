@@ -52,12 +52,12 @@ import org.apache.tika.parser.xmp.JempboxExtractor;
 import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
 
-class PDMetadataExtractor {
+public class PDMetadataExtractor {
 
     private static final MediaType MEDIA_TYPE = MediaType.application("pdf");
 
 
-    static void extract(PDMetadata pdMetadata, Metadata metadata, ParseContext context) {
+    public static void extract(PDMetadata pdMetadata, Metadata metadata, ParseContext context) {
         if (pdMetadata == null) {
             metadata.set(PDF.HAS_XMP, "false");
             return;

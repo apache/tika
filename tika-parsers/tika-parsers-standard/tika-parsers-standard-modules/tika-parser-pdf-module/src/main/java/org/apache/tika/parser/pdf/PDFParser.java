@@ -66,6 +66,7 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RenderingParser;
+import org.apache.tika.parser.pdf.image.ImageGraphicsEngineFactory;
 import org.apache.tika.renderer.PageRangeRequest;
 import org.apache.tika.renderer.RenderResult;
 import org.apache.tika.renderer.RenderResults;
@@ -734,6 +735,11 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
     @Override
     public void setRenderer(Renderer renderer) {
         defaultConfig.setRenderer(renderer);
+    }
+
+    @Field
+    public void setImageGraphicsEngineFactory(ImageGraphicsEngineFactory imageGraphicsEngineFactory) {
+        defaultConfig.setImageGraphicsEngineFactory(imageGraphicsEngineFactory);
     }
 
     public void setImageStrategy(String imageStrategy) {

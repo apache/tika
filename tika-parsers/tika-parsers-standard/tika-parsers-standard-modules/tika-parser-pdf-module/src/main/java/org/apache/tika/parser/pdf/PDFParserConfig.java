@@ -30,6 +30,7 @@ import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.text.PDFTextStripper;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.parser.pdf.image.ImageGraphicsEngineFactory;
 import org.apache.tika.renderer.Renderer;
 
 /**
@@ -73,6 +74,9 @@ public class PDFParserConfig implements Serializable {
     //True if inline images should only have their metadata
     //extracted.
     private boolean extractInlineImageMetadataOnly = false;
+
+    private ImageGraphicsEngineFactory imageGraphicsEngineFactory =
+            new ImageGraphicsEngineFactory();
 
     //True if inline images (as identified by their object id within
     //a pdf file) should only be extracted once.
@@ -141,7 +145,7 @@ public class PDFParserConfig implements Serializable {
     /**
      * @return whether or not to extract only inline image metadata and not render the images
      */
-    boolean isExtractInlineImageMetadataOnly() {
+    public boolean isExtractInlineImageMetadataOnly() {
         return extractInlineImageMetadataOnly;
     }
 
@@ -861,6 +865,20 @@ public class PDFParserConfig implements Serializable {
     public void setImageStrategy(IMAGE_STRATEGY imageStrategy) {
         this.imageStrategy = imageStrategy;
         userConfigured.add("imageStrategy");
+    }
+
+    /**
+     * EXPERT: Customize the class that handles inline images within a PDF page.
+     *
+     * @param imageGraphicsEngineFactory
+     */
+    public void setImageGraphicsEngineFactory(ImageGraphicsEngineFactory imageGraphicsEngineFactory) {
+        this.imageGraphicsEngineFactory = imageGraphicsEngineFactory;
+        userConfigured.add("imageGraphicsEngineFactory");
+    }
+
+    public ImageGraphicsEngineFactory getImageGraphicsEngineFactory() {
+        return imageGraphicsEngineFactory;
     }
 
     public IMAGE_STRATEGY getImageStrategy() {

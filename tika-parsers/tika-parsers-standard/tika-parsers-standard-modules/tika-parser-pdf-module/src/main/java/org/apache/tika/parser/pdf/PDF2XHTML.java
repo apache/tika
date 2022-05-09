@@ -40,6 +40,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.pdf.image.ImageGraphicsEngine;
 
 /**
  * Utility class that overrides the {@link PDFTextStripper} functionality
@@ -154,7 +155,8 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         }
 
         ImageGraphicsEngine engine =
-                new ImageGraphicsEngine(page, embeddedDocumentExtractor, config,
+                config.getImageGraphicsEngineFactory().newEngine(
+                        page, embeddedDocumentExtractor, config,
                         processedInlineImages, inlineImageCounter, xhtml, metadata, context);
         engine.run();
         List<IOException> engineExceptions = engine.getExceptions();
