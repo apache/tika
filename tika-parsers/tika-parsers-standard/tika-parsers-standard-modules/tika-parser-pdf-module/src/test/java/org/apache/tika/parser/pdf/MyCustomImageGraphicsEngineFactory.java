@@ -30,7 +30,11 @@ import org.apache.tika.parser.pdf.image.ImageGraphicsEngineFactory;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 public class MyCustomImageGraphicsEngineFactory extends ImageGraphicsEngineFactory {
-    public ImageGraphicsEngine newEngine(PDPage page, EmbeddedDocumentExtractor embeddedDocumentExtractor,
+
+    @Override
+    public ImageGraphicsEngine newEngine(PDPage page,
+                                         int pageNumber,
+                                         EmbeddedDocumentExtractor embeddedDocumentExtractor,
                                          PDFParserConfig pdfParserConfig,
                                          Map<COSStream, Integer> processedInlineImages,
                                          AtomicInteger imageCounter, XHTMLContentHandler xhtml,
