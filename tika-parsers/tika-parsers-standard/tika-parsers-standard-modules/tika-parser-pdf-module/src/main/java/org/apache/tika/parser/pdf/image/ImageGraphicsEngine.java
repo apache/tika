@@ -77,26 +77,28 @@ public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
 
     //We're currently copying images to byte[].  We should
     //limit the length to avoid OOM on crafted files.
-    private static final long MAX_IMAGE_LENGTH_BYTES = 100 * 1024 * 1024;
+    protected static final long MAX_IMAGE_LENGTH_BYTES = 100 * 1024 * 1024;
 
-    private static final List<String> JPEG =
+    protected static final List<String> JPEG =
             Arrays.asList(COSName.DCT_DECODE.getName(), COSName.DCT_DECODE_ABBREVIATION.getName());
 
 
-    private static final List<String> JP2 = Collections.singletonList(COSName.JPX_DECODE.getName());
+    protected static final List<String> JP2 =
+            Collections.singletonList(COSName.JPX_DECODE.getName());
 
-    private static final List<String> JB2 = Collections.singletonList(COSName.JBIG2_DECODE.getName());
+    protected static final List<String> JB2 =
+            Collections.singletonList(COSName.JBIG2_DECODE.getName());
     final List<IOException> exceptions = new ArrayList<>();
-    private final EmbeddedDocumentExtractor embeddedDocumentExtractor;
-    private final PDFParserConfig pdfParserConfig;
-    private final Map<COSStream, Integer> processedInlineImages;
-    private final AtomicInteger imageCounter;
-    private final Metadata parentMetadata;
-    private final XHTMLContentHandler xhtml;
-    private final ParseContext parseContext;
-    private final boolean extractInlineImageMetadataOnly;
+    protected final EmbeddedDocumentExtractor embeddedDocumentExtractor;
+    protected final PDFParserConfig pdfParserConfig;
+    protected final Map<COSStream, Integer> processedInlineImages;
+    protected final AtomicInteger imageCounter;
+    protected final Metadata parentMetadata;
+    protected final XHTMLContentHandler xhtml;
+    protected final ParseContext parseContext;
+    protected final boolean extractInlineImageMetadataOnly;
     //TODO: parameterize this ?
-    private boolean useDirectJPEG = false;
+    protected boolean useDirectJPEG = false;
 
     //TODO: this is an embarrassment of an initializer...fix
     protected ImageGraphicsEngine(PDPage page, EmbeddedDocumentExtractor embeddedDocumentExtractor,
@@ -202,7 +204,7 @@ public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         return null;
     }
 
-    private static void copyUpToMaxLength(InputStream is, OutputStream os)
+    protected static void copyUpToMaxLength(InputStream is, OutputStream os)
             throws IOException, TikaException {
         BoundedInputStream bis = new BoundedInputStream(MAX_IMAGE_LENGTH_BYTES, is);
         IOUtils.copy(bis, os);
@@ -210,10 +212,9 @@ public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
             throw new TikaMemoryLimitException(
                     "Image size is larger than allowed (" + MAX_IMAGE_LENGTH_BYTES + ")");
         }
-
     }
 
-    private static boolean hasMasks(PDImage pdImage) throws IOException {
+    protected static boolean hasMasks(PDImage pdImage) throws IOException {
         if (pdImage instanceof PDImageXObject) {
             PDImageXObject ximg = (PDImageXObject) pdImage;
             return ximg.getMask() != null || ximg.getSoftMask() != null;
@@ -429,7 +430,7 @@ public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
 
     }
 
-    private void extractInlineImageMetadataOnly(PDImage pdImage, Metadata metadata)
+    protected void extractInlineImageMetadataOnly(PDImage pdImage, Metadata metadata)
             throws IOException, SAXException {
         if (pdImage instanceof PDImageXObject) {
             PDMetadataExtractor
@@ -451,7 +452,7 @@ public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         }
     }
 
-    private String getSuffix(PDImage pdImage, Metadata metadata) throws IOException {
+    protected String getSuffix(PDImage pdImage, Metadata metadata) throws IOException {
         String suffix = pdImage.getSuffix();
 
         if (suffix == null || suffix.equals("png")) {
@@ -480,7 +481,7 @@ public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         return suffix;
     }
 
-    void handleCatchableIOE(IOException e) throws IOException {
+    protected void handleCatchableIOE(IOException e) throws IOException {
         if (pdfParserConfig.isCatchIntermediateIOExceptions()) {
             if (e.getCause() instanceof SAXException && e.getCause().getMessage() != null &&
                     e.getCause().getMessage().contains("Your document contained more than")) {
