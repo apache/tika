@@ -56,6 +56,7 @@ import org.apache.tika.metadata.Font;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPMM;
 import org.apache.tika.mime.MediaType;
@@ -715,7 +716,8 @@ public class PDFParserTest extends TikaTest {
         }
         assertEquals(2, inline);
         assertEquals(2, attach);
-
+        assertEquals(1, metadatas.get(1).getInt(TikaPagedText.PAGE_NUMBER));
+        assertEquals(66, metadatas.get(2).getInt(TikaPagedText.PAGE_NUMBER));
         //now try turning off inline
 
         context.set(org.apache.tika.extractor.DocumentSelector.class, new AvoidInlineSelector());

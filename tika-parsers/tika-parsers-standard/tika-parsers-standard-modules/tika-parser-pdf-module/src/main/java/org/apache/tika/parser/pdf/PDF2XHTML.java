@@ -156,7 +156,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
 
         ImageGraphicsEngine engine =
                 config.getImageGraphicsEngineFactory().newEngine(
-                        page, embeddedDocumentExtractor, config,
+                        page, getCurrentPageNo(), embeddedDocumentExtractor, config,
                         processedInlineImages, inlineImageCounter, xhtml, metadata, context);
         engine.run();
         List<IOException> engineExceptions = engine.getExceptions();

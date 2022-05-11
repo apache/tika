@@ -31,12 +31,14 @@ import org.apache.tika.sax.XHTMLContentHandler;
 
 public class ImageGraphicsEngineFactory implements Serializable {
 
-    public ImageGraphicsEngine newEngine(PDPage page, EmbeddedDocumentExtractor embeddedDocumentExtractor,
+    public ImageGraphicsEngine newEngine(PDPage page,
+                                         int pageNumber,
+                                         EmbeddedDocumentExtractor embeddedDocumentExtractor,
                                          PDFParserConfig pdfParserConfig,
                                          Map<COSStream, Integer> processedInlineImages,
                                          AtomicInteger imageCounter, XHTMLContentHandler xhtml,
                                          Metadata parentMetadata, ParseContext parseContext) {
-        return new ImageGraphicsEngine(page, embeddedDocumentExtractor, pdfParserConfig,
+        return new ImageGraphicsEngine(page, pageNumber, embeddedDocumentExtractor, pdfParserConfig,
                 processedInlineImages, imageCounter, xhtml, parentMetadata, parseContext);
     }
 }

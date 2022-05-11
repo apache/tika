@@ -64,6 +64,7 @@ import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.parser.pdf.PDMetadataExtractor;
@@ -89,6 +90,7 @@ public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
     protected static final List<String> JB2 =
             Collections.singletonList(COSName.JBIG2_DECODE.getName());
     final List<IOException> exceptions = new ArrayList<>();
+    protected final int pageNumber;
     protected final EmbeddedDocumentExtractor embeddedDocumentExtractor;
     protected final PDFParserConfig pdfParserConfig;
     protected final Map<COSStream, Integer> processedInlineImages;
@@ -101,12 +103,15 @@ public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
     protected boolean useDirectJPEG = false;
 
     //TODO: this is an embarrassment of an initializer...fix
-    protected ImageGraphicsEngine(PDPage page, EmbeddedDocumentExtractor embeddedDocumentExtractor,
+    protected ImageGraphicsEngine(PDPage page,
+                                  int pageNumber,
+                                  EmbeddedDocumentExtractor embeddedDocumentExtractor,
                                   PDFParserConfig pdfParserConfig,
                                   Map<COSStream, Integer> processedInlineImages,
                                   AtomicInteger imageCounter, XHTMLContentHandler xhtml,
                                   Metadata parentMetadata, ParseContext parseContext) {
         super(page);
+        this.pageNumber = pageNumber;
         this.embeddedDocumentExtractor = embeddedDocumentExtractor;
         this.pdfParserConfig = pdfParserConfig;
         this.processedInlineImages = processedInlineImages;
@@ -395,6 +400,9 @@ public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileName);
         metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
+        metadata.set(TikaPagedText.PAGE_NUMBER, pageNumber);
+
+        //TODO -- should we look for image rotation metadata in the PDImage or elsewhere?
 
         if (extractInlineImageMetadataOnly) {
             extractInlineImageMetadataOnly(pdImage, metadata);
