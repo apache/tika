@@ -125,6 +125,7 @@ public class DWGReadParser extends AbstractDWGParser {
         } finally {
             FileUtils.deleteQuietly(tmpFileOut);
             FileUtils.deleteQuietly(tmpFileIn);
+            FileUtils.deleteQuietly(tmpFileOutCleaned);
         }
         
         
@@ -173,23 +174,23 @@ public class DWGReadParser extends AbstractDWGParser {
         }
     }
 	private String cleanupDwgString(String dwgString) {
-		//Cleaning chars have been found from the following websites:
+		//Cleaning the formatting of the text has been found from the following website's:
 		//https://www.cadforum.cz/en/text-formatting-codes-in-mtext-objects-tip8640
 		//https://adndevblog.typepad.com/autocad/2017/09/dissecting-mtext-format-codes.html
 		String cleanString;
-		//replace Alignment characters
+		//replace A0-2 (Alignment)
 		cleanString = dwgString.replaceAll("(?<!\\\\\\\\)\\\\A[0-2];", "");
-		//remove \\p and replace with new line
-		cleanString = cleanString.replaceAll("(?<!\\\\\\\\)\\\\P", "\n");
-		//replace pi
+		//replace \\p (New paragraph/ new line) and with new line
+		cleanString = cleanString.replaceAll("(?<!\\\\\\\\)\\\\P", "\\n");
+		//remove pi (numbered paragraphs)
 		cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pi.*;", "");
-		//replace pxi
+		//remove pxi (bullets)
 		cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pxi.*;", "");
-		//replace pxt
+		//remove pxt (tab stops)
 		cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pxt.*;", "");
-		//replace lines with \H text height
+		//remove lines with \H (text height)
 		cleanString = cleanString.replaceAll("(?<!\\\\)\\\\H[0-9]*.*;", "");
-		//replace lines with \F Font Selection
+		//remove lines with \F Font Selection
 		cleanString = cleanString.replaceAll("(?<!\\\\)\\\\F.*;", "");
 		//replace lines without \L.l
 		//cleanString = cleanString.replaceAll("\\\\H[0-9]*\\.[0-9]*x;", "");
