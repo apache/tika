@@ -46,6 +46,11 @@ import org.apache.tika.parser.Parser;
 
 public class PDFRenderingTest extends TikaTest {
 
+    @Test
+    public void testDefault() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testPDF.pdf");
+        assertEquals(1, metadataList.size());
+    }
 
     @Test
     public void testBasic() throws Exception {
@@ -56,7 +61,6 @@ public class PDFRenderingTest extends TikaTest {
         Map<Integer, byte[]> embedded =
                 ((RenderCaptureExtractor)parseContext.get(EmbeddedDocumentExtractor.class))
                         .getEmbedded();
-
         assertEquals(1, embedded.size());
         assertTrue(embedded.containsKey(0));
         //what else can we do to test this?  File type == tiff? Run OCR?
@@ -99,9 +103,6 @@ public class PDFRenderingTest extends TikaTest {
     private ParseContext configureParseContext() {
         ParseContext parseContext = new ParseContext();
         parseContext.set(EmbeddedDocumentExtractor.class, new RenderCaptureExtractor(parseContext));
-        PDFParserConfig config = new PDFParserConfig();
-        config.setImageStrategy(PDFParserConfig.IMAGE_STRATEGY.RENDERED_PAGES);
-        parseContext.set(PDFParserConfig.class, config);
         return parseContext;
     }
 

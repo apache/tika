@@ -17,6 +17,7 @@
 package org.apache.tika.parser.pdf;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Writer;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.pdfbox.cos.COSArray;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.cos.COSStream;
@@ -38,9 +40,17 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.pdf.image.ImageGraphicsEngine;
+import org.apache.tika.renderer.PageRangeRequest;
+import org.apache.tika.renderer.RenderRequest;
+import org.apache.tika.renderer.RenderResult;
+import org.apache.tika.renderer.RenderResults;
+import org.apache.tika.renderer.Renderer;
+import org.apache.tika.renderer.pdf.pdfbox.PDFRenderingState;
 
 /**
  * Utility class that overrides the {@link PDFTextStripper} functionality
@@ -137,6 +147,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
             writeParagraphEnd();
             try {
                 extractImages(page);
+                renderPage(page);
             } catch (IOException e) {
                 handleCatchableIOE(e);
             }
@@ -148,12 +159,44 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         }
     }
 
+    private void renderPage(PDPage page) throws IOException {
+        if (config.getImageStrategy() != PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_AT_PAGE_END) {
+            return;
+        }
+        PDFRenderingState state = context.get(PDFRenderingState.class);
+        //this is the document's inputstream/PDDocument
+        //TODO: figure out if we can send in the PDPage in the TikaInputStream
+        TikaInputStream tis = state.getTikaInputStream();
+        Renderer renderer = config.getRenderer();
+        RenderRequest request = new PageRangeRequest(getCurrentPageNo(), getCurrentPageNo());
+        Metadata renderedMetadata = new Metadata();
+        renderedMetadata.set(TikaCoreProperties.TYPE, PDFParser.MEDIA_TYPE.toString());
+        try (RenderResults results = renderer.render(tis, renderedMetadata, context, request)) {
+            for (RenderResult result : results.getResults()) {
+                if (result.getStatus() == RenderResult.STATUS.SUCCESS) {
+                    if (embeddedDocumentExtractor.shouldParseEmbedded(result.getMetadata())) {
+
+                        try (InputStream is = result.getInputStream()) {
+                            //TODO: add markup here?
+                            embeddedDocumentExtractor.parseEmbedded(is, xhtml,
+                                    result.getMetadata(), true);
+                        }
+                    }
+                }
+            }
+        } catch (SecurityException e) {
+            throw e;
+        } catch (Exception e) {
+            handleCatchableIOE(new IOExceptionWithCause(e));
+        }
+    }
+
     void extractImages(PDPage page) throws SAXException, IOException {
         if (config.isExtractInlineImages() == false &&
                 config.isExtractInlineImageMetadataOnly() == false) {
             return;
         }
-
+        //TODO: modernize to ImageStratey != rawImages
         ImageGraphicsEngine engine =
                 config.getImageGraphicsEngineFactory().newEngine(
                         page, getCurrentPageNo(), embeddedDocumentExtractor, config,

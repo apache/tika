@@ -987,15 +987,35 @@ public class PDFParserConfig implements Serializable {
     }
 
     public enum IMAGE_STRATEGY {
-        NONE, RAW_IMAGES, RENDERED_PAGES;//TODO: add LOGICAL_IMAGES
+        NONE,
+        /**
+         * This is the more modern version of {@link PDFParserConfig#extractInlineImages}
+         */
+        RAW_IMAGES,
+        /**
+         * If you want the rendered images, and you don't care that there's
+         * markup in the xhtml handler per page then go with this option.
+         * For some rendering engines, it is faster to render the full document
+         * upfront than to parse a page, render a page, etc.
+         */
+        RENDER_PAGES_BEFORE_PARSE,
+        /**
+         * This renders each page, one at a time, at the end of the page.
+         * For some rendering engines, this may be slower, but it allows the writing
+         * of image metadata into the xhtml in the proper location
+         */
+        RENDER_PAGES_AT_PAGE_END;
+        //TODO: add LOGICAL_IMAGES
 
         private static IMAGE_STRATEGY parse(String s) {
             String lc = s.toLowerCase(Locale.US);
             switch (lc) {
-                case "rawImages" :
+                case "rawimages" :
                     return RAW_IMAGES;
-                case "renderedPages":
-                    return RENDERED_PAGES;
+                case "renderpagesbeforeparse":
+                    return RENDER_PAGES_BEFORE_PARSE;
+                case "renderpagesatpageend":
+                    return RENDER_PAGES_AT_PAGE_END;
                 case "none":
                     return NONE;
                 default:

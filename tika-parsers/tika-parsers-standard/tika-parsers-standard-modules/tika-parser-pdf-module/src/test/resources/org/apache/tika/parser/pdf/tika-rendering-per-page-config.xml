@@ -22,13 +22,11 @@
         </parser>
         <parser class="org.apache.tika.parser.pdf.PDFParser">
             <params>
-                <param name="imageStrategy" type="string">renderPagesBeforeParse</param>
+                <param name="imageStrategy" type="string">renderPagesAtPageEnd</param>
             </params>
         </parser>
     </parsers>
-<!--
-    This will be supplied automatically if not specified.
-    <renderers>
+<!--    <renderers>
         <renderer class="org.apache.tika.renderer.pdf.pdfbox.PDFBoxRenderer"/>
     </renderers> -->
 </properties>

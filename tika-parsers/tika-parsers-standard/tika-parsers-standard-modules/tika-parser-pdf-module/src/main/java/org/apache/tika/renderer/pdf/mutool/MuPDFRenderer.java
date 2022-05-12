@@ -115,7 +115,7 @@ public class MuPDFRenderer implements Renderer {
                 renderMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                         TikaCoreProperties.EmbeddedResourceType.RENDERING.name());
                 results.add(new RenderResult(RenderResult.STATUS.SUCCESS, tracker.getNextId(),
-                        f.toPath(), renderMetadata));
+                        TikaInputStream.get(f.toPath()), renderMetadata));
             }
         }
 

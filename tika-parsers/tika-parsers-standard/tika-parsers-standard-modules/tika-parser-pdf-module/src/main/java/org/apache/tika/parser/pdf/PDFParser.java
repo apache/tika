@@ -114,7 +114,7 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
      * @deprecated Supply a {@link PasswordProvider} on the {@link ParseContext} instead
      */
     public static final String PASSWORD = "org.apache.tika.parser.pdf.password";
-    protected static final MediaType MEDIA_TYPE = MediaType.application("pdf");
+    public static final MediaType MEDIA_TYPE = MediaType.application("pdf");
     /**
      * Serial version UID
      */
@@ -137,7 +137,7 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
         if (localConfig.isSetKCMS()) {
             System.setProperty("sun.java2d.cmm", "sun.java2d.cmm.kcms.KcmsServiceProvider");
         }
-        initRenderer(localConfig);
+        initRenderer(localConfig, context);
         PDDocument pdfDocument = null;
 
         String password = "";
@@ -172,7 +172,7 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
             AccessChecker checker = localConfig.getAccessChecker();
             checker.check(metadata);
             tstream.setOpenContainer(pdfDocument);
-            handleRendering(pdfDocument, tstream, handler, metadata, context, localConfig);
+            renderPagesBeforeParse(tstream, handler, metadata, context, localConfig);
             if (handler != null) {
                 if (shouldHandleXFAOnly(hasXFA, localConfig)) {
                     handleXFAOnly(pdfDocument, handler, metadata, context);
@@ -209,9 +209,11 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
     }
 
     private boolean shouldSpool(PDFParserConfig localConfig) {
-        if (localConfig.getImageStrategy() == PDFParserConfig.IMAGE_STRATEGY.RENDERED_PAGES) {
+        if (localConfig.getImageStrategy() == PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_BEFORE_PARSE
+                || localConfig.getImageStrategy() == PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_AT_PAGE_END) {
             return true;
         }
+
         if (localConfig.getOcrStrategy() == PDFParserConfig.OCR_STRATEGY.NO_OCR) {
             return false;
         }
@@ -219,11 +221,11 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
         return true;
     }
 
-    private void handleRendering(PDDocument pdDocument, TikaInputStream tstream,
-                                 ContentHandler xhtml, Metadata parentMetadata,
-                                 ParseContext context,
-                                 PDFParserConfig config) {
-        if (config.getImageStrategy() != PDFParserConfig.IMAGE_STRATEGY.RENDERED_PAGES) {
+    private void renderPagesBeforeParse(TikaInputStream tstream,
+                                        ContentHandler xhtml, Metadata parentMetadata,
+                                        ParseContext context,
+                                        PDFParserConfig config) {
+        if (config.getImageStrategy() != PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_BEFORE_PARSE) {
             return;
         }
         RenderResults renderResults = null;
@@ -242,7 +244,7 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
         for (RenderResult result : renderResults.getResults()) {
             if (result.getStatus() == RenderResult.STATUS.SUCCESS) {
                 if (embeddedDocumentExtractor.shouldParseEmbedded(result.getMetadata())) {
-                    try (InputStream is = TikaInputStream.get(result.getPath())) {
+                    try (InputStream is = result.getInputStream()) {
                         embeddedDocumentExtractor.parseEmbedded(is, xhtml, result.getMetadata(),
                                 false);
                     } catch (SecurityException e) {
@@ -720,8 +722,10 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
         //no-op
     }
 
-    private void initRenderer(PDFParserConfig config) {
-        if (config.getRenderer() != null) {
+    private void initRenderer(PDFParserConfig config, ParseContext context) {
+
+        if (config.getRenderer() != null &&
+                config.getRenderer().getSupportedTypes(context).contains(MEDIA_TYPE)) {
             return;
         }
         //set a default renderer if nothing was defined
@@ -742,6 +746,7 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
         defaultConfig.setImageGraphicsEngineFactory(imageGraphicsEngineFactory);
     }
 
+    @Field
     public void setImageStrategy(String imageStrategy) {
         defaultConfig.setImageStrategy(imageStrategy);
     }

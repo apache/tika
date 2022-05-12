@@ -494,13 +494,14 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
 
         try (TemporaryResources tmp = new TemporaryResources()) {
-            RenderResult renderResult = renderCurrentPage(pdPage, context, tmp);
-            Metadata renderMetadata = renderResult.getMetadata();
-            try (InputStream is = TikaInputStream.get(renderResult.getPath())) {
-                renderMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
-                        ocrImageMediaType.toString());
-                ocrParser.parse(is, new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
-                        renderMetadata, context);
+            try (RenderResult renderResult = renderCurrentPage(pdPage, context, tmp)) {
+                Metadata renderMetadata = renderResult.getMetadata();
+                try (InputStream is = renderResult.getInputStream()) {
+                    renderMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
+                            ocrImageMediaType.toString());
+                    ocrParser.parse(is, new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
+                            renderMetadata, context);
+                }
             }
         } catch (IOException e) {
             handleCatchableIOE(e);
@@ -538,11 +539,12 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             PageRangeRequest pageRangeRequest =
                     new PageRangeRequest(getCurrentPageNo(), getCurrentPageNo());
             if (thisRenderer instanceof PDDocumentRenderer) {
-                try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
-                    tis.setOpenContainer(pdDocument);
-                    return thisRenderer.render(tis, pageMetadata, parseContext, pageRangeRequest)
+                //do not do autocloseable.  We need to leave the pdDocument open!
+                TikaInputStream tis = TikaInputStream.get(new byte[0]);
+                tis.setOpenContainer(pdDocument);
+                return thisRenderer.render(tis, pageMetadata, parseContext, pageRangeRequest)
                             .getResults().get(0);
-                }
+
             } else {
                 PDFRenderingState state = context.get(PDFRenderingState.class);
                 if (state == null) {

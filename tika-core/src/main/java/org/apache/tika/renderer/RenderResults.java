@@ -18,7 +18,6 @@ package org.apache.tika.renderer;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,12 +32,7 @@ public class RenderResults implements Closeable {
         this.tmp = tmp;
     }
     public void add(RenderResult result) {
-        tmp.addResource(new Closeable() {
-            @Override
-            public void close() throws IOException {
-                Files.delete(result.getPath());
-            }
-        });
+        tmp.addResource(result);
         results.add(result);
     }
 

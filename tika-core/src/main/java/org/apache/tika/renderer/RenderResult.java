@@ -16,11 +16,17 @@
  */
 package org.apache.tika.renderer;
 
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 
-public class RenderResult {
+public class RenderResult implements Closeable {
 
     public enum STATUS {
         SUCCESS,
@@ -30,20 +36,40 @@ public class RenderResult {
     private final STATUS status;
 
     private final int id;
-    private final Path path;
+
+    private final Object result;
+
     //TODO: we're relying on metadata to bring in a bunch of info.
     //Might be cleaner to add specific parameters for page number, embedded path, etc.?
     private final Metadata metadata;
 
-    public RenderResult(STATUS status, int id, Path path, Metadata metadata) {
+    TemporaryResources tmp = new TemporaryResources();
+
+    public RenderResult(STATUS status, int id, Object result, Metadata metadata) {
         this.status = status;
         this.id = id;
-        this.path = path;
+        this.result = result;
         this.metadata = metadata;
+        if (result instanceof Path) {
+            tmp.addResource(new Closeable() {
+                @Override
+                public void close() throws IOException {
+                    Files.delete((Path)result);
+                }
+            });
+        } else if (result instanceof Closeable) {
+            tmp.addResource((Closeable) result);
+        }
     }
 
-    public Path getPath() {
-        return path;
+    public InputStream getInputStream() throws IOException {
+        if (result instanceof Path) {
+            return TikaInputStream.get((Path)result, metadata);
+        } else {
+            TikaInputStream tis = TikaInputStream.get(new byte[0]);
+            tis.setOpenContainer(result);
+            return tis;
+        }
     }
 
     public Metadata getMetadata() {
@@ -58,5 +84,9 @@ public class RenderResult {
         return id;
     }
 
+    @Override
+    public void close() throws IOException {
+        tmp.close();
+    }
 
 }

@@ -31,6 +31,8 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.tools.imageio.ImageIOUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -47,6 +49,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.pdf.PDFParser;
 import org.apache.tika.renderer.PageBasedRenderResults;
 import org.apache.tika.renderer.PageRangeRequest;
 import org.apache.tika.renderer.RenderRequest;
@@ -56,7 +59,9 @@ import org.apache.tika.renderer.RenderingTracker;
 
 public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
 
-    Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.application("pdf"));
+    Set<MediaType> SUPPORTED_TYPES = Collections.singleton(PDFParser.MEDIA_TYPE);
+
+    private static final Logger LOG = LoggerFactory.getLogger(PDFBoxRenderer.class);
 
     /**
      * This is the amount of time it takes for PDFBox to render the page
@@ -138,8 +143,7 @@ public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
             try {
                 m.set(TikaPagedText.PAGE_NUMBER, i);
                 m.set(TikaPagedText.PAGE_ROTATION, (double)pdDocument.getPage(i - 1).getRotation());
-                Path imagePath = renderPage(renderer, id, i, m);
-                results.add(new RenderResult(RenderResult.STATUS.SUCCESS, id, imagePath, m));
+                results.add(renderPage(renderer, id, i, m));
             } catch (IOException e) {
                 EmbeddedDocumentUtil.recordException(e, m);
                 results.add(new RenderResult(RenderResult.STATUS.EXCEPTION, id, null, m));
@@ -148,7 +152,8 @@ public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
     }
 
 
-    private Path renderPage(PDFRenderer renderer, int id, int pageNumber, Metadata metadata)
+    protected RenderResult renderPage(PDFRenderer renderer, int id, int pageNumber,
+                                     Metadata metadata)
             throws IOException {
 
         Path tmpFile = Files.createTempFile("tika-pdfbox-rendering-",
@@ -169,10 +174,15 @@ public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
         } catch (SecurityException e) {
             //throw SecurityExceptions immediately
             throw e;
-        } catch (IOException | RuntimeException e) {
+        } catch (Exception e) {
+            try {
+                Files.delete(tmpFile);
+            } catch (IOException ex) {
+                LOG.warn("couldn't delete " + tmpFile, ex);
+            }
             throw new IOExceptionWithCause(e);
         }
-        return tmpFile;
+        return new RenderResult(RenderResult.STATUS.SUCCESS, id, tmpFile, metadata);
     }
 
     @Override
