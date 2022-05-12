@@ -21,7 +21,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
-
+import org.apache.tika.utils.FileProcessResult;
+import org.apache.tika.utils.ProcessUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -30,9 +31,21 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.json.JsonReadFeature;
 
+/**
+ * DWGReadParser (CAD Drawing) parser. This extends the original DWGParser
+ * if in the parser configuration DwgRead is set. DWG reader can be found here:
+ * https://github.com/LibreDWG/libredwg
+ * The required configuration is dwgReadExecutable. The other settings which can be overwritten are:
+ * boolean : cleanDwgReadOutput - whether to clean the json output
+ * int : cleanDwgReadOutputBatchSize - clean output batch size to process
+ * long : dwgReadTimeout -timeout in milliseconds before killing the dwgread process
+ * String : cleanDwgReadRegexToReplace -  characters to replace in the json
+ * String : cleanDwgReadReplaceWith - replacement characters
+ * dwgReadExecutable
+ */
 
 public class DWGReadParser extends AbstractDWGParser {
-    private static final Logger LOG = LoggerFactory.getLogger(DWGParser.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DWGReadParser.class);
     /**
      * 
      */
@@ -50,7 +63,6 @@ public class DWGReadParser extends AbstractDWGParser {
         configure(context);
         DWGParserConfig dwgc = context.get(DWGParserConfig.class);
         final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-
         xhtml.startDocument();
         UUID uuid = UUID.randomUUID();
         File tmpFileOut = File.createTempFile(uuid + "dwgreadout", ".json");
@@ -62,31 +74,31 @@ public class DWGReadParser extends AbstractDWGParser {
 
             List < String > command = Arrays.asList(dwgc.getDwgReadExecutable(), "-O", "JSON", "-o",
                 tmpFileOut.getCanonicalPath(), tmpFileIn.getCanonicalPath());
-            Process p = new ProcessBuilder(command).start();
+            ProcessBuilder pb = new ProcessBuilder().command(command);
+            FileProcessResult fpr = ProcessUtils.execute(pb, dwgc.getDwgReadTimeout(), 1000, 100);
+            if (fpr.getExitValue() == 0) {
+                if (dwgc.isCleanDwgReadOutput()) {
+                    // dwgread sometimes creates strings with invalid utf-8 sequences or invalid
+                    // json (nan instead of NaN). replace them
+                    // with empty string.
 
-            try {
-                int exitCode = p.waitFor();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-
-            if (dwgc.isCleanDwgReadOutput()) {
-                // dwgread sometimes creates strings with invalid utf-8 sequences or invalid json (nan instead of NaN). replace them
-                // with empty string.
-
-                try (FileInputStream fis = new FileInputStream(tmpFileOut); FileOutputStream fos = new FileOutputStream(tmpFileOutCleaned)) {
-                    byte[] bytes = new byte[dwgc.getCleanDwgReadOutputBatchSize()];
-                    while (fis.read(bytes) != -1) {
-                        byte[] fixedBytes = new String(bytes, StandardCharsets.UTF_8)
-                            .replaceAll(dwgc.getCleanDwgReadRegexToReplace(), dwgc.getCleanDwgReadReplaceWith())
-                            .getBytes(StandardCharsets.UTF_8);
-                        fos.write(fixedBytes, 0, fixedBytes.length);
+                    try (FileInputStream fis = new FileInputStream(tmpFileOut);
+                            FileOutputStream fos = new FileOutputStream(tmpFileOutCleaned)) {
+                        byte[] bytes = new byte[dwgc.getCleanDwgReadOutputBatchSize()];
+                        while (fis.read(bytes) != -1) {
+                            byte[] fixedBytes = new String(bytes, StandardCharsets.UTF_8)
+                                    .replaceAll(dwgc.getCleanDwgReadRegexToReplace(), dwgc.getCleanDwgReadReplaceWith())
+                                    .getBytes(StandardCharsets.UTF_8);
+                            fos.write(fixedBytes, 0, fixedBytes.length);
+                        }
+                    } finally {
+                        FileUtils.deleteQuietly(tmpFileOut);
+                        tmpFileOut = tmpFileOutCleaned;
                     }
-                } finally {
-                    FileUtils.deleteQuietly(tmpFileOut);
-                    tmpFileOut = tmpFileOutCleaned;
-                }
 
+                } else {
+                    throw new TikaException("DWGRead Failed");
+                }
             }
             
             // we can't guarantee the json output is correct so we try to ignore as many errors as we can
@@ -106,11 +118,11 @@ public class DWGReadParser extends AbstractDWGParser {
                                 parseDwgObject(jParser, (nextTextValue) -> {
 
                                     try {
-										xhtml.characters(cleanupDwgString(nextTextValue));
-										xhtml.newline();
-									} catch (SAXException e) {
-										LOG.error("Could not write next text value {} to xhtml stream", nextTextValue);
-									}
+                                        xhtml.characters(cleanupDwgString(nextTextValue));
+                                        xhtml.newline();
+                                    } catch (SAXException e) {
+                                        LOG.error("Could not write next text value {} to xhtml stream", nextTextValue);
+                                    }
                                 });
                             }
                         }  else if ("FILEHEADER".equals(nextFieldName)) {
@@ -173,37 +185,37 @@ public class DWGReadParser extends AbstractDWGParser {
             }
         }
     }
-	private String cleanupDwgString(String dwgString) {
-		//Cleaning the formatting of the text has been found from the following website's:
-		//https://www.cadforum.cz/en/text-formatting-codes-in-mtext-objects-tip8640
-		//https://adndevblog.typepad.com/autocad/2017/09/dissecting-mtext-format-codes.html
-		String cleanString;
-		//replace A0-2 (Alignment)
-		cleanString = dwgString.replaceAll("(?<!\\\\\\\\)\\\\A[0-2];", "");
-		//replace \\p (New paragraph/ new line) and with new line
-		cleanString = cleanString.replaceAll("(?<!\\\\\\\\)\\\\P", "\\n");
-		//remove pi (numbered paragraphs)
-		cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pi.*;", "");
-		//remove pxi (bullets)
-		cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pxi.*;", "");
-		//remove pxt (tab stops)
-		cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pxt.*;", "");
-		//remove lines with \H (text height)
-		cleanString = cleanString.replaceAll("(?<!\\\\)\\\\H[0-9]*.*;", "");
-		//remove lines with \F Font Selection
-		cleanString = cleanString.replaceAll("(?<!\\\\)\\\\F.*;", "");
-		//replace lines without \L.l
-		//cleanString = cleanString.replaceAll("\\\\H[0-9]*\\.[0-9]*x;", "");
-		//replace Starting formating
-		//cleanString = cleanString.replaceAll("\\{\\\\L", "");
-		//replace }
-		//cleanString = cleanString.replaceAll("\\}", "");
+    private String cleanupDwgString(String dwgString) {
+        //Cleaning the formatting of the text has been found from the following website's:
+        //https://www.cadforum.cz/en/text-formatting-codes-in-mtext-objects-tip8640
+        //https://adndevblog.typepad.com/autocad/2017/09/dissecting-mtext-format-codes.html
+        String cleanString;
+        //replace A0-2 (Alignment)
+        cleanString = dwgString.replaceAll("(?<!\\\\\\\\)\\\\A[0-2];", "");
+        //replace \\p (New paragraph/ new line) and with new line
+        cleanString = cleanString.replaceAll("(?<!\\\\\\\\)\\\\P", "\\n");
+        //remove pi (numbered paragraphs)
+        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pi.*;", "");
+        //remove pxi (bullets)
+        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pxi.*;", "");
+        //remove pxt (tab stops)
+        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pxt.*;", "");
+        //remove lines with \H (text height)
+        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\H[0-9]*.*;", "");
+        //remove lines with \F Font Selection
+        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\F.*;", "");
+        //replace lines without \L.l
+        //cleanString = cleanString.replaceAll("\\\\H[0-9]*\\.[0-9]*x;", "");
+        //replace Starting formating
+        //cleanString = cleanString.replaceAll("\\{\\\\L", "");
+        //replace }
+        //cleanString = cleanString.replaceAll("\\}", "");
 
-		
-		
-		//
-		return cleanString;
-		
-	}
+        
+        
+        //
+        return cleanString;
+        
+    }
 
 }
