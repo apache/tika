@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -18,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.commons.io.FileUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -35,6 +37,7 @@ import com.fasterxml.jackson.core.json.JsonReadFeature;
  * DWGReadParser (CAD Drawing) parser. This extends the original DWGParser
  * if in the parser configuration DwgRead is set. DWG reader can be found here:
  * https://github.com/LibreDWG/libredwg
+ * DWGRead outputs json which we then loop through extracting the text elements
  * The required configuration is dwgReadExecutable. The other settings which can be overwritten are:
  * boolean : cleanDwgReadOutput - whether to clean the json output
  * int : cleanDwgReadOutputBatchSize - clean output batch size to process
@@ -127,7 +130,9 @@ public class DWGReadParser extends AbstractDWGParser {
                             }
                         }  else if ("FILEHEADER".equals(nextFieldName)) {
                             parseHeader(jParser,metadata);
-                        } else {
+                        }  else if ("SummaryInfo".equals(nextFieldName)) {
+                            parseSummaryInfo(jParser, metadata);
+                        }else {
                             jParser.skipChildren();
                         }
                     }
@@ -185,10 +190,54 @@ public class DWGReadParser extends AbstractDWGParser {
             }
         }
     }
+    private void parseSummaryInfo(JsonParser jsonParser, Metadata metadata) throws IOException {
+        JsonToken nextToken;
+        while ((nextToken = jsonParser.nextToken()) != JsonToken.END_OBJECT) {
+            if (nextToken == JsonToken.FIELD_NAME) {
+                String nextFieldName = jsonParser.currentName();
+                nextToken = jsonParser.nextToken();
+                if (nextToken.isStructStart()) {
+                    if ("TDCREATE".equals(nextFieldName) || "TDUPDATE".equals(nextFieldName)) {
+                        // timestamps are represented by an integer array of format with 2 values in the array:
+                        // [julianDate, millisecondOfDay]
+                        jsonParser.nextToken(); // start array
+                        int julianDay = jsonParser.getIntValue();
+                        jsonParser.nextToken();
+                        int millisecondsIntoDay = jsonParser.getIntValue();
+                        Instant instant = JulianDateUtil.toInstant(julianDay, millisecondsIntoDay);
+                        jsonParser.nextToken(); // end array
+                        if ("TDCREATE".equals(nextFieldName)) {
+                            metadata.set(TikaCoreProperties.CREATED, instant.toString());
+                        } else {
+                            metadata.set(TikaCoreProperties.MODIFIED, instant.toString());
+                        }
+                    } else {
+                        jsonParser.skipChildren();
+                    }
+
+                } else if (nextToken.isScalarValue()) {
+                    String textVal = jsonParser.getText();
+                    if (StringUtils.isNotBlank(textVal)) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Summary Info - {} = {}", nextFieldName, textVal);
+                        }
+                        if ("TITLE".equals(nextFieldName)) {
+                            metadata.set(TikaCoreProperties.TITLE, textVal);
+                        } else if ("LASTSAVEDBY".equals(nextFieldName)) {
+                            metadata.set(TikaCoreProperties.MODIFIER, textVal);
+                        } else if (!StringUtils.startsWithIgnoreCase(nextFieldName, "unknown")) {
+                            metadata.set(nextFieldName, textVal);
+                        }
+                    }
+                }
+            }
+        }
+    }
     private String cleanupDwgString(String dwgString) {
         //Cleaning the formatting of the text has been found from the following website's:
         //https://www.cadforum.cz/en/text-formatting-codes-in-mtext-objects-tip8640
         //https://adndevblog.typepad.com/autocad/2017/09/dissecting-mtext-format-codes.html
+    	//We always to do a backwards look to make sure the string to replace hasn't been escaped
         String cleanString;
         //replace A0-2 (Alignment)
         cleanString = dwgString.replaceAll("(?<!\\\\\\\\)\\\\A[0-2];", "");
