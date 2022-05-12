@@ -25,7 +25,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.poi.util.StringUtil;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.metadata.Metadata;
@@ -42,7 +41,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * Note that we use Apache POI for various parts of the processing, as
  * lots of the low level string/int/short concepts are the same.
  */
-public class DWGParser extends AbstractParser {
+public class DWGParser extends AbstractDWGParser {
     public static String DWG_CUSTOM_META_PREFIX = "dwg-custom:";
     /**
      * Serial version UID
@@ -94,6 +93,14 @@ public class DWGParser extends AbstractParser {
 
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, TikaException, SAXException {
+    	
+    	configure(context);
+    	DWGParserConfig dwgc = context.get(DWGParserConfig.class);
+
+if(!dwgc.getDwgReadExecutable().isEmpty()) {
+	DWGReadParser dwr = new DWGReadParser();
+	dwr.parse(stream, handler, metadata, context);
+} else {
         // First up, which version of the format are we handling?
         byte[] header = new byte[128];
         IOUtils.readFully(stream, header);
@@ -128,7 +135,7 @@ public class DWGParser extends AbstractParser {
                 throw new TikaException("Unsupported AutoCAD drawing version: " + version);
         }
 
-        xhtml.endDocument();
+        xhtml.endDocument();}
     }
 
     /**
