@@ -47,10 +47,16 @@
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
-    <!-- after we migrate everything to junit5, we can get rid of this -->
+    <!-- test dependencies -->
     <dependency>
-      <groupId>org.junit.vintage</groupId>
-      <artifactId>junit-vintage-engine</artifactId>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <version>${junit5.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
       <version>${junit5.version}</version>
       <scope>test</scope>
     </dependency>
