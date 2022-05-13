@@ -17,10 +17,10 @@
 package org.apache.tika.cli;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -30,11 +30,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.exception.TikaException;
 
@@ -54,7 +54,7 @@ public class TikaCLITest {
     private PrintStream stderr = null;
     private String resourcePrefix;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpClass() throws Exception {
         ASYNC_OUTPUT_DIR = Files.createTempDirectory("tika-cli-async-");
         ASYNC_CONFIG = Files.createTempFile("async-config-", ".xml");
@@ -74,7 +74,7 @@ public class TikaCLITest {
         Files.write(ASYNC_CONFIG, xml.getBytes(UTF_8));
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDownClass() throws Exception {
         Files.delete(ASYNC_CONFIG);
         FileUtils.deleteDirectory(ASYNC_OUTPUT_DIR.toFile());
@@ -82,11 +82,11 @@ public class TikaCLITest {
 
     protected static void assertExtracted(File f, String allFiles) {
 
-        assertTrue("File " + f.getName() + " not found in " + allFiles, f.exists());
+        assertTrue(f.exists(), "File " + f.getName() + " not found in " + allFiles);
 
-        assertFalse("File " + f.getName() + " is a directory!", f.isDirectory());
+        assertFalse(f.isDirectory(), "File " + f.getName() + " is a directory!");
 
-        assertTrue("File " + f.getName() + " wasn't extracted with contents", f.length() > 0);
+        assertTrue(f.length() > 0, "File " + f.getName() + " wasn't extracted with contents");
     }
 
     /**
@@ -95,7 +95,7 @@ public class TikaCLITest {
      * clear outContent and errContent if they are not empty
      * set outContent and errContent as System.out and System.err
      */
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         resourcePrefix = testDataURI.toString();
         stdout = System.out;
@@ -106,7 +106,7 @@ public class TikaCLITest {
     /**
      * Tears down the test. Returns the System.out and System.err
      */
-    @After
+    @AfterEach
     public void tearDown() {
         System.setOut(stdout);
         System.setErr(stderr);
@@ -179,8 +179,8 @@ public class TikaCLITest {
     public void testHTMLOutput() throws Exception {
         String content = getParamOutContent("-h", resourcePrefix + "alice.cli.test");
         assertTrue(content.contains("html xmlns=\"http://www.w3.org/1999/xhtml"));
-        assertTrue("Expanded <title></title> element should be present",
-                content.contains("<title></title>"));
+        assertTrue(content.contains("<title></title>"),
+                "Expanded <title></title> element should be present");
 
         content = getParamOutContent("-h", "--digest=SHA384", resourcePrefix + "alice.cli.test");
         assertTrue(content.contains(
