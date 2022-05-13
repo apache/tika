@@ -213,4 +213,5 @@ public class DWGParserTest extends TikaTest {
     boolean hasDwgRead = ExternalParser.check(checkCmd);
     System.out.println(hasDwgRead);
     }
+
 }
