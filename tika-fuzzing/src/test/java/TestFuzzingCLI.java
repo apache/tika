@@ -23,7 +23,6 @@ import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-
 import org.apache.tika.fuzzing.cli.FuzzingCLI;
 import org.apache.tika.utils.ProcessUtils;
 
