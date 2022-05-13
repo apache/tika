@@ -16,7 +16,9 @@
  */
 package org.apache.tika.filetypedetector;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -25,16 +27,14 @@ import java.nio.file.spi.FileTypeDetector;
 import java.util.Iterator;
 import java.util.ServiceLoader;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 public class TikaFileTypeDetectorTest {
     
-    @Rule
-    public TemporaryFolder tempDir = new TemporaryFolder();
+    @TempDir
+    public Path tempDir;
     
     private Path testDirectory = null;
     
@@ -42,19 +42,16 @@ public class TikaFileTypeDetectorTest {
     private static final String TEST_HTML = "test.html";
     private static final String TEST_UNRECOGNISED_EXTENSION = "test.unrecognisedextension";
     
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
-        testDirectory = tempDir.newFolder().toPath();
+        testDirectory = tempDir;
+        System.out.println(testDirectory.toAbsolutePath());
         try (InputStream is = this.getClass().getResourceAsStream(TEST_CLASSPATH)) {
             Files.copy(is, testDirectory.resolve(TEST_HTML));
         }
         try (InputStream is = this.getClass().getResourceAsStream(TEST_CLASSPATH)) {
             Files.copy(is, testDirectory.resolve(TEST_UNRECOGNISED_EXTENSION));
         }
-    }
-    
-    @After
-    public void tearDown() throws Exception {
     }
     
     @Test
@@ -95,6 +92,5 @@ public class TikaFileTypeDetectorTest {
         //o.a.sis.internal.storage.StoreTypeDetector appears with latest upgrade
         //check that TikaFileTypeDetector appears at all
         assertTrue(foundTika);
-
     }
 }
