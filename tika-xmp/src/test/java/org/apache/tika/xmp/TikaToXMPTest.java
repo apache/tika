@@ -16,11 +16,12 @@
  */
 package org.apache.tika.xmp;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -29,8 +30,6 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.xmp.convert.ITikaToXMPConverter;
 import org.apache.tika.xmp.convert.MSOfficeXMLConverter;
 import org.apache.tika.xmp.convert.TikaToXMP;
-import org.junit.Before;
-import org.junit.Test;
 
 import com.adobe.internal.xmp.XMPConst;
 import com.adobe.internal.xmp.XMPException;
@@ -38,6 +37,8 @@ import com.adobe.internal.xmp.XMPIterator;
 import com.adobe.internal.xmp.XMPMeta;
 import com.adobe.internal.xmp.XMPMetaFactory;
 import com.adobe.internal.xmp.properties.XMPProperty;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests the Tika <code>Metadata</code> to XMP conversion functionatlity
@@ -49,7 +50,7 @@ public class TikaToXMPTest {
     private static final String GENERIC_MIMETYPE = "generic/mimetype";
 
     // --- Set up ---
-    @Before
+    @BeforeEach
     public void setup() {
         tikaMetadata = new Metadata();
     }
@@ -183,9 +184,11 @@ public class TikaToXMPTest {
         assertFalse( iter.hasNext() );
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void convert_nullInput_throw() throws TikaException {
+        assertThrows(IllegalArgumentException.class, () -> {
         TikaToXMP.convert( null );
+        });
     }
 
     @Test
@@ -216,8 +219,10 @@ public class TikaToXMPTest {
         assertNull( converter );
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void getConverter_nullInput_throw() throws TikaException {
-        TikaToXMP.getConverter( null );
+        assertThrows(IllegalArgumentException.class, () -> {
+            TikaToXMP.getConverter(null);
+        });
     }
 }

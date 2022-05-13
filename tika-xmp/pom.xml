@@ -99,13 +99,6 @@
       <artifactId>xmpcore</artifactId>
       <version>${xmpcore.version}</version>
     </dependency>
-    <!-- after we migrate everything to junit5, we can get rid of this -->
-    <dependency>
-      <groupId>org.junit.vintage</groupId>
-      <artifactId>junit-vintage-engine</artifactId>
-      <version>${junit5.version}</version>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
 
   <description>Converts Tika metadata to XMP</description>

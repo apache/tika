@@ -16,6 +16,13 @@
  */
 package org.apache.tika.xmp;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Date;
 import java.util.Properties;
 
@@ -26,20 +33,14 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.PropertyTypeException;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPRights;
-import org.junit.Before;
-import org.junit.Test;
 
 import com.adobe.internal.xmp.XMPConst;
 import com.adobe.internal.xmp.XMPException;
 import com.adobe.internal.xmp.XMPMeta;
 import com.adobe.internal.xmp.XMPUtils;
 import com.adobe.internal.xmp.properties.XMPProperty;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class XMPMetadataTest {
     private Metadata tikaMetadata;
@@ -48,7 +49,7 @@ public class XMPMetadataTest {
     private static final String GENERIC_MIMETYPE = "generic/mimetype";
 
     // --- SETUP ---
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         XMPMetadata.registerNamespace( DublinCore.NAMESPACE_URI_DC_TERMS,
                 DublinCore.PREFIX_DC_TERMS );
@@ -138,20 +139,26 @@ public class XMPMetadataTest {
         assertNull( xmpMeta.get( TikaCoreProperties.FORMAT ) );
     }
 
-    @Test(expected = PropertyTypeException.class)
+    @Test
     public void get_nullInput_throw() {
         String notInitialized = null;
-        xmpMeta.get( notInitialized );
+        assertThrows(PropertyTypeException.class, () -> {
+            xmpMeta.get(notInitialized);
+        });
     }
 
-    @Test(expected = PropertyTypeException.class)
+    @Test
     public void get_notQualifiedKey_throw() {
-        xmpMeta.get( "wrongKey" );
+        assertThrows(PropertyTypeException.class, () -> {
+            xmpMeta.get( "wrongKey" );
+        });
     }
 
-    @Test(expected = PropertyTypeException.class)
+    @Test
     public void get_unknownPrefixKey_throw() {
-        xmpMeta.get( "unknown:key" );
+        assertThrows(PropertyTypeException.class, () -> {
+            xmpMeta.get("unknown:key");
+        });
     }
 
     @Test
@@ -202,20 +209,26 @@ public class XMPMetadataTest {
         assertEquals( GENERIC_MIMETYPE, xmpMeta.get( TikaCoreProperties.FORMAT ) );
     }
 
-    @Test(expected = PropertyTypeException.class)
+    @Test
     public void set_nullInput_throw() {
         String notInitialized = null;
-        xmpMeta.set( notInitialized, "value" );
+        assertThrows(PropertyTypeException.class, () -> {
+            xmpMeta.set(notInitialized, "value");
+        });
     }
 
-    @Test(expected = PropertyTypeException.class)
+    @Test
     public void set_notQualifiedKey_throw() {
-        xmpMeta.set( "wrongKey", "value" );
+        assertThrows(PropertyTypeException.class, () -> {
+            xmpMeta.set("wrongKey", "value");
+        });
     }
 
-    @Test(expected = PropertyTypeException.class)
+    @Test
     public void set_unknownPrefixKey_throw() {
-        xmpMeta.set( "unknown:key", "value" );
+        assertThrows(PropertyTypeException.class, () -> {
+            xmpMeta.set("unknown:key", "value");
+        });
     }
 
     @Test
@@ -228,9 +241,11 @@ public class XMPMetadataTest {
         checkArrayValues( values, "keyword" );
     }
 
-    @Test(expected = PropertyTypeException.class)
+    @Test
     public void set_simplePropWithMultipleValues_throw() {
-        xmpMeta.set( TikaCoreProperties.FORMAT, new String[] { "value1", "value2" } );
+        assertThrows(PropertyTypeException.class, () -> {
+            xmpMeta.set(TikaCoreProperties.FORMAT, new String[]{"value1", "value2"});
+        });
     }
 
     @Test
