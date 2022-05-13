@@ -852,6 +852,7 @@ public class PDFParserConfig implements Serializable {
 
     public void setRenderer(Renderer renderer) {
         this.renderer = renderer;
+        userConfigured.add("renderer");
     }
 
     public Renderer getRenderer() {
