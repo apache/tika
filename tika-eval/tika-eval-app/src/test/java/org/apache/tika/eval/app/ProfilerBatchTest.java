@@ -18,7 +18,7 @@
 package org.apache.tika.eval.app;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.testng.AssertJUnit.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -119,11 +119,11 @@ public class ProfilerBatchTest {
         debugTable(ExtractProfiler.EXCEPTION_TABLE);
         debugTable(ExtractProfiler.EXTRACT_EXCEPTION_TABLE);
         assertEquals(10, fNameList.size());
-        assertTrue("file1.pdf", fNameList.contains("file1.pdf"));
-        assertTrue("file2_attachANotB.doc", fNameList.contains("file2_attachANotB.doc"));
-        assertTrue("file3_attachBNotA.doc", fNameList.contains("file3_attachBNotA.doc"));
-        assertTrue("file4_emptyB.pdf", fNameList.contains("file4_emptyB.pdf"));
-        assertTrue("file7_badJson.pdf", fNameList.contains("file7_badJson.pdf"));
+        assertTrue(fNameList.contains("file1.pdf"), "file1.pdf");
+        assertTrue(fNameList.contains("file2_attachANotB.doc"), "file2_attachANotB.doc");
+        assertTrue(fNameList.contains("file3_attachBNotA.doc"), "file3_attachBNotA.doc");
+        assertTrue(fNameList.contains("file4_emptyB.pdf"), "file4_emptyB.pdf");
+        assertTrue(fNameList.contains("file7_badJson.pdf"), "file4_emptyB.pdf");
     }
 
     @Test
