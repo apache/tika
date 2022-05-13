@@ -19,14 +19,14 @@ package org.apache.tika.example;
 
 import static org.apache.tika.TikaTest.assertContains;
 import static org.apache.tika.TikaTest.assertNotContained;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.List;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
@@ -34,7 +34,7 @@ import org.apache.tika.exception.TikaException;
 public class ContentHandlerExampleTest {
     ContentHandlerExample example;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         example = new ContentHandlerExample();
     }
@@ -42,7 +42,7 @@ public class ContentHandlerExampleTest {
     @Test
     public void testParseToPlainText() throws IOException, SAXException, TikaException {
         String result = example.parseToPlainText().trim();
-        assertEquals("Expected 'test', but got '" + result + "'", "test", result);
+        assertEquals("test", result, "Expected 'test', but got '" + result + "'");
     }
 
     @Test
@@ -91,7 +91,8 @@ public class ContentHandlerExampleTest {
 
         assertEquals(3, result.size());
         for (String chunk : result) {
-            assertTrue("Chunk under max size", chunk.length() <= example.MAXIMUM_TEXT_CHUNK_SIZE);
+            assertTrue(chunk.length() <= example.MAXIMUM_TEXT_CHUNK_SIZE,
+                    "Chunk under max size");
         }
 
         assertContains("This is in the header", result.get(0));
