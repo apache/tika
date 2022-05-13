@@ -17,8 +17,8 @@
 
 package org.apache.tika.eval.app;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.testng.AssertJUnit.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -34,17 +34,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.H2Util;
 import org.apache.tika.eval.app.db.TableInfo;
 import org.apache.tika.eval.app.io.ExtractReaderException;
 
-@Ignore
+@Disabled
 public class ProfilerBatchTest {
 
     public final static String COMPARER_PROCESS_CLASS =
@@ -55,7 +55,7 @@ public class ProfilerBatchTest {
     private static Path dbDir;
     private static Connection conn;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws Exception {
 
         Path inputRoot = Paths.get(
@@ -77,7 +77,7 @@ public class ProfilerBatchTest {
         conn = dbUtil.getConnection();
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() throws IOException {
 
         try {
@@ -180,12 +180,12 @@ public class ProfilerBatchTest {
         int hits = 0;
         String val = "";
         while (rs.next()) {
-            assertEquals("must have only one column in result", 1,
-                    rs.getMetaData().getColumnCount());
+            assertEquals(1,
+                    rs.getMetaData().getColumnCount(), "must have only one column in result");
             val = rs.getString(1);
             hits++;
         }
-        assertEquals("must have only one hit", 1, hits);
+        assertEquals(1, hits, "must have only one hit");
         return val;
     }
 

@@ -18,7 +18,7 @@
 package org.apache.tika.eval.core.tokens;
 
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -29,8 +29,8 @@ import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class TokenCounterTest {
     private final static String FIELD = "f";
@@ -38,7 +38,7 @@ public class TokenCounterTest {
 
     private final int topN = 10;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws IOException {
         analyzerManager = AnalyzerManager.newInstance(100000);
 
@@ -76,7 +76,8 @@ public class TokenCounterTest {
                     new LuceneTokenCounter(analyzerManager.getGeneralAnalyzer());
             tokenCounter.add(FIELD, s);
             lucene += System.currentTimeMillis() - start;
-            assertEquals(s, simpleTokenStatistics, tokenCounter.getTokenStatistics(FIELD));
+
+            assertEquals(simpleTokenStatistics, tokenCounter.getTokenStatistics(FIELD), s);
         }
     }
 

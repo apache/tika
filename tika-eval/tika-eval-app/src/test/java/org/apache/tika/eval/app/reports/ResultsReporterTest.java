@@ -23,9 +23,9 @@ import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.Statement;
 
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.eval.app.db.H2Util;
 
@@ -35,7 +35,7 @@ public class ResultsReporterTest {
     private String dbName = "test-db";
     private Connection connection;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         configFile = Paths.get(this.getClass().getResource("/reports.xml").toURI());
         tmpDir = Files.createTempDirectory("tika-eval-report-test-");
@@ -52,7 +52,7 @@ public class ResultsReporterTest {
     }
 
     @Test
-    @Ignore("add a real test here")
+    @Disabled("add a real test here")
     public void testBuilder() throws Exception {
         ResultsReporter r = ResultsReporter.build(configFile);
         r.execute(connection, Paths.get("reports"));

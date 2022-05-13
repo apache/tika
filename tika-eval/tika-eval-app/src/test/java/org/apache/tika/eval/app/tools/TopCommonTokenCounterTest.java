@@ -16,7 +16,7 @@
  */
 package org.apache.tika.eval.app.tools;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.BufferedWriter;
 import java.nio.charset.StandardCharsets;
@@ -26,9 +26,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.utils.ProcessUtils;
@@ -39,7 +39,7 @@ public class TopCommonTokenCounterTest extends TikaTest {
     private static Path WORKING_DIR;
 //    private static Path LUCENE_DIR;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws Exception {
         String[] docs =
                 new String[]{"th quick brown fox", "jumped over th brown lazy", "brown lazy fox",
@@ -64,7 +64,7 @@ public class TopCommonTokenCounterTest extends TikaTest {
                         WORKING_DIR.resolve(INPUT_FILE).toAbsolutePath().toString())});
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() throws Exception {
         FileUtils.deleteDirectory(WORKING_DIR.toFile());
     }
