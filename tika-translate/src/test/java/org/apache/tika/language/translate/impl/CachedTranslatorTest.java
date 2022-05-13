@@ -17,16 +17,13 @@
 
 package org.apache.tika.language.translate.impl;
 
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import org.apache.tika.language.translate.impl.CachedTranslator;
-import org.apache.tika.language.translate.impl.GoogleTranslator;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test harness for the {@link CachedTranslator}. Take care to choose your target language carefully
@@ -35,7 +32,7 @@ import org.apache.tika.language.translate.impl.GoogleTranslator;
 public class CachedTranslatorTest {
     private CachedTranslator cachedTranslator;
 
-    @Before
+    @BeforeEach
     public void setUp(){
         cachedTranslator = new CachedTranslator(new GoogleTranslator());
     }
@@ -45,8 +42,8 @@ public class CachedTranslatorTest {
         for (int i = 0; i < 20; i++) {
             cachedTranslator.translate("This is a test string to translate!", "en", "sv");
         }
-        assertEquals("Cache doesn't have a single translation pair!", cachedTranslator.getNumTranslationPairs(), 1);
-        assertEquals("Cache has more than one element!", cachedTranslator.getNumTranslationsFor("en", "sv"), 1);
+        assertEquals(cachedTranslator.getNumTranslationPairs(), 1, "Cache doesn't have a single translation pair!");
+        assertEquals(cachedTranslator.getNumTranslationsFor("en", "sv"), 1, "Cache has more than one element!");
     }
 
     @Test
@@ -55,9 +52,9 @@ public class CachedTranslatorTest {
             cachedTranslator.translate("This is a test string to translate!", "en", "no");
             cachedTranslator.translate("This is a different string...", "en", "fr");
         }
-        assertEquals("Cache doesn't have two translation pairs!", cachedTranslator.getNumTranslationPairs(), 2);
-        assertEquals("Cache has more than en to no translation!", cachedTranslator.getNumTranslationsFor("en", "no"), 1);
-        assertEquals("Cache has more than en to fr translation!", cachedTranslator.getNumTranslationsFor("en", "fr"), 1);
+        assertEquals(cachedTranslator.getNumTranslationPairs(), 2, "Cache doesn't have two translation pairs!");
+        assertEquals(cachedTranslator.getNumTranslationsFor("en", "no"), 1, "Cache has more than en to no translation!");
+        assertEquals(cachedTranslator.getNumTranslationsFor("en", "fr"), 1, "Cache has more than en to fr translation!");
     }
 
     @Test
@@ -77,12 +74,12 @@ public class CachedTranslatorTest {
     @Test
     public void testCacheContains() throws Exception {
         String text = "Text that should be long enough to detect a language from.";
-        assertFalse("Cache should not contain a translation!",
-                cachedTranslator.contains(text, "en", "it"));
+        assertFalse(cachedTranslator.contains(text, "en", "it"),
+                "Cache should not contain a translation!");
         cachedTranslator.translate(text, "en", "it");
-        assertTrue("Cache should contain a translation!",
-                cachedTranslator.contains(text, "en", "it"));
-        assertTrue("Cache should detect source language when checking if contains.",
-                cachedTranslator.contains(text, "it"));
+        assertTrue(cachedTranslator.contains(text, "en", "it"),
+                "Cache should contain a translation!");
+        assertTrue(cachedTranslator.contains(text, "it"),
+                "Cache should detect source language when checking if contains.");
     }
 }

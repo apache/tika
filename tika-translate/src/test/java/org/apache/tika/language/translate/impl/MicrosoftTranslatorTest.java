@@ -16,40 +16,41 @@
  */
 package org.apache.tika.language.translate.impl;
 
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import org.apache.tika.language.translate.impl.MicrosoftTranslator;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test cases for the {@link MicrosoftTranslator} class.
  */
 public class MicrosoftTranslatorTest {
     MicrosoftTranslator translator;
-    @Before
+    @BeforeEach
     public void setUp() {
         translator = new MicrosoftTranslator();
     }
 
     @Test
     public void testSimpleTranslate() throws Exception {
+        assumeTrue(translator.isAvailable());
         String source = "hello";
         String expected = "salut";
         String translated = translator.translate(source, "en", "fr");
-        if (translator.isAvailable()) assertTrue("Translate " + source + " to " + expected + " (was " + translated + ")",
-                expected.equalsIgnoreCase(translated));
+        assertTrue(expected.equalsIgnoreCase(translated),
+                "Translate " + source + " to " + expected + " (was " + translated + ")");
     }
 
     @Test
     public void testSimpleDetectTranslate() throws Exception {
+        assumeTrue(translator.isAvailable());
         String source = "hello";
         String expected = "salut";
         String translated = translator.translate(source, "fr");
-        if (translator.isAvailable()) assertTrue("Translate " + source + " to " + expected + " (was " + translated + ")",
-                expected.equalsIgnoreCase(translated));
+        assertTrue(expected.equalsIgnoreCase(translated),
+                "Translate " + source + " to " + expected + " (was " + translated + ")");
     }
     
     @Test
