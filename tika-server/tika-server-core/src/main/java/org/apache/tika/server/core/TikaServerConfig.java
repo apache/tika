@@ -136,6 +136,8 @@ public class TikaServerConfig extends ConfigBase {
     private String forkedStatusFile;
     private int numRestarts = 0;
 
+    private boolean preventStopMethod = false;
+
     private TlsConfig tlsConfig = new TlsConfig();
     /**
      * Config with only the defaults
@@ -587,6 +589,14 @@ public class TikaServerConfig extends ConfigBase {
 
     public void setMaxforkedStartupMillis(long maxforkedStartupMillis) {
         this.maxforkedStartupMillis = maxforkedStartupMillis;
+    }
+
+    public void setPreventStopMethod(boolean preventStopMethod) {
+        this.preventStopMethod = preventStopMethod;
+    }
+
+    public boolean isPreventStopMethod() {
+        return preventStopMethod;
     }
 
     public int[] getPorts() {
