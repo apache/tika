@@ -30,13 +30,9 @@ public class FSUtilTest {
         Path cwd = Paths.get(".");
         String windows = "C:/temp/file.txt";
         String linux = "/root/dir/file.txt";
-        //this test does not work on linux
-     //   assertThrows(IllegalArgumentException.class, () -> {
-       //     System.out.println(FSUtil.resolveRelative(cwd, windows));
-        //});
-
         assertThrows(IllegalArgumentException.class, () -> {
             FSUtil.resolveRelative(cwd, linux);
+            FSUtil.resolveRelative(cwd, windows);
         });
     }
 
