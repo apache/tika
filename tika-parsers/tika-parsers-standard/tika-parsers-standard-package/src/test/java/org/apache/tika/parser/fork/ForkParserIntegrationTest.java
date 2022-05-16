@@ -228,6 +228,8 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
             });
         } catch (Throwable t) {
             t.printStackTrace();
+        } finally {
+            parser.close();
         }
     }
 

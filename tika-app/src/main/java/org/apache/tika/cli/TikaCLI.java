@@ -1082,15 +1082,20 @@ public class TikaCLI {
                 p = new ForkParser(TikaCLI.class.getClassLoader(), p);
             }
             ContentHandler handler = getContentHandler(output, metadata);
-
-            p.parse(input, handler, metadata, context);
-            // fix for TIKA-596: if a parser doesn't generate
-            // XHTML output, the lack of an output document prevents
-            // metadata from being output: this fixes that
-            if (handler instanceof NoDocumentMetHandler) {
-                NoDocumentMetHandler metHandler = (NoDocumentMetHandler) handler;
-                if (!metHandler.metOutput()) {
-                    metHandler.endDocument();
+            try {
+                p.parse(input, handler, metadata, context);
+                // fix for TIKA-596: if a parser doesn't generate
+                // XHTML output, the lack of an output document prevents
+                // metadata from being output: this fixes that
+                if (handler instanceof NoDocumentMetHandler) {
+                    NoDocumentMetHandler metHandler = (NoDocumentMetHandler) handler;
+                    if (!metHandler.metOutput()) {
+                        metHandler.endDocument();
+                    }
+                }
+            } finally {
+                if (fork) {
+                    ((ForkParser) p).close();
                 }
             }
         }

@@ -204,6 +204,8 @@ public class ForkParserTest extends TikaTest {
             fail("should have thrown IOException");
         } catch (TikaException e) {
             //failed to communicate with forked parser process"
+        } finally {
+            forkParser.close();
         }
 
         //test setting very short pulse (10 ms) and a parser that takes at least 1000 ms
@@ -223,6 +225,8 @@ public class ForkParserTest extends TikaTest {
             fail("Should have thrown exception");
         } catch (IOException | TikaException e) {
             //"should have thrown IOException lost connection"
+        } finally {
+            forkParser.close();
         }
     }
 
