@@ -22,85 +22,95 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.utils.StringUtils;
 
+public class DWGParserConfig implements Serializable {
 
-public class DWGParserConfig implements Serializable{
-	
     private static final long serialVersionUID = -7623524257255755725L;
-	private String dwgReadExecutable = "";
-	private boolean cleanDwgReadOutput = true;
+    private String dwgReadExecutable = "";
+    private boolean cleanDwgReadOutput = true;
     private int cleanDwgReadOutputBatchSize = 10000000;
-    //default to 5 minutes, some large DWG's do take a while...
+    // default to 5 minutes, some large DWG's do take a while...
     private long dwgReadTimeout = 300000;
     // we need to remove non UTF chars and Nan's (dwgread outputs these as nan)
     private String cleanDwgReadRegexToReplace = "[^\\x20-\\x7e]| nan,| nan ";
     private String cleanDwgReadReplaceWith = "";
     private boolean hasDwgRead;
     private static final Logger LOG = LoggerFactory.getLogger(DWGParserConfig.class);
-    
+
     public void initialize(Map<String, Param> params) throws TikaConfigException {
-    	hasDwgRead = hasDwgRead();
+        hasDwgRead = hasDwgRead();
 
     }
-    
+
     public boolean hasDwgRead() throws TikaConfigException {
         // Fetch where the config says to find DWGRead
         String dwgRead = getDwgReadExecutable();
 
         if (!StringUtils.isBlank(dwgRead) && !Files.isRegularFile(Paths.get(dwgRead))) {
-            throw new TikaConfigException("DwgRead cannot be found at: " + dwgRead );
+            throw new TikaConfigException("DwgRead cannot be found at: " + dwgRead);
         }
 
         // Try running DWGRead from there, and see if it exists + works
-        String[] checkCmd = {dwgRead};
+        String[] checkCmd = { dwgRead };
         boolean hasDwgRead = ExternalParser.check(checkCmd);
         LOG.debug("hasDwgRead (path: " + Arrays.toString(checkCmd) + "): " + hasDwgRead);
         return hasDwgRead;
     }
+
     public String getDwgReadExecutable() {
-		return dwgReadExecutable;
-	}
-	public boolean isCleanDwgReadOutput() {
-		return cleanDwgReadOutput;
-	}
-	public int getCleanDwgReadOutputBatchSize() {
-		return cleanDwgReadOutputBatchSize;
-	}
-	public long getDwgReadTimeout() {
-		return dwgReadTimeout;
-	}
-	public String getCleanDwgReadRegexToReplace() {
-		return cleanDwgReadRegexToReplace;
-	}
-	public String getCleanDwgReadReplaceWith() {
-		return cleanDwgReadReplaceWith;
-	}
+        return dwgReadExecutable;
+    }
+
+    public boolean isCleanDwgReadOutput() {
+        return cleanDwgReadOutput;
+    }
+
+    public int getCleanDwgReadOutputBatchSize() {
+        return cleanDwgReadOutputBatchSize;
+    }
+
+    public long getDwgReadTimeout() {
+        return dwgReadTimeout;
+    }
+
+    public String getCleanDwgReadRegexToReplace() {
+        return cleanDwgReadRegexToReplace;
+    }
+
+    public String getCleanDwgReadReplaceWith() {
+        return cleanDwgReadReplaceWith;
+    }
 
     public void setDwgReadExecutable(String dwgReadExecutable) {
-		this.dwgReadExecutable = dwgReadExecutable;
-	}
-	public void setCleanDwgReadOutput(boolean cleanDwgReadOutput) {
-		this.cleanDwgReadOutput = cleanDwgReadOutput;
-	}
-	public void setCleanDwgReadOutputBatchSize(int cleanDwgReadOutputBatchSize) {
-		this.cleanDwgReadOutputBatchSize = cleanDwgReadOutputBatchSize;
-	}
-	public void setDwgReadtimeout(long dwgReadtimeout) {
-		this.dwgReadTimeout = dwgReadtimeout;
-	}
-	public void setCleanDwgReadRegexToReplace(String cleanDwgReadRegexToReplace) {
-		this.cleanDwgReadRegexToReplace = cleanDwgReadRegexToReplace;
-	}
-	public void setCleanDwgReadReplaceWith(String cleanDwgReadReplaceWith) {
-		this.cleanDwgReadReplaceWith = cleanDwgReadReplaceWith;
-	}
+        this.dwgReadExecutable = dwgReadExecutable;
+    }
 
+    public void setCleanDwgReadOutput(boolean cleanDwgReadOutput) {
+        this.cleanDwgReadOutput = cleanDwgReadOutput;
+    }
 
+    public void setCleanDwgReadOutputBatchSize(int cleanDwgReadOutputBatchSize) {
+        this.cleanDwgReadOutputBatchSize = cleanDwgReadOutputBatchSize;
+    }
+
+    public void setDwgReadtimeout(long dwgReadtimeout) {
+        this.dwgReadTimeout = dwgReadtimeout;
+    }
+
+    public void setCleanDwgReadRegexToReplace(String cleanDwgReadRegexToReplace) {
+        this.cleanDwgReadRegexToReplace = cleanDwgReadRegexToReplace;
+    }
+
+    public void setCleanDwgReadReplaceWith(String cleanDwgReadReplaceWith) {
+        this.cleanDwgReadReplaceWith = cleanDwgReadReplaceWith;
+    }
 
 }

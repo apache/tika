@@ -25,13 +25,13 @@ import org.apache.commons.io.IOUtils;
 import org.apache.poi.util.StringUtil;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 
@@ -106,29 +106,29 @@ public class DWGParser extends AbstractDWGParser {
             xhtml.startDocument();
 
             switch (version) {
-            case "AC1015":
-                metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
-                if (skipTo2000PropertyInfoSection(stream, header)) {
-                    get2000Props(stream, metadata, xhtml);
-                }
-                break;
-            case "AC1018":
-                metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
-                if (skipToPropertyInfoSection(stream, header)) {
-                    get2004Props(stream, metadata, xhtml);
-                }
-                break;
-            case "AC1027":
-            case "AC1032":
-            case "AC1021":
-            case "AC1024":
-                metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
-                if (skipToPropertyInfoSection(stream, header)) {
-                    get2007and2010Props(stream, metadata, xhtml);
-                }
-                break;
-            default:
-                throw new TikaException("Unsupported AutoCAD drawing version: " + version);
+                case "AC1015":
+                    metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
+                    if (skipTo2000PropertyInfoSection(stream, header)) {
+                        get2000Props(stream, metadata, xhtml);
+                    }
+                    break;
+                case "AC1018":
+                    metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
+                    if (skipToPropertyInfoSection(stream, header)) {
+                        get2004Props(stream, metadata, xhtml);
+                    }
+                    break;
+                case "AC1027":
+                case "AC1032":
+                case "AC1021":
+                case "AC1024":
+                    metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
+                    if (skipToPropertyInfoSection(stream, header)) {
+                        get2007and2010Props(stream, metadata, xhtml);
+                    }
+                    break;
+                default:
+                    throw new TikaException("Unsupported AutoCAD drawing version: " + version);
             }
 
             xhtml.endDocument();

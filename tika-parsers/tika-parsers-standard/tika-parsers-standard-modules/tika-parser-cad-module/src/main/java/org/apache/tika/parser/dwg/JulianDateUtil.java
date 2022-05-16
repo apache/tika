@@ -24,10 +24,8 @@ import java.time.temporal.ChronoUnit;
 
 class JulianDateUtil {
     private static final double NANOS_PER_DAY = 24.0 * 60.0 * 60.0 * 1000000000.0;
-    public static final Instant REDUCED_JD =
-            ZonedDateTime.of(1858, 11, 16, 12, 0, 0, 0, ZoneOffset.UTC).toInstant();
-    public static final Instant JULIAN_DATE =
-            REDUCED_JD.minus(2400000, ChronoUnit.DAYS);
+    public static final Instant REDUCED_JD = ZonedDateTime.of(1858, 11, 16, 12, 0, 0, 0, ZoneOffset.UTC).toInstant();
+    public static final Instant JULIAN_DATE = REDUCED_JD.minus(2400000, ChronoUnit.DAYS);
 
     private final Instant epoch;
 
@@ -38,12 +36,11 @@ class JulianDateUtil {
 
     private Instant toInstant(double day) {
         long l = (long) day;
-        return epoch
-                .plus(l, ChronoUnit.DAYS)
-                .plusNanos(Math.round((day - l) * NANOS_PER_DAY));
+        return epoch.plus(l, ChronoUnit.DAYS).plusNanos(Math.round((day - l) * NANOS_PER_DAY));
     }
 
     public static Instant toInstant(int julianDay, int millisecondsIntoDay) {
-        return new JulianDateUtil(JulianDateUtil.JULIAN_DATE).toInstant(Double.parseDouble(julianDay + "." + millisecondsIntoDay));
+        return new JulianDateUtil(JulianDateUtil.JULIAN_DATE)
+                .toInstant(Double.parseDouble(julianDay + "." + millisecondsIntoDay));
     }
 }

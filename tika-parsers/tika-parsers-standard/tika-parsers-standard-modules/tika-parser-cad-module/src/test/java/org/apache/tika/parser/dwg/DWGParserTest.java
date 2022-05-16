@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import java.io.InputStream;
 import java.util.Arrays;
 
+import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
@@ -193,25 +194,27 @@ public class DWGParserTest extends TikaTest {
         assertEquals("jlakshvi", metadata.get(TikaCoreProperties.MODIFIER));
         assertEquals("CUSTOMER'S ADDRESS", metadata.get("dwg-custom:CUSTOMER'S ADDRESS"));
     }
-    
+    @Ignore("Ignore test for now")
     @Test
     public void testDWGRead() throws Exception {
         ParseContext pc = new ParseContext();
         DWGParserConfig dwgParserConfig = new DWGParserConfig();
         dwgParserConfig.setDwgReadExecutable("G:\\libredwg-0.12.5-win64\\dwgread.exe");
         dwgParserConfig.setCleanDwgReadRegexToReplace("^\\x20-\\x7e| nan");
+        dwgParserConfig.setDwgReadtimeout(10);
         pc.set(DWGParserConfig.class, dwgParserConfig);
         String xml = getXML("architectural_-_annotation_scaling_and_multileaders.dwg", pc).xml;
         System.out.println(xml);
     }
+    @Ignore("Ignore test for now")
     @Test
     public void testDWGReadexe() throws Exception {
-    	DWGParserConfig dwgParserConfig = new DWGParserConfig();
+        DWGParserConfig dwgParserConfig = new DWGParserConfig();
         dwgParserConfig.setDwgReadExecutable("G:\\libredwg-0.12.5-win64\\dwgread.exe");
     
-    String[] checkCmd = {dwgParserConfig.getDwgReadExecutable()};
-    boolean hasDwgRead = ExternalParser.check(checkCmd);
-    System.out.println(hasDwgRead);
+        String[] checkCmd = {dwgParserConfig.getDwgReadExecutable()};
+        boolean hasDwgRead = ExternalParser.check(checkCmd);
+        System.out.println(hasDwgRead);
     }
 
 }

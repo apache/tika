@@ -30,10 +30,19 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.json.JsonReadFeature;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.commons.io.FileUtils;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -43,27 +52,19 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.FileProcessResult;
 import org.apache.tika.utils.ProcessUtils;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.core.json.JsonReadFeature;
+
+
+
 
 /**
- * DWGReadParser (CAD Drawing) parser. This extends the original DWGParser
- * if in the parser configuration DwgRead is set. DWG reader can be found here:
- * https://github.com/LibreDWG/libredwg
- * DWGRead outputs json which we then loop through extracting the text elements
- * The required configuration is dwgReadExecutable. The other settings which can be overwritten are:
- * boolean : cleanDwgReadOutput - whether to clean the json output
- * int : cleanDwgReadOutputBatchSize - clean output batch size to process
- * long : dwgReadTimeout -timeout in milliseconds before killing the dwgread process
- * String : cleanDwgReadRegexToReplace -  characters to replace in the json
- * String : cleanDwgReadReplaceWith - replacement characters
- * dwgReadExecutable
+ * DWGReadParser (CAD Drawing) parser. This extends the original DWGParser if in the parser configuration DwgRead is
+ * set. DWG reader can be found here: https://github.com/LibreDWG/libredwg DWGRead outputs json which we then loop
+ * through extracting the text elements The required configuration is dwgReadExecutable. The other settings which can be
+ * overwritten are: boolean : cleanDwgReadOutput - whether to clean the json output int : cleanDwgReadOutputBatchSize -
+ * clean output batch size to process long : dwgReadTimeout -timeout in milliseconds before killing the dwgread process
+ * String : cleanDwgReadRegexToReplace - characters to replace in the json String : cleanDwgReadReplaceWith -
+ * replacement characters dwgReadExecutable
  */
 
 public class DWGReadParser extends AbstractDWGParser {
@@ -74,19 +75,19 @@ public class DWGReadParser extends AbstractDWGParser {
     private static final long serialVersionUID = 7983127145030096837L;
     private static MediaType TYPE = MediaType.image("vnd.dwg");
 
-    public Set < MediaType > getSupportedTypes(ParseContext context) {
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
         return Collections.singleton(TYPE);
     }
 
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
-    throws  IOException, SAXException, TikaException {
+            throws IOException, SAXException, TikaException {
 
         configure(context);
         DWGParserConfig dwgc = context.get(DWGParserConfig.class);
         final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
-        //create unique files so we avoid overwriting out files if multithreaded
+        // create unique files so we avoid overwriting out files if multithreaded
         UUID uuid = UUID.randomUUID();
         File tmpFileOut = File.createTempFile(uuid + "dwgreadout", ".json");
         File tmpFileOutCleaned = File.createTempFile(uuid + "dwgreadoutclean", ".json");
@@ -95,8 +96,8 @@ public class DWGReadParser extends AbstractDWGParser {
 
             FileUtils.copyInputStreamToFile(stream, tmpFileIn);
 
-            List < String > command = Arrays.asList(dwgc.getDwgReadExecutable(), "-O", "JSON", "-o",
-                tmpFileOut.getCanonicalPath(), tmpFileIn.getCanonicalPath());
+            List<String> command = Arrays.asList(dwgc.getDwgReadExecutable(), "-O", "JSON", "-o",
+                    tmpFileOut.getCanonicalPath(), tmpFileIn.getCanonicalPath());
             ProcessBuilder pb = new ProcessBuilder().command(command);
             LOG.info("About to call DWGRead: " + command.toString());
             FileProcessResult fpr = ProcessUtils.execute(pb, dwgc.getDwgReadTimeout(), 10000, 10000);
@@ -106,7 +107,8 @@ public class DWGReadParser extends AbstractDWGParser {
                     // dwgread sometimes creates strings with invalid utf-8 sequences or invalid
                     // json (nan instead of NaN). replace them
                     // with empty string.
-                	LOG.debug("Cleaning Json Output - Replace: " + dwgc.getCleanDwgReadRegexToReplace()+ " with: "+ dwgc.getCleanDwgReadReplaceWith());
+                    LOG.debug("Cleaning Json Output - Replace: " + dwgc.getCleanDwgReadRegexToReplace() + " with: "
+                            + dwgc.getCleanDwgReadReplaceWith());
                     try (FileInputStream fis = new FileInputStream(tmpFileOut);
                             FileOutputStream fos = new FileOutputStream(tmpFileOutCleaned)) {
                         byte[] bytes = new byte[dwgc.getCleanDwgReadOutputBatchSize()];
@@ -122,25 +124,33 @@ public class DWGReadParser extends AbstractDWGParser {
                     }
 
                 } else {
-                	LOG.debug("Json wasn't cleaned, if json parsing fails consider reviewing dwgread json output to check it's valid");
+                    LOG.debug(
+                            "Json wasn't cleaned, "
+                            + "if json parsing fails consider reviewing dwgread json output to check it's valid");
                 }
+            } else {
+                throw new TikaException(
+                        "DWGRead Failed - Exit Code is:" + fpr.getExitValue() + " Exe error is: " + fpr.getStderr());
             }
-            else {
-            	throw new TikaException("DWGRead Failed - Exit Code is:" + fpr.getExitValue()+" Exe error is: " + fpr.getStderr());
-            }
-            
-            // we can't guarantee the json output is correct so we try to ignore as many errors as we can
-            JsonFactory jfactory = JsonFactory.builder().enable(JsonReadFeature.ALLOW_MISSING_VALUES,JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS,JsonReadFeature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER).build();
+
+            // we can't guarantee the json output is correct so we try to ignore as many
+            // errors as we can
+            JsonFactory jfactory = JsonFactory.builder()
+                    .enable(JsonReadFeature.ALLOW_MISSING_VALUES, JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS,
+                            JsonReadFeature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER)
+                    .build();
             JsonParser jParser;
-			try {
-				jParser = jfactory.createParser(tmpFileOut);
-			} catch (JsonParseException e1) {
-				throw new TikaException("Failed to parse Json: " + ExceptionUtils.getStackTrace(e1));
-			} catch (IOException e1) {
-				throw new TikaException("Failed to read json file: " + ExceptionUtils.getStackTrace(e1));
-			}
-			//read json token in a stream using jackson, iterate over each token. We only support OBJECTS, FILEHEADER and SummaryInfo
-			//these are the only ones we have in either sample files or have been tested with
+            try {
+                jParser = jfactory.createParser(tmpFileOut);
+            } catch (JsonParseException e1) {
+                throw new TikaException("Failed to parse Json: " + ExceptionUtils.getStackTrace(e1));
+            } catch (IOException e1) {
+                throw new TikaException("Failed to read json file: " + ExceptionUtils.getStackTrace(e1));
+            }
+            // read json token in a stream using jackson, iterate over each token. We only
+            // support OBJECTS, FILEHEADER and SummaryInfo
+            // these are the only ones we have in either sample files or have been tested
+            // with
             JsonToken nextToken = jParser.nextToken();
             while ((nextToken = jParser.nextToken()) != JsonToken.END_OBJECT) {
                 if (nextToken == JsonToken.FIELD_NAME) {
@@ -162,11 +172,11 @@ public class DWGReadParser extends AbstractDWGParser {
                                     }
                                 });
                             }
-                        }  else if ("FILEHEADER".equals(nextFieldName)) {
-                            parseHeader(jParser,metadata);
-                        }  else if ("SummaryInfo".equals(nextFieldName)) {
+                        } else if ("FILEHEADER".equals(nextFieldName)) {
+                            parseHeader(jParser, metadata);
+                        } else if ("SummaryInfo".equals(nextFieldName)) {
                             parseSummaryInfo(jParser, metadata);
-                        }  else {
+                        } else {
                             jParser.skipChildren();
                         }
                     }
@@ -174,15 +184,15 @@ public class DWGReadParser extends AbstractDWGParser {
             }
             jParser.close();
         } finally {
-        	//make sure we delete all temp files
+            // make sure we delete all temp files
             FileUtils.deleteQuietly(tmpFileOut);
             FileUtils.deleteQuietly(tmpFileIn);
             FileUtils.deleteQuietly(tmpFileOutCleaned);
         }
-        
-        
+
         xhtml.endDocument();
     }
+
     private void parseDwgObject(JsonParser jsonParser, Consumer<String> textConsumer) throws IOException {
         JsonToken nextToken;
         while ((nextToken = jsonParser.nextToken()) != JsonToken.END_OBJECT) {
@@ -198,19 +208,19 @@ public class DWGReadParser extends AbstractDWGParser {
 
                             textConsumer.accept(textVal);
                         }
-                    }
-                    else    if ("text_value".equals(nextFieldName)) {
+                    } else if ("text_value".equals(nextFieldName)) {
                         String textVal = jsonParser.getText();
                         if (StringUtils.isNotBlank(textVal)) {
 
                             textConsumer.accept(textVal);
-                            
+
                         }
                     }
                 }
             }
         }
     }
+
     private void parseHeader(JsonParser jsonParser, Metadata metadata) throws IOException {
         JsonToken nextToken;
         while ((nextToken = jsonParser.nextToken()) != JsonToken.END_OBJECT) {
@@ -225,6 +235,7 @@ public class DWGReadParser extends AbstractDWGParser {
             }
         }
     }
+
     private void parseSummaryInfo(JsonParser jsonParser, Metadata metadata) throws IOException {
         JsonToken nextToken;
         while ((nextToken = jsonParser.nextToken()) != JsonToken.END_OBJECT) {
@@ -233,7 +244,8 @@ public class DWGReadParser extends AbstractDWGParser {
                 nextToken = jsonParser.nextToken();
                 if (nextToken.isStructStart()) {
                     if ("TDCREATE".equals(nextFieldName) || "TDUPDATE".equals(nextFieldName)) {
-                        // timestamps are represented by an integer array of format with 2 values in the array:
+                        // timestamps are represented by an integer array of format with 2 values in the
+                        // array:
                         // [julianDate, millisecondOfDay]
                         jsonParser.nextToken(); // start array
                         int julianDay = jsonParser.getIntValue();
@@ -268,53 +280,55 @@ public class DWGReadParser extends AbstractDWGParser {
             }
         }
     }
-    
+
     private String cleanupDwgString(String dwgString) {
-        //Cleaning the formatting of the text has been found from the following website's:
-        //https://www.cadforum.cz/en/text-formatting-codes-in-mtext-objects-tip8640
-        //https://adndevblog.typepad.com/autocad/2017/09/dissecting-mtext-format-codes.html
-    	//We always to do a backwards look to make sure the string to replace hasn't been escaped
+        // Cleaning the formatting of the text has been found from the following
+        // website's:
+        // https://www.cadforum.cz/en/text-formatting-codes-in-mtext-objects-tip8640
+        // https://adndevblog.typepad.com/autocad/2017/09/dissecting-mtext-format-codes.html
+        // We always to do a backwards look to make sure the string to replace hasn't
+        // been escaped
         String cleanString;
-        //replace A0-2 (Alignment)
+        // replace A0-2 (Alignment)
         cleanString = dwgString.replaceAll("(?<!\\\\)\\\\A[0-2];", "");
-        //replace \\p (New paragraph/ new line) and with new line
+        // replace \\p (New paragraph/ new line) and with new line
         cleanString = cleanString.replaceAll("(?<!\\\\\\\\)\\\\P", "\\n");
-        //remove pi (numbered paragraphs)
+        // remove pi (numbered paragraphs)
         cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pi.*;", "");
-        //remove pxi (bullets)
+        // remove pxi (bullets)
         cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pxi.*;", "");
-        //remove pxt (tab stops)
+        // remove pxt (tab stops)
         cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pxt.*;", "");
-        //remove lines with \H (text height)
+        // remove lines with \H (text height)
         cleanString = cleanString.replaceAll("(?<!\\\\)\\\\H[0-9]*.*;", "");
-        //remove lines with \F Font Selection
+        // remove lines with \F Font Selection
         cleanString = cleanString.replaceAll("(?<!\\\\)\\\\F.*;", "");
-        //Replace \L \l (underlines)
+        // Replace \L \l (underlines)
         cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\L)(.*)(\\\\l)", "$2");
-        //Replace \O \o (over strikes)
+        // Replace \O \o (over strikes)
         cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\O)(.*)(\\\\o)", "$2");
-        //Replace \K \k (Strike through)
+        // Replace \K \k (Strike through)
         cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\K)(.*)(\\\\k)", "$2");
-        //Replace \N (new Column)
+        // Replace \N (new Column)
         cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\N)", "\t");
-        //Replace \Q (text angle)
+        // Replace \Q (text angle)
         cleanString = cleanString.replaceAll("(?<!\\\\)\\\\Q[\\d];", "");
-        //Replace \W (Text Width)
+        // Replace \W (Text Width)
         cleanString = cleanString.replaceAll("(?<!\\\\)\\\\W[.*];", "");
-        //Replace \S (Stacking)
+        // Replace \S (Stacking)
         cleanString = cleanString.replaceAll("(?<!\\\\)\\\\S[.*]:", "");
-        //Replace \C (Stacking)
+        // Replace \C (Stacking)
         cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\C[1-7];)", "");
-        //Replace \T (Tracking)
+        // Replace \T (Tracking)
         cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\T[0-9];)", "");
-        //Now we have cleaned the formatting we can now remove the escaped \
+        // Now we have cleaned the formatting we can now remove the escaped \
         cleanString = cleanString.replaceAll("(\\\\)", "\\\\");
-        //Replace {} (text formatted by the above)
+        // Replace {} (text formatted by the above)
         cleanString = cleanString.replaceAll("(?<!\\\\)\\}|(?<!\\\\)\\{", "");
-       
+
         //
         return cleanString;
-        
+
     }
 
 }
