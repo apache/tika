@@ -276,7 +276,7 @@ public class DWGReadParser extends AbstractDWGParser {
     	//We always to do a backwards look to make sure the string to replace hasn't been escaped
         String cleanString;
         //replace A0-2 (Alignment)
-        cleanString = dwgString.replaceAll("(?<!\\\\\\\\)\\\\A[0-2];", "");
+        cleanString = dwgString.replaceAll("(?<!\\\\)\\\\A[0-2];", "");
         //replace \\p (New paragraph/ new line) and with new line
         cleanString = cleanString.replaceAll("(?<!\\\\\\\\)\\\\P", "\\n");
         //remove pi (numbered paragraphs)
@@ -290,27 +290,27 @@ public class DWGReadParser extends AbstractDWGParser {
         //remove lines with \F Font Selection
         cleanString = cleanString.replaceAll("(?<!\\\\)\\\\F.*;", "");
         //Replace \L \l (underlines)
-        cleanString = cleanString.replaceAll("(?<!\\\\\\\\)(\\\\L)(.*)(\\\\l)", "$2");
+        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\L)(.*)(\\\\l)", "$2");
         //Replace \O \o (over strikes)
-        cleanString = cleanString.replaceAll("(?<!\\\\\\\\)(\\\\O)(.*)(\\\\o)", "$2");
+        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\O)(.*)(\\\\o)", "$2");
         //Replace \K \k (Strike through)
-        cleanString = cleanString.replaceAll("(?<!\\\\\\\\)(\\\\K)(.*)(\\\\k)", "$2");
+        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\K)(.*)(\\\\k)", "$2");
         //Replace \N (new Column)
-        cleanString = cleanString.replaceAll("(?<!\\\\\\\\)(\\\\N)", "\t");
+        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\N)", "\t");
         //Replace \Q (text angle)
-        cleanString = dwgString.replaceAll("(?<!\\\\\\\\)\\\\Q[\\d];", "");
+        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\Q[\\d];", "");
         //Replace \W (Text Width)
-        cleanString = dwgString.replaceAll("(?<!\\\\\\\\)\\\\W[.*];", "");
+        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\W[.*];", "");
         //Replace \S (Stacking)
-        cleanString = dwgString.replaceAll("(?<!\\\\\\\\)\\\\S[.*]:", "");
+        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\S[.*]:", "");
         //Replace \C (Stacking)
-        cleanString = dwgString.replaceAll("(?<!\\\\\\\\)(\\\\C[1-7];", "");
+        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\C[1-7];)", "");
         //Replace \T (Tracking)
-        cleanString = dwgString.replaceAll("(?<!\\\\\\\\)(\\\\T[0-9];", "");
+        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\T[0-9];)", "");
         //Now we have cleaned the formatting we can now remove the escaped \
-        cleanString = cleanString.replaceAll("(\\\\)", "\\");
+        cleanString = cleanString.replaceAll("(\\\\)", "\\\\");
         //Replace {} (text formatted by the above)
-        cleanString = cleanString.replaceAll("\\}|\\{", "");
+        cleanString = cleanString.replaceAll("(?<!\\\\)\\}|(?<!\\\\)\\{", "");
        
         //
         return cleanString;
