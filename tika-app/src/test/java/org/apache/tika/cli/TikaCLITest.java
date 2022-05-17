@@ -365,9 +365,7 @@ public class TikaCLITest {
 
     private void testExtract(String targetFile, String[] expectedChildrenFileNames,
                              int expectedLength) throws Exception {
-        File tempFile = File.createTempFile("tika-test-", "");
-        assertTrue(tempFile.delete());
-        assertTrue(tempFile.mkdir());
+        File tempFile = Files.createTempDirectory("tika-test-").toFile();
 
         try {
             String[] params = {"--extract-dir=" + tempFile.getAbsolutePath(), "-z",
@@ -391,9 +389,7 @@ public class TikaCLITest {
     @Test
     public void testExtractTgz() throws Exception {
         //TIKA-2564
-        File tempFile = File.createTempFile("tika-test-", "");
-        assertTrue(tempFile.delete());
-        assertTrue(tempFile.mkdir());
+        File tempFile = Files.createTempDirectory("tika-test-").toFile();
 
         try {
             String[] params = {"--extract-dir=" + tempFile.getAbsolutePath(), "-z",
@@ -409,7 +405,7 @@ public class TikaCLITest {
 
             assertExtracted(expectedTAR, allFiles);
         } finally {
-            FileUtils.deleteDirectory(tempFile);
+            FileUtils.forceDeleteOnExit(tempFile);
         }
     }
 
@@ -438,10 +434,7 @@ public class TikaCLITest {
 
     @Test
     public void testExtractInlineImages() throws Exception {
-        File tempFile = File.createTempFile("tika-test-", "");
-        assertTrue(tempFile.delete());
-        assertTrue(tempFile.mkdir());
-        // google guava library has better solution
+        File tempFile = Files.createTempDirectory("tika-test-").toFile();
 
         try {
             String[] params = {"--extract-dir=" + tempFile.getAbsolutePath(), "-z",
@@ -463,7 +456,7 @@ public class TikaCLITest {
             assertExtracted(jobOptions, allFiles);
             assertExtracted(doc, allFiles);
         } finally {
-            FileUtils.deleteDirectory(tempFile);
+            FileUtils.forceDeleteOnExit(tempFile);
         }
     }
 
