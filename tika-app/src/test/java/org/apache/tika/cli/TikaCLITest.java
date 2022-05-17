@@ -365,47 +365,47 @@ public class TikaCLITest {
 
     private void testExtract(String targetFile, String[] expectedChildrenFileNames,
                              int expectedLength) throws Exception {
-        File tempFile = Files.createTempDirectory("tika-test-").toFile();
+        File tempDir = Files.createTempDirectory("tika-cli-test-").toFile();
 
         try {
-            String[] params = {"--extract-dir=" + tempFile.getAbsolutePath(), "-z",
+            String[] params = {"--extract-dir=" + tempDir.getAbsolutePath(), "-z",
                     resourcePrefix + "/" + targetFile};
 
             TikaCLI.main(params);
 
-            String[] tempFileNames = tempFile.list();
+            String[] tempFileNames = tempDir.list();
             assertNotNull(tempFileNames);
             assertEquals(expectedLength, tempFileNames.length);
             String allFiles = String.join(" : ", tempFileNames);
 
             for (String expectedChildName : expectedChildrenFileNames) {
-                assertExtracted(new File(tempFile, expectedChildName), allFiles);
+                assertExtracted(new File(tempDir, expectedChildName), allFiles);
             }
         } finally {
-            FileUtils.forceDeleteOnExit(tempFile);
+            FileUtils.deleteDirectory(tempDir);
         }
     }
 
     @Test
     public void testExtractTgz() throws Exception {
         //TIKA-2564
-        File tempFile = Files.createTempDirectory("tika-test-").toFile();
+        File tempDir = Files.createTempDirectory("tika-cli-test-").toFile();
 
         try {
-            String[] params = {"--extract-dir=" + tempFile.getAbsolutePath(), "-z",
+            String[] params = {"--extract-dir=" + tempDir.getAbsolutePath(), "-z",
                     resourcePrefix + "/test-documents.tgz"};
 
             TikaCLI.main(params);
 
-            String[] tempFileNames = tempFile.list();
+            String[] tempFileNames = tempDir.list();
             assertNotNull(tempFileNames);
             String allFiles = String.join(" : ", tempFileNames);
 
-            File expectedTAR = new File(tempFile, "test-documents.tar");
+            File expectedTAR = new File(tempDir, "test-documents.tar");
 
             assertExtracted(expectedTAR, allFiles);
         } finally {
-            FileUtils.forceDeleteOnExit(tempFile);
+            FileUtils.deleteDirectory(tempDir);
         }
     }
 
@@ -434,29 +434,29 @@ public class TikaCLITest {
 
     @Test
     public void testExtractInlineImages() throws Exception {
-        File tempFile = Files.createTempDirectory("tika-test-").toFile();
+        File tempDir = Files.createTempDirectory("tika-cli-test-").toFile();
 
         try {
-            String[] params = {"--extract-dir=" + tempFile.getAbsolutePath(), "-z",
+            String[] params = {"--extract-dir=" + tempDir.getAbsolutePath(), "-z",
                     resourcePrefix + "/testPDF_childAttachments.pdf"};
 
             TikaCLI.main(params);
 
-            String[] tempFileNames = tempFile.list();
+            String[] tempFileNames = tempDir.list();
             assertNotNull(tempFileNames);
             String allFiles = String.join(" : ", tempFileNames);
 
-            File jpeg = new File(tempFile, "image0.jpg");
+            File jpeg = new File(tempDir, "image0.jpg");
             //tiff isn't extracted without optional image dependency
 //            File tiff = new File(tempFile, "image1.tif");
-            File jobOptions = new File(tempFile, "Press Quality(1).joboptions");
-            File doc = new File(tempFile, "Unit10.doc");
+            File jobOptions = new File(tempDir, "Press Quality(1).joboptions");
+            File doc = new File(tempDir, "Unit10.doc");
 
             assertExtracted(jpeg, allFiles);
             assertExtracted(jobOptions, allFiles);
             assertExtracted(doc, allFiles);
         } finally {
-            FileUtils.forceDeleteOnExit(tempFile);
+            FileUtils.deleteDirectory(tempDir);
         }
     }
 
