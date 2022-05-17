@@ -49,11 +49,11 @@ import org.apache.tika.sax.StandardReference.StandardReferenceBuilder;
  * <li>returns the standard references along with scores.</li>
  * </ol>
  * </p>
- *
  */
 public class StandardsText {
 	// Regular expression to match uppercase headers
-	private static final String REGEX_HEADER = "(\\d+\\.(\\d+\\.?)*)\\p{Blank}+([A-Z]+(\\s[A-Z]+)*){5,}";
+	private static final String REGEX_HEADER =
+			"(\\d{1,10}\\.(\\d{1,10}\\.?){0,10})\\p{Blank}+([A-Z]{1,256}(\\s[A-Z]+){0,256}){5,}";
 
 	// Regular expression to match the "APPLICABLE DOCUMENTS" and equivalent
 	// sections
