@@ -86,8 +86,8 @@ public class TikaCLITest {
 
         assertFalse(Files.isDirectory(p), "File " + p.getFileName() + " is a directory!");
 
-        assertTrue(Files.size(p) > 0, "File " + p.getFileName() + " wasn't extracted with " +
-                "contents");
+        assertTrue(Files.size(p) > 0,
+                "File " + p.getFileName() + " wasn't extracted with " + "contents");
     }
 
     /**
@@ -329,8 +329,8 @@ public class TikaCLITest {
     @Test
     public void testExtractSimple() throws Exception {
         String[] expectedChildren =
-                new String[]{"MBD002B040A.cdx", "file4.png", "MBD002B0FA6.bin",
-                        "MBD00262FE3.txt", "file0.emf"};
+                new String[]{"MBD002B040A.cdx", "file4.png", "MBD002B0FA6.bin", "MBD00262FE3.txt",
+                        "file0.emf"};
         testExtract("/coffee.xls", expectedChildren, 8);
     }
 
@@ -367,8 +367,8 @@ public class TikaCLITest {
     private void testExtract(String targetFile, String[] expectedChildrenFileNames,
                              int expectedLength) throws Exception {
 
-        String[] params = {"--extract-dir=" + ProcessUtils.escapeCommandLine(
-                extractDir.toAbsolutePath().toString()), "-z",
+        String[] params = {"--extract-dir=" +
+                ProcessUtils.escapeCommandLine(extractDir.toAbsolutePath().toString()), "-z",
                 resourcePrefix + "/" + targetFile};
 
         TikaCLI.main(params);
@@ -387,18 +387,18 @@ public class TikaCLITest {
     public void testExtractTgz() throws Exception {
         //TIKA-2564
 
-            String[] params = {"--extract-dir=" + extractDir.toAbsolutePath(), "-z",
-                    resourcePrefix + "/test-documents.tgz"};
+        String[] params = {"--extract-dir=" + extractDir.toAbsolutePath(), "-z",
+                resourcePrefix + "/test-documents.tgz"};
 
-            TikaCLI.main(params);
+        TikaCLI.main(params);
 
-            String[] tempFileNames = extractDir.toFile().list();
-            assertNotNull(tempFileNames);
-            String allFiles = String.join(" : ", tempFileNames);
+        String[] tempFileNames = extractDir.toFile().list();
+        assertNotNull(tempFileNames);
+        String allFiles = String.join(" : ", tempFileNames);
 
-            Path expectedTAR = extractDir.resolve("test-documents.tar");
+        Path expectedTAR = extractDir.resolve("test-documents.tar");
 
-            assertExtracted(expectedTAR, allFiles);
+        assertExtracted(expectedTAR, allFiles);
     }
 
     // TIKA-920
@@ -426,24 +426,24 @@ public class TikaCLITest {
 
     @Test
     public void testExtractInlineImages() throws Exception {
-            String[] params = {"--extract-dir=" + extractDir.toAbsolutePath(), "-z",
-                    resourcePrefix + "/testPDF_childAttachments.pdf"};
+        String[] params = {"--extract-dir=" + extractDir.toAbsolutePath(), "-z",
+                resourcePrefix + "/testPDF_childAttachments.pdf"};
 
-            TikaCLI.main(params);
+        TikaCLI.main(params);
 
-            String[] tempFileNames = extractDir.toFile().list();
-            assertNotNull(tempFileNames);
-            String allFiles = String.join(" : ", tempFileNames);
+        String[] tempFileNames = extractDir.toFile().list();
+        assertNotNull(tempFileNames);
+        String allFiles = String.join(" : ", tempFileNames);
 
-            Path jpeg = extractDir.resolve("image0.jpg");
-            //tiff isn't extracted without optional image dependency
+        Path jpeg = extractDir.resolve("image0.jpg");
+        //tiff isn't extracted without optional image dependency
 //            File tiff = new File(tempFile, "image1.tif");
-            Path jobOptions = extractDir.resolve("Press Quality(1).joboptions");
-            Path doc = extractDir.resolve("Unit10.doc");
+        Path jobOptions = extractDir.resolve("Press Quality(1).joboptions");
+        Path doc = extractDir.resolve("Unit10.doc");
 
-            assertExtracted(jpeg, allFiles);
-            assertExtracted(jobOptions, allFiles);
-            assertExtracted(doc, allFiles);
+        assertExtracted(jpeg, allFiles);
+        assertExtracted(jobOptions, allFiles);
+        assertExtracted(doc, allFiles);
     }
 
     @Test
