@@ -24,29 +24,35 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.utils.ProcessUtils;
 
 /**
  * Tests the Tika's cli
  */
 public class TikaCLITest {
 
-    private static final File testDataFile = new File("src/test/resources/test-data");
+    private static final File TEST_DATA_FILE = new File("src/test/resources/test-data");
+
     private static Path ASYNC_CONFIG;
+    @TempDir
     private static Path ASYNC_OUTPUT_DIR;
-    private final URI testDataURI = testDataFile.toURI();
+
+    @TempDir
+    private Path extractDir;
+    private final URI testDataURI = TEST_DATA_FILE.toURI();
     /* Test members */
     private ByteArrayOutputStream outContent = null;
     private ByteArrayOutputStream errContent = null;
@@ -62,31 +68,26 @@ public class TikaCLITest {
                 "<tikaConfig>" + ASYNC_CONFIG.toAbsolutePath() + "</tikaConfig>" + "</params>" +
                 "</async>" + "<fetchers>" +
                 "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" +
-                "<params>" + "<name>fsf</name>" + "<basePath>" + testDataFile.getAbsolutePath() +
+                "<params>" + "<name>fsf</name>" + "<basePath>" + TEST_DATA_FILE.getAbsolutePath() +
                 "</basePath>" + "</params>" + "</fetcher>" + "</fetchers>" + "<emitters>" +
                 "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" +
                 "<params>" + "<name>fse</name>" + "<basePath>" + ASYNC_OUTPUT_DIR.toAbsolutePath() +
                 "</basePath>" + "</params></emitter>" + "</emitters>" + "<pipesIterator " +
                 "class=\"org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator\">" +
-                "<params>" + "<basePath>" + testDataFile.getAbsolutePath() + "</basePath>" +
+                "<params>" + "<basePath>" + TEST_DATA_FILE.getAbsolutePath() + "</basePath>" +
                 "<fetcherName>fsf</fetcherName>" + "<emitterName>fse</emitterName>" + "</params>" +
                 "</pipesIterator>" + "</properties>";
         Files.write(ASYNC_CONFIG, xml.getBytes(UTF_8));
     }
 
-    @AfterAll
-    public static void tearDownClass() throws Exception {
-        Files.delete(ASYNC_CONFIG);
-        FileUtils.deleteDirectory(ASYNC_OUTPUT_DIR.toFile());
-    }
+    protected static void assertExtracted(Path p, String allFiles) throws IOException {
 
-    protected static void assertExtracted(File f, String allFiles) {
+        assertTrue(Files.exists(p), "File " + p.getFileName() + " not found in " + allFiles);
 
-        assertTrue(f.exists(), "File " + f.getName() + " not found in " + allFiles);
+        assertFalse(Files.isDirectory(p), "File " + p.getFileName() + " is a directory!");
 
-        assertFalse(f.isDirectory(), "File " + f.getName() + " is a directory!");
-
-        assertTrue(f.length() > 0, "File " + f.getName() + " wasn't extracted with contents");
+        assertTrue(Files.size(p) > 0, "File " + p.getFileName() + " wasn't extracted with " +
+                "contents");
     }
 
     /**
@@ -365,52 +366,39 @@ public class TikaCLITest {
 
     private void testExtract(String targetFile, String[] expectedChildrenFileNames,
                              int expectedLength) throws Exception {
-        File tempFile = File.createTempFile("tika-test-", "");
-        assertTrue(tempFile.delete());
-        assertTrue(tempFile.mkdir());
 
-        try {
-            String[] params = {"--extract-dir=" + tempFile.getAbsolutePath(), "-z",
-                    resourcePrefix + "/" + targetFile};
+        String[] params = {"--extract-dir=" + ProcessUtils.escapeCommandLine(
+                extractDir.toAbsolutePath().toString()), "-z",
+                resourcePrefix + "/" + targetFile};
 
-            TikaCLI.main(params);
+        TikaCLI.main(params);
 
-            String[] tempFileNames = tempFile.list();
-            assertNotNull(tempFileNames);
-            assertEquals(expectedLength, tempFileNames.length);
-            String allFiles = String.join(" : ", tempFileNames);
+        String[] tempFileNames = extractDir.toFile().list();
+        assertNotNull(tempFileNames);
+        assertEquals(expectedLength, tempFileNames.length);
+        String allFiles = String.join(" : ", tempFileNames);
 
-            for (String expectedChildName : expectedChildrenFileNames) {
-                assertExtracted(new File(tempFile, expectedChildName), allFiles);
-            }
-        } finally {
-            FileUtils.forceDeleteOnExit(tempFile);
+        for (String expectedChildName : expectedChildrenFileNames) {
+            assertExtracted(extractDir.resolve(expectedChildName), allFiles);
         }
     }
 
     @Test
     public void testExtractTgz() throws Exception {
         //TIKA-2564
-        File tempFile = File.createTempFile("tika-test-", "");
-        assertTrue(tempFile.delete());
-        assertTrue(tempFile.mkdir());
 
-        try {
-            String[] params = {"--extract-dir=" + tempFile.getAbsolutePath(), "-z",
+            String[] params = {"--extract-dir=" + extractDir.toAbsolutePath(), "-z",
                     resourcePrefix + "/test-documents.tgz"};
 
             TikaCLI.main(params);
 
-            String[] tempFileNames = tempFile.list();
+            String[] tempFileNames = extractDir.toFile().list();
             assertNotNull(tempFileNames);
             String allFiles = String.join(" : ", tempFileNames);
 
-            File expectedTAR = new File(tempFile, "test-documents.tar");
+            Path expectedTAR = extractDir.resolve("test-documents.tar");
 
             assertExtracted(expectedTAR, allFiles);
-        } finally {
-            FileUtils.deleteDirectory(tempFile);
-        }
     }
 
     // TIKA-920
@@ -438,33 +426,24 @@ public class TikaCLITest {
 
     @Test
     public void testExtractInlineImages() throws Exception {
-        File tempFile = File.createTempFile("tika-test-", "");
-        assertTrue(tempFile.delete());
-        assertTrue(tempFile.mkdir());
-        // google guava library has better solution
-
-        try {
-            String[] params = {"--extract-dir=" + tempFile.getAbsolutePath(), "-z",
+            String[] params = {"--extract-dir=" + extractDir.toAbsolutePath(), "-z",
                     resourcePrefix + "/testPDF_childAttachments.pdf"};
 
             TikaCLI.main(params);
 
-            String[] tempFileNames = tempFile.list();
+            String[] tempFileNames = extractDir.toFile().list();
             assertNotNull(tempFileNames);
             String allFiles = String.join(" : ", tempFileNames);
 
-            File jpeg = new File(tempFile, "image0.jpg");
+            Path jpeg = extractDir.resolve("image0.jpg");
             //tiff isn't extracted without optional image dependency
 //            File tiff = new File(tempFile, "image1.tif");
-            File jobOptions = new File(tempFile, "Press Quality(1).joboptions");
-            File doc = new File(tempFile, "Unit10.doc");
+            Path jobOptions = extractDir.resolve("Press Quality(1).joboptions");
+            Path doc = extractDir.resolve("Unit10.doc");
 
             assertExtracted(jpeg, allFiles);
             assertExtracted(jobOptions, allFiles);
             assertExtracted(doc, allFiles);
-        } finally {
-            FileUtils.deleteDirectory(tempFile);
-        }
     }
 
     @Test
@@ -485,7 +464,7 @@ public class TikaCLITest {
     @Test
     public void testConfig() throws Exception {
         String content =
-                getParamOutContent("--config=" + testDataFile.toString() + "/tika-config1.xml",
+                getParamOutContent("--config=" + TEST_DATA_FILE.toString() + "/tika-config1.xml",
                         resourcePrefix + "bad_xml.xml");
         assertTrue(content.contains("apple"));
         assertTrue(content.contains("org.apache.tika.parser.html.HtmlParser"));
@@ -494,7 +473,7 @@ public class TikaCLITest {
     @Test
     public void testConfigIgnoreInit() throws Exception {
         String content = getParamOutContent(
-                "--config=" + testDataFile.toString() + "/TIKA-2389-ignore-init-problems.xml",
+                "--config=" + TEST_DATA_FILE.toString() + "/TIKA-2389-ignore-init-problems.xml",
                 resourcePrefix + "test_recursive_embedded.docx");
         assertTrue(content.contains("embed_1a"));
         //TODO: add a real unit test that configures logging to a file to test that nothing is
@@ -561,7 +540,7 @@ public class TikaCLITest {
     @Test
     public void testConfigSerializationCustomMinimal() throws Exception {
         String content =
-                getParamOutContent("--config=" + testDataFile.toString() + "/tika-config2.xml",
+                getParamOutContent("--config=" + TEST_DATA_FILE.toString() + "/tika-config2.xml",
                         "--dump-minimal-config").replaceAll("[\r\n\t ]+", " ");
 
         String expected = "<parser class=\"org.apache.tika.parser.DefaultParser\">" +
@@ -575,7 +554,7 @@ public class TikaCLITest {
     @Test
     public void testConfigSerializationCustomStatic() throws Exception {
         String content =
-                getParamOutContent("--config=" + testDataFile.toString() + "/tika-config2.xml",
+                getParamOutContent("--config=" + TEST_DATA_FILE.toString() + "/tika-config2.xml",
                         "--dump-static-config");
         assertFalse(content.contains("org.apache.tika.parser.executable.Executable"));
     }
