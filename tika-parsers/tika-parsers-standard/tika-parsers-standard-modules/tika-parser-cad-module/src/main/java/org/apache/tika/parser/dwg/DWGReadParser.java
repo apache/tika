@@ -93,6 +93,7 @@ public class DWGReadParser extends AbstractDWGParser {
         File tmpFileOutCleaned = File.createTempFile(uuid + "dwgreadoutclean", ".json");
         File tmpFileIn = File.createTempFile(uuid + "dwgreadin", ".dwg");
         try {
+            
 
             FileUtils.copyInputStreamToFile(stream, tmpFileIn);
 
@@ -104,9 +105,8 @@ public class DWGReadParser extends AbstractDWGParser {
             LOG.info("DWGRead Exit code is: " + fpr.getExitValue());
             if (fpr.getExitValue() == 0) {
                 if (dwgc.isCleanDwgReadOutput()) {
-                    // dwgread sometimes creates strings with invalid utf-8 sequences or invalid
-                    // json (nan instead of NaN). replace them
-                    // with empty string.
+                    // dwgread sometimes creates strings with invalid utf-8 sequences or invalid json
+                    //  replace them with empty string.
                     LOG.debug("Cleaning Json Output - Replace: " + dwgc.getCleanDwgReadRegexToReplace() + " with: "
                             + dwgc.getCleanDwgReadReplaceWith());
                     try (FileInputStream fis = new FileInputStream(tmpFileOut);
@@ -114,6 +114,8 @@ public class DWGReadParser extends AbstractDWGParser {
                         byte[] bytes = new byte[dwgc.getCleanDwgReadOutputBatchSize()];
                         while (fis.read(bytes) != -1) {
                             byte[] fixedBytes = new String(bytes, StandardCharsets.UTF_8)
+                      // We need to replace nan with 0 otherwise the json is incorrect
+                                    .replaceAll("nan,| nan","0")
                                     .replaceAll(dwgc.getCleanDwgReadRegexToReplace(), dwgc.getCleanDwgReadReplaceWith())
                                     .getBytes(StandardCharsets.UTF_8);
                             fos.write(fixedBytes, 0, fixedBytes.length);
@@ -250,7 +252,7 @@ public class DWGReadParser extends AbstractDWGParser {
                         jsonParser.nextToken(); // start array
                         int julianDay = jsonParser.getIntValue();
                         jsonParser.nextToken();
-                        int millisecondsIntoDay = jsonParser.getIntValue();
+                        int millisecondsIntoDay = jsonParser.getValueAsInt();
                         Instant instant = JulianDateUtil.toInstant(julianDay, millisecondsIntoDay);
                         jsonParser.nextToken(); // end array
                         if ("TDCREATE".equals(nextFieldName)) {

@@ -42,5 +42,6 @@ class JulianDateUtil {
     public static Instant toInstant(int julianDay, int millisecondsIntoDay) {
         return new JulianDateUtil(JulianDateUtil.JULIAN_DATE)
                 .toInstant(Double.parseDouble(julianDay + "." + millisecondsIntoDay));
+        
     }
 }

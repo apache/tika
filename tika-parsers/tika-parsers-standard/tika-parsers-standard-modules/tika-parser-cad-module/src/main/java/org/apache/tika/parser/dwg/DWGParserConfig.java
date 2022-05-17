@@ -40,7 +40,7 @@ public class DWGParserConfig implements Serializable {
     // default to 5 minutes, some large DWG's do take a while...
     private long dwgReadTimeout = 300000;
     // we need to remove non UTF chars and Nan's (dwgread outputs these as nan)
-    private String cleanDwgReadRegexToReplace = "[^\\x20-\\x7e]| nan,| nan ";
+    private String cleanDwgReadRegexToReplace = "[^\\x20-\\x7e]";
     private String cleanDwgReadReplaceWith = "";
     private boolean hasDwgRead;
     private static final Logger LOG = LoggerFactory.getLogger(DWGParserConfig.class);
