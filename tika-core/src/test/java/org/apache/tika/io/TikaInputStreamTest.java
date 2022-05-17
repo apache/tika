@@ -32,11 +32,15 @@ import java.nio.file.Paths;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
 public class TikaInputStreamTest {
+
+    @TempDir
+    Path tempDir;
 
     @Test
     public void testFileBased() throws IOException {
@@ -59,7 +63,6 @@ public class TikaInputStreamTest {
                 "The close() method must not remove the file used to" +
                 " instantiate a TikaInputStream");
 
-        Files.delete(path);
     }
 
     @Test
@@ -103,7 +106,7 @@ public class TikaInputStreamTest {
     }
 
     private Path createTempFile(String data) throws IOException {
-        Path file = Files.createTempFile("tika-", ".tmp");
+        Path file = Files.createTempFile(tempDir, "tika-", ".tmp");
         Files.write(file, data.getBytes(UTF_8));
         return file;
     }

@@ -29,13 +29,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import javax.ws.rs.core.Response;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.jaxrs.client.WebClient;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,6 +58,9 @@ public class IntegrationTestBase extends TikaTest {
     static final String INTEGRATION_TEST_PORT = "9999";
     protected static final String endPoint = "http://localhost:" + INTEGRATION_TEST_PORT;
     private static final Logger LOG = LoggerFactory.getLogger(IntegrationTestBase.class);
+
+    @TempDir
+    static Path TEMP_WORKING_DIR;
     static Path LOG_FILE;
     static Path STREAMS_DIR;
     private SecurityManager existingSecurityManager = null;
@@ -67,18 +69,14 @@ public class IntegrationTestBase extends TikaTest {
     @BeforeAll
     public static void staticSetup() throws Exception {
         LogUtils.setLoggerClass(NullWebClientLogger.class);
-        LOG_FILE = Files.createTempFile("tika-server-integration", ".xml");
+
+        LOG_FILE = Files.createTempFile(TEMP_WORKING_DIR, "tika-server-integration", ".xml");
         Files.copy(
                 TikaServerIntegrationTest.class.getResourceAsStream("/logging/log4j2_forked.xml"),
                 LOG_FILE, StandardCopyOption.REPLACE_EXISTING);
-        STREAMS_DIR = Files.createTempDirectory("tika-server-integration");
+        STREAMS_DIR = Files.createTempDirectory(TEMP_WORKING_DIR, "tika-server-integration");
     }
 
-    @AfterAll
-    public static void staticTearDown() throws Exception {
-        Files.delete(LOG_FILE);
-        FileUtils.deleteDirectory(STREAMS_DIR.toFile());
-    }
 
     @BeforeEach
     public void setUp() throws Exception {

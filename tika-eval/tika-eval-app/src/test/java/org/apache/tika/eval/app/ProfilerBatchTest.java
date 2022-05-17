@@ -85,7 +85,7 @@ public class ProfilerBatchTest {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-
+        //TODO: if/when we turn this back on, use @TempDir instead of this
 
         DirectoryStream<Path> dStream = Files.newDirectoryStream(dbDir);
         for (Path p : dStream) {

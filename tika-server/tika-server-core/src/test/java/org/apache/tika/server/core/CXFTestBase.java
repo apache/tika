@@ -164,17 +164,23 @@ public abstract class CXFTestBase {
 
     protected Map<String, String> readZipArchive(InputStream inputStream) throws IOException {
         Map<String, String> data = new HashMap<>();
-        Path tempFile = writeTemporaryArchiveFile(inputStream, "zip");
-        ZipFile zip = new ZipFile(tempFile.toFile());
-        Enumeration<ZipArchiveEntry> entries = zip.getEntries();
-        while (entries.hasMoreElements()) {
-            ZipArchiveEntry entry = entries.nextElement();
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            IOUtils.copy(zip.getInputStream(entry), bos);
-            data.put(entry.getName(), DigestUtils.md5Hex(bos.toByteArray()));
+        Path tempFile = null;
+        try {
+            tempFile = writeTemporaryArchiveFile(inputStream, "zip");
+            ZipFile zip = new ZipFile(tempFile.toFile());
+            Enumeration<ZipArchiveEntry> entries = zip.getEntries();
+            while (entries.hasMoreElements()) {
+                ZipArchiveEntry entry = entries.nextElement();
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                IOUtils.copy(zip.getInputStream(entry), bos);
+                data.put(entry.getName(), DigestUtils.md5Hex(bos.toByteArray()));
+            }
+            zip.close();
+        } finally {
+            if (tempFile != null ) {
+                Files.delete(tempFile);
+            }
         }
-        zip.close();
-        Files.delete(tempFile);
         return data;
     }
 

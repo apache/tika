@@ -36,11 +36,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FileUtils;
 import org.apache.cxf.jaxrs.client.WebClient;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,6 +61,8 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
     private static final String FETCHER_NAME = "fsf";
     private static FetchEmitTuple.ON_PARSE_EXCEPTION ON_PARSE_EXCEPTION =
             FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT;
+
+    @TempDir
     private static Path TMP_DIR;
     private static Path TMP_OUTPUT_DIR;
     private static String TIKA_CONFIG_XML;
@@ -75,7 +77,6 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
 
     @BeforeAll
     public static void setUpBeforeClass() throws Exception {
-        TMP_DIR = Files.createTempDirectory("tika-emitter-test-");
         Path inputDir = TMP_DIR.resolve("input");
         TMP_OUTPUT_DIR = TMP_DIR.resolve("output");
         Files.createDirectories(inputDir);
@@ -125,10 +126,6 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
         FileUtils.write(TIKA_CONFIG.toFile(), TIKA_CONFIG_XML, UTF_8);
     }
 
-    @AfterAll
-    public static void tearDownAfterClass() throws Exception {
-        FileUtils.deleteDirectory(TMP_DIR.toFile());
-    }
 
     @BeforeEach
     public void setUpEachTest() throws Exception {

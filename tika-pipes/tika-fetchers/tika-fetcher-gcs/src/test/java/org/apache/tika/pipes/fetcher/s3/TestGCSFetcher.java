@@ -24,10 +24,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.fetcher.Fetcher;
@@ -37,17 +37,16 @@ import org.apache.tika.pipes.fetcher.FetcherManager;
 public class TestGCSFetcher {
 
     private static final String FETCH_STRING = "testExtraSpaces.pdf";
+
+    @TempDir
+    private static Path TEMP_DIR;
     private static Path outputFile;
 
     @BeforeAll
     public static void setUp() throws Exception {
-        outputFile = Files.createTempFile("tika-test", ".pdf");
+        outputFile = Files.createTempFile(TEMP_DIR, "tika-test", ".pdf");
     }
 
-    @AfterAll
-    public static void tearDown() throws Exception {
-        Files.delete(outputFile);
-    }
 
     @Test
     public void testConfig() throws Exception {

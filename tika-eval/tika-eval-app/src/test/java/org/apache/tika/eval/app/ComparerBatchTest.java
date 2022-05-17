@@ -35,11 +35,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.batch.fs.FSBatchTestBase;
 import org.apache.tika.eval.app.db.Cols;
@@ -50,6 +50,8 @@ public class ComparerBatchTest extends FSBatchTestBase {
     public final static String COMPARER_PROCESS_CLASS =
             "org.apache.tika.batch.fs.FSBatchProcessCLI";
     private final static String compJoinCont = "";
+
+    @TempDir
     private static Path dbDir;
     private static Connection conn;
     /*ExtractComparer.COMPARISONS_TABLE+" cmp " +
@@ -80,10 +82,7 @@ public class ComparerBatchTest extends FSBatchTestBase {
 
     @AfterAll
     public static void tearDown() throws Exception {
-
         conn.close();
-
-        FileUtils.deleteDirectory(dbDir.toFile());
     }
 
 
