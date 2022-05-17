@@ -24,7 +24,7 @@ import java.io.File;
 import java.io.PrintStream;
 
 import org.apache.commons.io.FileUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 

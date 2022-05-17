@@ -16,12 +16,12 @@
  */
 package org.apache.tika.batch.fs;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class FSUtilTest {
 
@@ -30,20 +30,10 @@ public class FSUtilTest {
         Path cwd = Paths.get(".");
         String windows = "C:/temp/file.txt";
         String linux = "/root/dir/file.txt";
-        boolean ex = false;
-        try {
-            FSUtil.resolveRelative(cwd, windows);
-        } catch (IllegalArgumentException e) {
-            ex = true;
-        }
-
-        try {
+        assertThrows(IllegalArgumentException.class, () -> {
             FSUtil.resolveRelative(cwd, linux);
-        } catch (IllegalArgumentException e) {
-            ex = true;
-        }
-
-        assertTrue("IllegalArgumentException should have been thrown", ex);
+            FSUtil.resolveRelative(cwd, windows);
+        });
     }
 
 }

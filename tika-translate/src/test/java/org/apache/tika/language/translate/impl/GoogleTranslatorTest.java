@@ -17,11 +17,13 @@
 
 package org.apache.tika.language.translate.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 
-import org.junit.Before;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.language.translate.impl.GoogleTranslator;
 
@@ -38,11 +40,12 @@ public class GoogleTranslatorTest  {
 
 	}
 
-	@Before
+	@BeforeEach
 	public void setUp() {
 		translator = new GoogleTranslator();
 	}
 
+	@Test
 	public void testSimpleTranslate() {
 		String source = "hola senor";
 		String expected = "hello sir";
@@ -52,9 +55,8 @@ public class GoogleTranslatorTest  {
 			try {
 				result = translator.translate(source, "es", "en");
 				assertNotNull(result);
-				assertEquals("Result: [" + result
-						+ "]: not equal to expected: [" + expected + "]",
-						expected, result);
+				assertEquals(expected, result, "Result: [" + result
+						+ "]: not equal to expected: [" + expected + "]");
 			} catch (Exception e) {
 				e.printStackTrace();
 				fail(e.getMessage());
@@ -62,6 +64,7 @@ public class GoogleTranslatorTest  {
 		}
 	}
 
+	@Test
 	public void testTranslateGuessLanguage() {
 		String source = "bonjour comment vas-tu";
 		String expected = "hello how are you";
@@ -71,9 +74,8 @@ public class GoogleTranslatorTest  {
 			try {
 				result = translator.translate(source, "en");
 				assertNotNull(result);
-				assertEquals("Result: [" + result
-						+ "]: not equal to expected: [" + expected + "]",
-						expected, result);
+				assertEquals(expected, result, "Result: [" + result
+						+ "]: not equal to expected: [" + expected + "]");
 			} catch (Exception e) {
 				e.printStackTrace();
 				fail(e.getMessage());

@@ -35,6 +35,7 @@
     <module>tika-pipes-solr-integration-tests</module>
     <module>tika-pipes-opensearch-integration-tests</module>
     <module>tika-pipes-s3-integration-tests</module>
+    <module>tika-resource-loading-tests</module>
   </modules>
 
   <dependencies>

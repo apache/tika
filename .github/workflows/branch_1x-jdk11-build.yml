@@ -19,7 +19,7 @@ name: branch_1x jdk11 build
 
 on:
   push:
-    branches: [ main ]
+    branches: [ branch_1x ]
 
 jobs:
   build:

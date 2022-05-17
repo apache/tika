@@ -17,9 +17,9 @@
 package org.apache.tika.cli;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -31,9 +31,9 @@ import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.utils.ProcessUtils;
 
@@ -45,7 +45,7 @@ public class TikaCLIBatchCommandLineTest {
     String testInputPathForCommandLine;
     String escapedInputPathForCommandLine;
 
-    @Before
+    @BeforeEach
     public void init() {
         testInput = Paths.get("testInput");
         try {
@@ -64,7 +64,7 @@ public class TikaCLIBatchCommandLineTest {
                 BatchCommandLineBuilder.commandLineSafe(testInputPathForCommandLine);
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         try {
             //TODO: refactor this to use our FileUtils.deleteDirectory(Path)
@@ -186,7 +186,7 @@ public class TikaCLIBatchCommandLineTest {
         } catch (IllegalArgumentException e) {
             ex = true;
         }
-        assertTrue("exception on <dir> <file>", ex);
+        assertTrue(ex, "exception on <dir> <file>");
     }
 
     private Map<String, String> mapify(String[] args) {

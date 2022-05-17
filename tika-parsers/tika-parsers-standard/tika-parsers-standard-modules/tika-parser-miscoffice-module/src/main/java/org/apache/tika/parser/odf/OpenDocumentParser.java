@@ -309,7 +309,7 @@ public class OpenDocumentParser extends AbstractParser {
 
                 if (embeddedDocumentUtil.shouldParseEmbedded(embeddedMetadata)) {
                     embeddedDocumentUtil.parseEmbedded(stream, new EmbeddedContentHandler(handler),
-                            embeddedMetadata, true);
+                            embeddedMetadata, false);
                 }
             } else if (extractMacros && embeddedName.contains("Basic/")) {
                 //process all files under Basic/; let maybeHandleMacro figure

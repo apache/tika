@@ -16,11 +16,11 @@
  */
 package org.apache.tika.langdetect.tika;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 @Deprecated
 public class ProfilingWriterTest {

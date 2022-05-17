@@ -39,8 +39,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.batch.BatchProcess;
@@ -68,14 +68,14 @@ public abstract class FSBatchTestBase extends TikaTest {
 
     private static Path outputRoot = null;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws Exception {
         Path testOutput = Paths.get("target/test-classes/test-output");
         Files.createDirectories(testOutput);
         outputRoot = Files.createTempDirectory(testOutput, "tika-batch-output-root-");
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() throws Exception {
         //not ideal, but should be ok for testing
         //see caveat in TikaCLITest's textExtract

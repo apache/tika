@@ -270,24 +270,25 @@
     <project.build.outputTimestamp>1651168422</project.build.outputTimestamp>
     <!-- plugin versions -->
     <checkstyle.plugin.version>3.1.2</checkstyle.plugin.version>
-    <forbiddenapis.version>3.2</forbiddenapis.version>
+    <forbiddenapis.version>3.3</forbiddenapis.version>
     <groovy.maven.version>2.1.1</groovy.maven.version>
-    <maven.antrun.version>3.0.0</maven.antrun.version>
+    <maven.antrun.version>3.1.0</maven.antrun.version>
     <maven.assembly.version>3.3.0</maven.assembly.version>
+    <!-- 5.1.5 sometimes brings "Error checking manifest uptodate status" in tika-parser-html-commons -->
     <maven.bundle.version>5.1.4</maven.bundle.version>
-    <maven.compiler.plugin.version>3.10.0</maven.compiler.plugin.version>
-    <maven.failsafe.version>3.0.0-M5</maven.failsafe.version>
-    <maven.javadoc.version>3.3.2</maven.javadoc.version>
+    <maven.compiler.plugin.version>3.10.1</maven.compiler.plugin.version>
+    <maven.failsafe.version>3.0.0-M6</maven.failsafe.version>
+    <maven.javadoc.version>3.4.0</maven.javadoc.version>
     <maven.jar.version>3.2.2</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.surefire.version>3.0.0-M6</maven.surefire.version>
-    <maven.shade.version>3.2.4</maven.shade.version>
-    <!-- need above java 8 for 10.[0-1] -->
+    <maven.shade.version>3.3.0</maven.shade.version>
+    <!-- need above java 8 for 10.[0-2] -->
     <puppycrawl.version>9.3</puppycrawl.version>
     <rat.version>0.13</rat.version>
 
     <!-- dependency versions -->
-    <aws.version>1.12.206</aws.version>
+    <aws.version>1.12.220</aws.version>
     <asm.version>9.3</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
@@ -343,7 +344,7 @@
     <lombok.version>1.18.20</lombok.version>
     <!-- lucene >= 9.x requires Java 11 -->
     <lucene.version>8.11.1</lucene.version>
-    <metadata.extractor.version>2.17.0</metadata.extractor.version>
+    <metadata.extractor.version>2.18.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <!-- 0.8.6 is built with java 11 and does not work with Java 8 -->
     <mime4j.version>0.8.4</mime4j.version>
@@ -370,7 +371,7 @@
     <!-- we'll need to stay on 1.7 until we're java modularized ? -->
     <slf4j.version>1.7.36</slf4j.version>
     <solrj.version>8.11.1</solrj.version>
-    <spring.version>5.3.19</spring.version>
+    <spring.version>5.3.20</spring.version>
     <sqlite.version>3.36.0.3</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
     <test.containers.version>1.17.1</test.containers.version>
@@ -614,7 +615,7 @@
         <artifactId>jdom2</artifactId>
         <version>${jdom2.version}</version>
       </dependency>
-      <!-- dependency convergence problems with jakarata.activation if > 2.0.1 -->
+      <!-- dependency convergence problems with jakarta.activation if > 2.0.1 on jdk11 -->
       <dependency>
         <groupId>org.jvnet.staxex</groupId>
         <artifactId>stax-ex</artifactId>

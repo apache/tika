@@ -17,8 +17,8 @@
 
 package org.apache.tika.eval.app;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -34,17 +34,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.H2Util;
 import org.apache.tika.eval.app.db.TableInfo;
 import org.apache.tika.eval.app.io.ExtractReaderException;
 
-@Ignore
+@Disabled
 public class ProfilerBatchTest {
 
     public final static String COMPARER_PROCESS_CLASS =
@@ -55,7 +55,7 @@ public class ProfilerBatchTest {
     private static Path dbDir;
     private static Connection conn;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws Exception {
 
         Path inputRoot = Paths.get(
@@ -77,7 +77,7 @@ public class ProfilerBatchTest {
         conn = dbUtil.getConnection();
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() throws IOException {
 
         try {
@@ -119,11 +119,11 @@ public class ProfilerBatchTest {
         debugTable(ExtractProfiler.EXCEPTION_TABLE);
         debugTable(ExtractProfiler.EXTRACT_EXCEPTION_TABLE);
         assertEquals(10, fNameList.size());
-        assertTrue("file1.pdf", fNameList.contains("file1.pdf"));
-        assertTrue("file2_attachANotB.doc", fNameList.contains("file2_attachANotB.doc"));
-        assertTrue("file3_attachBNotA.doc", fNameList.contains("file3_attachBNotA.doc"));
-        assertTrue("file4_emptyB.pdf", fNameList.contains("file4_emptyB.pdf"));
-        assertTrue("file7_badJson.pdf", fNameList.contains("file7_badJson.pdf"));
+        assertTrue(fNameList.contains("file1.pdf"), "file1.pdf");
+        assertTrue(fNameList.contains("file2_attachANotB.doc"), "file2_attachANotB.doc");
+        assertTrue(fNameList.contains("file3_attachBNotA.doc"), "file3_attachBNotA.doc");
+        assertTrue(fNameList.contains("file4_emptyB.pdf"), "file4_emptyB.pdf");
+        assertTrue(fNameList.contains("file7_badJson.pdf"), "file4_emptyB.pdf");
     }
 
     @Test
@@ -180,12 +180,12 @@ public class ProfilerBatchTest {
         int hits = 0;
         String val = "";
         while (rs.next()) {
-            assertEquals("must have only one column in result", 1,
-                    rs.getMetaData().getColumnCount());
+            assertEquals(1,
+                    rs.getMetaData().getColumnCount(), "must have only one column in result");
             val = rs.getString(1);
             hits++;
         }
-        assertEquals("must have only one hit", 1, hits);
+        assertEquals(1, hits, "must have only one hit");
         return val;
     }
 

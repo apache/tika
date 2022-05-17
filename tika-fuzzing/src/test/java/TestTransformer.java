@@ -22,15 +22,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.fuzzing.general.GeneralTransformer;
 
 public class TestTransformer {
 
     @Test
-    @Ignore
+    @Disabled
     public void testBasic() throws Exception {
         //turn into actual unit test
         Path path = Paths.get("");//put something meaningful here

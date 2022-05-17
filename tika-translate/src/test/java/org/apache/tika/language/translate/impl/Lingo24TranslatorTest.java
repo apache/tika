@@ -16,13 +16,12 @@
  */
 package org.apache.tika.language.translate.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
-import org.junit.Before;
-
-import org.apache.tika.language.translate.impl.Lingo24Translator;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test harness for the {@link Lingo24Translator}.
@@ -32,11 +31,12 @@ public class Lingo24TranslatorTest {
 
     private Lingo24Translator translator;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         translator = new Lingo24Translator();
     }
 
+    @Test
     public void testSimpleTranslate() {
         String source = "Hola, hoy es un día genial para traducir";
         String expected = "Hello, today is a great day to translate";
@@ -46,9 +46,9 @@ public class Lingo24TranslatorTest {
             try {
                 result = translator.translate(source, "es", "en");
                 assertNotNull(result);
-                assertEquals("Result: [" + result
-                                + "]: not equal to expected: [" + expected + "]",
-                        expected, result);
+                assertEquals(
+                        expected, result, "Result: [" + result
+                                + "]: not equal to expected: [" + expected + "]");
             } catch (Exception e) {
                 e.printStackTrace();
                 fail(e.getMessage());
@@ -56,6 +56,7 @@ public class Lingo24TranslatorTest {
         }
     }
 
+    @Test
     public void testTranslateGuessLanguage() {
         String source = "C'est une merveilleuse journée pour traduction";
         String expected = "It is a wonderful day for translation";
@@ -65,9 +66,9 @@ public class Lingo24TranslatorTest {
             try {
                 result = translator.translate(source, "en");
                 assertNotNull(result);
-                assertEquals("Result: [" + result
-                                + "]: not equal to expected: [" + expected + "]",
-                        expected, result);
+                assertEquals(expected, result,
+                        "Result: [" + result
+                                + "]: not equal to expected: [" + expected + "]");
             } catch (Exception e) {
                 e.printStackTrace();
                 fail(e.getMessage());

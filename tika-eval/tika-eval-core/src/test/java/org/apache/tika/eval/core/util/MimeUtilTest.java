@@ -18,18 +18,18 @@
 package org.apache.tika.eval.core.util;
 
 
-import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
 
-@Ignore("Fix mimetype.getExtension to work with these and then we can get rid of MimeUtil")
+@Disabled("Fix mimetype.getExtension to work with these and then we can get rid of MimeUtil")
 public class MimeUtilTest {
 
     private final TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
@@ -52,7 +52,7 @@ public class MimeUtilTest {
         } catch (MimeTypeException e) {
             ex = true;
         }
-        assertTrue("Should have had exception for: " + contentType, ex);
+        assertTrue(ex, "Should have had exception for: " + contentType);
     }
 
     private void assertResult(String contentType, String expected) throws MimeTypeException {

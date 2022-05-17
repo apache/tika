@@ -33,4 +33,6 @@ public interface PagedText {
      */
     Property N_PAGES = Property.internalInteger("xmpTPg:NPages");
 
+    //TODO MaxPageSize, Fonts, Colorants, PlateNames
+
 }

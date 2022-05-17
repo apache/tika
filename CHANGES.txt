@@ -1,3 +1,13 @@
+Release 2.4.1 - ???
+
+   * Add stop() method to TikaServerCli so that it can be run
+     with Apache Commons Daemon (TIKA-1570).
+
+   * Fixed bug in ordering of Parsers during service loading (TIKA-3750).
+
+   * Users can expand system properties from the forking
+     process into forked tika-server processes (TIKA-3748).
+
 Release 2.4.0 - 04/23/2022
 
    * NOTE: To save on resources, we no longer include the
