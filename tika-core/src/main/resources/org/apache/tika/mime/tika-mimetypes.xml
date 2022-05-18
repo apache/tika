@@ -440,16 +440,18 @@
     <magic priority="50">
       <!-- built from, e.g. https://www.loc.gov/marc/community/cileader.html -->
       <match value="[0-9]{5,5}" type="regex" offset="0">
-        <!-- bibliographic -->
-        <match value="[acdnp][acdefgijkmoprt][abcdims]" type="regex" offset="5"/>
-        <!-- authority-->
-        <match value="[acdnosx]z" type="regex" offset="5"/>
-        <!-- holdings -->
-        <match value="[cdn][uvxy]" type="regex" offset="5"/>
-        <!-- classification -->
-        <match value="[acdn]w" type="regex" offset="5"/>
-        <!-- community -->
-        <match value="[cdn]q" type="regex" offset="5"/>
+        <match value="45" type="string" offset="20">
+          <!-- bibliographic -->
+          <match value="[acdnp][acdefgijkmoprt][abcdims]" type="regex" offset="5"/>
+          <!-- authority-->
+          <match value="[acdnosx]z" type="regex" offset="5"/>
+          <!-- holdings -->
+          <match value="[cdn][uvxy]" type="regex" offset="5"/>
+          <!-- classification -->
+          <match value="[acdn]w" type="regex" offset="5"/>
+          <!-- community -->
+          <match value="[cdn]q" type="regex" offset="5"/>
+        </match>
       </match>
     </magic>
   </mime-type>
