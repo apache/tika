@@ -32,15 +32,14 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.ws.rs.core.Response;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
@@ -68,8 +67,12 @@ import org.apache.tika.utils.ProcessUtils;
 public class TikaPipesTest extends CXFTestBase {
 
     private static final String PIPES_PATH = "/pipes";
-    private static Path TMP_DIR;
+
+    @TempDir
+    private static Path TMP_WORKING_DIR;
+
     private static Path TMP_OUTPUT_DIR;
+
     private static Path TMP_OUTPUT_FILE;
     private static Path TIKA_PIPES_LOG4j2_PATH;
     private static Path TIKA_CONFIG_PATH;
@@ -79,9 +82,8 @@ public class TikaPipesTest extends CXFTestBase {
 
     @BeforeAll
     public static void setUpBeforeClass() throws Exception {
-        TMP_DIR = Files.createTempDirectory("tika-pipes-test-");
-        Path inputDir = TMP_DIR.resolve("input");
-        TMP_OUTPUT_DIR = TMP_DIR.resolve("output");
+        Path inputDir = TMP_WORKING_DIR.resolve("input");
+        TMP_OUTPUT_DIR = TMP_WORKING_DIR.resolve("output");
         TMP_OUTPUT_FILE = TMP_OUTPUT_DIR.resolve(TEST_RECURSIVE_DOC + ".json");
 
         Files.createDirectories(inputDir);
@@ -90,8 +92,8 @@ public class TikaPipesTest extends CXFTestBase {
                 inputDir.resolve("test_recursive_embedded.docx"),
                 StandardCopyOption.REPLACE_EXISTING);
 
-        TIKA_CONFIG_PATH = Files.createTempFile(TMP_DIR, "tika-pipes-", ".xml");
-        TIKA_PIPES_LOG4j2_PATH = Files.createTempFile(TMP_DIR, "log4j2-", ".xml");
+        TIKA_CONFIG_PATH = Files.createTempFile(TMP_WORKING_DIR, "tika-pipes-", ".xml");
+        TIKA_PIPES_LOG4j2_PATH = Files.createTempFile(TMP_WORKING_DIR, "log4j2-", ".xml");
         Files.copy(TikaPipesTest.class.getResourceAsStream("/log4j2.xml"), TIKA_PIPES_LOG4j2_PATH,
                 StandardCopyOption.REPLACE_EXISTING);
 
@@ -119,10 +121,6 @@ public class TikaPipesTest extends CXFTestBase {
         Files.write(TIKA_CONFIG_PATH, TIKA_CONFIG_XML.getBytes(StandardCharsets.UTF_8));
     }
 
-    @AfterAll
-    public static void tearDownAfterClass() throws Exception {
-        FileUtils.deleteDirectory(TMP_DIR.toFile());
-    }
 
     @BeforeEach
     public void setUpEachTest() throws Exception {

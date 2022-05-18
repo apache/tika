@@ -382,6 +382,9 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
     }
 
     private int countTemporaryFiles() {
+        //TODO: fix this.  This can prevent multiple parallel builds
+        //from running at the same time because there can be more than one
+        //process writing to apache-tika-*
         return Objects.requireNonNull(new File(System.getProperty("java.io.tmpdir"))
                 .listFiles((dir, name) -> name.startsWith("apache-tika-"))).length;
     }

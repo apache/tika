@@ -20,13 +20,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.utils.RereadableInputStream;
 
@@ -46,6 +47,9 @@ public class TestRereadableInputStream {
 
     // This size of data exactly equals memory threshold
     private final int TEST_SIZE_MAX = MEMORY_THRESHOLD;
+
+    @TempDir
+    private Path tempDir;
 
     @Test
     public void testInMemory() throws IOException {
@@ -135,17 +139,16 @@ public class TestRereadableInputStream {
 
     private TestInputStream createTestInputStream(int testSize) throws IOException {
         return new TestInputStream(
-                new BufferedInputStream(new FileInputStream(createTestFile(testSize))));
+                new BufferedInputStream(Files.newInputStream(createTestFile(testSize))));
     }
 
-    private File createTestFile(int testSize) throws IOException {
-        File testfile = File.createTempFile("TIKA_ris_test", ".tmp");
-        testfile.deleteOnExit();
-        FileOutputStream fos = new FileOutputStream(testfile);
-        for (int i = 0; i < testSize; i++) {
-            fos.write(i);
+    private Path createTestFile(int testSize) throws IOException {
+        Path testfile = Files.createTempFile(tempDir, "TIKA_ris_test", ".tmp");
+        try (OutputStream fos = Files.newOutputStream(testfile)) {
+            for (int i = 0; i < testSize; i++) {
+                fos.write(i);
+            }
         }
-        fos.close();
         return testfile;
     }
 
