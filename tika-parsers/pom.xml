@@ -45,7 +45,7 @@
     <tukaani.version>1.9</tukaani.version>
     <!-- NOTE: sync brotli version with commons-compress in tika-parent-->
     <brotli.version>0.1.2</brotli.version>
-    <mime4j.version>0.8.4</mime4j.version>
+    <mime4j.version>0.8.4</mime4j.version> <!-- 0.8.5 and higher fail with ByteBuffer.flip() -->
     <vorbis.version>0.8</vorbis.version>
     <pdfbox.version>2.0.26</pdfbox.version>
     <jempbox.version>1.8.16</jempbox.version>
