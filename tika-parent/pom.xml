@@ -260,16 +260,16 @@
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
     <project.build.outputTimestamp>1</project.build.outputTimestamp>
     <!-- plugin versions -->
-    <forbiddenapis.version>3.2</forbiddenapis.version>
+    <forbiddenapis.version>3.3</forbiddenapis.version>
     <groovy.maven.version>2.1.1</groovy.maven.version>
     <maven.antrun.version>1.8</maven.antrun.version>
     <maven.assembly.version>3.3.0</maven.assembly.version>
-    <maven.bundle.version>5.1.1</maven.bundle.version>
+    <maven.bundle.version>5.1.6</maven.bundle.version>
     <maven.failsafe.version>2.22.2</maven.failsafe.version>
     <maven.javadoc.version>3.3.1</maven.javadoc.version>
     <maven.scr.version>1.26.4</maven.scr.version>
-    <maven.surefire.version>3.0.0-M4</maven.surefire.version>
-    <maven.shade.version>3.2.4</maven.shade.version>
+    <maven.surefire.version>3.0.0-M6</maven.surefire.version>
+    <maven.shade.version>3.3.0</maven.shade.version>
     <rat.version>0.13</rat.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
     <poi.version>5.2.2</poi.version>
