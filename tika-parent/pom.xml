@@ -274,8 +274,7 @@
     <groovy.maven.version>2.1.1</groovy.maven.version>
     <maven.antrun.version>3.1.0</maven.antrun.version>
     <maven.assembly.version>3.3.0</maven.assembly.version>
-    <!-- 5.1.5 sometimes brings "Error checking manifest uptodate status" in tika-parser-html-commons -->
-    <maven.bundle.version>5.1.4</maven.bundle.version>
+    <maven.bundle.version>5.1.6</maven.bundle.version>
     <maven.compiler.plugin.version>3.10.1</maven.compiler.plugin.version>
     <maven.failsafe.version>3.0.0-M6</maven.failsafe.version>
     <maven.javadoc.version>3.4.0</maven.javadoc.version>
