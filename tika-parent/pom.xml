@@ -287,7 +287,7 @@
     <rat.version>0.13</rat.version>
 
     <!-- dependency versions -->
-    <aws.version>1.12.222</aws.version>
+    <aws.version>1.12.223</aws.version>
     <asm.version>9.3</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
@@ -369,7 +369,7 @@
     <sis.version>1.1</sis.version>
     <!-- we'll need to stay on 1.7 until we're java modularized ? -->
     <slf4j.version>1.7.36</slf4j.version>
-    <solrj.version>8.11.1</solrj.version>
+    <solrj.version>9.0.0</solrj.version>
     <spring.version>5.3.20</spring.version>
     <sqlite.version>3.36.0.3</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
