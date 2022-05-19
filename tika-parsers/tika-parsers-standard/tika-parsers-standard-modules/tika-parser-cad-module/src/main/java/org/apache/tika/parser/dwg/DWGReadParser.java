@@ -17,11 +17,15 @@
 
 package org.apache.tika.parser.dwg;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
@@ -58,13 +62,24 @@ import org.apache.tika.utils.ProcessUtils;
 
 
 /**
- * DWGReadParser (CAD Drawing) parser. This extends the original DWGParser if in the parser configuration DwgRead is
- * set. DWG reader can be found here: https://github.com/LibreDWG/libredwg DWGRead outputs json which we then loop
- * through extracting the text elements The required configuration is dwgReadExecutable. The other settings which can be
- * overwritten are: boolean : cleanDwgReadOutput - whether to clean the json output int : cleanDwgReadOutputBatchSize -
- * clean output batch size to process long : dwgReadTimeout -timeout in milliseconds before killing the dwgread process
- * String : cleanDwgReadRegexToReplace - characters to replace in the json String : cleanDwgReadReplaceWith -
- * replacement characters dwgReadExecutable
+ * DWGReadParser (CAD Drawing) parser. This extends the original DWGParser if in 
+ * the parser configuration DwgRead is set. DWG reader can be found here: 
+ * <p>
+ * https://github.com/LibreDWG/libredwg 
+ * <p>
+ * DWGRead outputs json which we then loop through extracting the text elements 
+ * The required configuration is dwgReadExecutable. The other settings which can be
+ * overwritten are: 
+ * <p>
+ * boolean : cleanDwgReadOutput - whether to clean the json output 
+ * <p>
+ * int : cleanDwgReadOutputBatchSize - clean output batch size to process 
+ * <p>
+ * long : dwgReadTimeout -timeout in milliseconds before killing the dwgread process
+ * <p>
+ * String : cleanDwgReadRegexToReplace - characters to replace in the json 
+ * <p>
+ * String : cleanDwgReadReplaceWith - * replacement characters dwgReadExecutable
  */
 
 public class DWGReadParser extends AbstractDWGParser {
@@ -105,22 +120,36 @@ public class DWGReadParser extends AbstractDWGParser {
             LOG.info("DWGRead Exit code is: " + fpr.getExitValue());
             if (fpr.getExitValue() == 0) {
                 if (dwgc.isCleanDwgReadOutput()) {
-                    // dwgread sometimes creates strings with invalid utf-8 sequences or invalid json
-                    //  replace them with empty string.
-                    LOG.debug("Cleaning Json Output - Replace: " + dwgc.getCleanDwgReadRegexToReplace() + " with: "
-                            + dwgc.getCleanDwgReadReplaceWith());
-                    try (FileInputStream fis = new FileInputStream(tmpFileOut);
-                            FileOutputStream fos = new FileOutputStream(tmpFileOutCleaned)) {
-                        byte[] bytes = new byte[dwgc.getCleanDwgReadOutputBatchSize()];
-                        while (fis.read(bytes) != -1) {
-                            byte[] fixedBytes = new String(bytes, StandardCharsets.UTF_8)
-                      // We need to replace nan with 0 otherwise the json is incorrect
-                                    .replaceAll("nan,| nan","0")
-                                    .replaceAll(dwgc.getCleanDwgReadRegexToReplace(), dwgc.getCleanDwgReadReplaceWith())
-                                    .getBytes(StandardCharsets.UTF_8);
-                            fos.write(fixedBytes, 0, fixedBytes.length);
-                        }
+                    // dwgread sometimes creates strings with invalid utf-8 sequences or invalid
+                    // json (nan instead of NaN). replace them
+                    // with empty string.
+                    LOG.debug("Cleaning Json Output - Replace: " + dwgc.getCleanDwgReadRegexToReplace() 
+                              + " with: " + dwgc.getCleanDwgReadReplaceWith());
+                    try ( BufferedReader br = new BufferedReader(
+                              new InputStreamReader(
+                                    new FileInputStream(tmpFileOut), 
+                              StandardCharsets.UTF_8));
+                            
+                            BufferedWriter out = new BufferedWriter(
+                                    new OutputStreamWriter(
+                                            new FileOutputStream(tmpFileOutCleaned, true), 
+                                            StandardCharsets.UTF_8),32768);)
+                    {
+
+                        String sCurrentLine;
+                        while ((sCurrentLine = br.readLine()) != null) 
+                        {
+                            sCurrentLine = sCurrentLine
+                                            .replaceAll( dwgc.getCleanDwgReadRegexToReplace(), 
+                                                    dwgc.getCleanDwgReadReplaceWith())
+                                            .replaceAll(" nan,", " 0,")
+                                            .replaceAll(" nan ", " 0 ")
+                                            .replaceAll("\\.,", " \\. ,") + "\n";
+                            out.write(sCurrentLine);
+                        }                            
+                                 
                     } finally {
+                        FileUtils.deleteQuietly(tmpFileIn);
                         FileUtils.deleteQuietly(tmpFileOut);
                         tmpFileOut = tmpFileOutCleaned;
                     }
@@ -138,8 +167,13 @@ public class DWGReadParser extends AbstractDWGParser {
             // we can't guarantee the json output is correct so we try to ignore as many
             // errors as we can
             JsonFactory jfactory = JsonFactory.builder()
-                    .enable(JsonReadFeature.ALLOW_MISSING_VALUES, JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS,
-                            JsonReadFeature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER)
+                    .enable(JsonReadFeature.ALLOW_MISSING_VALUES, 
+                            JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS,
+                            JsonReadFeature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER, 
+                            JsonReadFeature.ALLOW_UNQUOTED_FIELD_NAMES, 
+                            JsonReadFeature.ALLOW_TRAILING_COMMA,
+                            JsonReadFeature.ALLOW_NON_NUMERIC_NUMBERS, 
+                            JsonReadFeature.ALLOW_LEADING_ZEROS_FOR_NUMBERS)
                     .build();
             JsonParser jParser;
             try {
@@ -288,41 +322,52 @@ public class DWGReadParser extends AbstractDWGParser {
         // website's:
         // https://www.cadforum.cz/en/text-formatting-codes-in-mtext-objects-tip8640
         // https://adndevblog.typepad.com/autocad/2017/09/dissecting-mtext-format-codes.html
+        // These have also been spotted (pxqc,pxqr,pxql,simplex)
         // We always to do a backwards look to make sure the string to replace hasn't
         // been escaped
         String cleanString;
         // replace A0-2 (Alignment)
         cleanString = dwgString.replaceAll("(?<!\\\\)\\\\A[0-2];", "");
         // replace \\p (New paragraph/ new line) and with new line
-        cleanString = cleanString.replaceAll("(?<!\\\\\\\\)\\\\P", "\\n");
+        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\P", "\n");
         // remove pi (numbered paragraphs)
-        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pi.*;", "");
+        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pi(.*?);", "");
         // remove pxi (bullets)
-        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pxi.*;", "");
+        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pxi(.*?);", "");
         // remove pxt (tab stops)
-        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pxt.*;", "");
+        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pxt(.*?);", "");
+        // remove pt (tabs)
+        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pt(.*?);", "");
         // remove lines with \H (text height)
-        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\H[0-9]*.*;", "");
+        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\H[0-9]*(.*?);", "");
         // remove lines with \F Font Selection
-        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\F.*;", "");
+        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\F|f(.*?);", "");
         // Replace \L \l (underlines)
-        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\L)(.*)(\\\\l)", "$2");
+        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\L)(.*?)(\\\\l)", "$2");
         // Replace \O \o (over strikes)
-        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\O)(.*)(\\\\o)", "$2");
+        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\O)(.*?)(\\\\o)", "$2");
         // Replace \K \k (Strike through)
-        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\K)(.*)(\\\\k)", "$2");
+        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\K)(.*?)(\\\\k)", "$2");
         // Replace \N (new Column)
         cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\N)", "\t");
         // Replace \Q (text angle)
         cleanString = cleanString.replaceAll("(?<!\\\\)\\\\Q[\\d];", "");
         // Replace \W (Text Width)
-        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\W[.*];", "");
+        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\W(.*?);", "");
         // Replace \S (Stacking)
-        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\S[.*]:", "");
+        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\S(.*?):", "");
         // Replace \C (Stacking)
-        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\C[1-7];)", "");
+        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\C|c[1-7];)", "");
         // Replace \T (Tracking)
-        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\T[0-9];)", "");
+        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\T(.*?);)", "");
+        // Replace \pxqc mtext justfication 
+        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\pxqc;)", "");
+        // Replace \pxqr mtext justfication 
+        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\pxqr;)", "");
+        // Replace \pxql mtext justfication 
+        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\pxql;)", "");
+        // Replace \simplex (simplex)
+        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\simplex\\|c(.*?);)", "");
         // Now we have cleaned the formatting we can now remove the escaped \
         cleanString = cleanString.replaceAll("(\\\\)", "\\\\");
         // Replace {} (text formatted by the above)

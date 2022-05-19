@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import java.io.InputStream;
 import java.util.Arrays;
 
-import org.junit.Ignore;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
@@ -194,7 +194,7 @@ public class DWGParserTest extends TikaTest {
         assertEquals("jlakshvi", metadata.get(TikaCoreProperties.MODIFIER));
         assertEquals("CUSTOMER'S ADDRESS", metadata.get("dwg-custom:CUSTOMER'S ADDRESS"));
     }
-    @Ignore("Ignore test for now")
+    @Disabled
     @Test
     public void testDWGRead() throws Exception {
         ParseContext pc = new ParseContext();
@@ -206,7 +206,7 @@ public class DWGParserTest extends TikaTest {
         String xml = getXML("architectural_-_annotation_scaling_and_multileaders.dwg", pc).xml;
         System.out.println(xml);
     }
-    @Ignore("Ignore test for now")
+    @Disabled
     @Test
     public void testDWGReadexe() throws Exception {
         DWGParserConfig dwgParserConfig = new DWGParserConfig();
