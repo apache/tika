@@ -100,10 +100,11 @@
       <artifactId>commons-lang3</artifactId>
       <version>${commons.lang3.version}</version>
     </dependency>
+    <!-- java.lang.NoClassDefFoundError: javax/annotation/Resource if updated to 2.1.0 on jdk11+ -->
     <dependency>
       <groupId>jakarta.annotation</groupId>
       <artifactId>jakarta.annotation-api</artifactId>
-      <version>2.1.0</version>
+      <version>1.3.5</version>
     </dependency>
 
     <!-- Externally Maintained Parsers -->
