@@ -38,7 +38,7 @@
       <dependency>
         <groupId>org.osgi</groupId>
         <artifactId>org.osgi.compendium</artifactId>
-        <version>5.0.0</version>
+        <version>${osgi.compendium.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
