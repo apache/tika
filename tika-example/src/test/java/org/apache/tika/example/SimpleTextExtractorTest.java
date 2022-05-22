@@ -25,9 +25,13 @@ import java.io.PrintStream;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Isolated;
 
 import org.apache.tika.TikaTest;
 
+// because System is caught
+// https://junit.org/junit5/docs/snapshot/user-guide/#writing-tests-parallel-execution-synchronization
+@Isolated 
 public class SimpleTextExtractorTest extends TikaTest {
     @Test
     public void testSimpleTextExtractor() throws Exception {
