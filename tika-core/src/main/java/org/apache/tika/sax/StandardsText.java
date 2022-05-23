@@ -60,7 +60,8 @@ public class StandardsText {
 	private static final String REGEX_APPLICABLE_DOCUMENTS = "(?i:.*APPLICABLE\\sDOCUMENTS|REFERENCE|STANDARD|REQUIREMENT|GUIDELINE|COMPLIANCE.*)";
 
 	// Regular expression to match the alphanumeric identifier of the standard
-	private static final String REGEX_IDENTIFIER = "(?<identifier>([0-9]{3,}|([A-Z]+(-|_|\\.)?[0-9]{2,}))((-|_|\\.)?[A-Z0-9]+)*)";
+	private static final String REGEX_IDENTIFIER = "(?<identifier>([0-9]{3,20}|([A-Z]+(-|_|\\.)" +
+			"?[0-9]{2,20}))((-|_|\\.)?[A-Z0-9]+){0,10})";
 
 	// Regular expression to match the standard organization
 	private static final String REGEX_ORGANIZATION = StandardOrganizations.getOrganzationsRegex();
@@ -71,8 +72,9 @@ public class StandardsText {
 
 	// Regular expression to match a string that is supposed to be a standard
 	// reference
-	private static final String REGEX_FALLBACK = "\\(?" + "(?<mainOrganization>[A-Z]\\w+)"
-			+ "\\)?((\\s?(?<separator>\\/)\\s?)(\\w+\\s)*\\(?" + "(?<secondOrganization>[A-Z]\\w+)" + "\\)?)?"
+	private static final String REGEX_FALLBACK = "\\(?" + "(?<mainOrganization>[A-Z]\\w{1,100})"
+			+ "\\)?((\\s?(?<separator>\\/)\\s?)(\\w{1,100}\\s)*\\(?" + "(?<secondOrganization>[A" +
+			"-Z]\\w{1,100})" + "\\)?)?"
 			+ REGEX_STANDARD_TYPE + "?" + "(-|\\s)?" + REGEX_IDENTIFIER;
 
 	// Regular expression to match the standard organization within a string
