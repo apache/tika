@@ -42,6 +42,7 @@ public class DWGParserConfig implements Serializable {
     // we need to remove non UTF chars and Nan's (dwgread outputs these as nan)
     private String cleanDwgReadRegexToReplace = "[^\\x20-\\x7e]";
     private String cleanDwgReadReplaceWith = "";
+    @SuppressWarnings("unused") 
     private boolean hasDwgRead;
     private static final Logger LOG = LoggerFactory.getLogger(DWGParserConfig.class);
 

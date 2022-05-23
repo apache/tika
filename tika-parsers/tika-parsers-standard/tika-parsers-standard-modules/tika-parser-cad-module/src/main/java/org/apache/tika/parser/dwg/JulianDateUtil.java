@@ -39,9 +39,9 @@ class JulianDateUtil {
         return epoch.plus(l, ChronoUnit.DAYS).plusNanos(Math.round((day - l) * NANOS_PER_DAY));
     }
 
-    public static Instant toInstant(int julianDay, int millisecondsIntoDay) {
+    public static Instant toInstant(long julianDay, long millisecondsIntoDay) {
         return new JulianDateUtil(JulianDateUtil.JULIAN_DATE)
                 .toInstant(Double.parseDouble(julianDay + "." + millisecondsIntoDay));
-        
+         
     }
 }

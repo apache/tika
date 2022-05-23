@@ -284,9 +284,9 @@ public class DWGReadParser extends AbstractDWGParser {
                         // array:
                         // [julianDate, millisecondOfDay]
                         jsonParser.nextToken(); // start array
-                        int julianDay = jsonParser.getIntValue();
+                        long julianDay = jsonParser.getValueAsLong();
                         jsonParser.nextToken();
-                        int millisecondsIntoDay = jsonParser.getValueAsInt();
+                        long millisecondsIntoDay = jsonParser.getValueAsLong();
                         Instant instant = JulianDateUtil.toInstant(julianDay, millisecondsIntoDay);
                         jsonParser.nextToken(); // end array
                         if ("TDCREATE".equals(nextFieldName)) {
