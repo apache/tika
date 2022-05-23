@@ -382,7 +382,7 @@
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
     <tukaani.version>1.9</tukaani.version>
     <twelvemonkeys.version>3.8.2</twelvemonkeys.version>
-    <uima.version>3.2.0</uima.version>
+    <uima.version>3.3.0</uima.version>
     <uimafit.version>3.2.0</uimafit.version>
     <vorbis.version>0.8</vorbis.version>
     <xerces.version>2.12.2</xerces.version>
@@ -706,7 +706,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>versions-maven-plugin</artifactId>
-        <version>2.10.0</version>
+        <version>2.11.0</version>
         <configuration>
           <generateBackupPoms>false</generateBackupPoms>
         </configuration>
