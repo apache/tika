@@ -260,16 +260,16 @@
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
     <project.build.outputTimestamp>1</project.build.outputTimestamp>
     <!-- plugin versions -->
-    <forbiddenapis.version>3.1</forbiddenapis.version>
+    <forbiddenapis.version>3.3</forbiddenapis.version>
     <groovy.maven.version>2.1.1</groovy.maven.version>
     <maven.antrun.version>1.8</maven.antrun.version>
     <maven.assembly.version>3.3.0</maven.assembly.version>
-    <maven.bundle.version>5.1.1</maven.bundle.version>
+    <maven.bundle.version>5.1.6</maven.bundle.version>
     <maven.failsafe.version>2.22.2</maven.failsafe.version>
-    <maven.javadoc.version>3.1.1</maven.javadoc.version>
+    <maven.javadoc.version>3.3.1</maven.javadoc.version>
     <maven.scr.version>1.26.4</maven.scr.version>
-    <maven.surefire.version>3.0.0-M4</maven.surefire.version>
-    <maven.shade.version>3.2.4</maven.shade.version>
+    <maven.surefire.version>3.0.0-M6</maven.surefire.version>
+    <maven.shade.version>3.3.0</maven.shade.version>
     <rat.version>0.13</rat.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
     <poi.version>5.2.2</poi.version>
@@ -291,8 +291,8 @@
     <jaxb.version>2.3.5</jaxb.version>
     <cli.version>1.5.0</cli.version>
     <lucene.version>8.11.1</lucene.version>
-    <mockito.version>3.11.2</mockito.version>
-    <lombok.version>1.18.22</lombok.version>
+    <mockito.version>4.5.1</mockito.version>
+    <lombok.version>1.18.24</lombok.version>
     <opennlp.version>1.9.4</opennlp.version>
     <xerces.version>2.12.2</xerces.version>
   </properties>
@@ -375,6 +375,7 @@
         <artifactId>commons-io</artifactId>
         <version>${commons.io.version}</version>
       </dependency>
+      <!-- java.lang.NoClassDefFoundError: javax/annotation/Resource if updated to 2.1.0 on jdk11+ -->
       <dependency>
         <groupId>jakarta.annotation</groupId>
         <artifactId>jakarta.annotation-api</artifactId>
@@ -403,7 +404,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.8.1</version>
+        <version>3.10.1</version>
         <configuration>
           <source>${maven.compiler.source}</source>
           <target>${maven.compiler.target}</target>
@@ -416,15 +417,25 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>versions-maven-plugin</artifactId>
-        <version>2.7</version>
+        <version>2.10.0</version>
         <configuration>
           <generateBackupPoms>false</generateBackupPoms>
         </configuration>
+        <executions>
+            <execution>
+                <phase>install</phase>
+                <goals>
+                    <goal>display-plugin-updates</goal>
+                    <goal>display-dependency-updates</goal>
+                    <goal>display-property-updates</goal>
+                </goals>
+            </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.sonatype.ossindex.maven</groupId>
         <artifactId>ossindex-maven-plugin</artifactId>
-        <version>3.1.0</version>
+        <version>3.2.0</version>
         <configuration>
           <fail>false</fail>
         </configuration>
