@@ -8,6 +8,10 @@ Release 2.4.1 - ???
    * Users can expand system properties from the forking
      process into forked tika-server processes (TIKA-3748).
 
+   * Fix a few files being wrongly detected as EML (TIKA-3771).
+
+   * Fix ignoreCharsets param of Icu4jEncodingDetector (TIKA-3774).
+
 Release 2.4.0 - 04/23/2022
 
    * NOTE: To save on resources, we no longer include the
