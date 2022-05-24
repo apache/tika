@@ -619,11 +619,17 @@
         <artifactId>jdom2</artifactId>
         <version>${jdom2.version}</version>
       </dependency>
-      <!-- dependency convergence problems with jakarta.activation if > 2.0.1 on jdk11 -->
       <dependency>
         <groupId>org.jvnet.staxex</groupId>
         <artifactId>stax-ex</artifactId>
-        <version>2.0.1</version>
+        <version>2.1.0</version>
+        <exclusions>
+            <!-- avoid dependency convergence error in tika-translate if > 2.0.1 on jdk18 -->
+            <exclusion>
+                <groupId>jakarta.activation</groupId>
+                <artifactId>jakarta.activation-api</artifactId>
+            </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.netpreserve</groupId>
