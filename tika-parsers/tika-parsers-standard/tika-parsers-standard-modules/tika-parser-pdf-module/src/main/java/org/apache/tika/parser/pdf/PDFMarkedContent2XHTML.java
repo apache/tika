@@ -104,7 +104,8 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
      * @throws SAXException  if the content handler fails to process SAX events
      * @throws TikaException if there was an exception outside of per page processing
      */
-    public static void process(PDDocument pdDocument, ContentHandler handler, ParseContext context,
+    public static void process(PDDocument pdDocument, ContentHandler handler,
+                               ParseContext context,
                                Metadata metadata, PDFParserConfig config)
             throws SAXException, TikaException {
 

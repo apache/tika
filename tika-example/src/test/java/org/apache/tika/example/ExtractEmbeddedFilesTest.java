@@ -17,7 +17,7 @@
 
 package org.apache.tika.example;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -25,22 +25,22 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ExtractEmbeddedFilesTest {
 
     ParsingExample parsingExample;
     Path outputPath;
 
-    @Before
+    @BeforeEach
     public void setUp() throws IOException {
         parsingExample = new ParsingExample();
         outputPath = Files.createTempDirectory("tika-ext-emb-example-");
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws IOException {
         //this does not act recursively, this only assumes single level directory
         try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(outputPath)) {

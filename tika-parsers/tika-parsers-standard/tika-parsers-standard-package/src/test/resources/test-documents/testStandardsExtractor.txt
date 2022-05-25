@@ -1,0 +1,13 @@
+REFERENCE STANDARD REQUIREMENT GUIDELINE COMPLIANCE
+
+American National Standards Institute (ANSI) / Telecommunications Industry
+Association (TIA) Publication 222-G Standards (Structural Standards for Steel Antenna
+Towers and Antenna Supporting Structures), including addendum (TIA/ANSI
+222-G-1 standards ) (http://www.tiaonline.org/standards/)
+
+Federal Information Processing Standard (FIPS) Publication 140-2, "Security
+Requirements for Cryptographic Modules"
+(http://csrc.nist.gov/publications/fips/fips140-2/fips1402.pdf)
+15. Federal Information Processing Standard (FIPS) Publication 197, "Advanced
+Encryption Standard"
+(http://csrc.nist.gov/publications/fips/fips197/fips-197.pdf)

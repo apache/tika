@@ -27,6 +27,8 @@ import org.apache.tika.detect.DefaultEncodingDetector;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.renderer.CompositeRenderer;
+import org.apache.tika.renderer.Renderer;
 import org.apache.tika.utils.ServiceLoaderUtils;
 
 /**
@@ -46,25 +48,27 @@ public class DefaultParser extends CompositeParser {
 
     public DefaultParser(MediaTypeRegistry registry, ServiceLoader loader,
                          Collection<Class<? extends Parser>> excludeParsers,
-                         EncodingDetector encodingDetector) {
-        super(registry, getDefaultParsers(loader, encodingDetector, excludeParsers));
+                         EncodingDetector encodingDetector, Renderer renderer) {
+        super(registry, getDefaultParsers(loader, encodingDetector, renderer, excludeParsers));
         this.loader = loader;
     }
 
     public DefaultParser(MediaTypeRegistry registry, ServiceLoader loader,
                          Collection<Class<? extends Parser>> excludeParsers) {
         super(registry,
-                getDefaultParsers(loader, new DefaultEncodingDetector(loader), excludeParsers));
+                getDefaultParsers(loader, new DefaultEncodingDetector(loader),
+                        new CompositeRenderer(loader), excludeParsers));
         this.loader = loader;
     }
 
     public DefaultParser(MediaTypeRegistry registry, ServiceLoader loader,
-                         EncodingDetector encodingDetector) {
-        this(registry, loader, Collections.EMPTY_SET, encodingDetector);
+                         EncodingDetector encodingDetector, Renderer renderer) {
+        this(registry, loader, Collections.EMPTY_SET, encodingDetector, renderer);
     }
 
     public DefaultParser(MediaTypeRegistry registry, ServiceLoader loader) {
-        this(registry, loader, Collections.EMPTY_SET, new DefaultEncodingDetector(loader));
+        this(registry, loader, Collections.EMPTY_SET, new DefaultEncodingDetector(loader),
+                new CompositeRenderer(loader));
     }
 
     public DefaultParser(MediaTypeRegistry registry, ClassLoader loader) {
@@ -94,6 +98,7 @@ public class DefaultParser extends CompositeParser {
      */
     private static List<Parser> getDefaultParsers(ServiceLoader loader,
                                                   EncodingDetector encodingDetector,
+                                                  Renderer renderer,
                                                   Collection<Class<? extends Parser>>
                                                           excludeParsers) {
         List<Parser> parsers =
@@ -104,7 +109,15 @@ public class DefaultParser extends CompositeParser {
                 setEncodingDetector(p, encodingDetector);
             }
         }
+        if (renderer != null) {
+            for (Parser p : parsers) {
+                setRenderer(p, renderer);
+            }
+        }
         ServiceLoaderUtils.sortLoadedClasses(parsers);
+        //reverse the order of parsers so that custom ones come last
+        //this will prevent them from being overwritten in getParsers(ParseContext ..)
+        Collections.reverse(parsers);
         return parsers;
     }
 
@@ -119,6 +132,18 @@ public class DefaultParser extends CompositeParser {
             }
         } else if (p instanceof ParserDecorator) {
             setEncodingDetector(((ParserDecorator) p).getWrappedParser(), encodingDetector);
+        }
+    }
+
+    private static void setRenderer(Parser p, Renderer renderer) {
+        if (p instanceof RenderingParser) {
+            ((RenderingParser) p).setRenderer(renderer);
+        } else if (p instanceof CompositeParser) {
+            for (Parser child : ((CompositeParser) p).getAllComponentParsers()) {
+                setRenderer(child, renderer);
+            }
+        } else if (p instanceof ParserDecorator) {
+            setRenderer(((ParserDecorator) p).getWrappedParser(), renderer);
         }
     }
 

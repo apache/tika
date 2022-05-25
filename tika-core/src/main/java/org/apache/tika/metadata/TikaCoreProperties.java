@@ -277,7 +277,7 @@ public interface TikaCoreProperties {
     Property EMBEDDED_RESOURCE_TYPE = Property.internalClosedChoise(EMBEDDED_RESOURCE_TYPE_KEY,
             EmbeddedResourceType.ATTACHMENT.toString(), EmbeddedResourceType.INLINE.toString(),
             EmbeddedResourceType.METADATA.toString(), EmbeddedResourceType.MACRO.toString(),
-            EmbeddedResourceType.THUMBNAIL.toString());
+            EmbeddedResourceType.THUMBNAIL.toString(), EmbeddedResourceType.RENDERING.toString());
     Property HAS_SIGNATURE = Property.internalBoolean("hasSignature");
 
 
@@ -302,6 +302,7 @@ public interface TikaCoreProperties {
         MACRO, //any code that is intended to be run by the application
         METADATA, //e.g. xmp, xfa
         FONT,//embedded font files
-        THUMBNAIL//TODO: set this in parsers that handle thumbnails
+        THUMBNAIL, //TODO: set this in parsers that handle thumbnails
+        RENDERING //if a file has been rendered
     }
 }

@@ -35,7 +35,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FileUtils;
 import org.apache.cxf.jaxrs.client.WebClient;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,8 +56,8 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
             LoggerFactory.getLogger(TikaServerPipesIntegrationTest.class);
     private static final String EMITTER_NAME = "fse";
     private static final String FETCHER_NAME = "fsf";
-    private static Path TMP_DIR;
-    private static Path TMP_OUTPUT_DIR;
+
+    private static Path TEMP_OUTPUT_DIR;
     private static Path TIKA_CONFIG;
     private static Path TIKA_CONFIG_TIMEOUT;
     private static String[] FILES =
@@ -67,19 +66,18 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
 
     @BeforeAll
     public static void setUpBeforeClass() throws Exception {
-        TMP_DIR = Files.createTempDirectory("tika-emitter-test-");
-        Path inputDir = TMP_DIR.resolve("input");
-        TMP_OUTPUT_DIR = TMP_DIR.resolve("output");
+        Path inputDir = TEMP_WORKING_DIR.resolve("input");
+        TEMP_OUTPUT_DIR = TEMP_WORKING_DIR.resolve("output");
         Files.createDirectories(inputDir);
-        Files.createDirectories(TMP_OUTPUT_DIR);
+        Files.createDirectories(TEMP_OUTPUT_DIR);
 
         for (String mockFile : FILES) {
             Files.copy(
                     TikaPipesTest.class.getResourceAsStream("/test-documents/mock/" + mockFile),
                     inputDir.resolve(mockFile));
         }
-        TIKA_CONFIG = TMP_DIR.resolve("tika-config.xml");
-        TIKA_CONFIG_TIMEOUT = TMP_DIR.resolve("tika-config-timeout.xml");
+        TIKA_CONFIG = TEMP_WORKING_DIR.resolve("tika-config.xml");
+        TIKA_CONFIG_TIMEOUT = TEMP_WORKING_DIR.resolve("tika-config-timeout.xml");
         //TODO -- clean this up so that port is sufficient and we don't need portString
         String xml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" +
                 "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" + "<params>" +
@@ -88,7 +86,7 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
                 "</basePath>" + "</params>" + "</fetcher>" + "</fetchers>" + "<emitters>" +
                 "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" +
                 "<params>" + "<name>" + EMITTER_NAME + "</name>" +
-                "<basePath>" + TMP_OUTPUT_DIR.toAbsolutePath() +
+                "<basePath>" + TEMP_OUTPUT_DIR.toAbsolutePath() +
                 "</basePath>" + "</params>" + "</emitter>" + "</emitters>" + "<server><params>" +
                 "<enableUnsecureFeatures>true</enableUnsecureFeatures>" + "<port>9999</port>" +
                 "<endpoints>" + "<endpoint>pipes</endpoint>" + "<endpoint>status</endpoint>" +
@@ -111,11 +109,6 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
 
     }
 
-    @AfterAll
-    public static void tearDownAfterClass() throws Exception {
-        FileUtils.deleteDirectory(TMP_DIR.toFile());
-    }
-
     @AfterEach
     public void tear() throws Exception {
         Thread.sleep(500);
@@ -125,7 +118,7 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
     public void setUpEachTest() throws Exception {
 
         for (String problemFile : FILES) {
-            Path targ = TMP_OUTPUT_DIR.resolve(problemFile + ".json");
+            Path targ = TEMP_OUTPUT_DIR.resolve(problemFile + ".json");
 
             if (Files.exists(targ)) {
                 Files.delete(targ);
@@ -212,7 +205,7 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
                 .accept("application/json")
                 .post(getJsonString(fileName, onParseException));
         if (response.getStatus() == 200) {
-            Path targFile = TMP_OUTPUT_DIR.resolve(fileName + ".json");
+            Path targFile = TEMP_OUTPUT_DIR.resolve(fileName + ".json");
             if (shouldFileExist) {
                 assertTrue(Files.size(targFile) > 1);
             } else {

@@ -109,6 +109,7 @@ public abstract class TikaPipesSolrTestBase {
         try (SolrClient solrClient = new LBHttpSolrClient.Builder().withBaseSolrUrls(solrEndpoint)
                 .build()) {
 
+            addBasicSchemaFields(solrEndpoint + "/" + collection);
             addSchemaFieldsForNestedDocs(solrEndpoint + "/" + collection);
             for (int i = 0; i < numDocs; ++i) {
                 SolrInputDocument solrDoc = new SolrInputDocument();
@@ -126,6 +127,23 @@ public abstract class TikaPipesSolrTestBase {
         }
     }
 
+    private void addBasicSchemaFields(String solrUrl) throws IOException {
+        try (CloseableHttpClient client = HttpClients.createMinimal()) {
+            HttpPost postAddRoot = new HttpPost(solrUrl + "/schema");
+            postAddRoot.setHeader("Content-Type", "application/json");
+            postAddRoot.setEntity(new StringEntity("{\n" +
+                    "  \"add-field\":{\n" +
+                    "     \"name\":\"path\",\n" +
+                    "     \"type\":\"string\",\n" +
+                    "     \"indexed\":true,\n" +
+                    "     \"stored\":true, \n" +
+                    "     \"docValues\":false \n" +
+                    "  }\n" +
+                    "}"));
+            CloseableHttpResponse resp = client.execute(postAddRoot);
+            Assert.assertEquals(200, resp.getStatusLine().getStatusCode());
+        }
+    }
     private void addSchemaFieldsForNestedDocs(String solrUrl) throws IOException {
         try (CloseableHttpClient client = HttpClients.createMinimal()) {
             HttpPost postAddRoot = new HttpPost(solrUrl + "/schema");

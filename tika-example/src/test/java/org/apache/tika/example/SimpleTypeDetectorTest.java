@@ -22,7 +22,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 

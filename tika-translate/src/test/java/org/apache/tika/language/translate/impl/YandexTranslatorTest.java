@@ -14,61 +14,60 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.language.translate.impl;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.language.translate.impl.YandexTranslator;
 
-import org.junit.Before;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeTrue;
-
 /**
  * Generic Tests to ensure that the RSS library behaves as expected
- * @author mark
  *
+ * @author mark
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+
 public class YandexTranslatorTest {
 
     private YandexTranslator translator;
-    
-    @Before
+
+    @BeforeEach
     public void setUp() throws Exception {
         this.translator = new YandexTranslator();
     }
 
     @Test
     public void test1EN_ES_Translation() {
+        assumeTrue(translator.isAvailable());
         String inputText = "Hello World!!!";
         String expectedText = "Hola Mundo!!!";
-        try{
-          String transText = translator.translate(inputText, "en", "es");
-           assertNotNull("Text not translated", transText);
-           assumeTrue(expectedText.equals(transText));
-	}
-	catch(TikaException | IOException e){
-	    e.printStackTrace();
-	    fail(e.getMessage());
-	}
+        try {
+            String transText = translator.translate(inputText, "en", "es");
+            assertNotNull(transText, "Text not translated");
+            assertEquals(expectedText, transText);
+        } catch (TikaException | IOException e) {
+            e.printStackTrace();
+            fail(e.getMessage());
+        }
     }
 
     @Test
     public void test2UNDEFINED_DE_ES_Translation() {
+        assumeTrue(translator.isAvailable());
         String inputText = "Guten Tag!!!";
         String expectedText = "Buen Día!!!";
         try {
             String transText = translator.translate(inputText, "es");
-            assertNotNull("Text not translated", transText);
-            assumeTrue(expectedText.equals(transText));
+            assertNotNull(transText, "Text not translated");
+            assertEquals(expectedText, transText);
         } catch (TikaException | IOException e) {
             e.printStackTrace();
             fail(e.getMessage());
@@ -77,12 +76,13 @@ public class YandexTranslatorTest {
 
     @Test
     public void test3UNDEFINED_IT_EN_Translation() {
+        assumeTrue(translator.isAvailable());
         String inputText = "Buona Sera!!!";
         String expectedText = "Good Evening!!!";
         try {
             String transText = translator.translate(inputText, "en");
-            assertNotNull("Text not translated", transText);
-            assumeTrue(expectedText.equals(transText));
+            assertNotNull(transText, "Text not translated");
+            assertEquals(expectedText, transText);
         } catch (TikaException | IOException e) {
             e.printStackTrace();
             fail(e.getMessage());

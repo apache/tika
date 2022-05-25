@@ -26,7 +26,6 @@ import com.drew.lang.SequentialReader;
 import com.drew.lang.annotations.NotNull;
 import com.drew.lang.annotations.Nullable;
 import com.drew.metadata.mp4.Mp4Directory;
-import com.drew.metadata.mp4.boxes.Box;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.RuntimeSAXException;
@@ -36,7 +35,7 @@ import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.sax.XHTMLContentHandler;
 
-public class TikaUserDataBox extends Box {
+public class TikaUserDataBox {
 
     private static final String LOCATION_CODE = "\u00A9xyz";
     private static final String META = "meta";
@@ -53,9 +52,8 @@ public class TikaUserDataBox extends Box {
     private boolean isQuickTime = false;
     private final Metadata metadata;
     private final XHTMLContentHandler xhtml;
-    public TikaUserDataBox(@NotNull Box box, byte[] payload, Metadata metadata,
+    public TikaUserDataBox(@NotNull String box, byte[] payload, Metadata metadata,
                            XHTMLContentHandler xhtml) throws IOException, SAXException {
-        super(box);
         this.metadata = metadata;
         this.xhtml = xhtml;
         int length = payload.length;

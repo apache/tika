@@ -159,21 +159,23 @@ public class BundleIT {
 
     @Test
     public void testForkParser() throws Exception {
-        ForkParser parser = new ForkParser(Activator.class.getClassLoader(), defaultParser);
-        String data = "<!DOCTYPE html>\n<html><body><p>test <span>content</span></p></body></html>";
-        InputStream stream = new ByteArrayInputStream(data.getBytes(UTF_8));
-        Writer writer = new StringWriter();
-        ContentHandler contentHandler = new BodyContentHandler(writer);
-        Metadata metadata = new Metadata();
-        MediaType type = contentTypeDetector.detect(stream, metadata);
-        assertEquals(type.toString(), "text/html");
-        metadata.add(Metadata.CONTENT_TYPE, type.toString());
-        ParseContext parseCtx = new ParseContext();
-        parser.parse(stream, contentHandler, metadata, parseCtx);
-        writer.flush();
-        String content = writer.toString();
-        assertTrue(content.length() > 0);
-        assertEquals("test content", content.trim());
+        try (ForkParser parser = new ForkParser(Activator.class.getClassLoader(), defaultParser)) {
+            String data =
+                    "<!DOCTYPE html>\n<html><body><p>test <span>content</span></p></body></html>";
+            InputStream stream = new ByteArrayInputStream(data.getBytes(UTF_8));
+            Writer writer = new StringWriter();
+            ContentHandler contentHandler = new BodyContentHandler(writer);
+            Metadata metadata = new Metadata();
+            MediaType type = contentTypeDetector.detect(stream, metadata);
+            assertEquals(type.toString(), "text/html");
+            metadata.add(Metadata.CONTENT_TYPE, type.toString());
+            ParseContext parseCtx = new ParseContext();
+            parser.parse(stream, contentHandler, metadata, parseCtx);
+            writer.flush();
+            String content = writer.toString();
+            assertTrue(content.length() > 0);
+            assertEquals("test content", content.trim());
+        }
     }
 
     @Test

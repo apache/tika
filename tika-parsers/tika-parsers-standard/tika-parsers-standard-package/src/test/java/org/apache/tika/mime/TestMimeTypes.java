@@ -71,6 +71,13 @@ public class TestMimeTypes {
         assertNotNull(repo.forName("text/x-tex"));
     }
 
+    @Test
+    public void testTextNotMarc() throws Exception {
+        //TIKA-3769
+        String md5 = "89148cea02eff4bb856183b4506bb9d8";
+        assertTypeByData("text/plain", md5.getBytes(UTF_8));
+    }
+
     /**
      * Tests MIME type determination based solely on the URL's extension.
      */

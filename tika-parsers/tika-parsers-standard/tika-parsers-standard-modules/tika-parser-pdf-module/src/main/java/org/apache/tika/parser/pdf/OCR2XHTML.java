@@ -47,15 +47,17 @@ class OCR2XHTML extends AbstractPDF2XHTML {
      * of XHTML SAX events sent to the given content handler.
      *
      * @param document PDF document
-     * @param handler  SAX content handler
+     * @param handler SAX content handler
      * @param metadata PDF metadata
      * @throws SAXException  if the content handler fails to process SAX events
      * @throws TikaException if there was an exception outside of per page processing
      */
     public static void process(PDDocument document, ContentHandler handler, ParseContext context,
-                               Metadata metadata, PDFParserConfig config)
+                               Metadata metadata,
+                               PDFParserConfig config)
             throws SAXException, TikaException {
         OCR2XHTML ocr2XHTML = null;
+
         try {
             ocr2XHTML = new OCR2XHTML(document, handler, context, metadata, config);
             ocr2XHTML.writeText(document, new Writer() {
@@ -89,7 +91,7 @@ class OCR2XHTML extends AbstractPDF2XHTML {
     public void processPage(PDPage pdPage) throws IOException {
         try {
             startPage(pdPage);
-            doOCROnCurrentPage(PDFParserConfig.OCR_STRATEGY.OCR_ONLY);
+            doOCROnCurrentPage(pdPage, PDFParserConfig.OCR_STRATEGY.OCR_ONLY);
             endPage(pdPage);
         } catch (TikaException | SAXException e) {
             throw new IOException(e);

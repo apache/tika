@@ -23,6 +23,7 @@
         <encodingDetector class="org.apache.tika.parser.txt.Icu4jEncodingDetector">
             <params>
                 <param name="ignoreCharsets" type="list">
+                    <string>IBM420</string>
                     <string>IBM424</string>
                 </param>
             </params>

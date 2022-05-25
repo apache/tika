@@ -46,6 +46,7 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.parser.xml.XMLProfiler;
@@ -62,12 +63,22 @@ public class PDFParserTest extends TikaTest {
     public static Level PDFBOX_LOG_LEVEL = Level.INFO;
     private static Boolean hasTesseract = null;
 
+    private static Boolean hasMuPDF = null;
+
     public static boolean canRunOCR() throws TikaConfigException {
         if (hasTesseract != null) {
             return hasTesseract;
         }
         hasTesseract = new TesseractOCRParser().hasTesseract();
         return hasTesseract;
+    }
+
+    public static boolean hasMuPDF() throws TikaConfigException {
+        if (hasMuPDF != null) {
+            return hasMuPDF;
+        }
+        hasMuPDF = ExternalParser.check(new String[]{"mutool", "-v"});
+        return hasMuPDF;
     }
 
     @BeforeAll
@@ -437,6 +448,22 @@ public class PDFParserTest extends TikaTest {
             pc.set(TesseractOCRConfig.class, tesseractOCRConfig);
             text = getText(getResourceAsStream("/test-documents/testOCR.pdf"), p, pc);
             assertContains("Happy", text);
+        }
+    }
+
+    @Test
+    public void testMuPDFInOCR() throws Exception {
+        //TODO -- need to add "rendered by" to confirm that mutool was actually called
+        //and that there wasn't some backoff to PDFBox the PDFParser
+        assumeTrue(canRunOCR(), "can run OCR");
+        assumeTrue(hasMuPDF(), "has mupdf");
+        try (InputStream is = getResourceAsStream(
+                "/configs/tika-rendering-mupdf-config.xml")) {
+            assertNotNull(is);
+            TikaConfig tikaConfig = new TikaConfig(is);
+            Parser p = new AutoDetectParser(tikaConfig);
+            String text = getText(getResourceAsStream("/test-documents/testOCR.pdf"), p);
+            assertContains("Happy", text.trim());
         }
     }
 

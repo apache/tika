@@ -17,14 +17,14 @@
 package org.apache.tika.eval.app.io;
 
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
@@ -35,7 +35,7 @@ public class ExtractReaderTest extends TikaTest {
     private Path testJsonFile;
     private Path testTxtFile;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         testJsonFile =
                 getResourceAsFile("/test-dirs/extractsA/file2_attachANotB.doc.json").toPath();

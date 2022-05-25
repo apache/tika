@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser.pdf;
+package org.apache.tika.parser.pdf.image;
 
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
@@ -64,45 +64,54 @@ import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.pdf.PDFParserConfig;
+import org.apache.tika.parser.pdf.PDMetadataExtractor;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Copied nearly verbatim from PDFBox
  */
-class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
+public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
 
     //We're currently copying images to byte[].  We should
     //limit the length to avoid OOM on crafted files.
-    private static final long MAX_IMAGE_LENGTH_BYTES = 100 * 1024 * 1024;
+    protected static final long MAX_IMAGE_LENGTH_BYTES = 100 * 1024 * 1024;
 
-    private static final List<String> JPEG =
+    protected static final List<String> JPEG =
             Arrays.asList(COSName.DCT_DECODE.getName(), COSName.DCT_DECODE_ABBREVIATION.getName());
 
 
-    private static final List<String> JP2 = Collections.singletonList(COSName.JPX_DECODE.getName());
+    protected static final List<String> JP2 =
+            Collections.singletonList(COSName.JPX_DECODE.getName());
 
-    private static final List<String> JB2 = Collections.singletonList(COSName.JBIG2_DECODE.getName());
+    protected static final List<String> JB2 =
+            Collections.singletonList(COSName.JBIG2_DECODE.getName());
     final List<IOException> exceptions = new ArrayList<>();
-    private final EmbeddedDocumentExtractor embeddedDocumentExtractor;
-    private final PDFParserConfig pdfParserConfig;
-    private final Map<COSStream, Integer> processedInlineImages;
-    private final AtomicInteger imageCounter;
-    private final Metadata parentMetadata;
-    private final XHTMLContentHandler xhtml;
-    private final ParseContext parseContext;
-    private final boolean extractInlineImageMetadataOnly;
+    protected final int pageNumber;
+    protected final EmbeddedDocumentExtractor embeddedDocumentExtractor;
+    protected final PDFParserConfig pdfParserConfig;
+    protected final Map<COSStream, Integer> processedInlineImages;
+    protected final AtomicInteger imageCounter;
+    protected final Metadata parentMetadata;
+    protected final XHTMLContentHandler xhtml;
+    protected final ParseContext parseContext;
+    protected final boolean extractInlineImageMetadataOnly;
     //TODO: parameterize this ?
-    private boolean useDirectJPEG = false;
+    protected boolean useDirectJPEG = false;
 
     //TODO: this is an embarrassment of an initializer...fix
-    protected ImageGraphicsEngine(PDPage page, EmbeddedDocumentExtractor embeddedDocumentExtractor,
+    protected ImageGraphicsEngine(PDPage page,
+                                  int pageNumber,
+                                  EmbeddedDocumentExtractor embeddedDocumentExtractor,
                                   PDFParserConfig pdfParserConfig,
                                   Map<COSStream, Integer> processedInlineImages,
                                   AtomicInteger imageCounter, XHTMLContentHandler xhtml,
                                   Metadata parentMetadata, ParseContext parseContext) {
         super(page);
+        this.pageNumber = pageNumber;
         this.embeddedDocumentExtractor = embeddedDocumentExtractor;
         this.pdfParserConfig = pdfParserConfig;
         this.processedInlineImages = processedInlineImages;
@@ -114,7 +123,7 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
     }
 
     //nearly directly copied from PDFBox ExtractImages
-    private static void writeToBuffer(PDImage pdImage, String suffix, boolean directJPEG,
+    protected BufferedImage writeToBuffer(PDImage pdImage, String suffix, boolean directJPEG,
                                       OutputStream out) throws IOException, TikaException {
 
         if ("jpg".equals(suffix)) {
@@ -129,12 +138,14 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
                 } finally {
                     IOUtils.closeQuietly(data);
                 }
+                return null;
             } else {
                 BufferedImage image = pdImage.getImage();
                 if (image != null) {
                     // for CMYK and other "unusual" colorspaces, the JPEG will be converted
                     ImageIOUtil.writeImage(image, suffix, out);
                 }
+                return image;
             }
         } else if ("jp2".equals(suffix)) {
             String colorSpaceName = pdImage.getColorSpace().getName();
@@ -148,6 +159,7 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
                 } finally {
                     IOUtils.closeQuietly(data);
                 }
+                return null;
             } else {
                 // for CMYK and other "unusual" colorspaces, the image will be converted
                 BufferedImage image = pdImage.getImage();
@@ -155,11 +167,13 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
                     // for CMYK and other "unusual" colorspaces, the JPEG will be converted
                     ImageIOUtil.writeImage(image, "jpeg2000", out);
                 }
+                return image;
             }
         } else if ("tif".equals(suffix) && pdImage.getColorSpace().equals(PDDeviceGray.INSTANCE)) {
             BufferedImage image = pdImage.getImage();
+            //TODO: log or otherwise report
             if (image == null) {
-                return;
+                return null;
             }
             // CCITT compressed images can have a different colorspace, but this one is B/W
             // This is a bitonal image, so copy to TYPE_BYTE_BINARY
@@ -174,6 +188,7 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
                 }
             }
             ImageIOUtil.writeImage(bitonalImage, suffix, out);
+            return image;
         } else if ("jb2".equals(suffix)) {
             InputStream data = pdImage.createInputStream(JB2);
             try {
@@ -184,15 +199,17 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         } else {
             BufferedImage image = pdImage.getImage();
             if (image == null) {
-                return;
+                return null;
             }
             ImageIOUtil.writeImage(image, suffix, out);
+            return image;
         }
 
         out.flush();
+        return null;
     }
 
-    private static void copyUpToMaxLength(InputStream is, OutputStream os)
+    protected static void copyUpToMaxLength(InputStream is, OutputStream os)
             throws IOException, TikaException {
         BoundedInputStream bis = new BoundedInputStream(MAX_IMAGE_LENGTH_BYTES, is);
         IOUtils.copy(bis, os);
@@ -200,10 +217,9 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
             throw new TikaMemoryLimitException(
                     "Image size is larger than allowed (" + MAX_IMAGE_LENGTH_BYTES + ")");
         }
-
     }
 
-    private static boolean hasMasks(PDImage pdImage) throws IOException {
+    protected static boolean hasMasks(PDImage pdImage) throws IOException {
         if (pdImage instanceof PDImageXObject) {
             PDImageXObject ximg = (PDImageXObject) pdImage;
             return ximg.getMask() != null || ximg.getSoftMask() != null;
@@ -211,7 +227,7 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         return false;
     }
 
-    void run() throws IOException {
+    public void run() throws IOException {
         PDPage page = getPage();
 
         //TODO: is there a better way to do this rather than reprocessing the page
@@ -254,6 +270,7 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
             }
 
             PDImageXObject xobject = (PDImageXObject) pdImage;
+            //TODO: handle image metadata: xobject.getMetadata()
             Integer cachedNumber = processedInlineImages.get(xobject.getCOSObject());
             if (cachedNumber != null && pdfParserConfig.isExtractUniqueInlineImagesOnly()) {
                 // skip duplicate image
@@ -365,7 +382,7 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         }
     }
 
-    private void processImage(PDImage pdImage, int imageNumber)
+    protected void processImage(PDImage pdImage, int imageNumber)
             throws IOException, TikaException, SAXException {
         //this is the metadata for this particular image
         Metadata metadata = new Metadata();
@@ -383,6 +400,9 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileName);
         metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
+        metadata.set(TikaPagedText.PAGE_NUMBER, pageNumber);
+
+        //TODO -- should we look for image rotation metadata in the PDImage or elsewhere?
 
         if (extractInlineImageMetadataOnly) {
             extractInlineImageMetadataOnly(pdImage, metadata);
@@ -392,12 +412,13 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         if (embeddedDocumentExtractor.shouldParseEmbedded(metadata)) {
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
             if (pdImage instanceof PDImageXObject) {
+                //extract the metadata contained outside of the image
                 PDMetadataExtractor
                         .extract(((PDImageXObject) pdImage).getMetadata(), metadata, parseContext);
             }
-            //extract the metadata contained outside of the image
+            BufferedImage bufferedImage = null;
             try {
-                writeToBuffer(pdImage, suffix, useDirectJPEG, buffer);
+                bufferedImage = writeToBuffer(pdImage, suffix, useDirectJPEG, buffer);
             } catch (MissingImageReaderException e) {
                 EmbeddedDocumentUtil.recordException(e, parentMetadata);
                 return;
@@ -405,16 +426,19 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
                 return;
             }
-            try (InputStream embeddedIs = TikaInputStream.get(buffer.toByteArray())) {
+            try (TikaInputStream tis = TikaInputStream.get(buffer.toByteArray())) {
+                if (bufferedImage != null) {
+                    tis.setOpenContainer(bufferedImage);
+                }
                 embeddedDocumentExtractor
-                        .parseEmbedded(embeddedIs, new EmbeddedContentHandler(xhtml), metadata,
+                        .parseEmbedded(tis, new EmbeddedContentHandler(xhtml), metadata,
                                 false);
             }
         }
 
     }
 
-    private void extractInlineImageMetadataOnly(PDImage pdImage, Metadata metadata)
+    protected void extractInlineImageMetadataOnly(PDImage pdImage, Metadata metadata)
             throws IOException, SAXException {
         if (pdImage instanceof PDImageXObject) {
             PDMetadataExtractor
@@ -436,7 +460,7 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         }
     }
 
-    private String getSuffix(PDImage pdImage, Metadata metadata) throws IOException {
+    protected String getSuffix(PDImage pdImage, Metadata metadata) throws IOException {
         String suffix = pdImage.getSuffix();
 
         if (suffix == null || suffix.equals("png")) {
@@ -465,7 +489,7 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         return suffix;
     }
 
-    void handleCatchableIOE(IOException e) throws IOException {
+    protected void handleCatchableIOE(IOException e) throws IOException {
         if (pdfParserConfig.isCatchIntermediateIOExceptions()) {
             if (e.getCause() instanceof SAXException && e.getCause().getMessage() != null &&
                     e.getCause().getMessage().contains("Your document contained more than")) {
@@ -485,7 +509,7 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         }
     }
 
-    List<IOException> getExceptions() {
+    public List<IOException> getExceptions() {
         return exceptions;
     }
 }

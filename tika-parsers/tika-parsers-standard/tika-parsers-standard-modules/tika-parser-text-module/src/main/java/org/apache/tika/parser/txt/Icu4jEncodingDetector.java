@@ -75,7 +75,7 @@ public class Icu4jEncodingDetector implements EncodingDetector {
             try {
                 String n = match.getNormalizedName();
                 if (ignoreCharsets.contains(n)) {
-                    return null;
+                    continue;
                 }
                 return CharsetUtils.forName(match.getNormalizedName());
             } catch (IllegalArgumentException e) {

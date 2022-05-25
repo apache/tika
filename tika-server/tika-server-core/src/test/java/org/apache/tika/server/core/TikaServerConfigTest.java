@@ -17,11 +17,14 @@
 package org.apache.tika.server.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.cli.CommandLine;
@@ -111,7 +114,36 @@ public class TikaServerConfigTest {
                         emptyCommandLine,
                         settings);
         TlsConfig tlsConfig = config.getTlsConfig();
-        System.out.println(tlsConfig);
+        assertTrue(tlsConfig.isActive());
+        assertFalse(tlsConfig.isClientAuthenticationWanted());
+        assertFalse(tlsConfig.isClientAuthenticationRequired());
+        assertEquals("myType", tlsConfig.getKeyStoreType());
+        assertEquals("pass", tlsConfig.getKeyStorePassword());
+        assertEquals("/something/or/other", tlsConfig.getKeyStoreFile());
+        assertEquals("myType2", tlsConfig.getTrustStoreType());
+        assertEquals("pass2", tlsConfig.getTrustStorePassword());
+        assertEquals("/something/or/other2", tlsConfig.getTrustStoreFile());
     }
 
+    @Test
+    public void testInterpolation() throws Exception {
+        List<String> input = new ArrayList<>();
+        System.setProperty("logpath", "qwertyuiop");
+        System.setProperty("logslash", "qwerty\\uiop");
+        try {
+            input.add("-Dlogpath=\"${sys:logpath}\"");
+            input.add("-Dlogpath=no-interpolation");
+            input.add("-Xlogpath=\"${sys:logpath}\"");
+            input.add("-Dlogpath=\"${sys:logslash}\"");
+
+            List<String> output = TikaServerConfig.interpolateSysProps(input);
+            assertEquals("-Dlogpath=\"qwertyuiop\"", output.get(0));
+            assertEquals("-Dlogpath=no-interpolation", output.get(1));
+            assertEquals("-Xlogpath=\"${sys:logpath}\"", output.get(2));
+            assertEquals("-Dlogpath=\"qwerty\\uiop\"", output.get(3));
+        } finally {
+            System.clearProperty("logpath");
+            System.clearProperty("logslash");
+        }
+    }
 }

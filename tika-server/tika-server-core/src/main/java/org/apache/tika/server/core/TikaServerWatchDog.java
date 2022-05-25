@@ -141,6 +141,14 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
                 try {
                     if (mustRestart) {
                         forkedProcess = startForkedProcess(restarts++);
+                        if (forkedProcess == null) {
+                            if (! shutDown) {
+                                throw new IllegalArgumentException("forked process should not be " +
+                                        "null when not in shutdown mode");
+                            } else {
+                                return new WatchDogResult(port, id, restarts);
+                            }
+                        }
                         setForkedStatus(FORKED_STATUS.RUNNING);
                         mustRestart = false;
                     }
@@ -190,6 +198,13 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
         }
     }
 
+    public synchronized void close() throws DoNotRestartException, InterruptedException {
+        setForkedStatus(FORKED_STATUS.SHUTTING_DOWN);
+        LOG.debug("received 'close()'; about to shutdown");
+        shutDown();
+        closeForkedProcess(forkedProcess);
+    }
+
     private static void closeForkedProcess(ForkedProcess forkedProcess)
             throws DoNotRestartException, InterruptedException {
         try {
@@ -199,12 +214,12 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
         }
     }
 
-    private ForkedProcess startForkedProcess(int restarts) throws Exception {
+    private synchronized ForkedProcess startForkedProcess(int restarts) throws Exception {
         int consecutiveRestarts = 0;
         //if there's a bind exception, retry for 5 seconds to give the OS
         //a chance to release the port
         int maxBind = 5;
-        while (consecutiveRestarts < maxBind) {
+        while (consecutiveRestarts < maxBind && ! shutDown) {
             try {
                 ForkedProcess forkedProcess = new ForkedProcess(restarts);
                 FORKED_PROCESSES.add(forkedProcess);
@@ -218,6 +233,9 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
                     throw e;
                 }
             }
+        }
+        if (shutDown) {
+            return null;
         }
         throw new RuntimeException("Couldn't start forked process");
     }
@@ -398,8 +416,6 @@ public class TikaServerWatchDog implements Callable<WatchDogResult> {
             argList.add(Integer.toString(numRestarts));
             LOG.debug("forked process commandline: " + argList.toString());
             builder.command(argList);
-            //copy forking processes' env variables
-            builder.environment().putAll(System.getenv());
             //now overwrite with the specific server id
             //this is mostly for log4j 2.x so that different processes
             //can log to different log files via {env:tika.server.id}

@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.InputStream;
 import java.util.Arrays;
@@ -55,6 +56,7 @@ import org.apache.tika.metadata.Font;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPMM;
 import org.apache.tika.mime.MediaType;
@@ -65,6 +67,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerDecorator;
+import org.apache.tika.utils.ExceptionUtils;
 
 /**
  * Test case for parsing pdf files.
@@ -713,7 +716,8 @@ public class PDFParserTest extends TikaTest {
         }
         assertEquals(2, inline);
         assertEquals(2, attach);
-
+        assertEquals(1, metadatas.get(1).getInt(TikaPagedText.PAGE_NUMBER));
+        assertEquals(66, metadatas.get(2).getInt(TikaPagedText.PAGE_NUMBER));
         //now try turning off inline
 
         context.set(org.apache.tika.extractor.DocumentSelector.class, new AvoidInlineSelector());
@@ -1210,6 +1214,15 @@ public class PDFParserTest extends TikaTest {
         assertContains("transport mined materials", xml);
     }
 
+    @Test
+    public void testAnglesOnPageRotation() throws Exception {
+        PDFParserConfig pdfParserConfig = new PDFParserConfig();
+        pdfParserConfig.setDetectAngles(true);
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(PDFParserConfig.class, pdfParserConfig);
+        String xml = getXML("testPDF_rotated.pdf", parseContext).xml;
+        assertContains("until a further review indicates that the infrastructure", xml);
+    }
 
     @Test
     public void testUnmappedUnicodeStats() throws Exception {
@@ -1359,32 +1372,51 @@ public class PDFParserTest extends TikaTest {
         assertEquals("RM1", metadata.get(0).getValues(PDF.ANNOTATION_TYPES)[0]);
     }
 
-    /**
+
     @Test
-    public void testWriteLimit() throws Exception {
-        for (int i = 0; i < 10000; i += 13) {
-            Metadata metadata = testWriteLimit("testPDF_childAttachments.pdf", i);
-            assertEquals("true", metadata.get(TikaCoreProperties.WRITE_LIMIT_REACHED));
-            int len = metadata.get(TikaCoreProperties.TIKA_CONTENT).length();
-            System.out.println(len + " : " + i);
-            assertTrue(len <= i);
+    public void testCustomGraphicsEngineFactory() throws Exception {
+        try (InputStream is =
+                     getResourceAsStream(
+                             "tika-config-custom-graphics-engine.xml")) {
+            assertNotNull(is);
+            TikaConfig tikaConfig = new TikaConfig(is);
+            Parser p = new AutoDetectParser(tikaConfig);
+            try {
+                List<Metadata> metadataList = getRecursiveMetadata("testPDF_JBIG2.pdf", p);
+                fail("should have thrown a runtime exception");
+            } catch (TikaException e) {
+                String stack = ExceptionUtils.getStackTrace(e);
+                assertContains("testing123", stack);
+            }
         }
     }
 
-    private Metadata testWriteLimit(String fileName, int limit) throws Exception {
-        BasicContentHandlerFactory factory = new BasicContentHandlerFactory(
-                BasicContentHandlerFactory.HANDLER_TYPE.TEXT, limit
-        );
-        ContentHandler contentHandler = factory.getNewContentHandler();
-        Metadata metadata = new Metadata();
-        ParseContext parseContext = new ParseContext();
-        try (InputStream is = getResourceAsStream("/test-documents/" + fileName)) {
-            AUTO_DETECT_PARSER.parse(is, contentHandler, metadata, parseContext);
-        } catch (WriteLimitReachedException e) {
-            //e.printStackTrace();
-        }
-        metadata.set(TikaCoreProperties.TIKA_CONTENT, contentHandler.toString());
-        return metadata;
-    }*/
+            /**
+            @Test
+            public void testWriteLimit() throws Exception {
+                for (int i = 0; i < 10000; i += 13) {
+                    Metadata metadata = testWriteLimit("testPDF_childAttachments.pdf", i);
+                    assertEquals("true", metadata.get(TikaCoreProperties.WRITE_LIMIT_REACHED));
+                    int len = metadata.get(TikaCoreProperties.TIKA_CONTENT).length();
+                    System.out.println(len + " : " + i);
+                    assertTrue(len <= i);
+                }
+            }
+
+            private Metadata testWriteLimit(String fileName, int limit) throws Exception {
+                BasicContentHandlerFactory factory = new BasicContentHandlerFactory(
+                        BasicContentHandlerFactory.HANDLER_TYPE.TEXT, limit
+                );
+                ContentHandler contentHandler = factory.getNewContentHandler();
+                Metadata metadata = new Metadata();
+                ParseContext parseContext = new ParseContext();
+                try (InputStream is = getResourceAsStream("/test-documents/" + fileName)) {
+                    AUTO_DETECT_PARSER.parse(is, contentHandler, metadata, parseContext);
+                } catch (WriteLimitReachedException e) {
+                    //e.printStackTrace();
+                }
+                metadata.set(TikaCoreProperties.TIKA_CONTENT, contentHandler.toString());
+                return metadata;
+            }*/
 
 }

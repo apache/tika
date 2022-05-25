@@ -18,8 +18,8 @@
 package org.apache.tika.langdetect.tika;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -30,9 +30,9 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.exception.TikaException;
 
@@ -44,20 +44,20 @@ public class LanguageProfilerBuilderTest {
     String profileName = "test-profile";
     private Path tmpProfileModel;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         tmpProfileModel = Files.createTempFile("tika-lang", ".ngp");
         try (InputStream is = LanguageProfilerBuilderTest.class.getResourceAsStream(corpusName)) {
             LanguageProfilerBuilder ngramProfileBuilder =
                     LanguageProfilerBuilder.create(profileName, is, UTF_8.name());
             try (OutputStream os = Files.newOutputStream(tmpProfileModel)) {
-                ngramProfileBuilder.save(os);
+                ngramProfileBuilder.save(os);;
                 assertEquals(maxlen, ngramProfileBuilder.getSorted().size());
             }
         }
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         if (Files.isRegularFile(tmpProfileModel)) {
             Files.delete(tmpProfileModel);

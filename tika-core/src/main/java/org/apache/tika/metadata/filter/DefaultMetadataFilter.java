@@ -36,9 +36,9 @@ public class DefaultMetadataFilter extends CompositeMetadataFilter {
     }
 
     private static List<MetadataFilter> getDefaultFilters(ServiceLoader loader) {
-        List<MetadataFilter> detectors = loader.loadStaticServiceProviders(MetadataFilter.class);
-        ServiceLoaderUtils.sortLoadedClasses(detectors);
+        List<MetadataFilter> metadataFilters = loader.loadStaticServiceProviders(MetadataFilter.class);
+        ServiceLoaderUtils.sortLoadedClasses(metadataFilters);
 
-        return detectors;
+        return metadataFilters;
     }
 }

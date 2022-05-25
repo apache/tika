@@ -47,11 +47,11 @@ import org.apache.cxf.configuration.security.KeyStoreType;
 import org.apache.cxf.configuration.security.TrustManagersType;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.transport.http.HTTPConduit;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,6 +64,10 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerIntegrationTest.class);
     private static Path TLS_KEYS;
+
+    @TempDir
+    private static Path TLS_CONFIG;
+
     private static Path TIKA_TLS_ONE_WAY_CONFIG;
     private static Path TIKA_TLS_TWO_WAY_CONFIG;
     @BeforeAll
@@ -76,7 +80,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
                 UTF_8);
         xml = xml.replace("{SSL_KEYS}", TLS_KEYS.toAbsolutePath().toString());
 
-        TIKA_TLS_TWO_WAY_CONFIG = Files.createTempFile("tika-config-tls-", ".xml");
+        TIKA_TLS_TWO_WAY_CONFIG = Files.createTempFile(TLS_CONFIG, "tika-config-tls-", ".xml");
         Files.write(TIKA_TLS_TWO_WAY_CONFIG, xml.getBytes(UTF_8));
 
         xml = IOUtils.resourceToString(
@@ -84,15 +88,9 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
                 UTF_8);
         xml = xml.replace("{SSL_KEYS}", TLS_KEYS.toAbsolutePath().toString());
 
-        TIKA_TLS_ONE_WAY_CONFIG = Files.createTempFile("tika-config-tls-", ".xml");
+        TIKA_TLS_ONE_WAY_CONFIG = Files.createTempFile(TLS_CONFIG, "tika-config-tls-", ".xml");
         Files.write(TIKA_TLS_ONE_WAY_CONFIG, xml.getBytes(UTF_8));
 
-    }
-
-    @AfterAll
-    public static void cleanUpSSL() throws IOException {
-        Files.delete(TIKA_TLS_TWO_WAY_CONFIG);
-        Files.delete(TIKA_TLS_ONE_WAY_CONFIG);
     }
 
     @Test
@@ -506,6 +504,39 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         }
     }
 
+    @Test
+    @Disabled("figure out how to test this with the forked process")
+    public void testSystemExitViaStopMethod() throws Exception {
+
+        Thread serverThread = new Thread() {
+            @Override
+            public void run() {
+                TikaServerCli.main(new String[]{"-p", INTEGRATION_TEST_PORT,});
+            }
+
+            //Add custom implementation of the destroy method
+            //This method was never implemented in the super class, and gives us
+            // an easy way to invoke our stop command.
+            //We pass in the preventSystemExit option to stop the call to System.Exit,
+            // which would terminate the JVM and cause a test failure.
+            @Override
+            public void interrupt() {
+                TikaServerCli.stop(new String[]{"-preventSystemExit"});
+            }
+        };
+        serverThread.start();
+        awaitServerStartup();
+        serverThread.interrupt();
+
+        //give some time for the server to crash/kill itself
+        Thread.sleep(2000);
+
+        try {
+            testBaseline();
+        } finally {
+            serverThread.interrupt();
+        }
+    }
 
     @Test
     @Disabled("turn this into a real test")

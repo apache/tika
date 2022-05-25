@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>2.4.0-SNAPSHOT</version>
+    <version>2.4.1-SNAPSHOT</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -38,7 +38,7 @@
       <dependency>
         <groupId>org.osgi</groupId>
         <artifactId>org.osgi.compendium</artifactId>
-        <version>5.0.0</version>
+        <version>${osgi.compendium.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -119,13 +119,6 @@
       <groupId>org.springframework</groupId>
       <artifactId>spring-context</artifactId>
       <version>${spring.version}</version>
-    </dependency>
-    <!-- after we migrate everything to junit5, we can get rid of this -->
-    <dependency>
-      <groupId>org.junit.vintage</groupId>
-      <artifactId>junit-vintage-engine</artifactId>
-      <version>${junit5.version}</version>
-      <scope>test</scope>
     </dependency>
   </dependencies>
 

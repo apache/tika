@@ -90,8 +90,6 @@ public class MidiParser extends AbstractParser {
                 metadata.set("divisionType", "SMPTE_30");
             } else if (type == Sequence.SMPTE_30DROP) {
                 metadata.set("divisionType", "SMPTE_30DROP");
-            } else if (type == Sequence.SMPTE_24) {
-                metadata.set("divisionType", String.valueOf(type));
             }
 
             for (Track track : tracks) {

@@ -45,6 +45,8 @@ public class IDMLParserTest extends TikaTest {
         assertEquals("2", metadata.get("MasterSpreadPageCount"));
         assertEquals("1", metadata.get("SpreadPageCount"));
         assertEquals("application/vnd.adobe.indesign-idml-package", metadata.get(Metadata.CONTENT_TYPE));
+        // failure below could be because of missing javax.xml.bind if xmpbox 2.* is used
+        // check the swallowed throwable in XMPMetadataExtractor.parse()
         assertEquals("2020-09-20T20:07:44Z", metadata.get(XMP.CREATE_DATE));
         assertEquals("2020-09-20T20:07:44Z", metadata.get(XMP.MODIFY_DATE));
         assertEquals("Adobe InDesign CC 14.0 (Windows)", metadata.get(XMP.CREATOR_TOOL));
@@ -55,6 +57,8 @@ public class IDMLParserTest extends TikaTest {
     public void testParserToXML() throws Exception {
         Metadata metadata = new Metadata();
         String xml = getXML("testIndesign.idml", parser, metadata).xml;
+        // failure below could be because of missing javax.xml.bind if xmpbox 2.* is used
+        // check the swallowed throwable in XMPMetadataExtractor.parse()
         assertEquals("Adobe InDesign CC 14.0 (Windows)", metadata.get(XMP.CREATOR_TOOL));
         assertEquals("3", metadata.get("TotalPageCount"));
         assertContains("<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit", xml);

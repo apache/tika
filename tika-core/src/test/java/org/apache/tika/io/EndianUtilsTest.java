@@ -72,4 +72,22 @@ public class EndianUtilsTest {
             //swallow
         }
     }
+
+    @Test
+    public void testReadIntME() throws Exception {
+        // Example from https://yamm.finance/wiki/Endianness.html#mwAiw 
+        byte[] data = new byte[]{(byte) 0x0b, (byte) 0x0a, (byte) 0x0d, (byte) 0x0c};
+        assertEquals(0x0a0b0c0d, EndianUtils.readIntME(new ByteArrayInputStream(data)));
+
+        data = new byte[]{(byte) 0xFE, (byte) 0xFF, (byte) 0xFC, (byte) 0xFD};
+        assertEquals(0xfffefdfc, EndianUtils.readIntME(new ByteArrayInputStream(data)));
+
+        data = new byte[]{(byte) 0xFF, (byte) 0xFF, (byte) 0xFF};
+        try {
+            EndianUtils.readIntME(new ByteArrayInputStream(data));
+            fail("Should have thrown exception");
+        } catch (EndianUtils.BufferUnderrunException e) {
+            //swallow
+        }
+    }
 }
