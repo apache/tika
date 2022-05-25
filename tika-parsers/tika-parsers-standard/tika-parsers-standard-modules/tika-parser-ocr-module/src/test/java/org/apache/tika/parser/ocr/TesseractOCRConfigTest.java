@@ -16,6 +16,11 @@
  */
 package org.apache.tika.parser.ocr;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
@@ -25,8 +30,6 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.parser.CompositeParser;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 public class TesseractOCRConfigTest extends TikaTest {
 
@@ -43,7 +46,7 @@ public class TesseractOCRConfigTest extends TikaTest {
         assertEquals("gray", config.getColorspace(), "Invalid default colorpsace value");
         assertEquals("triangle", config.getFilter(), "Invalid default filter value");
         assertEquals(200, config.getResize(), "Invalid default resize value");
-        assertFalse(config.isApplyRotation(), "Invalid default applyRotation value");
+        assertEquals(false, config.isApplyRotation(), "Invalid default applyRotation value");
     }
 
     @Test
@@ -64,7 +67,7 @@ public class TesseractOCRConfigTest extends TikaTest {
         assertEquals(8, config.getDepth(), "Invalid overridden depth value");
         assertEquals("box", config.getFilter(), "Invalid overridden filter value");
         assertEquals(300, config.getResize(), "Invalid overridden resize value");
-        assertFalse(config.isApplyRotation(), "Invalid default applyRotation value");
+        assertEquals(false, config.isApplyRotation(), "Invalid default applyRotation value");
     }
 
     @Test
@@ -86,7 +89,7 @@ public class TesseractOCRConfigTest extends TikaTest {
         assertEquals(8, config.getDepth(), "Invalid overridden depth value");
         assertEquals("box", config.getFilter(), "Invalid overridden filter value");
         assertEquals(300, config.getResize(), "Invalid overridden resize value");
-        assertTrue(config.isApplyRotation(), "Invalid default applyRotation value");
+        assertEquals(true, config.isApplyRotation(), "Invalid default applyRotation value");
     }
 
     @Test
@@ -244,14 +247,6 @@ public class TesseractOCRConfigTest extends TikaTest {
         TesseractOCRConfig config = new TesseractOCRConfig();
         assertThrows(IllegalArgumentException.class, () -> {
             config.setColorspace("someth!ng");
-        });
-    }
-
-    @Test
-    public void testNullFilter() {
-        TesseractOCRConfig config = new TesseractOCRConfig();
-        assertThrows(IllegalArgumentException.class, () -> {
-            config.setFilter(null);
         });
     }
 

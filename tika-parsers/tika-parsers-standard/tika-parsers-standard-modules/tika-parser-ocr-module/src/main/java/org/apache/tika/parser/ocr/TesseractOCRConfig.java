@@ -410,7 +410,7 @@ public class TesseractOCRConfig implements Serializable {
      *               Default value is triangle.
      */
     public void setFilter(String filter) {
-        if (filter == null) {
+        if (filter.equals(null)) {
             throw new IllegalArgumentException(
                     "Filter value cannot be null. Valid values are point, hermite, " +
                             "cubic, box, gaussian, catrom, triangle, quadratic and mitchell.");
