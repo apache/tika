@@ -610,7 +610,7 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
 
             int splitAt = embeddedName.lastIndexOf('.');
             if (splitAt > 0) {
-                embeddedName.substring(splitAt);
+                embeddedName = embeddedName.substring(splitAt);
             }
 
             File tmp = File.createTempFile("tika-embedded-", suffix);
