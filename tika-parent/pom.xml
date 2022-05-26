@@ -766,7 +766,7 @@
               <version>2.1.212</version>
             </exclude>
             <exclude>
-              <!-- the cve seems to be about the c++ library, not the java library -->
+              <!-- CVE-2018-18928 seems to be about the c++ library, not the java library -->
               <groupId>com.ibm.icu</groupId>
               <artifactId>icu4j</artifactId>
               <version>${icu4j.version}</version>
