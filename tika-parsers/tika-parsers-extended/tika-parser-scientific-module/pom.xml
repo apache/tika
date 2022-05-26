@@ -132,6 +132,25 @@ May the gods of dependency management fix this in the future.
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.sonatype.ossindex.maven</groupId>
+        <artifactId>ossindex-maven-plugin</artifactId>
+        <configuration>
+          <excludeCoordinates>
+            <exclude>
+              <groupId>com.google.guava</groupId>
+              <artifactId>guava</artifactId>
+              <version>31.1-jre</version>
+            </exclude>
+            <exclude>
+              <groupId>xerces</groupId>
+              <artifactId>xercesImpl</artifactId>
+              <version>2.12.2</version>
+            </exclude>
+          </excludeCoordinates>
+        </configuration>
+      </plugin>
+
     </plugins>
   </build>
 
