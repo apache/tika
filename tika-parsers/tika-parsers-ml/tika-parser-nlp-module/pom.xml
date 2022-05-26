@@ -119,7 +119,6 @@
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
-            <version>${gson.version}</version>
         </dependency>
         <!-- sentiment parser -->
         <dependency>
@@ -224,6 +223,21 @@
                             <groupId>log4j</groupId>
                             <artifactId>log4j</artifactId>
                             <version>1.2.17</version>
+                        </exclude>
+                        <exclude>
+                            <groupId>com.google.guava</groupId>
+                            <artifactId>guava</artifactId>
+                            <version>31.1-jre</version>
+                        </exclude>
+                        <exclude>
+                            <groupId>xerces</groupId>
+                            <artifactId>xercesImpl</artifactId>
+                            <version>2.12.2</version>
+                        </exclude>
+                        <exclude>
+                            <groupId>org.apache.lucene</groupId>
+                            <artifactId>lucene-queryparser</artifactId>
+                            <version>4.0.0</version>
                         </exclude>
                     </excludeCoordinates>
                 </configuration>

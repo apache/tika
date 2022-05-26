@@ -155,6 +155,31 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+      <groupId>org.sonatype.ossindex.maven</groupId>
+      <artifactId>ossindex-maven-plugin</artifactId>
+      <version>3.2.0</version>
+      <configuration>
+        <excludeCoordinates>
+          <exclude>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>31.1-jre</version>
+          </exclude>
+          <exclude>
+            <groupId>xerces</groupId>
+            <artifactId>xercesImpl</artifactId>
+            <version>2.12.2</version>
+          </exclude>
+          <exclude>
+            <groupId>commons-dbcp</groupId>
+            <artifactId>commons-dbcp</artifactId>
+            <version>1.4</version>
+          </exclude>
+        </excludeCoordinates>
+        <fail>true</fail>
+      </configuration>
+      </plugin>
     </plugins>
   </build>
 
