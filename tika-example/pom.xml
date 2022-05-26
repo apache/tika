@@ -164,12 +164,17 @@
           <exclude>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>31.1-jre</version>
+            <version>${guava.version}</version>
+          </exclude>
+          <exclude>
+            <groupId>com.ibm.icu</groupId>
+            <artifactId>icu4j</artifactId>
+            <version>${icu4j.version}</version>
           </exclude>
           <exclude>
             <groupId>xerces</groupId>
             <artifactId>xercesImpl</artifactId>
-            <version>2.12.2</version>
+            <version>${xerces.version}</version>
           </exclude>
           <exclude>
             <groupId>commons-dbcp</groupId>
