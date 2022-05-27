@@ -18,8 +18,9 @@ package org.apache.tika.pipes.fetcher.http;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -40,18 +41,16 @@ import org.apache.http.StatusLine;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.protocol.HttpContext;
-import org.apache.tika.client.HttpClientFactory;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Property;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.client.HttpClientFactory;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.fetcher.FetcherManager;
 
 public class HttpFetcherTest extends TikaTest {
@@ -63,8 +62,8 @@ public class HttpFetcherTest extends TikaTest {
 
     @BeforeEach
     public void before() throws Exception {
-        final HttpResponse mockResponse =
-                buildMockResponse(HttpStatus.SC_OK, IOUtils.toInputStream(CONTENT, Charset.defaultCharset()));
+        final HttpResponse mockResponse = buildMockResponse(HttpStatus.SC_OK,
+                IOUtils.toInputStream(CONTENT, Charset.defaultCharset()));
 
         mockClientResponse(mockResponse);
     }
@@ -106,8 +105,7 @@ public class HttpFetcherTest extends TikaTest {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         Metadata metadata = new Metadata();
         HttpFetcher httpFetcher =
-                (HttpFetcher) getFetcherManager("tika-config-http.xml")
-                        .getFetcher("http");
+                (HttpFetcher) getFetcherManager("tika-config-http.xml").getFetcher("http");
         try (InputStream is = httpFetcher.fetch(url, metadata)) {
             IOUtils.copy(is, bos);
         }
@@ -123,8 +121,7 @@ public class HttpFetcherTest extends TikaTest {
         long end = start + 1408 - 1;
         Metadata metadata = new Metadata();
         HttpFetcher httpFetcher =
-                (HttpFetcher) getFetcherManager("tika-config-http.xml")
-                        .getFetcher("http");
+                (HttpFetcher) getFetcherManager("tika-config-http.xml").getFetcher("http");
         try (TemporaryResources tmp = new TemporaryResources()) {
             Path tmpPath = tmp.createTempFile();
             try (InputStream is = httpFetcher.fetch(url, start, end, metadata)) {
@@ -146,7 +143,8 @@ public class HttpFetcherTest extends TikaTest {
         final HttpClient httpClient = mock(HttpClient.class);
         final HttpClientFactory clientFactory = mock(HttpClientFactory.class);
 
-        when(httpClient.execute(any(HttpUriRequest.class), any(HttpContext.class))).thenReturn(response);
+        when(httpClient.execute(
+                any(HttpUriRequest.class), any(HttpContext.class))).thenReturn(response);
         when(clientFactory.build()).thenReturn(httpClient);
         when(clientFactory.copy()).thenReturn(clientFactory);
 
@@ -154,7 +152,8 @@ public class HttpFetcherTest extends TikaTest {
         httpFetcher.initialize(Collections.emptyMap());
     }
 
-    private static HttpResponse buildMockResponse(final int statusCode, final InputStream is) throws IOException {
+    private static HttpResponse buildMockResponse(final int statusCode, final InputStream is)
+            throws IOException {
         final HttpResponse response = mock(HttpResponse.class);
         final StatusLine status = mock(StatusLine.class);
         final HttpEntity entity = mock(HttpEntity.class);
