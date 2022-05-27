@@ -311,7 +311,7 @@
     <!-- fakeload versions &gt; 0.4.0 require java > 8 -->
     <fakeload.version>0.4.0</fakeload.version>
     <geoapi.version>3.0.1</geoapi.version>
-    <google.cloud.version>2.7.1</google.cloud.version>
+    <google.cloud.version>2.7.2</google.cloud.version>
     <guava.version>31.1-jre</guava.version>
     <h2.version>2.1.212</h2.version>
     <httpcomponents.version>4.5.13</httpcomponents.version>
