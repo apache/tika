@@ -762,14 +762,19 @@
               <version>2.18.0</version>
             </exclude>
             <exclude>
+              <!-- sonatype https://github.com/google/guava/issues/4011 -->
               <groupId>com.google.guava</groupId>
               <artifactId>guava</artifactId>
               <version>31.1-jre</version>
             </exclude>
+            <!-- sonatype points to a sve in 1.4.199 for this ?!
+            https://www.exploit-db.com/exploits/49384
+            https://codewhitesec.blogspot.com/2019/08/exploit-h2-database-native-libraries-jni.html
+            -->
             <exclude>
               <groupId>com.h2database</groupId>
               <artifactId>h2</artifactId>
-              <version>2.1.212</version>
+              <version>${h2.version}</version>
             </exclude>
             <exclude>
               <!-- CVE-2018-18928 seems to be about the c++ library, not the java library -->
@@ -783,9 +788,29 @@
               <version>4.1.77.Final</version>
             </exclude>
             <exclude>
+              <!-- the most recent cve in sonatype for this artifact is 2.11.0,
+                  not at all the version we're using...smh-->
               <groupId>xerces</groupId>
               <artifactId>xercesImpl</artifactId>
-              <version>2.12.2</version>
+              <version>${xerces.version}</version>
+            </exclude>
+            <!-- these are used by the nlp-module -->
+            <exclude>
+              <groupId>org.apache.lucene</groupId>
+              <artifactId>lucene-queryparser</artifactId>
+              <version>4.0.0</version>
+            </exclude>
+            <exclude>
+              <groupId>log4j</groupId>
+              <artifactId>log4j</artifactId>
+              <version>1.2.17</version>
+            </exclude>
+            <!-- this one is used in tika-example -->
+            <exclude>
+              <!-- sonatype: https://github.com/apache/commons-dbcp/commit/a4c5af0da1de3a7f50c72fc7edaa1f653ca276dd -->
+              <groupId>commons-dbcp</groupId>
+              <artifactId>commons-dbcp</artifactId>
+              <version>1.4</version>
             </exclude>
           </excludeCoordinates>
           <fail>true</fail>
