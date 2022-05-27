@@ -111,6 +111,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
     private static String USER_AGENT = "User-Agent";
 
     Logger LOG = LoggerFactory.getLogger(HttpFetcher.class);
+
     private HttpClientFactory httpClientFactory = new HttpClientFactory();
     private HttpClient httpClient;
     //back-off client that disables compression
@@ -149,7 +150,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
 
     @Override
     public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata)
-            throws IOException, TikaException {
+            throws IOException {
         HttpGet get = new HttpGet(fetchKey);
         if (! StringUtils.isBlank(userAgent)) {
             get.setHeader(USER_AGENT, userAgent);
@@ -204,7 +205,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
             }
             throw e;
         } catch  (IOException e) {
-            if (timeout.get() == true) {
+            if (timeout.get()) {
                 throw new TikaTimeoutException("Overall timeout after " + overallTimeout + "ms");
             } else {
                 throw e;
@@ -283,9 +284,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
                 URI uri = uriList.get(uriList.size() - 1);
                 if (uri != null) {
                     URL u = uri.toURL();
-                    if (u != null) {
-                        metadata.set(HTTP_TARGET_URL, u.toString());
-                    }
+                    metadata.set(HTTP_TARGET_URL, u.toString());
                 }
             } catch (MalformedURLException e) {
                 //swallow
@@ -315,7 +314,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
             IOUtils.copyLarge(is, bos, 0, maxErrMsgSize);
             return new String(bos.toByteArray(), StandardCharsets.UTF_8);
         } catch (IOException e) {
-            LOG.warn("IOexception trying to read error message", e);
+            LOG.warn("IOException trying to read error message", e);
             return "";
         } catch (NullPointerException e ) {
             return "";
@@ -448,6 +447,11 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler)
             throws TikaConfigException {
-
     }
+
+    // For test purposes
+    void setHttpClientFactory(HttpClientFactory httpClientFactory) {
+        this.httpClientFactory = httpClientFactory;
+    }
+
 }
