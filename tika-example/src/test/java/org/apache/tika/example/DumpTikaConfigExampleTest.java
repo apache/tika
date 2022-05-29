@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,7 +46,7 @@ public class DumpTikaConfigExampleTest {
     @BeforeEach
     public void setUp() {
         try {
-            configFile = File.createTempFile("tmp", ".xml");
+            configFile = Files.createTempFile("tmp", ".xml").toFile();
         } catch (IOException e) {
             throw new RuntimeException("Failed to create tmp file");
         }
