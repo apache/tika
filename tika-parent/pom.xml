@@ -352,7 +352,7 @@
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <!-- 0.8.6 is built with java 11 and does not work with Java 8 -->
     <mime4j.version>0.8.4</mime4j.version>
-    <mockito.version>4.5.1</mockito.version>
+    <mockito.version>4.6.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <openjson.version>1.0.12</openjson.version>
     <opennlp.version>1.9.4</opennlp.version>
