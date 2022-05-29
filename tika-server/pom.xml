@@ -68,9 +68,21 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>net.sf.opencsv</groupId>
+      <groupId>com.opencsv</groupId>
       <artifactId>opencsv</artifactId>
-      <version>2.3</version>
+      <version>5.6</version>
+    </dependency>
+    <!-- avoid org.apache.commons:commons-text:1.9 dependent on org.apache.commons:commons-lang3:3.11 -->
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-text</artifactId>
+      <version>1.9</version>
+      <exclusions>
+          <exclusion>
+              <groupId>org.apache.commons</groupId>
+              <artifactId>commons-lang3</artifactId>
+          </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.cxf</groupId>
