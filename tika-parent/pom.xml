@@ -354,8 +354,6 @@
     <mime4j.version>0.8.4</mime4j.version>
     <mockito.version>4.5.1</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
-    <opencsv.version>2.3</opencsv.version>
-    <objenesis.version>3.2</objenesis.version>
     <openjson.version>1.0.12</openjson.version>
     <opennlp.version>1.9.4</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
