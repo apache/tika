@@ -22,6 +22,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 
 import org.apache.tika.utils.RereadableInputStream;
 import org.junit.Test;
@@ -98,7 +99,7 @@ public class TestRereadableInputStream {
     }
 
     private File createTestFile() throws IOException {
-        File testfile = File.createTempFile("TIKA_ris_test", ".tmp");
+        File testfile = Files.createTempFile("TIKA_ris_test", ".tmp").toFile();
         testfile.deleteOnExit();
         FileOutputStream fos = new FileOutputStream(testfile);
         for (int i = 0; i < TEST_SIZE; i++) {

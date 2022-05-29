@@ -20,6 +20,7 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.Locale;
 
 import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException;
@@ -39,7 +40,6 @@ import org.apache.poi.util.LocaleUtil;
 import org.apache.poi.xslf.extractor.XSLFExtractor;
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
 import org.apache.poi.xslf.usermodel.XSLFRelation;
-import org.apache.poi.xslf.usermodel.XSLFSlideShow;
 import org.apache.poi.xssf.extractor.XSSFBEventBasedExcelExtractor;
 import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
@@ -111,7 +111,7 @@ public class OOXMLExtractorFactory {
                 try {
                     pkg = OPCPackage.open(tis.getFile().getPath(), PackageAccess.READ);
                 } catch (InvalidOperationException e) {
-                    tmpRepairedCopy = File.createTempFile("tika-ooxml-repair-", "");
+                    tmpRepairedCopy = Files.createTempFile("tika-ooxml-repair-", "").toFile();
                     ZipSalvager.salvageCopy(tis.getFile(), tmpRepairedCopy);
                     pkg = OPCPackage.open(tmpRepairedCopy, PackageAccess.READ);
                 }
@@ -130,7 +130,7 @@ public class OOXMLExtractorFactory {
                             throw e;
                         }
                         rereadableInputStream.rewind();
-                        tmpRepairedCopy = File.createTempFile("tika-ooxml-repair-", "");
+                        tmpRepairedCopy = Files.createTempFile("tika-ooxml-repair-", "").toFile();
                         ZipSalvager.salvageCopy(rereadableInputStream, tmpRepairedCopy, false);
                         //if there isn't enough left to be opened as a package
                         //throw an exception -- we may want to fall back to streaming
@@ -146,7 +146,7 @@ public class OOXMLExtractorFactory {
                             throw e;
                         }
                         rereadableInputStream.rewind();
-                        tmpRepairedCopy = File.createTempFile("tika-ooxml-repair-", "");
+                        tmpRepairedCopy = Files.createTempFile("tika-ooxml-repair-", "").toFile();
                         ZipSalvager.salvageCopy(rereadableInputStream, tmpRepairedCopy, false);
                         //if there isn't enough left to be opened as a package
                         //throw an exception -- we may want to fall back to streaming

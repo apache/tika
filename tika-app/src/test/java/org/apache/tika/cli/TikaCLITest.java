@@ -23,23 +23,14 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InvalidObjectException;
-import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-import java.util.zip.ZipOutputStream;
+import java.nio.file.Files;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.tika.exception.TikaException;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -334,7 +325,7 @@ public class TikaCLITest {
         testExtract(targetFile, expectedChildrenFileNames, expectedChildrenFileNames.length);
     }
     private void testExtract(String targetFile, String[] expectedChildrenFileNames, int expectedLength) throws Exception {
-        File tempFile = File.createTempFile("tika-test-", "");
+        File tempFile = Files.createTempFile("tika-test-", "").toFile();
         tempFile.delete();
         tempFile.mkdir();
 
@@ -362,7 +353,7 @@ public class TikaCLITest {
     @Test
     public void testExtractTgz() throws Exception {
         //TIKA-2564
-        File tempFile = File.createTempFile("tika-test-", "");
+        File tempFile = Files.createTempFile("tika-test-", "").toFile();
         tempFile.delete();
         tempFile.mkdir();
 
@@ -431,7 +422,7 @@ public class TikaCLITest {
 
     @Test
     public void testExtractInlineImages() throws Exception {
-        File tempFile = File.createTempFile("tika-test-", "");
+        File tempFile = Files.createTempFile("tika-test-", "").toFile();
         tempFile.delete();
         tempFile.mkdir(); // not really good method for production usage, but ok for tests
         // google guava library has better solution

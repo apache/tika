@@ -28,7 +28,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
-import javax.swing.ProgressMonitorInputStream;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.event.HyperlinkEvent;
@@ -89,6 +88,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import java.nio.file.Files;
 
 /**
  * Simple Swing GUI for Apache Tika. You can drag and drop files on top
@@ -628,7 +628,7 @@ public class TikaGUI extends JFrame
          this.downstreamParser = downstreamParser;
          
          try {
-            File t = File.createTempFile("tika", ".test");
+            File t = Files.createTempFile("tika", ".test").toFile();
             tmpDir = t.getParentFile();
          } catch(IOException e) {}
       }
@@ -641,7 +641,7 @@ public class TikaGUI extends JFrame
             embeddedName.substring(splitAt);
          }
          
-         File tmp = File.createTempFile("tika-embedded-", suffix);
+         File tmp = Files.createTempFile("tika-embedded-", suffix).toFile();
          wanted.put(embeddedName, tmp);
          return tmp;
       }
