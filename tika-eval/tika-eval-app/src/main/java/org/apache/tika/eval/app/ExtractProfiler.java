@@ -63,6 +63,7 @@ public class ExtractProfiler extends AbstractProfiler {
                     new ColInfo(Cols.FILE_NAME, Types.VARCHAR, 256),
                     new ColInfo(Cols.MD5, Types.CHAR, 32), new ColInfo(Cols.LENGTH, Types.BIGINT),
                     new ColInfo(Cols.IS_EMBEDDED, Types.BOOLEAN),
+                    new ColInfo(Cols.EMBEDDED_DEPTH, Types.INTEGER),
                     new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 12),
                     new ColInfo(Cols.MIME_ID, Types.INTEGER),
                     new ColInfo(Cols.ELAPSED_TIME_MILLIS, Types.INTEGER),

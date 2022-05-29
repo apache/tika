@@ -75,6 +75,7 @@ import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.ToXMLContentHandler;
+import org.apache.tika.utils.StringUtils;
 
 public abstract class AbstractProfiler extends FileResourceConsumer {
 
@@ -391,9 +392,13 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         if (i == 0) {
             data.put(Cols.IS_EMBEDDED, FALSE);
             data.put(Cols.FILE_NAME, fps.getRelativeSourceFilePath().getFileName().toString());
+            data.put(Cols.EMBEDDED_DEPTH, "0");
         } else {
             data.put(Cols.IS_EMBEDDED, TRUE);
             data.put(Cols.FILE_NAME, getFileName(m.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH)));
+            if (!StringUtils.isBlank(m.get(TikaCoreProperties.EMBEDDED_DEPTH))) {
+                data.put(Cols.EMBEDDED_DEPTH, m.get(TikaCoreProperties.EMBEDDED_DEPTH));
+            }
         }
         String ext = FilenameUtils.getExtension(data.get(Cols.FILE_NAME));
         ext = (ext == null) ? "" : ext.toLowerCase(Locale.US);

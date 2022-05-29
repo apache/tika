@@ -17,35 +17,95 @@
 package org.apache.tika.pipes.fetcher.http;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Collections;
 import java.util.zip.GZIPInputStream;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.StatusLine;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.protocol.HttpContext;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.client.HttpClientFactory;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.fetcher.FetcherManager;
 
-@Disabled("requires network connectivity")
 public class HttpFetcherTest extends TikaTest {
 
+    private static final String TEST_URL = "wontbecalled";
+    private static final String CONTENT = "request content";
+
+    private HttpFetcher httpFetcher;
+
+    @BeforeEach
+    public void before() throws Exception {
+        final HttpResponse mockResponse = buildMockResponse(HttpStatus.SC_OK,
+                IOUtils.toInputStream(CONTENT, Charset.defaultCharset()));
+
+        mockClientResponse(mockResponse);
+    }
+
     @Test
+    public void test2xxResponse() throws TikaException, IOException {
+        final Metadata meta = new Metadata();
+        meta.set(TikaCoreProperties.RESOURCE_NAME_KEY, "fileName");
+
+        try (final InputStream ignored = httpFetcher.fetch(TEST_URL, meta)) {
+            // HTTP headers added into meta
+            assertEquals("200", meta.get("http-header:status-code"));
+            assertEquals(TEST_URL, meta.get("http-connection:target-url"));
+            // Content size included in meta
+            assertEquals("15", meta.get("Content-Length"));
+
+            // Filename passed in should be preserved
+            assertEquals("fileName", meta.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        }
+    }
+
+    @Test
+    public void test4xxResponse() throws Exception {
+        // Setup client to respond with 403
+        mockClientResponse(buildMockResponse(HttpStatus.SC_FORBIDDEN, null));
+
+        final Metadata meta = new Metadata();
+        assertThrows(IOException.class, () -> httpFetcher.fetch(TEST_URL, meta));
+
+        // Meta still populated
+        assertEquals("403", meta.get("http-header:status-code"));
+        assertEquals(TEST_URL, meta.get("http-connection:target-url"));
+    }
+
+    @Test
+    @Disabled("requires network connectivity")
     public void testRedirect() throws Exception {
         String url = "https://t.co/cvfkWAEIxw?amp=1";
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         Metadata metadata = new Metadata();
         HttpFetcher httpFetcher =
-                (HttpFetcher) getFetcherManager("tika-config-http.xml")
-                        .getFetcher("http");
+                (HttpFetcher) getFetcherManager("tika-config-http.xml").getFetcher("http");
         try (InputStream is = httpFetcher.fetch(url, metadata)) {
             IOUtils.copy(is, bos);
         }
@@ -53,6 +113,7 @@ public class HttpFetcherTest extends TikaTest {
     }
 
     @Test
+    @Disabled("requires network connectivity")
     public void testRange() throws Exception {
         String url =
                 "https://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2020-45/segments/1603107869785.9/warc/CC-MAIN-20201020021700-20201020051700-00529.warc.gz";
@@ -60,8 +121,7 @@ public class HttpFetcherTest extends TikaTest {
         long end = start + 1408 - 1;
         Metadata metadata = new Metadata();
         HttpFetcher httpFetcher =
-                (HttpFetcher) getFetcherManager("tika-config-http.xml")
-                        .getFetcher("http");
+                (HttpFetcher) getFetcherManager("tika-config-http.xml").getFetcher("http");
         try (TemporaryResources tmp = new TemporaryResources()) {
             Path tmpPath = tmp.createTempFile();
             try (InputStream is = httpFetcher.fetch(url, start, end, metadata)) {
@@ -77,5 +137,32 @@ public class HttpFetcherTest extends TikaTest {
                 Paths.get(HttpFetcherTest.class.getResource("/" + path).toURI()));
     }
 
+    private void mockClientResponse(final HttpResponse response) throws Exception {
+        httpFetcher = (HttpFetcher) getFetcherManager("tika-config-http.xml").getFetcher("http");
 
+        final HttpClient httpClient = mock(HttpClient.class);
+        final HttpClientFactory clientFactory = mock(HttpClientFactory.class);
+
+        when(httpClient.execute(
+                any(HttpUriRequest.class), any(HttpContext.class))).thenReturn(response);
+        when(clientFactory.build()).thenReturn(httpClient);
+        when(clientFactory.copy()).thenReturn(clientFactory);
+
+        httpFetcher.setHttpClientFactory(clientFactory);
+        httpFetcher.initialize(Collections.emptyMap());
+    }
+
+    private static HttpResponse buildMockResponse(final int statusCode, final InputStream is)
+            throws IOException {
+        final HttpResponse response = mock(HttpResponse.class);
+        final StatusLine status = mock(StatusLine.class);
+        final HttpEntity entity = mock(HttpEntity.class);
+
+        when(status.getStatusCode()).thenReturn(statusCode);
+        when(entity.getContent()).thenReturn(is);
+        when(response.getStatusLine()).thenReturn(status);
+        when(response.getEntity()).thenReturn(entity);
+
+        return response;
+    }
 }

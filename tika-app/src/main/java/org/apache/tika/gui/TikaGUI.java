@@ -35,6 +35,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -598,7 +599,7 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
             this.downstreamParser = downstreamParser;
 
             try {
-                File t = File.createTempFile("tika", ".test");
+                File t = Files.createTempFile("tika", ".test").toFile();
                 tmpDir = t.getParentFile();
             } catch (IOException e) {
                 //swallow
@@ -613,7 +614,7 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
                 embeddedName = embeddedName.substring(splitAt);
             }
 
-            File tmp = File.createTempFile("tika-embedded-", suffix);
+            File tmp = Files.createTempFile("tika-embedded-", suffix).toFile();
             wanted.put(embeddedName, tmp);
             return tmp;
         }

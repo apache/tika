@@ -25,6 +25,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.NotSerializableException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -174,7 +175,7 @@ class ForkClient {
      * @throws IOException if the bootstrap archive could not be created
      */
     private static File createBootstrapJar() throws IOException {
-        File file = File.createTempFile("apache-tika-fork-", ".jar");
+        File file = Files.createTempFile("apache-tika-fork-", ".jar").toFile();
         boolean ok = false;
         try {
             fillBootstrapJar(file);

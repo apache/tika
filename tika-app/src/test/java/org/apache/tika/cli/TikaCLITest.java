@@ -62,8 +62,7 @@ public class TikaCLITest {
 
     @BeforeAll
     public static void setUpClass() throws Exception {
-        ASYNC_OUTPUT_DIR = Files.createTempDirectory("tika-cli-async-");
-        ASYNC_CONFIG = Files.createTempFile("async-config-", ".xml");
+        ASYNC_CONFIG = Files.createTempFile(ASYNC_OUTPUT_DIR, "async-config-", ".xml");
         String xml = "<properties>" + "<async>" + "<params>" + "<numClients>3</numClients>" +
                 "<tikaConfig>" + ASYNC_CONFIG.toAbsolutePath() + "</tikaConfig>" + "</params>" +
                 "</async>" + "<fetchers>" +

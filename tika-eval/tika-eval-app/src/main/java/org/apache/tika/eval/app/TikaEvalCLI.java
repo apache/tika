@@ -122,6 +122,10 @@ public class TikaEvalCLI {
                 return;
             }
 
+            // lazy delete because main() calls System.exit()
+            if (tmpBCConfig != null && Files.isRegularFile(tmpBCConfig)) {
+                tmpBCConfig.toFile().deleteOnExit();
+            }
             FSBatchProcessCLI.main(updatedArgs);
         } finally {
             if (tmpBCConfig != null && Files.isRegularFile(tmpBCConfig)) {
@@ -237,6 +241,10 @@ public class TikaEvalCLI {
                 return;
             }
 
+            // lazy delete because main() calls System.exit()
+            if (tmpBCConfig != null && Files.isRegularFile(tmpBCConfig)) {
+                tmpBCConfig.toFile().deleteOnExit();
+            }
             FSBatchProcessCLI.main(updatedArgs);
         } finally {
             if (tmpBCConfig != null && Files.isRegularFile(tmpBCConfig)) {
@@ -335,6 +343,10 @@ public class TikaEvalCLI {
                 return;
             }
 
+            // lazy delete because main() calls System.exit()
+            if (tmpBCConfig != null && Files.isRegularFile(tmpBCConfig)) {
+                tmpBCConfig.toFile().deleteOnExit();
+            }
             FSBatchProcessCLI.main(updatedArgs);
         } finally {
             if (tmpBCConfig != null && Files.isRegularFile(tmpBCConfig)) {

@@ -5,6 +5,7 @@
   {
     "Content-Type":"text/plain",
     "X-TIKA:embedded_resource_path":"inner.txt",
-    "X-TIKA:content":"attachment contents"
+    "X-TIKA:content":"attachment contents",
+    "X-TIKA:embedded_depth": "1"
   }
 ]
