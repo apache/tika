@@ -25,6 +25,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 
 
 /**
@@ -213,7 +214,7 @@ public class RereadableInputStream extends InputStream {
         if (byteBuffer != null) {
             if (bufferPointer == maxBytesInMemory) {
                 // Need to switch to file
-                storeFile = File.createTempFile("TIKA_streamstore_", ".tmp");
+                storeFile = Files.createTempFile("TIKA_streamstore_", ".tmp").toFile();
                 storeOutputStream = new BufferedOutputStream(new FileOutputStream(storeFile));
                 // Save what we have so far in buffer
                 storeOutputStream.write(byteBuffer, 0, bufferPointer);

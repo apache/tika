@@ -287,7 +287,7 @@
     <rat.version>0.13</rat.version>
 
     <!-- dependency versions -->
-    <aws.version>1.12.227</aws.version>
+    <aws.version>1.12.229</aws.version>
     <asm.version>9.3</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
@@ -311,12 +311,13 @@
     <!-- fakeload versions &gt; 0.4.0 require java > 8 -->
     <fakeload.version>0.4.0</fakeload.version>
     <geoapi.version>3.0.1</geoapi.version>
-    <google.cloud.version>2.6.1</google.cloud.version>
-    <gson.version>2.9.0</gson.version>
+    <google.cloud.version>2.7.2</google.cloud.version>
     <guava.version>31.1-jre</guava.version>
     <h2.version>2.1.212</h2.version>
     <httpcomponents.version>4.5.13</httpcomponents.version>
     <httpcore.version>4.4.15</httpcore.version>
+    <!-- versions greater than 62.2 are not compatible with icu4j handler in lucene 8.11.1 -->
+    <icu4j.version>62.2</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
     <jackcess.version>4.0.1</jackcess.version>
     <jackcess.encrypt.version>4.0.1</jackcess.encrypt.version>
@@ -403,6 +404,11 @@
         <version>0.9.1.2</version>
       </dependency>
       <dependency>
+        <groupId>com.beust</groupId>
+        <artifactId>jcommander</artifactId>
+        <version>1.82</version>
+      </dependency>
+      <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-annotations</artifactId>
         <version>${jackson.version}</version>
@@ -443,9 +449,24 @@
         <version>3.0.2</version>
       </dependency>
       <dependency>
+        <groupId>com.google.code.gson</groupId>
+        <artifactId>gson</artifactId>
+        <version>2.9.0</version>
+      </dependency>
+      <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
         <version>${guava.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.protobuf</groupId>
+        <artifactId>protobuf-java</artifactId>
+        <version>3.21.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.ibm.icu</groupId>
+        <artifactId>icu4j</artifactId>
+        <version>${icu4j.version}</version>
       </dependency>
       <dependency>
         <groupId>commons-cli</groupId>
@@ -466,6 +487,16 @@
         <groupId>commons-logging</groupId>
         <artifactId>commons-logging</artifactId>
         <version>${commons.logging.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-common</artifactId>
+        <version>4.1.77.Final</version>
+      </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-handler</artifactId>
+        <version>4.1.77.Final</version>
       </dependency>
       <dependency>
         <groupId>it.unimi.dsi</groupId>
@@ -723,6 +754,65 @@
         <artifactId>ossindex-maven-plugin</artifactId>
         <version>3.2.0</version>
         <configuration>
+          <excludeCoordinates>
+            <!-- the link from ossindex "divide by zero" points to fixes that were made in 2.18.0 -->
+            <exclude>
+              <groupId>com.drewnoakes</groupId>
+              <artifactId>metadata-extractor</artifactId>
+              <version>2.18.0</version>
+            </exclude>
+            <exclude>
+              <!-- sonatype https://github.com/google/guava/issues/4011 -->
+              <groupId>com.google.guava</groupId>
+              <artifactId>guava</artifactId>
+              <version>31.1-jre</version>
+            </exclude>
+            <!-- sonatype points to a sve in 1.4.199 for this ?!
+            https://www.exploit-db.com/exploits/49384
+            https://codewhitesec.blogspot.com/2019/08/exploit-h2-database-native-libraries-jni.html
+            -->
+            <exclude>
+              <groupId>com.h2database</groupId>
+              <artifactId>h2</artifactId>
+              <version>${h2.version}</version>
+            </exclude>
+            <exclude>
+              <!-- CVE-2018-18928 seems to be about the c++ library, not the java library -->
+              <groupId>com.ibm.icu</groupId>
+              <artifactId>icu4j</artifactId>
+              <version>${icu4j.version}</version>
+            </exclude>
+            <exclude>
+              <groupId>io.netty</groupId>
+              <artifactId>netty-handler</artifactId>
+              <version>4.1.77.Final</version>
+            </exclude>
+            <exclude>
+              <!-- the most recent cve in sonatype for this artifact is 2.11.0,
+                  not at all the version we're using...smh-->
+              <groupId>xerces</groupId>
+              <artifactId>xercesImpl</artifactId>
+              <version>${xerces.version}</version>
+            </exclude>
+            <!-- these are used by the nlp-module -->
+            <exclude>
+              <groupId>org.apache.lucene</groupId>
+              <artifactId>lucene-queryparser</artifactId>
+              <version>4.0.0</version>
+            </exclude>
+            <exclude>
+              <groupId>log4j</groupId>
+              <artifactId>log4j</artifactId>
+              <version>1.2.17</version>
+            </exclude>
+            <!-- this one is used in tika-example -->
+            <exclude>
+              <!-- sonatype: https://github.com/apache/commons-dbcp/commit/a4c5af0da1de3a7f50c72fc7edaa1f653ca276dd -->
+              <groupId>commons-dbcp</groupId>
+              <artifactId>commons-dbcp</artifactId>
+              <version>1.4</version>
+            </exclude>
+          </excludeCoordinates>
           <fail>true</fail>
         </configuration>
         <executions>

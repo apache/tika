@@ -76,7 +76,6 @@ public class AsyncProcessorTest {
 
     @BeforeEach
     public void setUp() throws SQLException, IOException {
-        inputDir = Files.createTempDirectory("tika-async-");
         tikaConfigPath = Files.createTempFile(configDir, "tika-config-", ".xml");
         String xml =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<properties>" + "  <emitters>" +

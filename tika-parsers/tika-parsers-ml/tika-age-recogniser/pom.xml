@@ -73,7 +73,7 @@
       <dependency>
         <groupId>org.apache.hadoop</groupId>
         <artifactId>hadoop-client</artifactId>
-        <version>2.2.0</version>
+        <version>2.10.1</version>
       </dependency>
       <dependency>
         <groupId>commons-httpclient</groupId>
@@ -125,6 +125,34 @@
         <artifactId>xml-apis</artifactId>
         <version>1.4.01</version>
       </dependency>
+
+      <!-- avoid conflicts because of age-predictor-api -->
+      <dependency>
+          <groupId>org.apache.zookeeper</groupId>
+          <artifactId>zookeeper</artifactId>
+          <version>3.4.14</version>
+      </dependency>
+      <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty</artifactId>
+          <version>3.8.0.Final</version>
+      </dependency>
+      <dependency>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-math3</artifactId>
+          <version>3.6.1</version>
+      </dependency>
+      <dependency>
+          <groupId>commons-collections</groupId>
+          <artifactId>commons-collections</artifactId>
+          <version>3.2.2</version>
+      </dependency>
+      <dependency>
+          <groupId>org.apache.curator</groupId>
+          <artifactId>curator-recipes</artifactId>
+          <version>2.13.0</version>
+      </dependency>
+
     </dependencies>
   </dependencyManagement>
   <dependencies>

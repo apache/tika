@@ -119,7 +119,6 @@
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
-            <version>${gson.version}</version>
         </dependency>
         <!-- sentiment parser -->
         <dependency>
@@ -211,35 +210,6 @@
             </build>
         </profile>
     </profiles>
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.sonatype.ossindex.maven</groupId>
-                <artifactId>ossindex-maven-plugin</artifactId>
-                <version>3.2.0</version>
-                <configuration>
-                    <fail>true</fail>
-                    <excludeCoordinates>
-                        <exclude>
-                            <groupId>log4j</groupId>
-                            <artifactId>log4j</artifactId>
-                            <version>1.2.17</version>
-                        </exclude>
-                    </excludeCoordinates>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>audit-dependencies</id>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>audit</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
-
   <scm>
     <tag>2.2.1-rc2</tag>
   </scm>

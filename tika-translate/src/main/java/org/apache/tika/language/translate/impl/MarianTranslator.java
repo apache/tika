@@ -126,12 +126,12 @@ public class MarianTranslator extends AbstractTranslator {
         }
 
         StringBuilder translation = new StringBuilder();
-        File tmpFile = File.createTempFile(INPUT_TMP_NAME, ".tmp");
+        File tmpFile = Files.createTempFile(INPUT_TMP_NAME, ".tmp").toFile();
         tmpFile.deleteOnExit();
         try (OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(tmpFile), Charset.defaultCharset())) {
             out.append(text).append('\n').close();
         }
-        File tmpTranslatedFile = File.createTempFile(OUTPUT_TMP_NAME, ".tmp");
+        File tmpTranslatedFile = Files.createTempFile(OUTPUT_TMP_NAME, ".tmp").toFile();
         tmpTranslatedFile.deleteOnExit();
 
         try {

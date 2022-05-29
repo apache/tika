@@ -132,6 +132,7 @@ May the gods of dependency management fix this in the future.
           </execution>
         </executions>
       </plugin>
+
     </plugins>
   </build>
 
