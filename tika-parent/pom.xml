@@ -538,6 +538,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
+        <!-- can't update to 3.0.0, see MENFORCER-393 -->
         <version>3.0.0-M3</version>
         <executions>
           <execution>
