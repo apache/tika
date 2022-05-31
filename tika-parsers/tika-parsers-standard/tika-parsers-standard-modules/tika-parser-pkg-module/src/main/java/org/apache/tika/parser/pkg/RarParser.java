@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.pkg;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -84,20 +83,12 @@ public class RarParser extends AbstractParser {
             FileHeader header = rar.nextFileHeader();
             while (header != null && !Thread.currentThread().isInterrupted()) {
                 if (!header.isDirectory()) {
-                    Metadata entrydata = PackageParser.handleEntryMetadata(
-                            "".equals(header.getFileNameW()) ? header.getFileNameString() :
-                                    header.getFileNameW(), header.getCTime(), header.getMTime(),
-                            header.getFullUnpackSize(), xhtml);
-                    if (header.getFullUnpackSize() > 0) {
-                        try (InputStream subFile = rar.getInputStream(header)) {
-                            if (extractor.shouldParseEmbedded(entrydata)) {
-                                extractor.parseEmbedded(subFile, handler, entrydata, true);
-                            }
-                        }
-                    } else {
+                    Metadata entrydata = PackageParser.handleEntryMetadata(header.getFileName(),
+                            header.getCTime(), header.getMTime(), header.getFullUnpackSize(),
+                            xhtml);
+                    try (InputStream subFile = rar.getInputStream(header)) {
                         if (extractor.shouldParseEmbedded(entrydata)) {
-                            extractor.parseEmbedded(new ByteArrayInputStream(new byte[0]), handler,
-                                    entrydata, true);
+                            extractor.parseEmbedded(subFile, handler, entrydata, true);
                         }
                     }
                 }
