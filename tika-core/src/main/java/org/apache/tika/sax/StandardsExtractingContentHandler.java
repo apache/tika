@@ -20,29 +20,32 @@ package org.apache.tika.sax;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.tika.metadata.Metadata;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.metadata.Metadata;
+
 /**
  * StandardsExtractingContentHandler is a Content Handler used to extract
  * standard references while parsing.
- *
+ * <p>
+ * This handler relies on complex regular expressions which can be slow on some types of
+ * input data.
  */
 public class StandardsExtractingContentHandler extends ContentHandlerDecorator {
 	public static final String STANDARD_REFERENCES = "standard_references";
-	private Metadata metadata;
-	private StringBuilder stringBuilder;
+	private final Metadata metadata;
+	private final StringBuilder stringBuilder;
+
+	private int maxBufferLength = 100000;
 	private double threshold = 0;
 
 	/**
 	 * Creates a decorator for the given SAX event handler and Metadata object.
-	 * 
-	 * @param handler
-	 *            SAX event handler to be decorated.
-	 * @param metadata
-	 *            {@link Metadata} object.
+	 *
+	 * @param handler  SAX event handler to be decorated.
+	 * @param metadata {@link Metadata} object.
 	 */
 	public StandardsExtractingContentHandler(ContentHandler handler, Metadata metadata) {
 		super(handler);
@@ -64,9 +67,9 @@ public class StandardsExtractingContentHandler extends ContentHandlerDecorator {
 	/**
 	 * Gets the threshold to be used for selecting the standard references found
 	 * within the text based on their score.
-	 * 
+	 *
 	 * @return the threshold to be used for selecting the standard references
-	 *         found within the text based on their score.
+	 * found within the text based on their score.
 	 */
 	public double getThreshold() {
 		return threshold;
@@ -74,9 +77,8 @@ public class StandardsExtractingContentHandler extends ContentHandlerDecorator {
 
 	/**
 	 * Sets the score to be used as threshold.
-	 * 
-	 * @param score
-	 *            the score to be used as threshold.
+	 *
+	 * @param score the score to be used as threshold.
 	 */
 	public void setThreshold(double score) {
 		this.threshold = score;
@@ -92,6 +94,10 @@ public class StandardsExtractingContentHandler extends ContentHandlerDecorator {
 	@Override
 	public void characters(char[] ch, int start, int length) throws SAXException {
 		try {
+			if (maxBufferLength > -1) {
+				int remaining = maxBufferLength - stringBuilder.length();
+				length = remaining > length ? length : remaining;
+			}
 			String text = new String(Arrays.copyOfRange(ch, start, start + length));
 			stringBuilder.append(text);
 			super.characters(ch, start, length);
@@ -107,10 +113,21 @@ public class StandardsExtractingContentHandler extends ContentHandlerDecorator {
 	@Override
 	public void endDocument() throws SAXException {
 		super.endDocument();
-		List<StandardReference> standards = StandardsText.extractStandardReferences(stringBuilder.toString(),
-				threshold);
+		List<StandardReference> standards =
+				StandardsText.extractStandardReferences(stringBuilder.toString(), threshold);
 		for (StandardReference standardReference : standards) {
 			metadata.add(STANDARD_REFERENCES, standardReference.toString());
 		}
+	}
+
+
+	/**
+	 * The number of characters to store in memory for checking for standards.
+	 *
+	 * If this is unbounded, the complex regular expressions can take a long time
+	 * to process some types of data.  Only increase this limit with great caution.
+	 */
+	public void setMaxBufferLength(int maxBufferLength) {
+		this.maxBufferLength = maxBufferLength;
 	}
 }
