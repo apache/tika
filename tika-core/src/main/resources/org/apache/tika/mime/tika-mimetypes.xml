@@ -6737,6 +6737,10 @@
     <root-XML localName="SCRIPT"/>
     <root-XML localName="frameset"/>
     <root-XML localName="FRAMESET"/>
+    <magic priority="60">
+      <match value="(?i)&lt;(html|head|body|title|div)[ >]" type="regex" offset="0"/>
+      <match value="(?i)&lt;h[123][ >]" type="regex" offset="0"/>
+    </magic>
     <!-- The magic priority needs to be lower than that of -->
     <!--  files which contain HTML within them, eg mime emails -->
     <magic priority="40">
@@ -6749,14 +6753,6 @@
       <match value="&lt;TITLE" type="string" offset="0:64"/>
       <match value="&lt;title" type="string" offset="0:64"/>
       <match value="&lt;HTML" type="string" offset="0:64"/>
-      <match value="&lt;BODY" type="string" offset="0"/>
-      <match value="&lt;body" type="string" offset="0"/>
-      <match value="&lt;DIV" type="string" offset="0"/>
-      <match value="&lt;div" type="string" offset="0"/>
-      <match value="&lt;TITLE" type="string" offset="0"/>
-      <match value="&lt;title" type="string" offset="0"/>
-      <match value="&lt;h1" type="string" offset="0"/>
-      <match value="&lt;H1" type="string" offset="0"/>
       <match value="&lt;html" type="string" offset="0:128"/>
     </magic>
     <magic priority="20">
