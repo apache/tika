@@ -1279,6 +1279,11 @@ public class TestMimeTypes {
         assertTypeByData("application/vnd.java.hprof.text", "testJavaHprofText");
     }
 
+    @Test
+    public void testHTMLSnippetWithRFC822() throws Exception {
+        assertTypeByData("text/html", "testBrokenHTMLContainingRFC822.html");
+    }
+
     private void assertText(byte[] prefix) throws IOException {
         assertMagic("text/plain", prefix);
     }
