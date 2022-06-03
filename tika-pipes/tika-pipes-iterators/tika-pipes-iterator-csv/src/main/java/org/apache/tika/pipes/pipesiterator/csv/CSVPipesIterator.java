@@ -123,12 +123,16 @@ public class CSVPipesIterator extends PipesIterator implements Initializable {
                 break;
             }
 
-            checkFetchEmitValidity(fetcherName, emitterName, fetchEmitKeyIndices, headers);
+            try {
+                checkFetchEmitValidity(fetcherName, emitterName, fetchEmitKeyIndices, headers);
+            } catch (TikaConfigException e) {
+                throw new IOException(e);
+            }
             HandlerConfig handlerConfig = getHandlerConfig();
             for (CSVRecord record : records) {
-                String id = getId(fetchEmitKeyIndices, record);
-                String fetchKey = getFetchKey(fetchEmitKeyIndices, record);
-                String emitKey = getEmitKey(fetchEmitKeyIndices, record);
+                String id = record.get(fetchEmitKeyIndices.idIndex);
+                String fetchKey = record.get(fetchEmitKeyIndices.fetchKeyIndex);
+                String emitKey = record.get(fetchEmitKeyIndices.emitKeyIndex);
                 if (StringUtils.isBlank(fetchKey) && !StringUtils.isBlank(fetcherName)) {
                     LOGGER.debug("Fetcher specified ({}), but no fetchkey was found in ({})",
                             fetcherName, record);
@@ -136,9 +140,7 @@ public class CSVPipesIterator extends PipesIterator implements Initializable {
                 if (StringUtils.isBlank(emitKey)) {
                     throw new IOException("emitKey must not be blank in :" + record);
                 }
-                if (StringUtils.isBlank(id) && ! StringUtils.isBlank(fetchKey)) {
-                    id = fetchKey;
-                }
+
                 Metadata metadata = loadMetadata(fetchEmitKeyIndices, headers, record);
                 tryToAdd(new FetchEmitTuple(id, new FetchKey(fetcherName, fetchKey),
                         new EmitKey(emitterName, emitKey), metadata, handlerConfig,
@@ -149,62 +151,51 @@ public class CSVPipesIterator extends PipesIterator implements Initializable {
 
     private void checkFetchEmitValidity(String fetcherName, String emitterName,
                                         FetchEmitKeyIndices fetchEmitKeyIndices,
-                                        List<String> headers) throws IOException {
+                                        List<String> headers) throws TikaConfigException {
 
         if (StringUtils.isBlank(emitterName)) {
-            throw new IOException(new TikaConfigException("must specify at least an emitterName"));
+            throw new TikaConfigException("must specify at least an emitterName");
         }
 
         if (StringUtils.isBlank(fetcherName) && !StringUtils.isBlank(fetchKeyColumn)) {
-            throw new IOException(new TikaConfigException("If specifying a 'fetchKeyColumn', " +
-                    "you must also specify a 'fetcherName'"));
+            new TikaConfigException("If specifying a 'fetchKeyColumn', " +
+                    "you must also specify a 'fetcherName'");
         }
 
         if (StringUtils.isBlank(fetcherName)) {
-            LOGGER.debug("No fetcher specified. This will be metadata only");
+            LOGGER.info("No fetcher specified. This will be metadata only");
         }
 
+        if (StringUtils.isBlank(fetchKeyColumn)) {
+            throw new TikaConfigException("must specify fetchKeyColumn");
+        }
         //if a fetchkeycolumn is specified, make sure that it was found
         if (!StringUtils.isBlank(fetchKeyColumn) && fetchEmitKeyIndices.fetchKeyIndex < 0) {
-            throw new IOException(new TikaConfigException(
+            throw new TikaConfigException(
                     "Couldn't find fetchKeyColumn (" + fetchKeyColumn + " in header.\n" +
-                            "These are the headers I see: " + headers));
+                            "These are the headers I see: " + headers);
         }
 
         //if an emitkeycolumn is specified, make sure that it was found
         if (!StringUtils.isBlank(emitKeyColumn) && fetchEmitKeyIndices.emitKeyIndex < 0) {
-            throw new IOException(new TikaConfigException(
+            throw new TikaConfigException(
                     "Couldn't find emitKeyColumn (" + emitKeyColumn + " in header.\n" +
-                            "These are the headers I see: " + headers));
+                            "These are the headers I see: " + headers);
+        }
+
+        //if an idcolumn is specified, make sure that it was found
+        if (!StringUtils.isBlank(idColumn) && fetchEmitKeyIndices.idIndex < 0) {
+            throw new TikaConfigException(
+                    "Couldn't find idColumn (" + idColumn + " in header.\n" +
+                            "These are the headers I see: " + headers);
         }
 
         if (StringUtils.isBlank(emitKeyColumn)) {
-            LOGGER.debug("No emitKeyColumn specified. " +
+            LOGGER.warn("No emitKeyColumn specified. " +
                             "Will use fetchKeyColumn ({}) for both the fetch key and emit key",
                     fetchKeyColumn);
         }
-    }
 
-    private String getId(FetchEmitKeyIndices fetchEmitKeyIndices, CSVRecord record) {
-        if (fetchEmitKeyIndices.idIndex > -1) {
-            return record.get(fetchEmitKeyIndices.idIndex);
-        }
-        return StringUtils.EMPTY;
-    }
-
-
-    private String getFetchKey(FetchEmitKeyIndices fetchEmitKeyIndices, CSVRecord record) {
-        if (fetchEmitKeyIndices.fetchKeyIndex > -1) {
-            return record.get(fetchEmitKeyIndices.fetchKeyIndex);
-        }
-        return StringUtils.EMPTY;
-    }
-
-    private String getEmitKey(FetchEmitKeyIndices fetchEmitKeyIndices, CSVRecord record) {
-        if (fetchEmitKeyIndices.emitKeyIndex > -1) {
-            return record.get(fetchEmitKeyIndices.emitKeyIndex);
-        }
-        return getFetchKey(fetchEmitKeyIndices, record);
     }
 
     private Metadata loadMetadata(FetchEmitKeyIndices fetchEmitKeyIndices, List<String> headers,
@@ -240,6 +231,16 @@ public class CSVPipesIterator extends PipesIterator implements Initializable {
                 idIndex = col;
             }
         }
+
+        if (StringUtils.isBlank(idColumn)) {
+            LOGGER.info("no idColumn specified, will use fetchKeyColumn");
+            idIndex = fetchKeyColumnIndex;
+        }
+
+        if (StringUtils.isBlank(emitKeyColumn)) {
+            LOGGER.info("no emitKeyColumn specified, will use fetchKeyColumn");
+            emitKeyColumnIndex = fetchKeyColumnIndex;
+        }
         return new FetchEmitKeyIndices(idIndex, fetchKeyColumnIndex, emitKeyColumnIndex);
     }
 
@@ -251,9 +252,9 @@ public class CSVPipesIterator extends PipesIterator implements Initializable {
     }
 
     private static class FetchEmitKeyIndices {
-        private final int idIndex;
+        private int idIndex;
         private final int fetchKeyIndex;
-        private final int emitKeyIndex;
+        private int emitKeyIndex;
 
         public FetchEmitKeyIndices(int idIndex, int fetchKeyIndex, int emitKeyIndex) {
             this.idIndex = idIndex;
