@@ -291,7 +291,7 @@
     <jaxb.version>2.3.5</jaxb.version>
     <cli.version>1.5.0</cli.version>
     <lucene.version>8.11.1</lucene.version>
-    <mockito.version>4.6.0</mockito.version>
+    <mockito.version>4.6.1</mockito.version>
     <lombok.version>1.18.24</lombok.version>
     <opennlp.version>1.9.4</opennlp.version>
     <xerces.version>2.12.2</xerces.version>
