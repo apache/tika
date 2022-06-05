@@ -1163,6 +1163,7 @@ public class TestMimeTypes {
 
     @Test
     public void testCertificatesKeys() throws Exception {
+        // Certificates can be identified by name alone, or with data
         assertType("application/x-x509-cert; format=pem", "testCERT.pem");
         assertType("application/x-x509-cert; format=der", "testCERT.der");
         assertTypeByData("application/x-x509-cert; format=pem", "testCERT.pem");
@@ -1174,9 +1175,15 @@ public class TestMimeTypes {
         assertTypeByData("application/x-x509-key; format=der", "testRSAKEY.der");
         assertTypeByData("application/x-x509-key; format=pem", "testDSAKEY.pem");
         assertTypeByData("application/x-x509-key; format=der", "testDSAKEY.der");
+        assertTypeByData("application/x-x509-key; format=pem", "testRSAKEYenc.pem"); // pass=tika
+        assertTypeByData("application/x-x509-key; format=der", "testRSAKEYenc.der"); // pass=tika
         // Parameters only have PEM form, always need data
         assertTypeByData("application/x-x509-dsa-parameters", "testDSAPARAMS.pem");
         assertTypeByData("application/x-x509-ec-parameters", "testECPARAMS.pem");
+        // PKCS12 wrappers of Certs+Keys cannot currently be identified
+        // Once solved, see TIKA-3784, ought to work for name or data
+        //assertType("application/x-pkcs12", "testRSAKEYandCERT.p12");
+        //assertTypeByData("application/x-pkcs12", "testRSAKEYandCERT.p12"); // pass=tika
     }
 
     @Test
