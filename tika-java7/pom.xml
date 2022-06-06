@@ -87,8 +87,8 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>biz.aQute</groupId>
-      <artifactId>bndlib</artifactId>
+      <groupId>biz.aQute.bnd</groupId>
+      <artifactId>biz.aQute.bndlib</artifactId>
       <scope>provided</scope>
     </dependency>
   </dependencies>
