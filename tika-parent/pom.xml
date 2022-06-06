@@ -299,9 +299,15 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>biz.aQute</groupId>
-        <artifactId>bndlib</artifactId>
-        <version>1.50.0</version>
+        <groupId>biz.aQute.bnd</groupId>
+        <artifactId>biz.aQute.bndlib</artifactId>
+        <version>6.3.0</version>
+      </dependency>
+      <!-- for bndlib -->
+      <dependency>
+        <groupId>org.osgi</groupId>
+        <artifactId>org.osgi.util.function</artifactId>
+        <version>1.2.0</version>
       </dependency>
       <dependency>
         <groupId>org.glassfish.jaxb</groupId>
