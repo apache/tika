@@ -310,6 +310,10 @@ public class TikaResource {
             metadata.add(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE, mediaType.toString());
         }
 
+        if (httpHeaders.containsKey("Content-Length")) {
+            metadata.set(Metadata.CONTENT_LENGTH, httpHeaders.getFirst("Content-Length"));
+        }
+
         for (Map.Entry<String, List<String>> e : httpHeaders.entrySet()) {
             if (e.getKey().startsWith(META_PREFIX)) {
                 String tikaKey = e.getKey().substring(META_PREFIX.length());

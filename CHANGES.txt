@@ -1,5 +1,8 @@
 Release 2.4.1 - ???
 
+   * Allow pass-through of 'Content-Length' header to metadata
+     in TikaResource (TIKA-3786).
+
    * Add embedded depth to profiles tables in tika-eval (TIKA-3775).
 
    * Add stop() method to TikaServerCli so that it can be run
