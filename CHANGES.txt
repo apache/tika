@@ -1,5 +1,8 @@
 Release 2.4.1 - ???
 
+   * Allow continuation of parsing after write limit has
+     been reached (TIKA-3787).
+
    * Allow pass-through of 'Content-Length' header to metadata
      in TikaResource (TIKA-3786).
 

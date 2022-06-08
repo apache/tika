@@ -73,6 +73,7 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ExpandedTitleContentHandler;
@@ -590,12 +591,15 @@ public class TikaResource {
 
         logRequest(LOG, "/tika", metadata);
         int writeLimit = -1;
+        boolean throwOnWriteLimitReached = getThrowOnWriteLimitReached(httpHeaders);
         if (httpHeaders.containsKey("writeLimit")) {
             writeLimit = Integer.parseInt(httpHeaders.getFirst("writeLimit"));
         }
+
         BasicContentHandlerFactory.HANDLER_TYPE type =
                 BasicContentHandlerFactory.parseHandlerType(handlerTypeName, DEFAULT_HANDLER_TYPE);
-        BasicContentHandlerFactory fact = new BasicContentHandlerFactory(type, writeLimit);
+        BasicContentHandlerFactory fact = new BasicContentHandlerFactory(type, writeLimit,
+                throwOnWriteLimitReached, context);
         ContentHandler contentHandler = fact.getNewContentHandler();
 
         try {
@@ -628,6 +632,20 @@ public class TikaResource {
         } finally {
             metadata.add(TikaCoreProperties.TIKA_CONTENT, contentHandler.toString());
         }
+    }
+
+    public static boolean getThrowOnWriteLimitReached(MultivaluedMap<String, String> httpHeaders) {
+        if (httpHeaders.containsKey("throwOnWriteLimitReached")) {
+            String val = httpHeaders.getFirst("throwOnWriteLimitReached");
+            if ("true".equalsIgnoreCase(val)) {
+                return true;
+            } else if ("false".equalsIgnoreCase(val)) {
+                return false;
+            } else {
+                throw new IllegalArgumentException("'throwOnWriteLimitReached' must be either 'true' or 'false'");
+            }
+        }
+        return HandlerConfig.DEFAULT_HANDLER_CONFIG.isThrowOnWriteLimitReached();
     }
 
     private StreamingOutput produceOutput(final InputStream is, Metadata metadata,

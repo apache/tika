@@ -141,7 +141,7 @@ public class RecursiveMetadataResource {
         return new HandlerConfig(
                 BasicContentHandlerFactory.parseHandlerType(handlerTypeName, DEFAULT_HANDLER_TYPE),
                 parseMode,
-                writeLimit, maxEmbeddedResources);
+                writeLimit, maxEmbeddedResources, TikaResource.getThrowOnWriteLimitReached(httpHeaders));
     }
 
     /**

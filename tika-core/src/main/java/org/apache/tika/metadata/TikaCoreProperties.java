@@ -76,6 +76,10 @@ public interface TikaCoreProperties {
     Property EMBEDDED_EXCEPTION =
             Property.internalText(TIKA_META_EXCEPTION_PREFIX + "embedded_exception");
 
+    //warning while parsing in an embedded file
+    Property EMBEDDED_WARNING =
+            Property.internalText(TIKA_META_EXCEPTION_PREFIX + "embedded_warning");
+
     Property WRITE_LIMIT_REACHED =
             Property.internalBoolean(TIKA_META_EXCEPTION_PREFIX + "write_limit_reached");
     /**

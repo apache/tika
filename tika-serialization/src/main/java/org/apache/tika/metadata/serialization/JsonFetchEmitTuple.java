@@ -162,7 +162,9 @@ public class JsonFetchEmitTuple {
             }
             fieldName = jParser.nextFieldName();
         }
-        return new HandlerConfig(handlerType, parseMode, writeLimit, maxEmbeddedResources);
+        //TODO: implement configuration of throwOnWriteLimitReached
+        return new HandlerConfig(handlerType, parseMode, writeLimit, maxEmbeddedResources,
+                true);
     }
 
     private static String getValue(JsonParser jParser) throws IOException {

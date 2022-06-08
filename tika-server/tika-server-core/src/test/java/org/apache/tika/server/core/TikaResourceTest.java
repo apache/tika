@@ -171,6 +171,23 @@ public class TikaResourceTest extends CXFTestBase {
     }
 
     @Test
+    public void testNoWriteLimitOnStreamingWrite() throws Exception {
+        //this test shows that write limit is not active for
+        //text or xhtml or anything that does streaming writes
+        Response response = WebClient.create(endPoint + TIKA_PATH).header("writeLimit", "100")
+                .accept("text/plain")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD_LONG));
+        String content = getStringFromInputStream((InputStream) response.getEntity());
+        assertContains("separation.", content);
+
+        response = WebClient.create(endPoint + TIKA_PATH).header("writeLimit", "100")
+                .accept("text/html")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD_LONG));
+        content = getStringFromInputStream((InputStream) response.getEntity());
+        assertContains("separation.</p>", content);
+    }
+
+    @Test
     public void testJsonHandlerType() throws Exception {
         Response response = WebClient.create(endPoint + TIKA_PATH).accept("application/json")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD_LONG));
