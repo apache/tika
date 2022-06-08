@@ -302,7 +302,7 @@
       <dependency>
         <groupId>biz.aQute.bnd</groupId>
         <artifactId>biz.aQute.bndlib</artifactId>
-        <version>6.3.0</version>
+        <version>6.3.1</version>
       </dependency>
       <!-- for bndlib -->
       <dependency>
