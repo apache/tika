@@ -1,5 +1,8 @@
 Release 2.4.1 - ???
 
+   * Record embedded file exceptions in the container
+     file's metadata (TIKA-3788).
+
    * Allow continuation of parsing after write limit has
      been reached (TIKA-3787).
 

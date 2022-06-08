@@ -27,6 +27,15 @@ import java.util.Set;
  * after the parse by the {@link CompositeParser}.
  */
 public class ParseRecord {
+
+    //hard limits so that specially crafted files
+    //don't cause an OOM
+    private static int MAX_PARSERS = 100;
+
+    private static final int MAX_EXCEPTIONS = 100;
+
+    private static final int MAX_WARNINGS = 100;
+
     private int depth = 0;
     private final Set<String> parsers = new LinkedHashSet<>();
 
@@ -53,15 +62,21 @@ public class ParseRecord {
     }
 
     void addParserClass(String parserClass) {
-        parsers.add(parserClass);
+        if (parsers.size() < MAX_PARSERS) {
+            parsers.add(parserClass);
+        }
     }
 
     public void addException(Exception e) {
-        exceptions.add(e);
+        if (exceptions.size() < MAX_EXCEPTIONS) {
+            exceptions.add(e);
+        }
     }
 
     public void addWarning(String msg) {
-        warnings.add(msg);
+        if (warnings.size() < MAX_WARNINGS) {
+            warnings.add(msg);
+        }
     }
 
     public void setWriteLimitReached(boolean writeLimitReached) {

@@ -449,6 +449,16 @@ public class AutoDetectParserTest extends TikaTest {
         assertNotContained("embed_4", txt);
     }
 
+    @Test
+    public void testEmbeddedNPE() throws Exception {
+        Metadata metadata = new Metadata();
+        getXML("mock/null_pointer.xml.gz",
+                AUTO_DETECT_PARSER, metadata);
+        String embExString = metadata.get(TikaCoreProperties.EMBEDDED_EXCEPTION);
+        assertContains("another null pointer", embExString);
+
+    }
+
     //This is not the complete/correct way to look for parsers within another parser
     //However, it is good enough for this unit test for now.
     private Parser find(CompositeParser parser, Class clazz) {
