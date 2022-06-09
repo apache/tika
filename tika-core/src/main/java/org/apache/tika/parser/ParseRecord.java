@@ -21,6 +21,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.tika.metadata.Metadata;
+
 /**
  * Use this class to store exceptions, warnings and other information
  * during the parse.  This information is added to the parent's metadata
@@ -36,12 +38,16 @@ public class ParseRecord {
 
     private static final int MAX_WARNINGS = 100;
 
+    private static final int MAX_METADATA_LIST_SIZE = 100;
+
     private int depth = 0;
     private final Set<String> parsers = new LinkedHashSet<>();
 
     private final List<Exception> exceptions = new ArrayList<>();
 
     private final List<String> warnings = new ArrayList<>();
+
+    private final List<Metadata> metadataList = new ArrayList<>();
 
     private boolean writeLimitReached = false;
 
@@ -79,6 +85,12 @@ public class ParseRecord {
         }
     }
 
+    public void addMetadata(Metadata metadata) {
+        if (metadataList.size() < MAX_METADATA_LIST_SIZE) {
+            metadataList.add(metadata);
+        }
+    }
+
     public void setWriteLimitReached(boolean writeLimitReached) {
         this.writeLimitReached = writeLimitReached;
     }
@@ -94,5 +106,9 @@ public class ParseRecord {
 
     public boolean isWriteLimitReached() {
         return writeLimitReached;
+    }
+
+    public List<Metadata> getMetadataList() {
+        return metadataList;
     }
 }

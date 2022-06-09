@@ -336,5 +336,13 @@ public class CompositeParser extends AbstractParser {
         if (record.isWriteLimitReached()) {
             metadata.set(TikaCoreProperties.WRITE_LIMIT_REACHED, true);
         }
+
+        for (Metadata m : record.getMetadataList()) {
+            for (String n : m.names()) {
+                for (String v : m.getValues(n)) {
+                    metadata.add(n, v);
+                }
+            }
+        }
     }
 }

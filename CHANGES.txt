@@ -1,5 +1,9 @@
 Release 2.4.1 - ???
 
+   * Custom embedded parsers and EmbeddedDocumentHandlers
+     can now add metadata to the container file's
+     metadata (TIKA-3789).
+
    * Record embedded file exceptions in the container
      file's metadata (TIKA-3788).
 

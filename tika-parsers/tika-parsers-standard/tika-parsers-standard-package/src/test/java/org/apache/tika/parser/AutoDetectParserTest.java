@@ -456,8 +456,17 @@ public class AutoDetectParserTest extends TikaTest {
                 AUTO_DETECT_PARSER, metadata);
         String embExString = metadata.get(TikaCoreProperties.EMBEDDED_EXCEPTION);
         assertContains("another null pointer", embExString);
-
     }
+
+    @Test
+    public void testEmbeddedMetadataPercolatingToMainMetadata() throws Exception {
+        Metadata metadata = new Metadata();
+        getXML("mock/embedded_to_parent_metadata.xml.gz",
+                AUTO_DETECT_PARSER, metadata);
+        assertEquals("Nikolai Lobachevsky", metadata.get("embedded:dc:creator"));
+        assertEquals("application/gzip", metadata.get(Metadata.CONTENT_TYPE));
+    }
+
 
     //This is not the complete/correct way to look for parsers within another parser
     //However, it is good enough for this unit test for now.
