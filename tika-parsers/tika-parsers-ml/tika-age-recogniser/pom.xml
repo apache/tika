@@ -127,17 +127,14 @@
       </dependency>
 
       <!-- avoid conflicts because of age-predictor-api -->
-      <!-- can't update zookeeper higher than 3.4.14 without getting dependency convergence errors -->
+      <!-- can't update zookeeper higher than 3.5.10 without getting dependency convergence errors -->
       <dependency>
           <groupId>org.apache.zookeeper</groupId>
           <artifactId>zookeeper</artifactId>
-          <version>3.4.14</version>
+          <version>3.5.10</version>
       </dependency>
-      <dependency>
-          <groupId>io.netty</groupId>
-          <artifactId>netty</artifactId>
-          <version>3.10.6.Final</version>
-      </dependency>
+      <!-- netty dependency removed, either it isn't needed,
+           or our test coverage isn't good enough -->
       <dependency>
           <groupId>org.apache.commons</groupId>
           <artifactId>commons-math3</artifactId>
@@ -162,6 +159,12 @@
       <groupId>edu.usc.ir</groupId>
       <artifactId>age-predictor-api</artifactId>
       <version>1.0</version>
+      <exclusions>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <!-- Test dependencies -->
     <dependency>
