@@ -34,6 +34,7 @@ import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.emitter.AbstractEmitter;
+import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
 import org.apache.tika.utils.StringUtils;
 
@@ -62,15 +63,34 @@ public class OpenSearchEmitter extends AbstractEmitter implements Initializable 
     }
 
     @Override
-    public void emit(String emitKey, List<Metadata> metadataList)
-            throws IOException, TikaEmitterException {
-        if (metadataList == null || metadataList.size() == 0) {
-            LOG.warn("metadataList is null or empty");
+    public void emit(List<? extends EmitData> emitData) throws IOException, TikaEmitterException {
+        if (emitData == null || emitData.size() == 0) {
+            LOG.debug("metadataList is null or empty");
             return;
         }
         try {
-            openSearchClient.addDocument(emitKey, metadataList);
+            LOG.debug("about to emit {} docs", emitData.size());
+            openSearchClient.emitDocuments(emitData);
+            LOG.info("successfully emitted {} docs", emitData.size());
         } catch (TikaClientException e) {
+            LOG.warn("problem emitting docs", e);
+            throw new TikaEmitterException(e.getMessage());
+        }
+    }
+
+    @Override
+    public void emit(String emitKey, List<Metadata> metadataList)
+            throws IOException, TikaEmitterException {
+        if (metadataList == null || metadataList.size() == 0) {
+            LOG.debug("metadataList is null or empty");
+            return;
+        }
+        try {
+            LOG.debug("about to emit one doc");
+            openSearchClient.emitDocument(emitKey, metadataList);
+            LOG.info("successfully emitted one doc");
+        } catch (TikaClientException e) {
+            LOG.warn("problem emitting doc", e);
             throw new TikaEmitterException("failed to add document", e);
         }
     }

@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringWriter;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
@@ -41,6 +40,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.client.TikaClientException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.utils.StringUtils;
 
 public class OpenSearchClient {
@@ -62,9 +62,42 @@ public class OpenSearchClient {
         this.embeddedFileFieldName = embeddedFileFieldName;
     }
 
-    public void addDocument(String emitKey, List<Metadata> metadataList) throws IOException,
+
+    public void emitDocuments(List<? extends EmitData> emitData) throws IOException, TikaClientException {
+        StringBuilder json = new StringBuilder();
+        for (EmitData d : emitData) {
+            appendDoc(d.getEmitKey().getEmitKey(), d.getMetadataList(), json);
+        }
+        emitJson(json);
+    }
+
+    private void emitJson(StringBuilder json) throws IOException, TikaClientException {
+        String requestUrl = openSearchUrl + "/_bulk";
+
+        JsonResponse response = postJson(requestUrl, json.toString());
+        if (response.getStatus() != 200) {
+            throw new TikaClientException(response.getMsg());
+        } else {
+            //if there's a single error, throw the full json.
+            //this has not been thoroughly tested with versions of es < 7
+            JsonNode errorNode = response.getJson().get("errors");
+            if (errorNode.asText().equals("true")) {
+                throw new TikaClientException(response.getJson().toString());
+            }
+        }
+    }
+
+
+    public void emitDocument(String emitKey, List<Metadata> metadataList) throws IOException,
             TikaClientException {
-        StringBuilder sb = new StringBuilder();
+
+        StringBuilder json = new StringBuilder();
+        appendDoc(emitKey, metadataList, json);
+        emitJson(json);
+    }
+
+    private void appendDoc(String emitKey, List<Metadata> metadataList, StringBuilder json)
+            throws IOException {
         int i = 0;
         String routing = (attachmentStrategy == OpenSearchEmitter.AttachmentStrategy.PARENT_CHILD) ?
                 emitKey : null;
@@ -75,31 +108,15 @@ public class OpenSearchClient {
                 id.append("-").append(UUID.randomUUID());
             }
             String indexJson = getBulkIndexJson(id.toString(), routing);
-            sb.append(indexJson).append("\n");
+            json.append(indexJson).append("\n");
             if (i == 0) {
-                sb.append(metadataToJsonContainer(metadata, attachmentStrategy));
+                json.append(metadataToJsonContainer(metadata, attachmentStrategy));
             } else {
-                sb.append(metadataToJsonEmbedded(metadata, attachmentStrategy,
-                        emitKey, embeddedFileFieldName));
+                json.append(metadataToJsonEmbedded(metadata, attachmentStrategy, emitKey,
+                        embeddedFileFieldName));
             }
-            sb.append("\n");
+            json.append("\n");
             i++;
-        }
-        String requestUrl = openSearchUrl + "/_bulk";
-        if (attachmentStrategy == OpenSearchEmitter.AttachmentStrategy.PARENT_CHILD) {
-            requestUrl += "?routing=" + URLEncoder.encode(emitKey, StandardCharsets.UTF_8.name());
-        }
-
-        JsonResponse response = postJson(requestUrl, sb.toString());
-        if (response.getStatus() != 200) {
-            throw new TikaClientException(response.getMsg());
-        } else {
-            //if there's a single error, throw the full json.
-            //this has not been thoroughly tested with versions of es < 7
-            JsonNode errorNode = response.getJson().get("errors");
-            if (errorNode.asText().equals("true")) {
-                throw new TikaClientException(response.getJson().toString());
-            }
         }
     }
 

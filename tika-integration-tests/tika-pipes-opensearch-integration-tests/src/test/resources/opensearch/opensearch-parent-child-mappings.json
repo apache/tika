@@ -3,7 +3,7 @@
     "number_of_shards": 1
   },
   "mappings" : {
-    "dynamic": false,
+    "dynamic": "strict",
     "_routing": {
       "required":true
     },
