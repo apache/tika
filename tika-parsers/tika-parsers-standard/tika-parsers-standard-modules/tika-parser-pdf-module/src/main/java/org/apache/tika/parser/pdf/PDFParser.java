@@ -142,11 +142,16 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
 
         String password = "";
         PDFRenderingState incomingRenderingState = context.get(PDFRenderingState.class);
+        TikaInputStream tstream = null;
+        boolean shouldClose = false;
         try {
-            TikaInputStream tstream;
             if (shouldSpool(localConfig)) {
-                tstream = TikaInputStream.get(stream);
-                tstream.getPath();
+                if (stream instanceof TikaInputStream) {
+                    tstream = (TikaInputStream) stream;
+                } else {
+                    tstream = TikaInputStream.get(new CloseShieldInputStream(stream));
+                    shouldClose = true;
+                }
                 context.set(PDFRenderingState.class, new PDFRenderingState(tstream));
             } else {
                 tstream = TikaInputStream.cast(stream);
@@ -166,12 +171,15 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
                 pdfDocument = getPDDocument(new CloseShieldInputStream(stream), password,
                         memoryUsageSetting, metadata, context);
             }
+            if (tstream != null) {
+                tstream.setOpenContainer(pdfDocument);
+            }
+
             boolean hasXFA = hasXFA(pdfDocument, metadata);
             boolean hasMarkedContent = hasMarkedContent(pdfDocument, metadata);
             extractMetadata(pdfDocument, metadata, context);
             AccessChecker checker = localConfig.getAccessChecker();
             checker.check(metadata);
-            tstream.setOpenContainer(pdfDocument);
             renderPagesBeforeParse(tstream, handler, metadata, context, localConfig);
             if (handler != null) {
                 if (shouldHandleXFAOnly(hasXFA, localConfig)) {
@@ -204,6 +212,9 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
             } finally {
                 //replace the one that was here
                 context.set(PDFRenderingState.class, incomingRenderingState);
+                if (shouldClose && tstream != null) {
+                    tstream.close();
+                }
             }
         }
     }
