@@ -35,7 +35,7 @@ public class TestBasic {
         assertTrue(Files.isRegularFile(p));
 
         TikaServerClientConfig clientConfig = TikaServerClientConfig.build(p);
-        assertEquals(1, clientConfig.getNumThreads());
+        assertEquals(6, clientConfig.getNumThreads());
         assertEquals(5, clientConfig.getHttpClientFactory().getMaxConnections());
     }
 
