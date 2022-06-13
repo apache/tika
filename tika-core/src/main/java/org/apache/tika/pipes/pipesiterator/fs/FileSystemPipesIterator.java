@@ -124,6 +124,4 @@ public class FileSystemPipesIterator extends PipesIterator implements Initializa
             return FileVisitResult.CONTINUE;
         }
     }
-
-
 }

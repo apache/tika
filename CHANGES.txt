@@ -1,5 +1,9 @@
 Release 2.4.1 - ???
 
+   * Implement bulk upload in the OpenSearch emitter (TIKA-3791).
+
+   * Implement tika-server client via pipes mode (TIKA-3790).
+
    * Custom embedded parsers and EmbeddedDocumentHandlers
      can now add metadata to the container file's
      metadata (TIKA-3789).

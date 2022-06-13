@@ -19,19 +19,23 @@
 -->
 <properties>
   <service-loader initializableProblemHandler="throw"/>
-  <pipesIterators>
-    <pipesIterator class="org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator">
-      <params>
-        <fetcherName>fs</fetcherName>
-        <basePath>fix</basePath>
-      </params>
-    </pipesIterator>
-  </pipesIterators>
+  <parsers>
+    <parser class="org.apache.tika.parser.DefaultParser">
+      <parser-exclude class="org.apache.tika.parser.ocr.TesseractOCRParser"/>
+    </parser>
+  </parsers>
+  <pipesIterator class="org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator">
+    <params>
+      <fetcherName>fs</fetcherName>
+      <emitterName>fs</emitterName>
+      <basePath>UPDATE</basePath>
+    </params>
+  </pipesIterator>
   <fetchers>
     <fetcher class="org.apache.tika.pipes.fetcher.fs.FileSystemFetcher">
       <params>
         <name>fs</name>
-        <basePath>fix</basePath>
+        <basePath>UPDATE</basePath>
       </params>
     </fetcher>
   </fetchers>
@@ -53,27 +57,50 @@
     <emitter class="org.apache.tika.pipes.emitter.fs.FileSystemEmitter">
       <params>
         <name>fs</name>
-        <basePath>fix</basePath>
+        <basePath>UPDATE</basePath>
       </params>
     </emitter>
-    <!--
-    <emitter class="org.apache.tika.pipes.emitter.solr.SolrEmitter">
-        <params>
-            <param name="name" type="string">solr1</param>
-            <param name="url" type="string">http://localhost:8983/solr/tika-test</param>
-            <param name="attachmentStrategy" type="string">concatenate-content</param>
-            <param name="contentField" type="string">content</param>
-            <param name="commitWithin" type="int">10</param>
-        </params>
-    </emitter>
-    <emitter class="org.apache.tika.pipes.emitter.solr.SolrEmitter">
-        <params>
-            <param name="name" type="string">solr2</param>
-            <param name="url" type="string">http://localhost:8983/solr/tika-test</param>
-            <param name="attachmentStrategy" type="string">parent-child</param>
-            <param name="contentField" type="string">content</param>
-            <param name="commitWithin" type="int">10</param>
-        </params>
-    </emitter>-->
   </emitters>
+  <pipes>
+    <params>
+      <numClients>6</numClients>
+      <forkedJvmArgs>
+        <arg>-Xmx1g</arg>
+        <arg>-XX:ParallelGCThreads=2</arg>
+      </forkedJvmArgs>
+      <timeoutMillis>60000</timeoutMillis>
+    </params>
+  </pipes>
+  <server>
+    <params>
+      <port>9998</port>
+      <host>localhost</host>
+      <digest>sha256</digest>
+      <digestMarkLimit>1000000</digestMarkLimit>
+      <logLevel>debug</logLevel>
+      <returnStackTrace>true</returnStackTrace>
+      <noFork>true</noFork>
+      <endpoints>
+        <endpoint>tika</endpoint>
+        <endpoint>pipes</endpoint>
+      </endpoints>
+    </params>
+  </server>
+  <serverClientConfig>
+    <params>
+      <!-- this is the only option so far -->
+      <mode>pipes</mode>
+      <!-- this should be the same number as that in the pipes' numClients -->
+      <numThreads>6</numThreads>
+      <maxWaitMillis>600000</maxWaitMillis>
+      <tikaEndpoints>
+        <tikaEndpoint>http://localhost:9998</tikaEndpoint>
+      </tikaEndpoints>
+    </params>
+    <httpClientFactory class="org.apache.tika.client.HttpClientFactory">
+      <params>
+        <maxConnections>5</maxConnections>
+      </params>
+    </httpClientFactory>
+  </serverClientConfig>
 </properties>

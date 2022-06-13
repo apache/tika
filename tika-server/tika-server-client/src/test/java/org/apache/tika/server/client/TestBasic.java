@@ -16,6 +16,7 @@
  */
 package org.apache.tika.server.client;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
@@ -25,15 +26,29 @@ import java.nio.file.Paths;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-@Disabled("turn into actual unit test")
 public class TestBasic {
 
     @Test
+    public void testConfig() throws Exception {
+        Path p = Paths.get(
+                TestBasic.class.getResource("/tika-config-simple-fs-emitter.xml").toURI());
+        assertTrue(Files.isRegularFile(p));
+
+        TikaServerClientConfig clientConfig = TikaServerClientConfig.build(p);
+        assertEquals(1, clientConfig.getNumThreads());
+        assertEquals(5, clientConfig.getHttpClientFactory().getMaxConnections());
+    }
+
+    @Test
+    @Disabled("turn this into an actual test in tika-integration-tests?")
     public void testBasic() throws Exception {
         Path p = Paths.get(
                 TestBasic.class.getResource("/tika-config-simple-fs-emitter.xml").toURI());
         assertTrue(Files.isRegularFile(p));
-        String[] args = new String[]{p.toAbsolutePath().toString(), "http://localhost:9998/", "fs"};
+        String[] args = new String[]{p.toAbsolutePath().toString()};
+        long start = System.currentTimeMillis();
         TikaClientCLI.main(args);
+        long elapsed = System.currentTimeMillis() - start;
+        System.out.println("elapsed " + elapsed);
     }
 }
