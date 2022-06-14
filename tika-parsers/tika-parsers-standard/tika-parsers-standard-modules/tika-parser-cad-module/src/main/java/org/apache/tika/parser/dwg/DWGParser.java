@@ -14,333 +14,370 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.dwg;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
+import java.util.UUID;
+import java.util.function.Consumer;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.poi.util.StringUtil;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.json.JsonReadFeature;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.EndianUtils;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.ExceptionUtils;
+import org.apache.tika.utils.FileProcessResult;
+import org.apache.tika.utils.ProcessUtils;
+
+
+
+
 
 /**
- * DWG (CAD Drawing) parser. This is a very basic parser, which just
- * looks for bits of the headers.
- * Note that we use Apache POI for various parts of the processing, as
- * lots of the low level string/int/short concepts are the same.
+ * DWGReadParser (CAD Drawing) parser. This extends the original DWGParser if in 
+ * the parser configuration DwgRead is set. DWG reader can be found here: 
+ * <p>
+ * https://github.com/LibreDWG/libredwg 
+ * <p>
+ * DWGRead outputs json which we then loop through extracting the text elements 
+ * The required configuration is dwgReadExecutable. The other settings which can be
+ * overwritten are: 
+ * <p>
+ * boolean : cleanDwgReadOutput - whether to clean the json output 
+ * <p>
+ * int : cleanDwgReadOutputBatchSize - clean output batch size to process 
+ * <p>
+ * long : dwgReadTimeout -timeout in milliseconds before killing the dwgread process
+ * <p>
+ * String : cleanDwgReadRegexToReplace - characters to replace in the json 
+ * <p>
+ * String : cleanDwgReadReplaceWith - * replacement characters dwgReadExecutable
  */
-public class DWGParser extends AbstractDWGParser {
-    public static String DWG_CUSTOM_META_PREFIX = "dwg-custom:";
-    /**
-     * Serial version UID
-     */
-    private static final long serialVersionUID = -7744232583079169119L;
-    /**
-     * The order of the fields in the header
-     */
-    private static final Property[] HEADER_PROPERTIES_ENTRIES = { TikaCoreProperties.TITLE,
-            TikaCoreProperties.DESCRIPTION, TikaCoreProperties.CREATOR, TikaCoreProperties.SUBJECT,
-            TikaCoreProperties.COMMENTS, TikaCoreProperties.MODIFIER, null, // Unknown?
-            TikaCoreProperties.RELATION, // Hyperlink
-    };
-    /**
-     * For the 2000 file, they're indexed
-     */
-    private static final Property[] HEADER_2000_PROPERTIES_ENTRIES = { null, TikaCoreProperties.RELATION, // 0x01
-            TikaCoreProperties.TITLE, // 0x02
-            TikaCoreProperties.DESCRIPTION, // 0x03
-            TikaCoreProperties.CREATOR, // 0x04
-            null, TikaCoreProperties.COMMENTS, // 0x06
-            TikaCoreProperties.SUBJECT, // 0x07
-            TikaCoreProperties.MODIFIER, // 0x08
-    };
-    private static final String HEADER_2000_PROPERTIES_MARKER_STR = "DWGPROPS COOKIE";
-    private static final byte[] HEADER_2000_PROPERTIES_MARKER = new byte[HEADER_2000_PROPERTIES_MARKER_STR.length()];
-    /**
-     * How far to skip after the last standard property, before we find any custom
-     * properties that might be there.
-     */
-    private static final int CUSTOM_PROPERTIES_SKIP = 20;
-    /**
-     * The value of padding bytes other than 0 in some DWG files.
-     */
-    private static final int[] CUSTOM_PROPERTIES_ALT_PADDING_VALUES = new int[] { 0x2, 0, 0, 0 };
-    private static MediaType TYPE = MediaType.image("vnd.dwg");
 
-    static {
-        StringUtil.putCompressedUnicode(HEADER_2000_PROPERTIES_MARKER_STR, HEADER_2000_PROPERTIES_MARKER, 0);
-    }
+public class DWGReadParser extends AbstractDWGParser {
+    private static final Logger LOG = LoggerFactory.getLogger(DWGReadParser.class);
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 7983127145030096837L;
+    private static MediaType TYPE = MediaType.image("vnd.dwg");
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return Collections.singleton(TYPE);
     }
 
+    @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
-            throws IOException, TikaException, SAXException {
+            throws IOException, SAXException, TikaException {
 
         configure(context);
         DWGParserConfig dwgc = context.get(DWGParserConfig.class);
+        final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        xhtml.startDocument();
+        // create unique files so we avoid overwriting out files if multithreaded
+        UUID uuid = UUID.randomUUID();
+        File tmpFileOut = File.createTempFile(uuid + "dwgreadout", ".json");
+        File tmpFileOutCleaned = File.createTempFile(uuid + "dwgreadoutclean", ".json");
+        File tmpFileIn = File.createTempFile(uuid + "dwgreadin", ".dwg");
+        try {
+            
 
-        if (!dwgc.getDwgReadExecutable().isEmpty()) {
-            DWGReadParser dwr = new DWGReadParser();
-            dwr.parse(stream, handler, metadata, context);
-        } else {
-            // First up, which version of the format are we handling?
-            byte[] header = new byte[128];
-            IOUtils.readFully(stream, header);
-            String version = new String(header, 0, 6, "US-ASCII");
+            FileUtils.copyInputStreamToFile(stream, tmpFileIn);
 
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-            xhtml.startDocument();
+            List<String> command = Arrays.asList(dwgc.getDwgReadExecutable(), "-O", "JSON", "-o",
+                    tmpFileOut.getCanonicalPath(), tmpFileIn.getCanonicalPath());
+            ProcessBuilder pb = new ProcessBuilder().command(command);
+            LOG.info("About to call DWGRead: " + command.toString());
+            FileProcessResult fpr = ProcessUtils.execute(pb, dwgc.getDwgReadTimeout(), 10000, 10000);
+            LOG.info("DWGRead Exit code is: " + fpr.getExitValue());
+            if (fpr.getExitValue() == 0) {
+                if (dwgc.isCleanDwgReadOutput()) {
+                    // dwgread sometimes creates strings with invalid utf-8 sequences or invalid
+                    // json (nan instead of NaN). replace them
+                    // with empty string.
+                    LOG.debug("Cleaning Json Output - Replace: " + dwgc.getCleanDwgReadRegexToReplace() 
+                              + " with: " + dwgc.getCleanDwgReadReplaceWith());
+                    try ( BufferedReader br = new BufferedReader(
+                              new InputStreamReader(
+                                    new FileInputStream(tmpFileOut), 
+                              StandardCharsets.UTF_8));
+                            
+                            BufferedWriter out = new BufferedWriter(
+                                    new OutputStreamWriter(
+                                            new FileOutputStream(tmpFileOutCleaned, true), 
+                                            StandardCharsets.UTF_8),32768);)
+                    {
 
-            switch (version) {
-                case "AC1015":
-                    metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
-                    if (skipTo2000PropertyInfoSection(stream, header)) {
-                        get2000Props(stream, metadata, xhtml);
+                        String sCurrentLine;
+                        while ((sCurrentLine = br.readLine()) != null) 
+                        {
+                            sCurrentLine = sCurrentLine
+                                            .replaceAll( dwgc.getCleanDwgReadRegexToReplace(), 
+                                                    dwgc.getCleanDwgReadReplaceWith())
+                                            .replaceAll(" nan,", " 0,")
+                                            .replaceAll(" nan ", " 0 ")
+                                            .replaceAll(" nan$", " 0 ")
+                                            .replaceAll("\\.,", " \\. ,") + "\n";
+                            out.write(sCurrentLine);
+                        }                            
+                        out.close();      
+                    } finally {
+                    	
+                        FileUtils.deleteQuietly(tmpFileIn);
+                        FileUtils.deleteQuietly(tmpFileOut);
+                        tmpFileOut = tmpFileOutCleaned;
                     }
-                    break;
-                case "AC1018":
-                    metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
-                    if (skipToPropertyInfoSection(stream, header)) {
-                        get2004Props(stream, metadata, xhtml);
-                    }
-                    break;
-                case "AC1027":
-                case "AC1032":
-                case "AC1021":
-                case "AC1024":
-                    metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
-                    if (skipToPropertyInfoSection(stream, header)) {
-                        get2007and2010Props(stream, metadata, xhtml);
-                    }
-                    break;
-                default:
-                    throw new TikaException("Unsupported AutoCAD drawing version: " + version);
-            }
 
-            xhtml.endDocument();
-        }
-    }
-
-    /**
-     * Stored as US-ASCII
-     */
-    private void get2004Props(InputStream stream, Metadata metadata, XHTMLContentHandler xhtml)
-            throws IOException, TikaException, SAXException {
-        // Standard properties
-        for (int i = 0; i < HEADER_PROPERTIES_ENTRIES.length; i++) {
-            String headerValue = read2004String(stream);
-            handleHeader(i, headerValue, metadata, xhtml);
-        }
-
-        // Custom properties
-        int customCount = skipToCustomProperties(stream);
-        for (int i = 0; i < customCount; i++) {
-            String propName = read2004String(stream);
-            String propValue = read2004String(stream);
-            if (propName.length() > 0 && propValue.length() > 0) {
-                metadata.add(DWG_CUSTOM_META_PREFIX + propName, propValue);
-            }
-        }
-    }
-
-    private String read2004String(InputStream stream) throws IOException, TikaException {
-        int stringLen = EndianUtils.readUShortLE(stream);
-
-        byte[] stringData = new byte[stringLen];
-        IOUtils.readFully(stream, stringData);
-
-        // Often but not always null terminated
-        if (stringData[stringLen - 1] == 0) {
-            stringLen--;
-        }
-        return StringUtil.getFromCompressedUnicode(stringData, 0, stringLen);
-    }
-
-    /**
-     * Stored as UCS2, so 16 bit "unicode"
-     */
-    private void get2007and2010Props(InputStream stream, Metadata metadata, XHTMLContentHandler xhtml)
-            throws IOException, TikaException, SAXException {
-        // Standard properties
-        for (int i = 0; i < HEADER_PROPERTIES_ENTRIES.length; i++) {
-            String headerValue = read2007and2010String(stream);
-            handleHeader(i, headerValue, metadata, xhtml);
-        }
-
-        // Custom properties
-        int customCount = skipToCustomProperties(stream);
-        for (int i = 0; i < customCount; i++) {
-            String propName = read2007and2010String(stream);
-            String propValue = read2007and2010String(stream);
-            if (propName.length() > 0 && propValue.length() > 0) {
-                metadata.add(DWG_CUSTOM_META_PREFIX + propName, propValue);
-            }
-        }
-    }
-
-    private String read2007and2010String(InputStream stream) throws IOException, TikaException {
-        int stringLen = EndianUtils.readUShortLE(stream);
-
-        byte[] stringData = new byte[stringLen * 2];
-        IOUtils.readFully(stream, stringData);
-        String value = StringUtil.getFromUnicodeLE(stringData);
-
-        // Some strings are null terminated
-        if (value.charAt(value.length() - 1) == 0) {
-            value = value.substring(0, value.length() - 1);
-        }
-
-        return value;
-    }
-
-    private void get2000Props(InputStream stream, Metadata metadata, XHTMLContentHandler xhtml)
-            throws IOException, TikaException, SAXException {
-        int propCount = 0;
-        while (propCount < 30) {
-            int propIdx = EndianUtils.readUShortLE(stream);
-            int length = EndianUtils.readUShortLE(stream);
-            int valueType = stream.read();
-
-            if (propIdx == 0x28) {
-                // This one seems not to follow the pattern
-                length = 0x19;
-            } else if (propIdx == 90) {
-                // We think this means the end of properties
-                break;
-            }
-
-            byte[] value = new byte[length];
-            IOUtils.readFully(stream, value);
-            if (valueType == 0x1e) {
-                // Normal string, good
-                String val = StringUtil.getFromCompressedUnicode(value, 0, length);
-
-                // Is it one we can look up by index?
-                if (propIdx < HEADER_2000_PROPERTIES_ENTRIES.length) {
-                    metadata.add(HEADER_2000_PROPERTIES_ENTRIES[propIdx], val);
-                    xhtml.element("p", val);
-                } else if (propIdx == 0x012c) {
-                    int splitAt = val.indexOf('=');
-                    if (splitAt > -1) {
-                        String propName = val.substring(0, splitAt);
-                        String propVal = val.substring(splitAt + 1);
-                        metadata.add(DWGParser.DWG_CUSTOM_META_PREFIX + propName, propVal);
-                    }
+                } else {
+                    LOG.debug(
+                            "Json wasn't cleaned, "
+                            + "if json parsing fails consider reviewing dwgread json output to check it's valid");
                 }
             } else {
-                // No idea...
+                throw new TikaException(
+                        "DWGRead Failed - Exit Code is:" + fpr.getExitValue() + " Exe error is: " + fpr.getStderr());
             }
 
-            propCount++;
-        }
-    }
+            // we can't guarantee the json output is correct so we try to ignore as many
+            // errors as we can
+            JsonFactory jfactory = JsonFactory.builder()
+                    .enable(JsonReadFeature.ALLOW_MISSING_VALUES, 
+                            JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS,
+                            JsonReadFeature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER, 
+                            JsonReadFeature.ALLOW_UNQUOTED_FIELD_NAMES, 
+                            JsonReadFeature.ALLOW_TRAILING_COMMA,
+                            JsonReadFeature.ALLOW_NON_NUMERIC_NUMBERS, 
+                            JsonReadFeature.ALLOW_LEADING_ZEROS_FOR_NUMBERS)
+                    .build();
+            JsonParser jParser;
+            try {
+                jParser = jfactory.createParser(tmpFileOut);
+            } catch (JsonParseException e1) {
+                throw new TikaException("Failed to parse Json: " + ExceptionUtils.getStackTrace(e1));
+            } catch (IOException e1) {
+                throw new TikaException("Failed to read json file: " + ExceptionUtils.getStackTrace(e1));
+            }
+            // read json token in a stream using jackson, iterate over each token. We only
+            // support OBJECTS, FILEHEADER and SummaryInfo
+            // these are the only ones we have in either sample files or have been tested
+            // with
+            JsonToken nextToken = jParser.nextToken();
+            while ((nextToken = jParser.nextToken()) != JsonToken.END_OBJECT) {
+                if (nextToken == JsonToken.FIELD_NAME) {
+                    String nextFieldName = jParser.currentName();
+                    nextToken = jParser.nextToken();
+                    if (nextToken.isStructStart()) {
 
-    private void handleHeader(int headerNumber, String value, Metadata metadata, XHTMLContentHandler xhtml)
-            throws SAXException {
-        if (value == null || value.length() == 0) {
-            return;
-        }
+                        if ("OBJECTS".equals(nextFieldName)) {
+                            // Start array
+                            jParser.nextToken();
+                            while (jParser.nextToken() != JsonToken.END_ARRAY) {
+                                parseDwgObject(jParser, (nextTextValue) -> {
 
-        Property headerProp = HEADER_PROPERTIES_ENTRIES[headerNumber];
-        if (headerProp != null) {
-            metadata.set(headerProp, value);
-        }
-
-        xhtml.element("p", value);
-    }
-
-    /**
-     * Grab the offset, then skip there
-     */
-    private boolean skipToPropertyInfoSection(InputStream stream, byte[] header) throws IOException, TikaException {
-        // The offset is stored in the header from 0x20 onwards
-        long offsetToSection = EndianUtils.getLongLE(header, 0x20);
-
-        // Bounds check the offset. Some files seem to use a different format,
-        // and the offset isn't available at 0x20. Until we can work out how
-        // to find the offset in those files, skip them if detected
-        if (offsetToSection > 0xa00000l) {
-            // Header should never be more than 10mb into the file, something is wrong
-            offsetToSection = 0;
-        }
-
-        // Work out how far to skip, and bounds check
-        long toSkip = offsetToSection - header.length;
-        if (offsetToSection == 0) {
-            return false;
-        }
-        IOUtils.skipFully(stream, toSkip);
-
-        return true;
-    }
-
-    /**
-     * We think it can be anywhere...
-     */
-    private boolean skipTo2000PropertyInfoSection(InputStream stream, byte[] header) throws IOException {
-        int val = 0;
-        while (val != -1) {
-            val = stream.read();
-            if (val == HEADER_2000_PROPERTIES_MARKER[0]) {
-                boolean going = true;
-                for (int i = 1; i < HEADER_2000_PROPERTIES_MARKER.length && going; i++) {
-                    val = stream.read();
-                    if (val != HEADER_2000_PROPERTIES_MARKER[i]) {
-                        going = false;
+                                    try {
+                                        xhtml.characters(cleanupDwgString(nextTextValue));
+                                        xhtml.newline();
+                                    } catch (SAXException e) {
+                                        LOG.error("Could not write next text value {} to xhtml stream", nextTextValue);
+                                    }
+                                });
+                            }
+                        } else if ("FILEHEADER".equals(nextFieldName)) {
+                            parseHeader(jParser, metadata);
+                        } else if ("SummaryInfo".equals(nextFieldName)) {
+                            parseSummaryInfo(jParser, metadata);
+                        } else {
+                            jParser.skipChildren();
+                        }
                     }
                 }
-                if (going) {
-                    // Bingo, found it
-                    return true;
+            }
+            jParser.close();
+        } finally {
+            // make sure we delete all temp files
+            FileUtils.deleteQuietly(tmpFileOut);
+            FileUtils.deleteQuietly(tmpFileIn);
+            FileUtils.deleteQuietly(tmpFileOutCleaned);
+        }
+
+        xhtml.endDocument();
+    }
+
+    private void parseDwgObject(JsonParser jsonParser, Consumer<String> textConsumer) throws IOException {
+        JsonToken nextToken;
+        while ((nextToken = jsonParser.nextToken()) != JsonToken.END_OBJECT) {
+            if (nextToken == JsonToken.FIELD_NAME) {
+                String nextFieldName = jsonParser.currentName();
+                nextToken = jsonParser.nextToken();
+                if (nextToken.isStructStart()) {
+                    jsonParser.skipChildren();
+                } else if (nextToken.isScalarValue()) {
+                    if ("text".equals(nextFieldName)) {
+                        String textVal = jsonParser.getText();
+                        if (StringUtils.isNotBlank(textVal)) {
+
+                            textConsumer.accept(textVal);
+                        }
+                    } else if ("text_value".equals(nextFieldName)) {
+                        String textVal = jsonParser.getText();
+                        if (StringUtils.isNotBlank(textVal)) {
+
+                            textConsumer.accept(textVal);
+
+                        }
+                    }
                 }
             }
         }
-        return false;
     }
 
-    private int skipToCustomProperties(InputStream stream) throws IOException, TikaException {
-        // There should be 4 zero bytes or CUSTOM_PROPERTIES_ALT_PADDING_VALUES next
-        byte[] padding = new byte[4];
-        IOUtils.readFully(stream, padding);
-        if ((padding[0] == 0 && padding[1] == 0 && padding[2] == 0 && padding[3] == 0)
-                || (padding[0] == CUSTOM_PROPERTIES_ALT_PADDING_VALUES[0]
-                        && padding[1] == CUSTOM_PROPERTIES_ALT_PADDING_VALUES[1]
-                        && padding[2] == CUSTOM_PROPERTIES_ALT_PADDING_VALUES[2]
-                        && padding[3] == CUSTOM_PROPERTIES_ALT_PADDING_VALUES[3])) {
-
-            // Looks hopeful, skip on
-            padding = new byte[CUSTOM_PROPERTIES_SKIP];
-            IOUtils.readFully(stream, padding);
-
-            // We should now have the count
-            int count = EndianUtils.readUShortLE(stream);
-
-            // Plausibilitu check it
-            if (count > 0 && count < 0x7f) {
-                // Looks plausible
-                return count;
-            } else {
-                // No properties / count is too high to trust
-                return 0;
+    private void parseHeader(JsonParser jsonParser, Metadata metadata) throws IOException {
+        JsonToken nextToken;
+        while ((nextToken = jsonParser.nextToken()) != JsonToken.END_OBJECT) {
+            if (nextToken == JsonToken.FIELD_NAME) {
+                String nextFieldName = jsonParser.currentName();
+                nextToken = jsonParser.nextToken();
+                if (nextToken.isStructStart()) {
+                    jsonParser.skipChildren();
+                } else if (nextToken.isScalarValue()) {
+                    metadata.set(nextFieldName, jsonParser.getText());
+                }
             }
-        } else {
-            // No padding. That probably means no custom props
-            return 0;
         }
+    }
+
+    private void parseSummaryInfo(JsonParser jsonParser, Metadata metadata) throws IOException {
+        JsonToken nextToken;
+        while ((nextToken = jsonParser.nextToken()) != JsonToken.END_OBJECT) {
+            if (nextToken == JsonToken.FIELD_NAME) {
+                String nextFieldName = jsonParser.currentName();
+                nextToken = jsonParser.nextToken();
+                if (nextToken.isStructStart()) {
+                    if ("TDCREATE".equals(nextFieldName) || "TDUPDATE".equals(nextFieldName)) {
+                        // timestamps are represented by an integer array of format with 2 values in the
+                        // array:
+                        // [julianDate, millisecondOfDay]
+                        jsonParser.nextToken(); // start array
+                        long julianDay = jsonParser.getValueAsLong();
+                        jsonParser.nextToken();
+                        long millisecondsIntoDay = jsonParser.getValueAsLong();
+                        Instant instant = JulianDateUtil.toInstant(julianDay, millisecondsIntoDay);
+                        jsonParser.nextToken(); // end array
+                        if ("TDCREATE".equals(nextFieldName)) {
+                            metadata.set(TikaCoreProperties.CREATED, instant.toString());
+                        } else {
+                            metadata.set(TikaCoreProperties.MODIFIED, instant.toString());
+                        }
+                    } else {
+                        jsonParser.skipChildren();
+                    }
+
+                } else if (nextToken.isScalarValue()) {
+                    String textVal = jsonParser.getText();
+                    if (StringUtils.isNotBlank(textVal)) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Summary Info - {} = {}", nextFieldName, textVal);
+                        }
+                        if ("TITLE".equals(nextFieldName)) {
+                            metadata.set(TikaCoreProperties.TITLE, textVal);
+                        } else if ("LASTSAVEDBY".equals(nextFieldName)) {
+                            metadata.set(TikaCoreProperties.MODIFIER, textVal);
+                        } else if (!StringUtils.startsWithIgnoreCase(nextFieldName, "unknown")) {
+                            metadata.set(nextFieldName, textVal);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private String cleanupDwgString(String dwgString) {
+        // Cleaning the formatting of the text has been found from the following
+        // website's:
+        // https://www.cadforum.cz/en/text-formatting-codes-in-mtext-objects-tip8640
+        // https://adndevblog.typepad.com/autocad/2017/09/dissecting-mtext-format-codes.html
+        // These have also been spotted (pxqc,pxqr,pxql,simplex)
+        // We always to do a backwards look to make sure the string to replace hasn't
+        // been escaped
+        String cleanString;
+        // replace A0-2 (Alignment)
+        cleanString = dwgString.replaceAll("(?<!\\\\)\\\\A[0-2];", "");
+        // replace \\p (New paragraph/ new line) and with new line
+        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\P", "\n");
+        // remove pi (numbered paragraphs)
+        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pi(.*?);", "");
+        // remove pxi (bullets)
+        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pxi(.*?);", "");
+        // remove pxt (tab stops)
+        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pxt(.*?);", "");
+        // remove pt (tabs)
+        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pt(.*?);", "");
+        // remove lines with \H (text height)
+        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\H[0-9]*(.*?);", "");
+        // remove lines with \F Font Selection
+        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\F|f(.*?);", "");
+        // Replace \L \l (underlines)
+        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\L)(.*?)(\\\\l)", "$2");
+        // Replace \O \o (over strikes)
+        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\O)(.*?)(\\\\o)", "$2");
+        // Replace \K \k (Strike through)
+        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\K)(.*?)(\\\\k)", "$2");
+        // Replace \N (new Column)
+        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\N)", "\t");
+        // Replace \Q (text angle)
+        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\Q[\\d];", "");
+        // Replace \W (Text Width)
+        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\W(.*?);", "");
+        // Replace \S (Stacking)
+        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\S(.*?):", "");
+        // Replace \C (Stacking)
+        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\C|c[1-7];)", "");
+        // Replace \T (Tracking)
+        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\T(.*?);)", "");
+        // Replace \pxqc mtext justfication 
+        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\pxqc;)", "");
+        // Replace \pxqr mtext justfication 
+        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\pxqr;)", "");
+        // Replace \pxql mtext justfication 
+        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\pxql;)", "");
+        // Replace \simplex (simplex)
+        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\simplex\\|c(.*?);)", "");
+        // Now we have cleaned the formatting we can now remove the escaped \
+        cleanString = cleanString.replaceAll("(\\\\)", "\\\\");
+        // Replace {} (text formatted by the above)
+        cleanString = cleanString.replaceAll("(?<!\\\\)\\}|(?<!\\\\)\\{", "");
+
+        //
+        return cleanString;
+
     }
 
 }
