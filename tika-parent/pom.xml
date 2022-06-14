@@ -31,7 +31,7 @@
 
   <groupId>org.apache.tika</groupId>
   <artifactId>tika-parent</artifactId>
-  <version>2.4.1-SNAPSHOT</version>
+  <version>2.4.1</version>
   <packaging>pom</packaging>
 
   <name>Apache Tika parent</name>
@@ -267,7 +267,7 @@
     <maven.compiler.target>1.8</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
-    <project.build.outputTimestamp>1651168422</project.build.outputTimestamp>
+    <project.build.outputTimestamp>1655224451</project.build.outputTimestamp>
     <!-- plugin versions -->
     <checkstyle.plugin.version>3.1.2</checkstyle.plugin.version>
     <forbiddenapis.version>3.3</forbiddenapis.version>
@@ -1084,7 +1084,7 @@
       <url>https://github.com/apache/tika</url>
   -->
   <scm>
-    <tag>2.3.0-rc1</tag>
+    <tag>2.4.1-rc1</tag>
     <connection>scm:git:https://github.com/apache/</connection>
     <developerConnection>scm:git:https://github.com/apache/</developerConnection>
     <url>https://github.com/apache/tika</url>
