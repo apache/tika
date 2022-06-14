@@ -20,11 +20,13 @@ import java.io.IOException;
 import java.io.Serializable;
 
 import org.w3c.dom.Element;
+import org.xml.sax.ContentHandler;
 
 import org.apache.tika.config.ConfigBase;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractorFactory;
+import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.writefilter.MetadataWriteFilterFactory;
 import org.apache.tika.sax.ContentHandlerDecoratorFactory;
 
@@ -36,16 +38,26 @@ import org.apache.tika.sax.ContentHandlerDecoratorFactory;
  */
 public class AutoDetectParserConfig extends ConfigBase implements Serializable {
 
-    private static ContentHandlerDecoratorFactory NOOP_CONTENT_HANDLER_DECORATOR_FACTORY
-            = (contentHandler, metadata) -> contentHandler;
+    private static ContentHandlerDecoratorFactory NOOP_CONTENT_HANDLER_DECORATOR_FACTORY =
+            new ContentHandlerDecoratorFactory() {
+                @Override
+                public ContentHandler decorate(ContentHandler contentHandler, Metadata metadata) {
+                    return contentHandler;
+                }
+
+                @Override
+                public ContentHandler decorate(ContentHandler contentHandler, Metadata metadata,
+                                               ParseContext parseContext) {
+                    return contentHandler;
+                }
+            };
 
     public static AutoDetectParserConfig DEFAULT = new AutoDetectParserConfig();
 
     public static AutoDetectParserConfig load(Element element)
             throws TikaConfigException, IOException {
-        return AutoDetectParserConfig.buildSingle(
-                "autoDetectParserConfig", AutoDetectParserConfig.class, element,
-                AutoDetectParserConfig.DEFAULT);
+        return AutoDetectParserConfig.buildSingle("autoDetectParserConfig",
+                AutoDetectParserConfig.class, element, AutoDetectParserConfig.DEFAULT);
     }
 
     /**
@@ -84,7 +96,7 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
             NOOP_CONTENT_HANDLER_DECORATOR_FACTORY;
 
     /**
-     *  Creates a SecureContentHandlerConfig using the passed in parameters.
+     * Creates a SecureContentHandlerConfig using the passed in parameters.
      *
      * @param spoolToDisk
      * @param outputThreshold          SecureContentHandler - character output threshold.
@@ -150,10 +162,11 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
         return this.metadataWriteFilterFactory;
     }
 
-    public void setMetadataWriteFilterFactory(MetadataWriteFilterFactory metadataWriteFilterFactory) {
+    public void setMetadataWriteFilterFactory(
+            MetadataWriteFilterFactory metadataWriteFilterFactory) {
         this.metadataWriteFilterFactory = metadataWriteFilterFactory;
     }
-    
+
     public void setEmbeddedDocumentExtractorFactory(
             EmbeddedDocumentExtractorFactory embeddedDocumentExtractorFactory) {
         this.embeddedDocumentExtractorFactory = embeddedDocumentExtractorFactory;
@@ -163,7 +176,8 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
         return embeddedDocumentExtractorFactory;
     }
 
-    public void setContentHandlerDecoratorFactory(ContentHandlerDecoratorFactory contentHandlerDecoratorFactory) {
+    public void setContentHandlerDecoratorFactory(
+            ContentHandlerDecoratorFactory contentHandlerDecoratorFactory) {
         this.contentHandlerDecoratorFactory = contentHandlerDecoratorFactory;
     }
 

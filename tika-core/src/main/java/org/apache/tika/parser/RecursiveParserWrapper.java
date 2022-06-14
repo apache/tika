@@ -287,7 +287,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
         }
     }
 
-    private static class RecursivelySecureContentHandler extends SecureContentHandler {
+    static class RecursivelySecureContentHandler extends SecureContentHandler {
         private ContentHandler handler;
 
         //total allowable chars across all handlers

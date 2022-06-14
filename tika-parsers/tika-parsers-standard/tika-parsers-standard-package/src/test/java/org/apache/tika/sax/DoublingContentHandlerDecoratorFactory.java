@@ -24,7 +24,9 @@ import org.xml.sax.SAXException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 
-public class UpcasingContentHandlerDecoratorFactory implements ContentHandlerDecoratorFactory {
+public class DoublingContentHandlerDecoratorFactory implements ContentHandlerDecoratorFactory {
+    private static final char[] NEWLINE = new char[]{'\n'};
+
     @Override
     public ContentHandler decorate(ContentHandler contentHandler, Metadata metadata) {
         return decorate(contentHandler, metadata, new ParseContext());
@@ -37,6 +39,8 @@ public class UpcasingContentHandlerDecoratorFactory implements ContentHandlerDec
             @Override
             public void characters(char[] ch, int start, int length) throws SAXException {
                 String content = new String(ch, start, length).toUpperCase(Locale.US);
+                contentHandler.characters(content.toCharArray(), start, length);
+                contentHandler.characters(NEWLINE, 0, 1);
                 contentHandler.characters(content.toCharArray(), start, length);
             }
         };

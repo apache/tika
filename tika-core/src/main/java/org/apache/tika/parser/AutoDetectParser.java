@@ -154,8 +154,7 @@ public class AutoDetectParser extends CompositeParser {
                 }
                 tis.reset();
             }
-            handler = autoDetectParserConfig.getContentHandlerDecoratorFactory()
-                    .decorate(handler, metadata);
+            handler = decorateHandler(handler, metadata, context, autoDetectParserConfig);
             // TIKA-216: Zip bomb prevention
             SecureContentHandler sch =
                     handler != null ?
@@ -174,6 +173,24 @@ public class AutoDetectParser extends CompositeParser {
         } finally {
             tmp.dispose();
         }
+    }
+
+    private ContentHandler decorateHandler(ContentHandler handler,
+                                           Metadata metadata, ParseContext context,
+                                           AutoDetectParserConfig autoDetectParserConfig) {
+        if (context.get(RecursiveParserWrapper.RecursivelySecureContentHandler.class) != null) {
+            //using the recursiveparserwrapper. we should decorate this handler
+            return autoDetectParserConfig
+                    .getContentHandlerDecoratorFactory()
+                    .decorate(handler, metadata, context);
+        }
+        ParseRecord parseRecord = context.get(ParseRecord.class);
+        if (parseRecord == null || parseRecord.getDepth() == 0) {
+            return autoDetectParserConfig.getContentHandlerDecoratorFactory()
+                    .decorate(handler, metadata, context);
+        }
+        //else do not decorate
+        return handler;
     }
 
     private void maybeSpool(TikaInputStream tis, AutoDetectParserConfig autoDetectParserConfig,

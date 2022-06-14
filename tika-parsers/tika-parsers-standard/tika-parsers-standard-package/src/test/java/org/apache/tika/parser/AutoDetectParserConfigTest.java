@@ -64,4 +64,36 @@ public class AutoDetectParserConfigTest extends TikaTest {
         Metadata pdfMetadata2 = metadataList.get(5);
         assertContains("HELLO WORLD", pdfMetadata2.get(TikaCoreProperties.TIKA_CONTENT));
     }
+
+    @Test
+    public void testRecursiveContentHandlerDecoratorFactory() throws Exception {
+        TikaConfig tikaConfig = null;
+        try (InputStream is = OOXMLParserTest.class.getResourceAsStream(
+                "/configs/tika-config-doubling-custom-handler-decorator.xml")) {
+            tikaConfig = new TikaConfig(is);
+        }
+        Parser p = new AutoDetectParser(tikaConfig);
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.pptx", p);
+        assertContainsCount("IMAGE2.EMF",
+                metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT), 2);
+        assertContainsCount("15.9.2007 11:02",
+                metadataList.get(4).get(TikaCoreProperties.TIKA_CONTENT), 2);
+        assertContainsCount("HELLO WORLD",
+                metadataList.get(5).get(TikaCoreProperties.TIKA_CONTENT), 4);
+    }
+
+    @Test
+    public void testXMLContentHandlerDecoratorFactory() throws Exception {
+        //test to make sure that the decorator is only applied once for
+        //legacy (e.g. not RecursiveParserWrapperHandler) parsing
+        TikaConfig tikaConfig = null;
+        try (InputStream is = OOXMLParserTest.class.getResourceAsStream(
+                "/configs/tika-config-doubling-custom-handler-decorator.xml")) {
+            tikaConfig = new TikaConfig(is);
+        }
+        Parser p = new AutoDetectParser(tikaConfig);
+        String txt = getXML("testPPT_EmbeddedPDF.pptx", p).xml;
+        assertContainsCount("THE APACHE TIKA PROJECT WAS FORMALLY", txt, 2);
+        assertContainsCount("15.9.2007 11:02", txt, 2);
+    }
 }
