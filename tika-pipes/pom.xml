@@ -42,7 +42,7 @@
 
   <dependencyManagement>
     <!-- this is caused by convergence errors in
-        azure-storage-blob 12.15.0 and its dependencies.
+        azure-storage-blob since 12.15.0 and its dependencies.
         Hopefully, we can get rid of this all with the
         next upgrade.
 
@@ -116,6 +116,27 @@
         <groupId>io.netty</groupId>
         <artifactId>netty-transport-native-epoll</artifactId>
         <version>${netty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.projectreactor.netty</groupId>
+        <artifactId>reactor-netty-http</artifactId>
+        <version>1.0.20</version>
+      </dependency>
+      <dependency>
+        <groupId>io.projectreactor</groupId>
+        <artifactId>reactor-core</artifactId>
+        <version>3.4.19</version>
+      </dependency>
+      <dependency>
+        <groupId>com.azure</groupId>
+        <artifactId>azure-core-http-netty</artifactId>
+        <version>1.12.2</version>
+        <exclusions>
+            <exclusion>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-epoll</artifactId>
+            </exclusion>
+        </exclusions>
       </dependency>
     </dependencies>
   </dependencyManagement>
