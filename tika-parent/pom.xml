@@ -347,7 +347,7 @@
     <log4j2.version>2.17.2</log4j2.version>
     <lombok.version>1.18.20</lombok.version>
     <!-- lucene >= 9.x requires Java 11 -->
-    <lucene.version>8.11.1</lucene.version>
+    <lucene.version>8.11.2</lucene.version>
     <metadata.extractor.version>2.18.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <!-- 0.8.6 is built with java 11 and does not work with Java 8 -->
@@ -373,7 +373,7 @@
     <sis.version>1.2</sis.version>
     <!-- we'll need to stay on 1.7 until we're java modularized ? -->
     <slf4j.version>1.7.36</slf4j.version>
-    <solrj.version>8.11.1</solrj.version>
+    <solrj.version>8.11.2</solrj.version>
     <spring.version>5.3.21</spring.version>
     <sqlite.version>3.36.0.3</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
@@ -387,6 +387,7 @@
     <xerces.version>2.12.2</xerces.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <zstd.version>1.5.2-3</zstd.version>
+    <netty.version>4.1.78.Final</netty.version>
   </properties>
 
   <dependencyManagement>
@@ -495,12 +496,17 @@
       <dependency>
         <groupId>io.netty</groupId>
         <artifactId>netty-common</artifactId>
-        <version>4.1.77.Final</version>
+        <version>${netty.version}</version>
       </dependency>
       <dependency>
         <groupId>io.netty</groupId>
         <artifactId>netty-handler</artifactId>
-        <version>4.1.77.Final</version>
+        <version>${netty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-transport-native-unix-common</artifactId>
+        <version>${netty.version}</version>
       </dependency>
       <dependency>
         <groupId>it.unimi.dsi</groupId>
@@ -789,7 +795,7 @@
             <exclude>
               <groupId>io.netty</groupId>
               <artifactId>netty-handler</artifactId>
-              <version>4.1.77.Final</version>
+              <version>${netty.version}</version>
             </exclude>
             <exclude>
               <!-- the most recent cve in sonatype for this artifact is 2.11.0,

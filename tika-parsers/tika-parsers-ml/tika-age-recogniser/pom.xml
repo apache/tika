@@ -131,6 +131,12 @@
           <groupId>org.apache.zookeeper</groupId>
           <artifactId>zookeeper</artifactId>
           <version>3.8.0</version>
+          <exclusions>
+              <exclusion>
+                  <groupId>io.netty</groupId>
+                  <artifactId>netty-transport-native-unix-common</artifactId>
+              </exclusion>
+          </exclusions>
       </dependency>
       <!-- netty dependency removed, either it isn't needed,
            or our test coverage isn't good enough -->

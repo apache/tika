@@ -29,10 +29,6 @@
   <url>https://tika.apache.org/</url>
   <packaging>pom</packaging>
 
-  <properties>
-    <netty.version>4.1.77.Final</netty.version>
-  </properties>
-
   <modules>
     <module>tika-httpclient-commons</module>
     <module>tika-fetchers</module>
