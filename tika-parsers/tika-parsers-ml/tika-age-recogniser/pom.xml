@@ -146,9 +146,9 @@
           <version>3.6.1</version>
       </dependency>
       <dependency>
-          <groupId>commons-collections</groupId>
-          <artifactId>commons-collections</artifactId>
-          <version>3.2.2</version>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-collections4</artifactId>
+          <version>${commons.collections4.version}</version>
       </dependency>
       <dependency>
           <groupId>org.apache.curator</groupId>
@@ -175,6 +175,10 @@
         <exclusion>
           <groupId>io.netty</groupId>
           <artifactId>netty-buffer</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>commons-collections</groupId>
+          <artifactId>commons-collections</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
