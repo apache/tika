@@ -741,9 +741,9 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
         }
         //set a default renderer if nothing was defined
         PDFBoxRenderer pdfBoxRenderer = new PDFBoxRenderer();
-        pdfBoxRenderer.setDPI(defaultConfig.getOcrDPI());
-        pdfBoxRenderer.setImageType(defaultConfig.getOcrImageType());
-        pdfBoxRenderer.setImageFormatName(defaultConfig.getOcrImageFormatName());
+        pdfBoxRenderer.setDPI(config.getOcrDPI());
+        pdfBoxRenderer.setImageType(config.getOcrImageType());
+        pdfBoxRenderer.setImageFormatName(config.getOcrImageFormatName());
         config.setRenderer(pdfBoxRenderer);
     }
 

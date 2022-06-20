@@ -184,6 +184,28 @@ public abstract class CXFTestBase {
         return data;
     }
 
+    protected Map<String, byte[]> readZipArchiveBytes(InputStream inputStream) throws IOException {
+        Map<String, byte[]> data = new HashMap<>();
+        Path tempFile = null;
+        try {
+            tempFile = writeTemporaryArchiveFile(inputStream, "zip");
+            ZipFile zip = new ZipFile(tempFile.toFile());
+            Enumeration<ZipArchiveEntry> entries = zip.getEntries();
+            while (entries.hasMoreElements()) {
+                ZipArchiveEntry entry = entries.nextElement();
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                IOUtils.copy(zip.getInputStream(entry), bos);
+                data.put(entry.getName(), bos.toByteArray());
+            }
+            zip.close();
+        } finally {
+            if (tempFile != null ) {
+                Files.delete(tempFile);
+            }
+        }
+        return data;
+    }
+
     protected String readArchiveText(InputStream inputStream) throws IOException {
         Path tempFile = writeTemporaryArchiveFile(inputStream, "zip");
         ZipFile zip = new ZipFile(tempFile.toFile());

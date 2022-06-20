@@ -1,3 +1,9 @@
+Release 2.4.2 - ???
+
+   * Fix bug that prevented specification of rendered image type
+     via http header in the PDFParser (TIKA-3794).
+
+
 Release 2.4.1 - 06/14/2022
 
    * Implement bulk upload in the OpenSearch emitter (TIKA-3791).

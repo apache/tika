@@ -23,10 +23,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import javax.imageio.ImageIO;
 import javax.ws.rs.core.Response;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -35,6 +38,8 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.TikaServerParseExceptionMapper;
@@ -232,5 +237,96 @@ public class UnpackerResourceTest extends CXFTestBase {
                 .put(ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"));
         String txt = readArchiveText((InputStream) response.getEntity());
         CXFTestBase.assertContains("Happy New Year", txt);
+    }
+
+    @Test
+    public void testPDFPerPageRenderColor() throws Exception {
+
+        Response response = WebClient.create(CXFTestBase.endPoint + ALL_PATH)
+                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "imageStrategy",
+                        "RenderPagesAtPageEnd")
+                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "ocrImageType", "rgb")
+                .accept("application/zip").put(ClassLoader.getSystemResourceAsStream(
+                        "test-documents/testColorRendering.pdf"));
+        Map<String, byte[]> results = readZipArchiveBytes((InputStream) response.getEntity());
+        byte[] renderedImage = null;
+        for (Map.Entry<String, byte[]> e : results.entrySet()) {
+            if (e.getKey().startsWith("tika-pdfbox-rendering")) {
+                renderedImage = e.getValue();
+                break;
+            }
+        }
+        assertEquals("image/png",
+                TikaConfig.getDefaultConfig().getDetector()
+                        .detect(new ByteArrayInputStream(renderedImage), new Metadata()).toString()
+        );
+
+        try (InputStream is = new ByteArrayInputStream(renderedImage)) {
+            BufferedImage image = ImageIO.read(is);
+            //top left
+            AverageColor averageColor =
+                    getAverageColor(image, 0, image.getWidth() / 5, 0, image.getHeight() / 10);
+            assertTrue(averageColor.red > 250);
+            assertTrue(averageColor.green < 1);
+            assertTrue(averageColor.blue < 1);
+
+            //bottom left = green
+            averageColor = getAverageColor(image, 0, image.getWidth() / 5,
+                    image.getHeight() / 2 + image.getHeight() / 10,
+                    image.getHeight() / 2 + 2 * image.getHeight() / 10);
+
+            assertTrue(averageColor.red < 1);
+            assertTrue(averageColor.green > 250);
+            assertTrue(averageColor.blue < 1);
+
+            //bottom right = blue
+            averageColor = getAverageColor(image, image.getWidth() / 2 + image.getWidth() / 10,
+                    image.getWidth() / 2 + 2 * image.getWidth() / 10,
+                    image.getHeight() / 2 + image.getHeight() / 10,
+                    image.getHeight() / 2 + 2 * image.getHeight() / 10);
+
+            assertTrue(averageColor.red < 1);
+            assertTrue(averageColor.green < 1);
+            assertTrue(averageColor.blue > 250);
+        }
+    }
+
+    private static AverageColor getAverageColor(BufferedImage image, int minX, int maxX, int minY,
+                                                int maxY) {
+        long totalRed = 0;
+        long totalGreen = 0;
+        long totalBlue = 0;
+        int pixels = 0;
+        for (int x = minX; x < maxX; x++) {
+            for (int y = minY; y < maxY; y++) {
+                int clr = image.getRGB(x, y);
+                int red = (clr & 0x00ff0000) >> 16;
+                int green = (clr & 0x0000ff00) >> 8;
+                int blue = clr & 0x000000ff;
+                totalRed += red;
+                totalGreen += green;
+                totalBlue += blue;
+                pixels++;
+            }
+        }
+        return new AverageColor((double) totalRed / (double) pixels,
+                (double) totalGreen / (double) pixels, (double) totalBlue / (double) pixels);
+    }
+
+    public static class AverageColor {
+        double red;
+        double green;
+        double blue;
+
+        public AverageColor(double averageRed, double averageGreen, double averageBlue) {
+            this.red = averageRed;
+            this.green = averageGreen;
+            this.blue = averageBlue;
+        }
+
+        @Override
+        public String toString() {
+            return "AverageColor{" + "red=" + red + ", green=" + green + ", blue=" + blue + '}';
+        }
     }
 }
