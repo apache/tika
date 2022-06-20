@@ -1,5 +1,8 @@
 Release 2.4.2 - ???
 
+   * Fix bug that prevented setting of includeHeadersAndFooters
+     for xls, xlsx, doc and docx via tika-config (TIKA-3796).
+
    * Fix bug that prevented specification of rendered image type
      via http header in the PDFParser (TIKA-3794).
 
