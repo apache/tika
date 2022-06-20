@@ -149,4 +149,9 @@ public abstract class AbstractOfficeParser extends AbstractParser {
     public void setDateFormatOverride(String format) {
         defaultOfficeParserConfig.setDateOverrideFormat(format);
     }
+
+    @Field
+    public void setIncludeHeadersAndFooters(boolean includeHeadersAndFooters) {
+        defaultOfficeParserConfig.setIncludeHeadersAndFooters(includeHeadersAndFooters);
+    }
 }
