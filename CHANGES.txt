@@ -1,5 +1,8 @@
 Release 2.4.2 - ???
 
+   * ServiceLoader's loadServiceProviders() now guarantees
+     unique classes (TIKA-3797).
+
    * Fix bug that prevented setting of includeHeadersAndFooters
      for xls, xlsx, doc and docx via tika-config (TIKA-3796).
 
