@@ -1,5 +1,7 @@
 Release 2.4.2 - ???
 
+   * Refactor FuzzingCLI to use PipesParser (TIKA-3799).
+
    * ServiceLoader's loadServiceProviders() now guarantees
      unique classes (TIKA-3797).
 
