@@ -1,5 +1,7 @@
 Release 2.4.2 - ???
 
+   * Add unrar as an optional parser (TIKA-3800).
+
    * Refactor FuzzingCLI to use PipesParser (TIKA-3799).
 
    * ServiceLoader's loadServiceProviders() now guarantees
