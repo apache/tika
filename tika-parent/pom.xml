@@ -404,9 +404,14 @@
         <version>1.2.0</version>
       </dependency>
       <dependency>
-        <groupId>c3p0</groupId>
+        <groupId>com.mchange</groupId>
         <artifactId>c3p0</artifactId>
-        <version>0.9.1.2</version>
+        <version>0.9.5.5</version>
+      </dependency>
+      <dependency>
+        <groupId>com.mchange</groupId>
+        <artifactId>mchange-commons-java</artifactId>
+        <version>0.2.20</version>
       </dependency>
       <dependency>
         <groupId>com.beust</groupId>
