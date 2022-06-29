@@ -266,18 +266,18 @@ public class UnpackerResourceTest extends CXFTestBase {
             //top left
             AverageColor averageColor =
                     getAverageColor(image, 0, image.getWidth() / 5, 0, image.getHeight() / 10);
-            assertTrue(averageColor.red > 250);
-            assertTrue(averageColor.green < 1);
-            assertTrue(averageColor.blue < 1);
+            assertTrue(averageColor.getRed() > 250);
+            assertTrue(averageColor.getGreen() < 1);
+            assertTrue(averageColor.getBlue() < 1);
 
             //bottom left = green
             averageColor = getAverageColor(image, 0, image.getWidth() / 5,
                     image.getHeight() / 2 + image.getHeight() / 10,
                     image.getHeight() / 2 + 2 * image.getHeight() / 10);
 
-            assertTrue(averageColor.red < 1);
-            assertTrue(averageColor.green > 250);
-            assertTrue(averageColor.blue < 1);
+            assertTrue(averageColor.getRed() < 1);
+            assertTrue(averageColor.getGreen() > 250);
+            assertTrue(averageColor.getBlue() < 1);
 
             //bottom right = blue
             averageColor = getAverageColor(image, image.getWidth() / 2 + image.getWidth() / 10,
@@ -285,48 +285,9 @@ public class UnpackerResourceTest extends CXFTestBase {
                     image.getHeight() / 2 + image.getHeight() / 10,
                     image.getHeight() / 2 + 2 * image.getHeight() / 10);
 
-            assertTrue(averageColor.red < 1);
-            assertTrue(averageColor.green < 1);
-            assertTrue(averageColor.blue > 250);
-        }
-    }
-
-    private static AverageColor getAverageColor(BufferedImage image, int minX, int maxX, int minY,
-                                                int maxY) {
-        long totalRed = 0;
-        long totalGreen = 0;
-        long totalBlue = 0;
-        int pixels = 0;
-        for (int x = minX; x < maxX; x++) {
-            for (int y = minY; y < maxY; y++) {
-                int clr = image.getRGB(x, y);
-                int red = (clr & 0x00ff0000) >> 16;
-                int green = (clr & 0x0000ff00) >> 8;
-                int blue = clr & 0x000000ff;
-                totalRed += red;
-                totalGreen += green;
-                totalBlue += blue;
-                pixels++;
-            }
-        }
-        return new AverageColor((double) totalRed / (double) pixels,
-                (double) totalGreen / (double) pixels, (double) totalBlue / (double) pixels);
-    }
-
-    public static class AverageColor {
-        double red;
-        double green;
-        double blue;
-
-        public AverageColor(double averageRed, double averageGreen, double averageBlue) {
-            this.red = averageRed;
-            this.green = averageGreen;
-            this.blue = averageBlue;
-        }
-
-        @Override
-        public String toString() {
-            return "AverageColor{" + "red=" + red + ", green=" + green + ", blue=" + blue + '}';
+            assertTrue(averageColor.getRed() < 1);
+            assertTrue(averageColor.getGreen() < 1);
+            assertTrue(averageColor.getBlue() > 250);
         }
     }
 }

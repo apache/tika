@@ -21,6 +21,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -260,4 +261,54 @@ public abstract class CXFTestBase {
         return tmp;
     }
 
+    protected static AverageColor getAverageColor(BufferedImage image, int minX, int maxX, int minY,
+                                                  int maxY) {
+        long totalRed = 0;
+        long totalGreen = 0;
+        long totalBlue = 0;
+        int pixels = 0;
+        for (int x = minX; x < maxX; x++) {
+            for (int y = minY; y < maxY; y++) {
+                int clr = image.getRGB(x, y);
+                int red = (clr & 0x00ff0000) >> 16;
+                int green = (clr & 0x0000ff00) >> 8;
+                int blue = clr & 0x000000ff;
+                totalRed += red;
+                totalGreen += green;
+                totalBlue += blue;
+                pixels++;
+            }
+        }
+        return new AverageColor((double) totalRed / (double) pixels,
+                (double) totalGreen / (double) pixels, (double) totalBlue / (double) pixels);
+    }
+
+    public static class AverageColor {
+        double red;
+        double green;
+        double blue;
+
+        public AverageColor(double averageRed, double averageGreen, double averageBlue) {
+            this.red = averageRed;
+            this.green = averageGreen;
+            this.blue = averageBlue;
+        }
+
+        public double getRed() {
+            return red;
+        }
+
+        public double getGreen() {
+            return green;
+        }
+
+        public double getBlue() {
+            return blue;
+        }
+
+        @Override
+        public String toString() {
+            return "AverageColor{" + "red=" + red + ", green=" + green + ", blue=" + blue + '}';
+        }
+    }
 }
