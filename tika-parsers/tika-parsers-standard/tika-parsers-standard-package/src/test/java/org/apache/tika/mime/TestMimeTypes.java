@@ -1140,6 +1140,10 @@ public class TestMimeTypes {
         // With a custom text header
         assertType("text/vtt", "testWebVTT_header.vtt");
         assertTypeByData("text/vtt", "testWebVTT_header.vtt");
+
+        // With a UTF-8 BOM before the header
+        assertType("text/vtt", "testWebVTT_utf8.vtt");
+        assertTypeByData("text/vtt", "testWebVTT_utf8.vtt");
     }
 
     @Test

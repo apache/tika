@@ -7008,6 +7008,9 @@
       <match value="0xfeff" offset="0">
          <match value="WEBVTT\n" type="string" offset="2"/>
       </match>
+      <match value="0xefbbbf" offset="0">
+         <match value="WEBVTT\n" type="string" offset="3"/>
+      </match>
       <!-- Common Header -->
       <match value="WEBVTT FILE\r" type="string" offset="0"/>
       <match value="WEBVTT FILE\n" type="string" offset="0"/>
