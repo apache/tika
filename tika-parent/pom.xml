@@ -336,11 +336,11 @@
     <jempbox.version>1.8.16</jempbox.version>
     <jetty.version>9.4.48.v20220622</jetty.version>
     <jhighlight.version>1.1.0</jhighlight.version>
-    <jna.version>5.11.0</jna.version>
+    <jna.version>5.12.1</jna.version>
     <joda.time.version>2.10.10</joda.time.version>
     <json.simple.version>1.1.1</json.simple.version>
     <junit4.version>4.13.2</junit4.version>
-    <junit5.version>5.9.0-M1</junit5.version>
+    <junit5.version>5.9.0-RC1</junit5.version>
     <juniversalchardet.version>1.0.3</juniversalchardet.version>
     <junrar.version>7.5.2</junrar.version>
     <libpst.version>0.9.3</libpst.version>
