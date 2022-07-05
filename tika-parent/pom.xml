@@ -471,7 +471,7 @@
       <dependency>
         <groupId>com.google.protobuf</groupId>
         <artifactId>protobuf-java</artifactId>
-        <version>3.21.0</version>
+        <version>3.21.2</version>
       </dependency>
       <dependency>
         <groupId>com.ibm.icu</groupId>
