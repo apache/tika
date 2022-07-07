@@ -284,7 +284,7 @@
     <maven.shade.version>3.3.0</maven.shade.version>
     <!-- need above java 8 for 10.[0-2] -->
     <puppycrawl.version>9.3</puppycrawl.version>
-    <rat.version>0.13</rat.version>
+    <rat.version>0.14</rat.version>
 
     <!-- dependency versions -->
     <aws.version>1.12.255</aws.version>
