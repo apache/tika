@@ -571,12 +571,12 @@
     <dependency>
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna</artifactId>
-      <version>5.11.0</version>
+      <version>5.12.1</version>
     </dependency>
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
-      <version>3.19.4</version>
+      <version>3.21.2</version>
     </dependency>
     <dependency>
       <groupId>edu.ucar</groupId>
