@@ -382,7 +382,7 @@
     <tukaani.version>1.9</tukaani.version>
     <twelvemonkeys.version>3.8.2</twelvemonkeys.version>
     <uima.version>3.3.0</uima.version>
-    <uimafit.version>3.2.0</uimafit.version>
+    <uimafit.version>3.3.0</uimafit.version>
     <vorbis.version>0.8</vorbis.version>
     <xerces.version>2.12.2</xerces.version>
     <xmpcore.version>6.1.11</xmpcore.version>
@@ -920,7 +920,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
-        <version>3.0.0-M3</version> <!-- can't update to 3.0.0, see MENFORCER-393 -->
+        <version>3.1.0</version> <!-- can't update to 3.0.0, see MENFORCER-393 -->
         <executions>
           <execution>
             <id>enforce-maven</id>
