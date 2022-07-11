@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.pipesiterator.PipesIterator;
-import org.apache.tika.pipes.pipesiterator.kafka.KafkaPipesIterator;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -43,9 +42,8 @@ public class TestKafkaPipesIterator {
         KafkaPipesIterator it = new KafkaPipesIterator();
         it.setFetcherName("kafka");
         it.setGroupId("");//find one
-        it.setServer("");//use one
+        it.setBootstrapServers("");//use one
         it.setTopic("");//select one
-        it.setFileNamePattern("");
         it.initialize(Collections.EMPTY_MAP);
         int numConsumers = 6;
         ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(10);

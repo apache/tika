@@ -16,14 +16,11 @@
  */
 package org.apache.tika.pipes.pipesiterator.kafka;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeoutException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -36,7 +33,6 @@ import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.HandlerConfig;
@@ -49,18 +45,16 @@ import org.slf4j.LoggerFactory;
 public class KafkaPipesIterator extends PipesIterator implements Initializable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaPipesIterator.class);
-    private String server;
-    private String topic;
-    private String groupId;
-    private Pattern fileNamePattern = null;
+    String topic;
+    String bootstrapServers;
+    String keySerializer;
+    String valueSerializer;
+    String groupId;
+    String autoOffsetReset = "earliest";
+    int pollDelayMs = 100;
 
-    private Properties properties;
+    private Properties props;
     private KafkaConsumer<String, String> consumer;
-
-    @Field
-    public void setServer(String server) {
-        this.server = server;
-    }
 
     @Field
     public void setTopic(String topic) {
@@ -73,74 +67,89 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
     }
 
     @Field
-    public void setFileNamePattern(String fileNamePattern) {
-        this.fileNamePattern = Pattern.compile(fileNamePattern);
+    public void setBootstrapServers(String bootstrapServers) {
+        this.bootstrapServers = bootstrapServers;
     }
 
-    /**
-     * This initializes the s3 client. Note, we wrap S3's RuntimeExceptions,
-     * e.g. AmazonClientException in a TikaConfigException.
-     *
-     * @param params params to use for initialization
-     * @throws TikaConfigException
-     */
+    @Field
+    public void setKeySerializer(String keySerializer) {
+        this.keySerializer = keySerializer;
+    }
+
+    @Field
+    public void setAutoOffsetReset(String autoOffsetReset) {
+        this.autoOffsetReset = autoOffsetReset;
+    }
+
+    @Field
+    public void setValueSerializer(String valueSerializer) {
+        this.valueSerializer = valueSerializer;
+    }
+
+    @Field
+    public void setPollDelayMs(int pollDelayMs) {
+        this.pollDelayMs = pollDelayMs;
+    }
+
+    private void safePut(Properties props, String key, Object val) {
+        if (val != null) {
+            props.put(key, val);
+        }
+    }
+
     @Override
     public void initialize(Map<String, Param> params) {
-        properties = new Properties();
-        properties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, server);
-        properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer .class.getName());
-        properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, groupId);
-        properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        consumer = new KafkaConsumer<>(properties);
+        props = new Properties();
+        safePut(props, ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        safePut(props, ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, serializerClass(keySerializer, StringDeserializer.class));
+        safePut(props, ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, serializerClass(valueSerializer, StringDeserializer.class));
+        safePut(props, ConsumerConfig.GROUP_ID_CONFIG, groupId);
+        safePut(props, ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, autoOffsetReset);
+        consumer = new KafkaConsumer<>(props);
         consumer.subscribe(Arrays.asList(topic));
+    }
+
+    private Object serializerClass(String className, Class defaultClass) {
+        try {
+            return className == null ? defaultClass : Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            LOGGER.error("Could not find key serializer class: {}", className);
+            return null;
+        }
     }
 
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler)
             throws TikaConfigException {
         super.checkInitialization(problemHandler);
-        TikaConfig.mustNotBeEmpty("server", this.server);
+        TikaConfig.mustNotBeEmpty("bootstrapServers", this.bootstrapServers);
         TikaConfig.mustNotBeEmpty("topic", this.topic);
     }
 
     @Override
-    protected void enqueue() throws InterruptedException, IOException, TimeoutException {
+    protected void enqueue() throws InterruptedException, TimeoutException {
         String fetcherName = getFetcherName();
         String emitterName = getEmitterName();
         long start = System.currentTimeMillis();
         int count = 0;
         HandlerConfig handlerConfig = getHandlerConfig();
-        ConsumerRecords<String, String> records =
-                consumer.poll(Duration.ofMillis(100));
-        Matcher fileNameMatcher = null;
-        if (fileNamePattern != null) {
-            fileNameMatcher = fileNamePattern.matcher("");
-        }
+        ConsumerRecords<String, String> records;
 
-        // process the dataset received
-        for (ConsumerRecord<String, String> record : records) {
-            if (fileNameMatcher != null && !accept(fileNameMatcher, record.key())) {
-                continue;
+        do {
+            records = consumer.poll(Duration.ofMillis(pollDelayMs));
+            for (ConsumerRecord<String, String> r : records) {
+                long elapsed = System.currentTimeMillis() - start;
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("adding ({}) {} in {} ms", count, r.key(), elapsed);
+                }
+                tryToAdd(new FetchEmitTuple(r.key(), new FetchKey(fetcherName,
+                        r.key()),
+                        new EmitKey(emitterName, r.key()), new Metadata(), handlerConfig,
+                        getOnParseException()));
+                count++;
             }
-            long elapsed = System.currentTimeMillis() - start;
-            LOGGER.debug("adding ({}) {} in {} ms", count, record.key(), elapsed);
-            //TODO -- allow user specified metadata as the "id"?
-            tryToAdd(new FetchEmitTuple(record.key(), new FetchKey(fetcherName,
-                    record.key()),
-                    new EmitKey(emitterName, record.key()), new Metadata(), handlerConfig,
-                    getOnParseException()));
-            count++;
-        }
+        } while (!records.isEmpty());
         long elapsed = System.currentTimeMillis() - start;
-        LOGGER.info("finished enqueuing {} files in {} ms", count, elapsed);
-    }
-
-    private boolean accept(Matcher fileNameMatcher, String key) {
-        String fName = FilenameUtils.getName(key);
-        if (fileNameMatcher.reset(fName).find()) {
-            return true;
-        }
-        return false;
+        LOGGER.info("Finished enqueuing {} files in {} ms", count, elapsed);
     }
 }

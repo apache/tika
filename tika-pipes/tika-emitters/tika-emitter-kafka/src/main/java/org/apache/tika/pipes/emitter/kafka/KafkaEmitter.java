@@ -18,54 +18,173 @@ package org.apache.tika.pipes.emitter.kafka;
 
 import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
 
-import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.pipes.emitter.AbstractEmitter;
-import org.apache.tika.pipes.emitter.StreamEmitter;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
-import org.apache.tika.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Emits to kafka
  */
-public class KafkaEmitter extends AbstractEmitter implements Initializable, StreamEmitter {
+public class KafkaEmitter extends AbstractEmitter implements Initializable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaEmitter.class);
-    private String server;
-    private String topic;
-    private String groupId;
-    private String prefix = null;
-    private String fileExtension = null;
-    private Producer<String, Map<String, Object>> producer;
+
+    private static final ObjectMapper OM = new ObjectMapper();
+
+    String topic;
+    String bootstrapServers;
+    String groupId;
+
+    String acks = "all";
+    int lingerMs = 5000;
+    int batchSize = 16384;
+    int bufferMemory = 32 * 1024 * 1024;
+    String compressionType = "none";
+    int connectionsMaxIdleMs = 9 * 60 * 1000;
+    int deliveryTimeoutMs = 120 * 1000;
+    boolean enableIdempotence = false;
+    String interceptorClasses;
+    int maxBlockMs = 60 * 1000;
+    int maxInFlightRequestsPerConnection = 5;
+    int maxRequestSize = 1024 * 1024;
+    int metadataMaxAgeMs = 5 * 60 * 1000;
+    int requestTimeoutMs = 30 * 1000;
+    int retries = Integer.MAX_VALUE;
+    int retryBackoffMs = 100;
+    int transactionTimeoutMs = 60000;
+    String transactionalId;
+    String clientId;
+    String keySerializer;
+    String valueSerializer;
+
+    private Producer<String, String> producer;
 
     @Field
-    public void setServer(String server) {
-        this.server = server;
+    public void setBootstrapServers(String bootstrapServers) {
+        this.bootstrapServers = bootstrapServers;
+    }
+
+    @Field
+    public void setAcks(String acks) {
+        this.acks = acks;
+    }
+
+    @Field
+    public void setLingerMs(int lingerMs) {
+        this.lingerMs = lingerMs;
+    }
+
+    public void setBatchSize(int batchSize) {
+        this.batchSize = batchSize;
+    }
+
+    @Field
+    public void setBufferMemory(int bufferMemory) {
+        this.bufferMemory = bufferMemory;
+    }
+
+    @Field
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
+    }
+
+    @Field
+    public void setCompressionType(String compressionType) {
+        this.compressionType = compressionType;
+    }
+
+    @Field
+    public void setConnectionsMaxIdleMs(int connectionsMaxIdleMs) {
+        this.connectionsMaxIdleMs = connectionsMaxIdleMs;
+    }
+
+    @Field
+    public void setDeliveryTimeoutMs(int deliveryTimeoutMs) {
+        this.deliveryTimeoutMs = deliveryTimeoutMs;
+    }
+
+    @Field
+    public void setEnableIdempotence(boolean enableIdempotence) {
+        this.enableIdempotence = enableIdempotence;
+    }
+
+    @Field
+    public void setInterceptorClasses(String interceptorClasses) {
+        this.interceptorClasses = interceptorClasses;
+    }
+
+    @Field
+    public void setMaxBlockMs(int maxBlockMs) {
+        this.maxBlockMs = maxBlockMs;
+    }
+
+    @Field
+    public void setMaxInFlightRequestsPerConnection(int maxInFlightRequestsPerConnection) {
+        this.maxInFlightRequestsPerConnection = maxInFlightRequestsPerConnection;
+    }
+
+    @Field
+    public void setMaxRequestSize(int maxRequestSize) {
+        this.maxRequestSize = maxRequestSize;
+    }
+
+    @Field
+    public void setMetadataMaxAgeMs(int metadataMaxAgeMs) {
+        this.metadataMaxAgeMs = metadataMaxAgeMs;
+    }
+
+    @Field
+    public void setRequestTimeoutMs(int requestTimeoutMs) {
+        this.requestTimeoutMs = requestTimeoutMs;
+    }
+
+    @Field
+    public void setRetries(int retries) {
+        this.retries = retries;
+    }
+
+    @Field
+    public void setRetryBackoffMs(int retryBackoffMs) {
+        this.retryBackoffMs = retryBackoffMs;
+    }
+
+    @Field
+    public void setTransactionTimeoutMs(int transactionTimeoutMs) {
+        this.transactionTimeoutMs = transactionTimeoutMs;
+    }
+
+    @Field
+    public void setTransactionalId(String transactionalId) {
+        this.transactionalId = transactionalId;
+    }
+
+    @Field
+    public void setKeySerializer(String keySerializer) {
+        this.keySerializer = keySerializer;
+    }
+
+    @Field
+    public void setValueSerializer(String valueSerializer) {
+        this.valueSerializer = valueSerializer;
     }
 
     @Field
@@ -78,95 +197,36 @@ public class KafkaEmitter extends AbstractEmitter implements Initializable, Stre
         this.groupId = groupId;
     }
 
-    /**
-     * Requires the src-bucket/path/to/my/file.txt in the {@link TikaCoreProperties#SOURCE_PATH}.
-     *
-     * @param metadataList
-     * @throws IOException
-     * @throws TikaException
-     */
     @Override
     public void emit(String emitKey, List<Metadata> metadataList)
             throws IOException, TikaEmitterException {
-        if (metadataList == null || metadataList.size() == 0) {
+        if (metadataList == null || metadataList.isEmpty()) {
             throw new TikaEmitterException("metadata list must not be null or of size 0");
         }
+        for (Metadata metadata : metadataList) {
+            LOGGER.debug("about to emit to target topic: ({}) path:({})", topic, emitKey);
 
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        try (Writer writer = new BufferedWriter(
-                new OutputStreamWriter(bos, StandardCharsets.UTF_8))) {
-            JsonMetadataList.toJson(metadataList, writer);
-        } catch (IOException e) {
-            throw new TikaEmitterException("can't jsonify", e);
-        }
-        byte[] bytes = bos.toByteArray();
-        try (InputStream is = TikaInputStream.get(bytes)) {
-            emit(emitKey, is, new Metadata());
-        }
-    }
-
-    /**
-     * @param path         -- object path, not including the bucket
-     * @param is           inputStream to copy
-     * @param userMetadata this will be written to the s3 ObjectMetadata's userMetadata
-     * @throws TikaEmitterException or IOexception if there is a Runtime s3 client exception
-     */
-    @Override
-    public void emit(String path, InputStream is, Metadata userMetadata)
-            throws IOException, TikaEmitterException {
-
-        if (!StringUtils.isBlank(prefix)) {
-            path = prefix + "/" + path;
-        }
-
-        if (!StringUtils.isBlank(fileExtension)) {
-            path += "." + fileExtension;
-        }
-
-        LOGGER.debug("about to emit to target topic: ({}) path:({})", topic, path);
-
-        Map<String, Object> fields = new HashMap<>();
-        for (String n : userMetadata.names()) {
-            String[] vals = userMetadata.getValues(n);
-            if (vals.length > 1) {
-                LOGGER.warn("Can only write the first value for key {}. I see {} values.",
-                        n,
-                        vals.length);
+            Map<String, Object> fields = new HashMap<>();
+            for (String n : metadata.names()) {
+                String[] vals = metadata.getValues(n);
+                if (vals.length > 1) {
+                    LOGGER.warn("Can only write the first value for key {}. I see {} values.",
+                            n,
+                            vals.length);
+                }
+                fields.put(n, vals[0]);
             }
-            fields.put(n, vals[0]);
-        }
 
-        producer.send(new ProducerRecord<>(topic, path, fields));
-    }
-
-    @Field
-    public void setPrefix(String prefix) {
-        //strip final "/" if it exists
-        if (prefix.endsWith("/")) {
-            this.prefix = prefix.substring(0, prefix.length() - 1);
-        } else {
-            this.prefix = prefix;
+            producer.send(new ProducerRecord<>(topic, emitKey, OM.writeValueAsString(fields)));
         }
     }
 
-    /**
-     * If you want to customize the output file's file extension.
-     * Do not include the "."
-     *
-     * @param fileExtension
-     */
-    @Field
-    public void setFileExtension(String fileExtension) {
-        this.fileExtension = fileExtension;
+    private void safePut(Properties props, String key, Object val) {
+        if (val != null) {
+            props.put(key, val);
+        }
     }
 
-    /**
-     * This initializes the s3 client. Note, we wrap S3's RuntimeExceptions,
-     * e.g. AmazonClientException in a TikaConfigException.
-     *
-     * @param params params to use for initialization
-     * @throws TikaConfigException
-     */
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
 
@@ -174,30 +234,57 @@ public class KafkaEmitter extends AbstractEmitter implements Initializable, Stre
         Properties props = new Properties();
 
         //Assign localhost id
-        props.put("bootstrap.servers", server);
+        safePut(props, ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
 
         //Set acknowledgements for producer requests.      
-        props.put("acks", "all");
+        safePut(props, ProducerConfig.ACKS_CONFIG, acks);
 
         //If the request fails, the producer can automatically retry,
-        props.put("retries", 0);
+        safePut(props, ProducerConfig.RETRIES_CONFIG, retries);
 
         //Specify buffer size in config
-        props.put("batch.size", 16384);
+        safePut(props, ProducerConfig.BATCH_SIZE_CONFIG, batchSize);
 
         //Reduce the no of requests less than 0   
-        props.put("linger.ms", 1);
+        safePut(props, ProducerConfig.LINGER_MS_CONFIG, lingerMs);
 
         //The buffer.memory controls the total amount of memory available to the producer for buffering.   
-        props.put("buffer.memory", 33554432);
+        safePut(props, ProducerConfig.BUFFER_MEMORY_CONFIG, bufferMemory);
+
+        safePut(props, ProducerConfig.CLIENT_ID_CONFIG, clientId);
+        safePut(props, ProducerConfig.COMPRESSION_TYPE_CONFIG, compressionType);
+        safePut(props, ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, deliveryTimeoutMs);
+        safePut(props, ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, enableIdempotence);
+        safePut(props, ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, interceptorClasses);
+        safePut(props, ProducerConfig.MAX_BLOCK_MS_CONFIG, maxBlockMs);
+        safePut(props, ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, maxInFlightRequestsPerConnection);
+        safePut(props, ProducerConfig.MAX_REQUEST_SIZE_CONFIG, maxRequestSize);
+        safePut(props, ProducerConfig.METADATA_MAX_AGE_CONFIG, metadataMaxAgeMs);
+        safePut(props, ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, requestTimeoutMs);
+        safePut(props, ProducerConfig.RETRY_BACKOFF_MS_CONFIG, retryBackoffMs);
+        safePut(props, ProducerConfig.TRANSACTION_TIMEOUT_CONFIG, transactionTimeoutMs);
+        safePut(props, ProducerConfig.TRANSACTIONAL_ID_CONFIG, transactionalId);
+
+        safePut(props, ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, serializerClass(keySerializer, StringSerializer.class));
+        safePut(props, ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, serializerClass(valueSerializer, StringSerializer.class));
 
         producer = new KafkaProducer<>(props);
+    }
+
+    private Object serializerClass(String className, Class defaultClass) {
+        try {
+            return className == null ? defaultClass : Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            LOGGER.error("Could not find key serializer class: {}", className);
+            return null;
+        }
     }
 
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler)
             throws TikaConfigException {
         mustNotBeEmpty("topic", this.topic);
-        mustNotBeEmpty("server", this.server);
+        mustNotBeEmpty("server", this.bootstrapServers);
     }
+
 }
