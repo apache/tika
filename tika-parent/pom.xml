@@ -890,7 +890,7 @@
         <version>${maven.surefire.version}
         </version> <!-- versions greater than this don't like System.exit calls in tika-batch -->
         <configuration>
-          <argLine>-Xmx3072m -Duser.timezone=UTC -Djava.awt.headless=true</argLine>
+          <argLine>-Xmx3072m -Djava.awt.headless=true</argLine>
         </configuration>
       </plugin>
       <plugin>
