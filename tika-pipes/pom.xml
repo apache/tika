@@ -137,7 +137,7 @@
       <dependency>
         <groupId>io.projectreactor</groupId>
         <artifactId>reactor-core</artifactId>
-        <version>3.4.19</version>
+        <version>3.4.21</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
