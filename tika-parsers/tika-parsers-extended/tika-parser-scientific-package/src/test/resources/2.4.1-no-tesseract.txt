@@ -333,15 +333,13 @@ text/x-java-source	class org.apache.tika.parser.code.SourceCodeParser
 video/3gpp	class org.apache.tika.parser.mp4.MP4Parser
 video/3gpp2	class org.apache.tika.parser.mp4.MP4Parser
 video/daala	class org.gagravarr.tika.OggParser
-video/mp4	class org.apache.tika.parser.external.CompositeExternalParser
-video/mpeg	class org.apache.tika.parser.external.CompositeExternalParser
+video/mp4	class org.apache.tika.parser.mp4.MP4Parser
 video/ogg	class org.gagravarr.tika.OggParser
 video/quicktime	class org.apache.tika.parser.mp4.MP4Parser
 video/theora	class org.gagravarr.tika.TheoraParser
 video/x-dirac	class org.gagravarr.tika.OggParser
 video/x-flv	class org.apache.tika.parser.video.FLVParser
 video/x-m4v	class org.apache.tika.parser.mp4.MP4Parser
-video/x-msvideo	class org.apache.tika.parser.external.CompositeExternalParser
 video/x-oggrgb	class org.gagravarr.tika.OggParser
 video/x-ogguvs	class org.gagravarr.tika.OggParser
 video/x-oggyuv	class org.gagravarr.tika.OggParser
