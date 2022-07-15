@@ -274,7 +274,7 @@
     <groovy.maven.version>2.1.1</groovy.maven.version>
     <maven.antrun.version>3.1.0</maven.antrun.version>
     <maven.assembly.version>3.4.1</maven.assembly.version>
-    <maven.bundle.version>5.1.6</maven.bundle.version>
+    <maven.bundle.version>5.1.7</maven.bundle.version>
     <maven.compiler.plugin.version>3.10.1</maven.compiler.plugin.version>
     <maven.failsafe.version>3.0.0-M7</maven.failsafe.version>
     <maven.javadoc.version>3.4.0</maven.javadoc.version>
@@ -798,7 +798,8 @@
               <version>${h2.version}</version>
             </exclude>
             <exclude>
-              <!-- CVE-2018-18928 seems to be about the c++ library, not the java library -->
+              <!-- CVE-2018-18928 does affect the java library not just the c/c++ library,
+              upon further research -->
               <groupId>com.ibm.icu</groupId>
               <artifactId>icu4j</artifactId>
               <version>${icu4j.version}</version>
@@ -815,6 +816,12 @@
               <artifactId>xercesImpl</artifactId>
               <version>${xerces.version}</version>
             </exclude>
+            <!-- no fix available as of 20220715 -->
+            <dependency>
+              <groupId>com.azure</groupId>
+              <artifactId>azure-storage-blob</artifactId>
+              <version>12.18.0</version>
+            </dependency>
             <!-- these are used by the nlp-module -->
             <exclude>
               <groupId>org.apache.lucene</groupId>
