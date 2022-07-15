@@ -798,7 +798,8 @@
               <version>${h2.version}</version>
             </exclude>
             <exclude>
-              <!-- CVE-2018-18928 seems to be about the c++ library, not the java library -->
+              <!-- CVE-2018-18928 does affect the java library not just the c/c++ library,
+              upon further research -->
               <groupId>com.ibm.icu</groupId>
               <artifactId>icu4j</artifactId>
               <version>${icu4j.version}</version>
@@ -815,6 +816,12 @@
               <artifactId>xercesImpl</artifactId>
               <version>${xerces.version}</version>
             </exclude>
+            <!-- no fix available as of 20220715 -->
+            <dependency>
+              <groupId>com.azure</groupId>
+              <artifactId>azure-storage-blob</artifactId>
+              <version>12.18.0</version>
+            </dependency>
             <!-- these are used by the nlp-module -->
             <exclude>
               <groupId>org.apache.lucene</groupId>
