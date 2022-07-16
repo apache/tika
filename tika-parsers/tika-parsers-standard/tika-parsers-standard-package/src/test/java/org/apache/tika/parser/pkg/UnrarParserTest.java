@@ -44,6 +44,11 @@ public class UnrarParserTest extends AbstractPkgTest {
     @Test
     public void testEmbedded() throws Exception {
         assumeTrue(ExternalParser.check("unrar"));
+
+        // Expected embedded resources in test-documents.rar file.
+        String[] expectedResources = { "testHTML.html", "testEXCEL.xls", "testOpenOffice2.odt", "testPDF.pdf",
+                "testPPT.ppt", "testRTF.rtf", "testTXT.txt", "testWORD.doc", "testXML.xml"};
+
         TikaConfig tikaConfig = null;
         try (InputStream is = getResourceAsStream("tika-unrar-config.xml")) {
             tikaConfig = new TikaConfig(is);
@@ -53,8 +58,12 @@ public class UnrarParserTest extends AbstractPkgTest {
         assertEquals("org.apache.tika.parser.pkg.UnrarParser",
                 metadataList.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY)[1]);
         assertEquals(12, metadataList.size());
-        assertEquals("test-documents/testRTF.rtf",
-                metadataList.get(11).get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
+
+        for (String resource : expectedResources) {
+            assertEquals(1, metadataList.stream()
+                    .filter(m -> m.get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME) != null &&
+                            m.get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME).contains(resource)).count());
+        }
     }
 
 }
