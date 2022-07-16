@@ -79,6 +79,7 @@ import org.apache.tika.parser.multiple.AbstractMultipleParser;
 import org.apache.tika.renderer.CompositeRenderer;
 import org.apache.tika.renderer.Renderer;
 import org.apache.tika.utils.AnnotationUtils;
+import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
 
 /**
@@ -222,11 +223,19 @@ public class TikaConfig {
     public TikaConfig() throws TikaException, IOException {
 
         String config = System.getProperty("tika.config");
-        if (config == null || config.trim().equals("")) {
-            config = System.getenv("TIKA_CONFIG");
+        if (!StringUtils.isBlank(config)) {
+            LOG.debug("loading tika config from system property 'tika.config'");
         }
 
         if (config == null || config.trim().equals("")) {
+            config = System.getenv("TIKA_CONFIG");
+            if (!StringUtils.isBlank(config)) {
+                LOG.debug("loading tika config from environment variable 'TIKA_CONFIG'");
+            }
+        }
+
+        if (config == null || config.trim().equals("")) {
+            LOG.debug("loading tika config from defaults; no config file specified");
             this.serviceLoader = new ServiceLoader();
             this.mimeTypes = getDefaultMimeTypes(getContextClassLoader());
             this.encodingDetector = getDefaultEncodingDetector(serviceLoader);
@@ -239,6 +248,7 @@ public class TikaConfig {
             this.autoDetectParserConfig = AutoDetectParserConfig.DEFAULT;
         } else {
             ServiceLoader tmpServiceLoader = new ServiceLoader();
+            LOG.debug("loading tika config from: " + config);
             try (InputStream stream = getConfigInputStream(config, tmpServiceLoader)) {
                 Element element = XMLReaderUtils.buildDOM(stream).getDocumentElement();
                 updateXMLReaderUtils(element);
