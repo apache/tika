@@ -43,6 +43,8 @@ import org.apache.pdfbox.pdmodel.fixup.AbstractFixup;
 import org.apache.pdfbox.pdmodel.fixup.PDDocumentFixup;
 import org.apache.pdfbox.pdmodel.fixup.processor.AcroFormDefaultsProcessor;
 import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -107,6 +109,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
  */
 public class PDFParser extends AbstractParser implements RenderingParser, Initializable {
 
+    protected static final Logger LOG = LoggerFactory.getLogger(PDFParser.class);
+
     /**
      * Metadata key for giving the document password to the parser.
      *
@@ -155,6 +159,9 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
                 context.set(PDFRenderingState.class, new PDFRenderingState(tstream));
             } else {
                 tstream = TikaInputStream.cast(stream);
+            }
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("File: " + tstream.getFile() + ", length: " + tstream.getLength());
             }
             password = getPassword(metadata, context);
             MemoryUsageSetting memoryUsageSetting = MemoryUsageSetting.setupMainMemoryOnly();
