@@ -60,6 +60,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.ParseRecord;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -146,6 +147,8 @@ public class MockParser extends AbstractParser {
         String name = action.getNodeName();
         if ("metadata".equals(name)) {
             metadata(action, metadata);
+        } else if ("parentMetadata".equals(name)) {
+            parentMetadata(action, context);
         } else if ("write".equals(name)) {
             write(action, xhtml);
         } else if ("throw".equals(name)) {
@@ -169,6 +172,13 @@ public class MockParser extends AbstractParser {
         } else {
             throw new IllegalArgumentException("Didn't recognize mock action: " + name);
         }
+    }
+
+    private void parentMetadata(Node action, ParseContext context) {
+        Metadata toTransmit = new Metadata();
+        metadata(action, toTransmit);
+        ParseRecord record = context.get(ParseRecord.class);
+        record.addMetadata(toTransmit);
     }
 
     private void fakeload(Node action) {

@@ -345,7 +345,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         assertEquals(1, metadataList.size());
         assertEquals("true", metadataList.get(0).get(TikaCoreProperties.WRITE_LIMIT_REACHED));
 
-        //now try with a write limit of 1000
+        //now try with a write limit of 200
         writeLimit = 200;
         response = WebClient.create(endPoint + META_PATH).accept("application/json")
                 .header("writeLimit", Integer.toString(writeLimit))
@@ -376,6 +376,41 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
         Metadata metadata = metadataList.get(0);
         assertEquals("true", metadata.get(TikaCoreProperties.WRITE_LIMIT_REACHED));
+    }
+
+    @Test
+    public void testNoThrowOnWriteLimitReached() throws Exception {
+        int writeLimit = 100;
+        Response response = WebClient.create(endPoint + META_PATH).accept("application/json")
+                .header("writeLimit", Integer.toString(writeLimit))
+                .header("throwOnWriteLimitReached", "false")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+
+        assertEquals(200, response.getStatus());
+        // Check results
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+        assertEquals(10, metadataList.size());
+        assertEquals("true", metadataList.get(0).get(TikaCoreProperties.WRITE_LIMIT_REACHED));
+
+        //now try with a write limit of 200
+        writeLimit = 200;
+        response = WebClient.create(endPoint + META_PATH).accept("application/json")
+                .header("writeLimit", Integer.toString(writeLimit))
+                .header("throwOnWriteLimitReached", "false")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+
+        assertEquals(200, response.getStatus());
+        // Check results
+        reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        metadataList = JsonMetadataList.fromJson(reader);
+        assertEquals(10, metadataList.size());
+        assertEquals("true", metadataList.get(6).get(TikaCoreProperties.WRITE_LIMIT_REACHED));
+        assertContains("When in the Course of human events it becomes necessary for one people",
+                metadataList.get(6).get(TikaCoreProperties.TIKA_CONTENT));
+        TikaTest.assertNotContained("We hold these truths",
+                metadataList.get(6).get(TikaCoreProperties.TIKA_CONTENT));
+
     }
 
 }

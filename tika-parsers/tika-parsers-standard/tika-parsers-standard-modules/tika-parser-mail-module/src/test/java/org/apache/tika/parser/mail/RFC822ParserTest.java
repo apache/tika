@@ -38,6 +38,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.TimeZone;
 
 import org.apache.james.mime4j.stream.MimeConfig;
 import org.junit.jupiter.api.BeforeAll;
@@ -380,20 +381,23 @@ public class RFC822ParserTest extends TikaTest {
 
         String expected = "2016-05-15T01:32:00Z";
 
-        for (String dateString : new String[]{"Sun, 15 May 2016 01:32:00 UTC",
-                //make sure this test basically works
-                "Sun, 15 May 2016 01:32:00", //no timezone
+        int dateNum = 0;
+        for (String dateString : new String[] {
+                // with timezone info:
+                "Sun, 15 May 2016 01:32:00 UTC", "      Sun, 15 May 2016 3:32:00 +0200",
+                // format correctly handled by mime4j if no leading whitespace
+                "      Sun, 14 May 2016 20:32:00 EST",
+                // no timezone info:
+                "Sun, 15 May 2016 01:32:00",
                 "Sunday, May 15 2016 1:32 AM", "May 15 2016 1:32am", "May 15 2016 1:32 am",
-                "2016-05-15 01:32:00", "      Sun, 15 May 2016 3:32:00 +0200",
-                //format correctly handled by mime4j if no leading whitespace
-                "      Sun, 14 May 2016 20:32:00 EST",}) {
-            testDate(dateString, expected);
+                "2016-05-15 01:32:00", }) {
+            testDate(dateString, expected, dateNum++ < 3);
         }
 
         //now try days without times
         expected = "2016-05-15T12:00:00Z";
         for (String dateString : new String[]{"May 15, 2016", "Sun, 15 May 2016", "15 May 2016",}) {
-            testDate(dateString, expected);
+            testDate(dateString, expected, true);
         }
     }
 
@@ -419,11 +423,14 @@ public class RFC822ParserTest extends TikaTest {
 
     }
 
-    private void testDate(String dateString, String expected) throws Exception {
+    private void testDate(String dateString, String expected, boolean useUTC) throws Exception {
         Date parsedDate = getDate(dateString);
         assertNotNull(parsedDate, "couldn't parse " + dateString);
         DateFormat df =
                 new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", new DateFormatSymbols(Locale.US));
+        if (useUTC) {
+            df.setTimeZone(TimeZone.getTimeZone("UTC"));
+        }
         String parsedDateString = df.format(parsedDate);
         assertEquals(expected, parsedDateString, "failed to match: " + dateString);
     }

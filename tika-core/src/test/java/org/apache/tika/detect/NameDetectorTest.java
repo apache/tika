@@ -72,6 +72,9 @@ public class NameDetectorTest {
         assertDetect(MediaType.TEXT_PLAIN, "text#123.txt");// # before extension
         assertDetect(MediaType.TEXT_PLAIN, "text.txt#pdf");// # after extension
 
+        // TIKA-3783 # before the final .
+        assertDetect(MediaType.TEXT_PLAIN, "ABC#192.168.0.1#2.txt");
+
         // Check # as URL fragment too
         assertDetect(MediaType.TEXT_PLAIN, "http://foo/test.txt?1=2#pdf");
         assertDetect(MediaType.TEXT_PLAIN, "http://foo/test.txt#pdf");

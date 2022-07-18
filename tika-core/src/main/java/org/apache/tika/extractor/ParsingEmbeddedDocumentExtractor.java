@@ -37,6 +37,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.DelegatingParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.ParseRecord;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
@@ -97,31 +98,36 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
 
         // Use the delegate parser to parse this entry
         try (TemporaryResources tmp = new TemporaryResources()) {
-            final TikaInputStream newStream = TikaInputStream.get(
-                    new CloseShieldInputStream(stream), tmp);
+            final TikaInputStream newStream = TikaInputStream.get(new CloseShieldInputStream(stream), tmp);
             if (stream instanceof TikaInputStream) {
                 final Object container = ((TikaInputStream) stream).getOpenContainer();
                 if (container != null) {
                     newStream.setOpenContainer(container);
                 }
             }
-            DELEGATING_PARSER.parse(
-                                    newStream,
-                                    new EmbeddedContentHandler(new BodyContentHandler(handler)),
-                                    metadata, context);
+            DELEGATING_PARSER.parse(newStream, new EmbeddedContentHandler(new BodyContentHandler(handler)),
+                    metadata, context);
         } catch (EncryptedDocumentException ede) {
-            // TODO: can we log a warning that we lack the password?
-            // For now, just skip the content
+            recordException(ede, context);
         } catch (CorruptedFileException e) {
+            //necessary to stop the parse to avoid infinite loops
+            //on corrupt sqlite3 files
             throw new IOException(e);
         } catch (TikaException e) {
-            // TODO: can we log a warning somehow?
-            // Could not parse the entry, just skip the content
+            recordException(e, context);
         }
 
         if (outputHtml) {
             handler.endElement(XHTML, "div", "div");
         }
+    }
+
+    private void recordException(Exception e, ParseContext context) {
+        ParseRecord record = context.get(ParseRecord.class);
+        if (record == null) {
+            return;
+        }
+        record.addException(e);
     }
 
     public Parser getDelegatingParser() {

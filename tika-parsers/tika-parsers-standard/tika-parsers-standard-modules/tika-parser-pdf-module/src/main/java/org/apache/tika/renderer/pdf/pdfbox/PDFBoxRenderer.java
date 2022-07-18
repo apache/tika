@@ -50,6 +50,7 @@ import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.pdf.PDFParser;
+import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.renderer.PageBasedRenderResults;
 import org.apache.tika.renderer.PageRangeRequest;
 import org.apache.tika.renderer.RenderRequest;
@@ -61,10 +62,11 @@ public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
 
     Set<MediaType> SUPPORTED_TYPES = Collections.singleton(PDFParser.MEDIA_TYPE);
 
-    private static final Logger LOG = LoggerFactory.getLogger(PDFBoxRenderer.class);
+    protected static final Logger LOG = LoggerFactory.getLogger(PDFBoxRenderer.class);
 
     /**
      * This is the amount of time it takes for PDFBox to render the page
+     * to a BufferedImage
      */
     public static Property PDFBOX_RENDERING_TIME_MS =
             Property.externalReal(Rendering.RENDERING_PREFIX + "pdfbox-rendering-ms");
@@ -82,9 +84,9 @@ public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
         return SUPPORTED_TYPES;
     }
 
-    private int dpi = 300;
-    private ImageType imageType = ImageType.GRAY;
-    private String imageFormatName = "tiff";
+    private int defaultDPI = 300;
+    private ImageType defaultImageType = ImageType.GRAY;
+    private String defaultImageFormatName = "png";
 
 
     @Override
@@ -128,7 +130,7 @@ public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
     }
 
     private void renderRange(PDDocument pdDocument, int start, int endInclusive, Metadata metadata,
-                                    ParseContext parseContext, PageBasedRenderResults results) {
+                             ParseContext parseContext, PageBasedRenderResults results) {
         PDFRenderer renderer = new PDFRenderer(pdDocument);
         RenderingTracker tracker = parseContext.get(RenderingTracker.class);
         if (tracker == null) {
@@ -143,7 +145,7 @@ public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
             try {
                 m.set(TikaPagedText.PAGE_NUMBER, i);
                 m.set(TikaPagedText.PAGE_ROTATION, (double)pdDocument.getPage(i - 1).getRotation());
-                results.add(renderPage(renderer, id, i, m));
+                results.add(renderPage(renderer, id, i, m, parseContext));
             } catch (IOException e) {
                 EmbeddedDocumentUtil.recordException(e, m);
                 results.add(new RenderResult(RenderResult.STATUS.EXCEPTION, id, null, m));
@@ -151,22 +153,24 @@ public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
         }
     }
 
-
     protected RenderResult renderPage(PDFRenderer renderer, int id, int pageNumber,
-                                     Metadata metadata)
+                                      Metadata metadata, ParseContext parseContext)
             throws IOException {
 
         Path tmpFile = Files.createTempFile("tika-pdfbox-rendering-",
-                "-" + id + "-" + pageNumber + "." + imageFormatName);
+                "-" + id + "-" + pageNumber + "." + getImageFormatName(parseContext));
         try {
             long start = System.currentTimeMillis();
             //TODO: parameterize whether or not to un-rotate page?
-            BufferedImage image = renderer.renderImageWithDPI(pageNumber - 1, dpi, imageType);
+            BufferedImage image = renderer.renderImageWithDPI(
+                    pageNumber - 1,
+                    getDPI(parseContext),
+                    getImageType(parseContext));
             long renderingElapsed = System.currentTimeMillis() - start;
             metadata.set(PDFBOX_RENDERING_TIME_MS, renderingElapsed);
             start = System.currentTimeMillis();
             try (OutputStream os = Files.newOutputStream(tmpFile)) {
-                ImageIOUtil.writeImage(image, imageFormatName, os, dpi);
+                ImageIOUtil.writeImage(image, getImageFormatName(parseContext), os, getDPI(parseContext));
             }
             long elapsedWrite = System.currentTimeMillis() - start;
             metadata.set(PDFBOX_IMAGE_WRITING_TIME_MS, elapsedWrite);
@@ -197,15 +201,38 @@ public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
     }
 
     public void setDPI(int dpi) {
-        this.dpi = dpi;
+        this.defaultDPI = dpi;
     }
 
-
     public void setImageType(ImageType imageType) {
-        this.imageType = imageType;
+        this.defaultImageType = imageType;
     }
 
     public void setImageFormatName(String imageFormatName) {
-        this.imageFormatName = imageFormatName;
+        this.defaultImageFormatName = imageFormatName;
+    }
+
+    protected int getDPI(ParseContext parseContext) {
+        PDFParserConfig pdfParserConfig = parseContext.get(PDFParserConfig.class);
+        if (pdfParserConfig == null) {
+            return defaultDPI;
+        }
+        return pdfParserConfig.getOcrDPI();
+    }
+
+    protected ImageType getImageType(ParseContext parseContext) {
+        PDFParserConfig pdfParserConfig = parseContext.get(PDFParserConfig.class);
+        if (pdfParserConfig == null) {
+            return defaultImageType;
+        }
+        return pdfParserConfig.getOcrImageType();
+    }
+
+    protected String getImageFormatName(ParseContext parseContext) {
+        PDFParserConfig pdfParserConfig = parseContext.get(PDFParserConfig.class);
+        if (pdfParserConfig == null) {
+            return defaultImageFormatName;
+        }
+        return pdfParserConfig.getOcrImageFormatName();
     }
 }

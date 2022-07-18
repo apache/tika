@@ -93,10 +93,12 @@ public class RecursiveParserWrapperTest extends TikaTest {
         Metadata metadata = new Metadata();
 
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER);
-        InputStream stream = getResourceAsStream("/test-documents/test_recursive_embedded.docx");
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, 70));
-        wrapper.parse(stream, handler, metadata, context);
+        try (InputStream stream =
+                    getResourceAsStream("/test-documents/test_recursive_embedded.docx")) {
+            wrapper.parse(stream, handler, metadata, context);
+        }
         List<Metadata> list = handler.getMetadataList();
 
         assertEquals(5, list.size());
@@ -111,6 +113,29 @@ public class RecursiveParserWrapperTest extends TikaTest {
         assertEquals(2, wlr);
     }
 
+    @Test
+    public void testCharLimitNoThrowOnWriteLimit() throws Exception {
+        ParseContext context = new ParseContext();
+        Metadata metadata = new Metadata();
+
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER);
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, 500,
+                        false, context));
+        try (InputStream stream = getResourceAsStream("/test-documents/test_recursive_embedded" +
+                ".docx")) {
+            wrapper.parse(stream, handler, metadata, context);
+        }
+        List<Metadata> list = handler.getMetadataList();
+
+        assertEquals(12, list.size());
+
+        assertEquals("true", list.get(0).get(TikaCoreProperties.WRITE_LIMIT_REACHED));
+
+        assertContains("them to the separation", list.get(6).get(TikaCoreProperties.TIKA_CONTENT));
+        assertNotContained("unalienable Rights",
+                list.get(6).get(TikaCoreProperties.TIKA_CONTENT));
+    }
 
     @Test
     public void testMaxEmbedded() throws Exception {

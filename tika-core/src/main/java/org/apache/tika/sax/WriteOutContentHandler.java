@@ -26,6 +26,8 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.WriteLimitReachedException;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.ParseRecord;
 
 /**
  * SAX event handler that writes content up to an optional write
@@ -44,6 +46,12 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
      * Number of characters written so far.
      */
     private int writeCount = 0;
+
+    private boolean throwOnWriteLimitReached = true;
+
+    private ParseContext parseContext = null;
+
+    private boolean writeLimitReached;
 
     /**
      * Creates a content handler that writes content up to the given
@@ -118,11 +126,26 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
      * The internal string buffer is bounded at 100k characters. If this
      * write limit is reached, then a {@link SAXException} is thrown. The
      * {@link WriteLimitReachedException#isWriteLimitReached(Throwable)} method can be used to
-     * detect
-     * this case.
+     * detect this case.
      */
     public WriteOutContentHandler() {
         this(100 * 1000);
+    }
+
+    /**
+     * The default is to throw a {@link WriteLimitReachedException}
+     * @param handler
+     * @param writeLimit
+     * @param throwOnWriteLimitReached
+     * @param parseContext
+     */
+    public WriteOutContentHandler(ContentHandler handler,
+                                  int writeLimit, boolean throwOnWriteLimitReached,
+                                  ParseContext parseContext) {
+        super(handler);
+        this.writeLimit = writeLimit;
+        this.throwOnWriteLimitReached = throwOnWriteLimitReached;
+        this.parseContext = parseContext;
     }
 
     /**
@@ -130,25 +153,43 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
      */
     @Override
     public void characters(char[] ch, int start, int length) throws SAXException {
+        if (writeLimitReached) {
+            return;
+        }
         if (writeLimit == -1 || writeCount + length <= writeLimit) {
             super.characters(ch, start, length);
             writeCount += length;
         } else {
             super.characters(ch, start, writeLimit - writeCount);
-            writeCount = writeLimit;
-            throw new WriteLimitReachedException(writeLimit);
+            handleWriteLimitReached();
         }
     }
 
     @Override
     public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
+        if (writeLimitReached) {
+            return;
+        }
         if (writeLimit == -1 || writeCount + length <= writeLimit) {
             super.ignorableWhitespace(ch, start, length);
             writeCount += length;
         } else {
             super.ignorableWhitespace(ch, start, writeLimit - writeCount);
-            writeCount = writeLimit;
-            throw new WriteLimitReachedException(writeLimit);
+            handleWriteLimitReached();
         }
     }
+
+    private void handleWriteLimitReached() throws WriteLimitReachedException {
+        writeLimitReached = true;
+        writeCount = writeLimit;
+        if (throwOnWriteLimitReached) {
+            throw new WriteLimitReachedException(writeLimit);
+        } else {
+            ParseRecord parseRecord = parseContext.get(ParseRecord.class);
+            if (parseRecord != null) {
+                parseRecord.setWriteLimitReached(true);
+            }
+        }
+    }
+
 }

@@ -22,10 +22,17 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 
 public class UpcasingContentHandlerDecoratorFactory implements ContentHandlerDecoratorFactory {
     @Override
     public ContentHandler decorate(ContentHandler contentHandler, Metadata metadata) {
+        return decorate(contentHandler, metadata, new ParseContext());
+    }
+
+    @Override
+    public ContentHandler decorate(ContentHandler contentHandler, Metadata metadata,
+                                   ParseContext parseContext) {
         return new ContentHandlerDecorator(contentHandler) {
             @Override
             public void characters(char[] ch, int start, int length) throws SAXException {

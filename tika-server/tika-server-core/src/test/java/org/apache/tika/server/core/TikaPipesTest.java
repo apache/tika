@@ -223,7 +223,7 @@ public class TikaPipesTest extends CXFTestBase {
                         new EmitKey("fse", ""),
                         userMetadata,
                         new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.XML,
-                                HandlerConfig.PARSE_MODE.RMETA, -1, -1),
+                                HandlerConfig.PARSE_MODE.RMETA, -1, -1, true),
                         FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);

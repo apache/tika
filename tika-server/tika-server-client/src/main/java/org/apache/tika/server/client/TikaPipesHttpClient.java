@@ -17,36 +17,34 @@
 package org.apache.tika.server.client;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 
-import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.client.HttpClientFactory;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 
 /**
  * Low-level class to handle the http layer.
  */
-class TikaHttpClient {
+class TikaPipesHttpClient {
 
-    private static final String EMIT_ENDPOINT = "emit";
     private static final String TIKA_ENDPOINT = "tika";
-    private static final String ASYNC_ENDPOINT = "async";
-    private static final Logger LOGGER = LoggerFactory.getLogger(TikaHttpClient.class);
-    private final HttpHost httpHost;
-    private final HttpClient httpClient;
-    private final String emitEndPointUrl;
-    private final String asyncEndPointUrl;
+    private static final Logger LOGGER = LoggerFactory.getLogger(TikaPipesHttpClient.class);
+    private final String endPoint = "pipes";
+
+    private final HttpClientFactory httpClientFactory;
+    private HttpClient httpClient;
+    private final String endPointUrl;
     private final String tikaUrl;
     private final int maxRetries = 3;
     //if can't make contact with Tika server, max wait time in ms
@@ -56,39 +54,37 @@ class TikaHttpClient {
 
     /**
      * @param baseUrl    url to base endpoint
-     * @param httpHost
-     * @param httpClient
      */
-    private TikaHttpClient(String baseUrl, HttpHost httpHost, HttpClient httpClient) {
+    TikaPipesHttpClient(String baseUrl, HttpClientFactory httpClientFactory)
+            throws TikaConfigException {
         if (!baseUrl.endsWith("/")) {
             baseUrl += "/";
         }
-        this.emitEndPointUrl = baseUrl + EMIT_ENDPOINT;
-        this.asyncEndPointUrl = baseUrl + ASYNC_ENDPOINT;
+        this.endPointUrl = baseUrl + getEndpoint();
         this.tikaUrl = baseUrl + TIKA_ENDPOINT;
-        this.httpHost = httpHost;
-        this.httpClient = httpClient;
+        this.httpClientFactory = httpClientFactory;
+        this.httpClient = getNewClient(baseUrl);
     }
 
-    static TikaHttpClient get(String baseUrl) throws TikaClientConfigException {
-        URI uri;
-        try {
-            uri = new URI(baseUrl);
-        } catch (URISyntaxException e) {
-            throw new TikaClientConfigException("bad URI", e);
+    String getEndpoint() {
+        return endPoint;
+    }
+
+    private HttpClient getNewClient(String baseUrl)
+            throws TikaConfigException {
+        if (httpClient instanceof CloseableHttpClient) {
+            try {
+                ((CloseableHttpClient) httpClient).close();
+            } catch (IOException e) {
+                LOGGER.warn("exception closing client", e);
+            }
         }
-        HttpHost httpHost = new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
-        //TODO: need to add other configuration stuff? proxy, username, password, timeouts...
-        HttpClient client = HttpClients.createDefault();
-        return new TikaHttpClient(baseUrl, httpHost, client);
+        return httpClientFactory.build();
     }
 
-    public TikaEmitterResult postJsonAsync(String jsonRequest) {
-        return postJson(asyncEndPointUrl, jsonRequest);
-    }
 
     public TikaEmitterResult postJson(String jsonRequest) {
-        return postJson(emitEndPointUrl, jsonRequest);
+        return postJson(endPointUrl, jsonRequest);
     }
 
     private TikaEmitterResult postJson(String endPoint, String jsonRequest) {
@@ -103,7 +99,7 @@ class TikaHttpClient {
             while (tries++ < maxRetries) {
                 HttpResponse response = null;
                 try {
-                    response = httpClient.execute(httpHost, post);
+                    response = httpClient.execute(post);
                 } catch (IOException e) {
                     LOGGER.warn("Exception trying to parse", e);
                     waitForServer();
@@ -147,7 +143,7 @@ class TikaHttpClient {
 
             HttpGet get = new HttpGet(tikaUrl);
             try {
-                HttpResponse response = httpClient.execute(httpHost, get);
+                HttpResponse response = httpClient.execute(get);
                 if (response.getStatusLine().getStatusCode() == 200) {
                     LOGGER.debug("server back up");
                     return;
@@ -164,7 +160,7 @@ class TikaHttpClient {
         throw new TimeoutWaitingForTikaException("");
     }
 
-    private static class TimeoutWaitingForTikaException extends TikaException {
+    static class TimeoutWaitingForTikaException extends TikaException {
         public TimeoutWaitingForTikaException(String msg) {
             super(msg);
         }
