@@ -94,8 +94,9 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
     }
 
     /**
-     * If set to < 0, the kafka pipe iterator will poll until a request to .poll returns empty result.
-     * Otherwise, the kafka pipe iterator will stop polling for more documents until numDocsEmittedSoFar >= emitMax.
+     * If the kafka pipe iterator will keep polling for more documents until it returns an empty result.
+     * If you set emitMax is set to > 0, it will stop polling if the number of documents you
+     * have emitted so far > emitMax.
      */
     @Field
     public void setEmitMax(int emitMax) {
