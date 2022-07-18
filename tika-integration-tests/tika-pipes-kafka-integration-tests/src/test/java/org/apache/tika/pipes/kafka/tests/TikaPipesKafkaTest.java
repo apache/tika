@@ -165,7 +165,6 @@ public class TikaPipesKafkaTest {
         while (!waitingFor.isEmpty()) {
             Assert.assertFalse(stopwatch.elapsed(TimeUnit.MINUTES) > 2);
             try {
-                //consumer.seekToBeginning(consumer.assignment());
                 ConsumerRecords<String, String> records = consumer.poll(2000);
                 for (ConsumerRecord<String, String> record : records) {
                     String val = record.value();
