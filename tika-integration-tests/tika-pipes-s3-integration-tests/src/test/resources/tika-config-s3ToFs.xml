@@ -28,7 +28,7 @@
         </fetcher>
     </fetchers>
     <pipesIterators>
-        <pipesIterator class="org.apache.tika.pipes.pipesiterator.s3.KafkaPipesIterator">
+        <pipesIterator class="org.apache.tika.pipes.pipesiterator.s3.S3PipesIterator">
             <params>
                 <fetcherName>s3</fetcherName>
                 <bucket><!-- fill in here --></bucket>
