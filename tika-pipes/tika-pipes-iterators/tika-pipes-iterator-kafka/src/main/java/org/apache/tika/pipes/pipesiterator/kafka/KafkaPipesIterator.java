@@ -52,9 +52,11 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
     String groupId;
     String autoOffsetReset = "earliest";
     int pollDelayMs = 100;
+    int emitMax = -1;
 
     private Properties props;
     private KafkaConsumer<String, String> consumer;
+
 
     @Field
     public void setTopic(String topic) {
@@ -91,6 +93,15 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
         this.pollDelayMs = pollDelayMs;
     }
 
+    /**
+     * If set to < 0, the kafka pipe iterator will poll until a request to .poll returns empty result.
+     * Otherwise, the kafka pipe iterator will stop polling for more documents until numDocsEmittedSoFar >= emitMax.
+     */
+    @Field
+    public void setEmitMax(int emitMax) {
+        this.emitMax = emitMax;
+    }
+
     private void safePut(Properties props, String key, Object val) {
         if (val != null) {
             props.put(key, val);
@@ -104,7 +115,6 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
         safePut(props, ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, serializerClass(keySerializer, StringDeserializer.class));
         safePut(props, ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, serializerClass(valueSerializer, StringDeserializer.class));
         safePut(props, ConsumerConfig.GROUP_ID_CONFIG, groupId);
-        safePut(props, "group.inital.rebalance.delay.ms", 4000);
         safePut(props, ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, autoOffsetReset);
         consumer = new KafkaConsumer<>(props);
         consumer.subscribe(Arrays.asList(topic));
@@ -147,9 +157,9 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
                         r.key()),
                         new EmitKey(emitterName, r.key()), new Metadata(), handlerConfig,
                         getOnParseException()));
-                count++;
+                ++count;
             }
-        } while (!records.isEmpty());
+        } while ((emitMax > 0 || count < emitMax) && !records.isEmpty());
         long elapsed = System.currentTimeMillis() - start;
         LOGGER.info("Finished enqueuing {} files in {} ms", count, elapsed);
     }

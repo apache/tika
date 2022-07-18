@@ -83,7 +83,7 @@ public class TikaPipesKafkaTest {
     }
 
     @Test
-    public void testKafkaPipeIterator()
+    public void testKafkaPipeIteratorAndEmitter()
             throws Exception {
         createTestFiles("initial");
         File tikaConfigFile = new File("target", "ta.xml");
