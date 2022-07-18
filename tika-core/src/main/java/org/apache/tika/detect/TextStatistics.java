@@ -71,7 +71,7 @@ public class TextStatistics {
 
         int continuation = count(0x80, 0xc0);
         return utf8 > 0 && continuation <= expectedContinuation &&
-                continuation >= expectedContinuation - 3 && count(0xf80, 0x100) == 0 &&
+                continuation >= expectedContinuation - 3 && count(0xf8, 0x100) == 0 &&
                 (control - safe) * 100 < utf8 * 2;
     }
 
