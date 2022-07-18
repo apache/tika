@@ -19,6 +19,7 @@ package org.apache.tika.pipes.kafka.tests;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -55,12 +56,23 @@ import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 import org.testcontainers.utility.DockerImageName;
 
+/**
+ * Test will emit some documents into a Kafka "pipe_iterator_topic", then kafka pipe iterator will
+ * poll those documents and send them to tika pipes. Tika pipes will then use a file fetcher to fetch/parse, then
+ * the kafka emitter will send the now-parsed output to the "emitter_topic".
+ * Will then wait for the messages to come from the emitter and assert they are correct.
+ */
 public class TikaPipesKafkaTest {
     private static final Logger LOG = LoggerFactory.getLogger(TikaPipesKafkaTest.class);
 
     public static final String PIPE_ITERATOR_TOPIC = "pipe_iterator_topic";
     public static final String EMITTER_TOPIC = "emitter_topic";
     public static final String EMITTER_GRPID = "emit";
+    /**
+     * Wait up to this many minutes before you give up waiting for the emitted documents to poll from the
+     * emitter_topic.
+     */
+    public static final int WAIT_FOR_EMITTED_DOCS_TIMEOUT_MINUTES = 2;
     private final int numDocs = 42;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -163,9 +175,10 @@ public class TikaPipesKafkaTest {
 
         Stopwatch stopwatch = Stopwatch.createStarted();
         while (!waitingFor.isEmpty()) {
-            Assert.assertFalse(stopwatch.elapsed(TimeUnit.MINUTES) > 2);
+            Assert.assertFalse("Timed out after " + WAIT_FOR_EMITTED_DOCS_TIMEOUT_MINUTES + " waiting for the emitted docs",
+                    stopwatch.elapsed(TimeUnit.MINUTES) > WAIT_FOR_EMITTED_DOCS_TIMEOUT_MINUTES);
             try {
-                ConsumerRecords<String, String> records = consumer.poll(2000);
+                ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(1));
                 for (ConsumerRecord<String, String> record : records) {
                     String val = record.value();
                     Map<String, Object> valMap = objectMapper.readValue(val, Map.class);
