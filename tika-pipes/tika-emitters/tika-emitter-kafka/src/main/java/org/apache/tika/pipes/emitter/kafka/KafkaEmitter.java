@@ -42,7 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Emits to kafka
+ * Emits the now-parsed documents into a specified Apache Kafka topic.
  */
 public class KafkaEmitter extends AbstractEmitter implements Initializable {
 
