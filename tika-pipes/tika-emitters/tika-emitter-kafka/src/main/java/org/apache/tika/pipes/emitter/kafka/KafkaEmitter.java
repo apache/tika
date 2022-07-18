@@ -52,7 +52,6 @@ public class KafkaEmitter extends AbstractEmitter implements Initializable {
 
     String topic;
     String bootstrapServers;
-    String groupId;
 
     String acks = "all";
     int lingerMs = 5000;
@@ -190,11 +189,6 @@ public class KafkaEmitter extends AbstractEmitter implements Initializable {
     @Field
     public void setTopic(String topic) {
         this.topic = topic;
-    }
-
-    @Field
-    public void setGroupId(String groupId) {
-        this.groupId = groupId;
     }
 
     @Override

@@ -15,7 +15,12 @@ import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Stopwatch;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.CreateTopicsResult;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -23,29 +28,30 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.KafkaFuture;
+import org.apache.kafka.common.config.TopicConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.tika.cli.TikaCLI;
 import org.apache.tika.pipes.HandlerConfig;
 import org.jetbrains.annotations.NotNull;
+import org.junit.After;
 import org.junit.Assert;
-import org.junit.ClassRule;
+import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.DockerComposeContainer;
-import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.containers.KafkaContainer;
+import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
+import org.testcontainers.utility.DockerImageName;
 
 public class TikaPipesKafkaTest {
     private static final Logger LOG = LoggerFactory.getLogger(TikaPipesKafkaTest.class);
 
-    public static final int ZK_PORT = 2181;
-    public static final int KAFKA_PORT = 9092;
-    public static final String KAFKA = "kafka1";
-    public static final String ZOOKEEPER = "zoo1";
     public static final String PIPE_ITERATOR_TOPIC = "pipe_iterator_topic";
     public static final String EMITTER_TOPIC = "emitter_topic";
+    public static final String MY_GROUP_ID = "grpid";
     private final int numDocs = 42;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -62,18 +68,19 @@ public class TikaPipesKafkaTest {
                     "<html><body>" + bodyContent + "</body></html>", StandardCharsets.UTF_8);
             waitingFor.add(nextFileName);
         }
-        FileUtils.copyInputStreamToFile(this.getClass().getResourceAsStream("/embedded/embedded.docx"),
-                new File(testFileFolder, "test-embedded.docx"));
-        waitingFor.add("test-embedded.docx");
     }
 
-    @ClassRule
-    public static DockerComposeContainer environment =
-            new DockerComposeContainer(new File("src/test/resources/kafka-docker/zk-single-kafka-single.yml"))
-                    .withExposedService(KAFKA, KAFKA_PORT)
-                    .withExposedService(ZOOKEEPER, ZK_PORT)
-                    .withLogConsumer(ZOOKEEPER, new Slf4jLogConsumer(LOG))
-                    .withLogConsumer(KAFKA, new Slf4jLogConsumer(LOG));
+    KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.1"));
+
+    @Before
+    public void before() {
+        kafka.start();
+    }
+
+    @After
+    public void after() {
+        kafka.close();
+    }
 
     @Test
     public void testKafkaPipeIterator()
@@ -91,27 +98,59 @@ public class TikaPipesKafkaTest {
             tikaConfigTemplateXml = IOUtils.toString(is, StandardCharsets.UTF_8);
         }
 
-        Properties producerProps = new Properties();
-        producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers());
-        producerProps.put(ProducerConfig.CLIENT_ID_CONFIG, "producer");
-        producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-        producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        Properties adminProperties = new Properties();
+        adminProperties.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
+
+        Admin admin = Admin.create(adminProperties);
+
+        NewTopic newTopic = new NewTopic(PIPE_ITERATOR_TOPIC, 1, (short) 1);
+        newTopic.configs(ImmutableMap.of(TopicConfig.RETENTION_MS_CONFIG, "1680000"));
+
+        CreateTopicsResult result = admin.createTopics(
+                Collections.singleton(newTopic)
+        );
+
+        KafkaFuture<Void> future = result.values().get(PIPE_ITERATOR_TOPIC);
+        future.get();
 
         Properties consumerProps = new Properties();
-        consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers());
-        consumerProps.put(ConsumerConfig.CLIENT_ID_CONFIG, "consumer");
-        consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "grp");
-        consumerProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true");
-        consumerProps.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "1000");
-        consumerProps.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, "30000");
+        consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
+        consumerProps.put("group.id", MY_GROUP_ID);
         consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+
+        Properties producerProps = new Properties();
+        producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
+        producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
 
         KafkaConsumer<String, String> consumer = new KafkaConsumer<>(consumerProps);
         LOG.info("Listening to EMITTER_TOPIC={}", EMITTER_TOPIC);
         consumer.subscribe(Collections.singletonList(EMITTER_TOPIC));
 
         ExecutorService es = Executors.newCachedThreadPool();
+
+        try (KafkaProducer<String, String> producer = new KafkaProducer<>(producerProps)) {
+            int numSent = 0;
+            for (int i = 0; i < numDocs; ++i) {
+                File nextFile = new File(testFileFolder, "test-" + i + ".html");
+                Map<String, Object> meta = new HashMap<>();
+                meta.put("name", nextFile.getName());
+                meta.put("path", nextFile.getAbsolutePath());
+                meta.put("totalSpace", nextFile.getTotalSpace());
+                try {
+                    producer.send(new ProducerRecord<>(PIPE_ITERATOR_TOPIC,
+                            nextFile.getAbsolutePath(),
+                            objectMapper.writeValueAsString(meta))).get();
+                    LOG.info("Sent fetch request : {}", nextFile.getAbsolutePath());
+                    ++numSent;
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            LOG.info("Producer is now complete - sent {}.", numSent);
+        }
 
         es.execute(() -> {
             try {
@@ -126,38 +165,18 @@ public class TikaPipesKafkaTest {
             }
         });
 
-        // Send the initial messages to the pipe iterator.
-        KafkaProducer producer = new KafkaProducer(producerProps);
-        int numSent = 0;
-        for (int i = 0; i < numDocs; ++i) {
-            File nextFile = new File(testFileFolder, "test-" + i + ".html");
-            Map<String, Object> meta = new HashMap<>();
-            meta.put("name", nextFile.getName());
-            meta.put("path", nextFile.getAbsolutePath());
-            meta.put("totalSpace", nextFile.getTotalSpace());
-            try {
-                producer.send(new ProducerRecord<>(PIPE_ITERATOR_TOPIC,
-                        nextFile.getAbsolutePath(),
-                        objectMapper.writeValueAsString(meta))).get();
-                LOG.info("Sent fetch request : {}", nextFile.getAbsolutePath());
-                ++numSent;
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-        LOG.info("Producer is now complete - sent {}.", numSent);
-
-        LOG.info("Tika pipes have been run. See if we can pull the response messages from the EMITTER_TOPIC={}", EMITTER_TOPIC);
+        LOG.info("Tika pipes have been started. See if we can pull the response messages from the EMITTER_TOPIC={}", EMITTER_TOPIC);
 
         Stopwatch stopwatch = Stopwatch.createStarted();
         while (!waitingFor.isEmpty()) {
-            Assert.assertFalse(stopwatch.elapsed(TimeUnit.SECONDS) > 600);
+            Assert.assertFalse(stopwatch.elapsed(TimeUnit.MINUTES) > 2);
             try {
-                ConsumerRecords<String, String> records = consumer.poll(12000);
+                consumer.seekToBeginning(consumer.assignment());
+                ConsumerRecords<String, String> records = consumer.poll(2000);
                 for (ConsumerRecord<String, String> record : records) {
                     String val = record.value();
                     Map<String, Object> valMap = objectMapper.readValue(val, Map.class);
-                    waitingFor.remove(record.key());
+                    waitingFor.remove(FilenameUtils.getName(record.key()));
                     Assert.assertNotNull(valMap.get("content_s"));
                     Assert.assertNotNull(valMap.get("mime_s"));
                     Assert.assertNotNull(valMap.get("length_i"));
@@ -172,11 +191,6 @@ public class TikaPipesKafkaTest {
     }
 
     @NotNull
-    private String bootstrapServers() {
-        return environment.getServiceHost(KAFKA, KAFKA_PORT) + ":" + environment.getServicePort(KAFKA, KAFKA_PORT);
-    }
-
-    @NotNull
     private String createTikaConfigXml(File tikaConfigFile, File log4jPropFile,
                                        String tikaConfigTemplateXml,
                                        HandlerConfig.PARSE_MODE parseMode) {
@@ -187,7 +201,7 @@ public class TikaPipesKafkaTest {
                         .replace("{PARSE_MODE}", parseMode.name())
                         .replace("{PIPE_ITERATOR_TOPIC}", PIPE_ITERATOR_TOPIC)
                         .replace("{EMITTER_TOPIC}", EMITTER_TOPIC)
-                        .replace("{BOOTSTRAP_SERVERS}", bootstrapServers());
+                        .replace("{BOOTSTRAP_SERVERS}", kafka.getBootstrapServers());
         return res;
     }
 }

@@ -95,7 +95,6 @@
                 <name>ke</name>
                 <topic>{EMITTER_TOPIC}</topic>
                 <bootstrapServers>{BOOTSTRAP_SERVERS}</bootstrapServers>
-                <groupId>grpid</groupId>
             </params>
         </emitter>
         <emitter class="org.apache.tika.pipes.emitter.fs.FileSystemEmitter">
@@ -111,7 +110,7 @@
             <bootstrapServers>{BOOTSTRAP_SERVERS}</bootstrapServers>
             <groupId>grpid</groupId>
             <autoOffsetReset>earliest</autoOffsetReset>
-            <pollDelayMs>50000</pollDelayMs>
+            <pollDelayMs>1000</pollDelayMs>
             <fetcherName>fsf</fetcherName>
             <emitterName>ke</emitterName>
         </params>

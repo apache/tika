@@ -104,6 +104,7 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
         safePut(props, ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, serializerClass(keySerializer, StringDeserializer.class));
         safePut(props, ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, serializerClass(valueSerializer, StringDeserializer.class));
         safePut(props, ConsumerConfig.GROUP_ID_CONFIG, groupId);
+        safePut(props, "group.inital.rebalance.delay.ms", 4000);
         safePut(props, ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, autoOffsetReset);
         consumer = new KafkaConsumer<>(props);
         consumer.subscribe(Arrays.asList(topic));
