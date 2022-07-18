@@ -19,7 +19,6 @@ import com.google.common.base.Stopwatch;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.kafka.clients.admin.Admin;
-import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -98,14 +97,6 @@ public class TikaPipesKafkaTest {
                 .getResourceAsStream("/tika-config-kafka.xml")) {
             tikaConfigTemplateXml = IOUtils.toString(is, StandardCharsets.UTF_8);
         }
-
-        Properties adminProperties = new Properties();
-        adminProperties.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
-
-        Admin admin = Admin.create(adminProperties);
-
-        createTopic(admin, PIPE_ITERATOR_TOPIC);
-        createTopic(admin, EMITTER_TOPIC);
 
         Properties consumerProps = new Properties();
         consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
