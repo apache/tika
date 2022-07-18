@@ -77,6 +77,10 @@ public class JDBCPipesIterator extends PipesIterator implements Initializable {
     private String connection;
     private String select;
 
+    private int fetchSize = -1;
+
+    private int queryTimeoutSeconds = -1;
+
     private Connection db;
 
     @Field
@@ -118,6 +122,20 @@ public class JDBCPipesIterator extends PipesIterator implements Initializable {
         this.select = select;
     }
 
+    @Field
+    public void setFetchSize(int fetchSize) throws TikaConfigException {
+        if (fetchSize == 0) {
+            throw new TikaConfigException("Can't set fetch size == 0");
+        }
+        if (fetchSize < 0) {
+            LOGGER.info("fetch size < 0; no fetch size will be set");
+        }
+        this.fetchSize = fetchSize;
+    }
+
+    public void setQueryTimeoutSeconds(int seconds) {
+        this.queryTimeoutSeconds = seconds;
+    }
 
     @Override
     protected void enqueue() throws InterruptedException, IOException, TimeoutException {
@@ -129,6 +147,12 @@ public class JDBCPipesIterator extends PipesIterator implements Initializable {
         HandlerConfig handlerConfig = getHandlerConfig();
         LOGGER.debug("select: {}", select);
         try (Statement st = db.createStatement()) {
+            if (fetchSize > 0) {
+                st.setFetchSize(fetchSize);
+            }
+            if (queryTimeoutSeconds > 0) {
+                st.setQueryTimeout(queryTimeoutSeconds);
+            }
             try (ResultSet rs = st.executeQuery(select)) {
                 while (rs.next()) {
                     if (headers.size() == 0) {
@@ -166,11 +190,19 @@ public class JDBCPipesIterator extends PipesIterator implements Initializable {
 
         if (!StringUtils.isBlank(fetchKeyColumn) && fetchEmitKeyIndices.fetchKeyIndex < 0) {
             throw new IOException(
-                    new TikaConfigException("Couldn't find column: " + fetchKeyColumn));
+                    new TikaConfigException("Couldn't find fetchkey column: " + fetchKeyColumn));
         }
         if (!StringUtils.isBlank(emitKeyColumn) && fetchEmitKeyIndices.emitKeyIndex < 0) {
             throw new IOException(
-                    new TikaConfigException("Couldn't find column: " + emitKeyColumn));
+                    new TikaConfigException("Couldn't find emitKey column: " + emitKeyColumn));
+        }
+        if (!StringUtils.isBlank(idColumn) && fetchEmitKeyIndices.idIndex < 0) {
+            throw new IOException(
+                    new TikaConfigException("Couldn't find id column: " + idColumn));
+        }
+        if (StringUtils.isBlank(idColumn)) {
+            LOGGER.warn("id column is blank, using fetchkey column as the id column");
+            fetchEmitKeyIndices.idIndex = fetchEmitKeyIndices.fetchKeyIndex;
         }
     }
 
@@ -185,42 +217,46 @@ public class JDBCPipesIterator extends PipesIterator implements Initializable {
         String emitKey = "";
         String id = "";
         for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
-
+            //a single column can be the fetch key and the emit key, etc.
+            boolean isUsed = false;
             if (i == fetchEmitKeyIndices.fetchKeyIndex) {
                 fetchKey = getString(i, rs);
-                if (fetchKey == null) {
+                if (StringUtils.isBlank(fetchKey)) {
                     LOGGER.debug("fetchKey is empty for record " + toString(rs));
                 }
                 fetchKey = (fetchKey == null) ? "" : fetchKey;
-                continue;
+                isUsed = true;
             }
             if (i == fetchEmitKeyIndices.emitKeyIndex) {
                 emitKey = getString(i, rs);
-                if (emitKey == null) {
+                if (StringUtils.isBlank(emitKey)) {
                     LOGGER.debug("emitKey is empty for record " + toString(rs));
                 }
                 emitKey = (emitKey == null) ? "" : emitKey;
-                continue;
+                isUsed = true;
             }
             if (i == fetchEmitKeyIndices.idIndex) {
                 id = getString(i, rs);
-                if (id == null) {
+                if (StringUtils.isBlank(id)) {
                     LOGGER.warn("id is empty for record " + toString(rs));
                 }
                 id = (id == null) ? "" : id;
-                continue;
+                isUsed = true;
             }
             if (i == fetchEmitKeyIndices.fetchStartRangeIndex) {
                 fetchStartRange = getLong(i, rs);
-                continue;
+                isUsed = true;
             }
             if (i == fetchEmitKeyIndices.fetchEndRangeIndex) {
                 fetchEndRange = getLong(i, rs);
-                continue;
+                isUsed = true;
+
             }
-            String val = getString(i, rs);
-            if (val != null) {
-                metadata.set(headers.get(i - 1), val);
+            if (! isUsed) {
+                String val = getString(i, rs);
+                if (! StringUtils.isBlank(val)) {
+                    metadata.set(headers.get(i - 1), val);
+                }
             }
         }
 
@@ -324,7 +360,7 @@ public class JDBCPipesIterator extends PipesIterator implements Initializable {
     }
 
     private static class FetchEmitKeyIndices {
-        private final int idIndex;
+        private int idIndex;
         private final int fetchKeyIndex;
         private final int fetchStartRangeIndex;
         private final int fetchEndRangeIndex;

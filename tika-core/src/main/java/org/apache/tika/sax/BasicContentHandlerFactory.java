@@ -26,13 +26,19 @@ import java.util.Locale;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.parser.ParseContext;
+
 /**
  * Basic factory for creating common types of ContentHandlers
  */
-public class BasicContentHandlerFactory implements ContentHandlerFactory {
+public class BasicContentHandlerFactory implements ContentHandlerFactory, WriteLimiter {
 
     private final HANDLER_TYPE type;
     private final int writeLimit;
+
+    private final boolean throwOnWriteLimitReached;
+
+    private final ParseContext parseContext;
 
     /**
      * @param type       basic type of handler
@@ -40,8 +46,30 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory {
      *                   the handler will store all characters
      */
     public BasicContentHandlerFactory(HANDLER_TYPE type, int writeLimit) {
+        this(type, writeLimit, true, null);
+    }
+
+    /**
+     *
+     * @param type basic type of handler
+     * @param writeLimit maximum number of characters to store
+     * @param throwOnWriteLimitReached whether or not to throw a
+     *          {@link org.apache.tika.exception.WriteLimitReachedException}
+     *                                 when the write limit has been reached
+     * @param parseContext to store the writelimitreached warning if
+     *                 throwOnWriteLimitReached is set to <code>false</code>
+     */
+    public BasicContentHandlerFactory(HANDLER_TYPE type, int writeLimit,
+                                      boolean throwOnWriteLimitReached, ParseContext parseContext) {
         this.type = type;
         this.writeLimit = writeLimit;
+        this.throwOnWriteLimitReached = throwOnWriteLimitReached;
+        this.parseContext = parseContext;
+        if (throwOnWriteLimitReached == false && parseContext == null) {
+            throw new IllegalArgumentException("parse context must not be null if " +
+                    "throwOnWriteLimitReached is false");
+        }
+
     }
 
     /**
@@ -82,33 +110,30 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory {
     public ContentHandler getNewContentHandler() {
 
         if (type == HANDLER_TYPE.BODY) {
-            return new BodyContentHandler(writeLimit);
+            return new BodyContentHandler(
+                    new WriteOutContentHandler(new ToTextContentHandler(), writeLimit,
+                    throwOnWriteLimitReached, parseContext));
         } else if (type == HANDLER_TYPE.IGNORE) {
             return new DefaultHandler();
         }
-        if (writeLimit > -1) {
-            switch (type) {
-                case TEXT:
-                    return new WriteOutContentHandler(new ToTextContentHandler(), writeLimit);
-                case HTML:
-                    return new WriteOutContentHandler(new ToHTMLContentHandler(), writeLimit);
-                case XML:
-                    return new WriteOutContentHandler(new ToXMLContentHandler(), writeLimit);
-                default:
-                    return new WriteOutContentHandler(new ToTextContentHandler(), writeLimit);
-            }
-        } else {
-            switch (type) {
-                case TEXT:
-                    return new ToTextContentHandler();
-                case HTML:
-                    return new ToHTMLContentHandler();
-                case XML:
-                    return new ToXMLContentHandler();
-                default:
-                    return new ToTextContentHandler();
+        ContentHandler formatHandler = getFormatHandler();
+        if (writeLimit < 0) {
+            return formatHandler;
+        }
+        return new WriteOutContentHandler(formatHandler, writeLimit, throwOnWriteLimitReached,
+                parseContext);
+    }
 
-            }
+    private ContentHandler getFormatHandler() {
+        switch (type) {
+            case TEXT:
+                return new ToTextContentHandler();
+            case HTML:
+                return new ToHTMLContentHandler();
+            case XML:
+                return new ToXMLContentHandler();
+            default:
+                return new ToTextContentHandler();
         }
     }
 
@@ -181,5 +206,10 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory {
 
     public int getWriteLimit() {
         return writeLimit;
+    }
+
+    @Override
+    public boolean isThrowOnWriteLimitReached() {
+        return throwOnWriteLimitReached;
     }
 }

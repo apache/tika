@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -40,6 +39,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.sax.TaggedContentHandler;
+import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.ParserUtils;
 
 /**
@@ -281,18 +281,18 @@ public class CompositeParser extends AbstractParser {
                       ParseContext context) throws IOException, SAXException, TikaException {
         Parser parser = getParser(metadata, context);
         TemporaryResources tmp = new TemporaryResources();
-        ParserRecord parserRecord = context.get(ParserRecord.class);
+        ParseRecord parserRecord = context.get(ParseRecord.class);
         if (parserRecord == null) {
-            parserRecord = new ParserRecord();
-            context.set(ParserRecord.class, parserRecord);
+            parserRecord = new ParseRecord();
+            context.set(ParseRecord.class, parserRecord);
         }
         try {
             TikaInputStream taggedStream = TikaInputStream.get(stream, tmp);
             TaggedContentHandler taggedHandler =
                     handler != null ? new TaggedContentHandler(handler) : null;
-            String parsreClassName = ParserUtils.getParserClassname(parser);
-            parserRecord.add(parsreClassName);
-            ParserUtils.recordParserDetails(parsreClassName, metadata);
+            String parserClassname = ParserUtils.getParserClassname(parser);
+            parserRecord.addParserClass(parserClassname);
+            ParserUtils.recordParserDetails(parserClassname, metadata);
             parserRecord.beforeParse();
             try {
                 parser.parse(taggedStream, taggedHandler, metadata, context);
@@ -316,32 +316,33 @@ public class CompositeParser extends AbstractParser {
             parserRecord.afterParse();
             if (parserRecord.getDepth() == 0) {
                 metadata.set(TikaCoreProperties.TIKA_PARSED_BY_FULL_SET, parserRecord.getParsers());
+                recordEmbeddedMetadata(metadata, context);
             }
         }
     }
 
-    private static class ParserRecord {
-        int depth = 0;
-        Set<String> parsers = new LinkedHashSet<>();
-
-        void beforeParse() {
-            depth++;
+    private void recordEmbeddedMetadata(Metadata metadata, ParseContext context) {
+        ParseRecord record = context.get(ParseRecord.class);
+        if (record == null) {
+            //this should never happen
+            return;
+        }
+        for (Exception e : record.getExceptions()) {
+            metadata.add(TikaCoreProperties.EMBEDDED_EXCEPTION, ExceptionUtils.getStackTrace(e));
+        }
+        for (String msg : record.getWarnings()) {
+            metadata.add(TikaCoreProperties.EMBEDDED_WARNING, msg);
+        }
+        if (record.isWriteLimitReached()) {
+            metadata.set(TikaCoreProperties.WRITE_LIMIT_REACHED, true);
         }
 
-        void afterParse() {
-            depth--;
-        }
-
-        int getDepth() {
-            return depth;
-        }
-
-        String[] getParsers() {
-            return parsers.toArray(new String[0]);
-        }
-
-        void add(String parserClass) {
-            parsers.add(parserClass);
+        for (Metadata m : record.getMetadataList()) {
+            for (String n : m.names()) {
+                for (String v : m.getValues(n)) {
+                    metadata.add(n, v);
+                }
+            }
         }
     }
 }

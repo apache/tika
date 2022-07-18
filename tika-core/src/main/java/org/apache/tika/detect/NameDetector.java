@@ -116,7 +116,7 @@ public class NameDetector implements Detector {
 
             // Strip any fragments from the end, but only ones after the extension
             int hash = name.lastIndexOf('#');
-            int dot = name.indexOf('.');
+            int dot = name.lastIndexOf('.');
             if (hash != -1) {
                 if (dot == -1 || hash > dot) {
                     name = name.substring(0, hash);

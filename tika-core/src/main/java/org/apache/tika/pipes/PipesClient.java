@@ -167,7 +167,10 @@ public class PipesClient implements Closeable {
                 throw new InterruptedException("thread interrupt");
             }
             PipesResult result = readResults(t, start);
-            LOG.info("finished reading result ");
+            if (LOG.isDebugEnabled()) {
+                long elapsed = System.currentTimeMillis() - readStart;
+                LOG.debug("finished reading result in {} ms", elapsed);
+            }
 
             if (LOG.isTraceEnabled()) {
                 LOG.trace("pipesClientId={}: timer -- read result: {} ms",

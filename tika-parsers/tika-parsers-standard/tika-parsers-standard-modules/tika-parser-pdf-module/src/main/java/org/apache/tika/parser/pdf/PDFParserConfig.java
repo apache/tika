@@ -637,7 +637,7 @@ public class PDFParserConfig implements Serializable {
      * @see #setOcrImageType(ImageType)
      */
     public void setOcrImageType(String ocrImageTypeString) {
-        this.ocrImageType = parseImageType(ocrImageTypeString);
+        setOcrImageType(parseImageType(ocrImageTypeString));
     }
 
     /**
