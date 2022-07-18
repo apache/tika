@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -51,7 +52,7 @@ public class TikaPipesKafkaTest {
 
     public static final String PIPE_ITERATOR_TOPIC = "pipe_iterator_topic";
     public static final String EMITTER_TOPIC = "emitter_topic";
-    public static final String MY_GROUP_ID = "grpid";
+    public static final String EMITTER_GRPID = "emit";
     private final int numDocs = 42;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -103,19 +104,12 @@ public class TikaPipesKafkaTest {
 
         Admin admin = Admin.create(adminProperties);
 
-        NewTopic newTopic = new NewTopic(PIPE_ITERATOR_TOPIC, 1, (short) 1);
-        newTopic.configs(ImmutableMap.of(TopicConfig.RETENTION_MS_CONFIG, "1680000"));
-
-        CreateTopicsResult result = admin.createTopics(
-                Collections.singleton(newTopic)
-        );
-
-        KafkaFuture<Void> future = result.values().get(PIPE_ITERATOR_TOPIC);
-        future.get();
+        createTopic(admin, PIPE_ITERATOR_TOPIC);
+        createTopic(admin, EMITTER_TOPIC);
 
         Properties consumerProps = new Properties();
         consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
-        consumerProps.put("group.id", MY_GROUP_ID);
+        consumerProps.put("group.id", EMITTER_GRPID);
         consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
@@ -171,7 +165,7 @@ public class TikaPipesKafkaTest {
         while (!waitingFor.isEmpty()) {
             Assert.assertFalse(stopwatch.elapsed(TimeUnit.MINUTES) > 2);
             try {
-                consumer.seekToBeginning(consumer.assignment());
+                //consumer.seekToBeginning(consumer.assignment());
                 ConsumerRecords<String, String> records = consumer.poll(2000);
                 for (ConsumerRecord<String, String> record : records) {
                     String val = record.value();
@@ -188,6 +182,18 @@ public class TikaPipesKafkaTest {
         }
 
         LOG.info("Done");
+    }
+
+    private void createTopic(Admin admin, String topic) throws InterruptedException, ExecutionException {
+        NewTopic newTopic = new NewTopic(topic, 1, (short) 1);
+        newTopic.configs(ImmutableMap.of(TopicConfig.RETENTION_MS_CONFIG, "1680000"));
+
+        CreateTopicsResult result = admin.createTopics(
+                Collections.singleton(newTopic)
+        );
+
+        KafkaFuture<Void> future = result.values().get(topic);
+        future.get();
     }
 
     @NotNull

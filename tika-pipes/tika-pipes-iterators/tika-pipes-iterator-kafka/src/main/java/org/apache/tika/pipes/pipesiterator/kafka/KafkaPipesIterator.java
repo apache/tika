@@ -53,6 +53,7 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
     String autoOffsetReset = "earliest";
     int pollDelayMs = 100;
     int emitMax = -1;
+    int groupInitialRebalanceDelayMs = 3000;
 
     private Properties props;
     private KafkaConsumer<String, String> consumer;
@@ -93,6 +94,11 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
         this.pollDelayMs = pollDelayMs;
     }
 
+    @Field
+    public void setGroupInitialRebalanceDelayMs(int groupInitialRebalanceDelayMs) {
+        this.groupInitialRebalanceDelayMs = groupInitialRebalanceDelayMs;
+    }
+
     /**
      * If the kafka pipe iterator will keep polling for more documents until it returns an empty result.
      * If you set emitMax is set to > 0, it will stop polling if the number of documents you
@@ -117,6 +123,7 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
         safePut(props, ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, serializerClass(valueSerializer, StringDeserializer.class));
         safePut(props, ConsumerConfig.GROUP_ID_CONFIG, groupId);
         safePut(props, ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, autoOffsetReset);
+        safePut(props, "group.inital.rebalance.delay.ms", groupInitialRebalanceDelayMs);
         consumer = new KafkaConsumer<>(props);
         consumer.subscribe(Arrays.asList(topic));
     }
