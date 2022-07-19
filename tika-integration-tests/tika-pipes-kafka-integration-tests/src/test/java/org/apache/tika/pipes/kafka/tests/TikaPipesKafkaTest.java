@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -67,7 +68,6 @@ public class TikaPipesKafkaTest {
 
     public static final String PIPE_ITERATOR_TOPIC = "pipe_iterator_topic";
     public static final String EMITTER_TOPIC = "emitter_topic";
-    public static final String EMITTER_GRPID = "emit";
     /**
      * Wait up to this many minutes before you give up waiting for the emitted documents to poll from the
      * emitter_topic.
@@ -121,7 +121,7 @@ public class TikaPipesKafkaTest {
 
         Properties consumerProps = new Properties();
         consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
-        consumerProps.put("group.id", EMITTER_GRPID);
+        consumerProps.put("group.id", UUID.randomUUID().toString());
         consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
