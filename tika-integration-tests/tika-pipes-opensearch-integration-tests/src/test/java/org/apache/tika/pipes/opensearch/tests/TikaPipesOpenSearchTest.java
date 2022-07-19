@@ -28,7 +28,7 @@ import org.apache.tika.pipes.xsearch.tests.TikaPipesXSearchBase;
 
 public class TikaPipesOpenSearchTest extends TikaPipesXSearchBase {
 
-    private static final String DOCKER_IMAGE_NAME = "opensearchproject/opensearch:1.3.2";
+    private static final String DOCKER_IMAGE_NAME = "opensearchproject/opensearch:2.0.0";
 
     @ClassRule
     public static GenericContainer<?> OPEN_SEARCH_CONTAINER =

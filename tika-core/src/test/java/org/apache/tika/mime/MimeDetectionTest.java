@@ -260,4 +260,12 @@ public class MimeDetectionTest {
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "testingTESTINGtesting");
         assertEquals(helloXType, MIME_TYPES.detect(new ByteArrayInputStream(helloWorld), metadata));
     }
+
+    /**
+     * Test for TIKA-3771.
+     */
+    @Test
+    public void testPNGWithSomeEmlHeaders() throws IOException {
+        testFile("image/png", "test-pngNotEml.bin");
+    }
 }

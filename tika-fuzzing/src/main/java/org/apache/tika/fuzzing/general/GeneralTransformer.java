@@ -70,6 +70,7 @@ public class GeneralTransformer implements Transformer {
     public void transform(InputStream is, OutputStream os) throws IOException, TikaException {
         //used for debugging
         if (maxTransforms == 0) {
+            IOUtils.copy(is, os);
             return;
         }
         int transformerCount = (maxTransforms == 1) ? 1 : 1 + random.nextInt(maxTransforms);

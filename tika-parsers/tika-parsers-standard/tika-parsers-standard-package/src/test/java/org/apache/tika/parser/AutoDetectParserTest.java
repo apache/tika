@@ -41,6 +41,7 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.exception.ZeroByteFileException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -49,6 +50,8 @@ import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.external.CompositeExternalParser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.ToXMLContentHandler;
+import org.apache.tika.sax.WriteOutContentHandler;
 
 public class AutoDetectParserTest extends TikaTest {
     // Easy to read constants for the MIME types:
@@ -402,6 +405,68 @@ public class AutoDetectParserTest extends TikaTest {
         Parser p = find((CompositeParser) AUTO_DETECT_PARSER, CompositeExternalParser.class);
         assertNotNull(p);
     }
+
+    @Test
+    public void testWriteLimit() throws Exception {
+        ContentHandler handler = new WriteOutContentHandler(500);
+        Metadata metadata = new Metadata();
+        ParseContext parseContext = new ParseContext();
+        try (InputStream stream =
+                    getResourceAsStream("/test-documents/test_recursive_embedded.docx")) {
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, parseContext);
+            fail("write limit reached should have percolated to here");
+        } catch (WriteLimitReachedException e) {
+            //expected
+        }
+        String txt = handler.toString();
+        //test that the writelimit does intervene between these two
+        //pieces of text and that the first is there, but the second isn't
+        assertContains("assume among the powers", txt);
+        assertNotContained("unalienable Rights", txt);
+        //test that text from other embedded files after this one are not processed
+        assertNotContained("embed_4", txt);
+    }
+
+    @Test
+    public void testWriteLimitNoThrow() throws Exception {
+        ParseContext parseContext = new ParseContext();
+        ContentHandler handler = new WriteOutContentHandler(new ToXMLContentHandler(),
+                500, false, parseContext);
+        Metadata metadata = new Metadata();
+        try (InputStream stream =
+                    getResourceAsStream("/test-documents/test_recursive_embedded.docx")) {
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, parseContext);
+        }
+        String txt = handler.toString();
+        assertEquals("true", metadata.get(TikaCoreProperties.WRITE_LIMIT_REACHED));
+        //test that the writelimit does intervene between these two
+        //pieces of text and that the first is there, but the second isn't
+        assertContains("assume among the powers", txt);
+        assertNotContained("unalienable Rights", txt);
+        //test that text from other embedded files after this one are not processed,
+        //but that the entry is there for the embedded file, i.e. the parse continued
+        assertContains("id=\"embed4.txt\"", txt);
+        assertNotContained("embed_4", txt);
+    }
+
+    @Test
+    public void testEmbeddedNPE() throws Exception {
+        Metadata metadata = new Metadata();
+        getXML("mock/null_pointer.xml.gz",
+                AUTO_DETECT_PARSER, metadata);
+        String embExString = metadata.get(TikaCoreProperties.EMBEDDED_EXCEPTION);
+        assertContains("another null pointer", embExString);
+    }
+
+    @Test
+    public void testEmbeddedMetadataPercolatingToMainMetadata() throws Exception {
+        Metadata metadata = new Metadata();
+        getXML("mock/embedded_to_parent_metadata.xml.gz",
+                AUTO_DETECT_PARSER, metadata);
+        assertEquals("Nikolai Lobachevsky", metadata.get("embedded:dc:creator"));
+        assertEquals("application/gzip", metadata.get(Metadata.CONTENT_TYPE));
+    }
+
 
     //This is not the complete/correct way to look for parsers within another parser
     //However, it is good enough for this unit test for now.

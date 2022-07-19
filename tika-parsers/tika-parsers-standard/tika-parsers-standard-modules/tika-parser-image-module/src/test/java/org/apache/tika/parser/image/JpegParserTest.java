@@ -26,8 +26,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.TimeZone;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -42,22 +40,6 @@ public class JpegParserTest {
 
     static TimeZone CURR_TIME_ZONE = TimeZone.getDefault();
     private final Parser parser = new JpegParser();
-
-    //As of Drew Noakes' metadata-extractor 2.8.1,
-    //unspecified timezones appear to be set to
-    //TimeZone.getDefault().  We need to normalize this
-    //for testing across different time zones.
-    //We also appear to have to specify it in the surefire config:
-    //<argLine>-Duser.timezone=UTC</argLine>
-    @BeforeAll
-    public static void setDefaultTimeZone() {
-        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
-    }
-
-    @AfterAll
-    public static void resetDefaultTimeZone() {
-        TimeZone.setDefault(CURR_TIME_ZONE);
-    }
 
     @Test
     public void testJPEG() throws Exception {

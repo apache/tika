@@ -3,14 +3,15 @@
     "number_of_shards": 1
   },
   "mappings" : {
-    "dynamic": false,
+    "dynamic": "strict",
     "properties" : {
       "content" : { "type" : "text"},
       "length" : { "type" : "long"},
       "creators" : { "type" : "text"},
       "title" : { "type" : "text"},
       "mime" : { "type" : "keyword"},
-      "tika_exception" : { "type" : "text"}
+      "tika_exception" : { "type" : "text"},
+      "parent" : { "type" : "text"}
     }
   }
 }

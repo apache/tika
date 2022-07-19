@@ -28,8 +28,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.tika.exception.TikaConfigException;
@@ -241,13 +243,24 @@ public class ServiceLoader {
     /**
      * Returns all the available service providers of the given type.
      *
+     * As of versions after 2.4.1, this removes duplicate classes
+     *
      * @param iface service provider interface
      * @return available service providers
      */
     public <T> List<T> loadServiceProviders(Class<T> iface) {
+        List<T> tmp = new ArrayList<>();
+        tmp.addAll(loadDynamicServiceProviders(iface));
+        tmp.addAll(loadStaticServiceProviders(iface));
+
         List<T> providers = new ArrayList<>();
-        providers.addAll(loadDynamicServiceProviders(iface));
-        providers.addAll(loadStaticServiceProviders(iface));
+        Set<String> seen = new HashSet<>();
+        for (T provider : tmp) {
+            if (! seen.contains(provider.getClass().getCanonicalName())) {
+                providers.add(provider);
+                seen.add(provider.getClass().getCanonicalName());
+            }
+        }
         return providers;
     }
 

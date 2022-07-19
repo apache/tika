@@ -22,28 +22,28 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.client.HttpClientFactory;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.serialization.JsonFetchEmitTuple;
-import org.apache.tika.metadata.serialization.JsonFetchEmitTupleList;
 import org.apache.tika.pipes.FetchEmitTuple;
 
 public class TikaClient {
 
     private final Random random = new Random();
-    private final List<TikaHttpClient> clients;
+    private final List<TikaPipesHttpClient> clients;
 
 
-    private TikaClient(List<TikaHttpClient> clients) {
-
+    private TikaClient(List<TikaPipesHttpClient> clients) {
         this.clients = clients;
     }
 
-    public static TikaClient get(TikaConfig tikaConfig, List<String> tikaServers)
-            throws TikaClientConfigException {
+    public static TikaClient get(HttpClientFactory httpClientFactory, List<String> tikaServers)
+            throws TikaConfigException {
         List clients = new ArrayList<>();
         for (String url : tikaServers) {
-            clients.add(TikaHttpClient.get(url));
+            //client factory is not thread safe, create a copy per client
+            clients.add(new TikaPipesHttpClient(url, httpClientFactory.copy()));
         }
         return new TikaClient(clients);
     }
@@ -54,21 +54,13 @@ public class TikaClient {
     }*/
 
     public TikaEmitterResult parse(FetchEmitTuple fetchEmit) throws IOException, TikaException {
-        TikaHttpClient client = getHttpClient();
+        TikaPipesHttpClient client = getHttpClient();
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(fetchEmit, writer);
         return client.postJson(writer.toString());
     }
 
-    public TikaEmitterResult parseAsync(List<FetchEmitTuple> tuples)
-            throws IOException, TikaException {
-        StringWriter writer = new StringWriter();
-        JsonFetchEmitTupleList.toJson(tuples, writer);
-        TikaHttpClient client = getHttpClient();
-        return client.postJsonAsync(writer.toString());
-    }
-
-    private TikaHttpClient getHttpClient() {
+    private TikaPipesHttpClient getHttpClient() {
         if (clients.size() == 1) {
             return clients.get(0);
         }

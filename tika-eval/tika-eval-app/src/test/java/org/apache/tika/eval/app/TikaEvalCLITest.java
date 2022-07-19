@@ -32,11 +32,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.utils.ProcessUtils;
@@ -45,6 +44,9 @@ public class TikaEvalCLITest extends TikaTest {
     //TODO: these barely reach the minimal acceptable stage for unit tests
 
     private final static String dbName = "testdb";
+
+    @TempDir
+    private static Path TEMP_DIR;
     private static Path extractsDir = Paths.get("src/test/resources/test-dirs");
     private static Path compareDBDir;
     private static Path profileDBDir;
@@ -53,22 +55,14 @@ public class TikaEvalCLITest extends TikaTest {
 
     @BeforeAll
     public static void setUp() throws Exception {
-        compareDBDir = Files.createTempDirectory("tika-eval-cli-compare-db-");
-        profileDBDir = Files.createTempDirectory("tika-eval-cli-profile-db-");
-        compareReportsDir = Files.createTempDirectory("tika-eval-cli-compare-reports-");
-        profileReportsDir = Files.createTempDirectory("tika-eval-cli-profile-reports-");
+        compareDBDir = Files.createTempDirectory(TEMP_DIR, "tika-eval-cli-compare-db-");
+        profileDBDir = Files.createTempDirectory(TEMP_DIR, "tika-eval-cli-profile-db-");
+        compareReportsDir = Files.createTempDirectory(TEMP_DIR, "tika-eval-cli-compare-reports-");
+        profileReportsDir = Files.createTempDirectory(TEMP_DIR, "tika-eval-cli-profile-reports-");
         compare();
         profile();
         reportCompare();
         reportProfile();
-    }
-
-    @AfterAll
-    public static void tearDown() throws Exception {
-        FileUtils.deleteDirectory(compareDBDir.toFile());
-        FileUtils.deleteDirectory(profileDBDir.toFile());
-        FileUtils.deleteDirectory(compareReportsDir.toFile());
-        FileUtils.deleteDirectory(profileReportsDir.toFile());
     }
 
     private static void compare() throws IOException {

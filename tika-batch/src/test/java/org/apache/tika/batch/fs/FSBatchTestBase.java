@@ -18,7 +18,6 @@
 package org.apache.tika.batch.fs;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
@@ -37,10 +36,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.batch.BatchProcess;
@@ -66,31 +64,14 @@ import org.apache.tika.utils.ProcessUtils;
  */
 public abstract class FSBatchTestBase extends TikaTest {
 
-    private static Path outputRoot = null;
+    @TempDir
+    private static Path OUTPUT_ROOT = null;
 
     @BeforeAll
     public static void setUp() throws Exception {
         Path testOutput = Paths.get("target/test-classes/test-output");
         Files.createDirectories(testOutput);
-        outputRoot = Files.createTempDirectory(testOutput, "tika-batch-output-root-");
-    }
-
-    @AfterAll
-    public static void tearDown() throws Exception {
-        //not ideal, but should be ok for testing
-        //see caveat in TikaCLITest's textExtract
-
-        File outputDir = outputRoot.toFile();
-        try {
-            FileUtils.deleteDirectory(outputDir);
-        } catch (IOException e1) {
-            // Delete on exit if delete fail
-            try {
-                FileUtils.forceDeleteOnExit(outputDir);
-            } catch (IOException e2) {
-                e2.printStackTrace();
-            }
-        }
+        OUTPUT_ROOT = Files.createTempDirectory(testOutput, "tika-batch-output-root-");
     }
 
     /**
@@ -153,7 +134,7 @@ public abstract class FSBatchTestBase extends TikaTest {
     }
 
     Path getNewOutputDir(String subdirPrefix) throws IOException {
-        Path outputDir = Files.createTempDirectory(outputRoot, subdirPrefix);
+        Path outputDir = Files.createTempDirectory(OUTPUT_ROOT, subdirPrefix);
         assert (countChildren(outputDir) == 0);
         return outputDir;
     }

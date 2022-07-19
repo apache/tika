@@ -1,4 +1,42 @@
-Release 2.4.1 - ???
+Release 2.4.2 - ???
+
+   * Add unrar as an optional parser (TIKA-3800).
+
+   * Refactor FuzzingCLI to use PipesParser (TIKA-3799).
+
+   * ServiceLoader's loadServiceProviders() now guarantees
+     unique classes (TIKA-3797).
+
+   * Fix bug that prevented setting of includeHeadersAndFooters
+     for xls, xlsx, doc and docx via tika-config (TIKA-3796).
+
+   * Fix bug that prevented specification of rendered image type
+     via http header in the PDFParser (TIKA-3794).
+
+   * Fix bug causing some Exif dates to be decoded wrongly on
+     timezones different than UTC (TIKA-3815).
+
+
+Release 2.4.1 - 06/14/2022
+
+   * Implement bulk upload in the OpenSearch emitter (TIKA-3791).
+
+   * Implement tika-server client via pipes mode (TIKA-3790).
+
+   * Custom embedded parsers and EmbeddedDocumentHandlers
+     can now add metadata to the container file's
+     metadata (TIKA-3789).
+
+   * Record embedded file exceptions in the container
+     file's metadata (TIKA-3788).
+
+   * Allow continuation of parsing after write limit has
+     been reached (TIKA-3787).
+
+   * Allow pass-through of 'Content-Length' header to metadata
+     in TikaResource (TIKA-3786).
+
+   * Add embedded depth to profiles tables in tika-eval (TIKA-3775).
 
    * Add stop() method to TikaServerCli so that it can be run
      with Apache Commons Daemon (TIKA-1570).
@@ -7,6 +45,10 @@ Release 2.4.1 - ???
 
    * Users can expand system properties from the forking
      process into forked tika-server processes (TIKA-3748).
+
+   * Fix a few files being wrongly detected as EML (TIKA-3771).
+
+   * Fix ignoreCharsets param of Icu4jEncodingDetector (TIKA-3774).
 
 Release 2.4.0 - 04/23/2022
 

@@ -42,6 +42,7 @@ import org.apache.commons.io.input.TaggedInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * Input stream with extended capabilities. The purpose of this class is
@@ -321,6 +322,9 @@ public class TikaInputStream extends TaggedInputStream {
      * Creates a TikaInputStream from the file at the given path. The file name
      * and length are stored as input metadata in the given metadata instance.
      * <p>
+     * If there's an {@link TikaCoreProperties#RESOURCE_NAME_KEY} in the
+     * metadata object, this will not overwrite that value with the path's name.
+     * <p>
      * Note that you must always explicitly close the returned stream to
      * prevent leaking open file handles.
      *
@@ -330,7 +334,9 @@ public class TikaInputStream extends TaggedInputStream {
      * @throws IOException if an I/O error occurs
      */
     public static TikaInputStream get(Path path, Metadata metadata) throws IOException {
-        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, path.getFileName().toString());
+        if (StringUtils.isBlank(metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY))) {
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, path.getFileName().toString());
+        }
         metadata.set(Metadata.CONTENT_LENGTH, Long.toString(Files.size(path)));
         return new TikaInputStream(path);
     }
@@ -338,7 +344,9 @@ public class TikaInputStream extends TaggedInputStream {
     public static TikaInputStream get(Path path, Metadata metadata, TemporaryResources tmp)
             throws IOException {
         long length = Files.size(path);
-        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, path.getFileName().toString());
+        if (StringUtils.isBlank(metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY))) {
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, path.getFileName().toString());
+        }
         metadata.set(Metadata.CONTENT_LENGTH, Long.toString(length));
         return new TikaInputStream(path, tmp, length);
     }
@@ -377,7 +385,9 @@ public class TikaInputStream extends TaggedInputStream {
      */
     @Deprecated
     public static TikaInputStream get(File file, Metadata metadata) throws FileNotFoundException {
-        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, file.getName());
+        if (StringUtils.isBlank(metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY))) {
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, file.getName());
+        }
         metadata.set(Metadata.CONTENT_LENGTH, Long.toString(file.length()));
         return new TikaInputStream(file);
     }

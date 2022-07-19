@@ -581,7 +581,7 @@ public class TikaResourceTest extends CXFTestBase {
     @Test
     public void testJsonWriteLimitEmbedded() throws Exception {
         Response response =
-                WebClient.create(endPoint + TIKA_PATH + "/text").accept("application/json")
+                WebClient.create(endPoint + TIKA_PATH + "/html").accept("application/json")
                         .header("writeLimit", "500")
                         .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
         Metadata metadata = JsonMetadata.fromJson(
@@ -594,7 +594,26 @@ public class TikaResourceTest extends CXFTestBase {
         assertTrue(metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION)
                 .startsWith("org.apache.tika.exception.WriteLimitReachedException"));
         assertNotFound("embed4.txt", metadata.get(TikaCoreProperties.TIKA_CONTENT));
+    }
 
+    @Test
+    public void testJsonNoThrowWriteLimitEmbedded() throws Exception {
+        Response response =
+                WebClient.create(endPoint + TIKA_PATH + "/html").accept("application/json")
+                        .header("writeLimit", "500")
+                        .header("throwOnWriteLimitReached", "false")
+                        .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+        Metadata metadata = JsonMetadata.fromJson(
+                new InputStreamReader(((InputStream) response.getEntity()),
+                        StandardCharsets.UTF_8));
+        String txt = metadata.get(TikaCoreProperties.TIKA_CONTENT);
+        assertContains("embed2a.txt", txt);
+        assertContains("When in the Course", txt);
+        assertNotFound("declare the causes", txt);
+        assertEquals("Microsoft Office Word", metadata.get(OfficeOpenXMLExtended.APPLICATION));
+        assertEquals("true", metadata.get(TikaCoreProperties.WRITE_LIMIT_REACHED));
+        assertContains("<div class=\"embedded\" id=\"embed4.txt",
+                metadata.get(TikaCoreProperties.TIKA_CONTENT));
     }
 
     @Test

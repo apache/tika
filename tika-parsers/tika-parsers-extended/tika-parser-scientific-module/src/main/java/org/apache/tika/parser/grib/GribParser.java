@@ -17,12 +17,15 @@
 
 package org.apache.tika.parser.grib;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 import java.util.Set;
 
+import org.apache.commons.io.FileUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import ucar.nc2.Attribute;
@@ -32,8 +35,6 @@ import ucar.nc2.Variable;
 import ucar.nc2.dataset.NetcdfDataset;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TemporaryResources;
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -58,13 +59,17 @@ public class GribParser extends AbstractParser {
 
         //Set MIME type as grib2
         metadata.set(Metadata.CONTENT_TYPE, GRIB_MIME_TYPE);
-
-        TikaInputStream tis = TikaInputStream.get(stream, new TemporaryResources());
-        File gribFile = tis.getFile();
+        //grib was not cleaning up its temp files no matter what we tried
+        //this is a work around the creates a temp directory then copies the full input file
+        //into that tmp directory.  We then delete the directory in the finally statement.
+        Path tmpDir = Files.createTempDirectory("tika-grib-");
 
         try {
             XHTMLContentHandler xhtml;
-            try (NetcdfFile ncFile = NetcdfDataset.openFile(gribFile.getAbsolutePath(), null)) {
+            Path gribFile = Files.createTempFile(tmpDir, "tika-file", ".grib2");
+            Files.copy(stream, gribFile, StandardCopyOption.REPLACE_EXISTING);
+
+            try (NetcdfFile ncFile = NetcdfDataset.openFile(gribFile.toString(), null)) {
 
                 // first parse out the set of global attributes
                 for (Attribute attr : ncFile.getGlobalAttributes()) {
@@ -111,6 +116,8 @@ public class GribParser extends AbstractParser {
 
         } catch (IOException e) {
             throw new TikaException("NetCDF parse error", e);
+        } finally {
+            FileUtils.deleteDirectory(tmpDir.toFile());
         }
     }
 

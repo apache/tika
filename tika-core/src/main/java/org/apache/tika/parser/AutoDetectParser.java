@@ -134,22 +134,10 @@ public class AutoDetectParser extends CompositeParser {
         TemporaryResources tmp = new TemporaryResources();
         try {
             TikaInputStream tis = TikaInputStream.get(stream, tmp);
+
             //figure out if we should spool to disk
-            if (! tis.hasFile() && //if there's already a file, stop now
-                    autoDetectParserConfig.getSpoolToDisk() != null && //if this is not
-                    // configured, stop now
-                    autoDetectParserConfig.getSpoolToDisk() > -1 &&
-                    metadata.get(Metadata.CONTENT_LENGTH) != null) {
-                long len = -1l;
-                try {
-                    len = Long.parseLong(metadata.get(Metadata.CONTENT_LENGTH));
-                    if (len > autoDetectParserConfig.getSpoolToDisk()) {
-                        tis.getPath();
-                    }
-                } catch (NumberFormatException e) {
-                    //swallow...maybe log?
-                }
-            }
+            maybeSpool(tis, autoDetectParserConfig, metadata);
+
             // Automatically detect the MIME type of the document
             MediaType type = detector.detect(tis, metadata);
             //update CONTENT_TYPE as long as it wasn't set by parser override
@@ -166,8 +154,7 @@ public class AutoDetectParser extends CompositeParser {
                 }
                 tis.reset();
             }
-            handler = autoDetectParserConfig.getContentHandlerDecoratorFactory()
-                    .decorate(handler, metadata);
+            handler = decorateHandler(handler, metadata, context, autoDetectParserConfig);
             // TIKA-216: Zip bomb prevention
             SecureContentHandler sch =
                     handler != null ?
@@ -185,6 +172,43 @@ public class AutoDetectParser extends CompositeParser {
             }
         } finally {
             tmp.dispose();
+        }
+    }
+
+    private ContentHandler decorateHandler(ContentHandler handler,
+                                           Metadata metadata, ParseContext context,
+                                           AutoDetectParserConfig autoDetectParserConfig) {
+        if (context.get(RecursiveParserWrapper.RecursivelySecureContentHandler.class) != null) {
+            //using the recursiveparserwrapper. we should decorate this handler
+            return autoDetectParserConfig
+                    .getContentHandlerDecoratorFactory()
+                    .decorate(handler, metadata, context);
+        }
+        ParseRecord parseRecord = context.get(ParseRecord.class);
+        if (parseRecord == null || parseRecord.getDepth() == 0) {
+            return autoDetectParserConfig.getContentHandlerDecoratorFactory()
+                    .decorate(handler, metadata, context);
+        }
+        //else do not decorate
+        return handler;
+    }
+
+    private void maybeSpool(TikaInputStream tis, AutoDetectParserConfig autoDetectParserConfig,
+                            Metadata metadata) throws IOException {
+        if (! tis.hasFile() && //if there's already a file, stop now
+                autoDetectParserConfig.getSpoolToDisk() != null && //if this is not
+                // configured, stop now
+                autoDetectParserConfig.getSpoolToDisk() > -1 &&
+                metadata.get(Metadata.CONTENT_LENGTH) != null) {
+            long len = -1l;
+            try {
+                len = Long.parseLong(metadata.get(Metadata.CONTENT_LENGTH));
+                if (len > autoDetectParserConfig.getSpoolToDisk()) {
+                    tis.getPath();
+                }
+            } catch (NumberFormatException e) {
+                //swallow...maybe log?
+            }
         }
     }
 

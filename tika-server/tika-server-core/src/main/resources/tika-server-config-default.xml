@@ -45,7 +45,8 @@
       <!-- how much to read to memory during the digest phase before
           spooling to disc...only if digest is selected -->
       <digestMarkLimit>1000000</digestMarkLimit>
-      <!-- request URI log level 'debug' or 'info' -->
+      <!-- request URI log level 'debug' or 'info'; to change the general log level,
+           edit the "log4j2.xml" file. -->
       <logLevel>info</logLevel>
       <!-- whether or not to include the stacktrace when a parse exception happens
           in the data returned to the user -->

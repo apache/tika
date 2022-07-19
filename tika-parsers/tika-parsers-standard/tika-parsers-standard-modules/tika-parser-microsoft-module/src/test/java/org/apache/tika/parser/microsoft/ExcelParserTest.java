@@ -414,31 +414,41 @@ public class ExcelParserTest extends TikaTest {
 
     @Test
     public void testHeaderAndFooterNotExtraction() throws Exception {
-        try (InputStream input = getResourceAsStream(
-                "/test-documents/testEXCEL_headers_footers.xls")) {
-            Metadata metadata = new Metadata();
-            ContentHandler handler = new BodyContentHandler();
-            ParseContext context = new ParseContext();
-            context.set(Locale.class, Locale.UK);
+        ParseContext context = new ParseContext();
+        context.set(Locale.class, Locale.UK);
 
-            OfficeParserConfig officeParserConfig = new OfficeParserConfig();
-            officeParserConfig.setIncludeHeadersAndFooters(false);
-            context.set(OfficeParserConfig.class, officeParserConfig);
-            new OfficeParser().parse(input, handler, metadata, context);
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setIncludeHeadersAndFooters(false);
+        context.set(OfficeParserConfig.class, officeParserConfig);
 
-            assertEquals("application/vnd.ms-excel", metadata.get(Metadata.CONTENT_TYPE));
+        XMLResult xmlResult = getXML("testEXCEL_headers_footers.xls", context);
+        assertEquals("application/vnd.ms-excel", xmlResult.metadata.get(Metadata.CONTENT_TYPE));
+        String content = xmlResult.xml;
+        assertContains("John Smith1", content);
+        assertContains("John Smith50", content);
+        assertContains("1 Corporate HQ", content);
+        assertNotContained("Header - Corporate Spreadsheet", content);
+        assertNotContained("Header - For Internal Use Only", content);
+        assertNotContained("Header - Author: John Smith", content);
+        assertNotContained("Footer - Corporate Spreadsheet", content);
+        assertNotContained("Footer - For Internal Use Only", content);
+        assertNotContained("Footer - Author: John Smith", content);
 
-            String content = handler.toString();
-            assertContains("John Smith1", content);
-            assertContains("John Smith50", content);
-            assertContains("1 Corporate HQ", content);
-            assertNotContained("Header - Corporate Spreadsheet", content);
-            assertNotContained("Header - For Internal Use Only", content);
-            assertNotContained("Header - Author: John Smith", content);
-            assertNotContained("Footer - Corporate Spreadsheet", content);
-            assertNotContained("Footer - For Internal Use Only", content);
-            assertNotContained("Footer - Author: John Smith", content);
+        //now test configuration via tika-config
+        Parser configuredParser = null;
+        try (InputStream is = getResourceAsStream("tika-config-headers-footers.xml")) {
+            configuredParser = new AutoDetectParser(new TikaConfig(is));
         }
+        content = getXML("testEXCEL_headers_footers.xls", configuredParser).xml;
+        assertContains("John Smith1", content);
+        assertContains("John Smith50", content);
+        assertContains("1 Corporate HQ", content);
+        assertNotContained("Header - Corporate Spreadsheet", content);
+        assertNotContained("Header - For Internal Use Only", content);
+        assertNotContained("Header - Author: John Smith", content);
+        assertNotContained("Footer - Corporate Spreadsheet", content);
+        assertNotContained("Footer - For Internal Use Only", content);
+        assertNotContained("Footer - Author: John Smith", content);
     }
 
 
