@@ -70,7 +70,7 @@ public class TikaPipesKafkaTest {
     public static final String EMITTER_TOPIC = "emitter_topic";
     /**
      * Wait up to this many minutes before you give up waiting for the emitted documents to poll from the
-     * emitter_topic.
+     * emitter_topic and fail the test.
      */
     public static final int WAIT_FOR_EMITTED_DOCS_TIMEOUT_MINUTES = 2;
     private final int numDocs = 42;
