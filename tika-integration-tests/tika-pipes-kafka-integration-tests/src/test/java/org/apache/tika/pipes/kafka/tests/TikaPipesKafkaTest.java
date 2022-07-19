@@ -175,7 +175,7 @@ public class TikaPipesKafkaTest {
 
         Stopwatch stopwatch = Stopwatch.createStarted();
         while (!waitingFor.isEmpty()) {
-            Assert.assertFalse("Timed out after " + WAIT_FOR_EMITTED_DOCS_TIMEOUT_MINUTES + " waiting for the emitted docs",
+            Assert.assertFalse("Timed out after " + WAIT_FOR_EMITTED_DOCS_TIMEOUT_MINUTES + " minutes waiting for the emitted docs",
                     stopwatch.elapsed(TimeUnit.MINUTES) > WAIT_FOR_EMITTED_DOCS_TIMEOUT_MINUTES);
             try {
                 ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(1));
