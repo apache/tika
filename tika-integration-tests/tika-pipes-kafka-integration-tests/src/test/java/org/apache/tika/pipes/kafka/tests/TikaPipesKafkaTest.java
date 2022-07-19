@@ -31,6 +31,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Stopwatch;
 import org.apache.commons.io.FilenameUtils;
@@ -81,12 +82,14 @@ public class TikaPipesKafkaTest {
 
     private final Set<String> waitingFor = new HashSet<>();
 
-    private void createTestFiles(String bodyContent) throws Exception {
-        testFileFolder.mkdirs();
+    private void createTestFiles() throws Exception {
+        if (testFileFolder.mkdirs()) {
+            LOG.info("Created test folder: {}", testFileFolder);
+        }
         for (int i = 0; i < numDocs; ++i) {
             String nextFileName = "test-" + i + ".html";
             FileUtils.writeStringToFile(new File(testFileFolder, nextFileName),
-                    "<html><body>" + bodyContent + "</body></html>", StandardCharsets.UTF_8);
+                    "<html><body>body-" + i + "</body></html>", StandardCharsets.UTF_8);
             waitingFor.add(nextFileName);
         }
     }
@@ -106,16 +109,18 @@ public class TikaPipesKafkaTest {
     @Test
     public void testKafkaPipeIteratorAndEmitter()
             throws Exception {
-        createTestFiles("initial");
+        createTestFiles();
         File tikaConfigFile = new File("target", "ta.xml");
         File log4jPropFile = new File("target", "tmp-log4j2.xml");
         try (InputStream is = this.getClass()
                 .getResourceAsStream("/pipes-fork-server-custom-log4j2.xml")) {
+            assert is != null;
             FileUtils.copyInputStreamToFile(is, log4jPropFile);
         }
         String tikaConfigTemplateXml;
         try (InputStream is = this.getClass()
                 .getResourceAsStream("/tika-config-kafka.xml")) {
+            assert is != null;
             tikaConfigTemplateXml = IOUtils.toString(is, StandardCharsets.UTF_8);
         }
 
@@ -161,8 +166,8 @@ public class TikaPipesKafkaTest {
         es.execute(() -> {
             try {
                 String tikaConfigXml =
-                        createTikaConfigXml(tikaConfigFile, log4jPropFile, tikaConfigTemplateXml,
-                                HandlerConfig.PARSE_MODE.RMETA);
+                        createTikaConfigXml(tikaConfigFile, log4jPropFile, tikaConfigTemplateXml
+                        );
 
                 FileUtils.writeStringToFile(tikaConfigFile, tikaConfigXml, StandardCharsets.UTF_8);
                 TikaCLI.main(new String[] {"-a", "--config=" + tikaConfigFile.getAbsolutePath()});
@@ -181,7 +186,7 @@ public class TikaPipesKafkaTest {
                 ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(1));
                 for (ConsumerRecord<String, String> record : records) {
                     String val = record.value();
-                    Map<String, Object> valMap = objectMapper.readValue(val, Map.class);
+                    Map<String, Object> valMap = objectMapper.readValue(val, new TypeReference<Map<String, Object>>() {});
                     waitingFor.remove(FilenameUtils.getName(record.key()));
                     Assert.assertNotNull(valMap.get("content_s"));
                     Assert.assertNotNull(valMap.get("mime_s"));
@@ -198,16 +203,13 @@ public class TikaPipesKafkaTest {
 
     @NotNull
     private String createTikaConfigXml(File tikaConfigFile, File log4jPropFile,
-                                       String tikaConfigTemplateXml,
-                                       HandlerConfig.PARSE_MODE parseMode) {
-        String res =
-                tikaConfigTemplateXml.replace("{TIKA_CONFIG}", tikaConfigFile.getAbsolutePath())
+                                       String tikaConfigTemplateXml) {
+        return tikaConfigTemplateXml.replace("{TIKA_CONFIG}", tikaConfigFile.getAbsolutePath())
                         .replace("{LOG4J_PROPERTIES_FILE}", log4jPropFile.getAbsolutePath())
                         .replace("{PATH_TO_DOCS}", testFileFolder.getAbsolutePath())
-                        .replace("{PARSE_MODE}", parseMode.name())
+                        .replace("{PARSE_MODE}", HandlerConfig.PARSE_MODE.RMETA.name())
                         .replace("{PIPE_ITERATOR_TOPIC}", PIPE_ITERATOR_TOPIC)
                         .replace("{EMITTER_TOPIC}", EMITTER_TOPIC)
                         .replace("{BOOTSTRAP_SERVERS}", kafka.getBootstrapServers());
-        return res;
     }
 }
