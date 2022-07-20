@@ -770,7 +770,8 @@
           <generateBackupPoms>false</generateBackupPoms>
         </configuration>
       </plugin>
-      <!-- to run just this: mvn ossindex:audit -Dossindex.fail=(true|false) -->
+      <!-- to run just this: mvn ossindex:audit -Dossindex.fail=(true|false)
+          Although, -Dossindex.fail doesn't seem to work for us -->
       <plugin>
         <groupId>org.sonatype.ossindex.maven</groupId>
         <artifactId>ossindex-maven-plugin</artifactId>
@@ -840,12 +841,6 @@
               <groupId>commons-dbcp</groupId>
               <artifactId>commons-dbcp</artifactId>
               <version>1.4</version>
-            </exclude>
-            <exclude>
-              <!-- CVE-2022-2191 applies to jetty 10.0.0 thru 10.0.9, and 11.0.0 thru 11.0.9 -->
-              <groupId>org.eclipse.jetty</groupId>
-              <artifactId>jetty-io</artifactId>
-              <version>9.4.48.v20220622</version>
             </exclude>
           </excludeCoordinates>
           <fail>true</fail>
