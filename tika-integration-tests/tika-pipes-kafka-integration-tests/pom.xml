@@ -17,29 +17,30 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <parent>
+    <artifactId>tika-integration-tests</artifactId>
     <groupId>org.apache.tika</groupId>
-    <artifactId>tika-parent</artifactId>
     <version>2.4.2-SNAPSHOT</version>
-    <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>tika-integration-tests</artifactId>
-  <name>Apache Tika integration tests</name>
-
-  <packaging>pom</packaging>
-
-  <modules>
-    <module>tika-pipes-solr-integration-tests</module>
-    <module>tika-pipes-opensearch-integration-tests</module>
-    <module>tika-pipes-s3-integration-tests</module>
-    <module>tika-resource-loading-tests</module>
-    <module>tika-pipes-kafka-integration-tests</module>
-  </modules>
+  <artifactId>tika-pipes-kafka-integration-tests</artifactId>
+  <name>Apache Tika Kafka pipes integration tests</name>
 
   <dependencies>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers</artifactId>
+      <version>${test.containers.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>kafka</artifactId>
+      <version>${test.containers.version}</version>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-core</artifactId>
@@ -48,15 +49,25 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-serialization</artifactId>
+      <artifactId>tika-pipes-iterator-kafka</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
-    <!-- after we migrate everything to junit5, we can get rid of this -->
     <dependency>
-      <groupId>org.junit.vintage</groupId>
-      <artifactId>junit-vintage-engine</artifactId>
-      <version>${junit5.version}</version>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-emitter-kafka</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-app</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j-impl</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
