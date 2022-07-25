@@ -30,6 +30,9 @@ import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -38,8 +41,6 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.emitter.AbstractEmitter;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Emits the now-parsed documents into a specified Apache Kafka topic.
@@ -259,8 +260,10 @@ public class KafkaEmitter extends AbstractEmitter implements Initializable {
         safePut(props, ProducerConfig.TRANSACTION_TIMEOUT_CONFIG, transactionTimeoutMs);
         safePut(props, ProducerConfig.TRANSACTIONAL_ID_CONFIG, transactionalId);
 
-        safePut(props, ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, serializerClass(keySerializer, StringSerializer.class));
-        safePut(props, ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, serializerClass(valueSerializer, StringSerializer.class));
+        safePut(props, ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
+                serializerClass(keySerializer, StringSerializer.class));
+        safePut(props, ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
+                serializerClass(valueSerializer, StringSerializer.class));
 
         producer = new KafkaProducer<>(props);
     }
