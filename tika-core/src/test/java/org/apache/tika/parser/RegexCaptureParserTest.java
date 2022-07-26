@@ -43,7 +43,7 @@ public class RegexCaptureParserTest {
         RegexCaptureParser parser = new RegexCaptureParser();
         Map<String, String> regexes = new HashMap<>();
         regexes.put("title", "^Title: ([^\r\n]+)");
-        parser.setRegexMap(regexes);
+        parser.setCaptureMap(regexes);
 
         try (InputStream stream =
                      TikaInputStream.get(output.getBytes(StandardCharsets.UTF_8))) {

@@ -32,7 +32,7 @@
         </param>
         <param name="outputParser" type="class" class="org.apache.tika.parser.RegexCaptureParser">
           <params>
-            <param name="regexMap" type="map">
+            <param name="captureMap" type="map">
               <match key="mime" value="^MIME Type\s+: ([^\r\n]+)"/>
               <match key="pages" value="^Page Count\s+: ([^\r\n]+)"/>
               <match key="pdf:version" value="^PDF Version\s+: ([^\r\n]+)"/>

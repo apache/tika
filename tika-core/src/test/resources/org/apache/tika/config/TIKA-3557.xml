@@ -30,7 +30,7 @@
                 </param>
                 <param name="outputParser" type="class" class="org.apache.tika.parser.RegexCaptureParser">
                     <params>
-                        <param name="regexMap" type="map">
+                        <param name="captureMap" type="map">
                             <title>^Title: ([^\r\n]+)</title>
                         </param>
                     </params>

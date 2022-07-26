@@ -23,6 +23,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -45,7 +46,8 @@ public class RegexCaptureParser extends AbstractParser implements Initializable 
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.TEXT_PLAIN);
 
-    private Map<String, Pattern> regexMap = new HashMap();
+    private Map<String, Pattern> captureMap = new HashMap<>();
+    private Map<String, Pattern> matchMap = new HashMap<>();
 
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
@@ -69,29 +71,68 @@ public class RegexCaptureParser extends AbstractParser implements Initializable 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream,
                 StandardCharsets.UTF_8))) {
             String line = reader.readLine();
-            Map<String, Matcher> matchers = new HashMap();
-            for (Map.Entry<String, Pattern> e : regexMap.entrySet()) {
-                matchers.put(e.getKey(), e.getValue().matcher(""));
+            Map<String, Matcher> localCaptureMap = new HashMap();
+            for (Map.Entry<String, Pattern> e : captureMap.entrySet()) {
+                localCaptureMap.put(e.getKey(), e.getValue().matcher(""));
             }
+            Map<String, Matcher> localMatchMap = new HashMap<>();
+            for (Map.Entry<String, Pattern> e : matchMap.entrySet()) {
+                localMatchMap.put(e.getKey(), e.getValue().matcher(""));
+            }
+
+            Map<String, Set<String>> keyVals = new HashMap<>();
             while (line != null) {
-                for (Map.Entry<String, Matcher> e : matchers.entrySet()) {
+                for (Map.Entry<String, Matcher> e : localCaptureMap.entrySet()) {
                     Matcher m = e.getValue();
                     if (m.reset(line).find()) {
                         String val = m.group(1);
-                        metadata.set(e.getKey(), val);
+                        Set<String> vals = keyVals.get(e.getKey());
+                        if (vals == null) {
+                            vals = new LinkedHashSet<>();
+                            keyVals.put(e.getKey(), vals);
+                        }
+                        vals.add(val);
+                    }
+                }
+                for (Map.Entry<String, Matcher> e : localMatchMap.entrySet()) {
+                    if (e.getValue().reset(line).find()) {
+                        metadata.set(e.getKey(), "true");
                     }
                 }
                 line = reader.readLine();
+            }
+            for (Map.Entry<String, Set<String>> e : keyVals.entrySet()) {
+                for (String val : e.getValue()) {
+                    metadata.add(e.getKey(), val);
+                }
             }
         }
     }
 
     @Field
+    @Deprecated
+    /**
+     * @deprecated use setCaptureMap
+     */
     public void setRegexMap(Map<String, String> map) {
+        setCaptureMap(map);
+    }
+
+    @Field
+    public void setCaptureMap(Map<String, String> map) {
         for (Map.Entry<String, String> e : map.entrySet()) {
             String field = e.getKey();
             Pattern pattern = Pattern.compile(e.getValue());
-            regexMap.put(field, pattern);
+            captureMap.put(field, pattern);
+        }
+    }
+
+    @Field
+    public void setMatchMap(Map<String, String> map) {
+        for (Map.Entry<String, String> e : map.entrySet()) {
+            String field = e.getKey();
+            Pattern pattern = Pattern.compile(e.getValue());
+            matchMap.put(field, pattern);
         }
     }
 }
