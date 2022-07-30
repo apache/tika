@@ -37,9 +37,15 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
@@ -428,6 +434,38 @@ public class ForkParserTest extends TikaTest {
             sb.append(1);
         }
         proxy.skippedEntity(sb.toString());
+    }
+
+    @Test
+    public void testForkParserDoesntPreventShutdown() throws Exception {
+        ExecutorService service = Executors.newFixedThreadPool(1);
+        CountDownLatch cdl = new CountDownLatch(1);
+        service.submit(() -> {
+            try (ForkParser parser = new ForkParser(ForkParserTest.class.getClassLoader(),
+                    new ForkTestParser.ForkTestParserWaiting())) {
+                Metadata metadata = new Metadata();
+                ContentHandler output = new BodyContentHandler();
+                InputStream stream = new ByteArrayInputStream(new byte[0]);
+                ParseContext context = new ParseContext();
+                cdl.countDown();
+                parser.parse(stream, output, metadata, context);
+                // Don't care about output not planning to get this far
+            } catch (IOException | SAXException | TikaException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        // Wait to make sure submitted runnable is actually running
+        boolean await = cdl.await(1, TimeUnit.SECONDS);
+        if (!await) {
+            // This should never happen but be thorough
+            fail("Future never ran so cannot test cancellation");
+        }
+        // Parse is being called try and shutdown
+        Instant requestShutdown = Instant.now();
+        service.shutdownNow();
+        service.awaitTermination(15, TimeUnit.SECONDS);
+        long secondsSinceShutdown = ChronoUnit.SECONDS.between(requestShutdown, Instant.now());
+        assertTrue(secondsSinceShutdown < 5, "Should have shutdown the service in less than 5 seconds");
     }
 
 

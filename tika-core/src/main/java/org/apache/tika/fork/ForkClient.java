@@ -329,7 +329,7 @@ class ForkClient {
 
     private Throwable waitForResponse(List<ForkResource> resources) throws IOException {
         output.flush();
-        while (true) {
+        while (!Thread.currentThread().isInterrupted()) {
             int type = input.read();
             if (type == -1) {
                 throw new IOException("Lost connection to a forked server process");
@@ -346,6 +346,7 @@ class ForkClient {
                 return null;
             }
         }
+        throw new IOException(new InterruptedException());
     }
 
     public int getId() {
