@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -34,15 +33,18 @@ import org.apache.solr.common.SolrInputDocument;
 import org.apache.tika.cli.TikaCLI;
 import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.solr.SolrEmitter;
+import org.apache.tika.utils.SystemUtils;
 import org.jetbrains.annotations.NotNull;
+
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.jupiter.api.AfterEach;
+import org.testcontainers.containers.FixedHostPortGenericContainer;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 import org.testcontainers.utility.DockerImageName;
+
 
 public abstract class TikaPipesSolrTestBase {
 
@@ -64,20 +66,43 @@ public abstract class TikaPipesSolrTestBase {
         return true;
     }
 
-    @Rule
-    public GenericContainer<?> solrContainer =
-            new GenericContainer<>(DockerImageName.parse(getSolrImageName())).withExposedPorts(8983,
-                    9983)
-                    .withCommand("-DzkRun");
-
     @Before
     public void setupTest() throws Exception {
-        setupSolr(solrContainer);
+        if (SystemUtils.IS_OS_MAC_OSX || SystemUtils.IS_OS_VERSION_WSL) {
+            // Networking on these operating systems needs fixed ports and localhost to be passed for the SolrCloud
+            // with Zookeeper tests to succeed. This means stopping and starting needs
+            solr =
+                    new FixedHostPortGenericContainer<>(DockerImageName.parse(getSolrImageName()).toString())
+                            .withFixedExposedPort(8983,8983)
+                            .withFixedExposedPort(9983,9983)
+                            .withCommand("-DzkRun -Dhost=localhost");
+        } else {
+            solr =
+                    new GenericContainer<>(DockerImageName.parse(getSolrImageName())).withExposedPorts(8983,
+                                    9983)
+                            .withCommand("-DzkRun");
+        }
+        solr.start();
+        // Ideally wanted to use TestContainers WaitStrategy but they were inconsistent
+        Thread.sleep(2000);
+        setupSolr();
     }
 
-    @AfterEach
-    public void tearDown() throws Exception {
+    @After
+    public void tearDownAfter() throws Exception {
         FileUtils.deleteDirectory(testFileFolder);
+        if (solr != null) {
+            solr.stop();
+            long totalWait = 0;
+            long maxWait = 250000;
+            while (solr.getContainerInfo() != null) {
+                if (totalWait >= maxWait) {
+                    break;
+                }
+                Thread.sleep(1000);
+                totalWait += 1000;
+            }
+        }
     }
 
     @Test
@@ -95,9 +120,8 @@ public abstract class TikaPipesSolrTestBase {
                 new File(testFileFolder, "test-embedded.docx"));
     }
 
-    protected void setupSolr(GenericContainer<?> solr) throws Exception {
+    protected void setupSolr() throws Exception {
         createTestFiles("initial");
-        this.solr = solr;
         solrHost = solr.getHost();
         solrPort = solr.getMappedPort(8983);
         zkPort = solr.getMappedPort(9983);
