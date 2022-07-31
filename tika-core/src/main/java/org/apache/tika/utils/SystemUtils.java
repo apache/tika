@@ -36,11 +36,14 @@ public class SystemUtils {
     public static final boolean IS_OS_UNIX;
     public static final boolean IS_OS_WINDOWS;
     private static final String OS_NAME_WINDOWS_PREFIX = "Windows";
+    public static final boolean IS_OS_VERSION_WSL;
+    private static final String OS_VERSION_WSL = "WSL";
 
     static {
         IS_OS_UNIX = IS_OS_AIX || IS_OS_HP_UX || IS_OS_IRIX || IS_OS_LINUX || IS_OS_MAC_OSX ||
                 IS_OS_SOLARIS || IS_OS_SUN_OS;
         IS_OS_WINDOWS = getOSMatchesName(OS_NAME_WINDOWS_PREFIX);
+        IS_OS_VERSION_WSL = getOSContainsVersion(OS_VERSION_WSL);
     }
 
     private static String getSystemProperty(String property) {
@@ -57,6 +60,14 @@ public class SystemUtils {
 
     static boolean isOSNameMatch(String osName, String osNamePrefix) {
         return osName != null && osName.startsWith(osNamePrefix);
+    }
+
+    private static boolean getOSContainsVersion(String osVersionSearch) {
+        return doesOSVersionContain(OS_VERSION, osVersionSearch);
+    }
+
+    static boolean doesOSVersionContain(String osVersion, String osVersionSearch) {
+        return osVersion != null && osVersion.contains(osVersionSearch);
     }
 
 }
