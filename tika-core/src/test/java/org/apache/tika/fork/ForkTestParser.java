@@ -64,4 +64,17 @@ class ForkTestParser extends AbstractParser {
             super.parse(stream, handler, metadata, context);
         }
     }
+
+    static class ForkTestParserWaiting extends ForkTestParser {
+        @Override
+        public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                          ParseContext context) throws IOException, SAXException, TikaException {
+            try {
+                Thread.sleep(10_000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            super.parse(stream, handler, metadata, context);
+        }
+    }
 }
