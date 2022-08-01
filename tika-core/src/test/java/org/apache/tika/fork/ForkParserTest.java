@@ -495,7 +495,7 @@ public class ForkParserTest extends TikaTest {
         service.shutdownNow();
         service.awaitTermination(15, TimeUnit.SECONDS);
         long secondsSinceShutdown = ChronoUnit.SECONDS.between(requestShutdown, Instant.now());
-        assertTrue(secondsSinceShutdown < 5, "Should have shutdown the service in less than 5 seconds");
+        assertTrue("Should have shutdown the service in less than 5 seconds", secondsSinceShutdown < 5);
     }
 
 
