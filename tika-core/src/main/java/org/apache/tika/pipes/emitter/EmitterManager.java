@@ -74,4 +74,25 @@ public class EmitterManager extends ConfigBase {
         }
         return emitter;
     }
+
+    /**
+     * Convenience method that returns an emitter if only one emitter
+     * is specified in the tika-config file.  If 0 or > 1 emitters
+     * are specified, this throws an IllegalArgumentException.
+     * @return
+     */
+    public Emitter getEmitter() {
+        if (emitterMap.size() == 0) {
+            throw new IllegalArgumentException("emitters size must == 1 for the no arg call");
+        }
+        if (emitterMap.size() > 1) {
+            throw new IllegalArgumentException("need to specify 'emitterName' if > 1 emitters are" +
+                    " available");
+        }
+        for (Emitter emitter : emitterMap.values()) {
+            return emitter;
+        }
+        //this should be unreachable?!
+        throw new IllegalArgumentException("emitters size must == 0");
+    }
 }
