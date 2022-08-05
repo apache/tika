@@ -139,6 +139,10 @@ class AbstractPDF2XHTML extends PDFTextStripper {
      */
     private final static int MAX_RECURSION_DEPTH = 100;
     private final static int MAX_BOOKMARK_ITEMS = 10000;
+
+    //This is used for both types and subtypes.
+    //These can be unbounded.  We need to limit the number we store.
+    private final static int MAX_ANNOTATION_TYPES = 100;
     private static final String THREE_D = "3D";
     private static final COSName THREE_DD = COSName.getPDFName("3DD");
     private static final String NULL_STRING = "null";
@@ -644,16 +648,20 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         try {
             for (PDAnnotation annotation : page.getAnnotations()) {
                 String annotationName = annotation.getAnnotationName();
-                if (annotationName != null) {
-                    annotationTypes.add(annotationName);
-                } else {
-                    annotationTypes.add(NULL_STRING);
+                if (annotationTypes.size() < MAX_ANNOTATION_TYPES) {
+                    if (annotationName != null) {
+                        annotationTypes.add(annotationName);
+                    } else {
+                        annotationTypes.add(NULL_STRING);
+                    }
                 }
                 String annotationSubtype = annotation.getSubtype();
-                if (annotationSubtype != null) {
-                    annotationSubtypes.add(annotationSubtype);
-                } else {
-                    annotationSubtypes.add(NULL_STRING);
+                if (annotationSubtypes.size() < MAX_ANNOTATION_TYPES) {
+                    if (annotationSubtype != null) {
+                        annotationSubtypes.add(annotationSubtype);
+                    } else {
+                        annotationSubtypes.add(NULL_STRING);
+                    }
                 }
                 if (annotation instanceof PDAnnotationFileAttachment) {
                     PDAnnotationFileAttachment fann = (PDAnnotationFileAttachment) annotation;
