@@ -972,6 +972,9 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             }
             xhtml.startElement("ul");
             while (current != null) {
+                if (seen.contains(current)) {
+                    break;
+                }
                 seen.add(current);
                 xhtml.startElement("li");
                 xhtml.characters(current.getTitle());
