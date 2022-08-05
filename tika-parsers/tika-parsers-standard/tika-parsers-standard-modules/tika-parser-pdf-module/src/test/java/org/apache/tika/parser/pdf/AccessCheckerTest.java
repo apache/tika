@@ -86,7 +86,7 @@ public class AccessCheckerTest {
     }
 
     @Test
-    public void testCrazyExtractNotForAccessibility() throws AccessPermissionException {
+    public void testIllogicalExtractNotForAccessibility() throws AccessPermissionException {
         Metadata m = getMetadata(true, false);
         //allow accessibility
         AccessChecker checker = new AccessChecker(true);
