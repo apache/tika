@@ -975,6 +975,9 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 if (seen.contains(current)) {
                     break;
                 }
+                if (itemCount > MAX_BOOKMARK_ITEMS) {
+                    break;
+                }
                 seen.add(current);
                 xhtml.startElement("li");
                 xhtml.characters(current.getTitle());
