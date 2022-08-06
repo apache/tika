@@ -57,7 +57,7 @@
       <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-core</artifactId>
-        <version>1.30.0</version>
+        <version>1.31.0</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
@@ -73,7 +73,7 @@
       <dependency>
         <groupId>io.projectreactor</groupId>
         <artifactId>reactor-core</artifactId>
-        <version>3.4.20</version>
+        <version>3.4.21</version>
       </dependency>
       <dependency>
         <groupId>io.netty</groupId>
