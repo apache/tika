@@ -343,7 +343,7 @@
     <junit4.version>4.13.2</junit4.version>
     <junit5.version>5.9.0</junit5.version>
     <juniversalchardet.version>1.0.3</juniversalchardet.version>
-    <junrar.version>7.5.2</junrar.version>
+    <junrar.version>7.5.3</junrar.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.18.0</log4j2.version>
     <lombok.version>1.18.20</lombok.version>
