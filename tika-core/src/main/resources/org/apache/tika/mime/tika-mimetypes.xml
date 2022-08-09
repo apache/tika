@@ -3515,7 +3515,8 @@
   <mime-type type="application/x-bzip2">
     <sub-class-of type="application/x-bzip"/>
     <_comment>Bzip 2 UNIX Compressed File</_comment>
-    <magic priority="40">
+    <!-- slightly higher than bzip because slightly longer -->
+    <magic priority="41">
       <match value="\x42\x5a\x68\x39\x31" type="string" offset="0"/>
     </magic>
     <glob pattern="*.bz2"/>
