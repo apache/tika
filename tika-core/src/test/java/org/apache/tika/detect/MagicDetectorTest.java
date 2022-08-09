@@ -22,6 +22,7 @@ import static java.nio.charset.StandardCharsets.UTF_16LE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,6 +30,7 @@ import java.io.InputStream;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
@@ -245,4 +247,22 @@ public class MagicDetectorTest {
         }
     }
 
+    @Test
+    public void testBZ2Detection() throws Exception {
+        Detector detector = new TikaConfig().getDetector();
+        for (String bz2 : new String[]{"bzip2-8-file.txt.bz2",
+                "empty-file.txt.bz2", "lbzip2-8-file.txt.bz2",
+                "small-file.txt.bz2", "test-file-1.csv.bz2",
+                "test-file-2.csv.bz2"}) {
+            assertEquals("application/x-bzip2", detect(detector, bz2));
+        }
+    }
+
+    private String detect(Detector detector, String bz2Name) throws IOException  {
+        try (InputStream is = new BufferedInputStream(
+                this.getClass().getResourceAsStream(
+                        "/test-documents/bz2/" + bz2Name))) {
+            return detector.detect(is, new Metadata()).toString();
+        }
+    }
 }

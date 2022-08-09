@@ -3506,7 +3506,7 @@
 
   <mime-type type="application/x-bzip">
     <magic priority="40">
-      <match value="BZh" type="string" offset="0"/>
+      <match value="BZ0" type="string" offset="0"/>
     </magic>
     <glob pattern="*.bz"/>
     <glob pattern="*.tbz"/>
@@ -3515,9 +3515,8 @@
   <mime-type type="application/x-bzip2">
     <sub-class-of type="application/x-bzip"/>
     <_comment>Bzip 2 UNIX Compressed File</_comment>
-    <!-- slightly higher than bzip because slightly longer -->
-    <magic priority="41">
-      <match value="\x42\x5a\x68\x39\x31" type="string" offset="0"/>
+    <magic priority="40">
+      <match value="BZh[1-9]" type="regex" offset="0"/>
     </magic>
     <glob pattern="*.bz2"/>
     <glob pattern="*.tbz2"/>
