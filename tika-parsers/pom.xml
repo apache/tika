@@ -372,7 +372,7 @@
     <dependency>
       <groupId>com.github.junrar</groupId>
       <artifactId>junrar</artifactId>
-      <version>7.5.2</version>
+      <version>7.5.3</version>
       <exclusions>
         <exclusion>
           <groupId>commons-logging</groupId>
