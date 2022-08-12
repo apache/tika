@@ -297,6 +297,7 @@
     <!-- 2.0.0 doesn't work with jdk8 -->
     <opennlp.version>1.9.4</opennlp.version>
     <xerces.version>2.12.2</xerces.version>
+    <jackrabbit.version>2.21.12</jackrabbit.version>
   </properties>
   <dependencyManagement>
     <dependencies>
