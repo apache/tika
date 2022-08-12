@@ -39,6 +39,7 @@
     <module>tika-emitter-opensearch</module>
     <module>tika-emitter-gcs</module>
     <module>tika-emitter-az-blob</module>
+    <module>tika-emitter-jdbc</module>
   </modules>
 
   <scm>
