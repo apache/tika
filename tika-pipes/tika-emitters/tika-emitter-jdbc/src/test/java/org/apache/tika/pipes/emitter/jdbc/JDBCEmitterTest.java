@@ -124,7 +124,7 @@ public class JDBCEmitterTest {
 
     private void writeConfig(String srcConfig, String dbDir, Path config) throws IOException {
         String xml = IOUtils.resourceToString(srcConfig, StandardCharsets.UTF_8);
-        xml = xml.replaceAll("CONNECTION_STRING", dbDir);
+        xml = xml.replace("CONNECTION_STRING", dbDir);
         Files.write(config, xml.getBytes(StandardCharsets.UTF_8));
     }
 
