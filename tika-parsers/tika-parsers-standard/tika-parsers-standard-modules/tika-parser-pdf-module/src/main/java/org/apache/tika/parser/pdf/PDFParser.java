@@ -16,15 +16,10 @@
  */
 package org.apache.tika.parser.pdf;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.DigestInputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
@@ -48,8 +43,6 @@ import org.apache.pdfbox.pdmodel.fixup.AbstractFixup;
 import org.apache.pdfbox.pdmodel.fixup.PDDocumentFixup;
 import org.apache.pdfbox.pdmodel.fixup.processor.AcroFormDefaultsProcessor;
 import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -114,8 +107,6 @@ import org.apache.tika.sax.XHTMLContentHandler;
  */
 public class PDFParser extends AbstractParser implements RenderingParser, Initializable {
 
-    protected static final Logger LOG = LoggerFactory.getLogger(PDFParser.class);
-
     /**
      * Metadata key for giving the document password to the parser.
      *
@@ -164,10 +155,6 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
                 context.set(PDFRenderingState.class, new PDFRenderingState(tstream));
             } else {
                 tstream = TikaInputStream.cast(stream);
-            }
-            if (LOG.isDebugEnabled() && tstream != null) {
-                LOG.debug("File: " + tstream.getPath() + ", length: " + tstream.getLength() + 
-                        ", md5: " + calcMD5(tstream.getPath()));
             }
             password = getPassword(metadata, context);
             MemoryUsageSetting memoryUsageSetting = MemoryUsageSetting.setupMainMemoryOnly();
@@ -773,32 +760,6 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
     @Field
     public void setImageStrategy(String imageStrategy) {
         defaultConfig.setImageStrategy(imageStrategy);
-    }
-
-    private String calcMD5(Path path) throws IOException {
-        MessageDigest md;
-        try {
-            md = MessageDigest.getInstance("MD5");
-        }
-        catch (NoSuchAlgorithmException ex) {
-            return "No MD5";
-        }
-
-        try (InputStream is = new BufferedInputStream(Files.newInputStream(path));
-                DigestInputStream dis = new DigestInputStream(is, md)) {
-            while (dis.read() >= 0)
-                ;
-        }
-        byte[] digest = md.digest();
-        StringBuilder hexString = new StringBuilder();
-        for (byte by : digest) {
-            int ih = 0xFF & by;
-            if (ih < 16) {
-                hexString.append('0');
-            }
-            hexString.append(Integer.toHexString(ih));
-        }
-        return hexString.toString();
     }
 
     /**
