@@ -384,6 +384,9 @@ public class TestMimeTypes {
         assertTypeByName("application/x-cpio", "test.cpio");
         assertTypeByName("application/vnd.ms-cab-compressed", "test.cab");
 
+        assertTypeByNameAndData("application/x-bzip2", "test-bz2.txt.bz2");
+        assertTypeByName("application/x-bzip2", "test-bz2.txt.bz2");
+        assertTypeByData("application/x-bzip2", "test-bz2.txt.bz2");
         // TODO Add an example .deb and .udeb, then check these
 
         // Check the mime magic patterns for them work too

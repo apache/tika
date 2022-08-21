@@ -41,7 +41,7 @@ To build a specific project (for example, tika-server-standard):
 If the ossindex-maven-plugin is causing the build to fail because a dependency
 has now been discovered to have a vulnerability:
 
-    mvn clean install -Dossindex.fail=false
+    mvn clean install -Dossindex.skip
 
 
 Maven Dependencies
@@ -115,7 +115,7 @@ If a new vulnerability has been discovered between the date of the
 tag and the date you are building the tag, you may need to build with:
 
 ```
-4. mvn clean install -Dossindex.fail=false
+4. mvn clean install -Dossindex.skip
 ```
 
 If a local test is not working in your environment, please notify
@@ -123,7 +123,7 @@ If a local test is not working in your environment, please notify
  you can turn off individual tests with e.g.: 
 
 ```
-4. mvn clean install -Dossindex.fail=false -Dtest=\!UnpackerResourceTest#testPDFImages
+4. mvn clean install -Dossindex.skip -Dtest=\!UnpackerResourceTest#testPDFImages
 ```
 
 License (see also LICENSE.txt)

@@ -273,11 +273,11 @@
     <forbiddenapis.version>3.3</forbiddenapis.version>
     <groovy.maven.version>2.1.1</groovy.maven.version>
     <maven.antrun.version>3.1.0</maven.antrun.version>
-    <maven.assembly.version>3.4.1</maven.assembly.version>
-    <maven.bundle.version>5.1.7</maven.bundle.version>
+    <maven.assembly.version>3.4.2</maven.assembly.version>
+    <maven.bundle.version>5.1.8</maven.bundle.version>
     <maven.compiler.plugin.version>3.10.1</maven.compiler.plugin.version>
     <maven.failsafe.version>3.0.0-M7</maven.failsafe.version>
-    <maven.javadoc.version>3.4.0</maven.javadoc.version>
+    <maven.javadoc.version>3.4.1</maven.javadoc.version>
     <maven.jar.version>3.2.2</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.surefire.version>3.0.0-M7</maven.surefire.version>
@@ -288,8 +288,8 @@
 
     <!-- dependency versions -->
 
-    <aws.version>1.12.263</aws.version>
-    <google.cloud.version>2.10.0</google.cloud.version>
+    <aws.version>1.12.286</aws.version>
+    <google.cloud.version>2.11.3</google.cloud.version>
     <asm.version>9.3</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
@@ -308,13 +308,12 @@
     <commons.math3.version>3.6.1</commons.math3.version>
     <ctakes.version>4.0.0.1</ctakes.version>
     <cxf.version>3.5.3</cxf.version>
-    <ddplist.version>1.23</ddplist.version>
+    <ddplist.version>1.24</ddplist.version>
     <dl4j.version>1.0.0-M2</dl4j.version>
     <!-- fakeload versions &gt; 0.4.0 require java > 8 -->
     <fakeload.version>0.4.0</fakeload.version>
     <geoapi.version>3.0.1</geoapi.version>
     <guava.version>31.1-jre</guava.version>
-    <h2.version>2.1.214</h2.version>
     <httpcomponents.version>4.5.13</httpcomponents.version>
     <httpcore.version>4.4.15</httpcore.version>
     <!-- versions greater than 62.2 are not compatible with icu4j handler in lucene 8.11.1 -->
@@ -322,7 +321,7 @@
     <imageio.version>1.4.0</imageio.version>
     <jackcess.version>4.0.1</jackcess.version>
     <jackcess.encrypt.version>4.0.1</jackcess.encrypt.version>
-    <jackrabbit.version>2.21.11</jackrabbit.version>
+    <jackrabbit.version>2.21.12</jackrabbit.version>
     <jackson.version>2.13.3</jackson.version>
     <javax.annotation.version>1.3.2</javax.annotation.version>
     <javax.jcr.version>2.0</javax.jcr.version>
@@ -338,12 +337,11 @@
     <jetty.version>9.4.48.v20220622</jetty.version>
     <jhighlight.version>1.1.0</jhighlight.version>
     <jna.version>5.12.1</jna.version>
-    <joda.time.version>2.10.10</joda.time.version>
     <json.simple.version>1.1.1</json.simple.version>
     <junit4.version>4.13.2</junit4.version>
-    <junit5.version>5.9.0-RC1</junit5.version>
+    <junit5.version>5.9.0</junit5.version>
     <juniversalchardet.version>1.0.3</juniversalchardet.version>
-    <junrar.version>7.5.2</junrar.version>
+    <junrar.version>7.5.3</junrar.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.18.0</log4j2.version>
     <lombok.version>1.18.20</lombok.version>
@@ -353,7 +351,7 @@
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <!-- 0.8.6 is built with java 11 and does not work with Java 8 -->
     <mime4j.version>0.8.4</mime4j.version>
-    <mockito.version>4.6.1</mockito.version>
+    <mockito.version>4.7.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <openjson.version>1.0.12</openjson.version>
     <!-- 2.0.0 doesn't compile with jdk8 -->
@@ -377,18 +375,19 @@
     <slf4j.version>1.7.36</slf4j.version>
     <solrj.version>8.11.2</solrj.version>
     <spring.version>5.3.22</spring.version>
-    <sqlite.version>3.36.0.3</sqlite.version>
+    <sqlite.version>3.39.2.0</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
     <test.containers.version>1.17.3</test.containers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
     <tukaani.version>1.9</tukaani.version>
-    <twelvemonkeys.version>3.8.2</twelvemonkeys.version>
+    <twelvemonkeys.version>3.8.3</twelvemonkeys.version>
     <uima.version>3.3.0</uima.version>
     <uimafit.version>3.3.0</uimafit.version>
     <vorbis.version>0.8</vorbis.version>
     <xerces.version>2.12.2</xerces.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <zstd.version>1.5.2-3</zstd.version>
+    <kafka.version>3.2.1</kafka.version>
     <netty.version>4.1.79.Final</netty.version>
   </properties>
 
@@ -463,7 +462,7 @@
       <dependency>
         <groupId>com.google.code.gson</groupId>
         <artifactId>gson</artifactId>
-        <version>2.9.0</version>
+        <version>2.9.1</version>
       </dependency>
       <dependency>
         <groupId>com.google.guava</groupId>
@@ -473,7 +472,12 @@
       <dependency>
         <groupId>com.google.protobuf</groupId>
         <artifactId>protobuf-java</artifactId>
-        <version>3.21.2</version>
+        <version>3.21.5</version>
+      </dependency>
+      <dependency>
+        <groupId>com.h2database</groupId>
+        <artifactId>h2</artifactId>
+        <version>2.1.214</version>
       </dependency>
       <dependency>
         <groupId>com.ibm.icu</groupId>
@@ -524,11 +528,6 @@
         <groupId>javax.annotation</groupId>
         <artifactId>javax.annotation-api</artifactId>
         <version>${javax.annotation.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>javax.servlet</groupId>
-        <artifactId>servlet-api</artifactId>
-        <version>2.5</version>
       </dependency>
       <dependency>
         <groupId>javax.xml.soap</groupId>
@@ -770,7 +769,8 @@
           <generateBackupPoms>false</generateBackupPoms>
         </configuration>
       </plugin>
-      <!-- to run just this: mvn ossindex:audit -Dossindex.fail=(true|false) -->
+      <!-- to run just this: mvn ossindex:audit -Dossindex.fail=(true|false)
+          Although, -Dossindex.fail doesn't seem to work for us -->
       <plugin>
         <groupId>org.sonatype.ossindex.maven</groupId>
         <artifactId>ossindex-maven-plugin</artifactId>
@@ -788,15 +788,6 @@
               <groupId>com.google.guava</groupId>
               <artifactId>guava</artifactId>
               <version>31.1-jre</version>
-            </exclude>
-            <!-- sonatype points to a sve in 1.4.199 for this ?!
-            https://www.exploit-db.com/exploits/49384
-            https://codewhitesec.blogspot.com/2019/08/exploit-h2-database-native-libraries-jni.html
-            -->
-            <exclude>
-              <groupId>com.h2database</groupId>
-              <artifactId>h2</artifactId>
-              <version>${h2.version}</version>
             </exclude>
             <exclude>
               <!-- CVE-2018-18928 does affect the java library not just the c/c++ library,
@@ -840,12 +831,6 @@
               <groupId>commons-dbcp</groupId>
               <artifactId>commons-dbcp</artifactId>
               <version>1.4</version>
-            </exclude>
-            <exclude>
-              <!-- CVE-2022-2191 applies to jetty 10.0.0 thru 10.0.9, and 11.0.0 thru 11.0.9 -->
-              <groupId>org.eclipse.jetty</groupId>
-              <artifactId>jetty-io</artifactId>
-              <version>9.4.48.v20220622</version>
             </exclude>
           </excludeCoordinates>
           <fail>true</fail>

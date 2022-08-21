@@ -34,10 +34,12 @@
   <modules>
     <module>tika-emitter-fs</module>
     <module>tika-emitter-s3</module>
+    <module>tika-emitter-kafka</module>
     <module>tika-emitter-solr</module>
     <module>tika-emitter-opensearch</module>
     <module>tika-emitter-gcs</module>
     <module>tika-emitter-az-blob</module>
+    <module>tika-emitter-jdbc</module>
   </modules>
 
   <scm>

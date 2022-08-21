@@ -999,6 +999,8 @@ final class TextExtractor {
                 groupState.list = param;
             } else if (equals("lslvl")) {
                 groupState.listLevel = param;
+            } else if (equals("wbitmap")) {
+                embObjHandler.setPictBitmap(true);
             }
         }
 

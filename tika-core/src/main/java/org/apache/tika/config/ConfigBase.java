@@ -331,11 +331,16 @@ public abstract class ConfigBase {
                     key = m.getNamedItem("from").getTextContent();
                 } else if (m.getNamedItem("key") != null) {
                     key = m.getNamedItem("key").getTextContent();
+                } else if (m.getNamedItem("k") != null) {
+                    key = m.getNamedItem("k").getTextContent();
                 }
+
                 if (m.getNamedItem("to") != null) {
                     value = m.getNamedItem("to").getTextContent();
                 } else if (m.getNamedItem("value") != null) {
                     value = m.getNamedItem("value").getTextContent();
+                } else if (m.getNamedItem("v") != null) {
+                    value = m.getNamedItem("v").getTextContent();
                 }
                 if (key == null) {
                     throw new TikaConfigException("must specify a 'key' or 'from' value in a map " +
@@ -363,9 +368,14 @@ public abstract class ConfigBase {
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node n = nodeList.item(i);
             if (n.getNodeType() == 1) {
-                if (n.hasAttributes() && n.getAttributes().getNamedItem("from") != null &&
-                        n.getAttributes().getNamedItem("to") != null) {
-                    return true;
+                if (n.hasAttributes()) {
+                    if (n.getAttributes().getNamedItem("from") != null &&
+                            n.getAttributes().getNamedItem("to") != null) {
+                        return true;
+                    } else if (n.getAttributes().getNamedItem("k") != null &&
+                            n.getAttributes().getNamedItem("v") != null) {
+                        return true;
+                    }
                 }
             }
         }

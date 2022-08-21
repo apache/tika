@@ -50,6 +50,11 @@
       </exclusions>
     </dependency>
     <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-parser-html-commons</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-xmp</artifactId>
       <version>${project.version}</version>

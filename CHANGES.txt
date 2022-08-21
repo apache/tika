@@ -1,5 +1,12 @@
 Release 2.4.2 - ???
 
+   * tika-parser-html-commons (BoilerPipeHandler) is no longer a
+     a dependency of tika-parser-html-module. tika-app and tika-server-standard
+     have added a dependency on tika-parser-html-commons.  However,
+     users who are managing custom dependencies and who want the BoilerPipeHandler
+     will have to now include the tika-parser-html-commons dependency
+     (TIKA-1484).
+
    * Add unrar as an optional parser (TIKA-3800).
 
    * Refactor FuzzingCLI to use PipesParser (TIKA-3799).

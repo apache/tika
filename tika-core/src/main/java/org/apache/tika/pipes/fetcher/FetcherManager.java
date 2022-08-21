@@ -72,4 +72,25 @@ public class FetcherManager extends ConfigBase {
     public Set<String> getSupported() {
         return fetcherMap.keySet();
     }
+
+    /**
+     * Convenience method that returns a fetcher if only one fetcher
+     * is specified in the tika-config file.  If 0 or > 1 fetchers
+     * are specified, this throws an IllegalArgumentException.
+     * @return
+     */
+    public Fetcher getFetcher() {
+        if (fetcherMap.size() == 0) {
+            throw new IllegalArgumentException("fetchers size must == 1 for the no arg call");
+        }
+        if (fetcherMap.size() > 1) {
+            throw new IllegalArgumentException("need to specify 'fetcherName' if > 1 fetchers are" +
+                    " available");
+        }
+        for (Fetcher fetcher : fetcherMap.values()) {
+            return fetcher;
+        }
+        //this should be unreachable?!
+        throw new IllegalArgumentException("fetchers size must == 0");
+    }
 }

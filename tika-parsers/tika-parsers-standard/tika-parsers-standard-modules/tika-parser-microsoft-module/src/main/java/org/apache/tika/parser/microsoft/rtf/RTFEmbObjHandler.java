@@ -63,6 +63,8 @@ class RTFEmbObjHandler {
     private final EmbeddedDocumentUtil embeddedDocumentUtil;
     private final ByteArrayOutputStream os;
     private final int memoryLimitInKb;
+
+    private boolean isPictBitmap = false;
     //high hex cached for writing hexpair chars (data)
     private int hi = -1;
     private int thumbCount = 0;
@@ -127,6 +129,10 @@ class RTFEmbObjHandler {
         sb.append(c);
     }
 
+    protected void setPictBitmap(boolean isPictBitmap) {
+        this.isPictBitmap = isPictBitmap;
+    }
+
     protected void writeHexChar(int b) throws IOException, TikaException {
         //if not hexchar, ignore
         //white space is common
@@ -189,6 +195,10 @@ class RTFEmbObjHandler {
                 metadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, filePath);
             }
             metadata.set(RTFMetadata.THUMBNAIL, Boolean.toString(inObject));
+            if (isPictBitmap) {
+                metadata.set(
+                        TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, "image/x-rtf-raw-bitmap");
+            }
             extractObj(bytes, handler, metadata);
 
         } else if (state == EMB_STATE.NADA) {
@@ -243,6 +253,7 @@ class RTFEmbObjHandler {
         sv = EMPTY_STRING;
         sn = EMPTY_STRING;
         sb.setLength(0);
+        isPictBitmap = false;
     }
 
     private enum EMB_STATE {

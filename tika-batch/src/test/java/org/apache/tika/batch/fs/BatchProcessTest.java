@@ -84,8 +84,8 @@ public class BatchProcessTest extends FSBatchTestBase {
 
     @Test
     @Timeout(30000)
-    public void allHeavyHangsTestWithCrazyNumberConsumersTest() throws Exception {
-        Path outputDir = getNewOutputDir("allHeavyHangsCrazyNumberConsumers-");
+    public void allHeavyHangsTestWithExcessiveNumberConsumersTest() throws Exception {
+        Path outputDir = getNewOutputDir("allHeavyHangsExcessiveNumberConsumers-");
         Map<String, String> args = getDefaultArgs("heavy_heavy_hangs", outputDir);
         args.put("numConsumers", "100");
         BatchProcessTestExecutor ex = new BatchProcessTestExecutor(args);
