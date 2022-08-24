@@ -269,7 +269,7 @@
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
     <project.build.outputTimestamp>1655225567</project.build.outputTimestamp>
     <!-- plugin versions -->
-    <checkstyle.plugin.version>3.1.2</checkstyle.plugin.version>
+    <checkstyle.plugin.version>3.2.0</checkstyle.plugin.version>
     <forbiddenapis.version>3.3</forbiddenapis.version>
     <groovy.maven.version>2.1.1</groovy.maven.version>
     <maven.antrun.version>3.1.0</maven.antrun.version>
