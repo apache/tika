@@ -832,6 +832,13 @@
               <artifactId>commons-dbcp</artifactId>
               <version>1.4</version>
             </exclude>
+            <!-- used only in tests and in tika-eval, and this problem requires the use of the console.
+                 https://github.com/h2database/h2database/issues/1294 -->
+            <exclude>
+                <groupId>com.h2database</groupId>
+                <artifactId>h2</artifactId>
+                <version>2.1.214</version>
+            </exclude>
           </excludeCoordinates>
           <fail>true</fail>
         </configuration>
