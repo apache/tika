@@ -808,12 +808,6 @@
               <artifactId>xercesImpl</artifactId>
               <version>${xerces.version}</version>
             </exclude>
-            <!-- no fix available as of 20220715 -->
-            <dependency>
-              <groupId>com.azure</groupId>
-              <artifactId>azure-storage-blob</artifactId>
-              <version>12.18.0</version>
-            </dependency>
             <!-- these are used by the nlp-module -->
             <exclude>
               <groupId>org.apache.lucene</groupId>
