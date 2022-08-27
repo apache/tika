@@ -319,7 +319,7 @@
     <!-- versions greater than 62.2 are not compatible with icu4j handler in lucene 8.11.1 -->
     <icu4j.version>62.2</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
-    <jackcess.version>4.0.1</jackcess.version>
+    <jackcess.version>4.0.2</jackcess.version>
     <jackcess.encrypt.version>4.0.1</jackcess.encrypt.version>
     <jackrabbit.version>2.21.12</jackrabbit.version>
     <jackson.version>2.13.3</jackson.version>
@@ -388,7 +388,7 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <zstd.version>1.5.2-3</zstd.version>
     <kafka.version>3.2.1</kafka.version>
-    <netty.version>4.1.79.Final</netty.version>
+    <netty.version>4.1.80.Final</netty.version>
   </properties>
 
   <dependencyManagement>
