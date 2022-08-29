@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.xml.XMLConstants;
@@ -79,6 +80,8 @@ public class XMLReaderUtils implements Serializable {
     private static final String XERCES_SECURITY_MANAGER = "org.apache.xerces.util.SecurityManager";
     private static final String XERCES_SECURITY_MANAGER_PROPERTY =
             "http://apache.org/xml/properties/security-manager";
+
+    private static final AtomicBoolean HAS_WARNED_STAX = new AtomicBoolean(false);
     private static final ContentHandler IGNORING_CONTENT_HANDLER = new DefaultHandler();
     private static final DTDHandler IGNORING_DTD_HANDLER = new DTDHandler() {
         @Override
@@ -721,15 +724,19 @@ public class XMLReaderUtils implements Serializable {
     }
 
     private static void trySetStaxSecurityManager(XMLInputFactory inputFactory) {
+        //try default java entity expansion, then fallback to woodstox, then warn...once.
         try {
-            inputFactory.setProperty("com.ctc.wstx.maxEntityCount", MAX_ENTITY_EXPANSIONS);
+            inputFactory.setProperty("http://www.oracle.com/xml/jaxp/properties/entityExpansionLimit",
+                    MAX_ENTITY_EXPANSIONS);
         } catch (IllegalArgumentException e) {
-            // throttle the log somewhat as it can spam the log otherwise
-            if (System.currentTimeMillis() > LAST_LOG + TimeUnit.MINUTES.toMillis(5)) {
-                LOG.warn("SAX Security Manager could not be setup [log suppressed for 5 minutes]",
-                        e);
-                LAST_LOG = System.currentTimeMillis();
+            try {
+                inputFactory.setProperty("com.ctc.wstx.maxEntityCount", MAX_ENTITY_EXPANSIONS);
+            } catch (IllegalArgumentException e2) {
+                if (HAS_WARNED_STAX.getAndSet(true) == false) {
+                    LOG.warn("Could not set limit on maximum entity expansions for: " + inputFactory.getClass());
+                }
             }
+
         }
     }
 
