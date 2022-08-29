@@ -1,5 +1,7 @@
 Release 2.4.2 - ???
 
+   * Add extraction of ODF version from ODF files (TIKA-3840).
+
    * tika-parser-html-commons (BoilerPipeHandler) is no longer a
      a dependency of tika-parser-html-module. tika-app and tika-server-standard
      have added a dependency on tika-parser-html-commons.  However,
