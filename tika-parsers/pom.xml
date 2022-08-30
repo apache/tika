@@ -266,7 +266,7 @@
     <dependency>
       <groupId>com.healthmarketscience.jackcess</groupId>
       <artifactId>jackcess</artifactId>
-      <version>4.0.1</version>
+      <version>4.0.2</version>
       <exclusions>
         <exclusion>
           <groupId>org.apache.commons</groupId>
