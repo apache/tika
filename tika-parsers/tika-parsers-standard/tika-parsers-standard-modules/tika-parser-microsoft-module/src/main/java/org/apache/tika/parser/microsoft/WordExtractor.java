@@ -52,6 +52,8 @@ import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
@@ -72,6 +74,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
     private static final String LIST_DELIMITER = " ";
     private static final Map<String, TagAndStyle> fixedParagraphStyles = new HashMap<>();
     private static final TagAndStyle defaultParagraphStyle = new TagAndStyle("p", null);
+    private static final Logger LOG = LoggerFactory.getLogger(WordExtractor.class);
 
     static {
         fixedParagraphStyles.put("Default", defaultParagraphStyle);
@@ -249,12 +252,17 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             ListManager listManager = new ListManager(document);
             for (Range r : ranges) {
                 if (r != null) {
-                    for (int i = 0; i < r.numParagraphs(); i++) {
-                        Paragraph p = r.getParagraph(i);
+                    try {
+                        for (int i = 0; i < r.numParagraphs(); i++) {
+                            Paragraph p = r.getParagraph(i);
 
-                        i += handleParagraph(p, 0, r, document, FieldsDocumentPart.HEADER, pictures,
+                            i += handleParagraph(p, 0, r, document, FieldsDocumentPart.HEADER, pictures,
                                 pictureTable, listManager, xhtml);
+                        }
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                        LOG.warn("TIKA-3841 -- content may be missing from this header/footer");
                     }
+
                 }
             }
             xhtml.endElement("div");
