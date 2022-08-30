@@ -19,13 +19,13 @@ package org.apache.tika.parser.hdf;
 
 //JDK imports
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import ucar.nc2.Attribute;
@@ -79,7 +79,7 @@ public class HDFParser extends AbstractParser {
      */
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        UnsynchronizedByteArrayOutputStream os = new UnsynchronizedByteArrayOutputStream();
         IOUtils.copy(stream, os);
 
         String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);

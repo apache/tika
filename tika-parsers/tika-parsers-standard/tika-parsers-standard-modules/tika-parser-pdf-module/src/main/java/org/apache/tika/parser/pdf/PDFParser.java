@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.pdf;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -29,6 +28,7 @@ import java.util.Set;
 import javax.xml.stream.XMLStreamException;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.pdfbox.cos.COSArray;
 import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSDictionary;
@@ -498,7 +498,7 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
         XFAExtractor ex = new XFAExtractor();
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
-        try (InputStream is = new ByteArrayInputStream(
+        try (InputStream is = new UnsynchronizedByteArrayInputStream(
                 pdDocument.getDocumentCatalog().getAcroForm(null).getXFA().getBytes())) {
             ex.extract(is, xhtml, metadata, context);
         } catch (XMLStreamException e) {

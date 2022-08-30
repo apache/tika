@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.dbf;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -30,6 +29,7 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 
 import org.apache.tika.io.EndianUtils;
 
@@ -130,7 +130,7 @@ class DBFCell {
                 GregorianCalendar.getInstance(TimeZone.getTimeZone("UTC"), Locale.ROOT);
 //        baseCalendar.set(1899, 11, 31, 0, 0, 0);
         baseCalendar.set(-4712, 0, 1, 0, 0, 0);
-        try (InputStream is = new ByteArrayInputStream(getBytes())) {
+        try (InputStream is = new UnsynchronizedByteArrayInputStream(getBytes())) {
 
             int date = EndianUtils.readIntLE(is);
             int time = EndianUtils.readIntLE(is);

@@ -18,13 +18,12 @@ package org.apache.tika.parser.xmp;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Calendar;
 import java.util.List;
 
+import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.apache.jempbox.xmp.ResourceEvent;
 import org.apache.jempbox.xmp.ResourceRef;
 import org.apache.jempbox.xmp.XMPMetadata;
@@ -221,13 +220,13 @@ public class JempboxExtractor {
     }
 
     public void parse(InputStream file) throws IOException, TikaException {
-        ByteArrayOutputStream xmpraw = new ByteArrayOutputStream();
+        UnsynchronizedByteArrayOutputStream xmpraw = new UnsynchronizedByteArrayOutputStream();
         if (!scanner.parse(file, xmpraw)) {
             return;
         }
 
         XMPMetadata xmp = null;
-        try (InputStream decoded = new ByteArrayInputStream(xmpraw.toByteArray())) {
+        try (InputStream decoded = xmpraw.toInputStream()) {
             Document dom = XMLReaderUtils.buildDOM(decoded, EMPTY_PARSE_CONTEXT);
             if (dom != null) {
                 xmp = new XMPMetadata(dom);

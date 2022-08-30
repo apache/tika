@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -31,6 +30,7 @@ import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.poi.hdgf.extractor.VisioTextExtractor;
 import org.apache.poi.hpbf.extractor.PublisherTextExtractor;
 import org.apache.poi.poifs.crypt.Decryptor;
@@ -115,7 +115,7 @@ public class OfficeParser extends AbstractOfficeParser {
             if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
                 embeddedDocumentExtractor.parseEmbedded(
                         //pass in space character so that we don't trigger a zero-byte exception
-                        new ByteArrayInputStream(new byte[]{'\u0020'}), xhtml, m, true);
+                        new UnsynchronizedByteArrayInputStream(new byte[]{'\u0020'}), xhtml, m, true);
             }
             return;
         }
@@ -126,7 +126,7 @@ public class OfficeParser extends AbstractOfficeParser {
             m.set(Metadata.CONTENT_TYPE, "text/x-vbasic");
             if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
                 embeddedDocumentExtractor.parseEmbedded(
-                        new ByteArrayInputStream(e.getValue().getBytes(StandardCharsets.UTF_8)),
+                        new UnsynchronizedByteArrayInputStream(e.getValue().getBytes(StandardCharsets.UTF_8)),
                         xhtml, m, true);
             }
         }

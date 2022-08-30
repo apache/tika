@@ -18,7 +18,6 @@ package org.apache.tika.parser.pdf.image;
 
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -29,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.apache.pdfbox.contentstream.PDFGraphicsStreamEngine;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.cos.COSStream;
@@ -410,7 +410,7 @@ public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         }
 
         if (embeddedDocumentExtractor.shouldParseEmbedded(metadata)) {
-            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            UnsynchronizedByteArrayOutputStream buffer = new UnsynchronizedByteArrayOutputStream();
             if (pdImage instanceof PDImageXObject) {
                 //extract the metadata contained outside of the image
                 PDMetadataExtractor

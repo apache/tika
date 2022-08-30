@@ -18,7 +18,6 @@ package org.apache.tika.parser.image;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
-import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,6 +26,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -145,7 +145,7 @@ public class PSDParser extends AbstractParser {
                 //if there are multiple xmps in a file, this will
                 //overwrite the data from the earlier xmp
                 JempboxExtractor ex = new JempboxExtractor(metadata);
-                ex.parse(new ByteArrayInputStream(rb.data));
+                ex.parse(new UnsynchronizedByteArrayInputStream(rb.data));
             }
             blocks++;
         }

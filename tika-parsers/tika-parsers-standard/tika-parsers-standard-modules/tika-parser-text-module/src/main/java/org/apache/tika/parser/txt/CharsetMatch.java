@@ -8,12 +8,12 @@
  */
 package org.apache.tika.parser.txt;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 
 /**
  * This class represents a charset that has been identified by a CharsetDetector
@@ -99,7 +99,7 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
         InputStream inputStream = fInputStream;
 
         if (inputStream == null) {
-            inputStream = new ByteArrayInputStream(fRawInput, 0, fRawLength);
+            inputStream = new UnsynchronizedByteArrayInputStream(fRawInput, 0, fRawLength);
         }
 
         try {
