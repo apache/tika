@@ -661,7 +661,6 @@ public class PDFParserTest extends TikaTest {
         Set<String> versions = new HashSet<>(Arrays.asList(r.metadata.getValues("dc:format")));
 
         for (String hit : new String[]{"application/pdf; version=1.7",
-                "application/pdf; version=\"A-1b\"",
                 "application/pdf; version=\"1.7 Adobe Extension Level 8\""}) {
             assertTrue(versions.contains(hit), hit);
         }

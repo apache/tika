@@ -1,5 +1,11 @@
 Release 2.4.2 - ???
 
+   * Improved extraction of PDF subset info for PDF/UA, PDF/VT, and PDF/X.
+     NOTE: we no longer append PDF/A information, e.g. 'version="A-1b"'
+     to the 'dc:format'. Users must now get that information from the
+     'pdfa:PDFVersion' key or from 'pdfaid:conformance'
+     and 'pdfaid:part' (TIKA-3844).
+
    * Add extraction of ODF version from ODF files (TIKA-3840).
 
    * tika-parser-html-commons (BoilerPipeHandler) is no longer a

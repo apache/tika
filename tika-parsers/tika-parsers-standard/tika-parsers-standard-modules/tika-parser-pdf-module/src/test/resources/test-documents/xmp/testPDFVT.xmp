@@ -1,0 +1,85 @@
+<?xpacket begin='' id='W5M0MpCehiHzreSzNTczkc9d' ?>
+
+<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 5.6-c014 81.156655, 2014/07/22-00:39:16        ">
+  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+    <rdf:Description rdf:about=""
+                     xmlns:dc="http://purl.org/dc/elements/1.1/"
+                     xmlns:xmp="http://ns.adobe.com/xap/1.0/"
+                     xmlns:xmpMM="http://ns.adobe.com/xap/1.0/mm/"
+                     xmlns:pdf="http://ns.adobe.com/pdf/1.3/"
+                     xmlns:pdfx="http://ns.adobe.com/pdfx/1.3/"
+                     xmlns:pdfxid="http://www.npes.org/pdfx/ns/id/"
+                     xmlns:pdfvtid="http://www.npes.org/pdfvt/ns/id/"
+                     xmlns:pdfaExtension="http://www.aiim.org/pdfa/ns/extension/"
+                     xmlns:pdfaSchema="http://www.aiim.org/pdfa/ns/schema#"
+                     xmlns:pdfaProperty="http://www.aiim.org/pdfa/ns/property#"
+    >
+      <dc:format>application/pdf</dc:format>
+      <dc:rights><rdf:Alt><rdf:li xml:lang="x-default"></rdf:li></rdf:Alt></dc:rights>
+
+
+
+      <xmp:CreateDate>2018-08-06T12:53:12+01:00</xmp:CreateDate>
+      <xmp:CreatorTool>LaTeX with hyperref package</xmp:CreatorTool>
+      <xmp:ModifyDate>2018-08-06T12:53:12+01:00</xmp:ModifyDate>
+      <xmp:MetadataDate>2018-08-06T12:53:12+01:00</xmp:MetadataDate>
+      <xmpMM:VersionID>1</xmpMM:VersionID>
+      <xmpMM:DocumentID>uuid:9817320F-16E0-7705-677E-94BFB82970FC</xmpMM:DocumentID>
+      <xmpMM:InstanceID>uuid:E5740A74-4140-9431-3BB3-2A7D65CE0793</xmpMM:InstanceID>
+      <xmpMM:RenditionClass>default</xmpMM:RenditionClass>
+      <pdfxid:GTS_PDFXVersion>PDF/X-4</pdfxid:GTS_PDFXVersion>
+      <pdfvtid:GTS_PDFVTVersion>PDF/VT-1</pdfvtid:GTS_PDFVTVersion>
+      <pdfvtid:GTS_PDFVTModDate>2018-08-06T12:53:12+01:00</pdfvtid:GTS_PDFVTModDate>
+      <pdf:Producer>pdfTeX</pdf:Producer>
+      <pdf:Trapped>False</pdf:Trapped>
+      <pdfaExtension:schemas>
+        <rdf:Bag>
+          <rdf:li rdf:parseType="Resource">
+            <pdfaSchema:namespaceURI>http://ns.adobe.com/pdf/1.3/</pdfaSchema:namespaceURI>
+            <pdfaSchema:prefix>pdf</pdfaSchema:prefix>
+            <pdfaSchema:schema>Adobe PDF Schema</pdfaSchema:schema>
+            <pdfaSchema:property>
+              <rdf:Seq>
+                <rdf:li rdf:parseType="Resource">
+                  <pdfaProperty:category>internal</pdfaProperty:category>
+                  <pdfaProperty:description>A name object indicating whether the document has been modified to include trapping information</pdfaProperty:description>
+                  <pdfaProperty:name>Trapped</pdfaProperty:name>
+                  <pdfaProperty:valueType>Text</pdfaProperty:valueType>
+                </rdf:li>
+              </rdf:Seq>
+            </pdfaSchema:property>
+          </rdf:li>
+          <rdf:li rdf:parseType="Resource">
+            <pdfaSchema:namespaceURI>http://ns.adobe.com/pdfx/1.3/</pdfaSchema:namespaceURI>
+            <pdfaSchema:prefix>pdfx</pdfaSchema:prefix>
+            <pdfaSchema:schema>PDF/X ID Schema</pdfaSchema:schema>
+            <pdfaSchema:property>
+              <rdf:Seq>
+                <rdf:li rdf:parseType="Resource">
+                  <pdfaProperty:category>external</pdfaProperty:category>
+                  <pdfaProperty:description>URI to author's online version of the document</pdfaProperty:description>
+                  <pdfaProperty:name>AuthoritativeDomain</pdfaProperty:name>
+                  <pdfaProperty:valueType>URI</pdfaProperty:valueType>
+                </rdf:li>
+              </rdf:Seq>
+            </pdfaSchema:property>
+          </rdf:li>
+          <rdf:li rdf:parseType="Resource">
+            <pdfaSchema:schema>PRISM metadata</pdfaSchema:schema>
+            <pdfaSchema:namespaceURI>http://prismstandard.org/namespaces/basic/2.2/</pdfaSchema:namespaceURI>
+            <pdfaSchema:prefix>prism</pdfaSchema:prefix>
+            <pdfaSchema:property>
+              <rdf:Seq>
+              </rdf:Seq></pdfaSchema:property>
+          </rdf:li>
+        </rdf:Bag>
+      </pdfaExtension:schemas>
+    </rdf:Description>
+    <rdf:Description rdf:about="" xmlns:xmpRights = "http://ns.adobe.com/xap/1.0/rights/">
+      <xmpRights:WebStatement></xmpRights:WebStatement>
+    </rdf:Description>
+    <rdf:Description rdf:about="" xmlns:prism="http://prismstandard.org/namespaces/basic/2.2/">
+    </rdf:Description>
+  </rdf:RDF>
+</x:xmpmeta>
+<?xpacket end='w'?>

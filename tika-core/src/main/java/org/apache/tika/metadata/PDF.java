@@ -57,11 +57,23 @@ public interface PDF {
 
     Property PDF_VERSION = Property.internalRational(PDF_PREFIX + "PDFVersion");
     Property PDFA_VERSION = Property.internalRational(PDFA_PREFIX + "PDFVersion");
+
     Property PDF_EXTENSION_VERSION = Property.internalRational(PDF_PREFIX + "PDFExtensionVersion");
 
     Property PDFAID_CONFORMANCE = Property.internalText(PDFAID_PREFIX + "conformance");
 
-    Property PDFAID_PART = Property.internalText(PDFAID_PREFIX + "part");
+    Property PDFAID_PART = Property.internalInteger(PDFAID_PREFIX + "part");
+
+    Property PDFUAID_PART = Property.internalInteger("pdfuaid:part");
+
+    Property PDFVT_VERSION = Property.internalText("pdfvt:version");
+
+    Property PDFVT_MODIFIED = Property.internalDate("pdfvt:modified");
+    Property PDFXID_VERSION = Property.internalText("pdfxid:version");
+
+    Property PDFX_VERSION = Property.internalText("pdfx:version");
+
+    Property PDFX_CONFORMANCE = Property.internalText("pdfx:conformance");
 
     Property IS_ENCRYPTED = Property.internalBoolean(PDF_PREFIX + "encrypted");
 

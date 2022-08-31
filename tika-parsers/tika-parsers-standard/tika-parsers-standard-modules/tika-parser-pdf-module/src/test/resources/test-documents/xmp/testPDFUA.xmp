@@ -1,0 +1,71 @@
+<?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>
+<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 5.4-c005 78.147326, 2012/08/23-13:03:03        ">
+  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+    <rdf:Description rdf:about=""
+                     xmlns:xmpMM="http://ns.adobe.com/xap/1.0/mm/"
+                     xmlns:stRef="http://ns.adobe.com/xap/1.0/sType/ResourceRef#"
+                     xmlns:stEvt="http://ns.adobe.com/xap/1.0/sType/ResourceEvent#"
+                     xmlns:xmp="http://ns.adobe.com/xap/1.0/"
+                     xmlns:dc="http://purl.org/dc/elements/1.1/"
+                     xmlns:pdf="http://ns.adobe.com/pdf/1.3/"
+                     xmlns:xmpRights="http://ns.adobe.com/xap/1.0/rights/"
+                     xmlns:pdfuaid="http://www.aiim.org/pdfua/ns/id/">
+      <xmpMM:InstanceID>uuid:32400bee-527d-4e9f-b095-87d12af3ba7a</xmpMM:InstanceID>
+      <xmpMM:OriginalDocumentID>adobe:docid:indd:a0f5e113-103c-11e1-b5d7-9f6e74271daa</xmpMM:OriginalDocumentID>
+      <xmpMM:DocumentID>xmp.id:1D1946350F2068118A6DAFDCDBC68BEA</xmpMM:DocumentID>
+      <xmpMM:RenditionClass>proof:pdf</xmpMM:RenditionClass>
+      <xmpMM:DerivedFrom rdf:parseType="Resource">
+        <stRef:instanceID>xmp.iid:1C1946350F2068118A6DAFDCDBC68BEA</stRef:instanceID>
+        <stRef:documentID>xmp.did:1965862E1E2068118C14E23DA81CC02A</stRef:documentID>
+        <stRef:originalDocumentID>adobe:docid:indd:a0f5e113-103c-11e1-b5d7-9f6e74271daa</stRef:originalDocumentID>
+        <stRef:renditionClass>default</stRef:renditionClass>
+      </xmpMM:DerivedFrom>
+      <xmpMM:History>
+        <rdf:Seq>
+          <rdf:li rdf:parseType="Resource">
+            <stEvt:action>converted</stEvt:action>
+            <stEvt:parameters>from application/x-indesign to application/pdf</stEvt:parameters>
+            <stEvt:softwareAgent>Adobe InDesign CS6 (Macintosh)</stEvt:softwareAgent>
+            <stEvt:changed>/</stEvt:changed>
+            <stEvt:when>2016-06-23T13:52:30+02:00</stEvt:when>
+          </rdf:li>
+        </rdf:Seq>
+      </xmpMM:History>
+      <xmp:CreateDate>2016-06-23T13:52:29+02:00</xmp:CreateDate>
+      <xmp:ModifyDate>2016-09-14T15:37:53+02:00</xmp:ModifyDate>
+      <xmp:MetadataDate>2016-09-14T15:37:53+02:00</xmp:MetadataDate>
+      <xmp:CreatorTool>Adobe InDesign CS6 (Macintosh)</xmp:CreatorTool>
+      <dc:format>application/pdf</dc:format>
+      <dc:title>
+        <rdf:Alt>
+          <rdf:li xml:lang="x-default">title</rdf:li>
+        </rdf:Alt>
+      </dc:title>
+      <dc:creator>
+        <rdf:Bag>
+          <rdf:li>Creator</rdf:li>
+        </rdf:Bag>
+      </dc:creator>
+      <dc:description>
+        <rdf:Alt>
+          <rdf:li xml:lang="x-default">description</rdf:li>
+        </rdf:Alt>
+      </dc:description>
+      <dc:rights>
+        <rdf:Alt>
+          <rdf:li xml:lang="x-default">© blah, 2016</rdf:li>
+        </rdf:Alt>
+      </dc:rights>
+      <dc:subject>
+        <rdf:Bag>
+          <rdf:li>subject</rdf:li>
+        </rdf:Bag>
+      </dc:subject>
+      <pdf:Producer>Adobe PDF Library 10.0.1</pdf:Producer>
+      <pdf:Keywords>keywords</pdf:Keywords>
+      <pdf:Trapped>False</pdf:Trapped>
+      <xmpRights:WebStatement>http://www.blahblah.de</xmpRights:WebStatement>
+      <pdfuaid:part>1</pdfuaid:part>
+    </rdf:Description>
+  </rdf:RDF>
+</x:xmpmeta>
