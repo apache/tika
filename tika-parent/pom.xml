@@ -232,6 +232,14 @@
         <role>committer</role>
       </roles>
     </developer>
+    <developer>
+      <name>Tilman Hausherr</name>
+      <id>tilman</id>
+      <timezone>Europe/Berlin</timezone>
+      <roles>
+        <role>committer</role>
+      </roles>
+    </developer>
   </developers>
   <contributors>
     <contributor>
