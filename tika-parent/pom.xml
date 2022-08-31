@@ -219,6 +219,14 @@
       </roles>
     </developer>
     <developer>
+      <name>Tilman Hausherr</name>
+      <id>tilman</id>
+      <timezone>Europe/Berlin</timezone>
+      <roles>
+        <role>committer</role>
+      </roles>
+    </developer>
+    <developer>
       <name>Jukka Zitting</name>
       <id>jukka</id>
       <roles>
