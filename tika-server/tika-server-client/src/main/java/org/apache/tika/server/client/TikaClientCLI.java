@@ -36,6 +36,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.pipes.FetchEmitTuple;
+import org.apache.tika.pipes.pipesiterator.CallablePipesIterator;
 import org.apache.tika.pipes.pipesiterator.PipesIterator;
 
 public class TikaClientCLI {
@@ -56,13 +57,14 @@ public class TikaClientCLI {
         ExecutorService executorService =
                 Executors.newFixedThreadPool(clientConfig.getNumThreads() + 1);
 
-        ExecutorCompletionService<Integer> completionService = new ExecutorCompletionService<>(executorService);
+        ExecutorCompletionService<Long> completionService =
+                new ExecutorCompletionService<>(executorService);
 
         final PipesIterator pipesIterator = PipesIterator.build(tikaConfigPath);
 
         final ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(QUEUE_SIZE);
 
-        completionService.submit(new PipesIteratorWrapper(pipesIterator, queue));
+        completionService.submit(new CallablePipesIterator(pipesIterator, queue));
 
         if (clientConfig.getTikaEndpoints().size() == clientConfig.getNumThreads()) {
             logDiffSizes(clientConfig.getTikaEndpoints().size(), clientConfig.getNumThreads());
@@ -84,7 +86,7 @@ public class TikaClientCLI {
 
         int finished = 0;
         while (finished < clientConfig.getNumThreads() + 1) {
-            Future<Integer> future = null;
+            Future<Long> future = null;
             try {
                 future = completionService.poll(30, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
@@ -110,7 +112,7 @@ public class TikaClientCLI {
                 "Each client will randomly select a server from this list", servers, numThreads);
     }
 
-    private class FetchWorker implements Callable<Integer> {
+    private class FetchWorker implements Callable<Long> {
         private final ArrayBlockingQueue<FetchEmitTuple> queue;
         private final TikaClient client;
 
@@ -124,7 +126,7 @@ public class TikaClientCLI {
         }
 
         @Override
-        public Integer call() throws Exception {
+        public Long call() throws Exception {
             while (true) {
 
                 FetchEmitTuple t = queue.poll(maxWaitMs, TimeUnit.MILLISECONDS);
@@ -134,7 +136,7 @@ public class TikaClientCLI {
                 if (t == PipesIterator.COMPLETED_SEMAPHORE) {
                     //potentially blocks forever
                     queue.put(PipesIterator.COMPLETED_SEMAPHORE);
-                    return 1;
+                    return 1l;
                 }
                 try {
                     LOGGER.debug("about to parse: {}", t.getFetchKey());
@@ -143,27 +145,6 @@ public class TikaClientCLI {
                     LOGGER.warn(t.getFetchKey().toString(), e);
                 }
             }
-        }
-    }
-
-    private static class PipesIteratorWrapper implements Callable<Integer> {
-        private final PipesIterator pipesIterator;
-        private final ArrayBlockingQueue<FetchEmitTuple> queue;
-        public PipesIteratorWrapper(PipesIterator pipesIterator,
-                                    ArrayBlockingQueue<FetchEmitTuple> queue) {
-            this.pipesIterator = pipesIterator;
-            this.queue = queue;
-        }
-
-        @Override
-        public Integer call() throws Exception {
-            for (FetchEmitTuple t : pipesIterator) {
-                //potentially blocks forever
-                queue.put(t);
-            }
-            //potentially blocks forever
-            queue.put(PipesIterator.COMPLETED_SEMAPHORE);
-            return 1;
         }
     }
 }
