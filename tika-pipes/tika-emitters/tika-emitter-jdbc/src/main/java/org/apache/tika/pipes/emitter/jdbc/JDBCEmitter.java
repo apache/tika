@@ -51,19 +51,36 @@ import org.apache.tika.utils.StringUtils;
  */
 public class JDBCEmitter extends AbstractEmitter implements Initializable, Closeable {
 
+    public enum AttachmentStrategy {
+        FIRST_ONLY, ALL
+        //anything else?
+    }
+
     private static final Logger LOGGER = LoggerFactory.getLogger(JDBCEmitter.class);
-    private static volatile boolean INITIALIZED = false;
     //the "write" lock is used to make the connection and to configure the insertstatement
     //the "read" lock is used for preparing the insert and inserting
     private static ReadWriteLock READ_WRITE_LOCK = new ReentrantReadWriteLock();
     private String connectionString;
     private String insert;
     private String createTable;
-    private String idColumn;
+    private String alterTable;
     private Map<String, String> keys;
     private Connection connection;
     private PreparedStatement insertStatement;
 
+    private AttachmentStrategy attachmentStrategy = AttachmentStrategy.FIRST_ONLY;
+
+    private volatile boolean initialized = false;
+
+    /**
+     * This is called immediately after the table is created.
+     * The purpose of this is to allow for adding a complex primary key or
+     * other constraint on the table after it is created.
+     * @param alterTable
+     */
+    public void setAlterTable(String alterTable) {
+        this.alterTable = alterTable;
+    }
     @Field
     public void setCreateTable(String createTable) {
         this.createTable = createTable;
@@ -72,11 +89,6 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     @Field
     public void setInsert(String insert) {
         this.insert = insert;
-    }
-
-    @Field
-    public void setIdColumn(String idColumn) {
-        this.idColumn = idColumn;
     }
 
     @Field
@@ -98,12 +110,69 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
         this.keys = keys;
     }
 
+    public void setAttachmentStrategy(AttachmentStrategy attachmentStrategy) {
+        this.attachmentStrategy = attachmentStrategy;
+    }
+
+    @Field
+    public void setAttachmentStrategy(String attachmentStrategy) {
+        if ("all".equalsIgnoreCase(attachmentStrategy)) {
+            setAttachmentStrategy(AttachmentStrategy.ALL);
+        } else if ("first_only".equalsIgnoreCase(attachmentStrategy)) {
+            setAttachmentStrategy(AttachmentStrategy.FIRST_ONLY);
+        } else {
+            throw new IllegalArgumentException("attachmentStrategy must be 'all' or 'first_only'");
+        }
+    }
     @Override
     public void emit(String emitKey, List<Metadata> metadataList)
             throws IOException, TikaEmitterException {
         if (metadataList == null || metadataList.size() < 1) {
             return;
         }
+        if (attachmentStrategy == AttachmentStrategy.FIRST_ONLY) {
+            emitFirstOnly(emitKey, metadataList);
+        } else {
+            emitAll(emitKey, metadataList);
+        }
+    }
+
+    private void emitAll(String emitKey, List<Metadata> metadataList) throws TikaEmitterException {
+        //we aren't currently batching inserts
+        //because of risk of crashing in pipes handler.
+        READ_WRITE_LOCK.readLock().lock();
+        try {
+            try {
+                for (int i = 0; i < metadataList.size(); i++) {
+                    insertStatement.clearParameters();
+                    int col = 0;
+                    insertStatement.setString(++col, emitKey);
+                    insertStatement.setInt(++col, i);
+                    for (Map.Entry<String, String> e : keys.entrySet()) {
+                        updateValue(insertStatement, ++col, e.getKey(), e.getValue(),
+                                i, metadataList);
+                    }
+                    insertStatement.addBatch();
+                }
+                insertStatement.executeBatch();
+            } finally {
+                READ_WRITE_LOCK.readLock().unlock();
+            }
+        } catch (SQLException e) {
+            try {
+                LOGGER.warn("problem during emit; going to try to reconnect", e);
+                //something went wrong
+                //try to reconnect
+                reconnect();
+            } catch (SQLException ex) {
+                throw new TikaEmitterException("Couldn't reconnect!", ex);
+            }
+            throw new TikaEmitterException("couldn't emit", e);
+        }
+
+    }
+
+    private void emitFirstOnly(String emitKey, List<Metadata> metadataList) throws TikaEmitterException {
         //we aren't currently batching inserts
         //because of risk of crashing in pipes handler.
         READ_WRITE_LOCK.readLock().lock();
@@ -113,7 +182,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
                 int i = 0;
                 insertStatement.setString(++i, emitKey);
                 for (Map.Entry<String, String> e : keys.entrySet()) {
-                    updateValue(insertStatement, ++i, e.getKey(), e.getValue(), metadataList);
+                    updateValue(insertStatement, ++i, e.getKey(), e.getValue(), 0, metadataList);
                 }
                 insertStatement.execute();
             } finally {
@@ -130,6 +199,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
             }
             throw new TikaEmitterException("couldn't emit", e);
         }
+
     }
 
     private void reconnect() throws SQLException {
@@ -153,9 +223,10 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     }
 
     private void updateValue(PreparedStatement insertStatement, int i, String key, String type,
+                             int metadataListIndex,
                              List<Metadata> metadataList) throws SQLException {
         //for now we're only taking the info from the container document.
-        Metadata metadata = metadataList.get(0);
+        Metadata metadata = metadataList.get(metadataListIndex);
         String val = metadata.get(key);
         switch (type) {
             case "string":
@@ -224,21 +295,29 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
         }
         try {
             READ_WRITE_LOCK.writeLock().lock();
-            if (!INITIALIZED && !StringUtils.isBlank(createTable)) {
+            if (!initialized && !StringUtils.isBlank(createTable)) {
                 try (Statement st = connection.createStatement()) {
                     st.execute(createTable);
-                    INITIALIZED = true;
+                    if (!StringUtils.isBlank(alterTable)) {
+                        st.execute(alterTable);
+                    }
+                    if (! connection.getAutoCommit()) {
+                        connection.commit();
+                    }
+                    connection.commit();
+                    initialized = true;
                 } catch (SQLException e) {
                     throw new TikaConfigException("can't create table", e);
                 }
             }
+
+            try {
+                insertStatement = connection.prepareStatement(insert);
+            } catch (SQLException e) {
+                throw new TikaConfigException("can't create insert statement", e);
+            }
         } finally {
             READ_WRITE_LOCK.writeLock().unlock();
-        }
-        try {
-            insertStatement = connection.prepareStatement(insert);
-        } catch (SQLException e) {
-            throw new TikaConfigException("can't create insert statement", e);
         }
 
     }
