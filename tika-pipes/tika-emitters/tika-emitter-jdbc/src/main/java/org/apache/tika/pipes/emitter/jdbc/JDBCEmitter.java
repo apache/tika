@@ -233,9 +233,21 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
             case "long":
                 updateLong(insertStatement, i, val);
                 break;
+            case "float":
+                updateFloat(insertStatement, i, val);
+                break;
             default:
                 throw new IllegalArgumentException("Can only process: 'string', 'boolean', 'int' " +
                         "and 'long' types so far.  Please open a ticket to request other types");
+        }
+    }
+
+    private void updateFloat(PreparedStatement insertStatement, int i, String val)
+            throws SQLException {
+        if (StringUtils.isBlank(val)) {
+            insertStatement.setNull(i, Types.FLOAT);
+        } else {
+            insertStatement.setFloat(i, Float.parseFloat(val));
         }
     }
 
