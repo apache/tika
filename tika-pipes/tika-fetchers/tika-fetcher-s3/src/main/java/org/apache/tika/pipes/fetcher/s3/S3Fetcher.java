@@ -95,14 +95,14 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
         int tries = 0;
         IOException ex = null;
         while (tries++ <= retries) {
-            if (tries > 0) {
-                LOGGER.debug("sleeping for 30 seconds before retry");
+            if (tries > 1) {
+                LOGGER.warn("sleeping for 30 seconds before retry");
                 try {
                     Thread.sleep(30000);
                 } catch (InterruptedException e) {
                     throw new RuntimeException("interrupted");
                 }
-                LOGGER.debug("re-initializing S3 client");
+                LOGGER.info("trying to re-initialize S3 client");
                 initialize(new HashMap<>());
             }
             try {
