@@ -41,6 +41,7 @@ import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.emitter.AbstractEmitter;
+import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
 import org.apache.tika.utils.StringUtils;
 
@@ -52,15 +53,9 @@ import org.apache.tika.utils.StringUtils;
  */
 public class JDBCEmitter extends AbstractEmitter implements Initializable, Closeable {
 
-    public enum AttachmentStrategy {
-        FIRST_ONLY, ALL
-        //anything else?
-    }
-
     private static final Logger LOGGER = LoggerFactory.getLogger(JDBCEmitter.class);
     //the "write" lock is used for creating the table
     private static ReadWriteLock READ_WRITE_LOCK = new ReentrantReadWriteLock();
-
     //this keeps track of which table + connection string have been created
     //so that only one table is created per table + connection string.
     //This is necessary for testing and if someone specifies multiple
@@ -73,9 +68,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     private Map<String, String> keys;
     private Connection connection;
     private PreparedStatement insertStatement;
-
     private AttachmentStrategy attachmentStrategy = AttachmentStrategy.FIRST_ONLY;
-
 
     /**
      * This is called immediately after the table is created.
@@ -132,30 +125,54 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
         }
     }
 
+    /**
+     * This executes the emit with each call.  For more efficient
+     * batch execution use {@link #emit(List)}.
+     *
+     * @param emitKey emit key
+     * @param metadataList list of metadata per file
+     * @throws IOException
+     * @throws TikaEmitterException
+     */
     @Override
     public void emit(String emitKey, List<Metadata> metadataList)
             throws IOException, TikaEmitterException {
         if (metadataList == null || metadataList.size() < 1) {
             return;
         }
-        if (attachmentStrategy == AttachmentStrategy.FIRST_ONLY) {
-            emitFirstOnly(emitKey, metadataList);
-        } else {
-            emitAll(emitKey, metadataList);
+        try {
+            if (attachmentStrategy == AttachmentStrategy.FIRST_ONLY) {
+                insertFirstOnly(emitKey, metadataList);
+                insertStatement.execute();
+            } else {
+                insertAll(emitKey, metadataList);
+                insertStatement.executeBatch();
+            }
+        } catch (SQLException e) {
+            try {
+                LOGGER.warn("problem during emit; going to try to reconnect", e);
+                //something went wrong
+                //try to reconnect
+                reconnect();
+            } catch (SQLException ex) {
+                throw new TikaEmitterException("Couldn't reconnect!", ex);
+            }
+            throw new TikaEmitterException("couldn't emit", e);
         }
     }
 
-    private void emitAll(String emitKey, List<Metadata> metadataList) throws TikaEmitterException {
+    @Override
+    public void emit(List<? extends EmitData> emitData) throws IOException, TikaEmitterException {
         try {
-            for (int i = 0; i < metadataList.size(); i++) {
-                insertStatement.clearParameters();
-                int col = 0;
-                insertStatement.setString(++col, emitKey);
-                insertStatement.setInt(++col, i);
-                for (Map.Entry<String, String> e : keys.entrySet()) {
-                    updateValue(insertStatement, ++col, e.getKey(), e.getValue(), i, metadataList);
+            if (attachmentStrategy == AttachmentStrategy.FIRST_ONLY) {
+                for (EmitData d : emitData) {
+                    insertFirstOnly(d.getEmitKey().getEmitKey(), d.getMetadataList());
+                    insertStatement.addBatch();
                 }
-                insertStatement.addBatch();
+            } else {
+                for (EmitData d : emitData) {
+                    insertAll(d.getEmitKey().getEmitKey(), d.getMetadataList());
+                }
             }
             insertStatement.executeBatch();
         } catch (SQLException e) {
@@ -169,32 +186,28 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
             }
             throw new TikaEmitterException("couldn't emit", e);
         }
-
     }
 
-    private void emitFirstOnly(String emitKey, List<Metadata> metadataList)
-            throws TikaEmitterException {
-
-        try {
+    private void insertAll(String emitKey, List<Metadata> metadataList) throws SQLException {
+        for (int i = 0; i < metadataList.size(); i++) {
             insertStatement.clearParameters();
-            int i = 0;
-            insertStatement.setString(++i, emitKey);
+            int col = 0;
+            insertStatement.setString(++col, emitKey);
+            insertStatement.setInt(++col, i);
             for (Map.Entry<String, String> e : keys.entrySet()) {
-                updateValue(insertStatement, ++i, e.getKey(), e.getValue(), 0, metadataList);
+                updateValue(insertStatement, ++col, e.getKey(), e.getValue(), i, metadataList);
             }
-            insertStatement.execute();
-        } catch (SQLException e) {
-            try {
-                LOGGER.warn("problem during emit; going to try to reconnect", e);
-                //something went wrong
-                //try to reconnect
-                reconnect();
-            } catch (SQLException ex) {
-                throw new TikaEmitterException("Couldn't reconnect!", ex);
-            }
-            throw new TikaEmitterException("couldn't emit", e);
+            insertStatement.addBatch();
         }
+    }
 
+    private void insertFirstOnly(String emitKey, List<Metadata> metadataList) throws SQLException {
+        insertStatement.clearParameters();
+        int i = 0;
+        insertStatement.setString(++i, emitKey);
+        for (Map.Entry<String, String> e : keys.entrySet()) {
+            updateValue(insertStatement, ++i, e.getKey(), e.getValue(), 0, metadataList);
+        }
     }
 
     private void reconnect() throws SQLException {
@@ -330,11 +343,6 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
         //require
     }
 
-    /*
-        TODO: This is currently not ever called.  We need rework the PipesParser
-        to ensure that emitters are closed cleanly.
-     */
-
     /**
      * @throws IOException
      */
@@ -345,5 +353,15 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
         } catch (SQLException e) {
             throw new IOException(e);
         }
+    }
+
+    /*
+        TODO: This is currently not ever called.  We need rework the PipesParser
+        to ensure that emitters are closed cleanly.
+     */
+
+    public enum AttachmentStrategy {
+        FIRST_ONLY, ALL
+        //anything else?
     }
 }
