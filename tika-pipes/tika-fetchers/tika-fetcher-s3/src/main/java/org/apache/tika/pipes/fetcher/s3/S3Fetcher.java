@@ -42,6 +42,7 @@ import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
+import org.apache.tika.exception.FileTooLongException;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
@@ -71,6 +72,7 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
     private AmazonS3 s3Client;
     private boolean spoolToTemp = true;
     private int retries = 0;
+    private long maxLength = -1;
 
     @Override
     public InputStream fetch(String fetchKey, Metadata metadata) throws TikaException, IOException {
@@ -137,6 +139,14 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
             synchronized (clientLock) {
                 s3Object = s3Client.getObject(objectRequest);
             }
+            long length = s3Object.getObjectMetadata().getContentLength();
+            metadata.set(Metadata.CONTENT_LENGTH, Long.toString(length));
+            if (maxLength > -1) {
+                if (length > maxLength) {
+                    throw new FileTooLongException(length, maxLength);
+                }
+            }
+            LOGGER.debug("took {} ms to fetch file's metadata", System.currentTimeMillis() - start);
 
             if (extractUserMetadata) {
                 for (Map.Entry<String, String> e : s3Object.getObjectMetadata().getUserMetadata()
@@ -152,7 +162,8 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
                 Path tmpPath = tmp.createTempFile();
                 Files.copy(s3Object.getObjectContent(), tmpPath, StandardCopyOption.REPLACE_EXISTING);
                 TikaInputStream tis = TikaInputStream.get(tmpPath, metadata, tmp);
-                LOGGER.debug("took {} ms to copy to local tmp file", System.currentTimeMillis() - start);
+                LOGGER.debug("took {} ms to fetch metadata and copy to local tmp file",
+                        System.currentTimeMillis() - start);
                 return tis;
             }
         } catch (Throwable e) {
@@ -223,6 +234,11 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
                     "credentialsProvider must be either 'profile' or 'instance'");
         }
         this.credentialsProvider = credentialsProvider;
+    }
+
+    @Field
+    public void setMaxLength(long maxLength) {
+        this.maxLength = maxLength;
     }
 
     /**
