@@ -183,6 +183,7 @@ least three +1 Tika PMC votes are cast.
           <excludes>
             <exclude>CHANGES.txt</exclude>
             <exclude>README.md</exclude>
+            <exclude>.gitattributes</exclude>
           </excludes>
         </configuration>
       </plugin>
