@@ -1,3 +1,10 @@
+Release 1.28.5 - 9/8/2022
+
+   * General dependency upgrades (TIKA-3793).
+
+   * Avoid infinite loop in bookmark extraction from PDFs (TIKA-3832).
+
+
 Release 1.28.4 - 6/13/2022
 
    * General dependency upgrades (TIKA-3780).
