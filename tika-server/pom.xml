@@ -70,7 +70,7 @@
     <dependency>
       <groupId>com.opencsv</groupId>
       <artifactId>opencsv</artifactId>
-      <version>5.6</version>
+      <version>5.7.0</version>
     </dependency>
     <!-- avoid org.apache.commons:commons-text:1.9 dependent on org.apache.commons:commons-lang3:3.11 -->
     <dependency>
