@@ -396,7 +396,7 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <zstd.version>1.5.2-3</zstd.version>
     <kafka.version>3.2.1</kafka.version>
-    <netty.version>4.1.80.Final</netty.version>
+    <netty.version>4.1.81.Final</netty.version>
   </properties>
 
   <dependencyManagement>
