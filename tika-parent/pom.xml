@@ -296,7 +296,7 @@
 
     <!-- dependency versions -->
 
-    <aws.version>1.12.299</aws.version>
+    <aws.version>1.12.300</aws.version>
     <google.cloud.version>2.11.3</google.cloud.version>
     <asm.version>9.3</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
@@ -383,7 +383,7 @@
     <slf4j.version>1.7.36</slf4j.version>
     <solrj.version>8.11.2</solrj.version>
     <spring.version>5.3.22</spring.version>
-    <sqlite.version>3.39.2.1</sqlite.version>
+    <sqlite.version>3.39.3.0</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
     <test.containers.version>1.17.3</test.containers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
@@ -394,8 +394,8 @@
     <vorbis.version>0.8</vorbis.version>
     <xerces.version>2.12.2</xerces.version>
     <xmpcore.version>6.1.11</xmpcore.version>
-    <zstd.version>1.5.2-3</zstd.version>
-    <kafka.version>3.2.2</kafka.version>
+    <zstd.version>1.5.2-4</zstd.version>
+    <kafka.version>3.2.1</kafka.version>
     <netty.version>4.1.81.Final</netty.version>
   </properties>
 
