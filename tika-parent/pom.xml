@@ -296,7 +296,7 @@
 
     <!-- dependency versions -->
 
-    <aws.version>1.12.300</aws.version>
+    <aws.version>1.12.301</aws.version>
     <google.cloud.version>2.11.3</google.cloud.version>
     <asm.version>9.3</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
@@ -395,7 +395,7 @@
     <xerces.version>2.12.2</xerces.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <zstd.version>1.5.2-4</zstd.version>
-    <kafka.version>3.2.1</kafka.version>
+    <kafka.version>3.2.2</kafka.version>
     <netty.version>4.1.81.Final</netty.version>
   </properties>
 
@@ -694,7 +694,7 @@
       <dependency>
         <groupId>org.netpreserve</groupId>
         <artifactId>jwarc</artifactId>
-        <version>0.18.1</version>
+        <version>0.19.0</version>
       </dependency>
       <dependency>
         <groupId>org.ops4j.base</groupId>
