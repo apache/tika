@@ -1298,6 +1298,13 @@ public class TestMimeTypes {
         assertTypeByData("text/html", "testBrokenHTMLContainingRFC822.html");
     }
 
+    @Test
+    public void testE57() throws Exception {
+        assertTypeByName("model/e57", "testE57_header.e57");
+        assertTypeByData("model/e57", "testE57_header.e57");
+        assertTypeByNameAndData("model/e57", "testE57_header.e57");
+    }
+
     private void assertText(byte[] prefix) throws IOException {
         assertMagic("text/plain", prefix);
     }
