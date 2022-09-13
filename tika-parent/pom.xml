@@ -694,7 +694,7 @@
       <dependency>
         <groupId>org.netpreserve</groupId>
         <artifactId>jwarc</artifactId>
-        <version>0.18.1</version>
+        <version>0.19.0</version>
       </dependency>
       <dependency>
         <groupId>org.ops4j.base</groupId>
