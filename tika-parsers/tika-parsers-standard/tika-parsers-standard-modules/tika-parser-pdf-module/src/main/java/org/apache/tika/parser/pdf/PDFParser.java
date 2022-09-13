@@ -42,7 +42,9 @@ import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
 import org.apache.pdfbox.pdmodel.fixup.AbstractFixup;
 import org.apache.pdfbox.pdmodel.fixup.PDDocumentFixup;
 import org.apache.pdfbox.pdmodel.fixup.processor.AcroFormDefaultsProcessor;
+import org.apache.pdfbox.pdmodel.interactive.digitalsignature.PDSignature;
 import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm;
+import org.apache.pdfbox.pdmodel.interactive.form.PDSignatureField;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -178,6 +180,7 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
             boolean hasXFA = hasXFA(pdfDocument, metadata);
             boolean hasMarkedContent = hasMarkedContent(pdfDocument, metadata);
             extractMetadata(pdfDocument, metadata, context);
+            extractSignatures(pdfDocument, metadata);
             AccessChecker checker = localConfig.getAccessChecker();
             checker.check(metadata);
             renderPagesBeforeParse(tstream, handler, metadata, context, localConfig);
@@ -216,6 +219,38 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
                     tstream.close();
                 }
             }
+        }
+    }
+    private void extractSignatures(PDDocument pdfDocument, Metadata metadata) {
+        boolean hasSignature = false;
+        try {
+            for (PDSignatureField signatureField : pdfDocument.getSignatureFields()) {
+                PDSignature signature = signatureField.getSignature();
+                if (signature == null) {
+                    continue;
+                }
+                PDMetadataExtractor.addNotNull(TikaCoreProperties.SIGNATURE_NAME,
+                        signature.getName(), metadata);
+
+                Calendar date = signature.getSignDate();
+                if (date != null) {
+                    metadata.add(TikaCoreProperties.SIGNATURE_DATE, date);
+                }
+                PDMetadataExtractor.addNotNull(TikaCoreProperties.SIGNATURE_CONTACT_INFO,
+                        signature.getContactInfo(), metadata);
+                PDMetadataExtractor.addNotNull(TikaCoreProperties.SIGNATURE_FILTER,
+                        signature.getFilter(), metadata);
+                PDMetadataExtractor.addNotNull(TikaCoreProperties.SIGNATURE_LOCATION,
+                        signature.getLocation(), metadata);
+                PDMetadataExtractor.addNotNull(TikaCoreProperties.SIGNATURE_REASON,
+                        signature.getReason(), metadata);
+                hasSignature = true;
+            }
+        } catch (IOException e) {
+            //swallow
+        }
+        if (hasSignature) {
+            metadata.set(TikaCoreProperties.HAS_SIGNATURE, hasSignature);
         }
     }
 

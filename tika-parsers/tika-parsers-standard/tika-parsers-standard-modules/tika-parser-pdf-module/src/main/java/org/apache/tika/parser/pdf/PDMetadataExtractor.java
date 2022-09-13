@@ -309,6 +309,12 @@ public class PDMetadataExtractor {
         }
     }
 
+    static void addNotNull(Property property, String value, Metadata metadata) {
+        if (! StringUtils.isBlank(value)) {
+            metadata.add(property, value);
+        }
+    }
+
     /**
      * As of this writing, XMPSchema can contain bags or sequence lists
      * for some attributes...despite standards documentation.

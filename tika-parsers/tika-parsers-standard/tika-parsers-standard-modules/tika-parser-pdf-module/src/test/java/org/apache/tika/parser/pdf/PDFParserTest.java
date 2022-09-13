@@ -1390,32 +1390,36 @@ public class PDFParserTest extends TikaTest {
         }
     }
 
-            /**
-            @Test
-            public void testWriteLimit() throws Exception {
-                for (int i = 0; i < 10000; i += 13) {
-                    Metadata metadata = testWriteLimit("testPDF_childAttachments.pdf", i);
-                    assertEquals("true", metadata.get(TikaCoreProperties.WRITE_LIMIT_REACHED));
-                    int len = metadata.get(TikaCoreProperties.TIKA_CONTENT).length();
-                    System.out.println(len + " : " + i);
-                    assertTrue(len <= i);
-                }
-            }
+    /**
+     * TODO -- need to test signature extraction
+     */
 
-            private Metadata testWriteLimit(String fileName, int limit) throws Exception {
-                BasicContentHandlerFactory factory = new BasicContentHandlerFactory(
-                        BasicContentHandlerFactory.HANDLER_TYPE.TEXT, limit
-                );
-                ContentHandler contentHandler = factory.getNewContentHandler();
-                Metadata metadata = new Metadata();
-                ParseContext parseContext = new ParseContext();
-                try (InputStream is = getResourceAsStream("/test-documents/" + fileName)) {
-                    AUTO_DETECT_PARSER.parse(is, contentHandler, metadata, parseContext);
-                } catch (WriteLimitReachedException e) {
-                    //e.printStackTrace();
-                }
-                metadata.set(TikaCoreProperties.TIKA_CONTENT, contentHandler.toString());
-                return metadata;
-            }*/
+    /**
+    @Test
+    public void testWriteLimit() throws Exception {
+        for (int i = 0; i < 10000; i += 13) {
+            Metadata metadata = testWriteLimit("testPDF_childAttachments.pdf", i);
+            assertEquals("true", metadata.get(TikaCoreProperties.WRITE_LIMIT_REACHED));
+            int len = metadata.get(TikaCoreProperties.TIKA_CONTENT).length();
+            System.out.println(len + " : " + i);
+            assertTrue(len <= i);
+        }
+    }
+
+    private Metadata testWriteLimit(String fileName, int limit) throws Exception {
+        BasicContentHandlerFactory factory = new BasicContentHandlerFactory(
+                BasicContentHandlerFactory.HANDLER_TYPE.TEXT, limit
+        );
+        ContentHandler contentHandler = factory.getNewContentHandler();
+        Metadata metadata = new Metadata();
+        ParseContext parseContext = new ParseContext();
+        try (InputStream is = getResourceAsStream("/test-documents/" + fileName)) {
+            AUTO_DETECT_PARSER.parse(is, contentHandler, metadata, parseContext);
+        } catch (WriteLimitReachedException e) {
+            //e.printStackTrace();
+        }
+        metadata.set(TikaCoreProperties.TIKA_CONTENT, contentHandler.toString());
+        return metadata;
+    }*/
 
 }

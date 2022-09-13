@@ -144,6 +144,10 @@ public final class Property implements Comparable<Property> {
         return new Property(name, true, ValueType.DATE);
     }
 
+    public static Property internalDateBag(String name) {
+        return new Property(name, true, PropertyType.BAG, ValueType.DATE);
+    }
+
     public static Property internalInteger(String name) {
         return new Property(name, true, ValueType.INTEGER);
     }
