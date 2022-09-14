@@ -95,6 +95,8 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
     private ContentHandlerDecoratorFactory contentHandlerDecoratorFactory =
             NOOP_CONTENT_HANDLER_DECORATOR_FACTORY;
 
+    private DigestingParser.DigesterFactory digesterFactory = null;
+
     /**
      * Creates a SecureContentHandlerConfig using the passed in parameters.
      *
@@ -185,6 +187,14 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
         return contentHandlerDecoratorFactory;
     }
 
+    public void setDigesterFactory(DigestingParser.DigesterFactory digesterFactory) {
+        this.digesterFactory = digesterFactory;
+    }
+
+    public DigestingParser.DigesterFactory getDigesterFactory() {
+        return this.digesterFactory;
+    }
+
     @Override
     public String toString() {
         return "AutoDetectParserConfig{" + "spoolToDisk=" + spoolToDisk + ", outputThreshold=" +
@@ -193,7 +203,7 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
                 maximumPackageEntryDepth + ", metadataWriteFilterFactory=" +
                 metadataWriteFilterFactory + ", embeddedDocumentExtractorFactory=" +
                 embeddedDocumentExtractorFactory + ", contentHandlerDecoratorFactory=" +
-                contentHandlerDecoratorFactory + '}';
+                contentHandlerDecoratorFactory + ", digesterFactory=" + digesterFactory + '}';
     }
 }
 

@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.io.InputStream;
 import java.util.List;
 
@@ -95,5 +97,28 @@ public class AutoDetectParserConfigTest extends TikaTest {
         String txt = getXML("testPPT_EmbeddedPDF.pptx", p).xml;
         assertContainsCount("THE APACHE TIKA PROJECT WAS FORMALLY", txt, 2);
         assertContainsCount("15.9.2007 11:02", txt, 2);
+    }
+
+    @Test
+    public void testDigests() throws Exception {
+        //test to make sure that the decorator is only applied once for
+        //legacy (e.g. not RecursiveParserWrapperHandler) parsing
+        TikaConfig tikaConfig = null;
+        try (InputStream is = OOXMLParserTest.class.getResourceAsStream(
+                "/configs/tika-config-digests.xml")) {
+            tikaConfig = new TikaConfig(is);
+        }
+        Parser p = new AutoDetectParser(tikaConfig);
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.pptx", p);
+        assertEquals("SO67W5OGGMOFPMFQTHTNL5YU5EQXWPMNEPU7HKOZX2ULHRQICRZA====",
+                metadataList.get(0).get("X-TIKA:digest:SHA256"));
+
+        assertEquals("a16f14215ebbfa47bd995e799f03cb18",
+                metadataList.get(0).get("X-TIKA:digest:MD5"));
+
+        assertEquals("Q7D3RFV6DNGZ4BQIS6UKNWX4CDIKPIGDU2D7ADBUDVOBYSZHF7FQ====",
+                metadataList.get(6).get("X-TIKA:digest:SHA256"));
+        assertEquals("90a8b249a6d6b6cb127c59e01cef3aaa",
+                metadataList.get(6).get("X-TIKA:digest:MD5"));
     }
 }
