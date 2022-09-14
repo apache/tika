@@ -224,8 +224,7 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
     private void extractSignatures(PDDocument pdfDocument, Metadata metadata) {
         boolean hasSignature = false;
         try {
-            for (PDSignatureField signatureField : pdfDocument.getSignatureFields()) {
-                PDSignature signature = signatureField.getSignature();
+            for (PDSignature signature : pdfDocument.getSignatureDictionaries()) {
                 if (signature == null) {
                     continue;
                 }

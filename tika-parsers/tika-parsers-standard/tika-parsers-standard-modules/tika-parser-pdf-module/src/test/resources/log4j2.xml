@@ -23,10 +23,9 @@
     <Console name="Console" target="SYSTEM_ERR">
       <PatternLayout pattern="%-5p [%t] %d{HH:mm:ss,SSS} %c %m%n"/>
     </Console>
-
-    <File name="pdfbox-appender" fileName="logs/pdfbox-${sys:pipesClientId}.log">
+    <Console name="pdfbox-appender" target="SYSTEM_ERR">
       <PatternLayout pattern="%-5p [%t] %d{HH:mm:ss,SSS} %c %m%n"/>
-    </File>
+    </Console>
   </Appenders>
   <Loggers>
     <Root level="info">
