@@ -27,7 +27,6 @@ import static org.apache.tika.detect.zip.PackageConstants.TAR;
 import static org.apache.tika.detect.zip.PackageConstants.ZIP;
 
 import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -55,6 +54,7 @@ import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException.
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -425,8 +425,9 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         //Try to detect charset of archive entry in case of non-unicode filename is used
         if (detectCharsetsInEntryNames && entry instanceof ZipArchiveEntry) {
             Charset candidate =
-                    getEncodingDetector().detect(new ByteArrayInputStream(((ZipArchiveEntry) entry).getRawName()),
-                        parentMetadata);
+                    getEncodingDetector().detect(
+                            new UnsynchronizedByteArrayInputStream(((ZipArchiveEntry) entry).getRawName()),
+                            parentMetadata);
             if (candidate != null) {
                 name = new String(((ZipArchiveEntry) entry).getRawName(), candidate);
             }

@@ -18,11 +18,11 @@
 package org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006;
 
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -115,6 +115,6 @@ class BinaryDataHandler extends AbstractPartHandler {
 
     private InputStream getInputStream() {
         byte[] bytes = base64.decode(buffer.toString());
-        return new ByteArrayInputStream(bytes);
+        return new UnsynchronizedByteArrayInputStream(bytes);
     }
 }

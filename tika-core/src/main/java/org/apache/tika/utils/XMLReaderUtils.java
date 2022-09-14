@@ -19,6 +19,7 @@ package org.apache.tika.utils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Reader;
 import java.io.Serializable;
 import java.io.StringReader;
 import java.lang.reflect.Method;
@@ -401,6 +402,36 @@ public class XMLReaderUtils implements Serializable {
     }
 
     /**
+     * This checks context for a user specified {@link DocumentBuilder}.
+     * If one is not found, this reuses a DocumentBuilder from the pool.
+     *
+     * @param reader  reader (character stream) to parse
+     * @param context context to use
+     * @return a document
+     * @throws TikaException
+     * @throws IOException
+     * @throws SAXException
+     * @since Apache Tika 2.5
+     */
+    public static Document buildDOM(Reader reader, ParseContext context)
+            throws TikaException, IOException, SAXException {
+        DocumentBuilder builder = context.get(DocumentBuilder.class);
+        PoolDOMBuilder poolBuilder = null;
+        if (builder == null) {
+            poolBuilder = acquireDOMBuilder();
+            builder = poolBuilder.getDocumentBuilder();
+        }
+
+        try {
+            return builder.parse(new InputSource(reader));
+        } finally {
+            if (poolBuilder != null) {
+                releaseDOMBuilder(poolBuilder);
+            }
+        }
+    }
+
+    /**
      * Builds a Document with a DocumentBuilder from the pool
      *
      * @param path path to parse
@@ -480,6 +511,38 @@ public class XMLReaderUtils implements Serializable {
         }
         try {
             saxParser.parse(is, new OfflineContentHandler(contentHandler));
+        } finally {
+            if (poolSAXParser != null) {
+                releaseParser(poolSAXParser);
+            }
+        }
+    }
+
+    /**
+     * This checks context for a user specified {@link SAXParser}.
+     * If one is not found, this reuses a SAXParser from the pool.
+     *
+     * @param reader         reader (character stream) to parse
+     * @param contentHandler handler to use; this wraps a {@link OfflineContentHandler}
+     *                       to the content handler as an extra layer of defense against
+     *                       external entity vulnerabilities
+     * @param context        context to use
+     * @return
+     * @throws TikaException
+     * @throws IOException
+     * @throws SAXException
+     * @since Apache Tika 2.5
+     */
+    public static void parseSAX(Reader reader, ContentHandler contentHandler, ParseContext context)
+            throws TikaException, IOException, SAXException {
+        SAXParser saxParser = context.get(SAXParser.class);
+        PoolSAXParser poolSAXParser = null;
+        if (saxParser == null) {
+            poolSAXParser = acquireSAXParser();
+            saxParser = poolSAXParser.getSAXParser();
+        }
+        try {
+            saxParser.parse(new InputSource(reader), new OfflineContentHandler(contentHandler));
         } finally {
             if (poolSAXParser != null) {
                 releaseParser(poolSAXParser);

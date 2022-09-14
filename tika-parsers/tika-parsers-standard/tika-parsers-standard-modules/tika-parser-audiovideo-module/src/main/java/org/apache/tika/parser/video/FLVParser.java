@@ -18,7 +18,6 @@ package org.apache.tika.parser.video;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,6 +29,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -224,25 +224,26 @@ public class FLVParser extends AbstractParser {
                     }
                 }
 
-                ByteArrayInputStream is = new ByteArrayInputStream(metaBytes);
+                try (
+                        UnsynchronizedByteArrayInputStream is = new UnsynchronizedByteArrayInputStream(metaBytes);
+                        DataInputStream dis = new DataInputStream(is);
+                ) {
+                    Object data = null;
 
-                DataInputStream dis = new DataInputStream(is);
+                    for (int i = 0; i < 2; i++) {
+                        data = readAMFData(dis, -1);
+                    }
 
-                Object data = null;
-
-                for (int i = 0; i < 2; i++) {
-                    data = readAMFData(dis, -1);
-                }
-
-                if (data instanceof Map) {
-                    // TODO if there are multiple metadata values with same key (in
-                    // separate AMF blocks, we currently loose previous values)
-                    Map<String, Object> extractedMetadata = (Map<String, Object>) data;
-                    for (Entry<String, Object> entry : extractedMetadata.entrySet()) {
-                        if (entry.getValue() == null) {
-                            continue;
+                    if (data instanceof Map) {
+                        // TODO if there are multiple metadata values with same key (in
+                        // separate AMF blocks, we currently loose previous values)
+                        Map<String, Object> extractedMetadata = (Map<String, Object>) data;
+                        for (Entry<String, Object> entry : extractedMetadata.entrySet()) {
+                            if (entry.getValue() == null) {
+                                continue;
+                            }
+                            metadata.set(entry.getKey(), entry.getValue().toString());
                         }
-                        metadata.set(entry.getKey(), entry.getValue().toString());
                     }
                 }
 

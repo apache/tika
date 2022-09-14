@@ -19,8 +19,6 @@ package org.apache.tika.parser.mail;
 import static org.apache.tika.utils.DateUtils.MIDDAY;
 import static org.apache.tika.utils.DateUtils.UTC;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.DateFormat;
@@ -39,6 +37,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
+import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.apache.james.mime4j.MimeException;
 import org.apache.james.mime4j.codec.DecodeMonitor;
 import org.apache.james.mime4j.codec.DecoderUtil;
@@ -231,7 +231,7 @@ class MailContentHandler implements ContentHandler {
         //if we're in a multipart/alternative or any one of its children
         //add the bodypart to the latest that was added
         if (!extractAllAlternatives && alternativePartBuffer.size() > 0) {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
             IOUtils.copy(is, bos);
             alternativePartBuffer.peek().children.add(new BodyContents(submd, bos.toByteArray()));
         } else if (!extractAllAlternatives && parts.size() < 2) {
@@ -239,11 +239,11 @@ class MailContentHandler implements ContentHandler {
             //and you're not in an alternative part block
             //and you're text/html, put that in the body of the email
             //otherwise treat as a regular attachment
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
             IOUtils.copy(is, bos);
-            byte[] bytes = bos.toByteArray();
+            final byte[] bytes = bos.toByteArray();
             if (detectTextOrHtml(submd, bytes)) {
-                handleInlineBodyPart(new BodyContents(submd, bos.toByteArray()));
+                handleInlineBodyPart(new BodyContents(submd, bytes));
             } else {
                 //else handle as you would any other embedded content
                 try (TikaInputStream tis = TikaInputStream.get(bytes)) {
@@ -601,7 +601,7 @@ class MailContentHandler implements ContentHandler {
                     inlineMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
                             MediaType.TEXT_PLAIN.toString());
                 }
-                parser.parse(new ByteArrayInputStream(part.bytes),
+                parser.parse(new UnsynchronizedByteArrayInputStream(part.bytes),
                         new EmbeddedContentHandler(new BodyContentHandler(handler)), inlineMetadata,
                         parseContext);
             } catch (SAXException | TikaException e) {

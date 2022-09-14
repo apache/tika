@@ -16,13 +16,13 @@
  */
 package org.apache.tika.detect;
 
-import java.io.ByteArrayInputStream;
 import java.io.CharConversionException;
 import java.io.InputStream;
 import java.util.Arrays;
 import javax.xml.namespace.QName;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -43,7 +43,7 @@ public class XmlRootExtractor {
         // this loop should be very rare
         while (true) {
             try {
-                return extractRootElement(new ByteArrayInputStream(data), true);
+                return extractRootElement(new UnsynchronizedByteArrayInputStream(data), true);
             } catch (MalformedCharException e) {
                 // see TIKA-3596, try to handle truncated/bad encoded XML files
                 int newLen = data.length / 2;

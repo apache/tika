@@ -18,8 +18,6 @@ package org.apache.tika.pipes.emitter.azblob;
 
 import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
@@ -35,6 +33,8 @@ import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
+import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -87,7 +87,7 @@ public class AZBlobEmitter extends AbstractEmitter implements Initializable, Str
         }
         //TODO: estimate size of metadata list.  Above a certain size,
         //create a temp file?
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
         try (Writer writer = new OutputStreamWriter(bos, StandardCharsets.UTF_8)) {
             JsonMetadataList.toJson(metadataList, writer);
         } catch (IOException e) {
@@ -126,9 +126,10 @@ public class AZBlobEmitter extends AbstractEmitter implements Initializable, Str
             LOGGER.debug("relying on the content-length set in the metadata object: {}", length);
             write(path, userMetadata, is, length);
         } else {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            IOUtils.copy(is, bos);
-            write(path, userMetadata, bos.toByteArray());
+            try (UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream()) {
+                IOUtils.copy(is, bos);
+                write(path, userMetadata, bos.toByteArray());
+            }
         }
     }
 
@@ -154,7 +155,7 @@ public class AZBlobEmitter extends AbstractEmitter implements Initializable, Str
         LOGGER.debug("about to emit to target container: ({}) path:({})", container, actualPath);
         BlobClient blobClient = blobContainerClient.getBlobClient(actualPath);
         updateMetadata(blobClient, userMetadata);
-        blobClient.upload(new ByteArrayInputStream(bytes), bytes.length, overwriteExisting);
+        blobClient.upload(new UnsynchronizedByteArrayInputStream(bytes), bytes.length, overwriteExisting);
     }
 
     private void updateMetadata(BlobClient blobClient, Metadata userMetadata) {

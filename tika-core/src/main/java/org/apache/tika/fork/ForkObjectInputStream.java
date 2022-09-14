@@ -67,9 +67,9 @@ class ForkObjectInputStream extends ObjectInputStream {
      */
     public static void sendObject(Object object, DataOutputStream output) throws IOException {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        ObjectOutputStream serializer = new ObjectOutputStream(buffer);
-        serializer.writeObject(object);
-        serializer.close();
+        try (ObjectOutputStream serializer = new ObjectOutputStream(buffer)) {
+            serializer.writeObject(object);
+        }
 
         byte[] data = buffer.toByteArray();
         output.writeInt(data.length);

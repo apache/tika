@@ -17,7 +17,6 @@
 package org.apache.tika.pipes.fetcher.http;
 
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -38,6 +37,7 @@ import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.Header;
 import org.apache.http.HttpConnection;
@@ -310,9 +310,9 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
             return "";
         }
         try (InputStream is = response.getEntity().getContent()) {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
             IOUtils.copyLarge(is, bos, 0, maxErrMsgSize);
-            return new String(bos.toByteArray(), StandardCharsets.UTF_8);
+            return bos.toString(StandardCharsets.UTF_8);
         } catch (IOException e) {
             LOG.warn("IOException trying to read error message", e);
             return "";

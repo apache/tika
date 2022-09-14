@@ -19,8 +19,6 @@ package org.apache.tika.parser.mbox;
 import static org.apache.tika.parser.mailcommons.MailDateParser.parseDate;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -36,6 +34,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -110,7 +109,7 @@ public class MboxParser extends AbstractParser {
                     if (curLine == null) {
                         break;
                     }
-                    ByteArrayOutputStream message = new ByteArrayOutputStream(100000);
+                    UnsynchronizedByteArrayOutputStream message = new UnsynchronizedByteArrayOutputStream(100000);
                     do {
                         if (curLine.startsWith(" ") || curLine.startsWith("\t")) {
                             String latestLine = multiline.poll();
@@ -130,8 +129,7 @@ public class MboxParser extends AbstractParser {
                         saveHeaderInMetadata(mailMetadata, item);
                     }
 
-                    ByteArrayInputStream messageStream =
-                            new ByteArrayInputStream(message.toByteArray());
+                    InputStream messageStream = message.toInputStream();
                     message = null;
 
                     if (extractor.shouldParseEmbedded(mailMetadata)) {

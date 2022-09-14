@@ -22,8 +22,6 @@ import static org.apache.tika.pipes.PipesServer.STATUS.READY;
 import static org.apache.tika.pipes.PipesServer.STATUS.lookup;
 import static org.apache.tika.pipes.PipesServer.TIMEOUT_EXIT_CODE;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -41,6 +39,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
+import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -147,7 +147,7 @@ public class PipesClient implements Closeable {
         long start = System.currentTimeMillis();
         FutureTask<PipesResult> futureTask = new FutureTask<>(() -> {
 
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
             try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bos)) {
                 objectOutputStream.writeObject(t);
             }
@@ -331,7 +331,7 @@ public class PipesClient implements Closeable {
         byte[] bytes = new byte[length];
         input.readFully(bytes);
         try (ObjectInputStream objectInputStream = new ObjectInputStream(
-                new ByteArrayInputStream(bytes))) {
+                new UnsynchronizedByteArrayInputStream(bytes))) {
             EmitData emitData = (EmitData) objectInputStream.readObject();
 
             String stack = getStack(emitData);
@@ -385,7 +385,7 @@ public class PipesClient implements Closeable {
         output = new DataOutputStream(process.getOutputStream());
 
         //wait for ready signal
-        final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        final UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
         FutureTask<Integer> futureTask = new FutureTask<>(() -> {
             int b = input.read();
             int read = 1;
@@ -408,7 +408,7 @@ public class PipesClient implements Closeable {
             }
             if (bos.size() > 0) {
                 LOG.warn("pipesClientId={}: From forked process before start byte: {}",
-                        pipesClientId, new String(bos.toByteArray(), StandardCharsets.UTF_8));
+                        pipesClientId, bos.toString(StandardCharsets.UTF_8));
             }
             return 1;
         });
@@ -428,7 +428,7 @@ public class PipesClient implements Closeable {
             LOG.error("pipesClientId={} didn't receive ready byte from server within " +
                             "StartupTimeoutMillis {}; ms elapsed {}; did read >{}<",
                     pipesClientId, pipesConfig.getStartupTimeoutMillis(),
-                    elapsed, new String(bos.toByteArray(), StandardCharsets.UTF_8));
+                    elapsed, bos.toString(StandardCharsets.UTF_8));
             destroyForcibly();
             throw e;
         } finally {
@@ -436,8 +436,8 @@ public class PipesClient implements Closeable {
         }
     }
 
-    private static String getMsg(String msg, ByteArrayOutputStream bos) {
-        String readSoFar = new String(bos.toByteArray(), StandardCharsets.UTF_8);
+    private static String getMsg(String msg, UnsynchronizedByteArrayOutputStream bos) {
+        String readSoFar = bos.toString(StandardCharsets.UTF_8);
         if (StringUtils.isBlank(readSoFar)) {
             return msg;
         } else {

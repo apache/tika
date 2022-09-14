@@ -20,7 +20,6 @@ package org.apache.tika.parser.pot;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -37,6 +36,7 @@ import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteWatchdog;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.exec.environment.EnvironmentUtils;
+import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
@@ -154,22 +154,22 @@ public class PooledTimeSeriesParser extends AbstractParser {
         }
     }
 
-    private String computePoT(File input) throws IOException, TikaException {
+    private String computePoT(File input) throws IOException {
 
         CommandLine cmdLine = new CommandLine("pooled-time-series");
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        cmdLine.addArgument("-f");
-        cmdLine.addArgument(input.getAbsolutePath());
-        LOG.trace("Executing: {}", cmdLine);
-        DefaultExecutor exec = new DefaultExecutor();
-        exec.setExitValue(0);
-        ExecuteWatchdog watchdog = new ExecuteWatchdog(60000);
-        exec.setWatchdog(watchdog);
-        PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
-        exec.setStreamHandler(streamHandler);
-        int exitValue = exec.execute(cmdLine, EnvironmentUtils.getProcEnvironment());
-        return outputStream.toString("UTF-8");
-
+        try (UnsynchronizedByteArrayOutputStream outputStream = new UnsynchronizedByteArrayOutputStream()) {
+            cmdLine.addArgument("-f");
+            cmdLine.addArgument(input.getAbsolutePath());
+            LOG.trace("Executing: {}", cmdLine);
+            DefaultExecutor exec = new DefaultExecutor();
+            exec.setExitValue(0);
+            ExecuteWatchdog watchdog = new ExecuteWatchdog(60000);
+            exec.setWatchdog(watchdog);
+            PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
+            exec.setStreamHandler(streamHandler);
+            int exitValue = exec.execute(cmdLine, EnvironmentUtils.getProcEnvironment());
+            return outputStream.toString(UTF_8);
+        }
     }
 
     /**

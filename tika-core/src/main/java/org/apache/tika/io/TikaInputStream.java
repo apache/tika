@@ -19,7 +19,6 @@ package org.apache.tika.io;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
@@ -38,6 +37,7 @@ import java.sql.Blob;
 import java.sql.SQLException;
 
 import org.apache.commons.io.input.TaggedInputStream;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -300,7 +300,7 @@ public class TikaInputStream extends TaggedInputStream {
      */
     public static TikaInputStream get(byte[] data, Metadata metadata) {
         metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(data.length));
-        return new TikaInputStream(new ByteArrayInputStream(data), new TemporaryResources(),
+        return new TikaInputStream(new UnsynchronizedByteArrayInputStream(data), new TemporaryResources(),
                 data.length);
     }
 

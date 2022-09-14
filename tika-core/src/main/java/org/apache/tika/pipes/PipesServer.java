@@ -16,8 +16,6 @@
  */
 package org.apache.tika.pipes;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -31,6 +29,8 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
+import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
@@ -159,7 +159,7 @@ public class PipesServer implements Runnable {
             PipesServer server =
                     new PipesServer(tikaConfig, System.in, System.out, maxForEmitBatchBytes,
                             serverParseTimeoutMillis, serverWaitTimeoutMillis);
-            System.setIn(new ByteArrayInputStream(new byte[0]));
+            System.setIn(new UnsynchronizedByteArrayInputStream(new byte[0]));
             System.setOut(System.err);
             Thread watchdog = new Thread(server, "Tika Watchdog");
             watchdog.setDaemon(true);
@@ -581,7 +581,7 @@ public class PipesServer implements Runnable {
             byte[] bytes = new byte[length];
             input.readFully(bytes);
             try (ObjectInputStream objectInputStream = new ObjectInputStream(
-                    new ByteArrayInputStream(bytes))) {
+                    new UnsynchronizedByteArrayInputStream(bytes))) {
                 return (FetchEmitTuple) objectInputStream.readObject();
             }
         } catch (IOException e) {
@@ -607,7 +607,7 @@ public class PipesServer implements Runnable {
 
     private void write(EmitData emitData) {
         try {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
             try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bos)) {
                 objectOutputStream.writeObject(emitData);
             }
