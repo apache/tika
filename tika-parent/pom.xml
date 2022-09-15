@@ -289,14 +289,14 @@
     <maven.jar.version>3.2.2</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.surefire.version>3.0.0-M7</maven.surefire.version>
-    <maven.shade.version>3.3.0</maven.shade.version>
+    <maven.shade.version>3.4.0</maven.shade.version>
     <!-- need above java 8 for 10.[0-2] -->
     <puppycrawl.version>9.3</puppycrawl.version>
     <rat.version>0.14</rat.version>
 
     <!-- dependency versions -->
 
-    <aws.version>1.12.301</aws.version>
+    <aws.version>1.12.303</aws.version>
     <google.cloud.version>2.11.3</google.cloud.version>
     <asm.version>9.3</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
@@ -480,7 +480,7 @@
       <dependency>
         <groupId>com.google.protobuf</groupId>
         <artifactId>protobuf-java</artifactId>
-        <version>3.21.5</version>
+        <version>3.21.6</version>
       </dependency>
       <dependency>
         <groupId>com.h2database</groupId>
