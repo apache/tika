@@ -1,10 +1,21 @@
-Release 2.4.2 - ???
+Release 2.5.0 - ???
 
    * Improved extraction of PDF subset info for PDF/UA, PDF/VT, and PDF/X.
      NOTE: we no longer append PDF/A information, e.g. 'version="A-1b"'
      to the 'dc:format'. Users must now get that information from the
      'pdfa:PDFVersion' key or from 'pdfaid:conformance'
      and 'pdfaid:part' (TIKA-3844).
+
+   * Avoid infinite loop in bookmark extraction from PDFs (TIKA-3832).
+
+   * Added upsert option for the OpenSearch emitter (TIKA-3855).
+
+   * Extract PDF signature information at the document level
+     into the metadata (TIKA-3852).
+
+   * Enable configuration of digests via AutoDetectParserConfig (TIKA-3853).
+
+   * Use commons-io byte array streams via PJ Fanning (TIKA-3843).
 
    * Add extraction of ODF version from ODF files (TIKA-3840).
 

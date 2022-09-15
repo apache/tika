@@ -93,9 +93,7 @@
       <params>
         <name>ose</name>
         <openSearchUrl>{OPENSEARCH_CONNECTION}</openSearchUrl>
-<!--    TODO: implement this
         <updateStrategy>{UPDATE_STRATEGY}</updateStrategy>
-        -->
         <attachmentStrategy>{ATTACHMENT_STRATEGY}</attachmentStrategy>
         <commitWithin>10</commitWithin>
         <idField>_id</idField>

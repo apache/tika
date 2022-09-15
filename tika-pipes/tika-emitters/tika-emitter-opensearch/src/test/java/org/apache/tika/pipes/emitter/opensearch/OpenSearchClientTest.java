@@ -31,7 +31,7 @@ public class OpenSearchClientTest extends TikaTest {
         metadata.add("title", "title1");
         for (OpenSearchEmitter.AttachmentStrategy strategy :
                 OpenSearchEmitter.AttachmentStrategy.values()) {
-            String json = OpenSearchClient.metadataToJsonContainer(metadata,
+            String json = OpenSearchClient.metadataToJsonContainerInsert(metadata,
                     strategy);
             assertContains("author1", json);
             assertContains("author2", json);
@@ -40,7 +40,7 @@ public class OpenSearchClientTest extends TikaTest {
         }
         for (OpenSearchEmitter.AttachmentStrategy strategy :
                 OpenSearchEmitter.AttachmentStrategy.values()) {
-            String json = OpenSearchClient.metadataToJsonEmbedded(metadata, strategy,
+            String json = OpenSearchClient.metadataToJsonEmbeddedInsert(metadata, strategy,
                     "myEmitKey", OpenSearchEmitter.DEFAULT_EMBEDDED_FILE_FIELD_NAME);
             assertContains("author1", json);
             assertContains("author2", json);
