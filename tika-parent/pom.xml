@@ -480,7 +480,7 @@
       <dependency>
         <groupId>com.google.protobuf</groupId>
         <artifactId>protobuf-java</artifactId>
-        <version>3.21.5</version>
+        <version>3.21.6</version>
       </dependency>
       <dependency>
         <groupId>com.h2database</groupId>
