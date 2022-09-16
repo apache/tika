@@ -342,7 +342,7 @@
     <jbig2.version>3.0.4</jbig2.version>
     <jdom2.version>2.0.6.1</jdom2.version>
     <jempbox.version>1.8.17</jempbox.version>
-    <jetty.version>9.4.48.v20220622</jetty.version>
+    <jetty.version>9.4.49.v20220914</jetty.version>
     <jhighlight.version>1.1.0</jhighlight.version>
     <jna.version>5.12.1</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
