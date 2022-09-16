@@ -297,7 +297,7 @@
     <!-- dependency versions -->
 
     <aws.version>1.12.304</aws.version>
-    <google.cloud.version>2.11.3</google.cloud.version>
+    <google.cloud.version>2.12.0</google.cloud.version>
     <asm.version>9.3</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
@@ -342,7 +342,7 @@
     <jbig2.version>3.0.4</jbig2.version>
     <jdom2.version>2.0.6.1</jdom2.version>
     <jempbox.version>1.8.17</jempbox.version>
-    <jetty.version>9.4.48.v20220622</jetty.version>
+    <jetty.version>9.4.49.v20220914</jetty.version>
     <jhighlight.version>1.1.0</jhighlight.version>
     <jna.version>5.12.1</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
@@ -382,7 +382,7 @@
     <!-- we'll need to stay on 1.7 until we're java modularized ? -->
     <slf4j.version>1.7.36</slf4j.version>
     <solrj.version>8.11.2</solrj.version>
-    <spring.version>5.3.22</spring.version>
+    <spring.version>5.3.23</spring.version>
     <sqlite.version>3.39.3.0</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
     <test.containers.version>1.17.3</test.containers.version>
