@@ -351,7 +351,7 @@
     <juniversalchardet.version>1.0.3</juniversalchardet.version>
     <junrar.version>7.5.3</junrar.version>
     <libpst.version>0.9.3</libpst.version>
-    <log4j2.version>2.18.0</log4j2.version>
+    <log4j2.version>2.19.0</log4j2.version>
     <lombok.version>1.18.20</lombok.version>
     <!-- lucene >= 9.x requires Java 11 -->
     <lucene.version>8.11.2</lucene.version>
@@ -395,7 +395,7 @@
     <xerces.version>2.12.2</xerces.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <zstd.version>1.5.2-4</zstd.version>
-    <kafka.version>3.2.2</kafka.version>
+    <kafka.version>3.2.3</kafka.version>
     <netty.version>4.1.82.Final</netty.version>
   </properties>
 
