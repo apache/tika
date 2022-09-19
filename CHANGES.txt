@@ -8,6 +8,8 @@ Release 2.5.0 - ???
 
    * Avoid infinite loop in bookmark extraction from PDFs (TIKA-3832).
 
+   * Upgraded to slf4j 2.0.1 (TIKA-3842).
+
    * Added upsert option for the OpenSearch emitter (TIKA-3855).
 
    * Extract PDF signature information at the document level
@@ -43,6 +45,8 @@ Release 2.5.0 - ???
 
    * Fix bug causing some Exif dates to be decoded wrongly on
      timezones different than UTC (TIKA-3815).
+
+   * Numerous dependency upgrades (TIKA-3795).
 
 
 Release 2.4.1 - 06/14/2022

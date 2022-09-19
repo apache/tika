@@ -369,8 +369,6 @@
     <osgi.core.version>6.0.0</osgi.core.version>
     <osgi.compendium.version>5.0.0</osgi.compendium.version>
     <parso.version>2.0.14</parso.version>
-    <!-- some conflict with slf4j with >= 4.12.0
-          causes failure in testForkParser -->
     <pax.exam.version>4.13.1</pax.exam.version>
     <pdfbox.version>2.0.26</pdfbox.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
@@ -379,8 +377,7 @@
     <rome.version>1.18.0</rome.version>
     <scm.version>1.13.0</scm.version>
     <sis.version>1.2</sis.version>
-    <!-- we'll need to stay on 1.7 until we're java modularized ? -->
-    <slf4j.version>1.7.36</slf4j.version>
+    <slf4j.version>2.0.1</slf4j.version>
     <solrj.version>8.11.2</solrj.version>
     <spring.version>5.3.23</spring.version>
     <sqlite.version>3.39.3.0</sqlite.version>
@@ -601,7 +598,7 @@
       </dependency>
       <dependency>
         <groupId>org.apache.logging.log4j</groupId>
-        <artifactId>log4j-slf4j-impl</artifactId>
+        <artifactId>log4j-slf4j2-impl</artifactId>
         <version>${log4j2.version}</version>
       </dependency>
       <dependency>
