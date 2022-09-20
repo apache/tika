@@ -403,7 +403,7 @@ public class TestMimeTypes {
         assertTypeByData("application/octet-stream", "test-documents-spanned.zip");
         assertTypeByData("application/zip", "test-documents-spanned.z01");
 
-        assertTypeDetection("testZSTD.zstd", "application/zstd");
+        assertTypeDetection("testZSTD.zst", "application/zstd");
     }
 
     @Test

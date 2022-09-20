@@ -3877,7 +3877,7 @@
     <magic priority="50">
       <match value="0xFD2FB528" type="little32" offset="0"/>
     </magic>
-    <glob pattern="*.zstd"/>
+    <glob pattern="*.zst"/>
   </mime-type>
   <mime-type type="application/x-esri-layer">
     <_comment>ESRI Layer file</_comment>
