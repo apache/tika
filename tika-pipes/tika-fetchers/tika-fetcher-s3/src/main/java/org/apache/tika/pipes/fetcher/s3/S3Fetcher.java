@@ -72,6 +72,8 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
     private AmazonS3 s3Client;
     private boolean spoolToTemp = true;
     private int retries = 0;
+
+    private long sleepBeforeRetryMillis = 30000;
     private long maxLength = -1;
 
     @Override
@@ -95,11 +97,12 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
         }
         int tries = 0;
         IOException ex = null;
-        while (tries++ <= retries) {
-            if (tries > 1) {
-                LOGGER.warn("sleeping for 30 seconds before retry");
+        while (tries <= retries) {
+            if (tries > 0) {
+                LOGGER.warn("sleeping for {} milliseconds before retry",
+                        sleepBeforeRetryMillis);
                 try {
-                    Thread.sleep(30000);
+                    Thread.sleep(sleepBeforeRetryMillis);
                 } catch (InterruptedException e) {
                     throw new RuntimeException("interrupted");
                 }
@@ -121,6 +124,7 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
                 LOGGER.warn("client exception fetching on retry=" + tries, e);
                 ex = e;
             }
+            tries++;
         }
         throw ex;
     }
@@ -239,6 +243,11 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
     @Field
     public void setMaxLength(long maxLength) {
         this.maxLength = maxLength;
+    }
+
+    @Field
+    public void setSleepBeforeRetryMillis(long sleepBeforeRetryMillis) {
+        this.sleepBeforeRetryMillis = sleepBeforeRetryMillis;
     }
 
     /**
