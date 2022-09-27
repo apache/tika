@@ -34,6 +34,7 @@
     <module>tika-fetchers</module>
     <module>tika-emitters</module>
     <module>tika-pipes-iterators</module>
+    <module>tika-pipes-reporters</module>
   </modules>
 
   <dependencyManagement>

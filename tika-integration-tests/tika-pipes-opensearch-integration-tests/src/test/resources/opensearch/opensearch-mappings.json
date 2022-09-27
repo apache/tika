@@ -11,7 +11,9 @@
       "title" : { "type" : "text"},
       "mime" : { "type" : "keyword"},
       "tika_exception" : { "type" : "text"},
-      "parent" : { "type" : "text"}
+      "parent" : { "type" : "text"},
+      "my_test_parse_time_ms" : {"type": "long"},
+      "my_test_parse_status": {"type": "keyword"}
     }
   }
 }

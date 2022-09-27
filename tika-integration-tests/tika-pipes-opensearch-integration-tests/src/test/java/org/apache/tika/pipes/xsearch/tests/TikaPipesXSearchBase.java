@@ -28,6 +28,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -90,7 +92,7 @@ public abstract class TikaPipesXSearchBase {
         sendMappings(endpoint, TEST_INDEX, "opensearch-mappings.json");
 
         runPipes(OpenSearchEmitter.AttachmentStrategy.SEPARATE_DOCUMENTS,
-                OpenSearchEmitter.UpdateStrategy.OVERWRITE,
+                OpenSearchEmitter.UpdateStrategy.UPSERT,
                 HandlerConfig.PARSE_MODE.CONCATENATE, endpoint);
 
         String query = "{ \"track_total_hits\": true, \"query\": { \"match\": { \"content\": { " +
@@ -98,15 +100,37 @@ public abstract class TikaPipesXSearchBase {
 
         JsonResponse results = client.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
-        assertEquals(numHtmlDocs + numTestDocs,
+        assertEquals(numHtmlDocs + 1,
                 results.getJson().get("hits").get("total").get("value").asInt());
 
         //now try match all
-        query = "{ \"track_total_hits\": true, \"query\": { \"match_all\": {} } }";
+        query = "{ \"track_total_hits\": true, \"query\": { \"match_all\": {} }, " +
+                "\"from\": 0, \"size\": 1000 }";
         results = client.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
         assertEquals(numHtmlDocs + numTestDocs,
                 results.getJson().get("hits").get("total").get("value").asInt());
+
+        //now test that the reporter worked
+        Map<String, Integer> statusCounts = new HashMap<>();
+        for (JsonNode n : results.getJson().get("hits").get("hits")) {
+            String status = n.get("_source").get("my_test_parse_status").asText();
+            //this will throw an NPE if the field isn't there
+            //in short, this guarantees that the value is there
+            long parseTimeMs = n.get("_source").get("my_test_parse_time_ms").asLong();
+            Integer cnt = statusCounts.get(status);
+            if (cnt == null) {
+                cnt = 1;
+            } else {
+                cnt++;
+            }
+            statusCounts.put(status, cnt);
+        }
+        //the npe is caught and counted as a "parse success"
+        assertEquals(numHtmlDocs + 1, (int) statusCounts.get("PARSE_SUCCESS"));
+        //the embedded docx is emitted directly
+        assertEquals(1, (int) statusCounts.get("EMIT_SUCCESS"));
+        assertEquals(2, (int) statusCounts.get("OOM"));
     }
 
     @Test
@@ -125,7 +149,7 @@ public abstract class TikaPipesXSearchBase {
 
         JsonResponse results = client.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
-        assertEquals(numHtmlDocs + numTestDocs,
+        assertEquals(numHtmlDocs + 1,
               results.getJson().get("hits").get("total").get("value").asInt());
 
         //now try match all
@@ -135,7 +159,8 @@ public abstract class TikaPipesXSearchBase {
                 "\"match_all\": {} } }";
         results = client.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
-        assertEquals(numHtmlDocs + 12, //the .docx file has 11 embedded files, plus itself
+        assertEquals(numHtmlDocs + 3 + 12, // 3 mock files and...
+                // the .docx file has 11 embedded files, plus itself
                 results.getJson().get("hits").get("total").get("value").asInt());
 
         //now check out one of the embedded files
@@ -189,7 +214,7 @@ public abstract class TikaPipesXSearchBase {
 
         JsonResponse results = client.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
-        assertEquals(numHtmlDocs + numTestDocs,
+        assertEquals(numHtmlDocs + 1,
                 results.getJson().get("hits").get("total").get("value").asInt());
 
         //now try match all
@@ -199,7 +224,8 @@ public abstract class TikaPipesXSearchBase {
                 "\"match_all\": {} } }";
         results = client.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
-        assertEquals(numHtmlDocs + 12, //the .docx file has 11 embedded files, plus itself
+        assertEquals(numHtmlDocs + 3 + 12, //3 for the mock docs,
+                // and the .docx file has 11 embedded files, plus itself
                 results.getJson().get("hits").get("total").get("value").asInt());
 
         //now check out one of the embedded files
@@ -348,6 +374,11 @@ public abstract class TikaPipesXSearchBase {
                                 Matcher.quoteReplacement(testDocDirectory.toAbsolutePath().toString()))
                         .replace("{PARSE_MODE}", parseMode.name());
 
+        if (attachmentStrategy == OpenSearchEmitter.AttachmentStrategy.PARENT_CHILD) {
+            res = res.replace("{INCLUDE_ROUTING}", "true");
+        } else {
+            res = res.replace("{INCLUDE_ROUTING}", "false");
+        }
         res = res.replace("{OPENSEARCH_CONNECTION}", endpoint);
 
         return res;

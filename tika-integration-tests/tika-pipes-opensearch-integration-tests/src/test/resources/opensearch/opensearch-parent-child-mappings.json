@@ -20,7 +20,9 @@
         "relations":{
           "container":"embedded"
         }
-      }
+      },
+      "my_test_parse_time_ms" : {"type": "long"},
+      "my_test_parse_status": {"type": "keyword"}
     }
   }
 }
