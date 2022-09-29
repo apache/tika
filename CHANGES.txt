@@ -19,6 +19,8 @@ Release 2.5.0 - ???
 
    * Use commons-io byte array streams via PJ Fanning (TIKA-3843).
 
+   * Upgrade to PDFBox 2.0.27 (TIKA-3866).
+
    * Upgrade to jempbox 1.8.17 (TIKA-3856).
 
    * Add extraction of ODF version from ODF files (TIKA-3840).
