@@ -33,6 +33,7 @@
 
   <modules>
     <module>tika-pipes-reporter-opensearch</module>
+    <module>tika-pipes-reporter-fs-status</module>
   </modules>
 
   <scm>
