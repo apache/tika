@@ -29,6 +29,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
@@ -58,7 +59,7 @@ public class JDBCEmitterTest {
         data.add(new String[]{"k1", "true", "k2", "some string3", "k3", "6", "k4", "102"});
         int id = 0;
         for (String[] d : data) {
-            emitter.emit("id" + id++, m(d));
+            emitter.emit("id" + id++, Collections.singletonList(m(d)));
         }
 
         try (Connection connection = DriverManager.getConnection(connectionString)) {
@@ -101,7 +102,7 @@ public class JDBCEmitterTest {
         data.add(new String[]{"k1", "true", "k2", "some string3", "k3", "6", "k4", "102"});
         int id = 0;
         for (String[] d : data) {
-            emitter.emit("id" + id++, m(d));
+            emitter.emit("id" + id++, Collections.singletonList(m(d)));
         }
 
         try (Connection connection = DriverManager.getConnection(connectionString)) {
@@ -119,7 +120,46 @@ public class JDBCEmitterTest {
                 }
             }
         }
+    }
 
+    @Test
+    public void testAttachments(@TempDir Path tmpDir) throws Exception {
+        Files.createDirectories(tmpDir.resolve("db"));
+        Path dbDir = tmpDir.resolve("db/h2");
+        Path config = tmpDir.resolve("tika-config.xml");
+        String connectionString = "jdbc:h2:file:" + dbDir.toAbsolutePath();
+
+        writeConfig("/configs/tika-config-jdbc-emitter-attachments.xml",
+                connectionString, config);
+
+        EmitterManager emitterManager = EmitterManager.load(config);
+        Emitter emitter = emitterManager.getEmitter();
+        List<Metadata> data = new ArrayList<>();
+        data.add(m("k1", "true", "k2", "some string1", "k3", "4", "k4", "100"));
+        data.add(m("k1", "false", "k2", "some string2", "k3", "5", "k4", "101"));
+        data.add(m("k1", "true", "k2", "some string3", "k3", "6", "k4", "102"));
+        emitter.emit("id0", data);
+
+
+        try (Connection connection = DriverManager.getConnection(connectionString)) {
+            try (Statement st = connection.createStatement()) {
+                try (ResultSet rs = st.executeQuery("select * from test")) {
+                    int rows = 0;
+                    assertEquals("path", rs.getMetaData().getColumnName(1).toLowerCase(Locale.US));
+                    assertEquals("attachment_num",
+                            rs.getMetaData().getColumnName(2).toLowerCase(Locale.US));
+                    while (rs.next()) {
+                        assertEquals("id0", rs.getString(1));
+                        assertEquals(rows, rs.getInt(2));
+                        assertEquals(rows % 2 == 0, rs.getBoolean(3));
+                        assertEquals("some string" + (rows + 1), rs.getString(4));
+                        assertEquals(rows + 4, rs.getInt(5));
+                        assertEquals(100 + rows, rs.getLong(6));
+                        rows++;
+                    }
+                }
+            }
+        }
     }
 
     private void writeConfig(String srcConfig, String dbDir, Path config) throws IOException {
@@ -128,11 +168,11 @@ public class JDBCEmitterTest {
         Files.write(config, xml.getBytes(StandardCharsets.UTF_8));
     }
 
-    private List<Metadata> m(String... strings) {
+    private Metadata m(String... strings) {
         Metadata metadata = new Metadata();
         for (int i = 0; i < strings.length; i++) {
             metadata.set(strings[i], strings[++i]);
         }
-        return Collections.singletonList(metadata);
+        return metadata;
     }
 }

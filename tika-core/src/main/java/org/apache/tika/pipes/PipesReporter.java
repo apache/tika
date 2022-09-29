@@ -19,6 +19,16 @@ package org.apache.tika.pipes;
 import java.io.Closeable;
 import java.io.IOException;
 
+/**
+ * This is called asynchronously by the AsyncProcessor. This
+ * is not thread safe, and implementers must be careful to implement
+ * {@link #report(FetchEmitTuple, PipesResult, long)} in a thread safe
+ * way.
+ * <p/>
+ * Note, however, that this is not called in the forked processes.
+ * Implementers do not have to worry about synchronizing across processes;
+ * for example, one could use an in-memory h2 database as a target.
+ */
 public abstract class PipesReporter implements Closeable {
 
     public static final PipesReporter NO_OP_REPORTER = new PipesReporter() {

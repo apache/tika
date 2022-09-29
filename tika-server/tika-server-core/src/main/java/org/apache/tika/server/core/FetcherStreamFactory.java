@@ -23,6 +23,8 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriInfo;
 
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -31,11 +33,13 @@ import org.apache.tika.pipes.fetcher.FetcherManager;
 import org.apache.tika.pipes.fetcher.RangeFetcher;
 
 /**
- * This class looks for &quot;fileUrl&quot; in the http header.  If it is not null
- * and not empty, this will return a new TikaInputStream from the URL.
+ * This class looks for &quot;fetcherName&quot; in the http header.  If it is not null
+ * and not empty, this will return a new TikaInputStream from the fetch key
+ * and the base path as set in the definition of the named fetcher.
  * <p>
- * This is not meant to be used in place of a robust, responsible crawler.  Rather, this
- * is a convenience factory.
+ * Users may also specify the &quot;fetcherName&quote; and &quot;fetchKey&quot; in
+ * query parameters with in the request.  This is the only option if there are
+ * non-ASCII characters in the &quot;fetcherName&quote; or &quot;fetchKey&quot;.
  * <p>
  * <em>WARNING:</em> Unless you carefully lock down access to the server,
  * whoever has access to this service will have the read access of the server.
@@ -46,6 +50,8 @@ import org.apache.tika.pipes.fetcher.RangeFetcher;
  * See <a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2015-3271">CVE-2015-3271</a>
  */
 public class FetcherStreamFactory implements InputStreamFactory {
+
+    private static final Logger LOG = LoggerFactory.getLogger(FetcherStreamFactory.class);
 
     private final FetcherManager fetcherManager;
 
@@ -77,6 +83,7 @@ public class FetcherStreamFactory implements InputStreamFactory {
 
         if (!StringUtils.isBlank(fetcherName)) {
             try {
+                LOG.debug("going to fetch '{}' from fetcher: {}", fetchKey, fetcherName);
                 Fetcher fetcher = fetcherManager.getFetcher(fetcherName);
                 if (fetchRangeStart > -1 && fetchRangeEnd > -1) {
                     if (!(fetcher instanceof RangeFetcher)) {

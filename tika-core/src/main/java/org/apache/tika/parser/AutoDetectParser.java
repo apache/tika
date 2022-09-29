@@ -88,9 +88,17 @@ public class AutoDetectParser extends CompositeParser {
     }
 
     public AutoDetectParser(TikaConfig config) {
-        super(config.getMediaTypeRegistry(), config.getParser());
+        super(config.getMediaTypeRegistry(), getParser(config));
         setDetector(config.getDetector());
         setAutoDetectParserConfig(config.getAutoDetectParserConfig());
+    }
+
+    private static Parser getParser(TikaConfig config) {
+        if (config.getAutoDetectParserConfig().getDigesterFactory() == null) {
+            return config.getParser();
+        }
+        return new DigestingParser(config.getParser(),
+                config.getAutoDetectParserConfig().getDigesterFactory().build());
     }
 
     /**

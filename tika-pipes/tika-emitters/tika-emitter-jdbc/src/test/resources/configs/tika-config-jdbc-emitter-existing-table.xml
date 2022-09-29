@@ -23,7 +23,6 @@
       <params>
         <name>jdbc</name>
         <connection>CONNECTION_STRING</connection>
-        <idColumn>path</idColumn>
         <insert>insert into test (path, k1, k2, k3, k4) values (?,?,?,?,?);
         </insert>
         <!-- these are the keys in the metadata object.
@@ -38,6 +37,7 @@
           <key k="k3" v="int"/>
           <key k="k4" v="long"/>
         </keys>
+        <attachmentStrategy>first_only</attachmentStrategy>
       </params>
     </emitter>
   </emitters>

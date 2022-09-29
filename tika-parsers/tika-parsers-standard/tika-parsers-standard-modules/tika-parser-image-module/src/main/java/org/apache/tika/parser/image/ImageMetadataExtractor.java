@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.image;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -54,6 +53,7 @@ import com.drew.metadata.iptc.IptcDirectory;
 import com.drew.metadata.jpeg.JpegCommentDirectory;
 import com.drew.metadata.jpeg.JpegDirectory;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.jempbox.xmp.XMPMetadata;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -186,7 +186,7 @@ public class ImageMetadataExtractor {
 
     public void parseRawXMP(byte[] xmpData) throws IOException, SAXException, TikaException {
         XMPMetadata xmp = null;
-        try (InputStream decoded = new ByteArrayInputStream(xmpData)) {
+        try (InputStream decoded = new UnsynchronizedByteArrayInputStream(xmpData)) {
             Document dom = XMLReaderUtils.buildDOM(decoded, EMPTY_PARSE_CONTEXT);
             if (dom != null) {
                 xmp = new XMPMetadata(dom);

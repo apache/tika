@@ -17,9 +17,8 @@
 
 package org.apache.tika.parser.journal;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -80,8 +79,7 @@ public class TEIDOMParser {
             throws TikaException, SAXException, IOException {
 
         Document root = XMLReaderUtils
-                .buildDOM(new ByteArrayInputStream(source.getBytes(StandardCharsets.UTF_8)),
-                        parseContext);
+                .buildDOM(new StringReader(source), parseContext);
 
         Metadata metadata = new Metadata();
         createGrobidMetadata(source, root.getDocumentElement(), metadata);

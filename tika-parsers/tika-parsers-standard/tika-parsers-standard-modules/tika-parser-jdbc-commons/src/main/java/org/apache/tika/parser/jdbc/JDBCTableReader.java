@@ -18,7 +18,6 @@ package org.apache.tika.parser.jdbc;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.sql.Blob;
 import java.sql.Clob;
@@ -33,6 +32,7 @@ import java.util.List;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -201,7 +201,7 @@ public class JDBCTableReader {
         String s = clob.getSubString(0, readSize);
         if (embeddedDocumentUtil.shouldParseEmbedded(m)) {
             embeddedDocumentUtil
-                    .parseEmbedded(new ByteArrayInputStream(s.getBytes(UTF_8)), handler, m, true);
+                    .parseEmbedded(new UnsynchronizedByteArrayInputStream(s.getBytes(UTF_8)), handler, m, true);
         }
     }
 

@@ -403,7 +403,7 @@ public class TestMimeTypes {
         assertTypeByData("application/octet-stream", "test-documents-spanned.zip");
         assertTypeByData("application/zip", "test-documents-spanned.z01");
 
-        assertTypeDetection("testZSTD.zstd", "application/zstd");
+        assertTypeDetection("testZSTD.zst", "application/zstd");
     }
 
     @Test
@@ -1296,6 +1296,13 @@ public class TestMimeTypes {
     @Test
     public void testHTMLSnippetWithRFC822() throws Exception {
         assertTypeByData("text/html", "testBrokenHTMLContainingRFC822.html");
+    }
+
+    @Test
+    public void testE57() throws Exception {
+        assertTypeByName("model/e57", "testE57_header.e57");
+        assertTypeByData("model/e57", "testE57_header.e57");
+        assertTypeByNameAndData("model/e57", "testE57_header.e57");
     }
 
     private void assertText(byte[] prefix) throws IOException {

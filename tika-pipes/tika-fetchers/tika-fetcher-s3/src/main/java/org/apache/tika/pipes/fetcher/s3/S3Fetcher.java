@@ -42,6 +42,7 @@ import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
+import org.apache.tika.exception.FileTooLongException;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
@@ -55,13 +56,12 @@ import org.apache.tika.utils.StringUtils;
  * Fetches files from s3. Example file: s3://my_bucket/path/to/my_file.pdf
  * The bucket must be specified via the tika-config or before
  * initialization, and the fetch key is "path/to/my_file.pdf".
- * This will parse the bucket out of that string and retrieve the path.
  */
 public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFetcher {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(S3Fetcher.class);
     private static final String PREFIX = "s3";
-    private static final Object[] LOCK = new Object[0];
+    private final Object[] clientLock = new Object[0];
     private String region;
     private String bucket;
     private String profile;
@@ -72,6 +72,9 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
     private AmazonS3 s3Client;
     private boolean spoolToTemp = true;
     private int retries = 0;
+
+    private long sleepBeforeRetryMillis = 30000;
+    private long maxLength = -1;
 
     @Override
     public InputStream fetch(String fetchKey, Metadata metadata) throws TikaException, IOException {
@@ -94,19 +97,24 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
         }
         int tries = 0;
         IOException ex = null;
-        while (tries++ <= retries) {
+        while (tries <= retries) {
             if (tries > 0) {
-                LOGGER.debug("sleeping for 30 seconds before retry");
+                LOGGER.warn("sleeping for {} milliseconds before retry",
+                        sleepBeforeRetryMillis);
                 try {
-                    Thread.sleep(30000);
+                    Thread.sleep(sleepBeforeRetryMillis);
                 } catch (InterruptedException e) {
                     throw new RuntimeException("interrupted");
                 }
-                LOGGER.debug("re-initializing S3 client");
+                LOGGER.info("trying to re-initialize S3 client");
                 initialize(new HashMap<>());
             }
             try {
-                return _fetch(theFetchKey, metadata, startRange, endRange);
+                long start = System.currentTimeMillis();
+                InputStream is = _fetch(theFetchKey, metadata, startRange, endRange);
+                long elapsed = System.currentTimeMillis() - start;
+                LOGGER.debug("total to fetch {}", elapsed);
+                return is;
             } catch (AmazonClientException e ) {
                 //TODO -- filter exceptions -- if the file doesn't exist, don't retry
                 LOGGER.warn("client exception fetching on retry=" + tries, e);
@@ -116,6 +124,7 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
                 LOGGER.warn("client exception fetching on retry=" + tries, e);
                 ex = e;
             }
+            tries++;
         }
         throw ex;
     }
@@ -124,15 +133,25 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
                                Long startRange, Long endRange) throws IOException {
         TemporaryResources tmp = null;
         try {
+            long start = System.currentTimeMillis();
             GetObjectRequest objectRequest = new GetObjectRequest(bucket, fetchKey);
             if (startRange != null && endRange != null
                     && startRange > -1 && endRange > -1) {
                 objectRequest.withRange(startRange, endRange);
             }
             S3Object s3Object = null;
-            synchronized (LOCK) {
+            synchronized (clientLock) {
                 s3Object = s3Client.getObject(objectRequest);
             }
+            long length = s3Object.getObjectMetadata().getContentLength();
+            metadata.set(Metadata.CONTENT_LENGTH, Long.toString(length));
+            if (maxLength > -1) {
+                if (length > maxLength) {
+                    throw new FileTooLongException(length, maxLength);
+                }
+            }
+            LOGGER.debug("took {} ms to fetch file's metadata", System.currentTimeMillis() - start);
+
             if (extractUserMetadata) {
                 for (Map.Entry<String, String> e : s3Object.getObjectMetadata().getUserMetadata()
                         .entrySet()) {
@@ -142,13 +161,13 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
             if (!spoolToTemp) {
                 return TikaInputStream.get(s3Object.getObjectContent());
             } else {
-                long start = System.currentTimeMillis();
+                start = System.currentTimeMillis();
                 tmp = new TemporaryResources();
                 Path tmpPath = tmp.createTempFile();
                 Files.copy(s3Object.getObjectContent(), tmpPath, StandardCopyOption.REPLACE_EXISTING);
                 TikaInputStream tis = TikaInputStream.get(tmpPath, metadata, tmp);
-                long elapsed = System.currentTimeMillis() - start;
-                LOGGER.debug("took {} ms to copy to local tmp file", elapsed);
+                LOGGER.debug("took {} ms to fetch metadata and copy to local tmp file",
+                        System.currentTimeMillis() - start);
                 return tis;
             }
         } catch (Throwable e) {
@@ -221,6 +240,16 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
         this.credentialsProvider = credentialsProvider;
     }
 
+    @Field
+    public void setMaxLength(long maxLength) {
+        this.maxLength = maxLength;
+    }
+
+    @Field
+    public void setSleepBeforeRetryMillis(long sleepBeforeRetryMillis) {
+        this.sleepBeforeRetryMillis = sleepBeforeRetryMillis;
+    }
+
     /**
      * This initializes the s3 client. Note, we wrap S3's RuntimeExceptions,
      * e.g. AmazonClientException in a TikaConfigException.
@@ -243,7 +272,7 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
         ClientConfiguration clientConfiguration = new ClientConfiguration()
                         .withMaxConnections(maxConnections);
         try {
-            synchronized (LOCK) {
+            synchronized (clientLock) {
                 s3Client = AmazonS3ClientBuilder.standard()
                         .withClientConfiguration(clientConfiguration)
                         .withRegion(region)

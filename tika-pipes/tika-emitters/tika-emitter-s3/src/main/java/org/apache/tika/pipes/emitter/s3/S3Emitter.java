@@ -19,7 +19,6 @@ package org.apache.tika.pipes.emitter.s3;
 import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
 
 import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
@@ -40,6 +39,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -120,7 +120,7 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
         }
 
         if (!spoolToTemp) {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
             try (Writer writer = new BufferedWriter(
                     new OutputStreamWriter(bos, StandardCharsets.UTF_8))) {
                 JsonMetadataList.toJson(metadataList, writer);

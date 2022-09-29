@@ -25,6 +25,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.tika.exception.TikaException;
+
 class DBFColumnHeader {
 
     private final static Map<Integer, ColType> COL_TYPE_MAP = new ConcurrentHashMap<>();
@@ -48,10 +50,10 @@ class DBFColumnHeader {
     int decimalCount = -1;
     private ColType colType = null;
 
-    public void setType(int type) {
+    public void setType(int type) throws TikaException {
         colType = COL_TYPE_MAP.get(type);
         if (colType == null) {
-            throw new IllegalArgumentException(
+            throw new TikaException(
                     "Unrecognized column type for column: " + getName(StandardCharsets.US_ASCII) +
                             ". I regret I don't recognize: " + (char) type);
         }

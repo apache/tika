@@ -18,13 +18,13 @@ package org.apache.tika.parser.microsoft.chm;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -251,7 +251,7 @@ public class ChmExtractor {
      */
     public byte[] extractChmEntry(DirectoryListingEntry directoryListingEntry)
             throws TikaException {
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        UnsynchronizedByteArrayOutputStream buffer = new UnsynchronizedByteArrayOutputStream();
         ChmLzxBlock lzxBlock = null;
         try {
             /* UNCOMPRESSED type is easiest one */

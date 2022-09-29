@@ -1,4 +1,27 @@
-Release 2.4.2 - ???
+Release 2.5.0 - ???
+
+   * Improved extraction of PDF subset info for PDF/UA, PDF/VT, and PDF/X.
+     NOTE: we no longer append PDF/A information, e.g. 'version="A-1b"'
+     to the 'dc:format'. Users must now get that information from the
+     'pdfa:PDFVersion' key or from 'pdfaid:conformance'
+     and 'pdfaid:part' (TIKA-3844).
+
+   * Avoid infinite loop in bookmark extraction from PDFs (TIKA-3832).
+
+   * Upgraded to slf4j 2.0.1 (TIKA-3842).
+
+   * Added upsert option for the OpenSearch emitter (TIKA-3855).
+
+   * Extract PDF signature information at the document level
+     into the metadata (TIKA-3852).
+
+   * Enable configuration of digests via AutoDetectParserConfig (TIKA-3853).
+
+   * Use commons-io byte array streams via PJ Fanning (TIKA-3843).
+
+   * Upgrade to jempbox 1.8.17 (TIKA-3856).
+
+   * Add extraction of ODF version from ODF files (TIKA-3840).
 
    * tika-parser-html-commons (BoilerPipeHandler) is no longer a
      a dependency of tika-parser-html-module. tika-app and tika-server-standard
@@ -22,6 +45,8 @@ Release 2.4.2 - ???
 
    * Fix bug causing some Exif dates to be decoded wrongly on
      timezones different than UTC (TIKA-3815).
+
+   * Numerous dependency upgrades (TIKA-3795).
 
 
 Release 2.4.1 - 06/14/2022

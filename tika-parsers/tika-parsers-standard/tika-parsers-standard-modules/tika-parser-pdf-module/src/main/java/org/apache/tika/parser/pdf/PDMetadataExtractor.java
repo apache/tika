@@ -46,16 +46,16 @@ import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMP;
-import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.pdf.xmpschemas.XMPSchemaPDFUA;
+import org.apache.tika.parser.pdf.xmpschemas.XMPSchemaPDFVT;
+import org.apache.tika.parser.pdf.xmpschemas.XMPSchemaPDFX;
+import org.apache.tika.parser.pdf.xmpschemas.XMPSchemaPDFXId;
 import org.apache.tika.parser.xmp.JempboxExtractor;
 import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
 
 public class PDMetadataExtractor {
-
-    private static final MediaType MEDIA_TYPE = MediaType.application("pdf");
-
 
     public static void extract(PDMetadata pdMetadata, Metadata metadata, ParseContext context) {
         if (pdMetadata == null) {
@@ -71,6 +71,21 @@ public class PDMetadataExtractor {
             return;
         }
         XMPMetadata xmp = new XMPMetadata(dom);
+        extract(xmp, metadata, context);
+    }
+
+    public static void extract(XMPMetadata xmp, Metadata metadata, ParseContext context) {
+        extractBasic(xmp, metadata);
+        extractPDF(xmp, metadata);
+        extractDublin(xmp, metadata);
+        JempboxExtractor.extractXMPMM(xmp, metadata);
+        extractPDFA(xmp, metadata);
+        extractPDFX(xmp, metadata);
+        extractPDFVT(xmp, metadata);
+        extractPDFUA(xmp, metadata);
+    }
+
+    private static void extractDublin(XMPMetadata xmp, Metadata metadata) {
         XMPSchemaDublinCore dcSchema = null;
         try {
             dcSchema = xmp.getDublinCoreSchema();
@@ -83,30 +98,123 @@ public class PDMetadataExtractor {
             extractDublinCoreListItems(metadata, TikaCoreProperties.CREATOR, dcSchema);
             extractMultilingualItems(metadata, TikaCoreProperties.TITLE, null, dcSchema);
         }
-        extractBasic(xmp, metadata);
-        extractPDF(xmp, metadata);
-        JempboxExtractor.extractXMPMM(xmp, metadata);
+    }
 
+    private static void extractPDFVT(XMPMetadata xmp, Metadata metadata) {
+        xmp.addXMLNSMapping(XMPSchemaPDFVT.NAMESPACE_URI, XMPSchemaPDFVT.class);
+        XMPSchemaPDFVT schema = null;
         try {
-            xmp.addXMLNSMapping(XMPSchemaPDFAId.NAMESPACE, XMPSchemaPDFAId.class);
-            XMPSchemaPDFAId pdfaxmp = (XMPSchemaPDFAId) xmp.getSchemaByClass(XMPSchemaPDFAId.class);
-            if (pdfaxmp != null) {
-                if (pdfaxmp.getPart() != null) {
-                    metadata.set(PDF.PDFAID_PART, Integer.toString(pdfaxmp.getPart()));
-                }
-                if (pdfaxmp.getConformance() != null) {
-                    metadata.set(PDF.PDFAID_CONFORMANCE, pdfaxmp.getConformance());
-                    String version = "A-" + pdfaxmp.getPart() +
-                            pdfaxmp.getConformance().toLowerCase(Locale.ROOT);
-                    metadata.set(PDF.PDFA_VERSION, version);
-                    metadata.add(TikaCoreProperties.FORMAT.getName(),
-                            MEDIA_TYPE.toString() + "; version=\"" + version + "\"");
-                }
-            }
-            // TODO WARN if this XMP version is inconsistent with document header version?
+            schema = (XMPSchemaPDFVT) xmp.getSchemaByClass(XMPSchemaPDFVT.class);
         } catch (IOException e) {
             metadata.set(TikaCoreProperties.TIKA_META_PREFIX + "pdf:metadata-xmp-parse-failed",
                     "" + e);
+        }
+
+        if (schema == null) {
+            return;
+        }
+        String version = schema.getPDFVTVersion();
+        if (! StringUtils.isBlank(version)) {
+            metadata.set(PDF.PDFVT_VERSION, version);
+        }
+        try {
+            Calendar modified = schema.getPDFVTModified();
+            metadata.set(PDF.PDFVT_MODIFIED, modified);
+        } catch (IOException ex) {
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    "bad date in vt modified");
+        }
+    }
+
+    private static void extractPDFX(XMPMetadata xmp, Metadata metadata) {
+        xmp.addXMLNSMapping(XMPSchemaPDFXId.NAMESPACE_URI, XMPSchemaPDFXId.class);
+        xmp.addXMLNSMapping(XMPSchemaPDFX.NAMESPACE_URI, XMPSchemaPDFX.class);
+        try {
+            XMPSchemaPDFXId
+                    XMPSchemaPDFXId = (XMPSchemaPDFXId) xmp.getSchemaByClass(XMPSchemaPDFXId.class);
+            if (XMPSchemaPDFXId != null) {
+                String version = XMPSchemaPDFXId.getPDFXVersion();
+                if (!StringUtils.isBlank(version)) {
+                    metadata.set(PDF.PDFXID_VERSION, version);
+                }
+            }
+        } catch (IOException e) {
+            metadata.set(TikaCoreProperties.TIKA_META_PREFIX + "pdf:metadata-xmp-parse-failed",
+                    "" + e);
+        }
+        try {
+            XMPSchemaPDFX XMPSchemaPDFX = (XMPSchemaPDFX) xmp.getSchemaByClass(XMPSchemaPDFX.class);
+            if (XMPSchemaPDFX != null) {
+                String version = XMPSchemaPDFX.getPDFXVersion();
+                if (!StringUtils.isBlank(version)) {
+                    metadata.set(PDF.PDFX_VERSION, version);
+                }
+                String conformance = XMPSchemaPDFX.getPDFXConformance();
+                if (!StringUtils.isBlank(version)) {
+                    metadata.set(PDF.PDFX_CONFORMANCE, version);
+                }
+            }
+        } catch (IOException e) {
+            metadata.set(TikaCoreProperties.TIKA_META_PREFIX + "pdf:metadata-xmp-parse-failed",
+                    "" + e);
+        }
+
+    }
+
+
+    private static void extractPDFUA(XMPMetadata xmp, Metadata metadata) {
+        xmp.addXMLNSMapping(XMPSchemaPDFUA.NAMESPACE_URI, XMPSchemaPDFUA.class);
+        XMPSchemaPDFUA schema = null;
+        try {
+            schema = (XMPSchemaPDFUA) xmp.getSchemaByClass(XMPSchemaPDFUA.class);
+        } catch (IOException e) {
+            metadata.set(TikaCoreProperties.TIKA_META_PREFIX + "pdf:metadata-xmp-parse-failed",
+                    "" + e);
+        }
+
+        if (schema == null) {
+            return;
+        }
+        try {
+            Integer part = schema.getPart();
+            if (schema.getPart() != null) {
+                metadata.set(PDF.PDFUAID_PART, part.intValue());
+            }
+        } catch (NumberFormatException e) {
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    "expected integer " + "part");
+        }
+
+    }
+
+    private static void extractPDFA(XMPMetadata xmp, Metadata metadata) {
+        xmp.addXMLNSMapping(XMPSchemaPDFAId.NAMESPACE, XMPSchemaPDFAId.class);
+        XMPSchemaPDFAId schema = null;
+        try {
+            schema = (XMPSchemaPDFAId) xmp.getSchemaByClass(XMPSchemaPDFAId.class);
+        } catch (IOException e) {
+            metadata.set(TikaCoreProperties.TIKA_META_PREFIX + "pdf:metadata-xmp-parse-failed",
+                    "" + e);
+        }
+
+        if (schema == null) {
+            return;
+        }
+        String partString = "UNKNOWN";
+        try {
+            Integer part = schema.getPart();
+            if (part != null) {
+                partString = Integer.toString(part);
+                metadata.set(PDF.PDFAID_PART, part.intValue());
+            }
+        } catch (NumberFormatException e) {
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    "expected integer " + "part");
+        }
+        if (schema.getConformance() != null) {
+            metadata.set(PDF.PDFAID_CONFORMANCE, schema.getConformance());
+            String version = "A-" + partString + schema.getConformance().toLowerCase(Locale.ROOT);
+            metadata.set(PDF.PDFA_VERSION, version);
         }
     }
 
@@ -198,6 +306,12 @@ public class PDMetadataExtractor {
     private static void setNotNull(Property property, Integer value, Metadata metadata) {
         if (metadata.get(property) == null && value != null) {
             metadata.set(property, value);
+        }
+    }
+
+    static void addNotNull(Property property, String value, Metadata metadata) {
+        if (! StringUtils.isBlank(value)) {
+            metadata.add(property, value);
         }
     }
 

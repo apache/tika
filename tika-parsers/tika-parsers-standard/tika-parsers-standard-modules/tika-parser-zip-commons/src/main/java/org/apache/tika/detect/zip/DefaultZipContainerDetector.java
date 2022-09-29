@@ -17,7 +17,6 @@
 package org.apache.tika.detect.zip;
 
 import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,6 +34,7 @@ import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -121,7 +121,7 @@ public class DefaultZipContainerDetector implements Detector {
             return TIFF;
         }
         try {
-            String name = ArchiveStreamFactory.detect(new ByteArrayInputStream(prefix, 0, length));
+            String name = ArchiveStreamFactory.detect(new UnsynchronizedByteArrayInputStream(prefix, 0, length));
             return PackageConstants.getMediaType(name);
         } catch (ArchiveException e) {
             return MediaType.OCTET_STREAM;
@@ -131,7 +131,7 @@ public class DefaultZipContainerDetector implements Detector {
     static MediaType detectCompressorFormat(byte[] prefix, int length) {
         try {
             String type =
-                    CompressorStreamFactory.detect(new ByteArrayInputStream(prefix, 0, length));
+                    CompressorStreamFactory.detect(new UnsynchronizedByteArrayInputStream(prefix, 0, length));
             return CompressorConstants.getMediaType(type);
         } catch (CompressorException e) {
             return MediaType.OCTET_STREAM;

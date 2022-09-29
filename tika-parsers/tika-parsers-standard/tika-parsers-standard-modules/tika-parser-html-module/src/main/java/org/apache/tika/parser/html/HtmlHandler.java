@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.html;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -30,6 +29,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -364,7 +364,7 @@ class HtmlHandler extends TextContentHandler {
             }
         }
 
-        try (InputStream stream = new ByteArrayInputStream(
+        try (InputStream stream = new UnsynchronizedByteArrayInputStream(
                 script.toString().getBytes(StandardCharsets.UTF_8))) {
             embeddedDocumentExtractor.parseEmbedded(stream, xhtml, m, true);
         } catch (IOException e) {

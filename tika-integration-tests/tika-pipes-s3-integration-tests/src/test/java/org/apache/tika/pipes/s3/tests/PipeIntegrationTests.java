@@ -49,6 +49,7 @@ import org.apache.tika.pipes.emitter.EmitterManager;
 import org.apache.tika.pipes.emitter.s3.S3Emitter;
 import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.FetcherManager;
+import org.apache.tika.pipes.pipesiterator.CallablePipesIterator;
 import org.apache.tika.pipes.pipesiterator.PipesIterator;
 
 @Ignore("turn these into actual tests with mock s3")
@@ -93,21 +94,22 @@ public class PipeIntegrationTests {
 
         int numConsumers = 1;
         ExecutorService es = Executors.newFixedThreadPool(numConsumers + 1);
-        ExecutorCompletionService<Integer> completionService = new ExecutorCompletionService<>(es);
+        ExecutorCompletionService<Long> completionService = new ExecutorCompletionService<>(es);
         ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(1000);
+
+        completionService.submit(
+                new CallablePipesIterator(pipesIterator, queue, 60000, numConsumers));
         for (int i = 0; i < numConsumers; i++) {
             completionService.submit(new FSFetcherEmitter(queue, fetcher, null));
         }
-        for (FetchEmitTuple t : pipesIterator) {
-            queue.offer(t);
-        }
+
         for (int i = 0; i < numConsumers; i++) {
             queue.offer(PipesIterator.COMPLETED_SEMAPHORE);
         }
         int finished = 0;
         try {
             while (finished++ < numConsumers + 1) {
-                Future<Integer> future = completionService.take();
+                Future<Long> future = completionService.take();
                 future.get();
             }
         } finally {
@@ -122,13 +124,12 @@ public class PipeIntegrationTests {
         PipesIterator pipesIterator = getPipesIterator("tika-config-s3Tos3.xml");
         int numConsumers = 20;
         ExecutorService es = Executors.newFixedThreadPool(numConsumers + 1);
-        ExecutorCompletionService<Integer> completionService = new ExecutorCompletionService<>(es);
+        ExecutorCompletionService<Long> completionService = new ExecutorCompletionService<>(es);
         ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(1000);
+        completionService.submit(new CallablePipesIterator(pipesIterator,
+                queue, 60000, numConsumers));
         for (int i = 0; i < numConsumers; i++) {
             completionService.submit(new S3FetcherEmitter(queue, fetcher, (S3Emitter) emitter));
-        }
-        for (FetchEmitTuple t : pipesIterator) {
-            queue.offer(t);
         }
         for (int i = 0; i < numConsumers; i++) {
             queue.offer(PipesIterator.COMPLETED_SEMAPHORE);
@@ -136,7 +137,7 @@ public class PipeIntegrationTests {
         int finished = 0;
         try {
             while (finished++ < numConsumers + 1) {
-                Future<Integer> future = completionService.take();
+                Future<Long> future = completionService.take();
                 future.get();
             }
         } finally {
@@ -163,7 +164,7 @@ public class PipeIntegrationTests {
     }
 
 
-    private static class FSFetcherEmitter implements Callable<Integer> {
+    private static class FSFetcherEmitter implements Callable<Long> {
         private static final AtomicInteger counter = new AtomicInteger(0);
 
         private final Fetcher fetcher;
@@ -178,7 +179,7 @@ public class PipeIntegrationTests {
         }
 
         @Override
-        public Integer call() throws Exception {
+        public Long call() throws Exception {
 
             while (true) {
                 FetchEmitTuple t = queue.poll(5, TimeUnit.MINUTES);
@@ -186,7 +187,7 @@ public class PipeIntegrationTests {
                     throw new TimeoutException("");
                 }
                 if (t == PipesIterator.COMPLETED_SEMAPHORE) {
-                    return 1;
+                    return 1l;
                 }
                 process(t);
             }
@@ -205,7 +206,7 @@ public class PipeIntegrationTests {
         }
     }
 
-    private static class S3FetcherEmitter implements Callable<Integer> {
+    private static class S3FetcherEmitter implements Callable<Long> {
         private static final AtomicInteger counter = new AtomicInteger(0);
 
         private final Fetcher fetcher;
@@ -220,7 +221,7 @@ public class PipeIntegrationTests {
         }
 
         @Override
-        public Integer call() throws Exception {
+        public Long call() throws Exception {
 
             while (true) {
                 FetchEmitTuple t = queue.poll(5, TimeUnit.MINUTES);
@@ -228,7 +229,7 @@ public class PipeIntegrationTests {
                     throw new TimeoutException("");
                 }
                 if (t == PipesIterator.COMPLETED_SEMAPHORE) {
-                    return 1;
+                    return 1l;
                 }
                 process(t);
             }

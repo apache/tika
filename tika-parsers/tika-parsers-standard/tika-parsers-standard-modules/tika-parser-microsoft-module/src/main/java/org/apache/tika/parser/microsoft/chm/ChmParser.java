@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.microsoft.chm;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -24,6 +23,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -99,7 +99,7 @@ public class ChmParser extends AbstractParser {
         Metadata metadata = new Metadata();
         ContentHandler handler = new EmbeddedContentHandler(new BodyContentHandler(xhtml));// -1
         try {
-            stream = new ByteArrayInputStream(byteObject);
+            stream = new UnsynchronizedByteArrayInputStream(byteObject);
             htmlParser.parse(stream, handler, metadata, context);
         } catch (IOException e) {
             // Pushback overflow from tagsoup

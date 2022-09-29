@@ -79,6 +79,17 @@
       </forkedJvmArgs>
       <timeoutMillis>60000</timeoutMillis>
     </params>
+    <pipesReporter class="org.apache.tika.pipes.reporters.opensearch.OpenSearchPipesReporter">
+      <params>
+        <openSearchUrl>{OPENSEARCH_CONNECTION}</openSearchUrl>
+        <keyPrefix>my_test_</keyPrefix>
+        <connectionTimeout>10000</connectionTimeout>
+        <socketTimeout>60000</socketTimeout>
+        <includeRouting>{INCLUDE_ROUTING}</includeRouting>
+        <userName>admin</userName>
+        <password>admin</password>
+      </params>
+    </pipesReporter>
   </async>
   <fetchers>
     <fetcher class="org.apache.tika.pipes.fetcher.fs.FileSystemFetcher">
@@ -93,9 +104,7 @@
       <params>
         <name>ose</name>
         <openSearchUrl>{OPENSEARCH_CONNECTION}</openSearchUrl>
-<!--    TODO: implement this
         <updateStrategy>{UPDATE_STRATEGY}</updateStrategy>
-        -->
         <attachmentStrategy>{ATTACHMENT_STRATEGY}</attachmentStrategy>
         <commitWithin>10</commitWithin>
         <idField>_id</idField>

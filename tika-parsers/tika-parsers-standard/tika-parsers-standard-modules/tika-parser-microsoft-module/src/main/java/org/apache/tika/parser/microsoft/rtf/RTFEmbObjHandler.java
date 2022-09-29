@@ -16,13 +16,13 @@
  */
 package org.apache.tika.parser.microsoft.rtf;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -61,7 +61,7 @@ class RTFEmbObjHandler {
     private static final String EMPTY_STRING = "";
     private final ContentHandler handler;
     private final EmbeddedDocumentUtil embeddedDocumentUtil;
-    private final ByteArrayOutputStream os;
+    private final UnsynchronizedByteArrayOutputStream os;
     private final int memoryLimitInKb;
 
     private boolean isPictBitmap = false;
@@ -81,7 +81,7 @@ class RTFEmbObjHandler {
                                int memoryLimitInKb) {
         this.handler = handler;
         this.embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
-        os = new ByteArrayOutputStream();
+        os = new UnsynchronizedByteArrayOutputStream();
         this.memoryLimitInKb = memoryLimitInKb;
     }
 

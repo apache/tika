@@ -50,14 +50,19 @@ import org.apache.tika.sax.xpath.XPathParser;
  * Parser for OpenDocument <code>meta.xml</code> files.
  */
 public class OpenDocumentMetaParser extends XMLParser {
+
+    public static final String ODF_VERSION_KEY = "odf:version";
     /**
      * Serial version UID
      */
     private static final long serialVersionUID = -8739250869531737584L;
 
     private static final String META_NS = "urn:oasis:names:tc:opendocument:xmlns:meta:1.0";
+
+    private static final String OFFICE_NS = "urn:oasis:names:tc:opendocument:xmlns:office:1.0";
     private static final XPathParser META_XPATH = new XPathParser("meta", META_NS);
 
+    private static final XPathParser OFFICE_XPATH = new XPathParser("office", OFFICE_NS);
     private static ContentHandler getDublinCoreHandler(Metadata metadata, Property property,
                                                        String element) {
         return new ElementMetadataHandler(DublinCore.NAMESPACE_URI_DC, element, metadata, property);
@@ -80,6 +85,15 @@ public class OpenDocumentMetaParser extends XMLParser {
         ContentHandler branch = new MatchingContentHandler(
                 new AttributeDependantMetadataHandler(md, "meta:name",
                         Office.USER_DEFINED_METADATA_NAME_PREFIX), matcher);
+        return new TeeContentHandler(ch, branch);
+    }
+
+    private static ContentHandler getVersion(ContentHandler ch, Metadata md) {
+        Matcher matcher = OFFICE_XPATH.parse("/office:document-meta/@office:version");
+        ContentHandler branch = new MatchingContentHandler(
+                new AttributeMetadataHandler(
+                        OFFICE_NS, "version", md,
+                        ODF_VERSION_KEY), matcher);
         return new TeeContentHandler(ch, branch);
     }
 
@@ -115,7 +129,7 @@ public class OpenDocumentMetaParser extends XMLParser {
                         getDublinCoreHandler(md, TikaCoreProperties.IDENTIFIER, "identifier"),
                         getDublinCoreHandler(md, TikaCoreProperties.LANGUAGE, "language"),
                         getDublinCoreHandler(md, TikaCoreProperties.RIGHTS, "rights"));
-
+        ch = getVersion(ch, md);
         // Process the OO Meta Attributes
         ch = getMeta(ch, md, TikaCoreProperties.CREATED, "creation-date");
         // ODF uses dc:date for modified

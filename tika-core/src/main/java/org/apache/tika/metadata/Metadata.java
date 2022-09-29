@@ -591,6 +591,25 @@ public class Metadata
     }
 
     /**
+     * Adds the date value of the identified metadata property.
+     *
+     * @param property simple calendar property definition
+     * @param date     property value
+     * @since Apache Tika 2.5.0
+     */
+    public void add(Property property, Calendar date) {
+        if (property.getPrimaryProperty().getValueType() != Property.ValueType.DATE) {
+            throw new PropertyTypeException(Property.ValueType.DATE,
+                    property.getPrimaryProperty().getValueType());
+        }
+        String dateString = null;
+        if (date != null) {
+            dateString = formatDate(date);
+        }
+        add(property, dateString);
+    }
+
+    /**
      * Remove a metadata and all its associated values.
      *
      * @param name metadata name to remove

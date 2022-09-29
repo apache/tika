@@ -284,6 +284,12 @@ public interface TikaCoreProperties {
             EmbeddedResourceType.THUMBNAIL.toString(), EmbeddedResourceType.RENDERING.toString());
     Property HAS_SIGNATURE = Property.internalBoolean("hasSignature");
 
+    Property SIGNATURE_NAME = Property.internalTextBag("signature:name");
+    Property SIGNATURE_DATE = Property.internalDateBag("signature:date");
+    Property SIGNATURE_LOCATION = Property.internalTextBag("signature:location");
+    Property SIGNATURE_REASON = Property.internalTextBag("signature:reason");
+    Property SIGNATURE_FILTER = Property.internalTextBag("signature:filter");
+    Property SIGNATURE_CONTACT_INFO = Property.internalTextBag("signature:contact-info");
 
     /**
      * A file might contain different types of embedded documents.

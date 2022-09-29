@@ -31,7 +31,7 @@
 
   <groupId>org.apache.tika</groupId>
   <artifactId>tika-parent</artifactId>
-  <version>2.4.2-SNAPSHOT</version>
+  <version>2.5.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Apache Tika parent</name>
@@ -219,6 +219,14 @@
       </roles>
     </developer>
     <developer>
+      <name>Tilman Hausherr</name>
+      <id>tilman</id>
+      <timezone>Europe/Berlin</timezone>
+      <roles>
+        <role>committer</role>
+      </roles>
+    </developer>
+    <developer>
       <name>Jukka Zitting</name>
       <id>jukka</id>
       <roles>
@@ -269,7 +277,7 @@
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
     <project.build.outputTimestamp>1655225567</project.build.outputTimestamp>
     <!-- plugin versions -->
-    <checkstyle.plugin.version>3.1.2</checkstyle.plugin.version>
+    <checkstyle.plugin.version>3.2.0</checkstyle.plugin.version>
     <forbiddenapis.version>3.3</forbiddenapis.version>
     <groovy.maven.version>2.1.1</groovy.maven.version>
     <maven.antrun.version>3.1.0</maven.antrun.version>
@@ -278,18 +286,18 @@
     <maven.compiler.plugin.version>3.10.1</maven.compiler.plugin.version>
     <maven.failsafe.version>3.0.0-M7</maven.failsafe.version>
     <maven.javadoc.version>3.4.1</maven.javadoc.version>
-    <maven.jar.version>3.2.2</maven.jar.version>
+    <maven.jar.version>3.3.0</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.surefire.version>3.0.0-M7</maven.surefire.version>
-    <maven.shade.version>3.3.0</maven.shade.version>
+    <maven.shade.version>3.4.0</maven.shade.version>
     <!-- need above java 8 for 10.[0-2] -->
     <puppycrawl.version>9.3</puppycrawl.version>
-    <rat.version>0.14</rat.version>
+    <rat.version>0.15</rat.version>
 
     <!-- dependency versions -->
 
-    <aws.version>1.12.286</aws.version>
-    <google.cloud.version>2.11.3</google.cloud.version>
+    <aws.version>1.12.312</aws.version>
+    <google.cloud.version>2.12.0</google.cloud.version>
     <asm.version>9.3</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
@@ -308,7 +316,7 @@
     <commons.math3.version>3.6.1</commons.math3.version>
     <ctakes.version>4.0.0.1</ctakes.version>
     <cxf.version>3.5.3</cxf.version>
-    <ddplist.version>1.24</ddplist.version>
+    <ddplist.version>1.25</ddplist.version>
     <dl4j.version>1.0.0-M2</dl4j.version>
     <!-- fakeload versions &gt; 0.4.0 require java > 8 -->
     <fakeload.version>0.4.0</fakeload.version>
@@ -319,10 +327,10 @@
     <!-- versions greater than 62.2 are not compatible with icu4j handler in lucene 8.11.1 -->
     <icu4j.version>62.2</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
-    <jackcess.version>4.0.1</jackcess.version>
+    <jackcess.version>4.0.2</jackcess.version>
     <jackcess.encrypt.version>4.0.1</jackcess.encrypt.version>
     <jackrabbit.version>2.21.12</jackrabbit.version>
-    <jackson.version>2.13.3</jackson.version>
+    <jackson.version>2.13.4</jackson.version>
     <javax.annotation.version>1.3.2</javax.annotation.version>
     <javax.jcr.version>2.0</javax.jcr.version>
     <javax.rest.version>2.1.1</javax.rest.version>
@@ -333,17 +341,17 @@
     <jaxb.version>2.3.6</jaxb.version>
     <jbig2.version>3.0.4</jbig2.version>
     <jdom2.version>2.0.6.1</jdom2.version>
-    <jempbox.version>1.8.16</jempbox.version>
-    <jetty.version>9.4.48.v20220622</jetty.version>
+    <jempbox.version>1.8.17</jempbox.version>
+    <jetty.version>9.4.49.v20220914</jetty.version>
     <jhighlight.version>1.1.0</jhighlight.version>
     <jna.version>5.12.1</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
     <junit4.version>4.13.2</junit4.version>
-    <junit5.version>5.9.0</junit5.version>
+    <junit5.version>5.9.1</junit5.version>
     <juniversalchardet.version>1.0.3</juniversalchardet.version>
     <junrar.version>7.5.3</junrar.version>
     <libpst.version>0.9.3</libpst.version>
-    <log4j2.version>2.18.0</log4j2.version>
+    <log4j2.version>2.19.0</log4j2.version>
     <lombok.version>1.18.20</lombok.version>
     <!-- lucene >= 9.x requires Java 11 -->
     <lucene.version>8.11.2</lucene.version>
@@ -351,7 +359,7 @@
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <!-- 0.8.6 is built with java 11 and does not work with Java 8 -->
     <mime4j.version>0.8.4</mime4j.version>
-    <mockito.version>4.7.0</mockito.version>
+    <mockito.version>4.8.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <openjson.version>1.0.12</openjson.version>
     <!-- 2.0.0 doesn't compile with jdk8 -->
@@ -361,21 +369,18 @@
     <osgi.core.version>6.0.0</osgi.core.version>
     <osgi.compendium.version>5.0.0</osgi.compendium.version>
     <parso.version>2.0.14</parso.version>
-    <!-- some conflict with slf4j with >= 4.12.0
-          causes failure in testForkParser -->
     <pax.exam.version>4.13.1</pax.exam.version>
     <pdfbox.version>2.0.26</pdfbox.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
-    <poi.version>5.2.2</poi.version>
+    <poi.version>5.2.3</poi.version>
     <quartz.version>2.3.2</quartz.version>
     <rome.version>1.18.0</rome.version>
     <scm.version>1.13.0</scm.version>
     <sis.version>1.2</sis.version>
-    <!-- we'll need to stay on 1.7 until we're java modularized ? -->
-    <slf4j.version>1.7.36</slf4j.version>
+    <slf4j.version>2.0.1</slf4j.version>
     <solrj.version>8.11.2</solrj.version>
-    <spring.version>5.3.22</spring.version>
-    <sqlite.version>3.39.2.0</sqlite.version>
+    <spring.version>5.3.23</spring.version>
+    <sqlite.version>3.39.3.0</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
     <test.containers.version>1.17.3</test.containers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
@@ -386,9 +391,9 @@
     <vorbis.version>0.8</vorbis.version>
     <xerces.version>2.12.2</xerces.version>
     <xmpcore.version>6.1.11</xmpcore.version>
-    <zstd.version>1.5.2-3</zstd.version>
-    <kafka.version>3.2.1</kafka.version>
-    <netty.version>4.1.79.Final</netty.version>
+    <zstd.version>1.5.2-4</zstd.version>
+    <kafka.version>3.3.0</kafka.version>
+    <netty.version>4.1.82.Final</netty.version>
   </properties>
 
   <dependencyManagement>
@@ -472,7 +477,7 @@
       <dependency>
         <groupId>com.google.protobuf</groupId>
         <artifactId>protobuf-java</artifactId>
-        <version>3.21.5</version>
+        <version>3.21.6</version>
       </dependency>
       <dependency>
         <groupId>com.h2database</groupId>
@@ -522,7 +527,7 @@
       <dependency>
         <groupId>it.unimi.dsi</groupId>
         <artifactId>fastutil</artifactId>
-        <version>8.5.8</version>
+        <version>8.5.9</version>
       </dependency>
       <dependency>
         <groupId>javax.annotation</groupId>
@@ -593,7 +598,7 @@
       </dependency>
       <dependency>
         <groupId>org.apache.logging.log4j</groupId>
-        <artifactId>log4j-slf4j-impl</artifactId>
+        <artifactId>log4j-slf4j2-impl</artifactId>
         <version>${log4j2.version}</version>
       </dependency>
       <dependency>
@@ -686,7 +691,7 @@
       <dependency>
         <groupId>org.netpreserve</groupId>
         <artifactId>jwarc</artifactId>
-        <version>0.18.1</version>
+        <version>0.19.0</version>
       </dependency>
       <dependency>
         <groupId>org.ops4j.base</groupId>
@@ -764,7 +769,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>versions-maven-plugin</artifactId>
-        <version>2.11.0</version>
+        <version>2.12.0</version>
         <configuration>
           <generateBackupPoms>false</generateBackupPoms>
         </configuration>
@@ -808,12 +813,6 @@
               <artifactId>xercesImpl</artifactId>
               <version>${xerces.version}</version>
             </exclude>
-            <!-- no fix available as of 20220715 -->
-            <dependency>
-              <groupId>com.azure</groupId>
-              <artifactId>azure-storage-blob</artifactId>
-              <version>12.18.0</version>
-            </dependency>
             <!-- these are used by the nlp-module -->
             <exclude>
               <groupId>org.apache.lucene</groupId>
@@ -831,6 +830,13 @@
               <groupId>commons-dbcp</groupId>
               <artifactId>commons-dbcp</artifactId>
               <version>1.4</version>
+            </exclude>
+            <!-- used only in tests and in tika-eval, and this problem requires the use of the console.
+                 https://github.com/h2database/h2database/issues/1294 -->
+            <exclude>
+                <groupId>com.h2database</groupId>
+                <artifactId>h2</artifactId>
+                <version>2.1.214</version>
             </exclude>
           </excludeCoordinates>
           <fail>true</fail>

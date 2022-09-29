@@ -17,10 +17,11 @@
 
 package org.apache.tika.parser.html;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Objects;
+
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 
 import org.apache.tika.mime.MediaType;
 
@@ -38,7 +39,7 @@ public class DataURIScheme {
     }
 
     public InputStream getInputStream() {
-        return new ByteArrayInputStream(data);
+        return new UnsynchronizedByteArrayInputStream(data);
     }
 
     /**

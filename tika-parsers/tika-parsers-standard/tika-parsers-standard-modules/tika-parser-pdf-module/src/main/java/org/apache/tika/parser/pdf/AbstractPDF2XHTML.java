@@ -23,7 +23,6 @@ import static org.apache.tika.parser.pdf.PDFParserConfig.OCR_STRATEGY.OCR_ONLY;
 
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -48,6 +47,7 @@ import java.util.TreeSet;
 import javax.xml.stream.XMLStreamException;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.pdfbox.cos.COSDictionary;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -278,7 +278,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                     EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
                 }
                 if (bytes != null) {
-                    try (InputStream is = new ByteArrayInputStream(bytes)) {
+                    try (InputStream is = new UnsynchronizedByteArrayInputStream(bytes)) {
                         parseMetadata(is, xfaMetadata);
                     }
                 }
@@ -1024,7 +1024,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             XFAExtractor xfaExtractor = new XFAExtractor();
             InputStream is = null;
             try {
-                is = new BufferedInputStream(new ByteArrayInputStream(pdxfa.getBytes()));
+                is = new BufferedInputStream(new UnsynchronizedByteArrayInputStream(pdxfa.getBytes()));
             } catch (IOException e) {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
             }

@@ -19,6 +19,7 @@ package org.apache.tika.utils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Reader;
 import java.io.Serializable;
 import java.io.StringReader;
 import java.lang.reflect.Method;
@@ -26,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.xml.XMLConstants;
@@ -79,6 +81,8 @@ public class XMLReaderUtils implements Serializable {
     private static final String XERCES_SECURITY_MANAGER = "org.apache.xerces.util.SecurityManager";
     private static final String XERCES_SECURITY_MANAGER_PROPERTY =
             "http://apache.org/xml/properties/security-manager";
+
+    private static final AtomicBoolean HAS_WARNED_STAX = new AtomicBoolean(false);
     private static final ContentHandler IGNORING_CONTENT_HANDLER = new DefaultHandler();
     private static final DTDHandler IGNORING_DTD_HANDLER = new DTDHandler() {
         @Override
@@ -398,6 +402,36 @@ public class XMLReaderUtils implements Serializable {
     }
 
     /**
+     * This checks context for a user specified {@link DocumentBuilder}.
+     * If one is not found, this reuses a DocumentBuilder from the pool.
+     *
+     * @param reader  reader (character stream) to parse
+     * @param context context to use
+     * @return a document
+     * @throws TikaException
+     * @throws IOException
+     * @throws SAXException
+     * @since Apache Tika 2.5
+     */
+    public static Document buildDOM(Reader reader, ParseContext context)
+            throws TikaException, IOException, SAXException {
+        DocumentBuilder builder = context.get(DocumentBuilder.class);
+        PoolDOMBuilder poolBuilder = null;
+        if (builder == null) {
+            poolBuilder = acquireDOMBuilder();
+            builder = poolBuilder.getDocumentBuilder();
+        }
+
+        try {
+            return builder.parse(new InputSource(reader));
+        } finally {
+            if (poolBuilder != null) {
+                releaseDOMBuilder(poolBuilder);
+            }
+        }
+    }
+
+    /**
      * Builds a Document with a DocumentBuilder from the pool
      *
      * @param path path to parse
@@ -477,6 +511,38 @@ public class XMLReaderUtils implements Serializable {
         }
         try {
             saxParser.parse(is, new OfflineContentHandler(contentHandler));
+        } finally {
+            if (poolSAXParser != null) {
+                releaseParser(poolSAXParser);
+            }
+        }
+    }
+
+    /**
+     * This checks context for a user specified {@link SAXParser}.
+     * If one is not found, this reuses a SAXParser from the pool.
+     *
+     * @param reader         reader (character stream) to parse
+     * @param contentHandler handler to use; this wraps a {@link OfflineContentHandler}
+     *                       to the content handler as an extra layer of defense against
+     *                       external entity vulnerabilities
+     * @param context        context to use
+     * @return
+     * @throws TikaException
+     * @throws IOException
+     * @throws SAXException
+     * @since Apache Tika 2.5
+     */
+    public static void parseSAX(Reader reader, ContentHandler contentHandler, ParseContext context)
+            throws TikaException, IOException, SAXException {
+        SAXParser saxParser = context.get(SAXParser.class);
+        PoolSAXParser poolSAXParser = null;
+        if (saxParser == null) {
+            poolSAXParser = acquireSAXParser();
+            saxParser = poolSAXParser.getSAXParser();
+        }
+        try {
+            saxParser.parse(new InputSource(reader), new OfflineContentHandler(contentHandler));
         } finally {
             if (poolSAXParser != null) {
                 releaseParser(poolSAXParser);
@@ -721,15 +787,19 @@ public class XMLReaderUtils implements Serializable {
     }
 
     private static void trySetStaxSecurityManager(XMLInputFactory inputFactory) {
+        //try default java entity expansion, then fallback to woodstox, then warn...once.
         try {
-            inputFactory.setProperty("com.ctc.wstx.maxEntityCount", MAX_ENTITY_EXPANSIONS);
+            inputFactory.setProperty("http://www.oracle.com/xml/jaxp/properties/entityExpansionLimit",
+                    MAX_ENTITY_EXPANSIONS);
         } catch (IllegalArgumentException e) {
-            // throttle the log somewhat as it can spam the log otherwise
-            if (System.currentTimeMillis() > LAST_LOG + TimeUnit.MINUTES.toMillis(5)) {
-                LOG.warn("SAX Security Manager could not be setup [log suppressed for 5 minutes]",
-                        e);
-                LAST_LOG = System.currentTimeMillis();
+            try {
+                inputFactory.setProperty("com.ctc.wstx.maxEntityCount", MAX_ENTITY_EXPANSIONS);
+            } catch (IllegalArgumentException e2) {
+                if (HAS_WARNED_STAX.getAndSet(true) == false) {
+                    LOG.warn("Could not set limit on maximum entity expansions for: " + inputFactory.getClass());
+                }
             }
+
         }
     }
 

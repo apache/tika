@@ -23,7 +23,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
@@ -89,8 +89,7 @@ class TikaPipesHttpClient {
 
     private TikaEmitterResult postJson(String endPoint, String jsonRequest) {
         HttpPost post = new HttpPost(endPoint);
-        ByteArrayEntity entity = new ByteArrayEntity(jsonRequest.getBytes(StandardCharsets.UTF_8));
-        post.setEntity(entity);
+        post.setEntity(new StringEntity(jsonRequest, StandardCharsets.UTF_8));
         post.setHeader("Content-Type", "application/json");
 
         int tries = 0;
