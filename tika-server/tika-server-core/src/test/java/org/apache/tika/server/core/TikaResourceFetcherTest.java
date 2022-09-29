@@ -107,4 +107,21 @@ public class TikaResourceFetcherTest extends CXFTestBase {
         String xml = getStringFromInputStream((InputStream) response.getEntity());
         assertContains("hello world", xml);
     }
+
+    @Test
+    public void testNonAsciiInQueryParameters() throws Exception {
+        Response response = WebClient.create(endPoint + TIKA_PATH).query("fetcherName", "fsf")
+                .query("fetchKey", "mock/中文.xml").accept("text/xml").put(null);
+        String xml = getStringFromInputStream((InputStream) response.getEntity());
+        assertContains("你好世界", xml);
+    }
+
+    @Test
+    public void testNonAsciiUrlEncodedInQueryParameters() throws Exception {
+        Response response = WebClient.create(endPoint + TIKA_PATH).query("fetcherName", "fsf")
+                .query("fetchKey", "mock/%E4%B8%AD%E6%96%87.xml").accept("text/xml").put(null);
+        String xml = getStringFromInputStream((InputStream) response.getEntity());
+        assertContains("你好世界", xml);
+    }
+
 }
