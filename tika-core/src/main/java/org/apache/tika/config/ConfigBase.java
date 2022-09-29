@@ -294,6 +294,40 @@ public abstract class ConfigBase {
     }
 
     private static void tryToSetList(Object object, Node param) throws TikaConfigException {
+        if (param.hasAttributes() && param.getAttributes().getNamedItem("class") != null) {
+            tryToSetClassList(object, param);
+        } else {
+            tryToSetStringList(object, param);
+        }
+    }
+
+    private static void tryToSetClassList(Object object, Node node) throws TikaConfigException {
+        String name = node.getLocalName();
+        try {
+            Class interfaze =
+                    Class.forName(node.getAttributes().getNamedItem("class").getTextContent());
+            List items = new ArrayList<Object>();
+            NodeList nodeList = node.getChildNodes();
+            for (int i = 0; i < nodeList.getLength(); i++) {
+                Node child = nodeList.item(i);
+                if (child.getNodeType() == 1) {
+                    Object item = buildClass(child, child.getLocalName(), interfaze);
+                    setParams(item, child, new HashSet<>());
+                    items.add(item);
+                }
+            }
+
+            String setter = "set" + name.substring(0, 1).toUpperCase(Locale.US) + name.substring(1);
+            Method m = object.getClass().getMethod(setter, List.class);
+            m.invoke(object, items);
+
+        } catch (ClassNotFoundException | InvocationTargetException | NoSuchMethodException |
+                 IllegalAccessException e) {
+            throw new TikaConfigException("couldn't find class", e);
+        }
+    }
+
+    private static void tryToSetStringList(Object object, Node param) throws TikaConfigException {
         String name = param.getLocalName();
         List<String> strings = new ArrayList<>();
         NodeList nodeList = param.getChildNodes();
