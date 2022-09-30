@@ -42,6 +42,9 @@ import org.apache.tika.pipes.PipesResult;
 /**
  * This is intended to write summary statistics to disk
  * periodically.
+ *
+ *  As of the 2.5.0 release, this is ALPHA version.  There may be breaking changes
+ *  in the future.
  */
 public class FileSystemStatusReporter extends PipesReporter
         implements Initializable {

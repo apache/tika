@@ -1,4 +1,4 @@
-Release 2.5.0 - ???
+Release 2.5.0 - 09/30/2022
 
    * Improved extraction of PDF subset info for PDF/UA, PDF/VT, and PDF/X.
      NOTE: we no longer append PDF/A information, e.g. 'version="A-1b"'
@@ -21,7 +21,7 @@ Release 2.5.0 - ???
 
    * Upgrade to PDFBox 2.0.27 (TIKA-3866).
 
-   * Upgrade to jempbox 1.8.17 (TIKA-3856).
+   * Upgrade to JempBox 1.8.17 (TIKA-3856).
 
    * Add extraction of ODF version from ODF files (TIKA-3840).
 
@@ -50,6 +50,9 @@ Release 2.5.0 - ???
 
    * Numerous dependency upgrades (TIKA-3795).
 
+   * Add ALPHA-level initial releases of JDBCEmitter,
+     FileSystemStatusReporter and OpenSearchPipesReporter.
+     These may have breaking changes in subsequent releases.
 
 Release 2.4.1 - 06/14/2022
 
