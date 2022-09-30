@@ -103,6 +103,13 @@ public class FileSystemStatusReporter extends PipesReporter
         if (statusFile == null) {
             throw new TikaConfigException("must initialize 'statusFile'");
         }
+        if (! Files.isDirectory(statusFile.getParent())) {
+            try {
+                Files.createDirectories(statusFile.getParent());
+            } catch (IOException e) {
+                throw new TikaConfigException("couldn't create directory for status file", e);
+            }
+        }
     }
 
     @Override
