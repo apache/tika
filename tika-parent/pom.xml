@@ -382,7 +382,7 @@
     <spring.version>5.3.23</spring.version>
     <sqlite.version>3.39.3.0</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
-    <test.containers.version>1.17.3</test.containers.version>
+    <test.containers.version>1.17.4</test.containers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
     <tukaani.version>1.9</tukaani.version>
     <twelvemonkeys.version>3.8.3</twelvemonkeys.version>
