@@ -189,6 +189,7 @@ least three +1 Tika PMC votes are cast.
             <exclude>README.md</exclude>
             <!-- remove this once we figure out the bundle packaging -->
             <exclude>tika-bundle/src/main/resources/META-INF/MANIFEST.MF</exclude>
+            <exclude>.gitattributes</exclude>
           </excludes>
         </configuration>
       </plugin>

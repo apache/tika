@@ -111,6 +111,16 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <version>${rat.version}</version>
+        <configuration>
+          <excludes>
+            <exclude>**/resources/*tesseract.txt</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
     </plugins>
 
   </build>
