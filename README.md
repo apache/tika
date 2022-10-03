@@ -18,11 +18,11 @@ Pre-built binaries of Apache Tika standalone applications are available
 from https://tika.apache.org/download.html . Pre-built binaries of all the
 Tika jars can be fetched from Maven Central or your favourite Maven mirror.
 
-**Tika 1.X is scheduled for End of Life (EOL) on September 30, 2022.**  We will
-continue to make security improvements until the EOL, but we do not plan to back port new functionality from the main/2.x branch. See [Migrating to 2.x](#migrating-to-2x) below for more details. 
+**Tika 1.X reached End of Life (EOL) on September 30, 2022.**  
 
 Tika is based on **Java 8** and uses the [Maven 3](https://maven.apache.org) build system. 
-**N.B.** [Docker](https://www.docker.com/products/personal) is required in the main/2.x branch to complete all unit tests. You can pass the `-DskipTests` flag if you wish to skip tests.
+**N.B.** [Docker](https://www.docker.com/products/personal) is required in the main branch to complete all unit tests. 
+You can pass the `-DskipTests` flag if you wish to skip tests.
 
 To build Tika from source, use the following command in the main directory:
 
@@ -102,12 +102,12 @@ See the [pull request template](https://github.com/apache/tika/blob/main/.github
 
 Building from a Specific Tag
 ============================
-Let's assume that you want to build the 1.22 tag:
+Let's assume that you want to build the 2.5.0 tag:
 ```
 0. Download and install hub.github.com
 1. git clone https://github.com/apache/tika.git 
 2. cd tika
-3. git checkout 1.22
+3. git checkout 2.5.0
 4. mvn clean install
 ```
 
