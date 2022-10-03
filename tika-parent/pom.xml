@@ -278,7 +278,7 @@
     <project.build.outputTimestamp>1664544403</project.build.outputTimestamp>
     <!-- plugin versions -->
     <checkstyle.plugin.version>3.2.0</checkstyle.plugin.version>
-    <forbiddenapis.version>3.3</forbiddenapis.version>
+    <forbiddenapis.version>3.4</forbiddenapis.version>
     <groovy.maven.version>2.1.1</groovy.maven.version>
     <maven.antrun.version>3.1.0</maven.antrun.version>
     <maven.assembly.version>3.4.2</maven.assembly.version>
