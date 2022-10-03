@@ -838,6 +838,13 @@
                 <artifactId>h2</artifactId>
                 <version>2.1.214</version>
             </exclude>
+            <!-- I don't think this affects us based on this description: https://nvd.nist.gov/vuln/detail/CVE-2022-42003.
+            A stable release is not yet available to fix this -->
+            <exclude>
+              <groupId>com.fasterxml.jackson.core</groupId>
+              <artifactId>jackson-databind</artifactId>
+              <version>2.13.4</version>
+            </exclude>
           </excludeCoordinates>
           <fail>true</fail>
         </configuration>
