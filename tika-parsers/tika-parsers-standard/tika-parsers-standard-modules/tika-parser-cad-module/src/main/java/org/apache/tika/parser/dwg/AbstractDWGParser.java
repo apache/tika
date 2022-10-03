@@ -81,5 +81,13 @@ public abstract class AbstractDWGParser extends AbstractParser {
     public void setCleanDwgReadReplaceWith(String cleanDwgReadReplaceWith) {
         defaultDwgParserConfig.setCleanDwgReadReplaceWith(cleanDwgReadReplaceWith);
     }
+    long getDwgReadTimeout() {
+        return defaultDwgParserConfig.getDwgReadTimeout();
+    }
+
+    @Field
+    public void setDwgReadTimeout(long dwgReadTimeout) {
+        defaultDwgParserConfig.setDwgReadtimeout(dwgReadTimeout);
+    }
     
 }

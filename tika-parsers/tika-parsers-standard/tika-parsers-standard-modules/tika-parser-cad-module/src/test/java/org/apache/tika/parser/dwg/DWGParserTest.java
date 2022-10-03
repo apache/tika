@@ -16,14 +16,19 @@
  */
 package org.apache.tika.parser.dwg;
 
-import static org.apache.tika.TikaTest.assertContains;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 
-import org.junit.jupiter.api.Disabled;
+
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.parser.CompositeParser;
+import org.apache.tika.utils.StringUtils;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
@@ -35,7 +40,18 @@ import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.sax.BodyContentHandler;
 
 public class DWGParserTest extends TikaTest {
+    public static boolean canRun(DWGParser parser)  {
+        String dwgRead = parser.getDwgReadExecutable();
 
+        if (!StringUtils.isBlank(dwgRead) && !Files.isRegularFile(Paths.get(dwgRead))) {
+            return false;
+        }
+
+        // Try running DWGRead from there, and see if it exists + works
+        String[] checkCmd = { dwgRead };
+        return ExternalParser.check(checkCmd);
+
+    }
     @Test
     public void testDWG2000Parser() throws Exception {
         InputStream input =
@@ -104,12 +120,12 @@ public class DWGParserTest extends TikaTest {
         }
     }
 
-    @SuppressWarnings("deprecation")
+
     private void testParser(InputStream input) throws Exception {
         try {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new DWGParser().parse(input, handler, metadata);
+            new DWGParser().parse(input, handler, metadata,new ParseContext());
 
             assertEquals("image/vnd.dwg", metadata.get(Metadata.CONTENT_TYPE));
 
@@ -132,12 +148,12 @@ public class DWGParserTest extends TikaTest {
         }
     }
 
-    @SuppressWarnings("deprecation")
+
     private void testParserNoHeader(InputStream input) throws Exception {
         try {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new DWGParser().parse(input, handler, metadata);
+            new DWGParser().parse(input, handler, metadata,new ParseContext());
 
             assertEquals("image/vnd.dwg", metadata.get(Metadata.CONTENT_TYPE));
 
@@ -155,12 +171,11 @@ public class DWGParserTest extends TikaTest {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private void testParserAlt(InputStream input) throws Exception {
         try {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new DWGParser().parse(input, handler, metadata);
+            new DWGParser().parse(input, handler, metadata, new ParseContext());
 
             assertEquals("image/vnd.dwg", metadata.get(Metadata.CONTENT_TYPE));
 
@@ -194,27 +209,16 @@ public class DWGParserTest extends TikaTest {
         assertEquals("jlakshvi", metadata.get(TikaCoreProperties.MODIFIER));
         assertEquals("CUSTOMER'S ADDRESS", metadata.get("dwg-custom:CUSTOMER'S ADDRESS"));
     }
-    @Disabled
-    @Test
-    public void testDWGRead() throws Exception {
-        ParseContext pc = new ParseContext();
-        DWGParserConfig dwgParserConfig = new DWGParserConfig();
-        dwgParserConfig.setDwgReadExecutable("G:\\libredwg-0.12.5-win64\\dwgread.exe");
-        dwgParserConfig.setCleanDwgReadRegexToReplace("^\\x20-\\x7e| nan");
-        dwgParserConfig.setDwgReadtimeout(10);
-        pc.set(DWGParserConfig.class, dwgParserConfig);
-        String xml = getXML("architectural_-_annotation_scaling_and_multileaders.dwg", pc).xml;
-        System.out.println(xml);
-    }
-    @Disabled
     @Test
     public void testDWGReadexe() throws Exception {
-        DWGParserConfig dwgParserConfig = new DWGParserConfig();
-        dwgParserConfig.setDwgReadExecutable("G:\\libredwg-0.12.5-win64\\dwgread.exe");
-    
-        String[] checkCmd = {dwgParserConfig.getDwgReadExecutable()};
-        boolean hasDwgRead = ExternalParser.check(checkCmd);
-        System.out.println(hasDwgRead);
+
+        InputStream stream = getResourceAsStream("/test-configs/tika-config-dwgRead.xml");
+        DWGParser parser =
+                (DWGParser) ((CompositeParser) new TikaConfig(stream).getParser())
+                        .getAllComponentParsers().get(0);
+        assumeTrue(canRun(parser), "Can't run DWGRead.exe");
+        String output = getText("architectural_-_annotation_scaling_and_multileaders.dwg", parser);
+        assertContains("ELEV. 11'-9\" TOP OF SECOND FLR.",output);
     }
 
 }

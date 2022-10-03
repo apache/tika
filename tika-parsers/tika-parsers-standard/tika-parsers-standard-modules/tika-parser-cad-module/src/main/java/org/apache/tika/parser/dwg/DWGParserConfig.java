@@ -17,6 +17,8 @@
 
 package org.apache.tika.parser.dwg;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -67,6 +69,7 @@ public class DWGParserConfig implements Serializable {
     }
 
     public String getDwgReadExecutable() {
+
         return dwgReadExecutable;
     }
 
@@ -91,6 +94,14 @@ public class DWGParserConfig implements Serializable {
     }
 
     public void setDwgReadExecutable(String dwgReadExecutable) {
+        if (!Paths.get(dwgReadExecutable).isAbsolute())
+            try {
+                dwgReadExecutable =   new File(dwgReadExecutable).getCanonicalFile().toString();
+            } catch (IOException e) {
+                //do nothing as the error will be picked up by the DWG Parser
+            }
+
+
         this.dwgReadExecutable = dwgReadExecutable;
     }
 
