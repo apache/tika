@@ -997,6 +997,7 @@
         </executions>
       </plugin>
       <plugin>
+        <!-- mvn validate -->
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
         <version>${checkstyle.plugin.version}</version>
@@ -1013,12 +1014,12 @@
             <phase>validate</phase>
             <configuration>
               <configLocation>checkstyle.xml</configLocation>
-              <encoding>UTF-8</encoding>
               <consoleOutput>false</consoleOutput>
               <includeTestSourceDirectory>true</includeTestSourceDirectory>
               <testSourceDirectories>${project.basedir}/src/test/java</testSourceDirectories>
               <violationSeverity>warn</violationSeverity>
               <failOnViolation>true</failOnViolation>
+              <failsOnError>true</failsOnError>
             </configuration>
             <goals>
               <goal>check</goal>

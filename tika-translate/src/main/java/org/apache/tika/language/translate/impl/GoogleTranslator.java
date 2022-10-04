@@ -27,13 +27,13 @@ import java.util.Properties;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import org.apache.cxf.jaxrs.client.WebClient;
-import org.apache.tika.exception.TikaException;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.cxf.jaxrs.client.WebClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.tika.exception.TikaException;
 
 /**
  * An implementation of a REST client to the <a
@@ -42,14 +42,13 @@ import org.slf4j.LoggerFactory;
  * href="http://hayageek.com/google-translate-api-tutorial/">great tutorial</a>
  * from <a href="http://hayageek.com">hayageek.com</a>. Set your API key in
  * translator.google.properties.
- * 
- * 
  */
 public class GoogleTranslator extends AbstractTranslator {
 
     private static final Logger LOG = LoggerFactory.getLogger(GoogleTranslator.class);
 
-    private static final String GOOGLE_TRANSLATE_URL_BASE = "https://www.googleapis.com/language/translate/v2";
+    private static final String GOOGLE_TRANSLATE_URL_BASE =
+            "https://www.googleapis.com/language/translate/v2";
 
     private static final String DEFAULT_KEY = "dummy-secret";
 
@@ -64,12 +63,11 @@ public class GoogleTranslator extends AbstractTranslator {
         this.isAvailable = true;
         Properties config = new Properties();
         try {
-            config.load(GoogleTranslator.class
-                    .getResourceAsStream(
-                            "translator.google.properties"));
+            config.load(GoogleTranslator.class.getResourceAsStream("translator.google.properties"));
             this.apiKey = config.getProperty("translator.client-secret");
-            if (this.apiKey.equals(DEFAULT_KEY))
+            if (this.apiKey.equals(DEFAULT_KEY)) {
                 this.isAvailable = false;
+            }
         } catch (Exception e) {
             LOG.warn("Exception reading config file", e);
             isAvailable = false;
@@ -77,19 +75,19 @@ public class GoogleTranslator extends AbstractTranslator {
     }
 
     @Override
-    public String translate(String text, String sourceLanguage,
-            String targetLanguage) throws TikaException, IOException {
-        if (!this.isAvailable)
+    public String translate(String text, String sourceLanguage, String targetLanguage)
+            throws TikaException, IOException {
+        if (!this.isAvailable) {
             return text;
-        Response response = client.accept(MediaType.APPLICATION_JSON)
-                .query("key", apiKey).query("source", sourceLanguage)
-                .query("target", targetLanguage).query("q", text).get();
+        }
+        Response response = client.accept(MediaType.APPLICATION_JSON).query("key", apiKey)
+                .query("source", sourceLanguage).query("target", targetLanguage).query("q", text)
+                .get();
 
         StringBuilder responseText = new StringBuilder();
         try (InputStreamReader inputStreamReader = new InputStreamReader(
                 (InputStream) response.getEntity(), UTF_8);
-            BufferedReader reader = new BufferedReader(inputStreamReader);
-        ) {
+                BufferedReader reader = new BufferedReader(inputStreamReader)) {
             String line;
             while ((line = reader.readLine()) != null) {
                 responseText.append(line);
@@ -102,10 +100,10 @@ public class GoogleTranslator extends AbstractTranslator {
     }
 
     @Override
-    public String translate(String text, String targetLanguage)
-            throws TikaException, IOException {
-        if (!this.isAvailable)
+    public String translate(String text, String targetLanguage) throws TikaException, IOException {
+        if (!this.isAvailable) {
             return text;
+        }
 
         String sourceLanguage = detectLanguage(text).getLanguage();
         return translate(text, sourceLanguage, targetLanguage);

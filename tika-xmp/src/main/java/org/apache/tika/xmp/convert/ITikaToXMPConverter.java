@@ -16,10 +16,10 @@
  */
 package org.apache.tika.xmp.convert;
 
-import org.apache.tika.metadata.Metadata;
-
 import com.adobe.internal.xmp.XMPException;
 import com.adobe.internal.xmp.XMPMeta;
+
+import org.apache.tika.metadata.Metadata;
 
 /**
  * Interface for the specific <code>Metadata</code> to XMP converters
@@ -29,11 +29,9 @@ public interface ITikaToXMPConverter {
      * Converts a Tika {@link Metadata}-object into an {@link XMPMeta} containing the useful
      * properties.
      *
-     * @param metadata
-     *            a Tika Metadata object
+     * @param metadata a Tika Metadata object
      * @return Returns an XMPMeta object.
-     * @throws XMPException
-     *             If an error occurs during the creation of the XMP object.
+     * @throws XMPException If an error occurs during the creation of the XMP object.
      */
     XMPMeta process(Metadata metadata) throws XMPException;
 }

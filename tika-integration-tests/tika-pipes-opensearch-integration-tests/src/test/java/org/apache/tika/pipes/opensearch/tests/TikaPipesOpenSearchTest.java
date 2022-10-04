@@ -20,7 +20,6 @@ package org.apache.tika.pipes.opensearch.tests;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;

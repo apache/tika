@@ -33,7 +33,7 @@ public class CachedTranslatorTest {
     private CachedTranslator cachedTranslator;
 
     @BeforeEach
-    public void setUp(){
+    public void setUp() {
         cachedTranslator = new CachedTranslator(new GoogleTranslator());
     }
 
@@ -42,8 +42,10 @@ public class CachedTranslatorTest {
         for (int i = 0; i < 20; i++) {
             cachedTranslator.translate("This is a test string to translate!", "en", "sv");
         }
-        assertEquals(cachedTranslator.getNumTranslationPairs(), 1, "Cache doesn't have a single translation pair!");
-        assertEquals(cachedTranslator.getNumTranslationsFor("en", "sv"), 1, "Cache has more than one element!");
+        assertEquals(cachedTranslator.getNumTranslationPairs(), 1,
+                "Cache doesn't have a single translation pair!");
+        assertEquals(cachedTranslator.getNumTranslationsFor("en", "sv"), 1,
+                "Cache has more than one element!");
     }
 
     @Test
@@ -52,9 +54,12 @@ public class CachedTranslatorTest {
             cachedTranslator.translate("This is a test string to translate!", "en", "no");
             cachedTranslator.translate("This is a different string...", "en", "fr");
         }
-        assertEquals(cachedTranslator.getNumTranslationPairs(), 2, "Cache doesn't have two translation pairs!");
-        assertEquals(cachedTranslator.getNumTranslationsFor("en", "no"), 1, "Cache has more than en to no translation!");
-        assertEquals(cachedTranslator.getNumTranslationsFor("en", "fr"), 1, "Cache has more than en to fr translation!");
+        assertEquals(cachedTranslator.getNumTranslationPairs(), 2,
+                "Cache doesn't have two translation pairs!");
+        assertEquals(cachedTranslator.getNumTranslationsFor("en", "no"), 1,
+                "Cache has more than en to no translation!");
+        assertEquals(cachedTranslator.getNumTranslationsFor("en", "fr"), 1,
+                "Cache has more than en to fr translation!");
     }
 
     @Test
@@ -65,8 +70,7 @@ public class CachedTranslatorTest {
         if (cachedTranslator.isAvailable()) {
             String result = cachedTranslator.translate(source, "es", "en");
             assertNotNull(result);
-            assertEquals("Result: [" + result
-                            + "]: not equal to expected: [" + expected + "]",
+            assertEquals("Result: [" + result + "]: not equal to expected: [" + expected + "]",
                     expected, result);
         }
     }

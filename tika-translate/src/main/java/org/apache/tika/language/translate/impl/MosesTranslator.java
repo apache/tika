@@ -50,10 +50,8 @@ public class MosesTranslator extends ExternalTranslator {
     public MosesTranslator() {
         Properties config = new Properties();
         try {
-            config.load(MosesTranslator.class
-                    .getResourceAsStream("translator.moses.properties"));
-            new MosesTranslator(
-                    config.getProperty("translator.smt_path"),
+            config.load(MosesTranslator.class.getResourceAsStream("translator.moses.properties"));
+            new MosesTranslator(config.getProperty("translator.smt_path"),
                     config.getProperty("translator.script_path"));
         } catch (IOException e) {
             throw new AssertionError("Failed to read translator.moses.properties.");
@@ -63,7 +61,7 @@ public class MosesTranslator extends ExternalTranslator {
     /**
      * Create a Moses Translator with the specified smt jar and script paths.
      *
-     * @param smtPath Full path to the jar to run.
+     * @param smtPath    Full path to the jar to run.
      * @param scriptPath Full path to the script to pass to the smt jar.
      */
     public MosesTranslator(String smtPath, String scriptPath) {
@@ -73,27 +71,31 @@ public class MosesTranslator extends ExternalTranslator {
     }
 
     @Override
-    public String translate(String text, String sourceLanguage, String targetLanguage) throws TikaException, IOException {
-        if (!isAvailable() || !checkCommand(buildCheckCommand(smtPath), 1)) return text;
+    public String translate(String text, String sourceLanguage, String targetLanguage)
+            throws TikaException, IOException {
+        if (!isAvailable() || !checkCommand(buildCheckCommand(smtPath), 1)) {
+            return text;
+        }
         File tmpFile = new File(TMP_FILE_NAME);
-        try (OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(tmpFile), Charset.defaultCharset())) {
+        try (OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(tmpFile),
+                Charset.defaultCharset())) {
             out.append(text).append('\n').close();
         }
 
-        Runtime.getRuntime().exec(buildCommand(smtPath, scriptPath), new String[]{}, buildWorkingDirectory(scriptPath));
+        Runtime.getRuntime().exec(buildCommand(smtPath, scriptPath), new String[]{},
+                buildWorkingDirectory(scriptPath));
 
         File tmpTranslatedFile = new File(TMP_FILE_NAME + ".translated");
 
         StringBuilder stringBuilder = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-                new FileInputStream(tmpTranslatedFile),
-                Charset.defaultCharset()
-        ))) {
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(new FileInputStream(tmpTranslatedFile),
+                        Charset.defaultCharset()))) {
             String line;
             while ((line = reader.readLine()) != null) stringBuilder.append(line);
         }
 
-        if (!tmpFile.delete() || !tmpTranslatedFile.delete()){
+        if (!tmpFile.delete() || !tmpTranslatedFile.delete()) {
             throw new IOException("Failed to delete temporary files.");
         }
         return stringBuilder.toString();
@@ -106,19 +108,19 @@ public class MosesTranslator extends ExternalTranslator {
 
     /**
      * Build the command String to be executed.
-     * @param smtPath Full path to the jar to run.
+     *
+     * @param smtPath    Full path to the jar to run.
      * @param scriptPath Full path to the script to pass to the smt jar.
      * @return String to run on the command line.
      */
     private String buildCommand(String smtPath, String scriptPath) {
-        return "java -jar " + smtPath +
-                " -c NONE " +
-                scriptPath + " " +
+        return "java -jar " + smtPath + " -c NONE " + scriptPath + " " +
                 System.getProperty("user.dir") + "/" + TMP_FILE_NAME;
     }
 
     /**
      * Build the command String to check if we can execute the smt jar.
+     *
      * @param smtPath Full path to the jar to run.
      * @return String to run on the command line.
      */
@@ -129,6 +131,7 @@ public class MosesTranslator extends ExternalTranslator {
     /**
      * Build the File that represents the desired working directory. In this case,
      * the directory the script is in.
+     *
      * @param scriptPath Full path to the script passed to the smt jar.
      * @return File of the directory with the script in it.
      */

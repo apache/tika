@@ -25,63 +25,60 @@ import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.language.translate.impl.GoogleTranslator;
-
 
 /**
  * Test harness for the {@link GoogleTranslator}.
- * 
  */
-public class GoogleTranslatorTest  {
+public class GoogleTranslatorTest {
 
-	private GoogleTranslator translator;
+    private GoogleTranslator translator;
 
-	public GoogleTranslatorTest() {
+    public GoogleTranslatorTest() {
 
-	}
+    }
 
-	@BeforeEach
-	public void setUp() {
-		translator = new GoogleTranslator();
-	}
+    @BeforeEach
+    public void setUp() {
+        translator = new GoogleTranslator();
+    }
 
-	@Test
-	public void testSimpleTranslate() {
-		String source = "hola senor";
-		String expected = "hello sir";
+    @Test
+    public void testSimpleTranslate() {
+        String source = "hola senor";
+        String expected = "hello sir";
 
-		String result = null;
-		if (translator.isAvailable()) {
-			try {
-				result = translator.translate(source, "es", "en");
-				assertNotNull(result);
-				assertEquals(expected, result, "Result: [" + result
-						+ "]: not equal to expected: [" + expected + "]");
-			} catch (Exception e) {
-				e.printStackTrace();
-				fail(e.getMessage());
-			}
-		}
-	}
+        String result = null;
+        if (translator.isAvailable()) {
+            try {
+                result = translator.translate(source, "es", "en");
+                assertNotNull(result);
+                assertEquals(expected, result,
+                        "Result: [" + result + "]: not equal to expected: [" + expected + "]");
+            } catch (Exception e) {
+                e.printStackTrace();
+                fail(e.getMessage());
+            }
+        }
+    }
 
-	@Test
-	public void testTranslateGuessLanguage() {
-		String source = "bonjour comment vas-tu";
-		String expected = "hello how are you";
+    @Test
+    public void testTranslateGuessLanguage() {
+        String source = "bonjour comment vas-tu";
+        String expected = "hello how are you";
 
-		String result = null;
-		if (translator.isAvailable()) {
-			try {
-				result = translator.translate(source, "en");
-				assertNotNull(result);
-				assertEquals(expected, result, "Result: [" + result
-						+ "]: not equal to expected: [" + expected + "]");
-			} catch (Exception e) {
-				e.printStackTrace();
-				fail(e.getMessage());
-			}
-		}
+        String result = null;
+        if (translator.isAvailable()) {
+            try {
+                result = translator.translate(source, "en");
+                assertNotNull(result);
+                assertEquals(expected, result,
+                        "Result: [" + result + "]: not equal to expected: [" + expected + "]");
+            } catch (Exception e) {
+                e.printStackTrace();
+                fail(e.getMessage());
+            }
+        }
 
-	}
+    }
 
 }

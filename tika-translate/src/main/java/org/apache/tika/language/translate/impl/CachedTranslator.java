@@ -20,11 +20,11 @@ package org.apache.tika.language.translate.impl;
 import java.io.IOException;
 import java.util.HashMap;
 
+import com.fasterxml.jackson.databind.util.LRUMap;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.language.translate.Translator;
-
-import com.fasterxml.jackson.databind.util.LRUMap;
 
 /**
  * CachedTranslator. Saves a map of previous translations in order to prevent repetitive translation requests.
@@ -37,12 +37,13 @@ public class CachedTranslator extends AbstractTranslator {
     // Old entries are removed from the cache when it reaches its limit.
     // For example, {en:fr -> {hello -> salut}}.
     private HashMap<String, LRUMap<String, String>> cache;
-    
+
     /**
-     * Create a new CachedTranslator (must set the {@link Translator} with {@link #setTranslator(Translator)} before use!)
+     * Create a new CachedTranslator (must set the {@link Translator} with
+     * {@link #setTranslator(Translator)} before use!)
      */
-    public CachedTranslator(){
-    	this(null);
+    public CachedTranslator() {
+        this(null);
     }
 
     /**
@@ -57,25 +58,27 @@ public class CachedTranslator extends AbstractTranslator {
     }
 
     /**
-	 * @return the translator
-	 */
-	public Translator getTranslator() {
-		return translator;
-	}
+     * @return the translator
+     */
+    public Translator getTranslator() {
+        return translator;
+    }
 
-	/**
-	 * @param translator the translator to set
-	 */
-	public void setTranslator(Translator translator) {
-		this.translator = translator;
-	}
+    /**
+     * @param translator the translator to set
+     */
+    public void setTranslator(Translator translator) {
+        this.translator = translator;
+    }
 
-	@Override
-    public String translate(String text, String sourceLanguage, String targetLanguage) throws TikaException, IOException {
+    @Override
+    public String translate(String text, String sourceLanguage, String targetLanguage)
+            throws TikaException, IOException {
         if (translator == null) {
             return text;
         }
-        LRUMap<String, String> translationCache = getTranslationCache(sourceLanguage, targetLanguage);
+        LRUMap<String, String> translationCache =
+                getTranslationCache(sourceLanguage, targetLanguage);
         String translatedText = translationCache.get(text);
         if (translatedText == null) {
             translatedText = translator.translate(text, sourceLanguage, targetLanguage);
@@ -117,7 +120,8 @@ public class CachedTranslator extends AbstractTranslator {
      * @since Tika 1.6
      */
     public int getNumTranslationsFor(String sourceLanguage, String targetLanguage) {
-        LRUMap<String, String> translationCache = cache.get(buildCacheKeyString(sourceLanguage, targetLanguage));
+        LRUMap<String, String> translationCache =
+                cache.get(buildCacheKeyString(sourceLanguage, targetLanguage));
         if (translationCache == null) {
             return 0;
         } else {
@@ -129,13 +133,14 @@ public class CachedTranslator extends AbstractTranslator {
      * Check whether this CachedTranslator's cache contains a translation of the text from the
      * source language to the target language.
      *
-     * @param text What string to check for.
+     * @param text           What string to check for.
      * @param sourceLanguage The source language of translation.
      * @param targetLanguage The target language of translation.
      * @return true if the cache contains a translation of the text, false otherwise.
      */
     public boolean contains(String text, String sourceLanguage, String targetLanguage) {
-        LRUMap<String, String> translationCache = getTranslationCache(sourceLanguage, targetLanguage);
+        LRUMap<String, String> translationCache =
+                getTranslationCache(sourceLanguage, targetLanguage);
         return translationCache.get(text) != null;
     }
 
@@ -143,19 +148,19 @@ public class CachedTranslator extends AbstractTranslator {
      * Check whether this CachedTranslator's cache contains a translation of the text to the target language,
      * attempting to auto-detect the source language.
      *
-     * @param text What string to check for.
+     * @param text           What string to check for.
      * @param targetLanguage The target language of translation.
      * @return true if the cache contains a translation of the text, false otherwise.
      */
     public boolean contains(String text, String targetLanguage) {
-		try {
-			LanguageResult language = detectLanguage(text);
-	        String sourceLanguage = language.getLanguage();
-	        return contains(text, sourceLanguage, targetLanguage);
-		} catch (IOException e) {
-			// TODO what to do if we get an error?
-			return false;
-		}
+        try {
+            LanguageResult language = detectLanguage(text);
+            String sourceLanguage = language.getLanguage();
+            return contains(text, sourceLanguage, targetLanguage);
+        } catch (IOException e) {
+            // TODO what to do if we get an error?
+            return false;
+        }
     }
 
     /**
@@ -176,8 +181,10 @@ public class CachedTranslator extends AbstractTranslator {
      * @param targetLanguage The target language of translation.
      * @return The LRUMap representing the translation cache.
      */
-    private LRUMap<String, String> getTranslationCache(String sourceLanguage, String targetLanguage) {
-        LRUMap<String, String> translationCache = cache.get(buildCacheKeyString(sourceLanguage, targetLanguage));
+    private LRUMap<String, String> getTranslationCache(String sourceLanguage,
+                                                       String targetLanguage) {
+        LRUMap<String, String> translationCache =
+                cache.get(buildCacheKeyString(sourceLanguage, targetLanguage));
         if (translationCache == null) {
             translationCache = new LRUMap<>(INITIAL_ENTRIES, MAX_ENTRIES);
             cache.put(buildCacheKeyString(sourceLanguage, targetLanguage), translationCache);
