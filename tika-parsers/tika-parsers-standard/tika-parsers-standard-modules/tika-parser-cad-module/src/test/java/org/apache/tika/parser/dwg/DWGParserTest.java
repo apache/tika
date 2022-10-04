@@ -16,8 +16,9 @@
  */
 package org.apache.tika.parser.dwg;
 
-import static org.junit.jupiter.api.Assertions.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.InputStream;
@@ -25,20 +26,18 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 
-
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.parser.CompositeParser;
-import org.apache.tika.utils.StringUtils;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.sax.BodyContentHandler;
-
+import org.apache.tika.utils.StringUtils;
 public class DWGParserTest extends TikaTest {
     public static boolean canRun(DWGParser parser)  {
         String dwgRead = parser.getDwgReadExecutable();
