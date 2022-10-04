@@ -18,6 +18,9 @@ package org.apache.tika.server.core;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriInfo;
@@ -36,10 +39,10 @@ import org.apache.tika.pipes.fetcher.RangeFetcher;
  * This class looks for &quot;fetcherName&quot; in the http header.  If it is not null
  * and not empty, this will return a new TikaInputStream from the fetch key
  * and the base path as set in the definition of the named fetcher.
+ * As of Tika &gt; 2.5.0, the &quot;fetchKey&quot; is URL decoded.
  * <p>
  * Users may also specify the &quot;fetcherName&quote; and &quot;fetchKey&quot; in
- * query parameters with in the request.  This is the only option if there are
- * non-ASCII characters in the &quot;fetcherName&quote; or &quot;fetchKey&quot;.
+ * query parameters with in the request.
  * <p>
  * <em>WARNING:</em> Unless you carefully lock down access to the server,
  * whoever has access to this service will have the read access of the server.
@@ -65,6 +68,8 @@ public class FetcherStreamFactory implements InputStreamFactory {
         MultivaluedMap params = (uriInfo == null) ? null : uriInfo.getQueryParameters();
         String fetcherName = getParam("fetcherName", httpHeaders, params);
         String fetchKey = getParam("fetchKey", httpHeaders, params);
+        fetchKey = urlDecode(fetchKey);
+
         long fetchRangeStart = getLong(getParam("fetchRangeStart", httpHeaders, params));
         long fetchRangeEnd = getLong(getParam("fetchRangeEnd", httpHeaders, params));
         if (StringUtils.isBlank(fetcherName) != StringUtils.isBlank(fetchKey)) {
@@ -101,6 +106,18 @@ public class FetcherStreamFactory implements InputStreamFactory {
             }
         }
         return is;
+    }
+
+    private String urlDecode(String fetchKey) {
+        if (fetchKey == null) {
+            return fetchKey;
+        }
+        try {
+            return URLDecoder.decode(fetchKey, StandardCharsets.UTF_8.toString());
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            LOG.warn("couldn't decode fetch key", fetchKey);
+        }
+        return fetchKey;
     }
 
     private String getParam(String paramName, HttpHeaders httpHeaders, MultivaluedMap uriParams) {
