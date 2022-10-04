@@ -16,6 +16,9 @@
  */
 package org.apache.tika.pipes.solr.tests;
 
+import org.testcontainers.junit.jupiter.Testcontainers;
+
+@Testcontainers(disabledWithoutDocker = true)
 public class TikaPipesSolr6Test extends TikaPipesSolrTestBase {
 
     @Override

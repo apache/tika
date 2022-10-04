@@ -38,8 +38,8 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.iterable.S3Objects;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -52,7 +52,7 @@ import org.apache.tika.pipes.fetcher.FetcherManager;
 import org.apache.tika.pipes.pipesiterator.CallablePipesIterator;
 import org.apache.tika.pipes.pipesiterator.PipesIterator;
 
-@Ignore("turn these into actual tests with mock s3")
+@Disabled("turn these into actual tests with mock s3")
 public class PipeIntegrationTests {
 
     private static final Path OUTDIR = Paths.get("");

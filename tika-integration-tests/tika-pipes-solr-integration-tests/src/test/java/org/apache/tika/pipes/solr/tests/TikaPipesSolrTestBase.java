@@ -16,6 +16,8 @@
  */
 package org.apache.tika.pipes.solr.tests;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,12 +38,12 @@ import org.apache.tika.pipes.emitter.solr.SolrEmitter;
 import org.apache.tika.utils.SystemUtils;
 import org.jetbrains.annotations.NotNull;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.FixedHostPortGenericContainer;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 import org.testcontainers.utility.DockerImageName;
 
@@ -51,6 +53,8 @@ public abstract class TikaPipesSolrTestBase {
     private final String collection = "testcol";
     private final int numDocs = 42;
     private final File testFileFolder = new File("target", "test-files");
+
+    @Container
     protected GenericContainer<?> solr;
     private String solrHost;
     private int solrPort;
@@ -66,8 +70,15 @@ public abstract class TikaPipesSolrTestBase {
         return true;
     }
 
-    @Before
-    public void setupTest() throws Exception {
+    public TikaPipesSolrTestBase() {
+        try {
+            init();
+        } catch (InterruptedException e) {
+
+        }
+    }
+
+    private void init() throws InterruptedException {
         if (SystemUtils.IS_OS_MAC_OSX || SystemUtils.IS_OS_VERSION_WSL) {
             // Networking on these operating systems needs fixed ports and localhost to be passed for the SolrCloud
             // with Zookeeper tests to succeed. This means stopping and starting needs
@@ -83,12 +94,17 @@ public abstract class TikaPipesSolrTestBase {
                             .withCommand("-DzkRun");
         }
         solr.start();
+
         // Ideally wanted to use TestContainers WaitStrategy but they were inconsistent
         Thread.sleep(2000);
+    }
+
+    @BeforeEach
+    public void setupTest() throws Exception {
         setupSolr();
     }
 
-    @After
+    @AfterEach
     public void tearDownAfter() throws Exception {
         FileUtils.deleteDirectory(testFileFolder);
         if (solr != null) {
@@ -164,7 +180,7 @@ public abstract class TikaPipesSolrTestBase {
                     "  }\n" +
                     "}"));
             CloseableHttpResponse resp = client.execute(postAddRoot);
-            Assert.assertEquals(200, resp.getStatusLine().getStatusCode());
+            assertEquals(200, resp.getStatusLine().getStatusCode());
         }
     }
     private void addSchemaFieldsForNestedDocs(String solrUrl) throws IOException {
@@ -181,7 +197,7 @@ public abstract class TikaPipesSolrTestBase {
                     "  }\n" +
                     "}"));
             CloseableHttpResponse resp = client.execute(postAddRoot);
-            Assert.assertEquals(200, resp.getStatusLine().getStatusCode());
+            assertEquals(200, resp.getStatusLine().getStatusCode());
         }
     }
 
@@ -213,14 +229,14 @@ public abstract class TikaPipesSolrTestBase {
         try (SolrClient solrClient = new LBHttpSolrClient.Builder().withBaseSolrUrls(solrEndpoint)
                 .build()) {
             solrClient.commit(collection, true, true);
-            Assert.assertEquals(numDocs, solrClient
+            assertEquals(numDocs, solrClient
                     .query(collection, new SolrQuery("mime_s:\"text/html; charset=ISO-8859-1\""))
                     .getResults().getNumFound());
-            Assert.assertEquals(numDocs,
+            assertEquals(numDocs,
                     solrClient.query(collection, new SolrQuery("content_s:*initial*")).getResults()
                             .getNumFound());
             if(handlesParentChild()) {
-                Assert.assertEquals(3,
+                assertEquals(3,
                         solrClient.query(collection, new SolrQuery("_root_:\"test-embedded.docx\""))
                                 .getResults().getNumFound());
             }
@@ -248,10 +264,10 @@ public abstract class TikaPipesSolrTestBase {
         try (SolrClient solrClient = new LBHttpSolrClient.Builder().withBaseSolrUrls(solrEndpoint)
                 .build()) {
             solrClient.commit(collection, true, true);
-            Assert.assertEquals(numDocs, solrClient
+            assertEquals(numDocs, solrClient
                     .query(collection, new SolrQuery("mime_s:\"text/html; charset=ISO-8859-1\""))
                     .getResults().getNumFound());
-            Assert.assertEquals(numDocs,
+            assertEquals(numDocs,
                     solrClient.query(collection, new SolrQuery("content_s:*updated*")).getResults()
                             .getNumFound());
         }

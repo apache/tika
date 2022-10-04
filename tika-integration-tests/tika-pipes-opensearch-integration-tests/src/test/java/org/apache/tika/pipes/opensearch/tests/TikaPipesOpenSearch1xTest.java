@@ -19,18 +19,19 @@ package org.apache.tika.pipes.opensearch.tests;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
+import org.junit.jupiter.api.BeforeEach;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import org.apache.tika.pipes.xsearch.tests.TikaPipesXSearchBase;
-
+@Testcontainers(disabledWithoutDocker = true)
 public class TikaPipesOpenSearch1xTest extends TikaPipesXSearchBase {
 
     private static final String DOCKER_IMAGE_NAME = "opensearchproject/opensearch:1.3.2";
 
-    @ClassRule
+    @Container
     public static GenericContainer<?> OPEN_SEARCH_CONTAINER =
             new GenericContainer<>(DockerImageName.parse(DOCKER_IMAGE_NAME))
                     .withExposedPorts(9200)
@@ -38,8 +39,8 @@ public class TikaPipesOpenSearch1xTest extends TikaPipesXSearchBase {
                     .withEnv("discovery.type", "single-node");
 
 
-    @BeforeClass
-    public static void setupTest() throws Exception {
+    @BeforeEach
+    public void setupTest() throws Exception {
         setupXSearch(OPEN_SEARCH_CONTAINER, "https://");
     }
 }

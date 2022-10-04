@@ -36,6 +36,11 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-pipes-iterator-solr</artifactId>
       <version>${project.version}</version>
@@ -59,6 +64,7 @@
       <version>${solrj.version}</version>
       <scope>test</scope>
     </dependency>
+
 
   </dependencies>
 

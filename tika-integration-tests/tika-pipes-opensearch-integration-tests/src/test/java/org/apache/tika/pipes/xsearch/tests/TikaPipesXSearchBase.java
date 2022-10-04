@@ -16,9 +16,9 @@
  */
 package org.apache.tika.pipes.xsearch.tests;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,10 +36,10 @@ import java.util.regex.Pattern;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 
@@ -65,20 +65,20 @@ public abstract class TikaPipesXSearchBase {
     private static int OPEN_SEARCH_PORT;
     //this includes only the base, not the collection, e.g. https://localhost:49213
     protected static String OPEN_SEARCH_ENDPOINT_BASE;
-    private static XSearchTestClient client;
+    private static XSearchTestClient CLIENT;
 
 
-    @Before
+    @BeforeEach
     public void setUp() throws IOException {
         pipesDirectory = Files.createTempDirectory("tika-opensearch-integration-");
         testDocDirectory = pipesDirectory.resolve("docs");
     }
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         //we shouldn't have to do this because of @TempDir
         //there are some timing/order issues because of the joint junit 4 and 5
         FileUtils.deleteDirectory(pipesDirectory.toFile());
-        JsonResponse response = client.deleteIndex(OPEN_SEARCH_ENDPOINT_BASE + TEST_INDEX);
+        JsonResponse response = CLIENT.deleteIndex(OPEN_SEARCH_ENDPOINT_BASE + TEST_INDEX);
         assertEquals(200, response.getStatus());
         assertTrue(response.getJson().get("acknowledged").asBoolean());
     }
@@ -98,7 +98,7 @@ public abstract class TikaPipesXSearchBase {
         String query = "{ \"track_total_hits\": true, \"query\": { \"match\": { \"content\": { " +
                 "\"query\": \"happiness\" } } } }";
 
-        JsonResponse results = client.postJson(endpoint + "/_search", query);
+        JsonResponse results = CLIENT.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
         assertEquals(numHtmlDocs + 1,
                 results.getJson().get("hits").get("total").get("value").asInt());
@@ -106,7 +106,7 @@ public abstract class TikaPipesXSearchBase {
         //now try match all
         query = "{ \"track_total_hits\": true, \"query\": { \"match_all\": {} }, " +
                 "\"from\": 0, \"size\": 1000 }";
-        results = client.postJson(endpoint + "/_search", query);
+        results = CLIENT.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
         assertEquals(numHtmlDocs + numTestDocs,
                 results.getJson().get("hits").get("total").get("value").asInt());
@@ -147,7 +147,7 @@ public abstract class TikaPipesXSearchBase {
         String query = "{ \"track_total_hits\": true, \"query\": { \"match\": { \"content\": { " +
                 "\"query\": \"happiness\" } } } }";
 
-        JsonResponse results = client.postJson(endpoint + "/_search", query);
+        JsonResponse results = CLIENT.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
         assertEquals(numHtmlDocs + 1,
               results.getJson().get("hits").get("total").get("value").asInt());
@@ -157,7 +157,7 @@ public abstract class TikaPipesXSearchBase {
                 //"\"from\":0, \"size\":1000," +
                 "\"track_total_hits\": true, \"query\": { " +
                 "\"match_all\": {} } }";
-        results = client.postJson(endpoint + "/_search", query);
+        results = CLIENT.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
         assertEquals(numHtmlDocs + 3 + 12, // 3 mock files and...
                 // the .docx file has 11 embedded files, plus itself
@@ -167,7 +167,7 @@ public abstract class TikaPipesXSearchBase {
         query = "{ \"track_total_hits\": true, \"query\": { \"query_string\": { " +
                 "\"default_field\": \"content\",  " +
                 "\"query\": \"embed4 zip\" , \"minimum_should_match\":2 } } } ";
-        results = client.postJson(endpoint + "/_search", query);
+        results = CLIENT.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
         assertEquals(1,
                 results.getJson().get("hits").get("total").get("value").asInt());
@@ -178,7 +178,7 @@ public abstract class TikaPipesXSearchBase {
                 "[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\Z").matcher(
                 results.getJson().get("hits").get("hits").get(0).get("_id").asText()
         );
-        assertTrue("test_recursive_embedded.docx_$guid", m.find());
+        assertTrue(m.find(), "test_recursive_embedded.docx_$guid");
         assertEquals("test_recursive_embedded.docx",
                 results.getJson().get("hits").get("hits").get(0).get("_routing").asText());
         assertEquals("test_recursive_embedded.docx",
@@ -192,7 +192,7 @@ public abstract class TikaPipesXSearchBase {
         query = "{ \"track_total_hits\": true, \"query\": { \"parent_id\": { " +
                 "\"type\": \"embedded\",  " +
                 "\"id\": \"test_recursive_embedded.docx\" } } } ";
-        results = client.postJson(endpoint + "/_search", query);
+        results = CLIENT.postJson(endpoint + "/_search", query);
         assertEquals(11,
                 results.getJson().get("hits").get("total").get("value").asInt());
     }
@@ -212,7 +212,7 @@ public abstract class TikaPipesXSearchBase {
         String query = "{ \"track_total_hits\": true, \"query\": { \"match\": { \"content\": { " +
                 "\"query\": \"happiness\" } } } }";
 
-        JsonResponse results = client.postJson(endpoint + "/_search", query);
+        JsonResponse results = CLIENT.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
         assertEquals(numHtmlDocs + 1,
                 results.getJson().get("hits").get("total").get("value").asInt());
@@ -222,7 +222,7 @@ public abstract class TikaPipesXSearchBase {
                 //"\"from\":0, \"size\":1000," +
                 "\"track_total_hits\": true, \"query\": { " +
                 "\"match_all\": {} } }";
-        results = client.postJson(endpoint + "/_search", query);
+        results = CLIENT.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
         assertEquals(numHtmlDocs + 3 + 12, //3 for the mock docs,
                 // and the .docx file has 11 embedded files, plus itself
@@ -232,7 +232,7 @@ public abstract class TikaPipesXSearchBase {
         query = "{ \"track_total_hits\": true, \"query\": { \"query_string\": { " +
                 "\"default_field\": \"content\",  " +
                 "\"query\": \"embed4 zip\" , \"minimum_should_match\":2 } } } ";
-        results = client.postJson(endpoint + "/_search", query);
+        results = CLIENT.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
         assertEquals(1,
                 results.getJson().get("hits").get("total").get("value").asInt());
@@ -243,12 +243,11 @@ public abstract class TikaPipesXSearchBase {
                 "[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\Z").matcher(
                 results.getJson().get("hits").get("hits").get(0).get("_id").asText()
         );
-        assertTrue("test_recursive_embedded.docx-$guid", m.find());
+        assertTrue(m.find(), "test_recursive_embedded.docx-$guid");
 
-        assertNull("test_recursive_embedded.docx",
-                results.getJson().get("hits").get("hits").get(0).get("_routing"));
-        assertNull("test_recursive_embedded.docx",
-                source.get("relation_type"));
+        assertNull(results.getJson().get("hits").get("hits").get(0).get("_routing"),
+                "test_recursive_embedded.docx");
+        assertNull(source.get("relation_type"), "test_recursive_embedded.docx");
 
         assertEquals("application/zip", source.get("mime").asText());
 
@@ -257,7 +256,7 @@ public abstract class TikaPipesXSearchBase {
         query = "{ \"track_total_hits\": true, \"query\": { \"parent_id\": { " +
                 "\"type\": \"embedded\",  " +
                 "\"id\": \"test_recursive_embedded.docx\" } } } ";
-        results = client.postJson(endpoint + "/_search", query);
+        results = CLIENT.postJson(endpoint + "/_search", query);
         assertEquals(400, results.getStatus());
     }
 
@@ -274,26 +273,26 @@ public abstract class TikaPipesXSearchBase {
         metadata.set("mime", "mimeA");
         metadata.set("title", "titleA");
         emitter.emit("1", Collections.singletonList(metadata));
-        JsonResponse refresh = client.getJson(endpoint + "/_refresh");
+        JsonResponse refresh = CLIENT.getJson(endpoint + "/_refresh");
         metadata.set("title", "titleB");
         emitter.emit("1", Collections.singletonList(metadata));
-        refresh = client.getJson(endpoint + "/_refresh");
+        refresh = CLIENT.getJson(endpoint + "/_refresh");
 
         Metadata metadata2 = new Metadata();
         metadata2.set("content", "the quick brown fox");
         emitter.emit("1", Collections.singletonList(metadata2));
-        refresh = client.getJson(endpoint + "/_refresh");
+        refresh = CLIENT.getJson(endpoint + "/_refresh");
 
         String query = "{ " +
                 //"\"from\":0, \"size\":1000," +
                 "\"track_total_hits\": true, \"query\": { " +
                 "\"match_all\": {} } }";
-        JsonResponse response = client.postJson(endpoint + "/_search", query);
+        JsonResponse response = CLIENT.postJson(endpoint + "/_search", query);
         JsonNode doc1 = response.getJson().get("hits").get("hits").get(0).get(
                 "_source");
-        Assertions.assertEquals("mimeA", doc1.get("mime").asText());
-        Assertions.assertEquals("titleB", doc1.get("title").asText());
-        Assertions.assertEquals("the quick brown fox", doc1.get("content").asText());
+        assertEquals("mimeA", doc1.get("mime").asText());
+        assertEquals("titleB", doc1.get("title").asText());
+        assertEquals("the quick brown fox", doc1.get("content").asText());
     }
 
     protected void sendMappings(String endpoint, String index, String mappingsFile) throws Exception {
@@ -305,7 +304,7 @@ public abstract class TikaPipesXSearchBase {
         JsonResponse response = null;
         //need to wait a bit sometimes before OpenSearch is up
         while (status != 200 && tries++ < 20) {
-            response = client.putJson(endpoint, mappings);
+            response = CLIENT.putJson(endpoint, mappings);
             if (status != 200) {
                 Thread.sleep(1000);
             }
@@ -330,7 +329,7 @@ public abstract class TikaPipesXSearchBase {
         TikaCLI.main(new String[]{"-a", "--config=" + tikaConfigFile.toAbsolutePath().toString()});
 
         //refresh to make sure the content is searchable
-        JsonResponse refresh = client.getJson(endpoint + "/_refresh");
+        JsonResponse refresh = CLIENT.getJson(endpoint + "/_refresh");
 
     }
 
@@ -385,15 +384,16 @@ public abstract class TikaPipesXSearchBase {
 
     }
 
-    public static void setupXSearch(GenericContainer<?> openSearchContainer, String protocol) throws Exception {
+    public void setupXSearch(GenericContainer<?> openSearchContainer, String protocol) throws Exception {
         OPEN_SEARCH_HOST = openSearchContainer.getHost();
         OPEN_SEARCH_PORT = openSearchContainer.getMappedPort(9200);
         OPEN_SEARCH_ENDPOINT_BASE = protocol + OPEN_SEARCH_HOST + ":" + OPEN_SEARCH_PORT + "/";
         HttpClientFactory httpClientFactory = new HttpClientFactory();
         httpClientFactory.setUserName("admin");
         httpClientFactory.setPassword("admin");
+
         //attachment strategy is not used here...TODO clean this up
-        client = new XSearchTestClient(OPEN_SEARCH_ENDPOINT_BASE,
+        CLIENT = new XSearchTestClient(OPEN_SEARCH_ENDPOINT_BASE,
                 httpClientFactory.build(),
                 OpenSearchEmitter.AttachmentStrategy.SEPARATE_DOCUMENTS,
                 OpenSearchEmitter.UpdateStrategy.OVERWRITE,

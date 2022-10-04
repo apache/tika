@@ -18,13 +18,15 @@ package org.apache.tika.pipes.solr.tests;
 
 import static org.junit.Assume.assumeTrue;
 
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.BeforeAll;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import org.apache.tika.utils.SystemUtils;
 
+@Testcontainers(disabledWithoutDocker = true)
 public class TikaPipesSolr7ZkTest extends TikaPipesSolr7Test {
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() {
         assumeTrue("zk test only works on linux (and not mac os x)",
                 SystemUtils.IS_OS_UNIX && ! SystemUtils.IS_OS_MAC_OSX);

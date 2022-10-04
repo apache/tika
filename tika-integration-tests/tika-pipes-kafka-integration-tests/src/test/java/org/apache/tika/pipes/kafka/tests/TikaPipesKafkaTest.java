@@ -16,6 +16,9 @@
  */
 package org.apache.tika.pipes.kafka.tests;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import java.io.File;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -48,13 +51,13 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.tika.cli.TikaCLI;
 import org.apache.tika.pipes.HandlerConfig;
 import org.jetbrains.annotations.NotNull;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.KafkaContainer;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 import org.testcontainers.utility.DockerImageName;
 
@@ -64,6 +67,7 @@ import org.testcontainers.utility.DockerImageName;
  * the kafka emitter will send the now-parsed output to the "emitter_topic".
  * Will then wait for the messages to come from the emitter and assert they are correct.
  */
+@Testcontainers(disabledWithoutDocker = true)
 public class TikaPipesKafkaTest {
     private static final Logger LOG = LoggerFactory.getLogger(TikaPipesKafkaTest.class);
 
@@ -96,12 +100,12 @@ public class TikaPipesKafkaTest {
 
     KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.1"));
 
-    @Before
+    @BeforeEach
     public void before() {
         kafka.start();
     }
 
-    @After
+    @AfterEach
     public void after() {
         kafka.close();
     }
@@ -180,17 +184,18 @@ public class TikaPipesKafkaTest {
 
         Stopwatch stopwatch = Stopwatch.createStarted();
         while (!waitingFor.isEmpty()) {
-            Assert.assertFalse("Timed out after " + WAIT_FOR_EMITTED_DOCS_TIMEOUT_MINUTES + " minutes waiting for the emitted docs",
-                    stopwatch.elapsed(TimeUnit.MINUTES) > WAIT_FOR_EMITTED_DOCS_TIMEOUT_MINUTES);
+            assertFalse(
+                    stopwatch.elapsed(TimeUnit.MINUTES) > WAIT_FOR_EMITTED_DOCS_TIMEOUT_MINUTES,
+                    "Timed out after " + WAIT_FOR_EMITTED_DOCS_TIMEOUT_MINUTES + " minutes waiting for the emitted docs");
             try {
                 ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(1));
                 for (ConsumerRecord<String, String> record : records) {
                     String val = record.value();
                     Map<String, Object> valMap = objectMapper.readValue(val, new TypeReference<Map<String, Object>>() {});
                     waitingFor.remove(FilenameUtils.getName(record.key()));
-                    Assert.assertNotNull(valMap.get("content_s"));
-                    Assert.assertNotNull(valMap.get("mime_s"));
-                    Assert.assertNotNull(valMap.get("length_i"));
+                    assertNotNull(valMap.get("content_s"));
+                    assertNotNull(valMap.get("mime_s"));
+                    assertNotNull(valMap.get("length_i"));
                     LOG.info("Received message key={}, offset={}", record.key(), record.offset());
                 }
             } catch (Exception e) {
