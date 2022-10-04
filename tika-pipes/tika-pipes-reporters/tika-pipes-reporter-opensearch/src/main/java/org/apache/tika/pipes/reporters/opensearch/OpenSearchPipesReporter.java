@@ -41,6 +41,10 @@ import org.apache.tika.pipes.PipesReporter;
 import org.apache.tika.pipes.PipesResult;
 import org.apache.tika.utils.StringUtils;
 
+/**
+ * As of the 2.5.0 release, this is ALPHA version.  There may be breaking changes
+ * in the future.
+ */
 public class OpenSearchPipesReporter extends PipesReporter implements Initializable {
 
     private static final Logger LOG = LoggerFactory.getLogger(OpenSearchPipesReporter.class);

@@ -50,6 +50,9 @@ import org.apache.tika.utils.StringUtils;
  * <p>
  * It is currently NOT thread safe because of the shared prepared statement,
  * and depending on the jdbc implementation because of the shared connection.
+ * <p>
+ * As of the 2.5.0 release, this is ALPHA version.  There may be breaking changes
+ * in the future.
  */
 public class JDBCEmitter extends AbstractEmitter implements Initializable, Closeable {
 

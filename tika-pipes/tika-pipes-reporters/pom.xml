@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-pipes</artifactId>
-    <version>2.5.0-SNAPSHOT</version>
+    <version>2.5.1-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
@@ -33,6 +33,7 @@
 
   <modules>
     <module>tika-pipes-reporter-opensearch</module>
+    <module>tika-pipes-reporter-fs-status</module>
   </modules>
 
   <scm>

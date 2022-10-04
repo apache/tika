@@ -32,6 +32,7 @@ import javax.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.exception.TikaConfigException;
@@ -109,6 +110,7 @@ public class TikaResourceFetcherTest extends CXFTestBase {
     }
 
     @Test
+    @Disabled("Apache's Hudson does not like the test file or the utf-8 in this source file")
     public void testNonAsciiInQueryParameters() throws Exception {
         Response response = WebClient.create(endPoint + TIKA_PATH).query("fetcherName", "fsf")
                 .query("fetchKey", "mock/中文.xml").accept("text/xml").put(null);
@@ -117,6 +119,7 @@ public class TikaResourceFetcherTest extends CXFTestBase {
     }
 
     @Test
+    @Disabled("Apache's Hudson does not like the test file or the utf-8 in this source file")
     public void testNonAsciiUrlEncodedInQueryParameters() throws Exception {
         Response response = WebClient.create(endPoint + TIKA_PATH).query("fetcherName", "fsf")
                 .query("fetchKey", "mock/%E4%B8%AD%E6%96%87.xml").accept("text/xml").put(null);
