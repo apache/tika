@@ -41,8 +41,21 @@ import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
-
 import javax.inject.Inject;
+
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.ops4j.pax.exam.Configuration;
+import org.ops4j.pax.exam.Option;
+import org.ops4j.pax.exam.junit.PaxExam;
+import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
+import org.ops4j.pax.exam.spi.reactors.PerMethod;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 import org.apache.tika.Tika;
 import org.apache.tika.detect.DefaultDetector;
@@ -62,19 +75,6 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.internal.Activator;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.ops4j.pax.exam.Configuration;
-import org.ops4j.pax.exam.Option;
-import org.ops4j.pax.exam.junit.PaxExam;
-import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
-import org.ops4j.pax.exam.spi.reactors.PerMethod;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 @RunWith(PaxExam.class)
 @ExamReactorStrategy(PerMethod.class)
@@ -94,8 +94,7 @@ public class BundleIT {
     @Configuration
     public Option[] configuration() throws IOException, URISyntaxException, ClassNotFoundException {
         File base = new File(TARGET, "test-bundles");
-        return options(
-                systemPackages("javax.xml.bind"),
+        return options(systemPackages("javax.xml.bind"),
                 bundle(new File(base, "tika-core.jar").toURI().toURL().toString()),
                 //I couldn't find a way to get the build of bundle to work via imports
                 //for this one
@@ -105,8 +104,7 @@ public class BundleIT {
                 mavenBundle("org.ops4j.pax.logging", "pax-logging-api", "1.8.5"),
                 mavenBundle("org.ops4j.pax.logging", "pax-logging-service", "1.8.5"),
                 junitBundles(),
-                bundle(new File(base, "tika-bundle-standard.jar").toURI().toURL().toString())
-        );
+                bundle(new File(base, "tika-bundle-standard.jar").toURI().toURL().toString()));
     }
 
     @Test
@@ -276,7 +274,8 @@ public class BundleIT {
         ParseContext context = new ParseContext();
         context.set(Parser.class, parser);
 
-        try (InputStream stream = TikaInputStream.get(Paths.get("src/test/resources/test-documents.zip"))) {
+        try (InputStream stream = TikaInputStream.get(
+                Paths.get("src/test/resources/test-documents.zip"))) {
             parser.parse(stream, handler, new Metadata(), context);
         }
 
@@ -311,7 +310,8 @@ public class BundleIT {
         ParseContext context = new ParseContext();
         context.set(Parser.class, parser);
 
-        try (InputStream stream = TikaInputStream.get(Paths.get("src/test/resources/testPPT.pptx"))) {
+        try (InputStream stream = TikaInputStream.get(
+                Paths.get("src/test/resources/testPPT.pptx"))) {
             parser.parse(stream, handler, new Metadata(), context);
         }
 
@@ -350,7 +350,8 @@ public class BundleIT {
                 System.err.println("tika Exception " + f.getName());
                 e.printStackTrace();
             }
-            System.out.println(Arrays.asList(metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY)));
+            System.out.println(
+                    Arrays.asList(metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY)));
         }
     }
 

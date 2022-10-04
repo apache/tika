@@ -20,6 +20,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import com.adobe.internal.xmp.XMPException;
+import com.adobe.internal.xmp.XMPMeta;
+import com.adobe.internal.xmp.XMPMetaFactory;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -29,10 +33,6 @@ import org.apache.tika.parser.microsoft.OfficeParser;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLParser;
 import org.apache.tika.parser.microsoft.rtf.RTFParser;
 import org.apache.tika.parser.odf.OpenDocumentParser;
-
-import com.adobe.internal.xmp.XMPException;
-import com.adobe.internal.xmp.XMPMeta;
-import com.adobe.internal.xmp.XMPMetaFactory;
 
 public class TikaToXMP {
     /**
@@ -49,19 +49,19 @@ public class TikaToXMP {
 
     /**
      * @see TikaToXMP#convert(Metadata, String) But the mimetype is retrieved from the metadata
-     *      map.
+     * map.
      */
     public static XMPMeta convert(Metadata tikaMetadata) throws TikaException {
         if (tikaMetadata == null) {
-            throw new IllegalArgumentException( "Metadata parameter must not be null" );
+            throw new IllegalArgumentException("Metadata parameter must not be null");
         }
 
-        String mimetype = tikaMetadata.get( Metadata.CONTENT_TYPE );
+        String mimetype = tikaMetadata.get(Metadata.CONTENT_TYPE);
         if (mimetype == null) {
-            mimetype = tikaMetadata.get( TikaCoreProperties.FORMAT );
+            mimetype = tikaMetadata.get(TikaCoreProperties.FORMAT);
         }
 
-        return convert( tikaMetadata, mimetype );
+        return convert(tikaMetadata, mimetype);
     }
 
     /**
@@ -71,24 +71,21 @@ public class TikaToXMP {
      * convert only those properties that are in known namespaces and are using the correct
      * prefixes.
      *
-     * @param tikaMetadata
-     *            the Metadata map from Tika
-     * @param mimetype
-     *            depicts the format's converter to use
+     * @param tikaMetadata the Metadata map from Tika
+     * @param mimetype     depicts the format's converter to use
      * @return XMP object
      * @throws TikaException
      */
     public static XMPMeta convert(Metadata tikaMetadata, String mimetype) throws TikaException {
         if (tikaMetadata == null) {
-            throw new IllegalArgumentException( "Metadata parameter must not be null" );
+            throw new IllegalArgumentException("Metadata parameter must not be null");
         }
 
         ITikaToXMPConverter converter = null;
 
-        if (isConverterAvailable( mimetype )) {
-            converter = getConverter( mimetype );
-        }
-        else {
+        if (isConverterAvailable(mimetype)) {
+            converter = getConverter(mimetype);
+        } else {
             converter = new GenericConverter();
         }
 
@@ -96,13 +93,11 @@ public class TikaToXMP {
 
         if (converter != null) {
             try {
-                xmp = converter.process( tikaMetadata );
+                xmp = converter.process(tikaMetadata);
+            } catch (XMPException e) {
+                throw new TikaException("Tika metadata could not be converted to XMP", e);
             }
-            catch (XMPException e) {
-                throw new TikaException( "Tika metadata could not be converted to XMP", e );
-            }
-        }
-        else {
+        } else {
             xmp = XMPMetaFactory.create(); // empty packet
         }
 
@@ -112,15 +107,14 @@ public class TikaToXMP {
     /**
      * Check if there is a converter available which allows to convert the Tika metadata to XMP
      *
-     * @param mimetype
-     *            the Mimetype
+     * @param mimetype the Mimetype
      * @return true if the Metadata object can be converted or false if not
      */
     public static boolean isConverterAvailable(String mimetype) {
-        MediaType type = MediaType.parse( mimetype );
+        MediaType type = MediaType.parse(mimetype);
 
         if (type != null) {
-            return (getConverterMap().get( type ) != null);
+            return (getConverterMap().get(type) != null);
         }
 
         return false;
@@ -129,30 +123,28 @@ public class TikaToXMP {
     /**
      * Retrieve a specific converter according to the mimetype
      *
-     * @param mimetype
-     *            the Mimetype
+     * @param mimetype the Mimetype
      * @return the converter or null, if none exists
      * @throws TikaException
      */
     public static ITikaToXMPConverter getConverter(String mimetype) throws TikaException {
         if (mimetype == null) {
-            throw new IllegalArgumentException( "mimetype must not be null" );
+            throw new IllegalArgumentException("mimetype must not be null");
         }
 
         ITikaToXMPConverter converter = null;
 
-        MediaType type = MediaType.parse( mimetype );
+        MediaType type = MediaType.parse(mimetype);
 
         if (type != null) {
-            Class<? extends ITikaToXMPConverter> clazz = getConverterMap().get( type );
+            Class<? extends ITikaToXMPConverter> clazz = getConverterMap().get(type);
             if (clazz != null) {
                 try {
                     converter = clazz.newInstance();
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     throw new TikaException(
-                            "TikaToXMP converter class cannot be instantiated for mimetype: "
-                                    + type.toString(), e );
+                            "TikaToXMP converter class cannot be instantiated for mimetype: " +
+                                    type.toString(), e);
                 }
             }
         }
@@ -178,25 +170,24 @@ public class TikaToXMP {
         ParseContext parseContext = new ParseContext();
 
         // MS Office Binary File Format
-        addConverter( new OfficeParser().getSupportedTypes( parseContext ),
-                MSOfficeBinaryConverter.class );
+        addConverter(new OfficeParser().getSupportedTypes(parseContext),
+                MSOfficeBinaryConverter.class);
 
         // Rich Text Format
-        addConverter( new RTFParser().getSupportedTypes( parseContext ), RTFConverter.class );
+        addConverter(new RTFParser().getSupportedTypes(parseContext), RTFConverter.class);
 
         // MS Open XML Format
-        addConverter( new OOXMLParser().getSupportedTypes( parseContext ),
-                MSOfficeXMLConverter.class );
+        addConverter(new OOXMLParser().getSupportedTypes(parseContext), MSOfficeXMLConverter.class);
 
         // Open document format
-        addConverter( new OpenDocumentParser().getSupportedTypes( parseContext ),
-                OpenDocumentConverter.class );
+        addConverter(new OpenDocumentParser().getSupportedTypes(parseContext),
+                OpenDocumentConverter.class);
     }
 
     private static void addConverter(Set<MediaType> supportedTypes,
-            Class<? extends ITikaToXMPConverter> converter) {
+                                     Class<? extends ITikaToXMPConverter> converter) {
         for (MediaType type : supportedTypes) {
-            getConverterMap().put( type, converter );
+            getConverterMap().put(type, converter);
         }
     }
 }

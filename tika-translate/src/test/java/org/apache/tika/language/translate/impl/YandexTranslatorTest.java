@@ -21,13 +21,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.language.translate.impl.YandexTranslator;
+import java.io.IOException;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
+import org.apache.tika.exception.TikaException;
 
 /**
  * Generic Tests to ensure that the RSS library behaves as expected

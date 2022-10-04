@@ -16,14 +16,15 @@
  */
 package org.apache.tika.language.translate.impl;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 public class MosesTranslatorTest {
     MosesTranslator translator;
+
     @BeforeEach
     public void setUp() {
         translator = new MosesTranslator();
