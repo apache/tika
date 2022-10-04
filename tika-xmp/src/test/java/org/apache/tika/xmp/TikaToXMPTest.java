@@ -23,14 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.OfficeOpenXMLCore;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.xmp.convert.ITikaToXMPConverter;
-import org.apache.tika.xmp.convert.MSOfficeXMLConverter;
-import org.apache.tika.xmp.convert.TikaToXMP;
-
 import com.adobe.internal.xmp.XMPConst;
 import com.adobe.internal.xmp.XMPException;
 import com.adobe.internal.xmp.XMPIterator;
@@ -40,14 +32,22 @@ import com.adobe.internal.xmp.properties.XMPProperty;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.OfficeOpenXMLCore;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.xmp.convert.ITikaToXMPConverter;
+import org.apache.tika.xmp.convert.MSOfficeXMLConverter;
+import org.apache.tika.xmp.convert.TikaToXMP;
+
 /**
  * Tests the Tika <code>Metadata</code> to XMP conversion functionatlity
  */
 public class TikaToXMPTest {
-    private Metadata tikaMetadata;
-
-    private static final String OOXML_MIMETYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    private static final String OOXML_MIMETYPE =
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     private static final String GENERIC_MIMETYPE = "generic/mimetype";
+    private Metadata tikaMetadata;
 
     // --- Set up ---
     @BeforeEach
@@ -57,166 +57,166 @@ public class TikaToXMPTest {
 
     private void setupOOXMLMetadata(Metadata metadata) {
         // simple property
-        metadata.set( TikaCoreProperties.LANGUAGE, "language" );
+        metadata.set(TikaCoreProperties.LANGUAGE, "language");
         // language alternative
-        metadata.set( TikaCoreProperties.TITLE, "title" );
+        metadata.set(TikaCoreProperties.TITLE, "title");
         // comma separated array
-        metadata.set( TikaCoreProperties.SUBJECT, "keyword1,keyword2" );
+        metadata.set(TikaCoreProperties.SUBJECT, "keyword1,keyword2");
         // OOXML specific simple prop
-        metadata.set( TikaCoreProperties.MODIFIER, "lastModifiedBy" );
+        metadata.set(TikaCoreProperties.MODIFIER, "lastModifiedBy");
     }
 
     private void checkOOXMLMetadata(XMPMeta xmp) throws XMPException {
         // check simple property
-        XMPProperty prop = xmp.getProperty( XMPConst.NS_DC, "language" );
-        assertNotNull( prop );
-        assertEquals( "language", prop.getValue() );
+        XMPProperty prop = xmp.getProperty(XMPConst.NS_DC, "language");
+        assertNotNull(prop);
+        assertEquals("language", prop.getValue());
 
         // check lang alt
-        prop = xmp.getLocalizedText( XMPConst.NS_DC, "title", null, XMPConst.X_DEFAULT );
-        assertNotNull( prop );
-        assertEquals( "title", prop.getValue() );
+        prop = xmp.getLocalizedText(XMPConst.NS_DC, "title", null, XMPConst.X_DEFAULT);
+        assertNotNull(prop);
+        assertEquals("title", prop.getValue());
 
         // check array
-        prop = xmp.getArrayItem( XMPConst.NS_DC, "subject", 1 );
-        assertNotNull( prop );
-        assertEquals( "keyword1", prop.getValue() );
-        prop = xmp.getArrayItem( XMPConst.NS_DC, "subject", 2 );
-        assertNotNull( prop );
-        assertEquals( "keyword2", prop.getValue() );
+        prop = xmp.getArrayItem(XMPConst.NS_DC, "subject", 1);
+        assertNotNull(prop);
+        assertEquals("keyword1", prop.getValue());
+        prop = xmp.getArrayItem(XMPConst.NS_DC, "subject", 2);
+        assertNotNull(prop);
+        assertEquals("keyword2", prop.getValue());
 
         // check OOXML specific simple property
-        prop = xmp.getProperty( OfficeOpenXMLCore.NAMESPACE_URI, "lastModifiedBy" );
-        assertNotNull( prop );
-        assertEquals( "lastModifiedBy", prop.getValue() );
+        prop = xmp.getProperty(OfficeOpenXMLCore.NAMESPACE_URI, "lastModifiedBy");
+        assertNotNull(prop);
+        assertEquals("lastModifiedBy", prop.getValue());
     }
 
     // --- TESTS ---
     @Test
-    public void convert_OOXMLMetadataWithMimetype_everythingConverted() throws XMPException,
-            TikaException {
-        setupOOXMLMetadata( tikaMetadata );
-        tikaMetadata.set( Metadata.CONTENT_TYPE, OOXML_MIMETYPE );
+    public void convert_OOXMLMetadataWithMimetype_everythingConverted()
+            throws XMPException, TikaException {
+        setupOOXMLMetadata(tikaMetadata);
+        tikaMetadata.set(Metadata.CONTENT_TYPE, OOXML_MIMETYPE);
 
-        XMPMeta xmp = TikaToXMP.convert( tikaMetadata );
+        XMPMeta xmp = TikaToXMP.convert(tikaMetadata);
 
-        checkOOXMLMetadata( xmp );
+        checkOOXMLMetadata(xmp);
     }
 
     @Test
-    public void convert_OOXMLMetadataWithExtraMimetype_everythingConverted() throws XMPException,
-            TikaException {
-        setupOOXMLMetadata( tikaMetadata );
+    public void convert_OOXMLMetadataWithExtraMimetype_everythingConverted()
+            throws XMPException, TikaException {
+        setupOOXMLMetadata(tikaMetadata);
 
-        XMPMeta xmp = TikaToXMP.convert( tikaMetadata, OOXML_MIMETYPE );
+        XMPMeta xmp = TikaToXMP.convert(tikaMetadata, OOXML_MIMETYPE);
 
-        checkOOXMLMetadata( xmp );
+        checkOOXMLMetadata(xmp);
     }
 
     @Test
     public void convert_OOXMLMetadataWithoutMimetype_onlyGeneralMetadataconverted()
             throws XMPException, TikaException {
-        setupOOXMLMetadata( tikaMetadata );
+        setupOOXMLMetadata(tikaMetadata);
 
-        XMPMeta xmp = TikaToXMP.convert( tikaMetadata, null );
+        XMPMeta xmp = TikaToXMP.convert(tikaMetadata, null);
 
         // general metadata is converted
         // check simple property
-        XMPProperty prop = xmp.getProperty( XMPConst.NS_DC, "language" );
-        assertNotNull( prop );
-        assertEquals( "language", prop.getValue() );
+        XMPProperty prop = xmp.getProperty(XMPConst.NS_DC, "language");
+        assertNotNull(prop);
+        assertEquals("language", prop.getValue());
 
         // check lang alt
-        prop = xmp.getLocalizedText( XMPConst.NS_DC, "title", null, XMPConst.X_DEFAULT );
-        assertNotNull( prop );
-        assertEquals( "title", prop.getValue() );
+        prop = xmp.getLocalizedText(XMPConst.NS_DC, "title", null, XMPConst.X_DEFAULT);
+        assertNotNull(prop);
+        assertEquals("title", prop.getValue());
 
         // OOXML one is not, the namespace has also not been registiered as the converter has not
         // been used
-        XMPMetaFactory.getSchemaRegistry().registerNamespace( OfficeOpenXMLCore.NAMESPACE_URI,
-                OfficeOpenXMLCore.PREFIX );
-        prop = xmp.getProperty( OfficeOpenXMLCore.NAMESPACE_URI, "lastModifiedBy" );
-        assertNull( prop );
+        XMPMetaFactory.getSchemaRegistry()
+                .registerNamespace(OfficeOpenXMLCore.NAMESPACE_URI, OfficeOpenXMLCore.PREFIX);
+        prop = xmp.getProperty(OfficeOpenXMLCore.NAMESPACE_URI, "lastModifiedBy");
+        assertNull(prop);
     }
 
     @Test
-    public void convert_genericMetadataAllQualified_allConverted() throws XMPException,
-            TikaException {
+    public void convert_genericMetadataAllQualified_allConverted()
+            throws XMPException, TikaException {
         // simple property
-        tikaMetadata.set( TikaCoreProperties.FORMAT, GENERIC_MIMETYPE );
+        tikaMetadata.set(TikaCoreProperties.FORMAT, GENERIC_MIMETYPE);
         // language alternative
-        tikaMetadata.set( TikaCoreProperties.TITLE, "title" );
+        tikaMetadata.set(TikaCoreProperties.TITLE, "title");
         // array
-        tikaMetadata.set( TikaCoreProperties.SUBJECT, new String[] { "keyword1", "keyword2" } );
+        tikaMetadata.set(TikaCoreProperties.SUBJECT, new String[]{"keyword1", "keyword2"});
 
-        XMPMeta xmp = TikaToXMP.convert( tikaMetadata, null );
+        XMPMeta xmp = TikaToXMP.convert(tikaMetadata, null);
 
         // check simple property
-        XMPProperty prop = xmp.getProperty( XMPConst.NS_DC, "format" );
-        assertNotNull( prop );
-        assertEquals( GENERIC_MIMETYPE, prop.getValue() );
+        XMPProperty prop = xmp.getProperty(XMPConst.NS_DC, "format");
+        assertNotNull(prop);
+        assertEquals(GENERIC_MIMETYPE, prop.getValue());
 
         // check lang alt
-        prop = xmp.getLocalizedText( XMPConst.NS_DC, "title", null, XMPConst.X_DEFAULT );
-        assertNotNull( prop );
-        assertEquals( "title", prop.getValue() );
+        prop = xmp.getLocalizedText(XMPConst.NS_DC, "title", null, XMPConst.X_DEFAULT);
+        assertNotNull(prop);
+        assertEquals("title", prop.getValue());
 
         // check array
-        prop = xmp.getArrayItem( XMPConst.NS_DC, "subject", 1 );
-        assertNotNull( prop );
-        assertEquals( "keyword1", prop.getValue() );
-        prop = xmp.getArrayItem( XMPConst.NS_DC, "subject", 2 );
-        assertNotNull( prop );
-        assertEquals( "keyword2", prop.getValue() );
+        prop = xmp.getArrayItem(XMPConst.NS_DC, "subject", 1);
+        assertNotNull(prop);
+        assertEquals("keyword1", prop.getValue());
+        prop = xmp.getArrayItem(XMPConst.NS_DC, "subject", 2);
+        assertNotNull(prop);
+        assertEquals("keyword2", prop.getValue());
     }
 
     @Test
     public void convert_wrongGenericMetadata_notConverted() throws XMPException, TikaException {
         // unknown prefix
-        tikaMetadata.set( "unknown:key", "unknownPrefixValue" );
+        tikaMetadata.set("unknown:key", "unknownPrefixValue");
         // not qualified key
-        tikaMetadata.set( "wrongKey", "wrongKeyValue" );
+        tikaMetadata.set("wrongKey", "wrongKeyValue");
 
-        XMPMeta xmp = TikaToXMP.convert( tikaMetadata, null );
+        XMPMeta xmp = TikaToXMP.convert(tikaMetadata, null);
 
         // XMP is empty
         XMPIterator iter = xmp.iterator();
-        assertFalse( iter.hasNext() );
+        assertFalse(iter.hasNext());
     }
 
     @Test
     public void convert_nullInput_throw() throws TikaException {
         assertThrows(IllegalArgumentException.class, () -> {
-        TikaToXMP.convert( null );
+            TikaToXMP.convert(null);
         });
     }
 
     @Test
     public void isConverterAvailable_availableMime_true() {
-        assertTrue( TikaToXMP.isConverterAvailable( OOXML_MIMETYPE ) );
+        assertTrue(TikaToXMP.isConverterAvailable(OOXML_MIMETYPE));
     }
 
     @Test
     public void isConverterAvailable_noAvailableMime_false() {
-        assertFalse( TikaToXMP.isConverterAvailable( GENERIC_MIMETYPE ) );
+        assertFalse(TikaToXMP.isConverterAvailable(GENERIC_MIMETYPE));
     }
 
     @Test
     public void isConverterAvailable_nullInput_false() {
-        assertFalse( TikaToXMP.isConverterAvailable( null ) );
+        assertFalse(TikaToXMP.isConverterAvailable(null));
     }
 
     @Test
     public void getConverter_ConverterAvailable_class() throws TikaException {
-        ITikaToXMPConverter converter = TikaToXMP.getConverter( OOXML_MIMETYPE );
-        assertNotNull( converter );
-        assertTrue( converter instanceof MSOfficeXMLConverter );
+        ITikaToXMPConverter converter = TikaToXMP.getConverter(OOXML_MIMETYPE);
+        assertNotNull(converter);
+        assertTrue(converter instanceof MSOfficeXMLConverter);
     }
 
     @Test
     public void getConverter_noConverterAvailable_null() throws TikaException {
-        ITikaToXMPConverter converter = TikaToXMP.getConverter( GENERIC_MIMETYPE );
-        assertNull( converter );
+        ITikaToXMPConverter converter = TikaToXMP.getConverter(GENERIC_MIMETYPE);
+        assertNull(converter);
     }
 
     @Test

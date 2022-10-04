@@ -37,7 +37,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
@@ -149,8 +148,7 @@ public abstract class TikaPipesXSearchBase {
 
         JsonResponse results = CLIENT.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
-        assertEquals(numHtmlDocs + 1,
-              results.getJson().get("hits").get("total").get("value").asInt());
+        assertEquals(numHtmlDocs + 1, results.getJson().get("hits").get("total").get("value").asInt());
 
         //now try match all
         query = "{ " +

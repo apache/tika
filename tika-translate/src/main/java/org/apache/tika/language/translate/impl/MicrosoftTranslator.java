@@ -17,41 +17,41 @@
 
 package org.apache.tika.language.translate.impl;
 
-import com.memetix.mst.language.Language;
-import com.memetix.mst.translate.Translate;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.language.translate.Translator;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+import com.memetix.mst.language.Language;
+import com.memetix.mst.translate.Translate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.language.translate.Translator;
+
 /**
  * Wrapper class to access the Windows translation service. This class uses the com.memetix.mst
  * package as a wrapper for the API calls.
+ *
  * @since Tika 1.6
  */
 public class MicrosoftTranslator implements Translator {
-
-    private static final Logger LOG = LoggerFactory.getLogger(MicrosoftTranslator.class);
-
-    boolean available;              // Flag for whether or not translation is available.
-    String clientId, clientSecret;  // Keys used for the API calls.
 
     public static final String PROPERTIES_FILE = "translator.microsoft.properties";
     public static final String ID_PROPERTY = "translator.client-id";
     public static final String SECRET_PROPERTY = "translator.client-secret";
     public static final String DEFAULT_ID = "dummy-id";
     public static final String DEFAULT_SECRET = "dummy-secret";
+    private static final Logger LOG = LoggerFactory.getLogger(MicrosoftTranslator.class);
+    boolean available;              // Flag for whether or not translation is available.
+    String clientId, clientSecret;  // Keys used for the API calls.
 
     /**
      * Create a new MicrosoftTranslator with the client keys specified in
      * resources/org/apache/tika/language/translate/translator.microsoft.properties. Silently becomes unavailable
      * when client keys are unavailable. translator.microsoft.client-id and translator.client-secret must be set
      * in translator.microsoft.properties for translation to work.
+     *
      * @since Tika 1.6
      */
     public MicrosoftTranslator() {
@@ -59,11 +59,11 @@ public class MicrosoftTranslator implements Translator {
         InputStream stream;
         stream = MicrosoftTranslator.class.getResourceAsStream(PROPERTIES_FILE);
         try {
-            if(stream != null) {
+            if (stream != null) {
                 props.load(stream);
                 clientId = props.getProperty(ID_PROPERTY);
                 clientSecret = props.getProperty(SECRET_PROPERTY);
-                this.available = checkAvailable();   
+                this.available = checkAvailable();
             }
         } catch (IOException e) {
             LOG.warn("Error loading props file", e);
@@ -76,7 +76,7 @@ public class MicrosoftTranslator implements Translator {
      * Use the Microsoft service to translate the given text from the given source language to the given target.
      * You must set the client keys in translator.microsoft.properties.
      *
-     * @param text The text to translate.
+     * @param text           The text to translate.
      * @param sourceLanguage The input text language (for example, "en").
      * @param targetLanguage The desired language to translate to (for example, "fr").
      * @return The translated text. If translation is unavailable, returns the unchanged text.
@@ -84,8 +84,11 @@ public class MicrosoftTranslator implements Translator {
      * @see org.apache.tika.language.translate.Translator
      * @since Tika 1.6
      */
-    public String translate(String text, String sourceLanguage, String targetLanguage) throws TikaException, IOException {
-        if (!available) return text;
+    public String translate(String text, String sourceLanguage, String targetLanguage)
+            throws TikaException, IOException {
+        if (!available) {
+            return text;
+        }
         Language source = Language.fromString(sourceLanguage);
         Language target = Language.fromString(targetLanguage);
         Translate.setClientId(clientId);
@@ -100,7 +103,8 @@ public class MicrosoftTranslator implements Translator {
     /**
      * Use the Microsoft service to translate the given text to the given target language. The source language
      * is automatically detected by Microsoft. You must set the client keys in translator.microsoft.properties.
-     * @param text The text to translate.
+     *
+     * @param text           The text to translate.
      * @param targetLanguage The desired language to translate to (for example, "hi").
      * @return The translated text. If translation is unavailable, returns the unchanged text.
      * @throws Exception
@@ -108,7 +112,9 @@ public class MicrosoftTranslator implements Translator {
      * @since Tika 1.6
      */
     public String translate(String text, String targetLanguage) throws TikaException, IOException {
-        if (!available) return text;
+        if (!available) {
+            return text;
+        }
         Language target = Language.fromString(targetLanguage);
         Translate.setClientId(clientId);
         Translate.setClientSecret(clientSecret);
@@ -122,34 +128,35 @@ public class MicrosoftTranslator implements Translator {
     /**
      * Check whether this instance has a working property file and its keys are not the defaults.
      * This is not guaranteed to work, since keys may be incorrect or the webservice may be down.
+     *
      * @return whether translation will probably work.
      */
-    public boolean isAvailable(){
+    public boolean isAvailable() {
         return available;
     }
-    
+
     /**
      * Sets the client Id for the translator API.
+     *
      * @param id The ID to set.
      */
-    public void setId(String id){
-    	this.clientId = id;
-        this.available = checkAvailable();   
+    public void setId(String id) {
+        this.clientId = id;
+        this.available = checkAvailable();
     }
-    
+
     /**
      * Sets the client secret for the translator API.
+     *
      * @param secret The secret to set.
      */
-    public void setSecret(String secret){
-    	this.clientSecret = secret;
-        this.available = checkAvailable();   	
+    public void setSecret(String secret) {
+        this.clientSecret = secret;
+        this.available = checkAvailable();
     }
-    
-    private boolean checkAvailable(){
-       return clientId != null && 
-    		   !clientId.equals(DEFAULT_ID) && 
-    		   clientSecret != null && 
-    		   !clientSecret.equals(DEFAULT_SECRET);
+
+    private boolean checkAvailable() {
+        return clientId != null && !clientId.equals(DEFAULT_ID) && clientSecret != null &&
+                !clientSecret.equals(DEFAULT_SECRET);
     }
 }

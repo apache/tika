@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
  */
 public class MicrosoftTranslatorTest {
     MicrosoftTranslator translator;
+
     @BeforeEach
     public void setUp() {
         translator = new MicrosoftTranslator();
@@ -52,27 +53,25 @@ public class MicrosoftTranslatorTest {
         assertTrue(expected.equalsIgnoreCase(translated),
                 "Translate " + source + " to " + expected + " (was " + translated + ")");
     }
-    
+
     @Test
-    public void testSettersAndIsAvailable(){
-    	try{
-    		translator.setId("foo");
-    		translator.setSecret("bar");
-    	}
-    	catch(Exception e){
-    		e.printStackTrace();
-    		fail(e.getMessage());
-    	}
-    	//reset
-    	translator = new MicrosoftTranslator();
-    	try{
-    		translator.setSecret("bar");
-    		translator.setId("foo");
-    	}
-    	catch(Exception e){
-    		e.printStackTrace();
-    		fail(e.getMessage());
-    	}
+    public void testSettersAndIsAvailable() {
+        try {
+            translator.setId("foo");
+            translator.setSecret("bar");
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail(e.getMessage());
+        }
+        //reset
+        translator = new MicrosoftTranslator();
+        try {
+            translator.setSecret("bar");
+            translator.setId("foo");
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail(e.getMessage());
+        }
     }
 
 }

@@ -20,6 +20,11 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.adobe.internal.xmp.XMPConst;
+import com.adobe.internal.xmp.XMPException;
+import com.adobe.internal.xmp.XMPMeta;
+import com.adobe.internal.xmp.options.PropertyOptions;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -27,18 +32,14 @@ import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 
-import com.adobe.internal.xmp.XMPConst;
-import com.adobe.internal.xmp.XMPException;
-import com.adobe.internal.xmp.XMPMeta;
-import com.adobe.internal.xmp.options.PropertyOptions;
-
 /**
  * Tika to XMP mapping for the RTF format.
  */
 public class RTFConverter extends AbstractConverter {
-    protected static final Set<Namespace> ADDITIONAL_NAMESPACES = Collections
-            .unmodifiableSet(new HashSet<>(Collections.singletonList(new Namespace(
-                    OfficeOpenXMLExtended.NAMESPACE_URI, OfficeOpenXMLExtended.PREFIX))) );
+    protected static final Set<Namespace> ADDITIONAL_NAMESPACES = Collections.unmodifiableSet(
+            new HashSet<>(Collections.singletonList(
+                    new Namespace(OfficeOpenXMLExtended.NAMESPACE_URI,
+                            OfficeOpenXMLExtended.PREFIX))));
 
     public RTFConverter() throws TikaException {
         super();
@@ -46,24 +47,24 @@ public class RTFConverter extends AbstractConverter {
 
     @Override
     public XMPMeta process(Metadata metadata) throws XMPException {
-        setMetadata( metadata );
+        setMetadata(metadata);
 
-        createProperty( HttpHeaders.CONTENT_TYPE, XMPConst.NS_DC, "format" );
+        createProperty(HttpHeaders.CONTENT_TYPE, XMPConst.NS_DC, "format");
 
-        createCommaSeparatedArray( TikaCoreProperties.CREATOR, XMPConst.NS_DC, "creator",
-                PropertyOptions.ARRAY_ORDERED );
-        createLangAltProperty( TikaCoreProperties.TITLE, XMPConst.NS_DC, "title" );
-        createLangAltProperty( TikaCoreProperties.DESCRIPTION, XMPConst.NS_DC, "description" );
-        createCommaSeparatedArray( TikaCoreProperties.SUBJECT, XMPConst.NS_DC, "subject",
-                PropertyOptions.ARRAY );
-        createProperty( OfficeOpenXMLCore.CATEGORY, XMPConst.NS_IPTCCORE, "intellectualGenre" );
-        createProperty( OfficeOpenXMLExtended.TEMPLATE, OfficeOpenXMLExtended.NAMESPACE_URI,
-                "Template" );
-        createProperty( TikaCoreProperties.COMMENTS, XMPConst.NS_PDFX, "Comments" );
-        createProperty( OfficeOpenXMLExtended.COMPANY, OfficeOpenXMLExtended.NAMESPACE_URI,
-                "Company" );
-        createProperty( OfficeOpenXMLExtended.MANAGER, OfficeOpenXMLExtended.NAMESPACE_URI,
-                "Manager" );
+        createCommaSeparatedArray(TikaCoreProperties.CREATOR, XMPConst.NS_DC, "creator",
+                PropertyOptions.ARRAY_ORDERED);
+        createLangAltProperty(TikaCoreProperties.TITLE, XMPConst.NS_DC, "title");
+        createLangAltProperty(TikaCoreProperties.DESCRIPTION, XMPConst.NS_DC, "description");
+        createCommaSeparatedArray(TikaCoreProperties.SUBJECT, XMPConst.NS_DC, "subject",
+                PropertyOptions.ARRAY);
+        createProperty(OfficeOpenXMLCore.CATEGORY, XMPConst.NS_IPTCCORE, "intellectualGenre");
+        createProperty(OfficeOpenXMLExtended.TEMPLATE, OfficeOpenXMLExtended.NAMESPACE_URI,
+                "Template");
+        createProperty(TikaCoreProperties.COMMENTS, XMPConst.NS_PDFX, "Comments");
+        createProperty(OfficeOpenXMLExtended.COMPANY, OfficeOpenXMLExtended.NAMESPACE_URI,
+                "Company");
+        createProperty(OfficeOpenXMLExtended.MANAGER, OfficeOpenXMLExtended.NAMESPACE_URI,
+                "Manager");
 
         return getXMPMeta();
     }

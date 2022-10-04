@@ -20,19 +20,19 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.DublinCore;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.XMPRights;
-import org.apache.tika.metadata.Property.PropertyType;
-
 import com.adobe.internal.xmp.XMPException;
 import com.adobe.internal.xmp.XMPMeta;
 import com.adobe.internal.xmp.XMPMetaFactory;
 import com.adobe.internal.xmp.XMPSchemaRegistry;
 import com.adobe.internal.xmp.options.PropertyOptions;
+
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.DublinCore;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.Property.PropertyType;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.XMPRights;
 
 /**
  * Trys to convert as much of the properties in the <code>Metadata</code> map to XMP namespaces.
@@ -47,46 +47,44 @@ public class GenericConverter extends AbstractConverter {
 
     @Override
     public XMPMeta process(Metadata metadata) throws XMPException {
-        setMetadata( metadata );
+        setMetadata(metadata);
         XMPSchemaRegistry registry = XMPMetaFactory.getSchemaRegistry();
 
         String[] keys = metadata.names();
         for (String key : keys) {
-            String[] keyParts = key.split( TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER );
+            String[] keyParts = key.split(TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER);
             if (keyParts.length > 0 && keyParts.length <= 2) {
-                String uri = registry.getNamespaceURI( keyParts[0] );
+                String uri = registry.getNamespaceURI(keyParts[0]);
 
                 if (uri != null) {
                     // Tika properties where the type differs from the XMP specification
-                    if (key.equals( DublinCore.TITLE.getName() )
-                            || key.equals( DublinCore.DESCRIPTION.getName() )
-                            || key.equals( XMPRights.USAGE_TERMS.getName() )) {
-                        createLangAltProperty( key, uri, keyParts[1] );
-                    }
-                    else if (key.equals( DublinCore.CREATOR.getName() )) {
-                        createArrayProperty( key, uri, keyParts[1], PropertyOptions.ARRAY_ORDERED );
-                    }
-                    else {
-                        PropertyType type = Property.getPropertyType( key );
+                    if (key.equals(DublinCore.TITLE.getName()) ||
+                            key.equals(DublinCore.DESCRIPTION.getName()) ||
+                            key.equals(XMPRights.USAGE_TERMS.getName())) {
+                        createLangAltProperty(key, uri, keyParts[1]);
+                    } else if (key.equals(DublinCore.CREATOR.getName())) {
+                        createArrayProperty(key, uri, keyParts[1], PropertyOptions.ARRAY_ORDERED);
+                    } else {
+                        PropertyType type = Property.getPropertyType(key);
                         if (type != null) {
                             switch (type) {
                                 case SIMPLE:
-                                    createProperty( key, uri, keyParts[1] );
+                                    createProperty(key, uri, keyParts[1]);
                                     break;
                                 case BAG:
-                                    createArrayProperty( key, uri, keyParts[1],
-                                            PropertyOptions.ARRAY );
+                                    createArrayProperty(key, uri, keyParts[1],
+                                            PropertyOptions.ARRAY);
                                     break;
                                 case SEQ:
-                                    createArrayProperty( key, uri, keyParts[1],
-                                            PropertyOptions.ARRAY_ORDERED );
+                                    createArrayProperty(key, uri, keyParts[1],
+                                            PropertyOptions.ARRAY_ORDERED);
                                     break;
                                 case ALT:
-                                    createArrayProperty( key, uri, keyParts[1],
-                                            PropertyOptions.ARRAY_ALTERNATE );
+                                    createArrayProperty(key, uri, keyParts[1],
+                                            PropertyOptions.ARRAY_ALTERNATE);
                                     break;
-                            // TODO Add support for structs and lang-alts, but those types are
-                            // currently not used in Tika
+                                // TODO Add support for structs and lang-alts, but those types are
+                                // currently not used in Tika
                             }
                         }
                     }
@@ -100,6 +98,6 @@ public class GenericConverter extends AbstractConverter {
     @Override
     public Set<Namespace> getAdditionalNamespaces() {
         // no additional namespaces needed
-        return Collections.unmodifiableSet(new HashSet<>() );
+        return Collections.unmodifiableSet(new HashSet<>());
     }
 }

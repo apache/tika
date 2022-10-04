@@ -18,101 +18,101 @@
   under the License.
 -->
 <properties>
-    <parsers>
-        <parser class="org.apache.tika.parser.DefaultParser">
-            <parser-exclude class="org.apache.tika.parser.ocr.TesseractOCRParser"/>
-            <parser-exclude class="org.apache.tika.parser.pdf.PDFParser"/>
-            <parser-exclude class="org.apache.tika.parser.microsoft.ooxml.OOXMLParser"/>
-            <parser-exclude class="org.apache.tika.parser.microsoft.OfficeParser"/>
-        </parser>
-        <parser class="org.apache.tika.parser.pdf.PDFParser">
-            <params>
-                <param name="extractActions" type="bool">true</param>
-                <param name="checkExtractAccessPermissions" type="bool">true</param>
-            </params>
-        </parser>
-        <parser class="org.apache.tika.parser.microsoft.ooxml.OOXMLParser">
-            <params>
-                <param name="includeDeletedContent" type="bool">true</param>
-                <param name="includeMoveFromContent" type="bool">true</param>
-                <param name="extractMacros" type="bool">true</param>
-            </params>
-        </parser>
-        <parser class="org.apache.tika.parser.microsoft.OfficeParser">
-            <params>
-                <param name="extractMacros" type="bool">true</param>
-            </params>
-        </parser>
-    </parsers>
-    <metadataFilters>
-        <!-- depending on the file format, some dates do not have a timezone. This
-             filter arbitrarily assumes dates have a UTC timezone and will format all
-             dates as yyyy-MM-dd'T'HH:mm:ss'Z' whether or not they actually have a timezone.
-             -->
-        <metadataFilter class="org.apache.tika.metadata.filter.DateNormalizingMetadataFilter"/>
-        <metadataFilter class="org.apache.tika.metadata.filter.FieldNameMappingFilter">
-            <params>
-                <excludeUnmapped>true</excludeUnmapped>
-                <mappings>
-                    <mapping from="X-TIKA:content" to="content_s"/>
-                    <mapping from="Content-Length" to="length_i"/>
-                    <mapping from="dc:creator" to="creators_ss"/>
-                    <mapping from="dc:title" to="title_s"/>
-                    <mapping from="Content-Type" to="mime_s"/>
-                    <mapping from="X-TIKA:EXCEPTION:container_exception" to="tika_exception_s"/>
-                </mappings>
-            </params>
-        </metadataFilter>
-    </metadataFilters>
-    <async>
-        <params>
-            <maxForEmitBatchBytes>10000</maxForEmitBatchBytes>
-            <emitMaxEstimatedBytes>100000</emitMaxEstimatedBytes>
-            <emitWithinMillis>10</emitWithinMillis>
-            <numEmitters>1</numEmitters>
-            <numClients>1</numClients>
-            <tikaConfig>{TIKA_CONFIG}</tikaConfig>
-            <forkedJvmArgs>
-                <arg>-Xmx1g</arg>
-                <arg>-XX:ParallelGCThreads=2</arg>
-                <arg>-XX:+ExitOnOutOfMemoryError</arg>
-                <arg>-Dlog4j.configurationFile={LOG4J_PROPERTIES_FILE}</arg>
-            </forkedJvmArgs>
-            <timeoutMillis>60000</timeoutMillis>
-        </params>
-    </async>
-    <fetchers>
-        <fetcher class="org.apache.tika.pipes.fetcher.fs.FileSystemFetcher">
-            <params>
-                <name>fsf</name>
-                <basePath>{PATH_TO_DOCS}</basePath>
-            </params>
-        </fetcher>
-    </fetchers>
-    <emitters>
-        <emitter class="org.apache.tika.pipes.emitter.kafka.KafkaEmitter">
-            <params>
-                <name>ke</name>
-                <topic>{EMITTER_TOPIC}</topic>
-                <bootstrapServers>{BOOTSTRAP_SERVERS}</bootstrapServers>
-            </params>
-        </emitter>
-        <emitter class="org.apache.tika.pipes.emitter.fs.FileSystemEmitter">
-            <params>
-                <name>fse</name>
-                <basePath>/path/to/extracts</basePath>
-            </params>
-        </emitter>
-    </emitters>
-    <pipesIterator class="org.apache.tika.pipes.pipesiterator.kafka.KafkaPipesIterator">
-        <params>
-            <topic>{PIPE_ITERATOR_TOPIC}</topic>
-            <bootstrapServers>{BOOTSTRAP_SERVERS}</bootstrapServers>
-            <groupId>grpid</groupId>
-            <autoOffsetReset>earliest</autoOffsetReset>
-            <pollDelayMs>1000</pollDelayMs>
-            <fetcherName>fsf</fetcherName>
-            <emitterName>ke</emitterName>
-        </params>
-    </pipesIterator>
+  <parsers>
+    <parser class="org.apache.tika.parser.DefaultParser">
+      <parser-exclude class="org.apache.tika.parser.ocr.TesseractOCRParser"/>
+      <parser-exclude class="org.apache.tika.parser.pdf.PDFParser"/>
+      <parser-exclude class="org.apache.tika.parser.microsoft.ooxml.OOXMLParser"/>
+      <parser-exclude class="org.apache.tika.parser.microsoft.OfficeParser"/>
+    </parser>
+    <parser class="org.apache.tika.parser.pdf.PDFParser">
+      <params>
+        <param name="extractActions" type="bool">true</param>
+        <param name="checkExtractAccessPermissions" type="bool">true</param>
+      </params>
+    </parser>
+    <parser class="org.apache.tika.parser.microsoft.ooxml.OOXMLParser">
+      <params>
+        <param name="includeDeletedContent" type="bool">true</param>
+        <param name="includeMoveFromContent" type="bool">true</param>
+        <param name="extractMacros" type="bool">true</param>
+      </params>
+    </parser>
+    <parser class="org.apache.tika.parser.microsoft.OfficeParser">
+      <params>
+        <param name="extractMacros" type="bool">true</param>
+      </params>
+    </parser>
+  </parsers>
+  <metadataFilters>
+    <!-- depending on the file format, some dates do not have a timezone. This
+         filter arbitrarily assumes dates have a UTC timezone and will format all
+         dates as yyyy-MM-dd'T'HH:mm:ss'Z' whether or not they actually have a timezone.
+         -->
+    <metadataFilter class="org.apache.tika.metadata.filter.DateNormalizingMetadataFilter"/>
+    <metadataFilter class="org.apache.tika.metadata.filter.FieldNameMappingFilter">
+      <params>
+        <excludeUnmapped>true</excludeUnmapped>
+        <mappings>
+          <mapping from="X-TIKA:content" to="content_s"/>
+          <mapping from="Content-Length" to="length_i"/>
+          <mapping from="dc:creator" to="creators_ss"/>
+          <mapping from="dc:title" to="title_s"/>
+          <mapping from="Content-Type" to="mime_s"/>
+          <mapping from="X-TIKA:EXCEPTION:container_exception" to="tika_exception_s"/>
+        </mappings>
+      </params>
+    </metadataFilter>
+  </metadataFilters>
+  <async>
+    <params>
+      <maxForEmitBatchBytes>10000</maxForEmitBatchBytes>
+      <emitMaxEstimatedBytes>100000</emitMaxEstimatedBytes>
+      <emitWithinMillis>10</emitWithinMillis>
+      <numEmitters>1</numEmitters>
+      <numClients>1</numClients>
+      <tikaConfig>{TIKA_CONFIG}</tikaConfig>
+      <forkedJvmArgs>
+        <arg>-Xmx1g</arg>
+        <arg>-XX:ParallelGCThreads=2</arg>
+        <arg>-XX:+ExitOnOutOfMemoryError</arg>
+        <arg>-Dlog4j.configurationFile={LOG4J_PROPERTIES_FILE}</arg>
+      </forkedJvmArgs>
+      <timeoutMillis>60000</timeoutMillis>
+    </params>
+  </async>
+  <fetchers>
+    <fetcher class="org.apache.tika.pipes.fetcher.fs.FileSystemFetcher">
+      <params>
+        <name>fsf</name>
+        <basePath>{PATH_TO_DOCS}</basePath>
+      </params>
+    </fetcher>
+  </fetchers>
+  <emitters>
+    <emitter class="org.apache.tika.pipes.emitter.kafka.KafkaEmitter">
+      <params>
+        <name>ke</name>
+        <topic>{EMITTER_TOPIC}</topic>
+        <bootstrapServers>{BOOTSTRAP_SERVERS}</bootstrapServers>
+      </params>
+    </emitter>
+    <emitter class="org.apache.tika.pipes.emitter.fs.FileSystemEmitter">
+      <params>
+        <name>fse</name>
+        <basePath>/path/to/extracts</basePath>
+      </params>
+    </emitter>
+  </emitters>
+  <pipesIterator class="org.apache.tika.pipes.pipesiterator.kafka.KafkaPipesIterator">
+    <params>
+      <topic>{PIPE_ITERATOR_TOPIC}</topic>
+      <bootstrapServers>{BOOTSTRAP_SERVERS}</bootstrapServers>
+      <groupId>grpid</groupId>
+      <autoOffsetReset>earliest</autoOffsetReset>
+      <pollDelayMs>1000</pollDelayMs>
+      <fetcherName>fsf</fetcherName>
+      <emitterName>ke</emitterName>
+    </params>
+  </pipesIterator>
 </properties>

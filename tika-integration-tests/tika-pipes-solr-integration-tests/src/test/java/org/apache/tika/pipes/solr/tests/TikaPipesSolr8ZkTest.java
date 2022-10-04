@@ -16,7 +16,7 @@
  */
 package org.apache.tika.pipes.solr.tests;
 
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -28,8 +28,10 @@ public class TikaPipesSolr8ZkTest extends TikaPipesSolr8Test {
 
     @BeforeAll
     public static void setUp() {
-        assumeTrue("zk test only works on linux (and not mac os x)",
-                SystemUtils.IS_OS_UNIX && ! SystemUtils.IS_OS_MAC_OSX);
+        assumeTrue(
+                SystemUtils.IS_OS_UNIX && !SystemUtils.IS_OS_MAC_OSX,
+                "zk test only works on linux (and not mac os x)");
+
     }
 
     @Override

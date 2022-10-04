@@ -98,7 +98,7 @@ public class TikaCLIBatchIntegrationTest {
         String[] params = {
                 "-i", testInputDirForCommandLine,
                 "-o", tempOutputDirForCommandLine,
-                "--config="+configFile.toAbsolutePath().toString()};
+                "--config=" + configFile.toAbsolutePath().toString() };
         TikaCLI.main(params);
         assertFileExists(tempOutputDir.resolve("bad_xml.xml.xml"));
         assertFileExists(tempOutputDir.resolve("coffee.xls.xml"));

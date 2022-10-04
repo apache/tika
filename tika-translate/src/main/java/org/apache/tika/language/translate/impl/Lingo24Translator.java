@@ -24,17 +24,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Properties;
-
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import org.apache.cxf.jaxrs.client.WebClient;
-import org.apache.tika.exception.TikaException;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.cxf.jaxrs.client.WebClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.tika.exception.TikaException;
 
 /**
  * An implementation of a REST client for the
@@ -46,7 +45,8 @@ public class Lingo24Translator extends AbstractTranslator {
 
     private static final Logger LOG = LoggerFactory.getLogger(Lingo24Translator.class);
 
-    private static final String LINGO24_TRANSLATE_URL_BASE = "https://api.lingo24.com/mt/v1/translate";
+    private static final String LINGO24_TRANSLATE_URL_BASE =
+            "https://api.lingo24.com/mt/v1/translate";
 
     private static final String DEFAULT_KEY = "dummy-key";
 
@@ -61,12 +61,12 @@ public class Lingo24Translator extends AbstractTranslator {
         this.isAvailable = true;
         Properties config = new Properties();
         try {
-            config.load(Lingo24Translator.class
-                    .getResourceAsStream(
-                            "translator.lingo24.properties"));
+            config.load(
+                    Lingo24Translator.class.getResourceAsStream("translator.lingo24.properties"));
             this.userKey = config.getProperty("translator.user-key");
-            if (this.userKey.equals(DEFAULT_KEY))
+            if (this.userKey.equals(DEFAULT_KEY)) {
                 this.isAvailable = false;
+            }
         } catch (Exception e) {
             LOG.warn("Couldn't read config file", e);
             isAvailable = false;
@@ -74,18 +74,18 @@ public class Lingo24Translator extends AbstractTranslator {
     }
 
     @Override
-    public String translate(String text, String sourceLanguage,
-                            String targetLanguage) throws TikaException, IOException {
-        if (!this.isAvailable)
+    public String translate(String text, String sourceLanguage, String targetLanguage)
+            throws TikaException, IOException {
+        if (!this.isAvailable) {
             return text;
-        Response response = client.accept(MediaType.APPLICATION_JSON)
-                .query("user_key", userKey).query("source", sourceLanguage)
-                .query("target", targetLanguage).query("q", text).get();
+        }
+        Response response = client.accept(MediaType.APPLICATION_JSON).query("user_key", userKey)
+                .query("source", sourceLanguage).query("target", targetLanguage).query("q", text)
+                .get();
         StringBuilder responseText = new StringBuilder();
         try (InputStreamReader inputStreamReader = new InputStreamReader(
                 (InputStream) response.getEntity(), UTF_8);
-             BufferedReader reader = new BufferedReader(inputStreamReader);
-        ) {
+                BufferedReader reader = new BufferedReader(inputStreamReader)) {
             String line;
             while ((line = reader.readLine()) != null) {
                 responseText.append(line);
@@ -102,11 +102,11 @@ public class Lingo24Translator extends AbstractTranslator {
     }
 
     @Override
-    public String translate(String text, String targetLanguage)
-            throws TikaException, IOException {
-        if (!this.isAvailable)
+    public String translate(String text, String targetLanguage) throws TikaException, IOException {
+        if (!this.isAvailable) {
             return text;
-        
+        }
+
         String sourceLanguage = detectLanguage(text).getLanguage();
         return translate(text, sourceLanguage, targetLanguage);
     }
