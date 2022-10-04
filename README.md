@@ -21,8 +21,9 @@ Tika jars can be fetched from Maven Central or your favourite Maven mirror.
 **Tika 1.X reached End of Life (EOL) on September 30, 2022.**  
 
 Tika is based on **Java 8** and uses the [Maven 3](https://maven.apache.org) build system. 
-**N.B.** [Docker](https://www.docker.com/products/personal) is required in the main branch to complete all unit tests. 
-You can pass the `-DskipTests` flag if you wish to skip tests.
+**N.B.** [Docker](https://www.docker.com/products/personal) is used for tests in tika-integration-tests.
+As of Tika 2.5.1, if Docker is not installed, those tests are skipped.  Docker is required for a successful
+build on earlier 2.x versions.
 
 To build Tika from source, use the following command in the main directory:
 
