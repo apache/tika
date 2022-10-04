@@ -31,66 +31,65 @@ public class DWGReadFormatRemover {
         // been escaped
         String cleanString = dwgString;
         StringBuffer sb = new StringBuffer();
-            //Strip off start/stop underline/overstrike/strike throughs
-            Matcher m = Pattern.compile("((?:\\\\\\\\)+|\\\\[LlOoKk])").matcher(cleanString);
-            while (m.find()) {
-                if (! m.group(1).endsWith("\\")) {
-                    m.appendReplacement(sb, "");
-                }
+        //Strip off start/stop underline/overstrike/strike throughs
+        Matcher m = Pattern.compile("((?:\\\\\\\\)+|\\\\[LlOoKk])").matcher(cleanString);
+        while (m.find()) {
+            if (! m.group(1).endsWith("\\")) {
+                m.appendReplacement(sb, "");
             }
-            m.appendTail(sb);
+        }
+        m.appendTail(sb);
         cleanString = sb.toString();
 
-            //Strip off semi-colon ended markers
-            m =
-                    Pattern.compile("((?:\\\\\\\\)+|\\\\(?:A|H|pi|pxt|pxi|X|Q|f|W|C|T)[^;]{0,100" +
+        //Strip off semi-colon ended markers
+        m = Pattern.compile("((?:\\\\\\\\)+|\\\\(?:A|H|pi|pxt|pxi|X|Q|f|W|C|T)[^;]{0,100" +
                             "};)").matcher(cleanString);
-            sb.setLength(0);
-            while (m.find()) {
-                if (! m.group(1).endsWith("\\")) {
-                    m.appendReplacement(sb, "");
-                }
+        sb.setLength(0);
+        while (m.find()) {
+            if (! m.group(1).endsWith("\\")) {
+                m.appendReplacement(sb, "");
             }
-            m.appendTail(sb);
+        }
+        m.appendTail(sb);
         cleanString = sb.toString();
 
             //new line marker \\P replace with actual new line
-            m = Pattern.compile("((?:\\\\\\\\)+|\\\\P)").matcher(cleanString);
-            sb.setLength(0);
-            while (m.find()) {
-                if (m.group(1).endsWith("P")) {
-                    m.appendReplacement(sb, "\n");
-                }
+        m = Pattern.compile("((?:\\\\\\\\)+|\\\\P)").matcher(cleanString);
+        sb.setLength(0);
+        while (m.find()) {
+            if (m.group(1).endsWith("P")) {
+                m.appendReplacement(sb, "\n");
             }
-            m.appendTail(sb);
+        }
+        m.appendTail(sb);
         cleanString = sb.toString();
 
             //stacking fractions
-            m = Pattern.compile("(\\\\\\\\)+|\\\\S([^/^#]{1,20})[/^#]([^;]{1,20});").matcher(cleanString);
-            sb.setLength(0);
-            while (m.find()) {
-                if (m.group(1) == null) {
-                    m.appendReplacement(sb, m.group(2) + "/" + m.group(3));
-                }
+        m = Pattern.compile("(\\\\\\\\)+|\\\\S([^/^#]{1,20})[/^#]([^;]{1,20});").matcher(cleanString);
+        sb.setLength(0);
+        while (m.find()) {
+            if (m.group(1) == null) {
+                m.appendReplacement(sb, m.group(2) + "/" + m.group(3));
             }
-            m.appendTail(sb);
+        }
+        m.appendTail(sb);
         cleanString = sb.toString();
 
-            //strip brackets around text, make sure they aren't escaped
-            m = Pattern.compile("(\\\\)+[{}]|([{}])").matcher(cleanString);
-            sb.setLength(0);
-            while (m.find()) {
-                if (m.group(1) == null) {
-                    m.appendReplacement(sb, "");
-                }
+        //strip brackets around text, make sure they aren't escaped
+        m = Pattern.compile("(\\\\)+[{}]|([{}])").matcher(cleanString);
+        sb.setLength(0);
+        while (m.find()) {
+            if (m.group(1) == null) {
+                m.appendReplacement(sb, "");
             }
-            m.appendTail(sb);
+        }
+        m.appendTail(sb);
         cleanString = sb.toString();
             //now get rid of escape characters
         cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\)(?!\\\\)", "");
+        //now unescape backslash
         cleanString = cleanString.replaceAll("(\\\\\\\\)", "\\\\");
-            return cleanString;
-        }
-
+        return cleanString;
     }
 
+}
