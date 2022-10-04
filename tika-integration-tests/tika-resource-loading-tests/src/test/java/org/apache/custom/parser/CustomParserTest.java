@@ -32,7 +32,6 @@ import org.apache.tika.parser.Parser;
 public class CustomParserTest extends TikaTest {
 
     @Test
-    @Disabled("test fails because of sorting")
     public void testBasic() throws Exception {
         DefaultParser p = new DefaultParser();
         assertEquals(2, p.getAllComponentParsers().size());
