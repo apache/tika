@@ -17,6 +17,9 @@
 
 package org.apache.tika.parser.dwg;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class DWGReadFormatRemover {
     public String cleanupDwgString(String dwgString) {
         // Cleaning the formatting of the text has been found from the following
@@ -26,32 +29,68 @@ public class DWGReadFormatRemover {
         // These have also been spotted (pxqc,pxqr,pxql,simplex)
         // We always to do a backwards look to make sure the string to replace hasn't
         // been escaped
-        String cleanString;
-        // replace A0-2 (Alignment)
-        cleanString = dwgString.replaceAll("(?<!\\\\)\\\\A[0-2];", "");
-        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\P", "\n");
-        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pi(.*?);", "");
-        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pxi(.*?);", "");
-        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pxt(.*?);", "");
-        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pt(.*?);", "");
-        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\H[0-9]*(.*?);", "");
-        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\F|f(.*?);", "");
-        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\L)(.*?)(\\\\l)", "$2");
-        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\O)(.*?)(\\\\o)", "$2");
-        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\K)(.*?)(\\\\k)", "$2");
-        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\N)", "\t");
-        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\Q[\\d];", "");
-        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\W(.*?);", "");
-        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\S(.*?):", "");
-        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\C|c[1-7];)", "");
-        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\T(.*?);)", "");
-        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\pxqc;)", "");
-        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\pxqr;)", "");
-        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\pxql;)", "");
-        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\simplex\\|c(.*?);)", "");
-        cleanString = cleanString.replaceAll("(\\\\)", "\\\\");
-        cleanString = cleanString.replaceAll("(?<!\\\\)\\}|(?<!\\\\)\\{", "");
-        return cleanString;
+        String cleanString = dwgString;
+        StringBuffer sb = new StringBuffer();
+            //Strip off start/stop underline/overstrike/strike throughs
+            Matcher m = Pattern.compile("((?:\\\\\\\\)+|\\\\[LlOoKk])").matcher(cleanString);
+            while (m.find()) {
+                if (! m.group(1).endsWith("\\")) {
+                    m.appendReplacement(sb, "");
+                }
+            }
+            m.appendTail(sb);
+        cleanString = sb.toString();
+
+            //Strip off semi-colon ended markers
+            m =
+                    Pattern.compile("((?:\\\\\\\\)+|\\\\(?:A|H|pi|pxt|pxi|X|Q|f|W|C|T)[^;]{0,100" +
+                            "};)").matcher(cleanString);
+            sb.setLength(0);
+            while (m.find()) {
+                if (! m.group(1).endsWith("\\")) {
+                    m.appendReplacement(sb, "");
+                }
+            }
+            m.appendTail(sb);
+        cleanString = sb.toString();
+
+            //new line marker \\P replace with actual new line
+            m = Pattern.compile("((?:\\\\\\\\)+|\\\\P)").matcher(cleanString);
+            sb.setLength(0);
+            while (m.find()) {
+                if (m.group(1).endsWith("P")) {
+                    m.appendReplacement(sb, "\n");
+                }
+            }
+            m.appendTail(sb);
+        cleanString = sb.toString();
+
+            //stacking fractions
+            m = Pattern.compile("(\\\\\\\\)+|\\\\S([^/^#]{1,20})[/^#]([^;]{1,20});").matcher(cleanString);
+            sb.setLength(0);
+            while (m.find()) {
+                if (m.group(1) == null) {
+                    m.appendReplacement(sb, m.group(2) + "/" + m.group(3));
+                }
+            }
+            m.appendTail(sb);
+        cleanString = sb.toString();
+
+            //strip brackets around text, make sure they aren't escaped
+            m = Pattern.compile("(\\\\)+[{}]|([{}])").matcher(cleanString);
+            sb.setLength(0);
+            while (m.find()) {
+                if (m.group(1) == null) {
+                    m.appendReplacement(sb, "");
+                }
+            }
+            m.appendTail(sb);
+        cleanString = sb.toString();
+            //now get rid of escape characters
+        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\)(?!\\\\)", "");
+        cleanString = cleanString.replaceAll("(\\\\\\\\)", "\\\\");
+            return cleanString;
+        }
 
     }
-}
+
