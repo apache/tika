@@ -187,6 +187,7 @@ public class DWGReadParser extends AbstractDWGParser {
             // support OBJECTS, FILEHEADER and SummaryInfo
             // these are the only ones we have in either sample files or have been tested
             // with
+            DWGReadFormatRemover dwgReadFormatRemover = new DWGReadFormatRemover();
             JsonToken nextToken = jParser.nextToken();
             while ((nextToken = jParser.nextToken()) != JsonToken.END_OBJECT) {
                 if (nextToken == JsonToken.FIELD_NAME) {
@@ -201,7 +202,7 @@ public class DWGReadParser extends AbstractDWGParser {
                                 parseDwgObject(jParser, (nextTextValue) -> {
 
                                     try {
-                                        xhtml.characters(cleanupDwgString(nextTextValue));
+                                        xhtml.characters(dwgReadFormatRemover.cleanupDwgString(nextTextValue));
                                         xhtml.newline();
                                     } catch (SAXException e) {
                                         LOG.error("Could not write next text value {} to xhtml stream", nextTextValue);
