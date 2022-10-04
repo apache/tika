@@ -69,6 +69,9 @@ public class FetcherStreamFactory implements InputStreamFactory {
         String fetcherName = getParam("fetcherName", httpHeaders, params);
         String fetchKey = getParam("fetchKey", httpHeaders, params);
         fetchKey = urlDecode(fetchKey);
+        if (StringUtils.isBlank(fetchKey)) {
+            fetchKey = getParam("fetchKeyLiteral", httpHeaders, params);
+        }
 
         long fetchRangeStart = getLong(getParam("fetchRangeStart", httpHeaders, params));
         long fetchRangeEnd = getLong(getParam("fetchRangeEnd", httpHeaders, params));
