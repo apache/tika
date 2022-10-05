@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -65,7 +66,7 @@ import org.apache.tika.utils.ProcessUtils;
  * DWGReadParser (CAD Drawing) parser. This extends the original DWGParser if in 
  * the parser configuration DwgRead is set. DWG reader can be found here: 
  * <p>
- * https://github.com/LibreDWG/libredwg 
+ * <a href="https://github.com/LibreDWG/libredwg">https://github.com/LibreDWG/libredwg</a>
  * <p>
  * DWGRead outputs json which we then loop through extracting the text elements 
  * The required configuration is dwgReadExecutable. The other settings which can be
@@ -127,13 +128,13 @@ public class DWGReadParser extends AbstractDWGParser {
                               + " with: " + dwgc.getCleanDwgReadReplaceWith());
                     try ( BufferedReader br = new BufferedReader(
                               new InputStreamReader(
-                                    new FileInputStream(tmpFileOut), 
+                                      Files.newInputStream(tmpFileOut.toPath()),
                               StandardCharsets.UTF_8));
                             
                             BufferedWriter out = new BufferedWriter(
                                     new OutputStreamWriter(
                                             new FileOutputStream(tmpFileOutCleaned, true), 
-                                            StandardCharsets.UTF_8),32768);)
+                                            StandardCharsets.UTF_8),32768))
                     {
 
                         String sCurrentLine;
@@ -159,9 +160,13 @@ public class DWGReadParser extends AbstractDWGParser {
                             "Json wasn't cleaned, "
                             + "if json parsing fails consider reviewing dwgread json output to check it's valid");
                 }
-            } else {
+            } else if (fpr.isTimeout()) {
                 throw new TikaException(
-                        "DWGRead Failed - Exit Code is:" + fpr.getExitValue() + " Exe error is: " + fpr.getStderr());
+                        "DWGRead Failed - Timeout setting exceeded current setting of " + dwgc.getDwgReadTimeout() );
+            }
+            else {
+                throw new TikaException(
+                        "DWGRead Failed - Exit Code is:" + fpr.getExitValue() + " Exe error is: " + fpr.getStderr() );
             }
 
             // we can't guarantee the json output is correct so we try to ignore as many
@@ -316,67 +321,6 @@ public class DWGReadParser extends AbstractDWGParser {
                 }
             }
         }
-    }
-
-    private String cleanupDwgString(String dwgString) {
-        // Cleaning the formatting of the text has been found from the following
-        // website's:
-        // https://www.cadforum.cz/en/text-formatting-codes-in-mtext-objects-tip8640
-        // https://adndevblog.typepad.com/autocad/2017/09/dissecting-mtext-format-codes.html
-        // These have also been spotted (pxqc,pxqr,pxql,simplex)
-        // We always to do a backwards look to make sure the string to replace hasn't
-        // been escaped
-        String cleanString;
-        // replace A0-2 (Alignment)
-        cleanString = dwgString.replaceAll("(?<!\\\\)\\\\A[0-2];", "");
-        // replace \\p (New paragraph/ new line) and with new line
-        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\P", "\n");
-        // remove pi (numbered paragraphs)
-        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pi(.*?);", "");
-        // remove pxi (bullets)
-        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pxi(.*?);", "");
-        // remove pxt (tab stops)
-        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pxt(.*?);", "");
-        // remove pt (tabs)
-        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\pt(.*?);", "");
-        // remove lines with \H (text height)
-        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\H[0-9]*(.*?);", "");
-        // remove lines with \F Font Selection
-        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\F|f(.*?);", "");
-        // Replace \L \l (underlines)
-        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\L)(.*?)(\\\\l)", "$2");
-        // Replace \O \o (over strikes)
-        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\O)(.*?)(\\\\o)", "$2");
-        // Replace \K \k (Strike through)
-        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\K)(.*?)(\\\\k)", "$2");
-        // Replace \N (new Column)
-        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\N)", "\t");
-        // Replace \Q (text angle)
-        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\Q[\\d];", "");
-        // Replace \W (Text Width)
-        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\W(.*?);", "");
-        // Replace \S (Stacking)
-        cleanString = cleanString.replaceAll("(?<!\\\\)\\\\S(.*?):", "");
-        // Replace \C (Stacking)
-        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\C|c[1-7];)", "");
-        // Replace \T (Tracking)
-        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\T(.*?);)", "");
-        // Replace \pxqc mtext justfication 
-        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\pxqc;)", "");
-        // Replace \pxqr mtext justfication 
-        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\pxqr;)", "");
-        // Replace \pxql mtext justfication 
-        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\pxql;)", "");
-        // Replace \simplex (simplex)
-        cleanString = cleanString.replaceAll("(?<!\\\\)(\\\\simplex\\|c(.*?);)", "");
-        // Now we have cleaned the formatting we can now remove the escaped \
-        cleanString = cleanString.replaceAll("(\\\\)", "\\\\");
-        // Replace {} (text formatted by the above)
-        cleanString = cleanString.replaceAll("(?<!\\\\)\\}|(?<!\\\\)\\{", "");
-
-        //
-        return cleanString;
-
     }
 
 }
