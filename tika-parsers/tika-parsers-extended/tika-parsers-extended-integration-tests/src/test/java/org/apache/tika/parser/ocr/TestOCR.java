@@ -21,8 +21,11 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -36,6 +39,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;
+import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.gdal.GDALParser;
@@ -58,6 +62,33 @@ public class TestOCR extends TikaTest {
     public void testPNG() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testOCR.png", loadParser());
         assertContains("file contains", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+    }
+
+    @Test
+    public void testPNGProgrammatically() throws Exception {
+        //remove the GDAL parser from the default parser
+        Parser defaultParser = new DefaultParser();
+        List<Parser> parsers = new ArrayList<>();
+        for (Parser p : ((CompositeParser)defaultParser).getAllComponentParsers()) {
+            if (! (p instanceof GDALParser)) {
+                parsers.add(p);
+            }
+        }
+
+        //decorate the gdal parser to exclude these image formats
+        Set<MediaType> exclude = new HashSet<>();
+        exclude.add(MediaType.image("png"));
+        exclude.add(MediaType.image("jpeg"));
+        exclude.add(MediaType.image("bmp"));
+        exclude.add(MediaType.image("gif"));
+
+        Parser specialGDAL = ParserDecorator.withoutTypes(new GDALParser(), exclude);
+        parsers.add(specialGDAL);
+
+        Parser autoDetect = new AutoDetectParser(parsers.toArray(new Parser[0]));
+        List<Metadata> metadataList = getRecursiveMetadata("testOCR.png", autoDetect);
+        assertContains("file contains", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+
     }
 
     @Test
