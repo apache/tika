@@ -53,7 +53,7 @@
         <groupId>com.azure</groupId>
         <artifactId>azure-storage-blob</artifactId>
         <!-- when upgrading this, remove it from ossindex exclusions in parent -->
-        <version>12.19.1</version>
+        <version>12.20.0</version>
       </dependency>
       <dependency>
         <groupId>com.azure</groupId>
