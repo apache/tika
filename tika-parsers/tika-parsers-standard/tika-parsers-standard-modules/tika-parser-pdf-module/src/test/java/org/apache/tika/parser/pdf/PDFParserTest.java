@@ -1229,11 +1229,17 @@ public class PDFParserTest extends TikaTest {
         Metadata m = metadataList.get(0);
         int[] totalChars = m.getIntValues(PDF.CHARACTERS_PER_PAGE);
         int[] unmappedUnicodeChars = m.getIntValues(PDF.UNMAPPED_UNICODE_CHARS_PER_PAGE);
+        int totalUnmappedChars = m.getInt(PDF.TOTAL_UNMAPPED_UNICODE_CHARS);
+        float overallPercentage =
+                Float.parseFloat(m.get(PDF.OVERALL_PERCENTAGE_UNMAPPED_UNICODE_CHARS));
+
         //weird issue with pdfbox 2.0.20
         //this test passes in my IDE, but does not pass with mvn clean install from commandline
         if (totalChars[15] > 0) {
             assertEquals(3805, totalChars[15]);
             assertEquals(120, unmappedUnicodeChars[15]);
+            assertEquals(126, totalUnmappedChars);
+            assertEquals(0.00146, overallPercentage, 0.0001f);
         }
         //confirm all works with angles
         PDFParserConfig pdfParserConfig = new PDFParserConfig();

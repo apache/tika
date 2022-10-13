@@ -90,6 +90,12 @@ public interface PDF {
     Property UNMAPPED_UNICODE_CHARS_PER_PAGE =
             Property.internalIntegerSequence(PDF_PREFIX + "unmappedUnicodeCharsPerPage");
 
+    Property TOTAL_UNMAPPED_UNICODE_CHARS =
+            Property.internalInteger(PDF_PREFIX + "totalUnmappedUnicodeChars");
+
+    Property OVERALL_PERCENTAGE_UNMAPPED_UNICODE_CHARS =
+            Property.internalReal(PDF_PREFIX + "overallPercentageUnmappedUnicodeChars");
+
     /**
      * Has XFA
      */

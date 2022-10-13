@@ -172,6 +172,9 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     int unmappedUnicodeCharsPerPage = 0;
     int totalCharsPerPage = 0;
 
+    int totalUnmappedUnicodeCharacters;
+    int totalCharacters;
+
     AbstractPDF2XHTML(PDDocument pdDocument, ContentHandler handler, ParseContext context,
                       Metadata metadata, PDFParserConfig config) throws IOException {
         this.pdDocument = pdDocument;
@@ -958,6 +961,11 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 metadata.add(Font.FONT_NAME, fontName);
             }
         }
+        metadata.set(PDF.TOTAL_UNMAPPED_UNICODE_CHARS, totalUnmappedUnicodeCharacters);
+        if (totalCharacters > 0) {
+            metadata.set(PDF.OVERALL_PERCENTAGE_UNMAPPED_UNICODE_CHARS,
+                    (float)totalUnmappedUnicodeCharacters/(float)totalCharacters);
+        }
     }
 
     void extractBookmarkText() throws SAXException, IOException, TikaException {
@@ -1251,8 +1259,10 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         super.showGlyph(textRenderingMatrix, font, code, unicode, displacement);
         if (unicode == null || unicode.isEmpty()) {
             unmappedUnicodeCharsPerPage++;
+            totalUnmappedUnicodeCharacters++;
         }
         totalCharsPerPage++;
+        totalCharacters++;
     }
 
     enum ActionTrigger {
