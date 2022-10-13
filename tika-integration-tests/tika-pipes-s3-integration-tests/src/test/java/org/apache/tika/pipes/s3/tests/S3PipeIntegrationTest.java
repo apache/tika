@@ -95,7 +95,7 @@ class S3PipeIntegrationTest {
         File log4jPropFile = new File("target", "tmp-log4j2.xml");
         try (InputStream is = this.getClass()
                 .getResourceAsStream("/pipes-fork-server-custom-log4j2.xml")) {
-            assert is != null;
+            Assertions.assertNotNull(is);
             FileUtils.copyInputStreamToFile(is, log4jPropFile);
         }
         String tikaConfigTemplateXml;
