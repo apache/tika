@@ -16,28 +16,18 @@
  */
 package org.apache.tika.pipes.fetcher.s3;
 
-import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.HashMap;
-import java.util.Map;
-
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -51,6 +41,18 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.RangeFetcher;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
 
 /**
  * Fetches files from s3. Example file: s3://my_bucket/path/to/my_file.pdf
@@ -65,6 +67,10 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
     private String region;
     private String bucket;
     private String profile;
+    private String accessKey;
+    private String secretKey;
+    private String endpointConfigurationService;
+    private String endpointConfigurationSigningRegion;
     private String prefix;
     private String credentialsProvider;
     private boolean extractUserMetadata = true;
@@ -72,9 +78,9 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
     private AmazonS3 s3Client;
     private boolean spoolToTemp = true;
     private int retries = 0;
-
     private long sleepBeforeRetryMillis = 30000;
     private long maxLength = -1;
+    private boolean pathStyleAccessEnabled = false;
 
     @Override
     public InputStream fetch(String fetchKey, Metadata metadata) throws TikaException, IOException {
@@ -115,7 +121,7 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
                 long elapsed = System.currentTimeMillis() - start;
                 LOGGER.debug("total to fetch {}", elapsed);
                 return is;
-            } catch (AmazonClientException e ) {
+            } catch (AmazonClientException e) {
                 //TODO -- filter exceptions -- if the file doesn't exist, don't retry
                 LOGGER.warn("client exception fetching on retry=" + tries, e);
                 ex = new IOException(e);
@@ -201,16 +207,18 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
     /**
      * prefix to prepend to the fetch key before fetching.
      * This will automatically add a '/' at the end.
+     *
      * @param prefix
      */
     @Field
     public void setPrefix(String prefix) {
         //guarantee that the prefix ends with /
-        if (! prefix.endsWith("/")) {
+        if (!prefix.endsWith("/")) {
             prefix += "/";
         }
         this.prefix = prefix;
     }
+
     /**
      * Whether or not to extract user metadata from the S3Object
      *
@@ -233,9 +241,9 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
 
     @Field
     public void setCredentialsProvider(String credentialsProvider) {
-        if (!credentialsProvider.equals("profile") && !credentialsProvider.equals("instance")) {
+        if (!credentialsProvider.equals("profile") && !credentialsProvider.equals("instance") && !credentialsProvider.equals("key_secret")) {
             throw new IllegalArgumentException(
-                    "credentialsProvider must be either 'profile' or 'instance'");
+                    "credentialsProvider must be either 'profile', 'instance' or 'key_secret'");
         }
         this.credentialsProvider = credentialsProvider;
     }
@@ -250,6 +258,16 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
         this.sleepBeforeRetryMillis = sleepBeforeRetryMillis;
     }
 
+    @Field
+    public void setAccessKey(String accessKey) {
+        this.accessKey = accessKey;
+    }
+
+    @Field
+    public void setSecretKey(String secretKey) {
+        this.secretKey = secretKey;
+    }
+
     /**
      * This initializes the s3 client. Note, we wrap S3's RuntimeExceptions,
      * e.g. AmazonClientException in a TikaConfigException.
@@ -260,23 +278,32 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         //params have already been set...ignore them
-        AWSCredentialsProvider provider = null;
-        if ("instance".equals(credentialsProvider)) {
+        AWSCredentialsProvider provider;
+        if (credentialsProvider.equals("instance")) {
             provider = InstanceProfileCredentialsProvider.getInstance();
-        } else if ("profile".equals(credentialsProvider)) {
+        } else if (credentialsProvider.equals("profile")) {
             provider = new ProfileCredentialsProvider(profile);
+        } else if (credentialsProvider.equals("key_secret")) {
+            provider = new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey, secretKey));
         } else {
             throw new TikaConfigException("credentialsProvider must be set and " +
-                    "must be either 'instance' or 'profile'");
+                    "must be either 'instance', 'profile' or 'key_secret'");
         }
         ClientConfiguration clientConfiguration = new ClientConfiguration()
-                        .withMaxConnections(maxConnections);
+                .withMaxConnections(maxConnections);
         try {
             synchronized (clientLock) {
-                s3Client = AmazonS3ClientBuilder.standard()
+                AmazonS3ClientBuilder amazonS3ClientBuilder = AmazonS3ClientBuilder.standard()
                         .withClientConfiguration(clientConfiguration)
-                        .withRegion(region)
-                        .withCredentials(provider).build();
+                        .withPathStyleAccessEnabled(pathStyleAccessEnabled)
+                        .withCredentials(provider);
+                if (!StringUtils.isBlank(endpointConfigurationService) && !StringUtils.isBlank(endpointConfigurationSigningRegion)) {
+                    amazonS3ClientBuilder.setEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpointConfigurationService, endpointConfigurationSigningRegion));
+                } else {
+                    amazonS3ClientBuilder.withRegion(region);
+                }
+                s3Client = amazonS3ClientBuilder.build();
+
             }
         } catch (AmazonClientException e) {
             throw new TikaConfigException("can't initialize s3 fetcher", e);
@@ -287,6 +314,20 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
     public void checkInitialization(InitializableProblemHandler problemHandler)
             throws TikaConfigException {
         mustNotBeEmpty("bucket", this.bucket);
-        mustNotBeEmpty("region", this.region);
+    }
+
+    @Field
+    public void setEndpointConfigurationService(String endpointConfigurationService) {
+        this.endpointConfigurationService = endpointConfigurationService;
+    }
+
+    @Field
+    public void setEndpointConfigurationSigningRegion(String endpointConfigurationSigningRegion) {
+        this.endpointConfigurationSigningRegion = endpointConfigurationSigningRegion;
+    }
+
+    @Field
+    public void setPathStyleAccessEnabled(boolean pathStyleAccessEnabled) {
+        this.pathStyleAccessEnabled = pathStyleAccessEnabled;
     }
 }

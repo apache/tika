@@ -16,33 +16,19 @@
  */
 package org.apache.tika.pipes.emitter.s3;
 
-import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
-
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.util.List;
-import java.util.Map;
-
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -58,6 +44,18 @@ import org.apache.tika.pipes.emitter.AbstractEmitter;
 import org.apache.tika.pipes.emitter.StreamEmitter;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.List;
+import java.util.Map;
+
+import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
 
 /**
  * Emits to existing s3 bucket
@@ -99,10 +97,15 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
     private String profile;
     private String bucket;
     private String credentialsProvider;
+    private String accessKey;
+    private String secretKey;
+    private String endpointConfigurationService;
+    private String endpointConfigurationSigningRegion;
     private String fileExtension = "json";
     private boolean spoolToTemp = true;
     private String prefix = null;
     private int maxConnections = ClientConfiguration.DEFAULT_MAX_CONNECTIONS;
+    private boolean pathStyleAccessEnabled = false;
     private AmazonS3 s3Client;
 
     /**
@@ -238,9 +241,9 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
 
     @Field
     public void setCredentialsProvider(String credentialsProvider) {
-        if (!credentialsProvider.equals("profile") && !credentialsProvider.equals("instance")) {
+        if (!credentialsProvider.equals("profile") && !credentialsProvider.equals("instance") && !credentialsProvider.equals("key_secret")) {
             throw new IllegalArgumentException(
-                    "credentialsProvider must be either 'profile' or instance'");
+                    "credentialsProvider must be either 'profile', 'instance' or 'key_secret'");
         }
         this.credentialsProvider = credentialsProvider;
     }
@@ -256,6 +259,16 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
         this.fileExtension = fileExtension;
     }
 
+    @Field
+    public void setAccessKey(String accessKey) {
+        this.accessKey = accessKey;
+    }
+
+    @Field
+    public void setSecretKey(String secretKey) {
+        this.secretKey = secretKey;
+    }
+
     /**
      * maximum number of http connections allowed.  This should be
      * greater than or equal to the number of threads emitting to S3.
@@ -266,6 +279,17 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
     public void setMaxConnections(int maxConnections) {
         this.maxConnections = maxConnections;
     }
+
+    @Field
+    public void setEndpointConfigurationService(String endpointConfigurationService) {
+        this.endpointConfigurationService = endpointConfigurationService;
+    }
+
+    @Field
+    public void setEndpointConfigurationSigningRegion(String endpointConfigurationSigningRegion) {
+        this.endpointConfigurationSigningRegion = endpointConfigurationSigningRegion;
+    }
+
     /**
      * This initializes the s3 client. Note, we wrap S3's RuntimeExceptions,
      * e.g. AmazonClientException in a TikaConfigException.
@@ -276,22 +300,30 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         //params have already been set...ignore them
-        AWSCredentialsProvider provider = null;
+        AWSCredentialsProvider provider;
         if ("instance".equals(credentialsProvider)) {
             provider = InstanceProfileCredentialsProvider.getInstance();
         } else if ("profile".equals(credentialsProvider)) {
             provider = new ProfileCredentialsProvider(profile);
+        } else if (credentialsProvider.equals("key_secret")) {
+            provider = new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey, secretKey));
         } else {
             throw new TikaConfigException("credentialsProvider must be set and " +
-                    "must be either 'instance' or 'profile'");
+                    "must be either 'instance', 'profile' or 'key_secret'");
         }
         ClientConfiguration clientConfig = new ClientConfiguration()
                 .withMaxConnections(maxConnections);
         try {
-            s3Client =
-                    AmazonS3ClientBuilder.standard()
-                            .withClientConfiguration(clientConfig).withRegion(region).withCredentials(provider)
-                    .build();
+            AmazonS3ClientBuilder amazonS3ClientBuilder = AmazonS3ClientBuilder.standard()
+                    .withClientConfiguration(clientConfig)
+                    .withCredentials(provider)
+                    .withPathStyleAccessEnabled(pathStyleAccessEnabled);
+            if (!StringUtils.isBlank(endpointConfigurationService) && !StringUtils.isBlank(endpointConfigurationSigningRegion)) {
+                amazonS3ClientBuilder.setEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpointConfigurationService, endpointConfigurationSigningRegion));
+            } else {
+                amazonS3ClientBuilder.withRegion(region);
+            }
+            s3Client = amazonS3ClientBuilder.build();
         } catch (AmazonClientException e) {
             throw new TikaConfigException("can't initialize s3 emitter", e);
         }
@@ -301,7 +333,10 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
     public void checkInitialization(InitializableProblemHandler problemHandler)
             throws TikaConfigException {
         mustNotBeEmpty("bucket", this.bucket);
-        mustNotBeEmpty("region", this.region);
     }
 
+    @Field
+    public void setPathStyleAccessEnabled(boolean pathStyleAccessEnabled) {
+        this.pathStyleAccessEnabled = pathStyleAccessEnabled;
+    }
 }

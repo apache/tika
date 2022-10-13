@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<properties>
+  <parsers>
+    <parser class="org.apache.tika.parser.DefaultParser">
+      <parser-exclude class="org.apache.tika.parser.ocr.TesseractOCRParser"/>
+      <parser-exclude class="org.apache.tika.parser.pdf.PDFParser"/>
+      <parser-exclude class="org.apache.tika.parser.microsoft.ooxml.OOXMLParser"/>
+      <parser-exclude class="org.apache.tika.parser.microsoft.OfficeParser"/>
+    </parser>
+    <parser class="org.apache.tika.parser.pdf.PDFParser">
+      <params>
+        <param name="extractActions" type="bool">true</param>
+        <param name="checkExtractAccessPermissions" type="bool">true</param>
+      </params>
+    </parser>
+    <parser class="org.apache.tika.parser.microsoft.ooxml.OOXMLParser">
+      <params>
+        <param name="includeDeletedContent" type="bool">true</param>
+        <param name="includeMoveFromContent" type="bool">true</param>
+        <param name="extractMacros" type="bool">true</param>
+      </params>
+    </parser>
+    <parser class="org.apache.tika.parser.microsoft.OfficeParser">
+      <params>
+        <param name="extractMacros" type="bool">true</param>
+      </params>
+    </parser>
+  </parsers>
+  <metadataFilters>
+    <!-- depending on the file format, some dates do not have a timezone. This
+         filter arbitrarily assumes dates have a UTC timezone and will format all
+         dates as yyyy-MM-dd'T'HH:mm:ss'Z' whether or not they actually have a timezone.
+         -->
+    <metadataFilter class="org.apache.tika.metadata.filter.DateNormalizingMetadataFilter"/>
+    <metadataFilter class="org.apache.tika.metadata.filter.FieldNameMappingFilter">
+      <params>
+        <excludeUnmapped>true</excludeUnmapped>
+        <mappings>
+          <mapping from="X-TIKA:content" to="content_s"/>
+          <mapping from="Content-Length" to="length_i"/>
+          <mapping from="dc:creator" to="creators_ss"/>
+          <mapping from="dc:title" to="title_s"/>
+          <mapping from="Content-Type" to="mime_s"/>
+          <mapping from="X-TIKA:EXCEPTION:container_exception" to="tika_exception_s"/>
+        </mappings>
+      </params>
+    </metadataFilter>
+  </metadataFilters>
+  <async>
+    <params>
+      <maxForEmitBatchBytes>10000</maxForEmitBatchBytes>
+      <emitMaxEstimatedBytes>100000</emitMaxEstimatedBytes>
+      <emitWithinMillis>10</emitWithinMillis>
+      <numEmitters>1</numEmitters>
+      <numClients>1</numClients>
+      <tikaConfig>{TIKA_CONFIG}</tikaConfig>
+      <forkedJvmArgs>
+        <arg>-Xmx1g</arg>
+        <arg>-XX:ParallelGCThreads=2</arg>
+        <arg>-XX:+ExitOnOutOfMemoryError</arg>
+        <arg>-Dlog4j.configurationFile={LOG4J_PROPERTIES_FILE}</arg>
+      </forkedJvmArgs>
+      <timeoutMillis>60000</timeoutMillis>
+    </params>
+  </async>
+  <fetchers>
+    <fetcher class="org.apache.tika.pipes.fetcher.s3.S3Fetcher">
+      <params>
+        <name>s3f</name>
+        <region>us-east-1</region>
+        <bucket>{FETCH_BUCKET}</bucket>
+        <credentialsProvider>key_secret</credentialsProvider>
+        <accessKey>{ACCESS_KEY}</accessKey>
+        <secretKey>{SECRET_KEY}</secretKey>
+        <endpointConfigurationService>{ENDPOINT_CONFIGURATION_SERVICE}</endpointConfigurationService>
+        <endpointConfigurationSigningRegion>{ENDPOINT_CONFIGURATION_SIGNING_REGION}</endpointConfigurationSigningRegion>
+        <pathStyleAccessEnabled>true</pathStyleAccessEnabled>
+      </params>
+    </fetcher>
+  </fetchers>
+  <pipesIterator class="org.apache.tika.pipes.pipesiterator.s3.S3PipesIterator">
+    <params>
+      <emitterName>s3e</emitterName>
+      <fetcherName>s3f</fetcherName>
+      <region>us-east-1</region>
+      <bucket>{PIPE_ITERATOR_BUCKET}</bucket>
+      <credentialsProvider>key_secret</credentialsProvider>
+      <accessKey>{ACCESS_KEY}</accessKey>
+      <secretKey>{SECRET_KEY}</secretKey>
+      <endpointConfigurationService>{ENDPOINT_CONFIGURATION_SERVICE}</endpointConfigurationService>
+      <endpointConfigurationSigningRegion>{ENDPOINT_CONFIGURATION_SIGNING_REGION}</endpointConfigurationSigningRegion>
+      <pathStyleAccessEnabled>true</pathStyleAccessEnabled>
+    </params>
+  </pipesIterator>
+  <emitters>
+    <emitter class="org.apache.tika.pipes.emitter.s3.S3Emitter">
+      <params>
+        <name>s3e</name>
+        <region>us-east-1</region>
+        <bucket>{EMIT_BUCKET}</bucket>
+        <credentialsProvider>key_secret</credentialsProvider>
+        <accessKey>{ACCESS_KEY}</accessKey>
+        <secretKey>{SECRET_KEY}</secretKey>
+        <endpointConfigurationService>{ENDPOINT_CONFIGURATION_SERVICE}</endpointConfigurationService>
+        <endpointConfigurationSigningRegion>{ENDPOINT_CONFIGURATION_SIGNING_REGION}</endpointConfigurationSigningRegion>
+        <pathStyleAccessEnabled>true</pathStyleAccessEnabled>
+      </params>
+    </emitter>
+  </emitters>
+</properties>
