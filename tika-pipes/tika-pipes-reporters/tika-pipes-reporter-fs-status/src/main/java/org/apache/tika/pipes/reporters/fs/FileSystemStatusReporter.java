@@ -22,11 +22,15 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.LongAdder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,6 +42,8 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.PipesReporter;
 import org.apache.tika.pipes.PipesResult;
+import org.apache.tika.pipes.async.AsyncStatus;
+import org.apache.tika.pipes.pipesiterator.TotalCountResult;
 
 /**
  * This is intended to write summary statistics to disk
@@ -45,20 +51,28 @@ import org.apache.tika.pipes.PipesResult;
  *
  *  As of the 2.5.0 release, this is ALPHA version.  There may be breaking changes
  *  in the future.
+ *
+ *  Because {@link AsyncStatus uses {@link java.time.Instant}, if you are deserializing
+ *  with jackson-databind, you'll need to add jackson-datatype-jsr310. See
+ *  the unit tests for how to deserialize AsyncStatus.
+ *
  */
 public class FileSystemStatusReporter extends PipesReporter
         implements Initializable {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileSystemStatusReporter.class);
 
-    ObjectMapper objectMapper = new ObjectMapper();
+    ObjectMapper objectMapper;
     private Path statusFile;
 
     private long reportUpdateMillis = 1000;
 
     Thread reporterThread;
     private ConcurrentHashMap<PipesResult.STATUS, LongAdder> counts = new ConcurrentHashMap<>();
+    private AsyncStatus asyncStatus = new AsyncStatus();
 
+    private TotalCountResult totalCountResult = new TotalCountResult(0,
+            TotalCountResult.STATUS.NOT_COMPLETED);
     @Field
     public void setStatusFile(String path) {
         this.statusFile = Paths.get(path);
@@ -71,13 +85,17 @@ public class FileSystemStatusReporter extends PipesReporter
 
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
+        objectMapper = JsonMapper.builder()
+                .addModule(new JavaTimeModule())
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+                .build();
         reporterThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
                     while (true) {
                         Thread.sleep(reportUpdateMillis);
-                        report(statusFile, objectMapper, counts);
+                        report(AsyncStatus.ASYNC_STATUS.STARTED);
                     }
                 } catch (InterruptedException e) {
                     //no op
@@ -89,11 +107,14 @@ public class FileSystemStatusReporter extends PipesReporter
         reporterThread.start();
     }
 
-    private static synchronized void report(Path statusFile, ObjectMapper objectMapper,
-                               ConcurrentHashMap<PipesResult.STATUS, LongAdder> counts) {
+    private synchronized void report(AsyncStatus.ASYNC_STATUS status) {
+        Map<PipesResult.STATUS, Long> localCounts = new HashMap<>();
+        counts.entrySet().forEach( e -> localCounts.put(e.getKey(), e.getValue().longValue()));
+        asyncStatus.update(localCounts, totalCountResult, status);
         try (Writer writer = Files.newBufferedWriter(statusFile, StandardCharsets.UTF_8)) {
-            objectMapper.writeValue(writer, counts);
+            objectMapper.writeValue(writer, asyncStatus);
         } catch (IOException e) {
+            e.printStackTrace();
             LOG.warn("couldn't write report", e);
         }
     }
@@ -117,7 +138,12 @@ public class FileSystemStatusReporter extends PipesReporter
     public void close() throws IOException {
         LOG.debug("finishing and writing last report");
         reporterThread.interrupt();
-        report(statusFile, objectMapper, counts);
+        try {
+            reporterThread.join(1000);
+        } catch (InterruptedException e) {
+            //swallow
+        }
+        report(AsyncStatus.ASYNC_STATUS.COMPLETED);
     }
 
     @Override
@@ -126,4 +152,17 @@ public class FileSystemStatusReporter extends PipesReporter
                 k -> new LongAdder()).increment();
     }
 
+    @Override
+    public void report(TotalCountResult totalCountResult) {
+        _report(totalCountResult);
+    }
+
+    private synchronized void _report(TotalCountResult totalCountResult) {
+        this.totalCountResult = totalCountResult;
+    }
+
+    @Override
+    public boolean supportsTotalCount() {
+        return true;
+    }
 }

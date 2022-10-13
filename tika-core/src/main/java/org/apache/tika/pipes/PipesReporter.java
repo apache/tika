@@ -19,6 +19,8 @@ package org.apache.tika.pipes;
 import java.io.Closeable;
 import java.io.IOException;
 
+import org.apache.tika.pipes.pipesiterator.TotalCountResult;
+
 /**
  * This is called asynchronously by the AsyncProcessor. This
  * is not thread safe, and implementers must be careful to implement
@@ -41,6 +43,24 @@ public abstract class PipesReporter implements Closeable {
 
     public abstract void report(FetchEmitTuple t, PipesResult result, long elapsed);
 
+
+    /**
+     * No-op implementation. Override for custom behavior
+     * and make sure to override {@link #supportsTotalCount()}
+     * to return <code>true</code>
+     * @param totalCountResult
+     */
+    public void report(TotalCountResult totalCountResult) {
+
+    }
+
+    /**
+     * Override this if your reporter supports total count.
+     * @return <code>false</code> as the baseline implementation
+     */
+    public boolean supportsTotalCount() {
+        return false;
+    }
     /**
      * No-op implementation.  Override for custom behavior
      * @throws IOException

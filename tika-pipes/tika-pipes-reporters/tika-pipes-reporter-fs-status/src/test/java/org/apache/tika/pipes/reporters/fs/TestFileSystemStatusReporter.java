@@ -25,15 +25,17 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.atomic.LongAdder;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.pipes.PipesResult;
+import org.apache.tika.pipes.async.AsyncStatus;
 import org.apache.tika.pipes.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.pipesiterator.TotalCountResult;
 
 public class TestFileSystemStatusReporter {
 
@@ -44,14 +46,19 @@ public class TestFileSystemStatusReporter {
         reporter.setStatusFile(path.toAbsolutePath().toString());
         reporter.setReportUpdateMillis(100);
         reporter.initialize(new HashMap<>());
-        final ObjectMapper objectMapper = new ObjectMapper();
+        final ObjectMapper objectMapper = JsonMapper.builder()
+                .addModule(new JavaTimeModule())
+                .build();
         Thread readerThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 while (true) {
                     try {
-                        Map<PipesResult.STATUS, LongAdder> map =
-                                objectMapper.readValue(path.toFile(), Map.class);
+                        AsyncStatus asyncStatus =
+                                objectMapper.readValue(path.toFile(), AsyncStatus.class);
+                        assertEquals(TotalCountResult.STATUS.NOT_COMPLETED,
+                                asyncStatus.getTotalCountResult().getStatus());
+
                     } catch (IOException e) {
                         //there will be problems reading from the file
                         //before it is originally written, etc.  Ignore these
@@ -75,27 +82,38 @@ public class TestFileSystemStatusReporter {
             reporter.report(PipesIterator.COMPLETED_SEMAPHORE, pipesResult, 100l);
             Long cnt = written.get(status);
             if (cnt == null) {
-                written.put(status, new Long(1));
+                written.put(status, 1l);
             } else {
                 cnt++;
                 written.put(status, cnt);
             }
             if (i % 100 == 0) {
                 Thread.sleep(94);
+                reporter.report(new TotalCountResult(Math.round((100 + (double) i / (double) 1000)),
+                        TotalCountResult.STATUS.NOT_COMPLETED));
             }
         }
-        reporter.close();
         readerThread.interrupt();
-        TypeReference<HashMap<PipesResult.STATUS, Long>> typeRef
-                = new TypeReference<HashMap<PipesResult.STATUS, Long>>() {};
-        Map<PipesResult.STATUS, Long> map = objectMapper.readValue(path.toFile(), typeRef);
-
-
+        readerThread.join(1000);
+        reporter.report(new TotalCountResult(30000, TotalCountResult.STATUS.COMPLETED));
+        reporter.close();
+        AsyncStatus asyncStatus = objectMapper.readValue(path.toFile(), AsyncStatus.class);
+        Map<PipesResult.STATUS, Long> map = asyncStatus.getStatusCounts();
         assertEquals(written.size(), map.size());
         for (Map.Entry<PipesResult.STATUS, Long> e : written.entrySet()) {
             assertTrue(map.containsKey(e.getKey()), e.getKey().toString());
             assertEquals(e.getValue(), map.get(e.getKey()), e.getKey().toString());
         }
+        assertEquals(AsyncStatus.ASYNC_STATUS.COMPLETED, asyncStatus.getAsyncStatus());
+        assertEquals(30000, asyncStatus.getTotalCountResult().getTotalCount());
+        assertEquals(TotalCountResult.STATUS.COMPLETED, asyncStatus.getTotalCountResult().getStatus());
     }
+
+    /*@Test
+    //need to turn this into an actual test
+    public void oneOff() throws Exception {
+        Path config = Paths.get("");
+        AsyncProcessor.main(new String[]{ config.toAbsolutePath().toString()});
+    }*/
 
 }

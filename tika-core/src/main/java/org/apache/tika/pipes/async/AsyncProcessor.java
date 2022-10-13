@@ -38,10 +38,13 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.PipesClient;
 import org.apache.tika.pipes.PipesException;
+import org.apache.tika.pipes.PipesReporter;
 import org.apache.tika.pipes.PipesResult;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.EmitterManager;
 import org.apache.tika.pipes.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.pipesiterator.TotalCountResult;
+import org.apache.tika.pipes.pipesiterator.TotalCounter;
 
 /**
  * This is the main class for handling async requests. This manages
@@ -68,9 +71,14 @@ public class AsyncProcessor implements Closeable {
     boolean isShuttingDown = false;
 
     public AsyncProcessor(Path tikaConfigPath) throws TikaException, IOException {
+        this(tikaConfigPath, null);
+    }
+
+    public AsyncProcessor(Path tikaConfigPath, PipesIterator pipesIterator) throws TikaException, IOException {
         this.asyncConfig = AsyncConfig.load(tikaConfigPath);
         this.fetchEmitTuples = new ArrayBlockingQueue<>(asyncConfig.getQueueSize());
         this.emitData = new ArrayBlockingQueue<>(100);
+        //+1 is the watcher thread
         this.executorService = Executors.newFixedThreadPool(
                 asyncConfig.getNumClients() + asyncConfig.getNumEmitters() + 1);
         this.executorCompletionService =
@@ -94,6 +102,12 @@ public class AsyncProcessor implements Closeable {
                 }
             }
         });
+        //this is run in a daemon thread
+        if (pipesIterator != null &&
+                (pipesIterator instanceof TotalCounter)) {
+            LOG.debug("going to total counts");
+            startCounter((TotalCounter) pipesIterator);
+        }
 
         for (int i = 0; i < asyncConfig.getNumClients(); i++) {
             executorCompletionService.submit(new FetchEmitWorker(asyncConfig, fetchEmitTuples,
@@ -105,6 +119,27 @@ public class AsyncProcessor implements Closeable {
             executorCompletionService.submit(new AsyncEmitter(asyncConfig, emitData,
                     emitterManager));
         }
+    }
+
+    private void startCounter(TotalCounter totalCounter) {
+        Thread counterThread = new Thread(() -> {
+            totalCounter.startTotalCount();
+            PipesReporter pipesReporter = asyncConfig.getPipesReporter();
+            TotalCountResult.STATUS status = totalCounter.getTotalCount().getStatus();
+            while (status == TotalCountResult.STATUS.NOT_COMPLETED) {
+                try {
+                    Thread.sleep(500);
+                    TotalCountResult result = totalCounter.getTotalCount();
+                    pipesReporter.report(result);
+                    status = result.getStatus();
+                } catch (InterruptedException e) {
+                    return;
+                }
+            }
+
+        });
+        counterThread.setDaemon(true);
+        counterThread.start();
     }
 
     public synchronized boolean offer(List<FetchEmitTuple> newFetchEmitTuples, long offerMs)
@@ -289,7 +324,8 @@ public class AsyncProcessor implements Closeable {
         Path tikaConfigPath = Paths.get(args[0]);
         PipesIterator pipesIterator = PipesIterator.build(tikaConfigPath);
         long start = System.currentTimeMillis();
-        try (AsyncProcessor processor = new AsyncProcessor(tikaConfigPath)) {
+        try (AsyncProcessor processor = new AsyncProcessor(tikaConfigPath, pipesIterator)) {
+
             for (FetchEmitTuple t : pipesIterator) {
                 processor.offer(t, 2000);
             }
