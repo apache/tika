@@ -31,8 +31,8 @@ import java.util.Set;
 class S3PipeIntegrationTest {
     private static final Logger LOG = LoggerFactory.getLogger(S3PipeIntegrationTest.class);
 
-    public static final int MAX_STARTUP_TIMEOUT = 360;
-    private static final DockerComposeContainer minioContainer = new DockerComposeContainer<>(new File("src/test/resources/docker-compose.yml"))
+    public static final int MAX_STARTUP_TIMEOUT = 120;
+    private static final DockerComposeContainer<?> minioContainer = new DockerComposeContainer<>(new File("src/test/resources/docker-compose.yml"))
             .withStartupTimeout(Duration.of(MAX_STARTUP_TIMEOUT, ChronoUnit.SECONDS))
             .withExposedService("minio-service", 9000);
     private static final String MINIO_ENDPOINT = "http://localhost:9000";
@@ -45,7 +45,6 @@ class S3PipeIntegrationTest {
 
     private AmazonS3 s3Client;
 
-    private final int numDocs = 42;
     private final File testFileFolder = new File("target", "test-files");
     private final Set<String> testFiles = new HashSet<>();
 
@@ -53,6 +52,7 @@ class S3PipeIntegrationTest {
         if (testFileFolder.mkdirs()) {
             LOG.info("Created test folder: {}", testFileFolder);
         }
+        int numDocs = 42;
         for (int i = 0; i < numDocs; ++i) {
             String nextFileName = "test-" + i + ".html";
             testFiles.add(nextFileName);
