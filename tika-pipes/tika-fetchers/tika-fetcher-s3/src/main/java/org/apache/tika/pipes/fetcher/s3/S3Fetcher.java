@@ -16,6 +16,16 @@
  */
 package org.apache.tika.pipes.fetcher.s3;
 
+import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.HashMap;
+import java.util.Map;
+
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentialsProvider;
@@ -43,16 +53,6 @@ import org.apache.tika.pipes.fetcher.RangeFetcher;
 import org.apache.tika.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
 
 /**
  * Fetches files from s3. Example file: s3://my_bucket/path/to/my_file.pdf

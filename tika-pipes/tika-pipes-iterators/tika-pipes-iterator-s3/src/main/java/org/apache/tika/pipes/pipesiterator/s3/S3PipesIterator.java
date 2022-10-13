@@ -16,6 +16,14 @@
  */
 package org.apache.tika.pipes.pipesiterator.s3;
 
+import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.TimeoutException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentialsProvider;
@@ -43,14 +51,6 @@ import org.apache.tika.pipes.pipesiterator.PipesIterator;
 import org.apache.tika.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.TimeoutException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
 
 public class S3PipesIterator extends PipesIterator implements Initializable {
 

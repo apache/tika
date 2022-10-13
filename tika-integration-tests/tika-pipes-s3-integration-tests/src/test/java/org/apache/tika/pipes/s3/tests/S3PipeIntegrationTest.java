@@ -16,6 +16,14 @@
  */
 package org.apache.tika.pipes.s3.tests;
 
+import java.io.File;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.HashSet;
+import java.util.Set;
+
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
@@ -38,14 +46,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
-
-import java.io.File;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
-import java.util.HashSet;
-import java.util.Set;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class S3PipeIntegrationTest {
