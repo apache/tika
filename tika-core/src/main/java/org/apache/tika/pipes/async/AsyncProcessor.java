@@ -19,6 +19,7 @@ package org.apache.tika.pipes.async;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
@@ -284,4 +285,25 @@ public class AsyncProcessor implements Closeable {
         }
     }
 
+    public static void main(String[] args) throws Exception {
+        Path tikaConfigPath = Paths.get(args[0]);
+        PipesIterator pipesIterator = PipesIterator.build(tikaConfigPath);
+        long start = System.currentTimeMillis();
+        try (AsyncProcessor processor = new AsyncProcessor(tikaConfigPath)) {
+            for (FetchEmitTuple t : pipesIterator) {
+                processor.offer(t, 2000);
+            }
+            processor.finished();
+            while (true) {
+                if (processor.checkActive()) {
+                    Thread.sleep(500);
+                } else {
+                    break;
+                }
+            }
+            long elapsed = System.currentTimeMillis() - start;
+            LOG.info("Successfully finished processing {} files in {} ms",
+                    processor.getTotalProcessed(), elapsed);
+        }
+    }
 }

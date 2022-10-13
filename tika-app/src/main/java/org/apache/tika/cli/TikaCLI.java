@@ -99,10 +99,7 @@ import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.digestutils.CommonsDigester;
 import org.apache.tika.parser.pdf.PDFParserConfig;
-import org.apache.tika.pipes.FetchEmitTuple;
-import org.apache.tika.pipes.PipesException;
 import org.apache.tika.pipes.async.AsyncProcessor;
-import org.apache.tika.pipes.pipesiterator.PipesIterator;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerFactory;
@@ -277,31 +274,15 @@ public class TikaCLI {
     }
 
     private static void async(String[] args)
-            throws InterruptedException, PipesException, TikaException, IOException, SAXException {
+            throws Exception {
         String tikaConfigPath = "";
+        String config = "--config=";
         for (String arg : args) {
-            if (arg.startsWith("--config=")) {
-                tikaConfigPath = arg.substring(9);
+            if (arg.startsWith(config)) {
+                tikaConfigPath = arg.substring(config.length());
             }
         }
-        PipesIterator pipesIterator = PipesIterator.build(Paths.get(tikaConfigPath));
-        long start = System.currentTimeMillis();
-        try (AsyncProcessor processor = new AsyncProcessor(Paths.get(tikaConfigPath))) {
-            for (FetchEmitTuple t : pipesIterator) {
-                processor.offer(t, 2000);
-            }
-            processor.finished();
-            while (true) {
-                if (processor.checkActive()) {
-                    Thread.sleep(500);
-                } else {
-                    break;
-                }
-            }
-            long elapsed = System.currentTimeMillis() - start;
-            LOG.info("Successfully finished processing {} files in {} ms",
-                    processor.getTotalProcessed(), elapsed);
-        }
+        AsyncProcessor.main(new String[]{ tikaConfigPath});
     }
 
     /**
