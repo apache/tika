@@ -175,6 +175,12 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     int totalUnmappedUnicodeCharacters;
     int totalCharacters;
 
+    //contains at least one font that is not embedded
+    boolean containsNonEmbeddedFont = false;
+
+    //contains at least one broken font
+    boolean containsDamagedFont = false;
+
     AbstractPDF2XHTML(PDDocument pdDocument, ContentHandler handler, ParseContext context,
                       Metadata metadata, PDFParserConfig config) throws IOException {
         this.pdDocument = pdDocument;
@@ -964,8 +970,10 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         metadata.set(PDF.TOTAL_UNMAPPED_UNICODE_CHARS, totalUnmappedUnicodeCharacters);
         if (totalCharacters > 0) {
             metadata.set(PDF.OVERALL_PERCENTAGE_UNMAPPED_UNICODE_CHARS,
-                    (float)totalUnmappedUnicodeCharacters/(float)totalCharacters);
+                    (float)totalUnmappedUnicodeCharacters / (float)totalCharacters);
         }
+        metadata.set(PDF.CONTAINS_DAMAGED_FONT, containsDamagedFont);
+        metadata.set(PDF.CONTAINS_NON_EMBEDDED_FONT, containsNonEmbeddedFont);
     }
 
     void extractBookmarkText() throws SAXException, IOException, TikaException {
@@ -1263,6 +1271,13 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
         totalCharsPerPage++;
         totalCharacters++;
+
+        if (font.isDamaged()) {
+            containsDamagedFont = true;
+        }
+        if (! font.isEmbedded()) {
+            containsNonEmbeddedFont = true;
+        }
     }
 
     enum ActionTrigger {

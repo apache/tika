@@ -1240,6 +1240,8 @@ public class PDFParserTest extends TikaTest {
             assertEquals(120, unmappedUnicodeChars[15]);
             assertEquals(126, totalUnmappedChars);
             assertEquals(0.00146, overallPercentage, 0.0001f);
+            assertTrue(Boolean.parseBoolean(m.get(PDF.CONTAINS_NON_EMBEDDED_FONT)));
+            assertFalse(Boolean.parseBoolean(m.get(PDF.CONTAINS_DAMAGED_FONT)));
         }
         //confirm all works with angles
         PDFParserConfig pdfParserConfig = new PDFParserConfig();

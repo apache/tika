@@ -97,6 +97,18 @@ public interface PDF {
             Property.internalReal(PDF_PREFIX + "overallPercentageUnmappedUnicodeChars");
 
     /**
+     * Contains at least one damaged font for at least one character
+     */
+    Property CONTAINS_DAMAGED_FONT =
+            Property.internalBoolean(PDF_PREFIX + "containsDamagedFont");
+
+    /**
+     * Contains at least one font that is not embedded
+     */
+    Property CONTAINS_NON_EMBEDDED_FONT =
+            Property.internalBoolean(PDF_PREFIX + "containsNonEmbeddedFont");
+
+    /**
      * Has XFA
      */
     Property HAS_XFA = Property.internalBoolean(PDF_PREFIX + "hasXFA");
