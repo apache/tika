@@ -41,7 +41,7 @@ class S3PipeIntegrationTest {
     private static final String FETCH_BUCKET = "fetch-bucket";
     private static final String EMIT_BUCKET = "emit-bucket";
 
-    private static final String SIGNING_REGION = Regions.US_EAST_1.getName();
+    private static final String REGION = Regions.US_EAST_1.getName();
 
     private AmazonS3 s3Client;
 
@@ -72,7 +72,7 @@ class S3PipeIntegrationTest {
     }
 
     private void initializeS3Client() {
-        AwsClientBuilder.EndpointConfiguration endpoint = new AwsClientBuilder.EndpointConfiguration(MINIO_ENDPOINT, SIGNING_REGION);
+        AwsClientBuilder.EndpointConfiguration endpoint = new AwsClientBuilder.EndpointConfiguration(MINIO_ENDPOINT, REGION);
         s3Client = AmazonS3ClientBuilder.standard()
                 .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(ACCESS_KEY, SECRET_KEY)))
                 .withEndpointConfiguration(endpoint)
@@ -135,6 +135,6 @@ class S3PipeIntegrationTest {
                 .replace("{ACCESS_KEY}", ACCESS_KEY)
                 .replace("{SECRET_KEY}", SECRET_KEY)
                 .replace("{ENDPOINT_CONFIGURATION_SERVICE}", MINIO_ENDPOINT)
-                .replace("{ENDPOINT_CONFIGURATION_SIGNING_REGION}", SIGNING_REGION);
+                .replace("{REGION}", REGION);
     }
 }

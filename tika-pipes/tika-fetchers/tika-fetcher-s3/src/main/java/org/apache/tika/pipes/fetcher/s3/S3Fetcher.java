@@ -70,7 +70,6 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
     private String accessKey;
     private String secretKey;
     private String endpointConfigurationService;
-    private String endpointConfigurationSigningRegion;
     private String prefix;
     private String credentialsProvider;
     private boolean extractUserMetadata = true;
@@ -297,8 +296,8 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
                         .withClientConfiguration(clientConfiguration)
                         .withPathStyleAccessEnabled(pathStyleAccessEnabled)
                         .withCredentials(provider);
-                if (!StringUtils.isBlank(endpointConfigurationService) && !StringUtils.isBlank(endpointConfigurationSigningRegion)) {
-                    amazonS3ClientBuilder.setEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpointConfigurationService, endpointConfigurationSigningRegion));
+                if (!StringUtils.isBlank(endpointConfigurationService)) {
+                    amazonS3ClientBuilder.setEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpointConfigurationService, region));
                 } else {
                     amazonS3ClientBuilder.withRegion(region);
                 }
@@ -314,16 +313,12 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
     public void checkInitialization(InitializableProblemHandler problemHandler)
             throws TikaConfigException {
         mustNotBeEmpty("bucket", this.bucket);
+        mustNotBeEmpty("region", this.region);
     }
 
     @Field
     public void setEndpointConfigurationService(String endpointConfigurationService) {
         this.endpointConfigurationService = endpointConfigurationService;
-    }
-
-    @Field
-    public void setEndpointConfigurationSigningRegion(String endpointConfigurationSigningRegion) {
-        this.endpointConfigurationSigningRegion = endpointConfigurationSigningRegion;
     }
 
     @Field

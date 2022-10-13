@@ -100,7 +100,6 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
     private String accessKey;
     private String secretKey;
     private String endpointConfigurationService;
-    private String endpointConfigurationSigningRegion;
     private String fileExtension = "json";
     private boolean spoolToTemp = true;
     private String prefix = null;
@@ -285,11 +284,6 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
         this.endpointConfigurationService = endpointConfigurationService;
     }
 
-    @Field
-    public void setEndpointConfigurationSigningRegion(String endpointConfigurationSigningRegion) {
-        this.endpointConfigurationSigningRegion = endpointConfigurationSigningRegion;
-    }
-
     /**
      * This initializes the s3 client. Note, we wrap S3's RuntimeExceptions,
      * e.g. AmazonClientException in a TikaConfigException.
@@ -318,8 +312,8 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
                     .withClientConfiguration(clientConfig)
                     .withCredentials(provider)
                     .withPathStyleAccessEnabled(pathStyleAccessEnabled);
-            if (!StringUtils.isBlank(endpointConfigurationService) && !StringUtils.isBlank(endpointConfigurationSigningRegion)) {
-                amazonS3ClientBuilder.setEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpointConfigurationService, endpointConfigurationSigningRegion));
+            if (!StringUtils.isBlank(endpointConfigurationService)) {
+                amazonS3ClientBuilder.setEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpointConfigurationService, region));
             } else {
                 amazonS3ClientBuilder.withRegion(region);
             }
@@ -333,6 +327,7 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
     public void checkInitialization(InitializableProblemHandler problemHandler)
             throws TikaConfigException {
         mustNotBeEmpty("bucket", this.bucket);
+        mustNotBeEmpty("region", this.region);
     }
 
     @Field

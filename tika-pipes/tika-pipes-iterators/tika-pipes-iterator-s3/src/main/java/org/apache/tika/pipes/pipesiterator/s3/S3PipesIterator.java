@@ -60,7 +60,6 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
     private String accessKey;
     private String secretKey;
     private String endpointConfigurationService;
-    private String endpointConfigurationSigningRegion;
     private String credentialsProvider;
     private String profile;
     private String bucket;
@@ -73,11 +72,6 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
     @Field
     public void setEndpointConfigurationService(String endpointConfigurationService) {
         this.endpointConfigurationService = endpointConfigurationService;
-    }
-
-    @Field
-    public void setEndpointConfigurationSigningRegion(String endpointConfigurationSigningRegion) {
-        this.endpointConfigurationSigningRegion = endpointConfigurationSigningRegion;
     }
 
     @Field
@@ -168,8 +162,8 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
                     .withClientConfiguration(clientConfig)
                     .withCredentials(provider)
                     .withPathStyleAccessEnabled(pathStyleAccessEnabled);
-            if (!StringUtils.isBlank(endpointConfigurationService) && !StringUtils.isBlank(endpointConfigurationSigningRegion)) {
-                amazonS3ClientBuilder.setEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpointConfigurationService, endpointConfigurationSigningRegion));
+            if (!StringUtils.isBlank(endpointConfigurationService)) {
+                amazonS3ClientBuilder.setEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpointConfigurationService, region));
             } else {
                 amazonS3ClientBuilder.withRegion(region);
             }
@@ -184,6 +178,7 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
             throws TikaConfigException {
         super.checkInitialization(problemHandler);
         mustNotBeEmpty("bucket", this.bucket);
+        mustNotBeEmpty("region", this.region);
     }
 
     @Override
@@ -216,9 +211,6 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
 
     private boolean accept(Matcher fileNameMatcher, String key) {
         String fName = FilenameUtils.getName(key);
-        if (fileNameMatcher.reset(fName).find()) {
-            return true;
-        }
-        return false;
+        return fileNameMatcher.reset(fName).find();
     }
 }

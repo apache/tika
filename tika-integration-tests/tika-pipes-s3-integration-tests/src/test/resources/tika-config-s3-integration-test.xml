@@ -85,13 +85,12 @@
     <fetcher class="org.apache.tika.pipes.fetcher.s3.S3Fetcher">
       <params>
         <name>s3f</name>
-        <region>us-east-1</region>
+        <region>{REGION}</region>
         <bucket>{FETCH_BUCKET}</bucket>
         <credentialsProvider>key_secret</credentialsProvider>
         <accessKey>{ACCESS_KEY}</accessKey>
         <secretKey>{SECRET_KEY}</secretKey>
         <endpointConfigurationService>{ENDPOINT_CONFIGURATION_SERVICE}</endpointConfigurationService>
-        <endpointConfigurationSigningRegion>{ENDPOINT_CONFIGURATION_SIGNING_REGION}</endpointConfigurationSigningRegion>
         <pathStyleAccessEnabled>true</pathStyleAccessEnabled>
       </params>
     </fetcher>
@@ -100,13 +99,12 @@
     <params>
       <emitterName>s3e</emitterName>
       <fetcherName>s3f</fetcherName>
-      <region>us-east-1</region>
+      <region>{REGION}</region>
       <bucket>{PIPE_ITERATOR_BUCKET}</bucket>
       <credentialsProvider>key_secret</credentialsProvider>
       <accessKey>{ACCESS_KEY}</accessKey>
       <secretKey>{SECRET_KEY}</secretKey>
       <endpointConfigurationService>{ENDPOINT_CONFIGURATION_SERVICE}</endpointConfigurationService>
-      <endpointConfigurationSigningRegion>{ENDPOINT_CONFIGURATION_SIGNING_REGION}</endpointConfigurationSigningRegion>
       <pathStyleAccessEnabled>true</pathStyleAccessEnabled>
     </params>
   </pipesIterator>
@@ -114,13 +112,12 @@
     <emitter class="org.apache.tika.pipes.emitter.s3.S3Emitter">
       <params>
         <name>s3e</name>
-        <region>us-east-1</region>
+        <region>{REGION}</region>
         <bucket>{EMIT_BUCKET}</bucket>
         <credentialsProvider>key_secret</credentialsProvider>
         <accessKey>{ACCESS_KEY}</accessKey>
         <secretKey>{SECRET_KEY}</secretKey>
         <endpointConfigurationService>{ENDPOINT_CONFIGURATION_SERVICE}</endpointConfigurationService>
-        <endpointConfigurationSigningRegion>{ENDPOINT_CONFIGURATION_SIGNING_REGION}</endpointConfigurationSigningRegion>
         <pathStyleAccessEnabled>true</pathStyleAccessEnabled>
       </params>
     </emitter>
