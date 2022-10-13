@@ -85,10 +85,11 @@ public class FileSystemStatusReporter extends PipesReporter
 
             }
         });
+        reporterThread.setDaemon(true);
         reporterThread.start();
     }
 
-    private static void report(Path statusFile, ObjectMapper objectMapper,
+    private static synchronized void report(Path statusFile, ObjectMapper objectMapper,
                                ConcurrentHashMap<PipesResult.STATUS, LongAdder> counts) {
         try (Writer writer = Files.newBufferedWriter(statusFile, StandardCharsets.UTF_8)) {
             objectMapper.writeValue(writer, counts);
@@ -115,6 +116,7 @@ public class FileSystemStatusReporter extends PipesReporter
     @Override
     public void close() throws IOException {
         LOG.debug("finishing and writing last report");
+        reporterThread.interrupt();
         report(statusFile, objectMapper, counts);
     }
 
