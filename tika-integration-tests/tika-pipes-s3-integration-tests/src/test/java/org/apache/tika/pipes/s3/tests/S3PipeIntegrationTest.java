@@ -32,10 +32,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.S3Object;
 import org.apache.commons.io.IOUtils;
-import org.apache.tika.cli.TikaCLI;
-import org.apache.tika.pipes.HandlerConfig;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -46,6 +42,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
+import org.testcontainers.shaded.org.hamcrest.MatcherAssert;
+import org.testcontainers.shaded.org.hamcrest.Matchers;
+
+import org.apache.tika.cli.TikaCLI;
+import org.apache.tika.pipes.HandlerConfig;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class S3PipeIntegrationTest {
