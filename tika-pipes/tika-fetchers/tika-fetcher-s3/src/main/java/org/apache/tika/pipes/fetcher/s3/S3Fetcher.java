@@ -38,6 +38,9 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -51,8 +54,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.RangeFetcher;
 import org.apache.tika.utils.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Fetches files from s3. Example file: s3://my_bucket/path/to/my_file.pdf
@@ -240,7 +241,8 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
 
     @Field
     public void setCredentialsProvider(String credentialsProvider) {
-        if (!credentialsProvider.equals("profile") && !credentialsProvider.equals("instance") && !credentialsProvider.equals("key_secret")) {
+        if (!credentialsProvider.equals("profile") && !credentialsProvider.equals("instance")
+                && !credentialsProvider.equals("key_secret")) {
             throw new IllegalArgumentException(
                     "credentialsProvider must be either 'profile', 'instance' or 'key_secret'");
         }
@@ -297,7 +299,9 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
                         .withPathStyleAccessEnabled(pathStyleAccessEnabled)
                         .withCredentials(provider);
                 if (!StringUtils.isBlank(endpointConfigurationService)) {
-                    amazonS3ClientBuilder.setEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpointConfigurationService, region));
+                    amazonS3ClientBuilder.setEndpointConfiguration(
+                            new AwsClientBuilder
+                                    .EndpointConfiguration(endpointConfigurationService, region));
                 } else {
                     amazonS3ClientBuilder.withRegion(region);
                 }

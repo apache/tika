@@ -43,6 +43,9 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -58,8 +61,6 @@ import org.apache.tika.pipes.emitter.AbstractEmitter;
 import org.apache.tika.pipes.emitter.StreamEmitter;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
 import org.apache.tika.utils.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Emits to existing s3 bucket
@@ -244,7 +245,8 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
 
     @Field
     public void setCredentialsProvider(String credentialsProvider) {
-        if (!credentialsProvider.equals("profile") && !credentialsProvider.equals("instance") && !credentialsProvider.equals("key_secret")) {
+        if (!credentialsProvider.equals("profile") && !credentialsProvider.equals("instance")
+                && !credentialsProvider.equals("key_secret")) {
             throw new IllegalArgumentException(
                     "credentialsProvider must be either 'profile', 'instance' or 'key_secret'");
         }
@@ -317,7 +319,9 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
                     .withCredentials(provider)
                     .withPathStyleAccessEnabled(pathStyleAccessEnabled);
             if (!StringUtils.isBlank(endpointConfigurationService)) {
-                amazonS3ClientBuilder.setEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpointConfigurationService, region));
+                amazonS3ClientBuilder.setEndpointConfiguration(
+                        new AwsClientBuilder
+                                .EndpointConfiguration(endpointConfigurationService, region));
             } else {
                 amazonS3ClientBuilder.withRegion(region);
             }
