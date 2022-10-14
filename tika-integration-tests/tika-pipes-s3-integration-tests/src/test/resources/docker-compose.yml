@@ -1,0 +1,10 @@
+version: '3.7'
+services:
+  minio-service:
+    image: quay.io/minio/minio
+    command: minio server /data
+    ports:
+      - "9000:9000"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123

@@ -25,9 +25,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.amazonaws.AmazonClientException;
+import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.iterable.S3Objects;
@@ -47,17 +51,29 @@ import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.EmitKey;
 import org.apache.tika.pipes.fetcher.FetchKey;
 import org.apache.tika.pipes.pipesiterator.PipesIterator;
+import org.apache.tika.utils.StringUtils;
 
 public class S3PipesIterator extends PipesIterator implements Initializable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(S3PipesIterator.class);
     private String prefix = "";
     private String region;
+    private String accessKey;
+    private String secretKey;
+    private String endpointConfigurationService;
     private String credentialsProvider;
     private String profile;
     private String bucket;
     private Pattern fileNamePattern = null;
+    private int maxConnections = ClientConfiguration.DEFAULT_MAX_CONNECTIONS;
+    private boolean pathStyleAccessEnabled = false;
+
     private AmazonS3 s3Client;
+
+    @Field
+    public void setEndpointConfigurationService(String endpointConfigurationService) {
+        this.endpointConfigurationService = endpointConfigurationService;
+    }
 
     @Field
     public void setBucket(String bucket) {
@@ -80,10 +96,26 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
     }
 
     @Field
+    public void setAccessKey(String accessKey) {
+        this.accessKey = accessKey;
+    }
+
+    @Field
+    public void setMaxConnections(int maxConnections) {
+        this.maxConnections = maxConnections;
+    }
+
+    @Field
+    public void setSecretKey(String secretKey) {
+        this.secretKey = secretKey;
+    }
+
+    @Field
     public void setCredentialsProvider(String credentialsProvider) {
-        if (!credentialsProvider.equals("profile") && !credentialsProvider.equals("instance")) {
+        if (!credentialsProvider.equals("profile") && !credentialsProvider.equals("instance")
+                && !credentialsProvider.equals("key_secret")) {
             throw new IllegalArgumentException(
-                    "credentialsProvider must be either 'profile' or instance'");
+                    "credentialsProvider must be either 'profile', 'instance' or 'key_secret'");
         }
         this.credentialsProvider = credentialsProvider;
     }
@@ -91,6 +123,16 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
     @Field
     public void setFileNamePattern(String fileNamePattern) {
         this.fileNamePattern = Pattern.compile(fileNamePattern);
+    }
+
+    @Field
+    public void setFileNamePattern(Pattern fileNamePattern) {
+        this.fileNamePattern = fileNamePattern;
+    }
+
+    @Field
+    public void setPathStyleAccessEnabled(boolean pathStyleAccessEnabled) {
+        this.pathStyleAccessEnabled = pathStyleAccessEnabled;
     }
 
     /**
@@ -103,19 +145,33 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         //params have already been set...ignore them
-        AWSCredentialsProvider provider = null;
-        if ("instance".equals(credentialsProvider)) {
+        AWSCredentialsProvider provider;
+        if (credentialsProvider.equals("instance")) {
             provider = InstanceProfileCredentialsProvider.getInstance();
-        } else if ("profile".equals(credentialsProvider)) {
+        } else if (credentialsProvider.equals("profile")) {
             provider = new ProfileCredentialsProvider(profile);
+        } else if (credentialsProvider.equals("key_secret")) {
+            provider = new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey, secretKey));
         } else {
             throw new TikaConfigException("credentialsProvider must be set and " +
-                    "must be either 'instance' or 'profile'");
+                    "must be either 'instance', 'profile' or 'key_secret'");
         }
 
+        ClientConfiguration clientConfig = new ClientConfiguration()
+                .withMaxConnections(maxConnections);
         try {
-            s3Client = AmazonS3ClientBuilder.standard().withRegion(region).withCredentials(provider)
-                    .build();
+            AmazonS3ClientBuilder amazonS3ClientBuilder = AmazonS3ClientBuilder.standard()
+                    .withClientConfiguration(clientConfig)
+                    .withCredentials(provider)
+                    .withPathStyleAccessEnabled(pathStyleAccessEnabled);
+            if (!StringUtils.isBlank(endpointConfigurationService)) {
+                amazonS3ClientBuilder.setEndpointConfiguration(
+                        new AwsClientBuilder
+                                .EndpointConfiguration(endpointConfigurationService, region));
+            } else {
+                amazonS3ClientBuilder.withRegion(region);
+            }
+            s3Client = amazonS3ClientBuilder.build();
         } catch (AmazonClientException e) {
             throw new TikaConfigException("can't initialize s3 pipesiterator", e);
         }
@@ -159,9 +215,6 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
 
     private boolean accept(Matcher fileNameMatcher, String key) {
         String fName = FilenameUtils.getName(key);
-        if (fileNameMatcher.reset(fName).find()) {
-            return true;
-        }
-        return false;
+        return fileNameMatcher.reset(fName).find();
     }
 }
