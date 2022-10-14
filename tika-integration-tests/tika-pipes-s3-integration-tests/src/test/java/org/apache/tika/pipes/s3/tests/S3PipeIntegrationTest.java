@@ -53,8 +53,9 @@ class S3PipeIntegrationTest {
     private static final Logger LOG = LoggerFactory.getLogger(S3PipeIntegrationTest.class);
 
     public static final int MAX_STARTUP_TIMEOUT = 120;
-    private static final DockerComposeContainer<?> minioContainer = new DockerComposeContainer<>(new File("src/test/resources/docker-compose.yml"))
-            .withStartupTimeout(Duration.of(MAX_STARTUP_TIMEOUT, ChronoUnit.SECONDS))
+    private static final DockerComposeContainer<?> minioContainer = new DockerComposeContainer<>(
+            new File("src/test/resources/docker-compose.yml")).withStartupTimeout(
+                    Duration.of(MAX_STARTUP_TIMEOUT, ChronoUnit.SECONDS))
             .withExposedService("minio-service", 9000);
     private static final String MINIO_ENDPOINT = "http://localhost:9000";
     private static final String ACCESS_KEY = "minio";
@@ -77,7 +78,8 @@ class S3PipeIntegrationTest {
         for (int i = 0; i < numDocs; ++i) {
             String nextFileName = "test-" + i + ".html";
             testFiles.add(nextFileName);
-            s3Client.putObject(FETCH_BUCKET, nextFileName, "<html><body>body-of-" + nextFileName + "</body></html>");
+            s3Client.putObject(FETCH_BUCKET, nextFileName,
+                    "<html><body>body-of-" + nextFileName + "</body></html>");
         }
     }
 
@@ -93,12 +95,11 @@ class S3PipeIntegrationTest {
     }
 
     private void initializeS3Client() {
-        AwsClientBuilder.EndpointConfiguration endpoint = new AwsClientBuilder.EndpointConfiguration(MINIO_ENDPOINT, REGION);
-        s3Client = AmazonS3ClientBuilder.standard()
-                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(ACCESS_KEY, SECRET_KEY)))
-                .withEndpointConfiguration(endpoint)
-                .withPathStyleAccessEnabled(true)
-                .build();
+        AwsClientBuilder.EndpointConfiguration endpoint =
+                new AwsClientBuilder.EndpointConfiguration(MINIO_ENDPOINT, REGION);
+        s3Client = AmazonS3ClientBuilder.standard().withCredentials(
+                        new AWSStaticCredentialsProvider(new BasicAWSCredentials(ACCESS_KEY, SECRET_KEY)))
+                .withEndpointConfiguration(endpoint).withPathStyleAccessEnabled(true).build();
     }
 
     @Test
@@ -120,7 +121,8 @@ class S3PipeIntegrationTest {
             FileUtils.copyInputStreamToFile(is, log4jPropFile);
         }
         String tikaConfigTemplateXml;
-        try (InputStream is = this.getClass().getResourceAsStream("/tika-config-s3-integration-test.xml")) {
+        try (InputStream is = this.getClass()
+                .getResourceAsStream("/tika-config-s3-integration-test.xml")) {
             assert is != null;
             tikaConfigTemplateXml = IOUtils.toString(is, StandardCharsets.UTF_8);
         }
@@ -138,7 +140,8 @@ class S3PipeIntegrationTest {
             S3Object object = s3Client.getObject(EMIT_BUCKET, testFile + ".json");
             Assertions.assertNotNull(object);
             String data = IOUtils.toString(object.getObjectContent(), StandardCharsets.UTF_8);
-            MatcherAssert.assertThat("Should be able to read the parsed body of the HTML file as the body of the document",
+            MatcherAssert.assertThat(
+                    "Should be able to read the parsed body of the HTML file as the body of the document",
                     data, Matchers.containsString("body-of-" + testFile));
         }
     }
@@ -151,10 +154,8 @@ class S3PipeIntegrationTest {
                 .replace("{PATH_TO_DOCS}", testFileFolder.getAbsolutePath())
                 .replace("{PARSE_MODE}", HandlerConfig.PARSE_MODE.RMETA.name())
                 .replace("{PIPE_ITERATOR_BUCKET}", FETCH_BUCKET)
-                .replace("{EMIT_BUCKET}", EMIT_BUCKET)
-                .replace("{FETCH_BUCKET}", FETCH_BUCKET)
-                .replace("{ACCESS_KEY}", ACCESS_KEY)
-                .replace("{SECRET_KEY}", SECRET_KEY)
+                .replace("{EMIT_BUCKET}", EMIT_BUCKET).replace("{FETCH_BUCKET}", FETCH_BUCKET)
+                .replace("{ACCESS_KEY}", ACCESS_KEY).replace("{SECRET_KEY}", SECRET_KEY)
                 .replace("{ENDPOINT_CONFIGURATION_SERVICE}", MINIO_ENDPOINT)
                 .replace("{REGION}", REGION);
     }
