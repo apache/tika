@@ -162,9 +162,8 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
         }
         ForkParser parser =
                 new ForkParser(ForkParserIntegrationTest.class.getClassLoader(), tika.getParser());
-        parser.setJavaCommand(Arrays.asList("java", "-Xmx32m", "-Xdebug",
-                String.format("-Xrunjdwp:transport=dt_socket,address=%d,server=y,suspend=n",
-                        availSocket)));
+        parser.setJavaCommand(Arrays.asList("java", "-Xmx32m", "-Xdebug", "-Xrunjdwp:transport" +
+                "=dt_socket,address=" + availSocket + ",server=y,suspend=n"));
         try {
             ContentHandler body = new BodyContentHandler();
             InputStream stream = getResourceAsStream("/test-documents/testTXT.txt");
