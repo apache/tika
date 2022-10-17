@@ -296,7 +296,7 @@
 
     <!-- dependency versions -->
 
-    <aws.version>1.12.320</aws.version>
+    <aws.version>1.12.321</aws.version>
     <google.cloud.version>2.13.0</google.cloud.version>
     <asm.version>9.4</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
