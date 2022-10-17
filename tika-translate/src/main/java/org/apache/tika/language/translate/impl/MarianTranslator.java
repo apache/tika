@@ -187,12 +187,13 @@ public class MarianTranslator extends AbstractTranslator {
         builder.directory(new File(configPath).getParentFile());
         builder.redirectErrorStream(true);
         Process process = builder.start();
-        process.waitFor();
 
         BufferedReader stdOutReader = new BufferedReader(
                 new InputStreamReader(process.getInputStream(), Charset.defaultCharset()));
         stdOutReader.lines().forEach(LOG::debug);
         stdOutReader.close();
+
+        process.waitFor();
     }
 
     /**
