@@ -292,6 +292,7 @@ public class OpenSearchClient {
                 }
                 //end the "doc"
                 jsonGenerator.writeEndObject();
+                jsonGenerator.writeBooleanField("doc_as_upsert", true);
                 //end the metadata object
                 jsonGenerator.writeEndObject();
             }

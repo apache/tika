@@ -259,6 +259,69 @@ public abstract class TikaPipesXSearchBase {
     }
 
     @Test
+    public void testUpsertSeparateDocsFSToOpenSearch() throws Exception {
+        //now test that this works with upsert
+        int numHtmlDocs = 42;
+        createTestHtmlFiles("Happiness", numHtmlDocs);
+        String endpoint = OPEN_SEARCH_ENDPOINT_BASE + TEST_INDEX;
+        sendMappings(endpoint, TEST_INDEX, "opensearch-mappings.json");
+
+        runPipes(OpenSearchEmitter.AttachmentStrategy.SEPARATE_DOCUMENTS,
+                OpenSearchEmitter.UpdateStrategy.UPSERT,
+                HandlerConfig.PARSE_MODE.RMETA, endpoint);
+
+        String query = "{ \"track_total_hits\": true, \"query\": { \"match\": { \"content\": { " +
+                "\"query\": \"happiness\" } } } }";
+
+        JsonResponse results = CLIENT.postJson(endpoint + "/_search", query);
+        assertEquals(200, results.getStatus());
+        assertEquals(numHtmlDocs + 1,
+                results.getJson().get("hits").get("total").get("value").asInt());
+
+        //now try match all
+        query = "{ " +
+                //"\"from\":0, \"size\":1000," +
+                "\"track_total_hits\": true, \"query\": { " +
+                "\"match_all\": {} } }";
+        results = CLIENT.postJson(endpoint + "/_search", query);
+        assertEquals(200, results.getStatus());
+        assertEquals(numHtmlDocs + 3 + 12, //3 for the mock docs,
+                // and the .docx file has 11 embedded files, plus itself
+                results.getJson().get("hits").get("total").get("value").asInt());
+
+        //now check out one of the embedded files
+        query = "{ \"track_total_hits\": true, \"query\": { \"query_string\": { " +
+                "\"default_field\": \"content\",  " +
+                "\"query\": \"embed4 zip\" , \"minimum_should_match\":2 } } } ";
+        results = CLIENT.postJson(endpoint + "/_search", query);
+        assertEquals(200, results.getStatus());
+        assertEquals(1,
+                results.getJson().get("hits").get("total").get("value").asInt());
+        JsonNode source = results.getJson().get("hits").get("hits").get(0).get("_source");
+
+        Matcher m = Pattern.compile("\\Atest_recursive_embedded" +
+                ".docx-[0-9a-f]{8}-[0-9a-f]{4}-" +
+                "[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\Z").matcher(
+                results.getJson().get("hits").get("hits").get(0).get("_id").asText()
+        );
+        assertTrue(m.find(), "test_recursive_embedded.docx-$guid");
+
+        assertNull(results.getJson().get("hits").get("hits").get(0).get("_routing"),
+                "test_recursive_embedded.docx");
+        assertNull(source.get("relation_type"), "test_recursive_embedded.docx");
+
+        assertEquals("application/zip", source.get("mime").asText());
+
+        //now make sure there are no children; this query should
+        //cause an exception because there are no relationships in the schema
+        query = "{ \"track_total_hits\": true, \"query\": { \"parent_id\": { " +
+                "\"type\": \"embedded\",  " +
+                "\"id\": \"test_recursive_embedded.docx\" } } } ";
+        results = CLIENT.postJson(endpoint + "/_search", query);
+        assertEquals(400, results.getStatus());
+    }
+
+    @Test
     public void testUpsert() throws Exception {
         String endpoint = OPEN_SEARCH_ENDPOINT_BASE + TEST_INDEX;
         sendMappings(endpoint, TEST_INDEX, "opensearch-mappings.json");
