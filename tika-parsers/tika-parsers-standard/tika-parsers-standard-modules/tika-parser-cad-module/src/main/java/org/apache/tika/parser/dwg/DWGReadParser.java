@@ -142,8 +142,7 @@ public class DWGReadParser extends AbstractDWGParser {
                             sCurrentLine = sCurrentLine
                                             .replaceAll( dwgc.getCleanDwgReadRegexToReplace(), 
                                                     dwgc.getCleanDwgReadReplaceWith())
-                                            .replaceAll(" nan,", " 0,")
-                                            .replaceAll(" nan ", " 0 ")
+                                            .replaceAll("\\bnan\\b", " 0,")
                                             .replaceAll("\\.,", " \\. ,") + "\n";
                             out.write(sCurrentLine);
                         }                            
@@ -201,7 +200,6 @@ public class DWGReadParser extends AbstractDWGParser {
 
                         if ("OBJECTS".equals(nextFieldName)) {
                             // Start array
-                            jParser.nextToken();
                             while (jParser.nextToken() != JsonToken.END_ARRAY) {
                                 parseDwgObject(jParser, (nextTextValue) -> {
 
