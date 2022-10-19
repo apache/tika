@@ -82,8 +82,18 @@ public interface PDF {
     /**
      * This specifies where an action or destination would be found/triggered
      * in the document: on document open, before close, etc.
+     *
+     * This is included in the embedded document (js only for now?), not the container PDF.
      */
     Property ACTION_TRIGGER = Property.internalText(PDF_PREFIX + "actionTrigger");
+
+    /**
+     * This is a list of all action or destination triggers contained
+     * within a given PDF.
+     */
+    Property ACTION_TRIGGERS = Property.internalTextBag(PDF_PREFIX + "actionTriggers");
+
+    Property ACTION_TYPES = Property.internalTextBag(PDF_PREFIX + "actionTypes");
 
     Property CHARACTERS_PER_PAGE = Property.internalIntegerSequence(PDF_PREFIX + "charsPerPage");
 

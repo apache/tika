@@ -165,6 +165,10 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     private final Set<String> fontNames = new TreeSet<>();
     private final Set<String> annotationTypes = new TreeSet<>();
     private final Set<String> annotationSubtypes = new TreeSet<>();
+
+    private final Set<String> triggers = new TreeSet<>();
+
+    private final Set<String> actionTypes = new TreeSet<>();
     //zero-based pageIndex
     int pageIndex = 0;
     int startPage = -1;
@@ -442,7 +446,11 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         Metadata embeddedMetadata = new Metadata();
         embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileName);
         embeddedMetadata.set(Metadata.CONTENT_TYPE, file.getSubtype());
-        embeddedMetadata.set(Metadata.CONTENT_LENGTH, Long.toString(file.getSize()));
+        //if the stream is missing a size, -1 is returned
+        long sz = file.getSize();
+        if (sz > -1) {
+            embeddedMetadata.set(Metadata.CONTENT_LENGTH, Long.toString(sz));
+        }
         embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
         embeddedMetadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, fileName);
@@ -880,8 +888,16 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         if (action == null || !config.isExtractActions()) {
             return;
         }
+        triggers.add(actionTrigger.name());
+        String actionOrDestString = "destination";
+        if (action instanceof PDAction) {
+            actionOrDestString = "action";
+            String actionType = ((PDAction)action).getType();
+            if (! StringUtils.isBlank(actionType)) {
+                actionTypes.add(actionType);
+            }
+        }
         AttributesImpl attributes = new AttributesImpl();
-        String actionOrDestString = (action instanceof PDAction) ? "action" : "destination";
 
         addNonNullAttribute("class", actionOrDestString, attributes);
         addNonNullAttribute("type", action.getClass().getSimpleName(), attributes);
@@ -971,6 +987,14 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             }
             for (String annotationSubtype : annotationSubtypes) {
                 metadata.add(PDF.ANNOTATION_SUBTYPES, annotationSubtype);
+            }
+
+            for (String trigger : triggers) {
+                metadata.add(PDF.ACTION_TRIGGERS, trigger);
+            }
+
+            for (String actionType : actionTypes) {
+                metadata.add(PDF.ACTION_TYPES, actionType);
             }
             xhtml.endDocument();
         } catch (TikaException | SAXException e) {
