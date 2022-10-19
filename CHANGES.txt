@@ -3,7 +3,7 @@ Release 2.5.1 - ???
    * Fix bug in OpenSearch emitter that prevented upserts on
      documents with embedded files (TIKA-3882).
 
-   * Extract PDF actions and triggers into the file's metadata (TIKA-3886).
+   * Extract PDF actions and triggers into the file's metadata (TIKA-3887).
 
    * Add a tika-async-cli module (TIKA-3885).
 
