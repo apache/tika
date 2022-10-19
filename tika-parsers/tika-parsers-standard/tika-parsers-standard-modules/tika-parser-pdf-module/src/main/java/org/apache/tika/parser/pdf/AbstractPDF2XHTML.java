@@ -185,6 +185,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     //contains at least one broken font
     boolean containsDamagedFont = false;
 
+    int num3DAnnotations = 0;
+
     AbstractPDF2XHTML(PDDocument pdDocument, ContentHandler handler, ParseContext context,
                       Metadata metadata, PDFParserConfig config) throws IOException {
         this.pdDocument = pdDocument;
@@ -711,6 +713,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                         //To make this stricter, we could get the 3DD stream object and see if the
                         //subtype is U3D or PRC or model/ (prefix for model mime type)
                         metadata.set(PDF.HAS_3D, true);
+                        num3DAnnotations++;
                     }
                     for (COSDictionary fileSpec : findFileSpecs(annotation.getCOSObject())) {
                         PDComplexFileSpecification cfs = new PDComplexFileSpecification(fileSpec);
@@ -1012,6 +1015,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
         metadata.set(PDF.CONTAINS_DAMAGED_FONT, containsDamagedFont);
         metadata.set(PDF.CONTAINS_NON_EMBEDDED_FONT, containsNonEmbeddedFont);
+        metadata.set(PDF.NUM_3D_ANNOTATIONS, num3DAnnotations);
     }
 
     void extractBookmarkText() throws SAXException, IOException, TikaException {

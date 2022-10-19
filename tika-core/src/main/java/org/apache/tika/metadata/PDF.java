@@ -170,4 +170,8 @@ public interface PDF {
 
     Property ANNOTATION_SUBTYPES = Property.internalTextBag(PDF_PREFIX + "annotationSubtypes");
 
+    /**
+     * Number of 3D annotations a PDF contains.  This makes {@link PDF#HAS_3D} redundant.
+     */
+    Property NUM_3D_ANNOTATIONS = Property.internalInteger(PDF_PREFIX + "num3DAnnotations");
 }
