@@ -1,5 +1,7 @@
 Release 2.5.1 - ???
 
+   * Add a tika-async-cli module (TIKA-3885).
+
    * Fetch keys sent via headers to tika server are now URL decoded (TIKA-3864).
 
 

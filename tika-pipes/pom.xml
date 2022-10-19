@@ -35,6 +35,7 @@
     <module>tika-emitters</module>
     <module>tika-pipes-iterators</module>
     <module>tika-pipes-reporters</module>
+    <module>tika-async-cli</module>
   </modules>
 
   <dependencyManagement>

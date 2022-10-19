@@ -66,6 +66,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.Tika;
+import org.apache.tika.async.cli.TikaAsyncCLI;
 import org.apache.tika.batch.BatchProcessDriverCLI;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.config.TikaConfigSerializer;
@@ -99,7 +100,6 @@ import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.digestutils.CommonsDigester;
 import org.apache.tika.parser.pdf.PDFParserConfig;
-import org.apache.tika.pipes.async.AsyncProcessor;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerFactory;
@@ -282,7 +282,7 @@ public class TikaCLI {
                 tikaConfigPath = arg.substring(config.length());
             }
         }
-        AsyncProcessor.main(new String[]{ tikaConfigPath});
+        TikaAsyncCLI.main(new String[]{ tikaConfigPath});
     }
 
     /**

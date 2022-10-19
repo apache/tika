@@ -375,7 +375,11 @@
         <artifactId>tika-pipes-iterator-solr</artifactId>
         <version>2.5.1-SNAPSHOT</version>
       </dependency>
-
+      <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-async-cli</artifactId>
+        <version>2.5.1-SNAPSHOT</version>
+      </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-httpclient-commons</artifactId>
