@@ -140,6 +140,18 @@ public interface PDF {
             "embeddedFileDescription");
 
     /**
+     * If the file came from an annotation and there was a type
+     */
+    Property EMBEDDED_FILE_ANNOTATION_TYPE = Property.internalText(PDF_PREFIX +
+            "embeddedFileAnnotationType");
+
+    /**
+     *     literal string from the PDEmbeddedFile#getSubtype(), should be what the PDF
+     *     alleges is the embedded file's mime type
+     */
+    Property EMBEDDED_FILE_SUBTYPE = Property.internalText(PDF_PREFIX +
+            "embeddedFileSubtype");
+    /**
      * If the PDF has an annotation of type 3D
      */
     Property HAS_3D = Property.internalBoolean(PDF_PREFIX + "has3D");
@@ -147,4 +159,5 @@ public interface PDF {
     Property ANNOTATION_TYPES = Property.internalTextBag(PDF_PREFIX + "annotationTypes");
 
     Property ANNOTATION_SUBTYPES = Property.internalTextBag(PDF_PREFIX + "annotationSubtypes");
+
 }
