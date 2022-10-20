@@ -35,6 +35,9 @@ import org.apache.tika.sax.ContentHandlerDecoratorFactory;
  * when parsing data that is extremely compressible and resembles a ZIP
  * bomb. Null values will be ignored and will not affect the default values
  * in SecureContentHandler.
+ * <p>
+ *     See <a href="https://cwiki.apache.org/confluence/display/TIKA/ModifyingContentWithHandlersAndMetadataFilters"/>ModifyingContentWithHandlersAndMetadataFilters</a>
+ *     for documentation and examples for configuring this with a tika-config.xml file.
  */
 public class AutoDetectParserConfig extends ConfigBase implements Serializable {
 
