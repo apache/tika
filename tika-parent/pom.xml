@@ -374,6 +374,7 @@
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
     <poi.version>5.2.3</poi.version>
     <quartz.version>2.3.2</quartz.version>
+    <reactor.netty.version>1.0.24</reactor.netty.version>
     <rome.version>1.18.0</rome.version>
     <scm.version>1.13.0</scm.version>
     <sis.version>1.2</sis.version>
@@ -528,6 +529,16 @@
         <groupId>io.netty</groupId>
         <artifactId>netty-transport-native-unix-common</artifactId>
         <version>${netty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.projectreactor.netty</groupId>
+        <artifactId>reactor-netty-core</artifactId>
+        <version>${reactor.netty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.projectreactor.netty</groupId>
+        <artifactId>reactor-netty-http</artifactId>
+        <version>${reactor.netty.version}</version>
       </dependency>
       <dependency>
         <groupId>it.unimi.dsi</groupId>
