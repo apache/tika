@@ -632,9 +632,17 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
         defaultConfig.setOcrStrategy(ocrStrategyString);
     }
 
+    public String getOcrStrategy() {
+        return defaultConfig.getOcrStrategy().name();
+    }
+
     @Field
     public void setOcrStrategyAuto(String ocrStrategyAuto) {
         defaultConfig.setOcrStrategyAuto(ocrStrategyAuto);
+    }
+
+    public String getOcrStrategyAuto() {
+        return defaultConfig.getOcrStrategyAuto().toString();
     }
 
     @Field
@@ -642,100 +650,176 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
         defaultConfig.setOcrRenderingStrategy(ocrRenderingStrategy);
     }
 
+    public String getOcrRenderingStrategy() {
+        return defaultConfig.getOcrRenderingStrategy().name();
+    }
+
     @Field
     public void setOcrImageType(String imageType) {
         defaultConfig.setOcrImageType(imageType);
     }
 
+    public String getOcrImageType() {
+        return defaultConfig.getOcrImageType().name();
+    }
+
     @Field
-    void setOcrDPI(int dpi) {
+    public void setOcrDPI(int dpi) {
         defaultConfig.setOcrDPI(dpi);
     }
 
+    public int getOcrDPI() {
+        return defaultConfig.getOcrDPI();
+    }
     @Field
-    void setOcrImageQuality(float imageQuality) {
+    public void setOcrImageQuality(float imageQuality) {
         defaultConfig.setOcrImageQuality(imageQuality);
     }
 
+    public float getOcrImageQuality() {
+        return defaultConfig.getOcrImageQuality();
+    }
+
     @Field
-    void setOcrImageFormatName(String formatName) {
+    public void setOcrImageFormatName(String formatName) {
         defaultConfig.setOcrImageFormatName(formatName);
     }
 
+    public String getOcrImageFormatName() {
+        return defaultConfig.getOcrImageFormatName();
+    }
+
     @Field
-    void setExtractBookmarksText(boolean extractBookmarksText) {
+    public void setExtractBookmarksText(boolean extractBookmarksText) {
         defaultConfig.setExtractBookmarksText(extractBookmarksText);
     }
 
+    public boolean isExtractBookmarksText() {
+        return defaultConfig.isExtractBookmarksText();
+    }
+
     @Field
-    void setExtractInlineImages(boolean extractInlineImages) {
+    public void setExtractInlineImages(boolean extractInlineImages) {
         defaultConfig.setExtractInlineImages(extractInlineImages);
     }
 
+    public boolean isExtractInlineImages() {
+        return defaultConfig.isExtractInlineImages();
+    }
+
     @Field
-    void setExtractInlineImageMetadataOnly(boolean extractInlineImageMetadataOnly) {
+    public void setExtractInlineImageMetadataOnly(boolean extractInlineImageMetadataOnly) {
         defaultConfig.setExtractInlineImageMetadataOnly(extractInlineImageMetadataOnly);
     }
 
+    public boolean isExtractInlineImageMetadataOnly() {
+        return defaultConfig.isExtractInlineImageMetadataOnly();
+    }
+
     @Field
-    void setAverageCharTolerance(float averageCharTolerance) {
+    public void setAverageCharTolerance(float averageCharTolerance) {
         defaultConfig.setAverageCharTolerance(averageCharTolerance);
     }
 
+    public float getAverageCharTolerance() {
+        return defaultConfig.getAverageCharTolerance();
+    }
+
     @Field
-    void setSpacingTolerance(float spacingTolerance) {
+    public void setSpacingTolerance(float spacingTolerance) {
         defaultConfig.setSpacingTolerance(spacingTolerance);
     }
 
+    public float getSpacingTolerance() {
+        return defaultConfig.getSpacingTolerance();
+    }
+
 
     @Field
-    void setCatchIntermediateExceptions(boolean catchIntermediateExceptions) {
+    public void setCatchIntermediateExceptions(boolean catchIntermediateExceptions) {
         defaultConfig.setCatchIntermediateIOExceptions(catchIntermediateExceptions);
     }
 
+    public boolean isCatchIntermediateExceptions() {
+        return defaultConfig.isCatchIntermediateIOExceptions();
+    }
+
     @Field
-    void setExtractAcroFormContent(boolean extractAcroFormContent) {
+    public void setExtractAcroFormContent(boolean extractAcroFormContent) {
         defaultConfig.setExtractAcroFormContent(extractAcroFormContent);
     }
 
+    public boolean isExtractAcroFormContent() {
+        return defaultConfig.isExtractAcroFormContent();
+    };
+
     @Field
-    void setIfXFAExtractOnlyXFA(boolean ifXFAExtractOnlyXFA) {
+    public void setIfXFAExtractOnlyXFA(boolean ifXFAExtractOnlyXFA) {
         defaultConfig.setIfXFAExtractOnlyXFA(ifXFAExtractOnlyXFA);
     }
 
+    public boolean isIfXFAExtractOnlyXFA() {
+        return defaultConfig.isIfXFAExtractOnlyXFA();
+    }
     @Field
-    void setAllowExtractionForAccessibility(boolean allowExtractionForAccessibility) {
+    public void setAllowExtractionForAccessibility(boolean allowExtractionForAccessibility) {
         defaultConfig.setAccessChecker(new AccessChecker(allowExtractionForAccessibility));
     }
 
+    public boolean isAllowExtractionForAccessibility() {
+        return defaultConfig.getAccessChecker().isAllowExtractionForAccessibility();
+    }
+
     @Field
-    void setExtractUniqueInlineImagesOnly(boolean extractUniqueInlineImagesOnly) {
+    public void setExtractUniqueInlineImagesOnly(boolean extractUniqueInlineImagesOnly) {
         defaultConfig.setExtractUniqueInlineImagesOnly(extractUniqueInlineImagesOnly);
     }
 
+    public boolean isExtractUniqueInlineImagesOnly() {
+        return defaultConfig.isExtractUniqueInlineImagesOnly();
+    }
+
     @Field
-    void setExtractActions(boolean extractActions) {
+    public void setExtractActions(boolean extractActions) {
         defaultConfig.setExtractActions(extractActions);
     }
 
+    public boolean isExtractActions() {
+        return defaultConfig.isExtractActions();
+    }
+
     @Field
-    void setExtractFontNames(boolean extractFontNames) {
+    public void setExtractFontNames(boolean extractFontNames) {
         defaultConfig.setExtractFontNames(extractFontNames);
     }
 
+    public boolean isExtractFontNames() {
+        return defaultConfig.isExtractFontNames();
+    }
+
     @Field
-    void setSetKCMS(boolean setKCMS) {
+    public void setSetKCMS(boolean setKCMS) {
         defaultConfig.setSetKCMS(setKCMS);
     }
 
+    public boolean isSetKCMS() {
+        return defaultConfig.isSetKCMS();
+    }
     @Field
-    void setDetectAngles(boolean detectAngles) {
+    public void setDetectAngles(boolean detectAngles) {
         defaultConfig.setDetectAngles(detectAngles);
     }
 
+    public boolean isDetectAngles() {
+        return defaultConfig.isDetectAngles();
+    }
     @Field
-    void setExtractMarkedContent(boolean extractMarkedContent) {
+    public void setExtractMarkedContent(boolean extractMarkedContent) {
         defaultConfig.setExtractMarkedContent(extractMarkedContent);
+    }
+
+    public boolean isExtractMarkedContent() {
+        return defaultConfig.isExtractMarkedContent();
     }
 
     @Field
@@ -743,9 +827,17 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
         defaultConfig.setDropThreshold(dropThreshold);
     }
 
+    public float getDropThreshold() {
+        return defaultConfig.getDropThreshold();
+    }
+
     @Field
     public void setMaxMainMemoryBytes(long maxMainMemoryBytes) {
         defaultConfig.setMaxMainMemoryBytes(maxMainMemoryBytes);
+    }
+
+    public long getMaxMainMemoryBytes() {
+        return defaultConfig.getMaxMainMemoryBytes();
     }
 
     /**
@@ -780,9 +872,14 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
         config.setRenderer(pdfBoxRenderer);
     }
 
+    //TODO -- figure out how to deserialize this in TikaConfigSerializer
     @Override
     public void setRenderer(Renderer renderer) {
         defaultConfig.setRenderer(renderer);
+    }
+
+    public Renderer getRenderer() {
+        return defaultConfig.getRenderer();
     }
 
     @Field
@@ -790,9 +887,17 @@ public class PDFParser extends AbstractParser implements RenderingParser, Initia
         defaultConfig.setImageGraphicsEngineFactory(imageGraphicsEngineFactory);
     }
 
+    public ImageGraphicsEngineFactory getImageGraphicsEngineFactory() {
+        return defaultConfig.getImageGraphicsEngineFactory();
+    }
+
     @Field
     public void setImageStrategy(String imageStrategy) {
         defaultConfig.setImageStrategy(imageStrategy);
+    }
+
+    public String getImageStrategy() {
+        return defaultConfig.getImageStrategy().name();
     }
 
     /**

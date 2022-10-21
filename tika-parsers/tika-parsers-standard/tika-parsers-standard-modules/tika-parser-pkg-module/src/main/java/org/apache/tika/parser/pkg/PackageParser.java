@@ -527,4 +527,8 @@ public class PackageParser extends AbstractEncodingDetectorParser {
     public void setDetectCharsetsInEntryNames(boolean detectCharsetsInEntryNames) {
         this.detectCharsetsInEntryNames = detectCharsetsInEntryNames;
     }
+
+    public boolean isDetectCharsetsInEntryNames() {
+        return detectCharsetsInEntryNames;
+    }
 }

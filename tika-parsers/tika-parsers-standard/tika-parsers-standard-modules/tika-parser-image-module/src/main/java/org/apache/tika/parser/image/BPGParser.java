@@ -182,6 +182,10 @@ public class BPGParser extends AbstractImageParser {
         this.maxRecordLength = maxRecordLength;
     }
 
+    public int getMaxRecordLength() {
+        return this.maxRecordLength;
+    }
+
     protected void handleXMP(InputStream stream, int xmpLength, ImageMetadataExtractor extractor)
             throws IOException, TikaException, SAXException {
         if (xmpLength < 0) {

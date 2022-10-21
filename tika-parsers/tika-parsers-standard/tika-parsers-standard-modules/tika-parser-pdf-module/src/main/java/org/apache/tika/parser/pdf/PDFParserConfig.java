@@ -946,6 +946,20 @@ public class PDFParserConfig implements Serializable {
         public int getTotalCharsPerPage() {
             return totalCharsPerPage;
         }
+
+        @Override
+        public String toString() {
+            //TODO -- figure out if this is actual BEST or whatever
+            //and return that instead of the literal values
+            String unmappedString = null;
+            if (unmappedUnicodeCharsPerPage < 1.0) {
+                unmappedString = String.format(Locale.US, "%.03f",
+                        unmappedUnicodeCharsPerPage * 100) + "%";
+            } else {
+                unmappedString = String.format(Locale.US, "%.0f", unmappedUnicodeCharsPerPage);
+            }
+            return unmappedString + "," + totalCharsPerPage;
+        }
     }
 
     public enum OCR_RENDERING_STRATEGY {

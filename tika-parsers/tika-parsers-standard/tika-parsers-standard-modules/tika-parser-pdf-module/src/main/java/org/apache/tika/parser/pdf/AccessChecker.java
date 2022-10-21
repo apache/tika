@@ -32,7 +32,7 @@ public class AccessChecker implements Serializable {
     private static final long serialVersionUID = 6492570218190936986L;
 
     private final boolean needToCheck;
-    private final boolean allowAccessibility;
+    private final boolean allowExtractionForAccessibility;
 
     /**
      * This constructs an {@link AccessChecker} that
@@ -43,7 +43,7 @@ public class AccessChecker implements Serializable {
      */
     public AccessChecker() {
         needToCheck = false;
-        allowAccessibility = true;
+        allowExtractionForAccessibility = true;
     }
 
     /**
@@ -55,12 +55,16 @@ public class AccessChecker implements Serializable {
      */
     public AccessChecker(boolean allowExtractionForAccessibility) {
         needToCheck = true;
-        this.allowAccessibility = allowExtractionForAccessibility;
+        this.allowExtractionForAccessibility = allowExtractionForAccessibility;
+    }
+
+    public boolean isAllowExtractionForAccessibility() {
+        return allowExtractionForAccessibility;
     }
 
     /**
      * Checks to see if a document's content should be extracted based
-     * on metadata values and the value of {@link #allowAccessibility} in the constructor.
+     * on metadata values and the value of {@link #allowExtractionForAccessibility} in the constructor.
      *
      * @param metadata
      * @throws AccessPermissionException if access is not permitted
@@ -70,7 +74,7 @@ public class AccessChecker implements Serializable {
             return;
         }
         if ("false".equals(metadata.get(AccessPermissions.EXTRACT_CONTENT))) {
-            if (allowAccessibility) {
+            if (allowExtractionForAccessibility) {
                 if ("true".equals(metadata.get(AccessPermissions.EXTRACT_FOR_ACCESSIBILITY))) {
                     return;
                 }
@@ -95,14 +99,14 @@ public class AccessChecker implements Serializable {
         if (needToCheck != checker.needToCheck) {
             return false;
         }
-        return allowAccessibility == checker.allowAccessibility;
+        return allowExtractionForAccessibility == checker.allowExtractionForAccessibility;
 
     }
 
     @Override
     public int hashCode() {
         int result = (needToCheck ? 1 : 0);
-        result = 31 * result + (allowAccessibility ? 1 : 0);
+        result = 31 * result + (allowExtractionForAccessibility ? 1 : 0);
         return result;
     }
 }

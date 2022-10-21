@@ -37,6 +37,7 @@ public class OfficeParserConfig implements Serializable {
     private boolean extractAllAlternativesFromMSG;
 
     private String dateOverrideFormat = null;
+    private int maxOverride;
 
     /**
      * @return whether or not to extract macros
@@ -266,6 +267,14 @@ public class OfficeParserConfig implements Serializable {
      */
     public void setDateOverrideFormat(String format) {
         this.dateOverrideFormat = format;
+    }
+
+    public void setMaxOverride(int maxOverride) {
+        this.maxOverride = maxOverride;
+    }
+
+    public int getMaxOverride() {
+        return this.maxOverride;
     }
 }
 

@@ -99,9 +99,17 @@ public abstract class AbstractOfficeParser extends AbstractParser {
         defaultOfficeParserConfig.setIncludeShapeBasedContent(includeShapeBasedContent);
     }
 
+    public boolean isIncludeShapeBasedContent() {
+        return defaultOfficeParserConfig.isIncludeShapeBasedContent();
+    }
+
     @Field
     public void setUseSAXPptxExtractor(boolean useSAXPptxExtractor) {
         defaultOfficeParserConfig.setUseSAXPptxExtractor(useSAXPptxExtractor);
+    }
+
+    public boolean isUseSAXPptxExtractor() {
+        return defaultOfficeParserConfig.isUseSAXPptxExtractor();
     }
 
     @Field
@@ -109,8 +117,8 @@ public abstract class AbstractOfficeParser extends AbstractParser {
         defaultOfficeParserConfig.setConcatenatePhoneticRuns(concatenatePhoneticRuns);
     }
 
-    void getConcatenatePhoneticRuns() {
-        defaultOfficeParserConfig.isConcatenatePhoneticRuns();
+    public boolean isConcatenatePhoneticRuns() {
+        return defaultOfficeParserConfig.isConcatenatePhoneticRuns();
     }
 
     public boolean isExtractAllAlternativesFromMSG() {
@@ -143,6 +151,12 @@ public abstract class AbstractOfficeParser extends AbstractParser {
     @Field
     public void setByteArrayMaxOverride(int maxOverride) {
         IOUtils.setByteArrayMaxOverride(maxOverride);
+        //required for serialization
+        defaultOfficeParserConfig.setMaxOverride(maxOverride);
+    }
+
+    public int getByteArrayMaxOverride() {
+        return defaultOfficeParserConfig.getMaxOverride();
     }
 
     @Field
@@ -150,8 +164,16 @@ public abstract class AbstractOfficeParser extends AbstractParser {
         defaultOfficeParserConfig.setDateOverrideFormat(format);
     }
 
+    public String getDateFormatOverride() {
+        return defaultOfficeParserConfig.getDateFormatOverride();
+    }
+
     @Field
     public void setIncludeHeadersAndFooters(boolean includeHeadersAndFooters) {
         defaultOfficeParserConfig.setIncludeHeadersAndFooters(includeHeadersAndFooters);
+    }
+
+    public boolean isIncludeHeadersAndFooters() {
+        return defaultOfficeParserConfig.isIncludeHeadersAndFooters();
     }
 }

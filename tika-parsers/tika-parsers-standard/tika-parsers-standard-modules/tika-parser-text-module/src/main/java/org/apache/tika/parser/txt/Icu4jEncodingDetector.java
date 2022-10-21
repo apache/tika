@@ -19,6 +19,8 @@ package org.apache.tika.parser.txt;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -121,8 +123,19 @@ public class Icu4jEncodingDetector implements EncodingDetector {
         this.markLimit = markLimit;
     }
 
+    public int getMarkLimt() {
+        return this.markLimit;
+    }
+
     @Field
     public void setIgnoreCharsets(List<String> charsetsToIgnore) {
         this.ignoreCharsets.addAll(charsetsToIgnore);
+    }
+
+    public List<String> getIgnoreCharsets() {
+        List<String> ret = new ArrayList<>();
+        ret.addAll(ignoreCharsets);
+        Collections.sort(ret);
+        return ret;
     }
 }
