@@ -295,9 +295,8 @@
     <rat.version>0.15</rat.version>
 
     <!-- dependency versions -->
-
-    <aws.version>1.12.324</aws.version>
-    <google.cloud.version>2.13.0</google.cloud.version>
+    <google.cloud.version>2.13.1</google.cloud.version>
+    <aws.version>1.12.325</aws.version>
     <asm.version>9.4</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
@@ -374,6 +373,7 @@
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
     <poi.version>5.2.3</poi.version>
     <quartz.version>2.3.2</quartz.version>
+    <reactor.netty.version>1.0.24</reactor.netty.version>
     <rome.version>1.18.0</rome.version>
     <scm.version>1.13.0</scm.version>
     <sis.version>1.2</sis.version>
@@ -385,7 +385,7 @@
     <test.containers.version>1.17.5</test.containers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
     <tukaani.version>1.9</tukaani.version>
-    <twelvemonkeys.version>3.9.1</twelvemonkeys.version>
+    <twelvemonkeys.version>3.9.3</twelvemonkeys.version>
     <uima.version>3.3.0</uima.version>
     <uimafit.version>3.3.0</uimafit.version>
     <vorbis.version>0.8</vorbis.version>
@@ -528,6 +528,16 @@
         <groupId>io.netty</groupId>
         <artifactId>netty-transport-native-unix-common</artifactId>
         <version>${netty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.projectreactor.netty</groupId>
+        <artifactId>reactor-netty-core</artifactId>
+        <version>${reactor.netty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.projectreactor.netty</groupId>
+        <artifactId>reactor-netty-http</artifactId>
+        <version>${reactor.netty.version}</version>
       </dependency>
       <dependency>
         <groupId>it.unimi.dsi</groupId>
