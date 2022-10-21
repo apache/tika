@@ -41,6 +41,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.DockerComposeContainer;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 import org.testcontainers.shaded.org.hamcrest.MatcherAssert;
 import org.testcontainers.shaded.org.hamcrest.Matchers;
@@ -49,6 +50,7 @@ import org.apache.tika.cli.TikaCLI;
 import org.apache.tika.pipes.HandlerConfig;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Testcontainers(disabledWithoutDocker = true)
 class S3PipeIntegrationTest {
     private static final Logger LOG = LoggerFactory.getLogger(S3PipeIntegrationTest.class);
 
