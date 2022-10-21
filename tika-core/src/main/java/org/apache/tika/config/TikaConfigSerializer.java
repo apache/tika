@@ -455,7 +455,16 @@ public class TikaConfigSerializer {
                                             Object object,
                                             MethodTuples setterTuples, MethodTuples getterTuples) {
 
-        Element params = null;
+        Element paramsElement = null;
+        if (object instanceof AbstractMultipleParser) {
+            paramsElement = doc.createElement("params");
+            Element paramElement = doc.createElement("param");
+            paramElement.setAttribute("name", "metadataPolicy");
+            paramElement.setAttribute("value",
+                    ((AbstractMultipleParser) object).getMetadataPolicy().toString());
+            paramsElement.appendChild(paramElement);
+            root.appendChild(paramsElement);
+        }
         for (Map.Entry<String, Set<MethodTuple>> e : setterTuples.tuples.entrySet()) {
             if (!getterTuples.tuples.containsKey(e.getKey())) {
                 LOG.info("no getter for setter: {} in {}", e.getKey(), object.getClass());
@@ -503,11 +512,11 @@ public class TikaConfigSerializer {
             } else {
                 param.setTextContent(valString);
             }
-            if (params == null) {
-                params = doc.createElement("params");
-                root.appendChild(params);
+            if (paramsElement == null) {
+                paramsElement = doc.createElement("params");
+                root.appendChild(paramsElement);
             }
-            params.appendChild(param);
+            paramsElement.appendChild(param);
         }
     }
 
