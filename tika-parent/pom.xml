@@ -654,7 +654,7 @@
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-utils</artifactId>
-        <version>3.4.2</version>
+        <version>3.5.0</version>
       </dependency>
       <dependency>
         <groupId>org.eclipse.jetty</groupId>
