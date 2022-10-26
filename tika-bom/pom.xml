@@ -297,6 +297,17 @@
         <version>2.5.1-SNAPSHOT</version>
       </dependency>
 
+      <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-detectors</artifactId>
+        <version>2.5.1-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-siegfried</artifactId>
+        <version>2.5.1-SNAPSHOT</version>
+      </dependency>
+
       <!-- Tika Pipes modules -->
       <dependency>
         <groupId>org.apache.tika</groupId>

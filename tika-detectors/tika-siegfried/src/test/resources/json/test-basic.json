@@ -1,0 +1,31 @@
+{
+  "created": "2022-09-12T23:45:48+02:00",
+  "files": [
+    {
+      "errors": "",
+      "filename": "/home/tallison/data/jfk/oswald/104-10263-10202.pdf",
+      "filesize": 810825,
+      "matches": [
+        {
+          "basis": "extension match pdf; byte match at [[0 8] [810818 5]]",
+          "format": "Acrobat PDF 1.5 - Portable Document Format",
+          "id": "fmt/19",
+          "mime": "application/pdf",
+          "ns": "pronom",
+          "version": "1.5",
+          "warning": ""
+        }
+      ],
+      "modified": "2022-03-28T09:43:40-04:00"
+    }
+  ],
+  "identifiers": [
+    {
+      "details": "DROID_SignatureFile_V108.xml; container-signature-20220905.xml",
+      "name": "pronom"
+    }
+  ],
+  "scandate": "2022-10-26T10:32:10-04:00",
+  "siegfried": "1.9.5",
+  "signature": "default.sig"
+}
