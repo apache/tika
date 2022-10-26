@@ -16,7 +16,8 @@
   limitations under the License.
 -->
 <properties>
-  <detectors class="org.apache.tika.detect.DefaultDetector">
+  <detectors>
+    <detector class="org.apache.tika.detect.DefaultDetector"/>
     <detector class="org.apache.tika.detect.siegfried.SiegfriedDetector">
       <params>
         <param name="siegfriedPath" type="string"><!-- put path here --></param>

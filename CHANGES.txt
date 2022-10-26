@@ -1,5 +1,7 @@
 Release 2.5.1 - ???
 
+   * Move OverrideDetector's functionality to the CompositeDetector (TIKA-3904).
+
    * The FileCommandDetector has been refactored to have the same
      behavior as the Siegfried detector; see setUseMime in the javadoc (TIKA-3902).
 
