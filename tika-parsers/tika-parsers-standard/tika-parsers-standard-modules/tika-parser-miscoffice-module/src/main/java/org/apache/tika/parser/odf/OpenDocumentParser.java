@@ -191,6 +191,10 @@ public class OpenDocumentParser extends AbstractParser {
         this.extractMacros = extractMacros;
     }
 
+    public boolean isExtractMacros() {
+        return extractMacros;
+    }
+
     private void handleZipStream(ZipInputStream zipStream, Metadata metadata, ParseContext context,
                                  EndDocumentShieldingContentHandler handler,
                                  EmbeddedDocumentUtil embeddedDocumentUtil)

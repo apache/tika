@@ -151,6 +151,10 @@ public class DefaultZipContainerDetector implements Detector {
         this.markLimit = markLimit;
     }
 
+    public int getMarkLimit() {
+        return markLimit;
+    }
+
     @Override
     public MediaType detect(InputStream input, Metadata metadata) throws IOException {
         // Check if we have access to the document

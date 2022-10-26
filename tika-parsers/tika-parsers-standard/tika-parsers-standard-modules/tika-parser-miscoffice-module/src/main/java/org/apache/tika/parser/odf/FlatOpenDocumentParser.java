@@ -89,6 +89,9 @@ public class FlatOpenDocumentParser extends AbstractParser {
         this.extractMacros = extractMacros;
     }
 
+    public boolean isExtractMacros() {
+        return extractMacros;
+    }
     private ContentHandler getContentHandler(ContentHandler handler, Metadata metadata,
                                              ParseContext context) {
         return new FlatOpenDocumentParserHandler(handler, metadata, context, extractMacros);

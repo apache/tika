@@ -39,7 +39,7 @@ public abstract class AbstractDWGParser extends AbstractParser {
     }
 
 
-    String getDwgReadExecutable() {
+    public String getDwgReadExecutable() {
         return defaultDwgParserConfig.getDwgReadExecutable();
     }
     
@@ -48,7 +48,7 @@ public abstract class AbstractDWGParser extends AbstractParser {
         defaultDwgParserConfig.setDwgReadExecutable(dwgReadExecutable);
     }
     
-    boolean isCleanDwgReadOutput() {
+    public boolean isCleanDwgReadOutput() {
         return defaultDwgParserConfig.isCleanDwgReadOutput();
     }
     
@@ -56,8 +56,8 @@ public abstract class AbstractDWGParser extends AbstractParser {
     public void setCleanDwgReadOutput(boolean cleanDwgReadOutput) {
         defaultDwgParserConfig.setCleanDwgReadOutput(cleanDwgReadOutput);
     }
-    
-    int getCleanDwgReadOutputBatchSize() {
+
+    public int getCleanDwgReadOutputBatchSize() {
         return defaultDwgParserConfig.getCleanDwgReadOutputBatchSize();
     }
     
@@ -65,7 +65,7 @@ public abstract class AbstractDWGParser extends AbstractParser {
     public void setCleanDwgReadOutputBatchSize(int cleanDwgReadOutputBatchSize) {
         defaultDwgParserConfig.setCleanDwgReadOutputBatchSize(cleanDwgReadOutputBatchSize);
     }
-    String getCleanDwgReadRegexToReplace() {
+    public String getCleanDwgReadRegexToReplace() {
         return defaultDwgParserConfig.getCleanDwgReadRegexToReplace();
     }
     
@@ -73,7 +73,7 @@ public abstract class AbstractDWGParser extends AbstractParser {
     public void setCleanDwgReadRegexToReplace(String cleanDwgReadRegexToReplace) {
         defaultDwgParserConfig.setCleanDwgReadRegexToReplace(cleanDwgReadRegexToReplace);
     }
-    String getCleanDwgReadReplaceWith() {
+    public String getCleanDwgReadReplaceWith() {
         return defaultDwgParserConfig.getCleanDwgReadReplaceWith();
     }
     
@@ -81,7 +81,7 @@ public abstract class AbstractDWGParser extends AbstractParser {
     public void setCleanDwgReadReplaceWith(String cleanDwgReadReplaceWith) {
         defaultDwgParserConfig.setCleanDwgReadReplaceWith(cleanDwgReadReplaceWith);
     }
-    long getDwgReadTimeout() {
+    public long getDwgReadTimeout() {
         return defaultDwgParserConfig.getDwgReadTimeout();
     }
 

@@ -165,6 +165,10 @@ public class PSDParser extends AbstractParser {
         this.maxDataLengthBytes = maxDataLengthBytes;
     }
 
+    public int getMaxDataLengthBytes() {
+        return maxDataLengthBytes;
+    }
+
     private static class ResourceBlock {
         private static final long SIGNATURE = 0x3842494d; // 8BIM
         private static final int ID_CAPTION = 0x03F0;
