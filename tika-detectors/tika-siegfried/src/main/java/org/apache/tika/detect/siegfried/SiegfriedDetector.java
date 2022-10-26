@@ -31,7 +31,6 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.Field;
 import org.apache.tika.detect.Detector;
-import org.apache.tika.detect.FileCommandDetector;
 import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -220,8 +219,12 @@ public class SiegfriedDetector implements Detector {
                     metadata.add(SIEGFRIED_PREFIX + ns + ":" + MIME, mime);
                     metadata.add(SIEGFRIED_PREFIX + ns + ":" + VERSION, version);
                     metadata.add(SIEGFRIED_PREFIX + ns + ":" + WARNING, warning);
-                    if (returnMime) {
+                    //take the first non-octet-stream
+                    if (returnMime && mt.equals(MediaType.OCTET_STREAM)) {
                         mt = MediaType.parse(mime);
+                        if (mt == null) {
+                            mt = MediaType.OCTET_STREAM;
+                        }
                     }
                 }
             }
