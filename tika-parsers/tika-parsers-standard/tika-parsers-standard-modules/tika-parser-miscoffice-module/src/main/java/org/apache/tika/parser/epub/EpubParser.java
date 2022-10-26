@@ -49,6 +49,7 @@ import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -175,7 +176,7 @@ public class EpubParser extends AbstractParser {
             }
         } else {
             temporaryResources = new TemporaryResources();
-            tis = TikaInputStream.get(new CloseShieldInputStream(stream), temporaryResources);
+            tis = TikaInputStream.get(new CloseShieldInputStream(stream), temporaryResources, metadata);
         }
         ZipFile zipFile = null;
         try {
@@ -201,7 +202,8 @@ public class EpubParser extends AbstractParser {
                             Metadata metadata, ParseContext context)
             throws IOException, TikaException, SAXException {
         try (TemporaryResources resources = new TemporaryResources()) {
-            Path salvaged = resources.createTempFile();
+            Path salvaged =
+                    resources.createTempFile(FilenameUtils.getSuffixFromPath(brokenZip.getFileName().toString()));
             ZipSalvager.salvageCopy(brokenZip.toFile(), salvaged.toFile());
             boolean success = false;
             try (ZipFile zipFile = new ZipFile(salvaged.toFile())) {

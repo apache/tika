@@ -53,7 +53,7 @@ public class JournalParser extends AbstractParser {
 
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        TikaInputStream tis = TikaInputStream.get(stream, new TemporaryResources());
+        TikaInputStream tis = TikaInputStream.get(stream, new TemporaryResources(), metadata);
         File tmpFile = tis.getFile();
 
         GrobidRESTParser grobidParser = new GrobidRESTParser();

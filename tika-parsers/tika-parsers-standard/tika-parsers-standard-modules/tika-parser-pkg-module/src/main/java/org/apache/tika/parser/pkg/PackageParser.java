@@ -267,7 +267,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
             if (sne.getFormat().equals(ArchiveStreamFactory.SEVEN_Z)) {
                 // Rework as a file, and wrap
                 stream.reset();
-                TikaInputStream tstream = TikaInputStream.get(stream, tmp);
+                TikaInputStream tstream = TikaInputStream.get(stream, tmp, metadata);
 
                 // Seven Zip suports passwords, was one given?
                 String password = null;
@@ -445,7 +445,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 // InputStream, which ArchiveInputStream isn't, so wrap
                 TemporaryResources tmp = new TemporaryResources();
                 try {
-                    TikaInputStream tis = TikaInputStream.get(archive, tmp);
+                    TikaInputStream tis = TikaInputStream.get(archive, tmp, entrydata);
                     extractor.parseEmbedded(tis, xhtml, entrydata, true);
                 } finally {
                     tmp.dispose();

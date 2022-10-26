@@ -155,7 +155,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
             }
         }
         try {
-            TikaInputStream tis = TikaInputStream.get(stream, tmp);
+            TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
             RecursivelySecureContentHandler secureContentHandler =
                     new RecursivelySecureContentHandler(localHandler, tis, writeLimit,
                             throwOnWriteLimitReached, context);

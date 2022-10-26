@@ -125,7 +125,7 @@ public class PooledTimeSeriesParser extends AbstractParser {
 
         TemporaryResources tmp = new TemporaryResources();
         try {
-            TikaInputStream tikaStream = TikaInputStream.get(stream, tmp);
+            TikaInputStream tikaStream = TikaInputStream.get(stream, tmp, metadata);
             File input = tikaStream.getFile();
             String cmdOutput = computePoT(input);
             try (InputStream ofStream = new FileInputStream(

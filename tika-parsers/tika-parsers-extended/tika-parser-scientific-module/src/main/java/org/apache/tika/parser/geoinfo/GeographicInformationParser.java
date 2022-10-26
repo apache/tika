@@ -97,7 +97,7 @@ public class GeographicInformationParser extends AbstractParser {
         TemporaryResources tmp =
                 TikaInputStream.isTikaInputStream(inputStream) ? null : new TemporaryResources();
         try {
-            TikaInputStream tikaInputStream = TikaInputStream.get(inputStream, tmp);
+            TikaInputStream tikaInputStream = TikaInputStream.get(inputStream, tmp, metadata);
             File file = tikaInputStream.getFile();
             dataStore = DataStores.open(file);
             defaultMetadata = new DefaultMetadata(dataStore.getMetadata());

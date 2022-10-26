@@ -182,7 +182,7 @@ public class GDALParser extends AbstractParser {
         // first set up and run GDAL
         // process the command
         TemporaryResources tmp = new TemporaryResources();
-        TikaInputStream tis = TikaInputStream.get(stream, tmp);
+        TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
 
         String runCommand = processCommand(tis);
         String output = execCommand(new String[]{runCommand});

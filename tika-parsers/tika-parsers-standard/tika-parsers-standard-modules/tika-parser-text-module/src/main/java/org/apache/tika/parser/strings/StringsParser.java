@@ -99,7 +99,7 @@ public class StringsParser extends AbstractParser implements Initializable {
         StringsConfig stringsConfig = context.get(StringsConfig.class, defaultStringsConfig);
 
         try (TemporaryResources tmp = new TemporaryResources()) {
-            TikaInputStream tis = TikaInputStream.get(stream, tmp);
+            TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
             File input = tis.getFile();
 
             // Metadata

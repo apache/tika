@@ -271,7 +271,7 @@ public class ExternalParser extends AbstractParser {
 
         TemporaryResources tmp = new TemporaryResources();
         try {
-            parse(TikaInputStream.get(stream, tmp), xhtml, metadata, tmp);
+            parse(TikaInputStream.get(stream, tmp, metadata), xhtml, metadata, tmp);
         } finally {
             tmp.dispose();
         }

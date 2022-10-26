@@ -61,7 +61,7 @@ public class MuPDFRenderer implements Renderer {
                                 RenderRequest... requests) throws IOException, TikaException {
         TemporaryResources tmp = new TemporaryResources();
         PageBasedRenderResults results = new PageBasedRenderResults(tmp);
-        Path path = TikaInputStream.get(is, tmp).getPath();
+        Path path = TikaInputStream.get(is, tmp, metadata).getPath();
         for (RenderRequest request : requests) {
             renderRequest(path, metadata, parseContext, request, results, tmp);
         }
