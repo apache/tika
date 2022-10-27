@@ -515,6 +515,11 @@
         <version>${commons.logging.version}</version>
       </dependency>
       <dependency>
+        <groupId>io.grpc</groupId>
+        <artifactId>grpc-core</artifactId>
+        <version>1.50.2</version>
+      </dependency>
+      <dependency>
         <groupId>io.netty</groupId>
         <artifactId>netty-common</artifactId>
         <version>${netty.version}</version>
