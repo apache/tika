@@ -29,7 +29,7 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
 
 @Disabled("need to have siegfried on the path")
-public class TestIntegration extends TikaTest {
+public class TestSiegfriedIntegration extends TikaTest {
 
     @Test
     public void testIntegration() throws Exception {

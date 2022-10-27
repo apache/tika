@@ -41,30 +41,27 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.utils.FileProcessResult;
 import org.apache.tika.utils.ProcessUtils;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * Simple wrapper around Siegfried https://github.com/richardlehane/siegfried
  * The default behavior is to run detection, report the results in the
  * metadata and then return null so that other detectors will be used.
- *
- *
  */
 public class SiegfriedDetector implements Detector {
 
     enum STATUS {
-        SUCCESS,
-        TIMEOUT,
-        CRASH,
-        JSON_PARSE_EXCEPTION
+        SUCCESS, TIMEOUT, CRASH, JSON_PARSE_EXCEPTION
     }
 
     public static final String SIEGFRIED_PREFIX = "sf:";
     public static Property SIEGFRIED_STATUS = Property.externalText(SIEGFRIED_PREFIX + "status");
 
-    public static Property SIEGFRIED_VERSION = Property.externalText(SIEGFRIED_PREFIX + "sf_version");
+    public static Property SIEGFRIED_VERSION =
+            Property.externalText(SIEGFRIED_PREFIX + "sf_version");
 
-    public static Property SIEGFRIED_SIGNATURE = Property.externalText(SIEGFRIED_PREFIX +
-            "signature");
+    public static Property SIEGFRIED_SIGNATURE =
+            Property.externalText(SIEGFRIED_PREFIX + "signature");
 
     public static Property SIEGFRIED_IDENTIFIERS_NAME =
             Property.externalTextBag(SIEGFRIED_PREFIX + "identifiers_name");
@@ -152,6 +149,7 @@ public class SiegfriedDetector implements Detector {
     public boolean isUseMime() {
         return useMime;
     }
+
     private MediaType detectOnPath(Path path, Metadata metadata) throws IOException {
 
         String[] args = new String[]{ProcessUtils.escapeCommandLine(siegfriedPath), "-json",
@@ -183,21 +181,23 @@ public class SiegfriedDetector implements Detector {
         }
 
         if (root.has("siegfried")) {
-            String siegfriedVersion = root.get("siegfried").asText();
+            String siegfriedVersion = root.get("siegfried").asText(StringUtils.EMPTY);
             metadata.set(SIEGFRIED_VERSION, siegfriedVersion);
         }
 
         if (root.has("signature")) {
-            String sig = root.get("signature").asText();
+            String sig = root.get("signature").asText(StringUtils.EMPTY);
             metadata.set(SIEGFRIED_SIGNATURE, sig);
         }
 
         if (root.has("identifiers")) {
             for (JsonNode n : root.get("identifiers")) {
-                String name = n.get("name").asText("");
-                String details = n.get("details").asText("");
-                metadata.add(SIEGFRIED_IDENTIFIERS_NAME, name);
-                metadata.add(SIEGFRIED_IDENTIFIERS_DETAILS, details);
+                if (n.has("name") && n.has("details")) {
+                    String name = n.get("name").asText(StringUtils.EMPTY);
+                    String details = n.get("details").asText(StringUtils.EMPTY);
+                    metadata.add(SIEGFRIED_IDENTIFIERS_NAME, name);
+                    metadata.add(SIEGFRIED_IDENTIFIERS_DETAILS, details);
+                }
             }
         }
         MediaType mt = MediaType.OCTET_STREAM;
@@ -206,30 +206,40 @@ public class SiegfriedDetector implements Detector {
                 //TODO
 ///                String errors = file.get("errors").asText("");
                 for (JsonNode match : file.get("matches")) {
-                    String ns = match.get("ns").asText("");
-                    String basis = match.get("basis").asText("");
-                    String format = match.get("format").asText("");
-                    String id = match.get("id").asText("");
-                    String mime = match.get("mime").asText("");
-                    String version = match.get("version").asText("");
-                    String warning = match.get("warning").asText("");
-                    metadata.add(SIEGFRIED_PREFIX + ns + ":" + BASIS, basis );
-                    metadata.add(SIEGFRIED_PREFIX + ns + ":" + FORMAT, format);
-                    metadata.add(SIEGFRIED_PREFIX + ns + ":" + ID, id);
-                    metadata.add(SIEGFRIED_PREFIX + ns + ":" + MIME, mime);
-                    metadata.add(SIEGFRIED_PREFIX + ns + ":" + VERSION, version);
-                    metadata.add(SIEGFRIED_PREFIX + ns + ":" + WARNING, warning);
+                    String ns = match.has("ns") ? match.get("ns").asText(StringUtils.EMPTY) :
+                            StringUtils.EMPTY;
+                    addNotBlank(match, "basis", metadata, SIEGFRIED_PREFIX + ns + ":" + BASIS);
+                    addNotBlank(match, "format", metadata, SIEGFRIED_PREFIX + ns + ":" + FORMAT);
+                    addNotBlank(match, "id", metadata, SIEGFRIED_PREFIX + ns + ":" + ID);
+                    addNotBlank(match, "mime", metadata, SIEGFRIED_PREFIX + ns + ":" + MIME);
+                    addNotBlank(match, "version", metadata, SIEGFRIED_PREFIX + ns + ":" + VERSION);
+                    addNotBlank(match, "warning", metadata, SIEGFRIED_PREFIX + ns + ":" + WARNING);
+
                     //take the first non-octet-stream
                     if (returnMime && mt.equals(MediaType.OCTET_STREAM)) {
-                        mt = MediaType.parse(mime);
-                        if (mt == null) {
-                            mt = MediaType.OCTET_STREAM;
+                        if (match.has("mime")) {
+                            String mimeString = match.get("mime").asText(StringUtils.EMPTY);
+                            mt = MediaType.parse(mimeString);
+                            if (mt == null) {
+                                mt = MediaType.OCTET_STREAM;
+                            }
                         }
                     }
                 }
             }
         }
         return mt;
+    }
+
+    private static void addNotBlank(JsonNode node, String jsonKey, Metadata metadata,
+                                    String metadataKey) {
+        if (node.has(jsonKey)) {
+            String val = node.get(jsonKey).asText(StringUtils.EMPTY);
+            if (StringUtils.isBlank(val)) {
+                return;
+            }
+            metadata.set(metadataKey, val);
+        }
     }
 
     @Field
