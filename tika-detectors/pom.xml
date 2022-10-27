@@ -34,6 +34,6 @@
   <name>Apache Tika Detectors</name>
 
   <modules>
-    <module>tika-siegfried</module>
+    <module>tika-detector-siegfried</module>
   </modules>
 </project>

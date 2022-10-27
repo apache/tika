@@ -304,7 +304,7 @@
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
-        <artifactId>tika-siegfried</artifactId>
+        <artifactId>tika-detector-siegfried</artifactId>
         <version>2.5.1-SNAPSHOT</version>
       </dependency>
 
