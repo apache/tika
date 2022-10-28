@@ -289,7 +289,7 @@
     <maven.jar.version>3.3.0</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.surefire.version>3.0.0-M7</maven.surefire.version>
-    <maven.shade.version>3.4.0</maven.shade.version>
+    <maven.shade.version>3.4.1</maven.shade.version>
     <!-- need above java 8 for 10.[0-2] -->
     <puppycrawl.version>9.3</puppycrawl.version>
     <rat.version>0.15</rat.version>
