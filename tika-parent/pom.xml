@@ -326,7 +326,7 @@
     <!-- versions greater than 62.2 are not compatible with icu4j handler in lucene 8.11.1 -->
     <icu4j.version>62.2</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
-    <jackcess.version>4.0.2</jackcess.version>
+    <jackcess.version>4.0.4</jackcess.version>
     <jackcess.encrypt.version>4.0.1</jackcess.encrypt.version>
     <jackrabbit.version>2.21.13</jackrabbit.version>
     <jackson.version>2.13.4</jackson.version>
