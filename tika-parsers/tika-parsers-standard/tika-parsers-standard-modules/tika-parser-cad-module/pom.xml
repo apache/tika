@@ -67,7 +67,6 @@
       </plugin>
     </plugins>
   </build>
-
   <scm>
     <tag>2.2.1-rc2</tag>
   </scm>
