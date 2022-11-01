@@ -411,6 +411,11 @@
         <version>1.2.0</version>
       </dependency>
       <dependency>
+        <groupId>com.drewnoakes</groupId>
+        <artifactId>metadata-extractor</artifactId>
+        <version>${metadata.extractor.version}</version>
+      </dependency>
+      <dependency>
         <groupId>com.mchange</groupId>
         <artifactId>c3p0</artifactId>
         <version>0.9.5.5</version>
@@ -460,6 +465,7 @@
           </exclusion>
         </exclusions>
       </dependency>
+      <!-- jai-imageio-core is allowed since LEGAL-304 -->
       <dependency>
         <groupId>com.github.jai-imageio</groupId>
         <artifactId>jai-imageio-core</artifactId>
@@ -479,6 +485,17 @@
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
         <version>${guava.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.googlecode.json-simple</groupId>
+        <artifactId>json-simple</artifactId>
+        <version>${json.simple.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>com.google.protobuf</groupId>
@@ -506,6 +523,16 @@
         <version>${commons.codec.version}</version>
       </dependency>
       <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-collections4</artifactId>
+        <version>${commons.collections4.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-csv</artifactId>
+        <version>${commons.csv.version}</version>
+      </dependency>
+      <dependency>
         <groupId>commons-io</groupId>
         <artifactId>commons-io</artifactId>
         <version>${commons.io.version}</version>
@@ -514,6 +541,11 @@
         <groupId>commons-logging</groupId>
         <artifactId>commons-logging</artifactId>
         <version>${commons.logging.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-math3</artifactId>
+        <version>${commons.math3.version}</version>
       </dependency>
       <dependency>
         <groupId>io.netty</groupId>
@@ -551,6 +583,11 @@
         <version>${javax.annotation.version}</version>
       </dependency>
       <dependency>
+        <groupId>javax.ws.rs</groupId>
+        <artifactId>javax.ws.rs-api</artifactId>
+        <version>${javax.rest.version}</version>
+      </dependency>
+      <dependency>
         <groupId>javax.xml.soap</groupId>
         <artifactId>javax.xml.soap-api</artifactId>
         <version>1.4.0</version>
@@ -572,8 +609,38 @@
       </dependency>
       <dependency>
         <groupId>org.apache.commons</groupId>
+        <artifactId>commons-exec</artifactId>
+        <version>${commons.exec.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.commons</groupId>
         <artifactId>commons-lang3</artifactId>
         <version>${commons.lang3.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.cxf</groupId>
+        <artifactId>cxf-rt-frontend-jaxrs</artifactId>
+        <version>${cxf.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.cxf</groupId>
+        <artifactId>cxf-rt-rs-client</artifactId>
+        <version>${cxf.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.cxf</groupId>
+        <artifactId>cxf-rt-rs-service-description</artifactId>
+        <version>${cxf.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.cxf</groupId>
+        <artifactId>cxf-rt-rs-security-cors</artifactId>
+        <version>${cxf.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.cxf</groupId>
+        <artifactId>cxf-rt-transports-http-jetty</artifactId>
+        <version>${cxf.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.felix</groupId>
@@ -638,6 +705,16 @@
         <version>${opennlp.version}</version>
       </dependency>
       <dependency>
+        <groupId>org.apache.poi</groupId>
+        <artifactId>poi</artifactId>
+        <version>${poi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.poi</groupId>
+        <artifactId>poi-ooxml</artifactId>
+        <version>${poi.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.bouncycastle</groupId>
         <artifactId>bcmail-jdk15on</artifactId>
         <version>${bouncycastle.version}</version>
@@ -651,6 +728,11 @@
         <groupId>org.bouncycastle</groupId>
         <artifactId>bcprov-jdk15on</artifactId>
         <version>${bouncycastle.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.ccil.cowan.tagsoup</groupId>
+        <artifactId>tagsoup</artifactId>
+        <version>1.2.1</version>
       </dependency>
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
@@ -717,6 +799,11 @@
         </exclusions>
       </dependency>
       <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-core</artifactId>
+        <version>${mockito.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.netpreserve</groupId>
         <artifactId>jwarc</artifactId>
         <version>0.19.0</version>
@@ -743,12 +830,17 @@
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
+        <artifactId>jcl-over-slf4j</artifactId>
+        <version>${slf4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
         <version>${slf4j.version}</version>
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
-        <artifactId>jcl-over-slf4j</artifactId>
+        <artifactId>slf4j-simple</artifactId>
         <version>${slf4j.version}</version>
       </dependency>
       <dependency>
