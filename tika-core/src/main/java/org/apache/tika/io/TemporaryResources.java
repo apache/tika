@@ -27,6 +27,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * Utility class for tracking and ultimately closing or otherwise disposing
@@ -52,7 +55,7 @@ public class TemporaryResources implements Closeable {
 
     /**
      * Sets the directory to be used for the temporary files created by
-     * the {@link #createTempFile()} method.
+     * the {@link #createTempFile(String)} method.
      *
      * @param tempFileDir temporary file directory,
      *                    or <code>null</code> for the system default
@@ -63,7 +66,7 @@ public class TemporaryResources implements Closeable {
 
     /**
      * Sets the directory to be used for the temporary files created by
-     * the {@link #createTempFile()} method.
+     * the {@link #createTempFile(String)} method.
      *
      * @param tempFileDir temporary file directory,
      *                    or <code>null</code> for the system default
@@ -76,13 +79,15 @@ public class TemporaryResources implements Closeable {
     /**
      * Creates a temporary file that will automatically be deleted when
      * the {@link #close()} method is called, returning its path.
-     *
+     * @param suffix -- the suffix of the file if known, starting with "." as in ".pdf"
      * @return Path to created temporary file that will be deleted after closing
      * @throws IOException
      */
-    public Path createTempFile() throws IOException {
-        final Path path = tempFileDir == null ? Files.createTempFile("apache-tika-", ".tmp") :
-                Files.createTempFile(tempFileDir, "apache-tika-", ".tmp");
+    public Path createTempFile(String suffix) throws IOException {
+        String actualSuffix = StringUtils.isBlank(suffix) ? ".tmp" : suffix;
+
+        final Path path = tempFileDir == null ? Files.createTempFile("apache-tika-", actualSuffix) :
+                Files.createTempFile(tempFileDir, "apache-tika-", actualSuffix);
         addResource(() -> {
             try {
                 Files.delete(path);
@@ -95,16 +100,34 @@ public class TemporaryResources implements Closeable {
         return path;
     }
 
+    public Path createTempFile() throws IOException {
+        return createTempFile(StringUtils.EMPTY);
+    }
+
+    /**
+     * Creates a temporary file that will automatically be deleted when
+     * the {@link #close()} method is called, returning its path.
+     *
+     * @return Path to created temporary file that will be deleted after closing
+     * @throws IOException
+     */
+    public Path createTempFile(Metadata metadata) throws IOException {
+        String resourceName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+        if (StringUtils.isBlank(resourceName)) {
+            return createTempFile(StringUtils.EMPTY);
+        }
+        return createTempFile(FilenameUtils.getSuffixFromPath(resourceName));
+    }
     /**
      * Creates and returns a temporary file that will automatically be
      * deleted when the {@link #close()} method is called.
      *
      * @return Created temporary file that'll be deleted after closing
      * @throws IOException
-     * @see #createTempFile()
+     * @see #createTempFile(String)
      */
     public File createTemporaryFile() throws IOException {
-        return createTempFile().toFile();
+        return createTempFile(StringUtils.EMPTY).toFile();
     }
 
     /**

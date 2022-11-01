@@ -44,6 +44,7 @@ import org.xml.sax.ContentHandler;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.extractor.EmbeddedResourceHandler;
+import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -433,8 +434,10 @@ public abstract class TikaTest {
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parserToWrap);
         RecursiveParserWrapperHandler handler =
                 new RecursiveParserWrapperHandler(new BasicContentHandlerFactory(handlerType, -1));
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, FilenameUtils.getName(filePath));
         try (InputStream is = getResourceAsStream("/test-documents/" + filePath)) {
-            wrapper.parse(is, handler, new Metadata(), context);
+            wrapper.parse(is, handler, metadata, context);
         }
         return handler.getMetadataList();
     }

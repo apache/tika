@@ -113,7 +113,8 @@ public class ParserUtils {
      * Streams that are automatically OK include {@link TikaInputStream}s
      * created from Files or InputStreamFactories, and {@link RereadableInputStream}.
      */
-    public static InputStream ensureStreamReReadable(InputStream stream, TemporaryResources tmp)
+    public static InputStream ensureStreamReReadable(InputStream stream, TemporaryResources tmp,
+                                                     Metadata metadata)
             throws IOException {
         // If it's re-readable, we're done
         if (stream instanceof RereadableInputStream) {
@@ -123,7 +124,7 @@ public class ParserUtils {
         // Make sure it's a TikaInputStream
         TikaInputStream tstream = TikaInputStream.cast(stream);
         if (tstream == null) {
-            tstream = TikaInputStream.get(stream, tmp);
+            tstream = TikaInputStream.get(stream, tmp, metadata);
         }
 
         // If it's factory based, it's ok
@@ -140,7 +141,7 @@ public class ParserUtils {
 
     /**
      * Resets the given {@link TikaInputStream} (checked by
-     * {@link #ensureStreamReReadable(InputStream, TemporaryResources)})
+     * {@link #ensureStreamReReadable(InputStream, TemporaryResources, Metadata)})
      * so that it can be re-read again.
      */
     public static InputStream streamResetForReRead(InputStream stream, TemporaryResources tmp)

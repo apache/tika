@@ -19,6 +19,8 @@ package org.apache.tika.io;
 import java.util.HashSet;
 import java.util.Locale;
 
+import org.apache.tika.utils.StringUtils;
+
 
 public class FilenameUtils {
 
@@ -93,7 +95,7 @@ public class FilenameUtils {
     public static String getName(final String path) {
 
         if (path == null || path.length() == 0) {
-            return "";
+            return StringUtils.EMPTY;
         }
         int unix = path.lastIndexOf("/");
         int windows = path.lastIndexOf("\\");
@@ -102,8 +104,23 @@ public class FilenameUtils {
         int colon = path.lastIndexOf(":");
         String cand = path.substring(Math.max(colon, Math.max(unix, windows)) + 1);
         if (cand.equals("..") || cand.equals(".")) {
-            return "";
+            return StringUtils.EMPTY;
         }
         return cand;
+    }
+
+    /**
+     * This includes the period, e.g. ".pdf"
+     * @param path
+     * @return the suffix or an empty string if one could not be found
+     */
+    public static String getSuffixFromPath(String path) {
+        String n = getName(path);
+        int i = n.lastIndexOf(".");
+        //arbitrarily sets max extension length
+        if (i > -1 && n.length() - i < 6) {
+            return n.substring(i);
+        }
+        return StringUtils.EMPTY;
     }
 }

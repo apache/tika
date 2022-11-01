@@ -247,7 +247,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
 
 
         try (TemporaryResources tmp = new TemporaryResources()) {
-            TikaInputStream tikaStream = TikaInputStream.get(stream, tmp);
+            TikaInputStream tikaStream = TikaInputStream.get(stream, tmp, metadata);
 
             //trigger the spooling to a tmp file if the stream wasn't
             //already a TikaInputStream that contained a file

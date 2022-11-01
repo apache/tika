@@ -123,7 +123,7 @@ public class HttpFetcherTest extends TikaTest {
         HttpFetcher httpFetcher =
                 (HttpFetcher) getFetcherManager("tika-config-http.xml").getFetcher("http");
         try (TemporaryResources tmp = new TemporaryResources()) {
-            Path tmpPath = tmp.createTempFile();
+            Path tmpPath = tmp.createTempFile(metadata);
             try (InputStream is = httpFetcher.fetch(url, start, end, metadata)) {
                 Files.copy(new GZIPInputStream(is), tmpPath, StandardCopyOption.REPLACE_EXISTING);
             }

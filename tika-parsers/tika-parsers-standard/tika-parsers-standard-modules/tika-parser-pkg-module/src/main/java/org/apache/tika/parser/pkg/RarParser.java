@@ -70,7 +70,7 @@ public class RarParser extends AbstractParser {
         }
         Archive rar = null;
         try (TemporaryResources tmp = new TemporaryResources()) {
-            TikaInputStream tis = TikaInputStream.get(stream, tmp);
+            TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
             rar = new Archive(tis.getFile());
 
             if (rar.isEncrypted()) {

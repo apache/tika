@@ -70,7 +70,7 @@ public class MatParser extends AbstractParser {
                 TikaInputStream.isTikaInputStream(stream) ? null : new TemporaryResources();
         try {
             // Use TIS so we can spool a temp file for parsing.
-            TikaInputStream tis = TikaInputStream.get(stream, tmp);
+            TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
 
             //Extract information from header file
             MatFileReader mfr = new MatFileReader(tis.getFile()); //input .mat file

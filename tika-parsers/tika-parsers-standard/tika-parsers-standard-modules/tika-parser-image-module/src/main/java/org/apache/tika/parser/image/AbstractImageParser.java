@@ -84,7 +84,7 @@ public abstract class AbstractImageParser extends AbstractParser {
         }
 
         TemporaryResources tmpResources = new TemporaryResources();
-        TikaInputStream tis = TikaInputStream.get(stream, tmpResources);
+        TikaInputStream tis = TikaInputStream.get(stream, tmpResources, metadata);
         Exception metadataException = null;
         try {
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);

@@ -48,6 +48,7 @@ import org.apache.tika.config.Param;
 import org.apache.tika.exception.FileTooLongException;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -169,7 +170,7 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
             } else {
                 start = System.currentTimeMillis();
                 tmp = new TemporaryResources();
-                Path tmpPath = tmp.createTempFile();
+                Path tmpPath = tmp.createTempFile(FilenameUtils.getSuffixFromPath(fetchKey));
                 Files.copy(s3Object.getObjectContent(), tmpPath, StandardCopyOption.REPLACE_EXISTING);
                 TikaInputStream tis = TikaInputStream.get(tmpPath, metadata, tmp);
                 LOGGER.debug("took {} ms to fetch metadata and copy to local tmp file",
