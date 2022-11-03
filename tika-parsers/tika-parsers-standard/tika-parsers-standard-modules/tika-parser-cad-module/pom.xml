@@ -36,16 +36,13 @@
       <artifactId>tika-parser-microsoft-module</artifactId>
       <version>${project.version}</version>
     </dependency>
-
     <dependency>
     	<groupId>com.fasterxml.jackson.core</groupId>
     	<artifactId>jackson-core</artifactId>
-	    <version>${jackson.version}</version><!--$NO-MVN-MAN-VER$-->
     </dependency>
-        <dependency>
+    <dependency>
     	<groupId>com.fasterxml.jackson.core</groupId>
     	<artifactId>jackson-databind</artifactId>
-	    <version>${jackson.version}</version><!--$NO-MVN-MAN-VER$-->
     </dependency>
   </dependencies>
   <build>
@@ -70,7 +67,6 @@
       </plugin>
     </plugins>
   </build>
-
   <scm>
     <tag>2.2.1-rc2</tag>
   </scm>

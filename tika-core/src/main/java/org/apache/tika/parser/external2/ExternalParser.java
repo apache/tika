@@ -104,7 +104,7 @@ public class ExternalParser extends AbstractParser implements Initializable {
         //this may remain null, depending on whether the external parser writes to a file
         Path outFile = null;
         try (TemporaryResources tmp = new TemporaryResources()) {
-            TikaInputStream tis = TikaInputStream.get(stream, tmp);
+            TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
             Path p = tis.getPath();
             List<String> thisCommandLine = new ArrayList<>();
             Matcher inputMatcher = INPUT_TOKEN_MATCHER.matcher("");

@@ -51,6 +51,11 @@
         -->
     <dependencies>
       <dependency>
+        <groupId>com.amazonaws</groupId>
+        <artifactId>aws-java-sdk-s3</artifactId>
+        <version>${aws.version}</version>
+      </dependency>
+      <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-storage-blob</artifactId>
         <!-- when upgrading this, remove it from ossindex exclusions in parent -->
@@ -71,6 +76,11 @@
                 <artifactId>netty-transport-native-epoll</artifactId>
             </exclusion>
         </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>com.google.cloud</groupId>
+        <artifactId>google-cloud-storage</artifactId>
+        <version>${google.cloud.version}</version>
       </dependency>
       <dependency>
         <groupId>io.projectreactor</groupId>

@@ -78,7 +78,7 @@ public class ISArchiveParser implements Parser {
         TemporaryResources tmp =
                 TikaInputStream.isTikaInputStream(stream) ? null : new TemporaryResources();
 
-        TikaInputStream tis = TikaInputStream.get(stream, tmp);
+        TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
         try {
             if (this.location == null) {
                 this.location = tis.getFile().getParent() + File.separator;

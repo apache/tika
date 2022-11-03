@@ -108,7 +108,7 @@ public class FileCommandDetector implements Detector {
 
         input.mark(maxBytes);
         try (TemporaryResources tmp = new TemporaryResources()) {
-            Path tmpFile = tmp.createTempFile();
+            Path tmpFile = tmp.createTempFile(metadata);
             Files.copy(new BoundedInputStream(maxBytes, input), tmpFile, REPLACE_EXISTING);
             return detectOnPath(tmpFile, metadata);
         } finally {
