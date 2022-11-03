@@ -376,7 +376,7 @@
     <quartz.version>2.3.2</quartz.version>
     <reactor.netty.version>1.0.24</reactor.netty.version>
     <rome.version>1.18.0</rome.version>
-    <scm.version>1.13.0</scm.version>
+    <scm.version>2.0.0-M3</scm.version>
     <sis.version>1.2</sis.version>
     <slf4j.version>2.0.3</slf4j.version>
     <solrj.version>8.11.2</solrj.version>
