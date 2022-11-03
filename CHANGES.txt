@@ -1,4 +1,6 @@
-Release 2.5.1 - ???
+Release 2.6.0 - 11/3/2022
+
+   * Add optional Siegfried detector (TIKA-3901).
 
    * Move OverrideDetector's functionality to the CompositeDetector (TIKA-3904).
 
