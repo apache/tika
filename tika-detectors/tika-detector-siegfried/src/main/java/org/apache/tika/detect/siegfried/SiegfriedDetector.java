@@ -69,6 +69,9 @@ public class SiegfriedDetector implements Detector {
     public static Property SIEGFRIED_IDENTIFIERS_DETAILS =
             Property.externalTextBag(SIEGFRIED_PREFIX + "identifiers_details");
 
+    public static Property SIEGFRIED_ERRORS =
+            Property.externalTextBag(SIEGFRIED_PREFIX + "errors");
+
     //TODO -- grab errors and warnings
 
     public static String ID = "id";
@@ -77,6 +80,8 @@ public class SiegfriedDetector implements Detector {
     public static String MIME = "mime";
     public static String WARNING = "warning";
     public static String BASIS = "basis";
+
+    public static String ERRORS = "errors";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SiegfriedDetector.class);
     private static final long DEFAULT_TIMEOUT_MS = 6000;
@@ -203,8 +208,18 @@ public class SiegfriedDetector implements Detector {
         MediaType mt = MediaType.OCTET_STREAM;
         if (root.has("files")) {
             for (JsonNode file : root.get("files")) {
-                //TODO
-///                String errors = file.get("errors").asText("");
+
+                if (file.has(ERRORS)) {
+                    JsonNode errors = file.get(ERRORS);
+                    if (errors.isTextual()) {
+                        metadata.add(SIEGFRIED_ERRORS, file.get(ERRORS).asText());
+                    } else if (errors.isArray()) {
+                        //is this even possible?!
+                        for (JsonNode e : errors) {
+                            metadata.add(SIEGFRIED_ERRORS, e.asText());
+                        }
+                    }
+                }
                 for (JsonNode match : file.get("matches")) {
                     String ns = match.has("ns") ? match.get("ns").asText(StringUtils.EMPTY) :
                             StringUtils.EMPTY;
