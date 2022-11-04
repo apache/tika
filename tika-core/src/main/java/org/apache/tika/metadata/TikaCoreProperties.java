@@ -291,6 +291,9 @@ public interface TikaCoreProperties {
     Property SIGNATURE_FILTER = Property.internalTextBag("signature:filter");
     Property SIGNATURE_CONTACT_INFO = Property.internalTextBag("signature:contact-info");
 
+    //is the file encrypted
+    Property IS_ENCRYPTED = Property.internalBoolean(TIKA_META_PREFIX + "encrypted");
+
     /**
      * A file might contain different types of embedded documents.
      * The most common is the ATTACHMENT.

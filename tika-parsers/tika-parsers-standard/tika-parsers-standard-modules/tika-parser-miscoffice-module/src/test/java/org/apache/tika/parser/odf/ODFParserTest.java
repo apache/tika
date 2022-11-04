@@ -414,6 +414,9 @@ public class ODFParserTest extends TikaTest {
         assertThrows(EncryptedDocumentException.class, () -> {
             getRecursiveMetadata(p, false);
         });
+
+        List<Metadata> metadataList = getRecursiveMetadata(p, true);
+        assertEquals("true", metadataList.get(0).get(TikaCoreProperties.IS_ENCRYPTED));
     }
 
     //this, of course, should throw an EncryptedDocumentException

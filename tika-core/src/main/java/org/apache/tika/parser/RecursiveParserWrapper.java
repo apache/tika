@@ -25,6 +25,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.CorruptedFileException;
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.exception.ZeroByteFileException;
@@ -162,6 +163,9 @@ public class RecursiveParserWrapper extends ParserDecorator {
             context.set(RecursivelySecureContentHandler.class, secureContentHandler);
             getWrappedParser().parse(tis, secureContentHandler, metadata, context);
         } catch (Throwable e) {
+            if (e instanceof EncryptedDocumentException) {
+                metadata.set(TikaCoreProperties.IS_ENCRYPTED, "true");
+            }
             if (WriteLimitReachedException.isWriteLimitReached(e)) {
                 metadata.set(TikaCoreProperties.WRITE_LIMIT_REACHED, "true");
             } else {
@@ -255,6 +259,9 @@ public class RecursiveParserWrapper extends ParserDecorator {
             } catch (CorruptedFileException e) {
                 throw e;
             } catch (TikaException e) {
+                if (e instanceof EncryptedDocumentException) {
+                    metadata.set(TikaCoreProperties.IS_ENCRYPTED, true);
+                }
                 if (context.get(ZeroByteFileException.IgnoreZeroByteFileException.class) != null &&
                         e instanceof ZeroByteFileException) {
                     //do nothing
