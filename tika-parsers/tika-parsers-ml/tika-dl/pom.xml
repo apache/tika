@@ -31,40 +31,6 @@
   <name>Apache Tika Deep Learning (powered by DL4J)</name>
   <url>http://maven.apache.org</url>
 
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>com.twelvemonkeys.common</groupId>
-        <artifactId>common-io</artifactId>
-        <version>${twelvemonkeys.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.twelvemonkeys.imageio</groupId>
-        <artifactId>imageio-bmp</artifactId>
-        <version>${twelvemonkeys.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.twelvemonkeys.imageio</groupId>
-        <artifactId>imageio-jpeg</artifactId>
-        <version>${twelvemonkeys.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.twelvemonkeys.imageio</groupId>
-        <artifactId>imageio-psd</artifactId>
-        <version>${twelvemonkeys.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.twelvemonkeys.imageio</groupId>
-        <artifactId>imageio-tiff</artifactId>
-        <version>${twelvemonkeys.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.freemarker</groupId>
-        <artifactId>freemarker</artifactId>
-        <version>2.3.31</version>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>

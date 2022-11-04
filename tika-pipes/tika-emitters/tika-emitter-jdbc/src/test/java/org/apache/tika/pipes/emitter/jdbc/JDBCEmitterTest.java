@@ -26,6 +26,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.sql.Timestamp;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -57,6 +59,12 @@ public class JDBCEmitterTest {
         data.add(new String[]{"k1", "true", "k2", "some string1", "k3", "4", "k4", "100"});
         data.add(new String[]{"k1", "false", "k2", "some string2", "k3", "5", "k4", "101"});
         data.add(new String[]{"k1", "true", "k2", "some string3", "k3", "6", "k4", "102"});
+        //test dates with and without timezones
+        data.add(new String[]{"k1", "false", "k2", "some string4", "k3", "7", "k4", "103", "k5",
+                "100002", "k6", "2022-11-04T17:10:15Z"});
+
+        data.add(new String[]{"k1", "true", "k2", "some string5", "k3", "8", "k4", "104", "k5",
+                "100002", "k6", "2022-11-04T17:10:15"});
         int id = 0;
         for (String[] d : data) {
             emitter.emit("id" + id++, Collections.singletonList(m(d)));
@@ -72,6 +80,12 @@ public class JDBCEmitterTest {
                         assertEquals("some string" + (rows + 1), rs.getString(3));
                         assertEquals(rows + 4, rs.getInt(4));
                         assertEquals(100 + rows, rs.getLong(5));
+                        if (rows > 2) {
+                            assertEquals(100002, rs.getLong(6));
+                            Timestamp timestamp = rs.getTimestamp(7);
+                            String str = timestamp.toInstant().atZone(ZoneId.of("UTC")).toString();
+                            assertEquals("2022-11-04T21:10:15Z[UTC]", str);
+                        }
                         rows++;
                     }
                 }

@@ -23,13 +23,21 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.sql.Types;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,6 +65,12 @@ import org.apache.tika.utils.StringUtils;
 public class JDBCEmitter extends AbstractEmitter implements Initializable, Closeable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JDBCEmitter.class);
+
+    //some file formats do not have time zones...
+    //try both
+    private static final String[] TIKA_DATE_PATTERNS = new String[] {
+            "yyyy-MM-dd'T'HH:mm:ss'Z'","yyyy-MM-dd'T'HH:mm:ss"
+    };
     //the "write" lock is used for creating the table
     private static ReadWriteLock READ_WRITE_LOCK = new ReentrantReadWriteLock();
     //this keeps track of which table + connection string have been created
@@ -73,6 +87,17 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     private PreparedStatement insertStatement;
     private AttachmentStrategy attachmentStrategy = AttachmentStrategy.FIRST_ONLY;
 
+    //emitters are run in a single thread.  If we ever start running them
+    //multithreaded, this will be a big problem.
+    private final DateFormat[] dateFormats;
+
+    public JDBCEmitter() {
+        dateFormats = new DateFormat[TIKA_DATE_PATTERNS.length];
+        int i = 0;
+        for (String p : TIKA_DATE_PATTERNS) {
+            dateFormats[i++] = new SimpleDateFormat(p, Locale.US);
+        }
+    }
     /**
      * This is called immediately after the table is created.
      * The purpose of this is to allow for adding a complex primary key or
@@ -192,6 +217,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     }
 
     private void insertAll(String emitKey, List<Metadata> metadataList) throws SQLException {
+
         for (int i = 0; i < metadataList.size(); i++) {
             insertStatement.clearParameters();
             int col = 0;
@@ -207,6 +233,10 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     private void insertFirstOnly(String emitKey, List<Metadata> metadataList) throws SQLException {
         insertStatement.clearParameters();
         int i = 0;
+        DateFormat[] dateFormats = new DateFormat[TIKA_DATE_PATTERNS.length];
+        for (int j = 0; j < TIKA_DATE_PATTERNS.length; j++) {
+            dateFormats[i] = new SimpleDateFormat(TIKA_DATE_PATTERNS[j], Locale.US);
+        }
         insertStatement.setString(++i, emitKey);
         for (Map.Entry<String, String> e : keys.entrySet()) {
             updateValue(insertStatement, ++i, e.getKey(), e.getValue(), 0, metadataList);
@@ -234,7 +264,13 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
         //for now we're only taking the info from the container document.
         Metadata metadata = metadataList.get(metadataListIndex);
         String val = metadata.get(key);
-        switch (type) {
+
+        String lcType = type.toLowerCase(Locale.US);
+        if (lcType.startsWith("varchar")) {
+            updateVarchar(lcType, insertStatement, i, val);
+            return;
+        }
+        switch (lcType) {
             case "string":
                 updateString(insertStatement, i, val);
                 break;
@@ -246,16 +282,73 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
             case "integer":
                 updateInteger(insertStatement, i, val);
                 break;
+            case "bigint":
             case "long":
                 updateLong(insertStatement, i, val);
                 break;
             case "float":
                 updateFloat(insertStatement, i, val);
                 break;
+            case "double":
+                updateDouble(insertStatement, i, val);
+                break;
+            case "timestamp":
+                updateTimestamp(insertStatement, i, val, dateFormats);
+                break;
             default:
                 throw new IllegalArgumentException("Can only process: 'string', 'boolean', 'int' " +
-                        "and 'long' types so far.  Please open a ticket to request other types");
+                        "and 'long' types so far.  Please open a ticket to request: " + type);
         }
+    }
+
+    private void updateDouble(PreparedStatement insertStatement, int i, String val) throws SQLException {
+        if (StringUtils.isBlank(val)) {
+            insertStatement.setNull(i, Types.DOUBLE);
+            return;
+        }
+        Double d = Double.parseDouble(val);
+        insertStatement.setDouble(i, d);
+    }
+
+    private void updateVarchar(String type, PreparedStatement insertStatement, int i, String val)
+            throws SQLException {
+        if (StringUtils.isBlank(val)) {
+            updateString(insertStatement, i, val);
+            return;
+        }
+        Matcher m = Pattern.compile("varchar\\((\\d+)\\)").matcher(type);
+        if (m.find()) {
+            int len = Integer.parseInt(m.group(1));
+            if (val.length() > len) {
+                int origLength = val.length();
+                val = val.substring(0, len);
+                LOGGER.warn("truncating varchar from {} to {}", origLength, len);
+            }
+            updateString(insertStatement, i, val);
+            return;
+        }
+        LOGGER.warn("couldn't parse varchar?! {}", type);
+        updateString(insertStatement, i, null);
+    }
+
+    private void updateTimestamp(PreparedStatement insertStatement, int i, String val,
+                                 DateFormat[] dateFormats) throws SQLException {
+        if (StringUtils.isBlank(val)) {
+            insertStatement.setNull(i, Types.TIMESTAMP);
+            return;
+        }
+
+        for (DateFormat df : dateFormats) {
+            try {
+                Date d = df.parse(val);
+                insertStatement.setTimestamp(i, new Timestamp(d.getTime()));
+                return;
+            } catch (ParseException e) {
+                //ignore
+            }
+        }
+        LOGGER.warn("Couldn't parse {}" + val);
+        insertStatement.setNull(i, Types.TIMESTAMP);
     }
 
     private void updateFloat(PreparedStatement insertStatement, int i, String val)

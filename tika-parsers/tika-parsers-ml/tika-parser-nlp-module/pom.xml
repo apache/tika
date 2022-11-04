@@ -29,25 +29,6 @@
     <name>Apache Tika natural language process module</name>
 
 
-    <dependencyManagement>
-        <dependencies>
-            <!-- need to specify this to avoid
-                  version clash within ctakes-core 4.0.0 -->
-            <dependency>
-                <groupId>org.apache.uima</groupId>
-                <artifactId>uimafit-core</artifactId>
-                <version>${uimafit.version}</version>
-                <scope>provided</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.uima</groupId>
-                <artifactId>uimaj-core</artifactId>
-                <version>${uima.version}</version>
-                <scope>provided</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>

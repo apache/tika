@@ -32,6 +32,8 @@
   <url>http://maven.apache.org</url>
 
 
+  <!-- we're not maintaining this module.
+  Keep this here instead of cluttering the parent pom -->
   <dependencyManagement>
     <dependencies>
       <dependency>

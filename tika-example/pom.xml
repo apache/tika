@@ -33,16 +33,6 @@
   <name>Apache Tika examples</name>
   <url>https://tika.apache.org/</url>
 
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>org.osgi</groupId>
-        <artifactId>org.osgi.compendium</artifactId>
-        <version>${osgi.compendium.version}</version>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
-
   <!-- List of dependencies that we depend on for the examples. See the full list of Tika
        modules and how to use them at http://mvnrepository.com/artifact/org.apache.tika.-->
   <dependencies>
