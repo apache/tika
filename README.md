@@ -48,7 +48,9 @@ has now been discovered to have a vulnerability:
 Maven Dependencies
 ==================
 
-Apache Tika provides *Bill of Material* (BOM) artifact to align Tika module versions and simplify version management.
+Apache Tika provides *Bill of Material* (BOM) artifact to align Tika module versions and simplify version management. 
+To avoid convergence errors in your own project, import this
+bom or Tika's parent pom.xml in your dependencey management section.
 
 If you use Apache Maven:
 
