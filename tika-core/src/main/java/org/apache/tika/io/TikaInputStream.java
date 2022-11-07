@@ -710,12 +710,16 @@ public class TikaInputStream extends TaggedInputStream {
             } else {
                 Path tmpFile = tmp.createTempFile(suffix);
                 if (maxBytes > -1) {
-                    try (InputStream lookAhead = new LookaheadInputStream(this, maxBytes)) {
-                        Files.copy(lookAhead, tmpFile, REPLACE_EXISTING);
-                        if (Files.size(tmpFile) >= maxBytes) {
+                    this.mark(maxBytes);
+                    try (BoundedInputStream boundedInputStream =
+                                 new BoundedInputStream(maxBytes, this)) {
+                        Files.copy(boundedInputStream, tmpFile, REPLACE_EXISTING);
+                        if (boundedInputStream.hasHitBound()) {
                             //tmpFile will be cleaned up when this TikaInputStream is closed
                             return null;
                         }
+                    } finally {
+                        this.reset();
                     }
                 } else {
                     // Spool the entire stream into a temporary file

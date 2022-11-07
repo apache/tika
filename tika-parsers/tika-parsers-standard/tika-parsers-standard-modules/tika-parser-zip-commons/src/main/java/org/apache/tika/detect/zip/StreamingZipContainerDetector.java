@@ -25,7 +25,7 @@ import org.apache.commons.io.IOUtils;
 
 import org.apache.tika.config.LoadErrorHandler;
 import org.apache.tika.config.ServiceLoader;
-import org.apache.tika.io.LookaheadInputStream;
+import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
@@ -80,9 +80,11 @@ public class StreamingZipContainerDetector extends DefaultZipContainerDetector {
         if (type == TIFF) {
             return TIFF;
         } else if (isZipArchive(type)) {
-
-            try (LookaheadInputStream lookahead = new LookaheadInputStream(input, markLimit)) {
+            input.mark(markLimit);
+            try (BoundedInputStream lookahead = new BoundedInputStream(markLimit, input)) {
                 return detectStreaming(lookahead, metadata);
+            } finally {
+                input.reset();
             }
         } else if (!type.equals(MediaType.OCTET_STREAM)) {
             return type;
