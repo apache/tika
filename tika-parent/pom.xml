@@ -1062,7 +1062,7 @@
             <dependency>
               <groupId>io.grpc</groupId>
               <artifactId>grpc-core</artifactId>
-              <version>1.50.1</version>
+              <version>1.50.2</version>
             </dependency>
             <exclude>
               <!-- CVE-2018-18928 does affect the java library not just the c/c++ library,
