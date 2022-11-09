@@ -1136,7 +1136,7 @@
             <bundledSignature>jdk-non-portable</bundledSignature>
             <bundledSignature>jdk-internal</bundledSignature>
             <!-- replace with ${commons.io.version} when available -->
-            <bundledSignature>commons-io-unsafe-2.7</bundledSignature>
+            <bundledSignature>commons-io-unsafe-2.11.0</bundledSignature>
           </bundledSignatures>
         </configuration>
         <executions>
