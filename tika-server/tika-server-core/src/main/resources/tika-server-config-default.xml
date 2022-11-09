@@ -34,10 +34,10 @@
           If not specified, a UUID will be generated.
           -->
       <id>my-id</id>
-      <!-- whether or not to allow CORS requests. Set to 'all' if you
-          want to allow all CORS requests. Set to NONE or leave blank
-           if you do not want to enable CORS. -->
-      <cors>NONE</cors>
+      <!-- Origin URL for cors requests. Set to '*' if you
+          want to allow all CORS requests. Leave blank or remove element
+          if you do not want to enable CORS. -->
+      <cors></cors>
       <!-- which digests to calculate, comma delimited (e.g. md5,sha256);
           optionally specify encoding followed by a colon (e.g. "sha1:32").
           Can be empty if you don't want to calculate a digest -->
