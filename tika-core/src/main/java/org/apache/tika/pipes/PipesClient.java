@@ -44,7 +44,6 @@ import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.utils.ProcessUtils;
 import org.apache.tika.utils.StringUtils;
@@ -334,7 +333,7 @@ public class PipesClient implements Closeable {
                 new UnsynchronizedByteArrayInputStream(bytes))) {
             EmitData emitData = (EmitData) objectInputStream.readObject();
 
-            String stack = getStack(emitData);
+            String stack = emitData.getContainerStackTrace();
             if (StringUtils.isBlank(stack)) {
                 return new PipesResult(emitData);
             } else {
@@ -345,13 +344,6 @@ public class PipesClient implements Closeable {
             //this should be catastrophic
             throw new RuntimeException(e);
         }
-    }
-
-    private String getStack(EmitData emitData) {
-        if (emitData.getMetadataList() == null || emitData.getMetadataList().size() < 1) {
-            return StringUtils.EMPTY;
-        }
-        return emitData.getMetadataList().get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION);
     }
 
     private void restart() throws IOException, InterruptedException, TimeoutException {

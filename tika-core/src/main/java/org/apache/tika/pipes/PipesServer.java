@@ -259,10 +259,10 @@ public class PipesServer implements Runnable {
      */
     private String getContainerStacktrace(FetchEmitTuple t, List<Metadata> metadataList) {
         if (metadataList == null || metadataList.size() < 1) {
-            return "";
+            return StringUtils.EMPTY;
         }
         String stack = metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION);
-        return (stack != null) ? stack : "";
+        return (stack != null) ? stack : StringUtils.EMPTY;
     }
 
 
@@ -354,6 +354,8 @@ public class PipesServer implements Runnable {
     private void emitIt(FetchEmitTuple t, List<Metadata> metadataList) {
         long start = System.currentTimeMillis();
         String stack = getContainerStacktrace(t, metadataList);
+        //we need to apply this after we pull out the stacktrace
+        filterMetadata(metadataList);
         if (StringUtils.isBlank(stack) || t.getOnParseException() == FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT) {
             injectUserMetadata(t.getMetadata(), metadataList);
             EmitKey emitKey = t.getEmitKey();
@@ -361,14 +363,13 @@ public class PipesServer implements Runnable {
                 emitKey = new EmitKey(emitKey.getEmitterName(), t.getFetchKey().getFetchKey());
                 t.setEmitKey(emitKey);
             }
-            EmitData emitData = new EmitData(t.getEmitKey(), metadataList);
+            EmitData emitData = new EmitData(t.getEmitKey(), metadataList, stack);
             if (maxForEmitBatchBytes >= 0 && emitData.getEstimatedSizeBytes() >= maxForEmitBatchBytes) {
                 emit(t.getId(), emitData, stack);
                 if (LOG.isTraceEnabled()) {
                     LOG.trace("timer -- emitted: {} ms", System.currentTimeMillis() - start);
                 }
             } else {
-                //ignore the stack, it is stored in the emit data
                 write(emitData);
                 if (LOG.isTraceEnabled()) {
                     LOG.trace("timer -- to write data: {} ms", System.currentTimeMillis() - start);
@@ -376,6 +377,16 @@ public class PipesServer implements Runnable {
             }
         } else {
             write(STATUS.PARSE_EXCEPTION_NO_EMIT, stack);
+        }
+    }
+
+    private void filterMetadata(List<Metadata> metadataList) {
+        for (Metadata m : metadataList) {
+            try {
+                tikaConfig.getMetadataFilter().filter(m);
+            } catch (TikaException e) {
+                LOG.warn("failed to filter metadata", e);
+            }
         }
     }
 
@@ -516,11 +527,6 @@ public class PipesServer implements Runnable {
             if (containerException != null) {
                 metadata.add(TikaCoreProperties.CONTAINER_EXCEPTION, containerException);
             }
-            try {
-                tikaConfig.getMetadataFilter().filter(metadata);
-            } catch (TikaException e) {
-                LOG.warn("exception mapping metadata", e);
-            }
             if (LOG.isTraceEnabled()) {
                 LOG.trace("timer -- parse only time: {} ms", System.currentTimeMillis() - start);
             }
@@ -531,9 +537,11 @@ public class PipesServer implements Runnable {
     private List<Metadata> parseRecursive(FetchEmitTuple fetchEmitTuple,
                                           HandlerConfig handlerConfig, InputStream stream,
                                           Metadata metadata) {
+        //Intentionally do not add the metadata filter here!
+        //We need to let stacktraces percolate
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
                 new BasicContentHandlerFactory(handlerConfig.getType(), handlerConfig.getWriteLimit()),
-                handlerConfig.getMaxEmbeddedResources(), tikaConfig.getMetadataFilter());
+                handlerConfig.getMaxEmbeddedResources());
         ParseContext parseContext = new ParseContext();
         long start = System.currentTimeMillis();
         try {
