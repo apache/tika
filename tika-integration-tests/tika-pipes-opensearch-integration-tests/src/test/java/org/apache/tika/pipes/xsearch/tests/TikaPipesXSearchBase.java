@@ -125,8 +125,9 @@ public abstract class TikaPipesXSearchBase {
             }
             statusCounts.put(status, cnt);
         }
-        //the npe is caught and counted as a "parse success"
-        assertEquals(numHtmlDocs + 1, (int) statusCounts.get("PARSE_SUCCESS"));
+        assertEquals(numHtmlDocs, (int) statusCounts.get("PARSE_SUCCESS"));
+        //the npe is caught and counted as a "parse success with exception"
+        assertEquals(1, (int) statusCounts.get("PARSE_SUCCESS_WITH_EXCEPTION"));
         //the embedded docx is emitted directly
         assertEquals(1, (int) statusCounts.get("EMIT_SUCCESS"));
         assertEquals(2, (int) statusCounts.get("OOM"));
