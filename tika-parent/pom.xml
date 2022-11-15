@@ -296,7 +296,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.15.0</google.cloud.version>
-    <aws.version>1.12.338</aws.version>
+    <aws.version>1.12.342</aws.version>
     <asm.version>9.4</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
@@ -359,7 +359,7 @@
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <!-- 0.8.6 is built with java 11 and does not work with Java 8 -->
     <mime4j.version>0.8.4</mime4j.version>
-    <mockito.version>4.8.1</mockito.version>
+    <mockito.version>4.9.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <openjson.version>1.0.12</openjson.version>
     <!-- 2.0.0 doesn't compile with jdk8 -->
@@ -394,7 +394,7 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <zstd.version>1.5.2-5</zstd.version>
     <kafka.version>3.3.1</kafka.version>
-    <netty.version>4.1.84.Final</netty.version>
+    <netty.version>4.1.85.Final</netty.version>
   </properties>
 
   <dependencyManagement>
@@ -635,11 +635,6 @@
       <dependency>
         <groupId>io.netty</groupId>
         <artifactId>netty-transport</artifactId>
-        <version>${netty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-transport-native-unix-common</artifactId>
         <version>${netty.version}</version>
       </dependency>
       <dependency>
@@ -916,7 +911,7 @@
       <dependency>
         <groupId>org.netpreserve</groupId>
         <artifactId>jwarc</artifactId>
-        <version>0.19.0</version>
+        <version>0.20.0</version>
       </dependency>
       <dependency>
         <groupId>org.ops4j.base</groupId>
@@ -1136,7 +1131,7 @@
             <bundledSignature>jdk-non-portable</bundledSignature>
             <bundledSignature>jdk-internal</bundledSignature>
             <!-- replace with ${commons.io.version} when available -->
-            <bundledSignature>commons-io-unsafe-2.7</bundledSignature>
+            <bundledSignature>commons-io-unsafe-2.11.0</bundledSignature>
           </bundledSignatures>
         </configuration>
         <executions>
