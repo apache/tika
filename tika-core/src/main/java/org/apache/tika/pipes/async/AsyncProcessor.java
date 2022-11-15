@@ -289,6 +289,7 @@ public class AsyncProcessor implements Closeable {
                         try {
                             result = pipesClient.process(t);
                         } catch (IOException e) {
+                            LOG.warn("pipesClient crash", e);
                             result = PipesResult.UNSPECIFIED_CRASH;
                         }
                         if (LOG.isTraceEnabled()) {

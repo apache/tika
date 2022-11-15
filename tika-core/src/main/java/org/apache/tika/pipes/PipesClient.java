@@ -356,6 +356,7 @@ public class PipesClient implements Closeable {
 
     private void restart() throws IOException, InterruptedException, TimeoutException {
         if (process != null) {
+            LOG.debug("process still alive; trying to destroy it");
             destroyForcibly();
             boolean processEnded = process.waitFor(30, TimeUnit.SECONDS);
             if (! processEnded) {
@@ -379,8 +380,14 @@ public class PipesClient implements Closeable {
         }
         ProcessBuilder pb = new ProcessBuilder(getCommandline());
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
-        process = pb.start();
 
+        try {
+            process = pb.start();
+        } catch (Exception e) {
+            //Do we ever want this to be not fatal?!
+            LOG.error("failed to start client", e);
+            throw new FailedToStartClientException(e);
+        }
         input = new DataInputStream(process.getInputStream());
         output = new DataOutputStream(process.getOutputStream());
 
