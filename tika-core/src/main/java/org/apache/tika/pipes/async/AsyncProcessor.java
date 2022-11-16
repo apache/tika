@@ -82,41 +82,43 @@ public class AsyncProcessor implements Closeable {
                 asyncConfig.getNumClients() + asyncConfig.getNumEmitters() + 1);
         this.executorCompletionService =
                 new ExecutorCompletionService<>(executorService);
-        if (!tikaConfigPath.toAbsolutePath()
-                .equals(asyncConfig.getTikaConfig().toAbsolutePath())) {
-            LOG.warn("TikaConfig for AsyncProcessor ({}) is different " +
-                    "from TikaConfig for workers ({}). If this is intended," +
-                    " please ignore this warning.",
-                    tikaConfigPath.toAbsolutePath(),
-                    asyncConfig.getTikaConfig().toAbsolutePath()
-            );
-        }
-        this.executorCompletionService.submit(() -> {
-            while (true) {
-                try {
-                    Thread.sleep(500);
-                    checkActive();
-                } catch (InterruptedException e) {
-                    return WATCHER_FUTURE_CODE;
-                }
+        try {
+            if (!tikaConfigPath.toAbsolutePath().equals(asyncConfig.getTikaConfig().toAbsolutePath())) {
+                LOG.warn("TikaConfig for AsyncProcessor ({}) is different " +
+                                "from TikaConfig for workers ({}). If this is intended," +
+                                " please ignore this warning.", tikaConfigPath.toAbsolutePath(),
+                        asyncConfig.getTikaConfig().toAbsolutePath());
             }
-        });
-        //this is run in a daemon thread
-        if (pipesIterator != null &&
-                (pipesIterator instanceof TotalCounter)) {
-            LOG.debug("going to total counts");
-            startCounter((TotalCounter) pipesIterator);
-        }
+            this.executorCompletionService.submit(() -> {
+                while (true) {
+                    try {
+                        Thread.sleep(500);
+                        checkActive();
+                    } catch (InterruptedException e) {
+                        return WATCHER_FUTURE_CODE;
+                    }
+                }
+            });
+            //this is run in a daemon thread
+            if (pipesIterator != null && (pipesIterator instanceof TotalCounter)) {
+                LOG.debug("going to total counts");
+                startCounter((TotalCounter) pipesIterator);
+            }
 
-        for (int i = 0; i < asyncConfig.getNumClients(); i++) {
-            executorCompletionService.submit(new FetchEmitWorker(asyncConfig, fetchEmitTuples,
-                    emitData));
-        }
+            for (int i = 0; i < asyncConfig.getNumClients(); i++) {
+                executorCompletionService.submit(
+                        new FetchEmitWorker(asyncConfig, fetchEmitTuples, emitData));
+            }
 
-        EmitterManager emitterManager = EmitterManager.load(asyncConfig.getTikaConfig());
-        for (int i = 0; i < asyncConfig.getNumEmitters(); i++) {
-            executorCompletionService.submit(new AsyncEmitter(asyncConfig, emitData,
-                    emitterManager));
+            EmitterManager emitterManager = EmitterManager.load(asyncConfig.getTikaConfig());
+            for (int i = 0; i < asyncConfig.getNumEmitters(); i++) {
+                executorCompletionService.submit(
+                        new AsyncEmitter(asyncConfig, emitData, emitterManager));
+            }
+        } catch (Exception e) {
+            executorService.shutdownNow();
+            asyncConfig.getPipesReporter().close();
+            throw e;
         }
     }
 
