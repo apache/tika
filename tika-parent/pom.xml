@@ -44,10 +44,20 @@
 
   <url>https://tika.apache.org/</url>
 
+  <organization>
+    <name>The Apache Software Foundation</name>
+    <url>https://www.apache.org</url>
+  </organization>
+
   <issueManagement>
     <system>JIRA</system>
     <url>https://issues.apache.org/jira/browse/TIKA</url>
   </issueManagement>
+
+  <ciManagement>
+    <system>Jenkins</system>
+    <url>https://ci-builds.apache.org/job/Tika/</url>
+  </ciManagement>
 
   <mailingLists>
     <mailingList>
