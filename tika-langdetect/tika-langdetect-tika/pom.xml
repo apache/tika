@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <!--
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -17,17 +18,20 @@
   specific language governing permissions and limitations
   under the License.
 -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <parent>
-    <artifactId>tika-langdetect</artifactId>
-    <groupId>org.apache.tika</groupId>
-    <version>2.6.1-SNAPSHOT</version>
-  </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>tika-langdetect-tika</artifactId>
-  <name>Apache Tika langdetect (legacy builtin)</name>
+  <parent>
+    <groupId>org.apache.tika</groupId>
+    <artifactId>tika-langdetect</artifactId>
+    <version>2.6.1-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
 
+  <artifactId>tika-langdetect-tika</artifactId>
+
+  <name>Apache Tika langdetect (legacy builtin)</name>
 
   <dependencies>
     <dependency>
@@ -38,12 +42,12 @@
 
     <!-- test dependencies -->
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-langdetect-test-commons</artifactId>
-      <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
+
   <build>
     <plugins>
       <plugin>
@@ -58,8 +62,4 @@
       </plugin>
     </plugins>
   </build>
-
-  <scm>
-    <tag>2.2.1-rc2</tag>
-  </scm>
 </project>

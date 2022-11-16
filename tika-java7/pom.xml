@@ -31,13 +31,31 @@
 
   <artifactId>tika-java7</artifactId>
   <packaging>bundle</packaging>
+
   <name>Apache Tika Java-7 Components</name>
-  <url>https://tika.apache.org/</url>
+  <description>Java-7 reliant components, including FileTypeDetector implementations</description>
 
   <properties>
     <maven.compiler.source>1.7</maven.compiler.source>
     <maven.compiler.target>1.7</maven.compiler.target>
   </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-parsers-standard-package</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>biz.aQute.bnd</groupId>
+      <artifactId>biz.aQute.bndlib</artifactId>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
 
   <build>
     <plugins>
@@ -74,40 +92,4 @@
       </plugin>
     </plugins>
   </build>
-
-  <dependencies>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-core</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-parsers-standard-package</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>biz.aQute.bnd</groupId>
-      <artifactId>biz.aQute.bndlib</artifactId>
-      <scope>provided</scope>
-    </dependency>
-  </dependencies>
-
-  <description>Java-7 reliant components, including FileTypeDetector implementations</description>
-  <organization>
-    <name>The Apache Software Foundation</name>
-    <url>http://www.apache.org</url>
-  </organization>
-  <issueManagement>
-    <system>JIRA</system>
-    <url>https://issues.apache.org/jira/browse/TIKA</url>
-  </issueManagement>
-  <ciManagement>
-    <system>Jenkins</system>
-    <url>https://builds.apache.org/job/Tika-trunk/</url>
-  </ciManagement>
-
-  <scm>
-    <tag>2.2.1-rc2</tag>
-  </scm>
 </project>

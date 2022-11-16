@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <!--
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -17,24 +18,28 @@
   specific language governing permissions and limitations
   under the License.
 -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <parent>
-    <artifactId>tika-parsers-extended</artifactId>
-    <groupId>org.apache.tika</groupId>
-    <version>2.6.1-SNAPSHOT</version>
-  </parent>
   <modelVersion>4.0.0</modelVersion>
 
+  <parent>
+    <groupId>org.apache.tika</groupId>
+    <artifactId>tika-parsers-extended</artifactId>
+    <version>2.6.1-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+
   <artifactId>tika-parser-scientific-module</artifactId>
+
   <name>Apache Tika scientific parser module</name>
 
   <dependencies>
     <!-- needed by AutoDetectReader in EnviHeaderParser -->
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-parser-text-module</artifactId>
-      <version>${project.version}</version>
     </dependency>
+
     <dependency>
       <groupId>org.apache.sis.core</groupId>
       <artifactId>sis-utility</artifactId>
@@ -87,7 +92,6 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-csv</artifactId>
-      <version>${commons.csv.version}</version>
     </dependency>
     <!-- for java 10
 See TIKA-2778 for why we need to do this now.
@@ -96,7 +100,6 @@ May the gods of dependency management fix this in the future.
     <dependency>
       <groupId>org.glassfish.jaxb</groupId>
       <artifactId>jaxb-runtime</artifactId>
-      <version>${jaxb.version}</version>
     </dependency>
   </dependencies>
 
@@ -132,11 +135,6 @@ May the gods of dependency management fix this in the future.
           </execution>
         </executions>
       </plugin>
-
     </plugins>
   </build>
-
-  <scm>
-    <tag>2.2.1-rc2</tag>
-  </scm>
 </project>

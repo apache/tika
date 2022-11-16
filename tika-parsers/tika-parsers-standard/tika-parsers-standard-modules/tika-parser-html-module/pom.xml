@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <!--
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -17,23 +18,25 @@
   specific language governing permissions and limitations
   under the License.
 -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
   <parent>
-    <artifactId>tika-parsers-standard-modules</artifactId>
     <groupId>org.apache.tika</groupId>
+    <artifactId>tika-parsers-standard-modules</artifactId>
     <version>2.6.1-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
-  <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-parser-html-module</artifactId>
+
   <name>Apache Tika html parser module</name>
 
   <dependencies>
     <dependency>
       <groupId>org.ccil.cowan.tagsoup</groupId>
       <artifactId>tagsoup</artifactId>
-      <version>${tagsoup.version}</version>
     </dependency>
 
     <dependency>
@@ -44,12 +47,12 @@
     <!-- test scope -->
     <!-- this is required for basic encoding detection -->
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-parser-text-module</artifactId>
-      <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
+
   <build>
     <plugins>
       <plugin>
@@ -72,8 +75,4 @@
       </plugin>
     </plugins>
   </build>
-
-  <scm>
-    <tag>2.2.1-rc2</tag>
-  </scm>
 </project>

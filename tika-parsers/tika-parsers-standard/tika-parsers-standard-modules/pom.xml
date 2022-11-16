@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <!--
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -17,32 +18,30 @@
   specific language governing permissions and limitations
   under the License.
 -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
   <parent>
-    <artifactId>tika-parsers-standard</artifactId>
     <groupId>org.apache.tika</groupId>
+    <artifactId>tika-parsers-standard</artifactId>
     <version>2.6.1-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-
-  <modelVersion>4.0.0</modelVersion>
-
   <artifactId>tika-parsers-standard-modules</artifactId>
   <packaging>pom</packaging>
+
   <name>Apache Tika standard parser modules</name>
-
-  <url>https://tika.apache.org/</url>
-
 
   <dependencies>
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-core</artifactId>
-      <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
+
   <modules>
     <module>tika-parser-html-commons</module>
     <module>tika-parser-jdbc-commons</module>
@@ -70,6 +69,7 @@
     <module>tika-parser-crypto-module</module>
     <module>tika-parser-webarchive-module</module>
   </modules>
+
   <build>
     <pluginManagement>
       <plugins>
@@ -108,8 +108,4 @@
       </plugins>
     </pluginManagement>
   </build>
-
-  <scm>
-    <tag>2.2.1-rc2</tag>
-  </scm>
 </project>

@@ -30,8 +30,9 @@
   </parent>
 
   <artifactId>tika-example</artifactId>
+
   <name>Apache Tika examples</name>
-  <url>https://tika.apache.org/</url>
+  <description>This module contains examples of how to use Apache Tika.</description>
 
   <!-- List of dependencies that we depend on for the examples. See the full list of Tika
        modules and how to use them at http://mvnrepository.com/artifact/org.apache.tika.-->
@@ -39,37 +40,31 @@
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-app</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-serialization</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-translate</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-langdetect-optimaize</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-eval-core</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-transcribe-aws</artifactId>
-      <version>${project.version}</version>
     </dependency>
+
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-core</artifactId>
-      <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
@@ -103,7 +98,6 @@
     <dependency>
       <groupId>org.apache.lucene</groupId>
       <artifactId>lucene-core</artifactId>
-      <version>${lucene.version}</version>
     </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
@@ -112,7 +106,6 @@
     </dependency>
   </dependencies>
 
-  <description>This module contains examples of how to use Apache Tika.</description>
   <build>
     <plugins>
       <plugin>
@@ -147,8 +140,4 @@
       </plugin>
     </plugins>
   </build>
-
-  <scm>
-    <tag>2.2.1-rc2</tag>
-  </scm>
 </project>

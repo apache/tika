@@ -771,6 +771,16 @@
         <version>${lucene.version}</version>
       </dependency>
       <dependency>
+        <groupId>org.apache.lucene</groupId>
+        <artifactId>lucene-memory</artifactId>
+        <version>${lucene.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.solr</groupId>
+        <artifactId>solr-solrj</artifactId>
+        <version>${solrj.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.apache.opennlp</groupId>
         <artifactId>opennlp-tools</artifactId>
         <version>${opennlp.version}</version>
@@ -1288,8 +1298,9 @@
       <developerConnection>scm:git:https://github.com/apache/</developerConnection>
       <url>https://github.com/apache/tika</url>
   -->
+  <!-- FIXME: check if correct connection/developerConnection should be set -->
   <scm>
-    <tag>2.3.0-rc1</tag>
+    <tag>main</tag>
     <connection>scm:git:https://github.com/apache/</connection>
     <developerConnection>scm:git:https://github.com/apache/</developerConnection>
     <url>https://github.com/apache/tika</url>

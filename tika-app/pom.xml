@@ -34,49 +34,42 @@
   <url>https://tika.apache.org/</url>
 
   <properties>
+    <!--suppress UnresolvedMavenProperty -->
     <ikvm>${env.IKVM_HOME}</ikvm>
   </properties>
 
   <dependencies>
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-parsers-standard-package</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-parser-html-commons</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-langdetect-optimaize</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-serialization</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-xmp</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-batch</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-emitter-fs</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-async-cli</artifactId>
-      <version>${project.version}</version>
     </dependency>
 
     <!-- logging -->
@@ -279,21 +272,4 @@
       </build>
     </profile>
   </profiles>
-
-  <organization>
-    <name>The Apache Software Foundation</name>
-    <url>http://www.apache.org</url>
-  </organization>
-  <issueManagement>
-    <system>JIRA</system>
-    <url>https://issues.apache.org/jira/browse/TIKA</url>
-  </issueManagement>
-  <ciManagement>
-    <system>Jenkins</system>
-    <url>https://builds.apache.org/job/Tika-trunk/</url>
-  </ciManagement>
-
-  <scm>
-    <tag>2.2.1-rc2</tag>
-  </scm>
 </project>

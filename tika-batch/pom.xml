@@ -31,19 +31,17 @@
 
   <artifactId>tika-batch</artifactId>
   <packaging>jar</packaging>
+
   <name>Apache Tika batch</name>
-  <url>https://tika.apache.org/</url>
 
   <dependencies>
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-core</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-serialization</artifactId>
-      <version>${project.version}</version>
     </dependency>
 
     <dependency>
@@ -58,7 +56,6 @@
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-core</artifactId>
-      <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
@@ -130,11 +127,6 @@
           </execution>
         </executions>
       </plugin>
-
     </plugins>
   </build>
-
-  <scm>
-    <tag>2.2.1-rc2</tag>
-  </scm>
 </project>

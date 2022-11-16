@@ -23,15 +23,17 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <artifactId>tika-parsers-ml</artifactId>
     <groupId>org.apache.tika</groupId>
+    <artifactId>tika-parsers-ml</artifactId>
     <version>2.6.1-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>tika-transcribe-aws</artifactId>
   <packaging>bundle</packaging>
+
   <name>Apache Tika transcribe aws</name>
-  <url>http://tika.apache.org/</url>
+
   <!--TODO use latest aws version or the one defined in the tika-parent-->
   <dependencies>
     <dependency>
@@ -49,6 +51,7 @@
       <artifactId>json-simple</artifactId>
     </dependency>
   </dependencies>
+
   <build>
     <plugins>
       <plugin>
@@ -130,8 +133,4 @@
       </plugins>
     </pluginManagement>
   </build>
-
-  <scm>
-    <tag>2.2.1-rc2</tag>
-  </scm>
 </project>

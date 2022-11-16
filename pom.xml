@@ -31,8 +31,12 @@
 
   <artifactId>tika</artifactId>
   <packaging>pom</packaging>
+
   <name>Apache Tika</name>
-  <url>https://tika.apache.org</url>
+  <description>
+    The Apache Tika™ toolkit detects and extracts metadata and structured text content from various documents
+    using existing parser libraries.
+  </description>
 
   <modules>
     <module>tika-parent</module>
@@ -55,6 +59,82 @@
     <module>tika-java7</module>
     <module>tika-detectors</module>
   </modules>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-bom</artifactId>
+        <version>2.6.1-SNAPSHOT</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+
+      <!-- reusable test dependencies -->
+      <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-batch</artifactId>
+        <version>2.6.1-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-app</artifactId>
+        <version>2.6.1-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-server-eval</artifactId>
+        <version>2.6.1-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-server-standard</artifactId>
+        <version>2.6.1-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-server-core</artifactId>
+        <version>2.6.1-SNAPSHOT</version>
+        <type>test-jar</type>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-core</artifactId>
+        <version>2.6.1-SNAPSHOT</version>
+        <type>test-jar</type>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-batch</artifactId>
+        <version>2.6.1-SNAPSHOT</version>
+        <type>test-jar</type>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-langdetect-test-commons</artifactId>
+        <version>2.6.1-SNAPSHOT</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-params</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
 
   <profiles>
     <profile>
@@ -196,23 +276,4 @@ least three +1 Tika PMC votes are cast.
       </plugin>
     </plugins>
   </build>
-  <description>The Apache Tika™ toolkit detects and extracts metadata and structured text content from various documents
-    using existing parser libraries.
-  </description>
-  <organization>
-    <name>The Apache Software Foundation</name>
-    <url>https://www.apache.org</url>
-  </organization>
-  <issueManagement>
-    <system>JIRA</system>
-    <url>https://issues.apache.org/jira/browse/TIKA</url>
-  </issueManagement>
-  <ciManagement>
-    <system>Jenkins</system>
-    <url>https://ci-builds.apache.org/job/Tika/job/tika-main-jdk8/</url>
-  </ciManagement>
-
-  <scm>
-    <tag>2.2.1-rc2</tag>
-  </scm>
 </project>

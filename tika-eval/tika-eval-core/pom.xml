@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <!--
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -17,33 +18,33 @@
   specific language governing permissions and limitations
   under the License.
 -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <parent>
-    <artifactId>tika-eval</artifactId>
-    <groupId>org.apache.tika</groupId>
-    <version>2.6.1-SNAPSHOT</version>
-  </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>tika-eval-core</artifactId>
-  <name>Apache Tika eval core</name>
+  <parent>
+    <groupId>org.apache.tika</groupId>
+    <artifactId>tika-eval</artifactId>
+    <version>2.6.1-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
 
+  <artifactId>tika-eval-core</artifactId>
+
+  <name>Apache Tika eval core</name>
 
   <dependencies>
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-core</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-serialization</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-langdetect-opennlp</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
@@ -60,17 +61,14 @@
     <dependency>
       <groupId>org.apache.lucene</groupId>
       <artifactId>lucene-core</artifactId>
-      <version>${lucene.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.lucene</groupId>
       <artifactId>lucene-analyzers-common</artifactId>
-      <version>${lucene.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.lucene</groupId>
       <artifactId>lucene-analyzers-icu</artifactId>
-      <version>${lucene.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -84,14 +82,12 @@
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-core</artifactId>
-      <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.lucene</groupId>
       <artifactId>lucene-memory</artifactId>
-      <version>${lucene.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -213,8 +209,4 @@
       </plugin>
     </plugins>
   </build>
-
-  <scm>
-    <tag>2.2.1-rc2</tag>
-  </scm>
 </project>

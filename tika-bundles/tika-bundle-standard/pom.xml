@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <!--
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -29,8 +30,8 @@
   </parent>
 
   <artifactId>tika-bundle-standard</artifactId>
-  <version>2.6.1-SNAPSHOT</version>
   <packaging>bundle</packaging>
+
   <name>Apache Tika OSGi standard bundle</name>
 
   <description>
@@ -39,7 +40,7 @@
     bundle exports no packages, only the Parser and Detector services
     from the tika-parsers component.
   </description>
-  <url>https://tika.apache.org/</url>
+
   <!-- pax doesn't yet work with junit4; checkstyle forbids junit4. -->
   <properties>
     <checkstyle.skip>true</checkstyle.skip>
@@ -47,19 +48,16 @@
 
   <dependencies>
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-core</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-parsers-standard-package</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-parser-html-commons</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
@@ -392,6 +390,7 @@
       </plugin>
 
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
         <version>${maven.failsafe.version}</version>
         <executions>
@@ -429,23 +428,4 @@
       </plugin>
     </plugins>
   </build>
-
-  <organization>
-    <name>The Apache Software Founation</name>
-    <url>http://www.apache.org</url>
-  </organization>
-  <issueManagement>
-    <system>JIRA</system>
-    <url>https://issues.apache.org/jira/browse/TIKA</url>
-  </issueManagement>
-  <ciManagement>
-    <system>Jenkins</system>
-    <url>https://builds.apache.org/job/Tika-trunk/</url>
-  </ciManagement>
-
-  <scm>
-    <tag>2.2.1-rc2</tag>
-  </scm>
 </project>
-
-

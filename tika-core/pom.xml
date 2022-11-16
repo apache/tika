@@ -31,8 +31,12 @@
 
   <artifactId>tika-core</artifactId>
   <packaging>bundle</packaging>
+
   <name>Apache Tika core</name>
-  <url>https://tika.apache.org/</url>
+  <description>
+    This is the core Apache Tika™ toolkit library from which all other modules inherit functionality. It
+    also includes the core facades for the Tika API.
+  </description>
 
   <dependencies>
     <!-- See https://issues.apache.org/jira/browse/TIKA-2566 for more info -->
@@ -43,21 +47,18 @@
     <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
-      <version>${commons.io.version}</version>
     </dependency>
 
     <!-- Optional OSGi dependencies, used only when running within OSGi -->
     <dependency>
       <groupId>org.osgi</groupId>
       <artifactId>org.osgi.core</artifactId>
-      <version>${osgi.core.version}</version>
       <scope>provided</scope>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.osgi</groupId>
       <artifactId>org.osgi.compendium</artifactId>
-      <version>${osgi.compendium.version}</version>
       <scope>provided</scope>
       <optional>true</optional>
     </dependency>
@@ -71,7 +72,6 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>${guava.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -83,25 +83,11 @@
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-core</artifactId>
-      <version>${log4j2.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-slf4j2-impl</artifactId>
-      <version>${log4j2.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
-      <version>${junit5.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-engine</artifactId>
-      <version>${junit5.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -216,6 +202,7 @@
         </executions>
       </plugin> -->
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
         <version>${maven.failsafe.version}</version>
         <configuration>
@@ -282,25 +269,4 @@
       </plugin>
     </plugins>
   </reporting>
-
-  <description>This is the core Apache Tika™ toolkit library from which all other modules inherit functionality. It
-    also
-    includes the core facades for the Tika API.
-  </description>
-  <organization>
-    <name>The Apache Software Foundation</name>
-    <url>http://www.apache.org</url>
-  </organization>
-  <issueManagement>
-    <system>JIRA</system>
-    <url>https://issues.apache.org/jira/browse/TIKA</url>
-  </issueManagement>
-  <ciManagement>
-    <system>Jenkins</system>
-    <url>https://builds.apache.org/job/Tika-trunk/</url>
-  </ciManagement>
-
-  <scm>
-    <tag>2.2.1-rc2</tag>
-  </scm>
 </project>

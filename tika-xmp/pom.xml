@@ -31,8 +31,31 @@
 
   <artifactId>tika-xmp</artifactId>
   <packaging>bundle</packaging>
+
   <name>Apache Tika XMP</name>
-  <url>https://tika.apache.org/</url>
+  <description>
+    Converts Tika metadata to XMP
+  </description>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-parser-microsoft-module</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-parser-miscoffice-module</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.adobe.xmp</groupId>
+      <artifactId>xmpcore</artifactId>
+      <version>${xmpcore.version}</version>
+    </dependency>
+  </dependencies>
 
   <build>
     <plugins>
@@ -77,45 +100,4 @@
       </plugin>
     </plugins>
   </build>
-
-  <dependencies>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-core</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-parser-microsoft-module</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-parser-miscoffice-module</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.adobe.xmp</groupId>
-      <artifactId>xmpcore</artifactId>
-      <version>${xmpcore.version}</version>
-    </dependency>
-  </dependencies>
-
-  <description>Converts Tika metadata to XMP</description>
-  <organization>
-    <name>The Apache Software Foundation</name>
-    <url>http://www.apache.org</url>
-  </organization>
-  <issueManagement>
-    <system>JIRA</system>
-    <url>https://issues.apache.org/jira/browse/TIKA</url>
-  </issueManagement>
-  <ciManagement>
-    <system>Jenkins</system>
-    <url>https://builds.apache.org/job/Tika-trunk/</url>
-  </ciManagement>
-
-  <scm>
-    <tag>2.2.1-rc2</tag>
-  </scm>
 </project>

@@ -31,34 +31,34 @@
 
   <artifactId>tika-translate</artifactId>
   <packaging>bundle</packaging>
+
   <name>Apache Tika translate</name>
-  <url>https://tika.apache.org/</url>
+  <description>
+    This is the translate Apache Tika™ toolkit. Translator implementations may depend on web services.
+  </description>
 
   <dependencies>
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-core</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-langdetect-optimaize</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>com.memetix</groupId>
       <artifactId>microsoft-translator-java-api</artifactId>
       <version>${microsoft.translator.version}</version>
-      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>com.googlecode.json-simple</groupId>
       <artifactId>json-simple</artifactId>
     </dependency>
     <!-- for java 10
-  See TIKA-2778 for why we need to do this now.
-  May the gods of dependency management fix this in the future.
-  -->
+      See TIKA-2778 for why we need to do this now.
+      May the gods of dependency management fix this in the future.
+    -->
     <dependency>
       <groupId>org.glassfish.jaxb</groupId>
       <artifactId>jaxb-runtime</artifactId>
@@ -93,10 +93,6 @@
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-annotations</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
     </dependency>
     <!-- web sockets -->
@@ -113,6 +109,7 @@
       <version>2.0.2</version>
     </dependency>
   </dependencies>
+
   <reporting>
     <plugins>
       <plugin>
@@ -140,6 +137,7 @@
       </plugin>
     </plugins>
   </reporting>
+
   <build>
     <plugins>
       <plugin>
@@ -225,27 +223,7 @@
             </lifecycleMappingMetadata>
           </configuration>
         </plugin>
-
       </plugins>
     </pluginManagement>
   </build>
-
-  <description>This is the translate Apache Tika™ toolkit. Translator implementations may depend on web services.
-  </description>
-  <organization>
-    <name>The Apache Software Foundation</name>
-    <url>http://www.apache.org</url>
-  </organization>
-  <issueManagement>
-    <system>JIRA</system>
-    <url>https://issues.apache.org/jira/browse/TIKA</url>
-  </issueManagement>
-  <ciManagement>
-    <system>Jenkins</system>
-    <url>https://builds.apache.org/job/Tika-trunk/</url>
-  </ciManagement>
-
-  <scm>
-    <tag>2.2.1-rc2</tag>
-  </scm>
 </project>

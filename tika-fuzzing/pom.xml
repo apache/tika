@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <!--
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -17,7 +18,10 @@
   specific language governing permissions and limitations
   under the License.
 -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika</artifactId>
@@ -26,27 +30,21 @@
   </parent>
 
   <artifactId>tika-fuzzing</artifactId>
+
   <name>Apache Tika fuzzing</name>
-  <url>https://tika.apache.org/</url>
-
-  <modelVersion>4.0.0</modelVersion>
-
 
   <dependencies>
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-core</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-serialization</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-emitter-fs</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>commons-cli</groupId>
@@ -56,18 +54,15 @@
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-parser-pkg-module</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-parser-pdf-module</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <!-- logging -->
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-slf4j2-impl</artifactId>
-      <version>${log4j2.version}</version>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -77,18 +72,17 @@
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-parser-digest-commons</artifactId>
-      <version>${project.version}</version>
     </dependency>
 
     <!-- bring in the mock parser -->
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-core</artifactId>
-      <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
   </dependencies>
+
   <build>
     <plugins>
       <plugin>

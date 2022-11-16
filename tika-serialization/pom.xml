@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- 
+<!--
   Licensed to the Apache Software Foundation (ASF) under one 
   or more contributor license agreements. See the NOTICE file 
   distributed with this work for additional information 
@@ -30,10 +30,21 @@
   </parent>
 
   <artifactId>tika-serialization</artifactId>
+
   <name>Apache Tika serialization</name>
-  <url>https://tika.apache.org</url>
 
   <dependencies>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-core</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
+
     <!-- Optional OSGi dependency, used only when running within OSGi -->
     <dependency>
       <groupId>org.osgi</groupId>
@@ -41,21 +52,8 @@
       <scope>provided</scope>
       <optional>true</optional>
     </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-core</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-    </dependency>
   </dependencies>
+
   <build>
     <plugins>
       <plugin>
@@ -108,8 +106,4 @@
       </plugin>
     </plugins>
   </build>
-
-  <scm>
-    <tag>2.2.1-rc2</tag>
-  </scm>
 </project>

@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <!--
   Licensed to the Apache Software Foundation (ASF) under one or more
   contributor license agreements.  See the NOTICE file distributed with
@@ -15,55 +16,39 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <parent>
-    <artifactId>tika-server</artifactId>
-    <groupId>org.apache.tika</groupId>
-    <version>2.6.1-SNAPSHOT</version>
-  </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>tika-server-standard</artifactId>
-  <name>Apache Tika standard server</name>
+  <parent>
+    <groupId>org.apache.tika</groupId>
+    <artifactId>tika-server</artifactId>
+    <version>2.6.1-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
 
+  <artifactId>tika-server-standard</artifactId>
+
+  <name>Apache Tika standard server</name>
 
   <dependencies>
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-server-core</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-parsers-standard-package</artifactId>
-      <version>${project.version}</version>
-      <!-- this is brought in by tika-server-core. Don't duplicate -->
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.tika</groupId>
-          <artifactId>tika-parser-digest-commons</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.tika</groupId>
-          <artifactId>tika-parser-zip-commons</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
-      <artifactId>tika-parser-html-commons</artifactId>
-      <version>${project.version}</version>
+      <artifactId>tika-parsers-standard-package</artifactId>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-xmp</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-emitter-fs</artifactId>
-      <version>${project.version}</version>
     </dependency>
+
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-core</artifactId>
@@ -72,28 +57,27 @@
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-slf4j2-impl</artifactId>
     </dependency>
+
     <!-- test jars -->
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-server-core</artifactId>
-      <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-core</artifactId>
-      <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-langdetect-opennlp</artifactId>
-      <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
+
   <build>
     <plugins>
       <plugin>
@@ -317,8 +301,4 @@
       </plugin>
     </plugins>
   </build>
-
-  <scm>
-    <tag>2.2.1-rc2</tag>
-  </scm>
 </project>
