@@ -291,13 +291,13 @@ public class PipesClient implements Closeable {
                 return readMessage(PipesResult.STATUS.FETCH_EXCEPTION);
             case PARSE_SUCCESS:
                 //there may have been a parse exception, but the parse didn't crash
-                LOG.info("pipesClientId={} parse success: {} in {} ms", pipesClientId, t.getId(),
+                LOG.debug("pipesClientId={} parse success: {} in {} ms", pipesClientId, t.getId(),
                         millis);
                 return deserializeEmitData();
             case PARSE_EXCEPTION_NO_EMIT:
                 return readMessage(PipesResult.STATUS.PARSE_EXCEPTION_NO_EMIT);
             case EMIT_SUCCESS:
-                LOG.info("pipesClientId={} emit success: {} in {} ms", pipesClientId, t.getId(),
+                LOG.debug("pipesClientId={} emit success: {} in {} ms", pipesClientId, t.getId(),
                         millis);
                 return PipesResult.EMIT_SUCCESS;
             case EMIT_SUCCESS_PARSE_EXCEPTION:
