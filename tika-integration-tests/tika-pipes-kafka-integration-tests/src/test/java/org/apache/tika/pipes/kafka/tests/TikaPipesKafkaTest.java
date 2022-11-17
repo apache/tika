@@ -18,6 +18,7 @@ package org.apache.tika.pipes.kafka.tests;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.File;
 import java.io.InputStream;
@@ -50,6 +51,7 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -61,6 +63,7 @@ import org.testcontainers.utility.DockerImageName;
 
 import org.apache.tika.cli.TikaCLI;
 import org.apache.tika.pipes.HandlerConfig;
+import org.apache.tika.utils.SystemUtils;
 
 /**
  * Test will emit some documents into a Kafka "pipe_iterator_topic", then kafka pipe iterator will
@@ -70,6 +73,11 @@ import org.apache.tika.pipes.HandlerConfig;
  */
 @Testcontainers(disabledWithoutDocker = true)
 public class TikaPipesKafkaTest {
+    @BeforeAll
+    public static void setUp() {
+        assumeTrue(!SystemUtils.IS_OS_MAC_OSX && !SystemUtils.OS_VERSION.equals("12.6.1"),
+                "This stopped working on macos x ... TIKA-3932");
+    }
     public static final String PIPE_ITERATOR_TOPIC = "pipe_iterator_topic";
     public static final String EMITTER_TOPIC = "emitter_topic";
     /**

@@ -16,11 +16,20 @@
  */
 package org.apache.tika.pipes.solr.tests;
 
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
+import org.junit.jupiter.api.BeforeAll;
 import org.testcontainers.junit.jupiter.Testcontainers;
+
+import org.apache.tika.utils.SystemUtils;
 
 @Testcontainers(disabledWithoutDocker = true)
 public class TikaPipesSolr6Test extends TikaPipesSolrTestBase {
-
+    @BeforeAll
+    public static void setUp() {
+        assumeTrue(!SystemUtils.IS_OS_MAC_OSX && !SystemUtils.OS_VERSION.equals("12.6.1"),
+                "This stopped working on macos x ... TIKA-3932");
+    }
     @Override
     public boolean useZk() {
         return false;
