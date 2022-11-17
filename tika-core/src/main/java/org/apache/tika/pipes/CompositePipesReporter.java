@@ -25,6 +25,7 @@ import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.pipes.pipesiterator.TotalCountResult;
 
 public class CompositePipesReporter extends PipesReporter implements Initializable {
 
@@ -36,6 +37,23 @@ public class CompositePipesReporter extends PipesReporter implements Initializab
             reporter.report(t, result, elapsed);
         }
 
+    }
+
+    @Override
+    public void report(TotalCountResult totalCountResult) {
+        for (PipesReporter reporter : pipesReporters) {
+            reporter.report(totalCountResult);
+        }
+    }
+
+    @Override
+    public boolean supportsTotalCount() {
+        for (PipesReporter reporter : pipesReporters) {
+            if (reporter.supportsTotalCount()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

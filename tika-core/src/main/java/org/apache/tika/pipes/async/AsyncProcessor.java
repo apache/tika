@@ -116,6 +116,7 @@ public class AsyncProcessor implements Closeable {
                         new AsyncEmitter(asyncConfig, emitData, emitterManager));
             }
         } catch (Exception e) {
+            LOG.error("problem initializing AsyncProcessor", e);
             executorService.shutdownNow();
             asyncConfig.getPipesReporter().error(e);
             throw e;
@@ -131,6 +132,7 @@ public class AsyncProcessor implements Closeable {
                 try {
                     Thread.sleep(500);
                     TotalCountResult result = totalCounter.getTotalCount();
+                    LOG.trace("counter total  {} {} ", result.getStatus(), result.getTotalCount());
                     pipesReporter.report(result);
                     status = result.getStatus();
                 } catch (InterruptedException e) {
