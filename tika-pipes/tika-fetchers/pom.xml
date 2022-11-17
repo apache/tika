@@ -38,6 +38,9 @@
     <module>tika-fetcher-az-blob</module>
   </modules>
 
+  <dependencies>
+
+  </dependencies>
   <scm>
     <tag>2.2.1-rc2</tag>
   </scm>

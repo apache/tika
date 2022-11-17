@@ -66,6 +66,15 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JDBCEmitter.class);
 
+    public enum AttachmentStrategy {
+        FIRST_ONLY, ALL
+        //anything else?
+    }
+
+    public enum MultivaluedFieldStrategy {
+        FIRST_ONLY, CONCATENATE
+        //anything else?
+    }
     //some file formats do not have time zones...
     //try both
     private static final String[] TIKA_DATE_PATTERNS = new String[] {
@@ -86,6 +95,11 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     private Connection connection;
     private PreparedStatement insertStatement;
     private AttachmentStrategy attachmentStrategy = AttachmentStrategy.FIRST_ONLY;
+
+    private MultivaluedFieldStrategy multivaluedFieldStrategy =
+            MultivaluedFieldStrategy.CONCATENATE;
+
+    private String multivaluedFieldDelimiter = ", ";
 
     //emitters are run in a single thread.  If we ever start running them
     //multithreaded, this will be a big problem.
@@ -122,6 +136,44 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     @Field
     public void setConnection(String connectionString) {
         this.connectionString = connectionString;
+    }
+
+    /**
+     * This applies to fields of type 'string' or 'varchar'.  If there's
+     * a multivalued field in a metadata object, do you want the first value only
+     * or should we concatenate these with the
+     * {@link JDBCEmitter#setMultivaluedFieldDelimiter(String)}.
+     *
+     * The default values as of 2.6.1 are {@link MultivaluedFieldStrategy#CONCATENATE}
+     * and the default delimiter is &quot;, &quot;
+     *
+     * @param strategy
+     * @throws TikaConfigException
+     */
+    @Field
+    public void setMultivaluedFieldStrategy(String strategy) throws TikaConfigException {
+        String lc = strategy.toLowerCase(Locale.US);
+        if (lc.equals("first_only")) {
+            setMultivaluedFieldStrategy(MultivaluedFieldStrategy.FIRST_ONLY);
+        } else if (lc.equals("concatenate")) {
+            setMultivaluedFieldStrategy(MultivaluedFieldStrategy.CONCATENATE);
+        } else {
+            throw new TikaConfigException("I'm sorry, I only recogize 'first_only' and " +
+                    "'concatenate'. I don't mind '" + strategy + "'");
+        }
+    }
+
+    public void setMultivaluedFieldStrategy(MultivaluedFieldStrategy multivaluedFieldStrategy) {
+        this.multivaluedFieldStrategy = multivaluedFieldStrategy;
+    }
+
+    /**
+     * See {@link JDBCEmitter#setMultivaluedFieldDelimiter(String)}
+      * @param delimiter
+     */
+    @Field
+    public void setMultivaluedFieldDelimiter(String delimiter) {
+        this.multivaluedFieldDelimiter = delimiter;
     }
 
     /**
@@ -261,10 +313,8 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     private void updateValue(PreparedStatement insertStatement, int i, String key, String type,
                              int metadataListIndex, List<Metadata> metadataList)
             throws SQLException {
-        //for now we're only taking the info from the container document.
         Metadata metadata = metadataList.get(metadataListIndex);
-        String val = metadata.get(key);
-
+        String val = getVal(metadata, key, type);
         String lcType = type.toLowerCase(Locale.US);
         if (lcType.startsWith("varchar")) {
             updateVarchar(lcType, insertStatement, i, val);
@@ -299,6 +349,35 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
                 throw new IllegalArgumentException("Can only process: 'string', 'boolean', 'int' " +
                         "and 'long' types so far.  Please open a ticket to request: " + type);
         }
+    }
+
+    private String getVal(Metadata metadata, String key, String type) {
+        if (! type.equals("string") && ! type.startsWith("varchar")) {
+            return metadata.get(key);
+        }
+        if (multivaluedFieldStrategy == MultivaluedFieldStrategy.FIRST_ONLY) {
+            return metadata.get(key);
+        }
+        String[] vals = metadata.getValues(key);
+        if (vals.length == 0) {
+            return null;
+        } else if (vals.length == 1) {
+            return vals[0];
+        }
+
+        int i = 0;
+        StringBuilder sb = new StringBuilder();
+        for (String val : metadata.getValues(key)) {
+            if (StringUtils.isBlank(val)) {
+                continue;
+            }
+            if (i > 0) {
+                sb.append(multivaluedFieldDelimiter);
+            }
+            sb.append(val);
+            i++;
+        }
+        return sb.toString();
     }
 
     private void updateDouble(PreparedStatement insertStatement, int i, String val) throws SQLException {
@@ -451,13 +530,4 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
         }
     }
 
-    /*
-        TODO: This is currently not ever called.  We need rework the PipesParser
-        to ensure that emitters are closed cleanly.
-     */
-
-    public enum AttachmentStrategy {
-        FIRST_ONLY, ALL
-        //anything else?
-    }
 }

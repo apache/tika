@@ -1,6 +1,9 @@
 Release 2.6.1 - ???
 
-   * Downgraded logging in PipesClient for each parse from info to debug.
+   * Add multivalued field strategy option in jdbc-emitter (TIKA-3930).
+     Default is now 'concatenate' with ', ' as the delimiter.
+
+   * Downgrade logging in PipesClient for each parse from info to debug.
 
 Release 2.6.0 - 11/3/2022
 

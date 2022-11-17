@@ -178,6 +178,44 @@ public class JDBCEmitterTest {
         }
     }
 
+    @Test
+    public void testMultiValuedFields(@TempDir Path tmpDir) throws Exception {
+        Files.createDirectories(tmpDir.resolve("db"));
+        Path dbDir = tmpDir.resolve("db/h2");
+        Path config = tmpDir.resolve("tika-config.xml");
+        String connectionString = "jdbc:h2:file:" + dbDir.toAbsolutePath();
+
+        writeConfig("/configs/tika-config-jdbc-emitter-multivalued.xml",
+                connectionString, config);
+
+        EmitterManager emitterManager = EmitterManager.load(config);
+        Emitter emitter = emitterManager.getEmitter();
+        List<Metadata> data = new ArrayList<>();
+        Metadata m = new Metadata();
+        m.add("k1", "first");
+        m.add("k1", "second");
+        m.add("k1", "third");
+        m.add("k1", "fourth");
+        data.add(m);
+        emitter.emit("id0", data);
+
+        String expected = "first, second, third, fourth";
+        int rows = 0;
+        try (Connection connection = DriverManager.getConnection(connectionString)) {
+            try (Statement st = connection.createStatement()) {
+                try (ResultSet rs = st.executeQuery("select * from test")) {
+                    assertEquals("path", rs.getMetaData().getColumnName(1).toLowerCase(Locale.US));
+                    while (rs.next()) {
+                        assertEquals("id0", rs.getString(1));
+                        assertEquals(expected, rs.getString(2));
+                        rows++;
+                    }
+                }
+            }
+        }
+        assertEquals(1, rows);
+    }
+
     private void writeConfig(String srcConfig, String dbDir, Path config) throws IOException {
         String xml = IOUtils.resourceToString(srcConfig, StandardCharsets.UTF_8);
         xml = xml.replace("CONNECTION_STRING", dbDir);
