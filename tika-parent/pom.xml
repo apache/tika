@@ -380,7 +380,7 @@
     <sis.version>1.2</sis.version>
     <slf4j.version>2.0.3</slf4j.version>
     <solrj.version>8.11.2</solrj.version>
-    <spring.version>5.3.23</spring.version>
+    <spring.version>6.0.0</spring.version>
     <sqlite.version>3.39.4.0</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
     <test.containers.version>1.17.5</test.containers.version>
