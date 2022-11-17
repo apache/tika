@@ -296,7 +296,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.15.0</google.cloud.version>
-    <aws.version>1.12.343</aws.version>
+    <aws.version>1.12.344</aws.version>
     <asm.version>9.4</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
@@ -380,10 +380,11 @@
     <sis.version>1.2</sis.version>
     <slf4j.version>2.0.3</slf4j.version>
     <solrj.version>8.11.2</solrj.version>
-    <spring.version>5.3.23</spring.version>
+    <!-- NOTE: Spring 6 requires jdk17 -->
+    <spring.version>5.3.24</spring.version>
     <sqlite.version>3.39.4.0</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
-    <test.containers.version>1.17.5</test.containers.version>
+    <test.containers.version>1.17.6</test.containers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
     <tukaani.version>1.9</tukaani.version>
     <twelvemonkeys.version>3.9.3</twelvemonkeys.version>
