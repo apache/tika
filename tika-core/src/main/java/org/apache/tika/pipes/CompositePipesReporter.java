@@ -16,6 +16,7 @@
  */
 package org.apache.tika.pipes;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -74,6 +75,27 @@ public class CompositePipesReporter extends PipesReporter implements Initializab
         }
         if (pipesReporters.size() == 0) {
             throw new TikaConfigException("must specify at least one pipes reporter");
+        }
+    }
+
+    /**
+     * Tries to close all resources.  Throws the last encountered IOException
+     * if any are thrown by the component reporters.
+     *
+     * @throws IOException
+     */
+    @Override
+    public void close() throws IOException {
+        IOException ex = null;
+        for (PipesReporter pipesReporter : pipesReporters) {
+            try {
+                pipesReporter.close();
+            } catch (IOException e) {
+                ex = e;
+            }
+        }
+        if (ex != null) {
+            throw ex;
         }
     }
 }
