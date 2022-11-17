@@ -60,8 +60,8 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
     private static final long MAX_WAIT_MILLIS = 120000;
 
     private String connectionString;
-    private ArrayBlockingQueue<KeyStatusPair> queue =
-            new ArrayBlockingQueue<>(ARRAY_BLOCKING_QUEUE_SIZE);
+    private final ArrayBlockingQueue<KeyStatusPair> queue =
+            new ArrayBlockingQueue(ARRAY_BLOCKING_QUEUE_SIZE);
     CompletableFuture<Void> reportWorkerFuture;
 
     @Override
@@ -186,6 +186,7 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
                     return;
                 }
                 if (p == KeyStatusPair.END_SEMAPHORE) {
+                    LOG.trace("received end semaphore");
                     try {
                         reportNow();
                     } catch (SQLException e) {
@@ -193,6 +194,15 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
                     } catch (InterruptedException e) {
                         return;
                     }
+                    LOG.trace("about to close");
+                    try {
+                        insert.close();
+                        connection.close();
+                        LOG.trace("successfully closed resources");
+                    } catch (SQLException e) {
+                        LOG.warn("problem shutting down reporter", e);
+                    }
+
                     return;
                 }
                 cache.add(p);
@@ -220,6 +230,7 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
                         insert.addBatch();
                     }
                     insert.executeBatch();
+                    LOG.debug("writing {} " + cache.size());
                     cache.clear();
                     return;
                 } catch (SQLException e) {
@@ -233,7 +244,7 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
             try (Statement st = connection.createStatement()) {
                 String sql = "drop table if exists " + TABLE_NAME;
                 st.execute(sql);
-                sql = "create table " + TABLE_NAME + " (emit_key varchar(512), status varchar(32))";
+                sql = "create table " + TABLE_NAME + " (path varchar(1024), status varchar(32))";
                 st.execute(sql);
             }
         }
@@ -262,7 +273,7 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
         }
 
         private void createPreparedStatement() throws SQLException {
-            String sql = "insert into " + TABLE_NAME + " (emit_key, status) values (?,?)";
+            String sql = "insert into " + TABLE_NAME + " (path, status) values (?,?)";
             insert = connection.prepareStatement(sql);
         }
     }

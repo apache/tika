@@ -22,8 +22,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -42,7 +44,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.PipesReporter;
@@ -55,16 +59,20 @@ import org.apache.tika.pipes.pipesiterator.TotalCountResult;
 public class TestJDBCPipesReporter {
 
     @Test
-    public void testBasic() throws Exception {
+    public void testBasic(@TempDir Path tmpDir) throws Exception {
+        Files.createDirectories(tmpDir.resolve("db"));
+        Path dbDir = tmpDir.resolve("db/h2");
+        String connectionString = "jdbc:h2:file:" + dbDir.toAbsolutePath();
+
         int numThreads = 10;
         int numIterations = 200;
-        String connectionString = "jdbc:h2:mem:test_tika";
         JDBCPipesReporter reporter = new JDBCPipesReporter();
         reporter.setConnection(connectionString);
         reporter.initialize(new HashMap<>());
 
         Map<PipesResult.STATUS, Long> expected = runBatch(reporter, numThreads, numIterations);
         reporter.close();
+
         Map<PipesResult.STATUS, Long> total = countReported(connectionString);
         assertEquals(expected.size(), total.size());
         long sum = 0;
@@ -77,13 +85,19 @@ public class TestJDBCPipesReporter {
     }
 
     @Test
-    public void testIncludes() throws Exception {
-        Path p = Paths.get(this.getClass().getResource("/tika-config-includes.xml").toURI());
-        AsyncConfig asyncConfig = AsyncConfig.load(p);
+    public void testIncludes(@TempDir Path tmpDir) throws Exception {
+        Files.createDirectories(tmpDir.resolve("db"));
+        Path dbDir = tmpDir.resolve("db/h2");
+        Path config = tmpDir.resolve("tika-config.xml");
+        String connectionString = "jdbc:h2:file:" + dbDir.toAbsolutePath();
+
+        writeConfig("/configs/tika-config-includes.xml",
+                connectionString, config);
+
+        AsyncConfig asyncConfig = AsyncConfig.load(config);
         PipesReporter reporter = asyncConfig.getPipesReporter();
         int numThreads = 10;
         int numIterations = 200;
-        String connectionString = "jdbc:h2:mem:test_tika";
 
         Map<PipesResult.STATUS, Long> expected = runBatch(reporter, numThreads, numIterations);
         reporter.close();
@@ -103,13 +117,18 @@ public class TestJDBCPipesReporter {
     }
 
     @Test
-    public void testExcludes() throws Exception {
-        Path p = Paths.get(this.getClass().getResource("/tika-config-excludes.xml").toURI());
-        AsyncConfig asyncConfig = AsyncConfig.load(p);
+    public void testExcludes(@TempDir Path tmpDir) throws Exception {
+        Files.createDirectories(tmpDir.resolve("db"));
+        Path dbDir = tmpDir.resolve("db/h2");
+        Path config = tmpDir.resolve("tika-config.xml");
+        String connectionString = "jdbc:h2:file:" + dbDir.toAbsolutePath();
+
+        writeConfig("/configs/tika-config-excludes.xml",
+                connectionString, config);
+        AsyncConfig asyncConfig = AsyncConfig.load(config);
         PipesReporter reporter = asyncConfig.getPipesReporter();
         int numThreads = 10;
         int numIterations = 200;
-        String connectionString = "jdbc:h2:mem:test_tika";
 
         Map<PipesResult.STATUS, Long> expected = runBatch(reporter, numThreads, numIterations);
         reporter.close();
@@ -234,5 +253,11 @@ public class TestJDBCPipesReporter {
         Map<PipesResult.STATUS, Long> getWritten() {
             return written;
         }
+    }
+
+    private void writeConfig(String srcConfig, String dbDir, Path config) throws IOException {
+        String xml = IOUtils.resourceToString(srcConfig, StandardCharsets.UTF_8);
+        xml = xml.replace("CONNECTION_STRING", dbDir);
+        Files.write(config, xml.getBytes(StandardCharsets.UTF_8));
     }
 }

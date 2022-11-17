@@ -35,11 +35,11 @@
   </params>
   <pipesReporter class="org.apache.tika.pipes.reporters.jdbc.JDBCPipesReporter">
     <params>
-      <connection>jdbc:h2:mem:test_tika</connection>
-      <excludes>
-        <exclude>PARSE_SUCCESS</exclude>
-        <exclude>PARSE_SUCCESS_WITH_EXCEPTION</exclude>
-      </excludes>
+      <connection>CONNECTION_STRING</connection>
+      <includes>
+        <include>PARSE_SUCCESS</include>
+        <include>PARSE_SUCCESS_WITH_EXCEPTION</include>
+      </includes>
     </params>
   </pipesReporter>
 </async>
