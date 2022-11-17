@@ -37,6 +37,20 @@ public class CompositePipesReporter extends PipesReporter implements Initializab
 
     }
 
+    @Override
+    public void error(Throwable t) {
+        for (PipesReporter reporter : pipesReporters) {
+            reporter.error(t);
+        }
+    }
+
+    @Override
+    public void error(String msg) {
+        for (PipesReporter reporter : pipesReporters) {
+            reporter.error(msg);
+        }
+    }
+
     @Field
     public void setPipesReporters(List<PipesReporter> pipesReporters) {
         this.pipesReporters = pipesReporters;

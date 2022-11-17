@@ -44,6 +44,7 @@ import org.apache.tika.pipes.PipesReporter;
 import org.apache.tika.pipes.PipesResult;
 import org.apache.tika.pipes.async.AsyncStatus;
 import org.apache.tika.pipes.pipesiterator.TotalCountResult;
+import org.apache.tika.utils.ExceptionUtils;
 
 /**
  * This is intended to write summary statistics to disk
@@ -66,6 +67,8 @@ public class FileSystemStatusReporter extends PipesReporter
     private Path statusFile;
 
     private long reportUpdateMillis = 1000;
+
+    private volatile boolean crashed = false;
 
     Thread reporterThread;
     private ConcurrentHashMap<PipesResult.STATUS, LongAdder> counts = new ConcurrentHashMap<>();
@@ -114,7 +117,15 @@ public class FileSystemStatusReporter extends PipesReporter
         try (Writer writer = Files.newBufferedWriter(statusFile, StandardCharsets.UTF_8)) {
             objectMapper.writeValue(writer, asyncStatus);
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.warn("couldn't write report", e);
+        }
+    }
+
+    private synchronized void crash(String crashMessage) {
+        asyncStatus.updateCrash(crashMessage);
+        try (Writer writer = Files.newBufferedWriter(statusFile, StandardCharsets.UTF_8)) {
+            objectMapper.writeValue(writer, asyncStatus);
+        } catch (IOException e) {
             LOG.warn("couldn't write report", e);
         }
     }
@@ -137,13 +148,33 @@ public class FileSystemStatusReporter extends PipesReporter
     @Override
     public void close() throws IOException {
         LOG.debug("finishing and writing last report");
+        interuptThread();
+        if (! crashed) {
+            report(AsyncStatus.ASYNC_STATUS.COMPLETED);
+        }
+    }
+
+    private void interuptThread() {
         reporterThread.interrupt();
         try {
             reporterThread.join(1000);
         } catch (InterruptedException e) {
             //swallow
         }
-        report(AsyncStatus.ASYNC_STATUS.COMPLETED);
+    }
+
+    @Override
+    public void error(Throwable t) {
+        crashed = true;
+        interuptThread();
+        crash(ExceptionUtils.getStackTrace(t));
+    }
+
+    @Override
+    public void error(String msg) {
+        crashed = true;
+        interuptThread();
+        crash(msg);
     }
 
     @Override

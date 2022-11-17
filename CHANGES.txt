@@ -1,3 +1,7 @@
+Release 2.6.1 - ???
+
+   * Downgraded logging in PipesClient for each parse from info to debug.
+
 Release 2.6.0 - 11/3/2022
 
    * Add optional Siegfried detector (TIKA-3901).

@@ -30,6 +30,16 @@ public class MockReporter extends PipesReporter {
 
     }
 
+    @Override
+    public void error(Throwable t) {
+
+    }
+
+    @Override
+    public void error(String msg) {
+
+    }
+
     @Field
     public void setEndpoint(String endpoint) {
         this.endpoint = endpoint;

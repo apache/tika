@@ -22,21 +22,23 @@ import java.util.Map;
 
 import org.apache.tika.pipes.PipesResult;
 import org.apache.tika.pipes.pipesiterator.TotalCountResult;
+import org.apache.tika.utils.StringUtils;
 
 public class AsyncStatus {
 
     public enum ASYNC_STATUS {
         STARTED,
-        COMPLETED
-        //CRASHED TODO: need to figure out how to set this?
+        COMPLETED,
+        CRASHED
     }
     private final Instant started;
-
 
     private Instant lastUpdate;
     private TotalCountResult totalCountResult = new TotalCountResult(0, TotalCountResult.STATUS.NOT_COMPLETED);
     private Map<PipesResult.STATUS, Long> statusCounts = new HashMap<>();
     private ASYNC_STATUS asyncStatus = ASYNC_STATUS.STARTED;
+
+    private String crashMessage = StringUtils.EMPTY;
 
     public AsyncStatus() {
         started = Instant.now();
@@ -49,6 +51,10 @@ public class AsyncStatus {
         this.statusCounts = statusCounts;
         this.totalCountResult = totalCountResult;
         this.asyncStatus = status;
+    }
+
+    public void updateCrash(String msg) {
+        this.crashMessage = msg;
     }
 
     public Instant getStarted() {
@@ -71,10 +77,14 @@ public class AsyncStatus {
         return asyncStatus;
     }
 
+    public String getCrashMessage() {
+        return crashMessage;
+    }
+
     @Override
     public String toString() {
         return "AsyncStatus{" + "started=" + started + ", lastUpdate=" + lastUpdate +
                 ", totalCountResult=" + totalCountResult + ", statusCounts=" + statusCounts +
-                ", status=" + asyncStatus + '}';
+                ", asyncStatus=" + asyncStatus + ", crashMessage='" + crashMessage + '\'' + '}';
     }
 }

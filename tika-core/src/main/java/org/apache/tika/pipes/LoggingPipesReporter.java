@@ -30,4 +30,14 @@ public class LoggingPipesReporter extends PipesReporter {
     public void report(FetchEmitTuple t, PipesResult result, long elapsed) {
         LOGGER.debug("{} {} {}", t, result, elapsed);
     }
+
+    @Override
+    public void error(Throwable t) {
+        LOGGER.error("pipes error", t);
+    }
+
+    @Override
+    public void error(String msg) {
+        LOGGER.error("error {}", msg);
+    }
 }

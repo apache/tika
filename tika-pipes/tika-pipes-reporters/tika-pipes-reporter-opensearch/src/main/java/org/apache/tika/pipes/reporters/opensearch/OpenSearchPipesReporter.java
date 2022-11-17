@@ -102,6 +102,16 @@ public class OpenSearchPipesReporter extends PipesReporter implements Initializa
         }
     }
 
+    @Override
+    public void error(Throwable t) {
+        LOG.error("crashed", t);
+    }
+
+    @Override
+    public void error(String msg) {
+        LOG.error("crashed {}", msg);
+    }
+
     private boolean shouldReport(PipesResult result) {
         if (includeStatus.size() > 0) {
             if (includeStatus.contains(result.getStatus().name())) {

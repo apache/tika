@@ -39,8 +39,20 @@ public abstract class PipesReporter implements Closeable {
         public void report(FetchEmitTuple t, PipesResult result, long elapsed) {
 
         }
+
+        @Override
+        public void error(Throwable t) {
+
+        }
+
+        @Override
+        public void error(String msg) {
+
+        }
     };
 
+    //Implementers are responsible for preventing reporting after
+    //crashes if that is the desired behavior.
     public abstract void report(FetchEmitTuple t, PipesResult result, long elapsed);
 
 
@@ -69,4 +81,16 @@ public abstract class PipesReporter implements Closeable {
     public void close() throws IOException {
         //no-op
     }
+
+    /**
+     * This is called if the process has crashed.
+     * Implementers should not rely on close() to be called after this.
+     * @param t
+     */
+    public abstract void error(Throwable t);
+    /**
+     * This is called if the process has crashed.
+     * Implementers should not rely on close() to be called after this.
+     * @param msg
+     */public abstract void error(String msg);
 }

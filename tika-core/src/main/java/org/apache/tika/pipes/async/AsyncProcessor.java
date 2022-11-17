@@ -117,7 +117,7 @@ public class AsyncProcessor implements Closeable {
             }
         } catch (Exception e) {
             executorService.shutdownNow();
-            asyncConfig.getPipesReporter().close();
+            asyncConfig.getPipesReporter().error(e);
             throw e;
         }
     }
@@ -222,6 +222,7 @@ public class AsyncProcessor implements Closeable {
                 }
             } catch (ExecutionException e) {
                 LOG.error("execution exception", e);
+                asyncConfig.getPipesReporter().error(e);
                 throw new RuntimeException(e);
             }
         }
