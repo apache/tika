@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<properties>
+  <async>
+  <params>
+    <maxForEmitBatchBytes>10000</maxForEmitBatchBytes>
+    <emitMaxEstimatedBytes>100000</emitMaxEstimatedBytes>
+    <emitWithinMillis>60000</emitWithinMillis>
+    <numEmitters>1</numEmitters>
+    <numClients>3</numClients>
+    <tikaConfig>{TIKA_CONFIG}</tikaConfig>
+    <forkedJvmArgs>
+      <arg>-Xmx512m</arg>
+      <arg>-XX:ParallelGCThreads=2</arg>
+      <arg>-Dlog4j.configurationFile={LOG4J_PROPERTIES_FILE}</arg>
+    </forkedJvmArgs>
+    <timeoutMillis>60000</timeoutMillis>
+  </params>
+  <pipesReporter class="org.apache.tika.pipes.reporters.jdbc.JDBCPipesReporter">
+    <params>
+      <connection>jdbc:h2:mem:test_tika</connection>
+      <includes>
+        <include>PARSE_SUCCESS</include>
+        <include>PARSE_SUCCESS_WITH_EXCEPTION</include>
+      </includes>
+    </params>
+  </pipesReporter>
+</async>
+</properties>

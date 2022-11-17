@@ -92,5 +92,7 @@ public abstract class PipesReporter implements Closeable {
      * This is called if the process has crashed.
      * Implementers should not rely on close() to be called after this.
      * @param msg
-     */public abstract void error(String msg);
+     */
+    public abstract void error(String msg);
+
 }

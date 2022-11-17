@@ -34,6 +34,7 @@
   <modules>
     <module>tika-pipes-reporter-opensearch</module>
     <module>tika-pipes-reporter-fs-status</module>
+    <module>tika-pipes-reporter-jdbc</module>
   </modules>
 
   <scm>

@@ -321,6 +321,16 @@
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
+        <artifactId>tika-emitter-jdbc</artifactId>
+        <version>2.6.1-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-emitter-kafka</artifactId>
+        <version>2.6.1-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tika</groupId>
         <artifactId>tika-emitter-opensearch</artifactId>
         <version>2.6.1-SNAPSHOT</version>
       </dependency>
@@ -331,15 +341,24 @@
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
-        <artifactId>tika-emitter-kafka</artifactId>
+        <artifactId>tika-emitter-solr</artifactId>
         <version>2.6.1-SNAPSHOT</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
-        <artifactId>tika-emitter-solr</artifactId>
+        <artifactId>tika-pipes-reporter-fs-status</artifactId>
         <version>2.6.1-SNAPSHOT</version>
       </dependency>
-
+      <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-pipes-reporter-jdbc</artifactId>
+        <version>2.6.1-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-pipes-reporter-opensearch</artifactId>
+        <version>2.6.1-SNAPSHOT</version>
+      </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-fetcher-gcs</artifactId>
@@ -355,7 +374,6 @@
         <artifactId>tika-fetcher-s3</artifactId>
         <version>2.6.1-SNAPSHOT</version>
       </dependency>
-
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-pipes-iterator-csv</artifactId>
@@ -373,12 +391,12 @@
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
-        <artifactId>tika-pipes-iterator-s3</artifactId>
+        <artifactId>tika-pipes-iterator-kafka</artifactId>
         <version>2.6.1-SNAPSHOT</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
-        <artifactId>tika-pipes-iterator-kafka</artifactId>
+        <artifactId>tika-pipes-iterator-s3</artifactId>
         <version>2.6.1-SNAPSHOT</version>
       </dependency>
       <dependency>
