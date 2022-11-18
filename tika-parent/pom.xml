@@ -295,7 +295,7 @@
     <rat.version>0.15</rat.version>
 
     <!-- dependency versions -->
-    <google.cloud.version>2.15.0</google.cloud.version>
+    <google.cloud.version>2.15.1</google.cloud.version>
     <aws.version>1.12.345</aws.version>
     <asm.version>9.4</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
@@ -382,7 +382,7 @@
     <solrj.version>8.11.2</solrj.version>
     <!-- NOTE: Spring 6 requires jdk17 -->
     <spring.version>5.3.24</spring.version>
-    <sqlite.version>3.39.4.0</sqlite.version>
+    <sqlite.version>3.39.4.1</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
     <test.containers.version>1.17.6</test.containers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
