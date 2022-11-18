@@ -62,11 +62,11 @@
          problems with encrypted PDFs. -->
     <dependency>
       <groupId>org.bouncycastle</groupId>
-      <artifactId>bcmail-jdk15on</artifactId>
+      <artifactId>bcmail-jdk18on</artifactId>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
-      <artifactId>bcprov-jdk15on</artifactId>
+      <artifactId>bcprov-jdk18on</artifactId>
     </dependency>
     <!-- for java 10
        See TIKA-2778 for why we need to do this now.
