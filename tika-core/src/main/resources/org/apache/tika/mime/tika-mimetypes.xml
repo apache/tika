@@ -5827,6 +5827,12 @@
     <acronym>SVG</acronym>
     <_comment>Scalable Vector Graphics</_comment>
     <root-XML localName="svg" namespaceURI="http://www.w3.org/2000/svg"/>
+    <magic priority="50">
+      <!-- Version of 0x0001 is PSD -->
+      <match value="&lt;svg" type="string" offset="0">
+        <match value="http://www.w3.org/2000/svg" type="string" offset="5:256"/>
+      </match>
+    </magic>
     <glob pattern="*.svg"/>
     <glob pattern="*.svgz"/>
   </mime-type>

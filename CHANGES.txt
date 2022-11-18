@@ -1,5 +1,7 @@
 Release 2.6.1 - ???
 
+   * Add SVG detection for svg files lacking the xml header (TIKA-3308).
+
    * Upgrade to Bouncy Castle 1.71 and jdk18on jars (TIKA-3933).
 
    * Add a JDBCPipesReporter (TIKA-3931).

@@ -607,6 +607,7 @@ public class TestMimeTypes {
         assertTypeByData("image/svg+xml", "testSVG.svg");
         assertTypeByName("image/svg+xml", "x.svg");
         assertTypeByName("image/svg+xml", "x.SVG");
+        assertTypeByData("image/svg+xml", "testSVG_no_xml_header.svg");
 
         // Should *.svgz be svg or gzip
         assertType("application/gzip", "testSVG.svgz");
