@@ -1,5 +1,7 @@
 Release 2.6.1 - ???
 
+   * Upgrade to Bouncy Castle 1.71 and jdk18on jars (TIKA-3933).
+
    * Add a JDBCPipesReporter (TIKA-3931).
 
    * Add multivalued field strategy option in jdbc-emitter (TIKA-3930).
