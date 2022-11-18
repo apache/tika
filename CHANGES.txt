@@ -1,5 +1,7 @@
 Release 2.6.1 - ???
 
+   * Add SVG detection for svg files lacking the xml header (TIKA-3308).
+
    * Add a JDBCPipesReporter (TIKA-3931).
 
    * Add multivalued field strategy option in jdbc-emitter (TIKA-3930).
