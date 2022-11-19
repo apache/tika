@@ -344,21 +344,7 @@
         <artifactId>tika-emitter-solr</artifactId>
         <version>2.6.1-SNAPSHOT</version>
       </dependency>
-      <dependency>
-        <groupId>org.apache.tika</groupId>
-        <artifactId>tika-pipes-reporter-fs-status</artifactId>
-        <version>2.6.1-SNAPSHOT</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.tika</groupId>
-        <artifactId>tika-pipes-reporter-jdbc</artifactId>
-        <version>2.6.1-SNAPSHOT</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.tika</groupId>
-        <artifactId>tika-pipes-reporter-opensearch</artifactId>
-        <version>2.6.1-SNAPSHOT</version>
-      </dependency>
+
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-fetcher-gcs</artifactId>
@@ -374,6 +360,7 @@
         <artifactId>tika-fetcher-s3</artifactId>
         <version>2.6.1-SNAPSHOT</version>
       </dependency>
+
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-pipes-iterator-csv</artifactId>
@@ -408,6 +395,11 @@
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-pipes-reporter-fs-status</artifactId>
+        <version>2.6.1-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-pipes-reporter-jdbc</artifactId>
         <version>2.6.1-SNAPSHOT</version>
       </dependency>
       <dependency>
