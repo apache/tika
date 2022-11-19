@@ -26,16 +26,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.logging.api.LoggerLevelChangeContext;
+import org.apache.tika.logging.api.LoggingConfigurator;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -361,17 +359,11 @@ public class WordParserTest extends TikaTest {
     @Test
     public void testExceptions1() throws Exception {
         XMLResult xml;
-        LoggerContext ctx = (LoggerContext) LogManager.getContext();
-        LoggerConfig lc = ctx.getConfiguration().getRootLogger();
-        Level originalLevel = lc.getLevel();
-        lc.setLevel(Level.ERROR);
-        try {
+        try (LoggerLevelChangeContext ignored = LoggingConfigurator.withRootLoggerLevel("ERROR")) {
             xml = getXML("testException1.doc");
             assertContains("total population", xml.xml);
             xml = getXML("testException2.doc");
             assertContains("electric charge", xml.xml);
-        } finally {
-            lc.setLevel(originalLevel);
         }
     }
 
