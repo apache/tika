@@ -70,6 +70,10 @@
           <groupId>net.sf.ehcache</groupId>
           <artifactId>ehcache-core</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>commons-logging</groupId>
+          <artifactId>commons-logging</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -80,6 +84,10 @@
         <exclusion>
           <groupId>org.jsoup</groupId>
           <artifactId>jsoup</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>commons-logging</groupId>
+          <artifactId>commons-logging</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
