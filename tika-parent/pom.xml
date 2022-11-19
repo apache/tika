@@ -1121,44 +1121,6 @@
         </dependencies>
       </plugin>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-enforcer-plugin</artifactId>
-        <version>3.0.0-M3</version> <!-- can't update to 3.1.0, see MENFORCER-393 -->
-        <executions>
-          <execution>
-            <id>enforce-maven</id>
-            <configuration>
-              <rules>
-                <dependencyConvergence />
-                <requireMavenVersion>
-                  <version>3.5</version>
-                </requireMavenVersion>
-              </rules>
-            </configuration>
-            <goals>
-              <goal>enforce</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>ban-bad-log4j-versions</id>
-            <phase>validate</phase>
-            <goals>
-              <goal>enforce</goal>
-            </goals>
-            <configuration>
-              <rules>
-                <bannedDependencies>
-                  <excludes>
-                    <exclude>org.apache.logging.log4j:log4j-core:(,2.17.1)</exclude>
-                  </excludes>
-                </bannedDependencies>
-              </rules>
-              <fail>true</fail>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <!-- mvn validate -->
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>

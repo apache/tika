@@ -60,6 +60,12 @@
     <module>tika-detectors</module>
   </modules>
 
+  <properties>
+    <!-- versions for enforcer plugin configured in org.apache:apache grandparent POM -->
+    <minimalMavenBuildVersion>3.5</minimalMavenBuildVersion>
+    <minimalJavaBuildVersion>1.8</minimalJavaBuildVersion>
+  </properties>
+
   <dependencyManagement>
     <dependencies>
       <dependency>
@@ -273,6 +279,40 @@ least three +1 Tika PMC votes are cast.
             <exclude>.gitattributes</exclude>
           </excludes>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>3.0.0-M3</version> <!-- can't update to 3.1.0, see MENFORCER-393 -->
+        <executions>
+          <execution>
+            <id>enforce-dependency-convergence</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <dependencyConvergence />
+              </rules>
+            </configuration>
+          </execution>
+          <execution>
+            <id>ban-bad-log4j-versions</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <bannedDependencies>
+                  <excludes>
+                    <exclude>org.apache.logging.log4j:log4j-core:(,2.17.1)</exclude>
+                  </excludes>
+                </bannedDependencies>
+              </rules>
+              <fail>true</fail>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
