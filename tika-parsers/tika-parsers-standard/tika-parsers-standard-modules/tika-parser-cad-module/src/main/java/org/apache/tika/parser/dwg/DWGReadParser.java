@@ -104,9 +104,9 @@ public class DWGReadParser extends AbstractDWGParser {
         xhtml.startDocument();
         // create unique files so we avoid overwriting out files if multithreaded
         UUID uuid = UUID.randomUUID();
-        File tmpFileOut = File.createTempFile(uuid + "dwgreadout", ".json");
-        File tmpFileOutCleaned = File.createTempFile(uuid + "dwgreadoutclean", ".json");
-        File tmpFileIn = File.createTempFile(uuid + "dwgreadin", ".dwg");
+        File tmpFileOut = Files.createTempFile(uuid + "dwgreadout", ".json").toFile();
+        File tmpFileOutCleaned = Files.createTempFile(uuid + "dwgreadoutclean", ".json").toFile();
+        File tmpFileIn = Files.createTempFile(uuid + "dwgreadin", ".dwg").toFile();
         try {
             
 
