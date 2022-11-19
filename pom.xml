@@ -312,6 +312,25 @@ least three +1 Tika PMC votes are cast.
               <fail>true</fail>
             </configuration>
           </execution>
+          <execution>
+            <id>ban-commons-logging</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <bannedDependencies>
+                  <excludes>
+                    <exclude>commons-logging:commons-logging</exclude>
+                  </excludes>
+                  <includes>
+                    <include>commons-logging:commons-logging:*:jar:test</include>
+                  </includes>
+                </bannedDependencies>
+              </rules>
+              <fail>true</fail>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
     </plugins>
