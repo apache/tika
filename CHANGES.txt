@@ -1,5 +1,8 @@
 Release 2.6.1 - ???
 
+   * Remove log4j 1.2.x (and slf4j-log4j12 which now redirects to slf4j-reload4j) from
+     all modules (TIKA-3935).
+
    * Add SVG detection for svg files lacking the xml header (TIKA-3308).
 
    * Upgrade to Bouncy Castle 1.71 and jdk18on jars (TIKA-3933).
