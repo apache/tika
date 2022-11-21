@@ -24,7 +24,6 @@ import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.utils.ProcessUtils;
 
 public class TikaAsyncCLITest {
     @Test
@@ -33,7 +32,7 @@ public class TikaAsyncCLITest {
         assertThrows(TikaConfigException.class,
                 () -> TikaAsyncCLI.main(
                         new String[] {
-                            ProcessUtils.escapeCommandLine(config.toAbsolutePath().toString())
+                            config.toAbsolutePath().toString()
                         })
         );
     }
