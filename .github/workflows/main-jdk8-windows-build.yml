@@ -32,11 +32,11 @@ jobs:
         java: [ '1.8' ]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up JDK ${{ matrix.java }}
-      - path: "tika main" #include space in path to test commandline calls
         uses: actions/setup-java@v1
         with:
           java-version: ${{ matrix.java }}
+          path: "tika main" #include space in path to test commandline calls
       - name: Build with Maven
         run: mvn clean test install javadoc:aggregate
