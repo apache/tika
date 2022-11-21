@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-name: main pr build
+name: main pr windows build
 
 on:
   push:
