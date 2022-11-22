@@ -395,7 +395,7 @@
     <test.containers.version>1.17.6</test.containers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
     <tukaani.version>1.9</tukaani.version>
-    <twelvemonkeys.version>3.9.3</twelvemonkeys.version>
+    <twelvemonkeys.version>3.9.4</twelvemonkeys.version>
     <uima.version>3.3.1</uima.version>
     <uimafit.version>3.3.0</uimafit.version>
     <vorbis.version>0.8</vorbis.version>
