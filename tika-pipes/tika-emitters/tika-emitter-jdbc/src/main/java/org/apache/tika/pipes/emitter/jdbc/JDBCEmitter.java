@@ -317,7 +317,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
         String val = getVal(metadata, key, type);
         String lcType = type.toLowerCase(Locale.US);
         if (lcType.startsWith("varchar")) {
-            updateVarchar(lcType, insertStatement, i, val);
+            updateVarchar(key, lcType, insertStatement, i, val);
             return;
         }
         switch (lcType) {
@@ -389,7 +389,8 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
         insertStatement.setDouble(i, d);
     }
 
-    private void updateVarchar(String type, PreparedStatement insertStatement, int i, String val)
+    private void updateVarchar(String key, String type, PreparedStatement insertStatement, int i,
+                               String val)
             throws SQLException {
         if (StringUtils.isBlank(val)) {
             updateString(insertStatement, i, val);
@@ -401,7 +402,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
             if (val.length() > len) {
                 int origLength = val.length();
                 val = val.substring(0, len);
-                LOGGER.warn("truncating varchar from {} to {}", origLength, len);
+                LOGGER.warn("truncating varchar ({}) from {} to {}", key, origLength, len);
             }
             updateString(insertStatement, i, val);
             return;
