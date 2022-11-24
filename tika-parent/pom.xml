@@ -371,7 +371,7 @@
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <openjson.version>1.0.12</openjson.version>
     <!-- 2.0.0 doesn't compile with jdk8 -->
-    <opennlp.version>1.9.4</opennlp.version>
+    <opennlp.version>2.1.0</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
     <optimaize.version>0.6</optimaize.version>
     <osgi.core.version>6.0.0</osgi.core.version>
