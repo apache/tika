@@ -121,4 +121,21 @@ public class AutoDetectParserConfigTest extends TikaTest {
         assertEquals("90a8b249a6d6b6cb127c59e01cef3aaa",
                 metadataList.get(6).get("X-TIKA:digest:MD5"));
     }
+
+    @Test
+    public void testDigestsEmptyParser() throws Exception {
+        //TIKA-3939 -- ensure that digesting happens even with EmptyParser
+        TikaConfig tikaConfig = null;
+        try (InputStream is = OOXMLParserTest.class.getResourceAsStream(
+                "/configs/tika-config-digests-pdf-only.xml")) {
+            tikaConfig = new TikaConfig(is);
+        }
+        Parser p = new AutoDetectParser(tikaConfig);
+        List<Metadata> metadataList = getRecursiveMetadata("testPDF.pdf", p);
+        assertEquals(1, metadataList.size());
+        assertEquals("4ef0d3bdb12ba603f4caf7d2e2c6112e",
+                metadataList.get(0).get("X-TIKA:digest:MD5"));
+        assertEquals("org.apache.tika.parser.EmptyParser",
+                metadataList.get(0).get("X-TIKA:Parsed-By"));
+    }
 }

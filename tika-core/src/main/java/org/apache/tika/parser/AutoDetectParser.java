@@ -90,8 +90,28 @@ public class AutoDetectParser extends CompositeParser {
 
     public AutoDetectParser(TikaConfig config) {
         super(config.getMediaTypeRegistry(), getParser(config));
+        setFallback(buildFallbackParser(config));
         setDetector(config.getDetector());
         setAutoDetectParserConfig(config.getAutoDetectParserConfig());
+
+    }
+
+    private static Parser buildFallbackParser(TikaConfig config) {
+        Parser fallback = null;
+        Parser p = config.getParser();
+        if (p instanceof DefaultParser) {
+            fallback = ((DefaultParser)p).getFallback();
+        } else {
+            fallback = new EmptyParser();
+        }
+
+        if (config.getAutoDetectParserConfig().getDigesterFactory() == null) {
+            return fallback;
+        } else {
+            return new DigestingParser(fallback,
+                    config.getAutoDetectParserConfig().getDigesterFactory().build());
+        }
+
     }
 
     private static Parser getParser(TikaConfig config) {
@@ -144,7 +164,6 @@ public class AutoDetectParser extends CompositeParser {
         TemporaryResources tmp = new TemporaryResources();
         try {
             TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
-
             //figure out if we should spool to disk
             maybeSpool(tis, autoDetectParserConfig, metadata);
 
