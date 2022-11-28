@@ -584,7 +584,7 @@
       <dependency>
         <groupId>com.healthmarketscience.jackcess</groupId>
         <artifactId>jackcess-encrypt</artifactId>
-        <version>4.0.1</version>
+        <version>4.0.2</version>
         <exclusions>
           <!-- to avoid maven-enforcer convergence error,
             let's make this explicit -->
