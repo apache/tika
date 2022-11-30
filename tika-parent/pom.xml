@@ -332,7 +332,7 @@
     <geoapi.version>3.0.1</geoapi.version>
     <guava.version>31.1-jre</guava.version>
     <httpcomponents.version>4.5.13</httpcomponents.version>
-    <httpcore.version>4.4.15</httpcore.version>
+    <httpcore.version>4.4.16</httpcore.version>
     <!-- versions greater than 62.2 are not compatible with icu4j handler in lucene 8.11.1 -->
     <icu4j.version>62.2</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
