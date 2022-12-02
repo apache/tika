@@ -50,8 +50,30 @@ public interface TikaCoreProperties {
      */
     String TIKA_META_PREFIX = "X-TIKA" + NAMESPACE_PREFIX_DELIMITER;
     Property EMBEDDED_DEPTH = Property.internalInteger(TIKA_META_PREFIX + "embedded_depth");
+
+    /**
+     * This tracks the embedded file paths based on the name of embedded files
+     * where available.  There is a small risk that there may be path collisions
+     * and that these paths may not be unique within a file.
+     *
+     * For a more robust path, see {@link TikaCoreProperties#EMBEDDED_ID_PATH}.
+     */
     Property EMBEDDED_RESOURCE_PATH =
             Property.internalText(TIKA_META_PREFIX + "embedded_resource_path");
+
+    /**
+     * This tracks the embedded file paths based on the embedded file's
+     * {@link TikaCoreProperties#EMBEDDED_ID}.
+     */
+    Property EMBEDDED_ID_PATH =
+            Property.internalText(TIKA_META_PREFIX + "embedded_id_path");
+
+    /**
+     * This is a 1-index counter for embedded files, used by the RecursiveParserWrapper
+     */
+    Property EMBEDDED_ID =
+            Property.internalInteger(TIKA_META_PREFIX + "embedded_id");
+
     Property PARSE_TIME_MILLIS = Property.internalText(TIKA_META_PREFIX + "parse_time_millis");
     /**
      * Simple class name of the content handler
