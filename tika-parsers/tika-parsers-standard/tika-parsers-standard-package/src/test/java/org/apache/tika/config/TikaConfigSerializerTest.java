@@ -17,6 +17,7 @@
 package org.apache.tika.config;
 
 import static org.apache.tika.TikaTest.assertContains;
+import static org.apache.tika.TikaTest.assertContainsCount;
 import static org.apache.tika.TikaTest.assertNotContained;
 
 import java.io.ByteArrayInputStream;
@@ -79,6 +80,16 @@ public class TikaConfigSerializerTest {
         try (InputStream is = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))) {
             TikaConfig deserialized = new TikaConfig(is);
         }
+    }
+
+    @Test
+    public void testOfficeParserParams() throws Exception {
+        TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
+        StringWriter writer = new StringWriter();
+        TikaConfigSerializer.serialize(tikaConfig, TikaConfigSerializer.Mode.STATIC_FULL,
+                writer, StandardCharsets.UTF_8);
+        assertContainsCount("<param name=\"concatenatePhoneticRuns\" type=\"bool\">true</param>",
+                writer.toString(), 3);
     }
 
     private Path getPath(String config) {
