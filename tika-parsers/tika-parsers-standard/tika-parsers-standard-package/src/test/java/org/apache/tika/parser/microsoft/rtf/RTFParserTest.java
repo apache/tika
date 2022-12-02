@@ -134,8 +134,9 @@ public class RTFParserTest extends TikaTest {
         assertEquals("false", meta_jpg_exif.get(RTFMetadata.THUMBNAIL));
 
         //need flexibility for if tesseract is installed or not
-        assertTrue(meta_jpg.names().length >= 50 && meta_jpg.names().length <= 51);
-        assertTrue(meta_jpg_exif.names().length >= 109 && meta_jpg_exif.names().length <= 110);
+        //TODO -- fix this test.  It is too fragile.
+        assertTrue(meta_jpg.names().length >= 52 && meta_jpg.names().length <= 53);
+        assertTrue(meta_jpg_exif.names().length >= 111 && meta_jpg_exif.names().length <= 112);
     }
 
     private static class Pair {

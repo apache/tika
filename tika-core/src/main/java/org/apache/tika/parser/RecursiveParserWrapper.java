@@ -137,7 +137,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
                     "ContentHandler must implement RecursiveParserWrapperHandler");
         }
         EmbeddedParserDecorator decorator =
-                new EmbeddedParserDecorator(getWrappedParser(), "/", parserState);
+                new EmbeddedParserDecorator(getWrappedParser(), "/", "/", parserState);
         context.set(Parser.class, decorator);
         ContentHandler localHandler =
                 parserState.recursiveParserWrapperHandler.getNewContentHandler();
@@ -204,13 +204,17 @@ public class RecursiveParserWrapper extends ParserDecorator {
         private final ParserState parserState;
         private String location = null;
 
+        private String embeddedIdPath = null;
 
-        private EmbeddedParserDecorator(Parser parser, String location, ParserState parseState) {
+
+        private EmbeddedParserDecorator(Parser parser, String location,
+                                        String embeddedIdPath, ParserState parseState) {
             super(parser);
             this.location = location;
             if (!this.location.endsWith("/")) {
                 this.location += "/";
             }
+            this.embeddedIdPath = embeddedIdPath;
             this.parserState = parseState;
         }
 
@@ -227,7 +231,12 @@ public class RecursiveParserWrapper extends ParserDecorator {
 
             metadata.add(TikaCoreProperties.EMBEDDED_RESOURCE_PATH, objectLocation);
 
-
+            String idPath =
+                    this.embeddedIdPath.equals("/") ?
+                            this.embeddedIdPath + ++parserState.embeddedCount :
+                            this.embeddedIdPath + "/" + ++parserState.embeddedCount;
+            metadata.add(TikaCoreProperties.EMBEDDED_ID_PATH, idPath);
+            metadata.set(TikaCoreProperties.EMBEDDED_ID, parserState.embeddedCount);
             //get a fresh handler
             ContentHandler localHandler =
                     parserState.recursiveParserWrapperHandler.getNewContentHandler();
@@ -235,7 +244,8 @@ public class RecursiveParserWrapper extends ParserDecorator {
 
             Parser preContextParser = context.get(Parser.class);
             context.set(Parser.class,
-                    new EmbeddedParserDecorator(getWrappedParser(), objectLocation, parserState));
+                    new EmbeddedParserDecorator(getWrappedParser(), objectLocation,
+                            idPath, parserState));
             long started = System.currentTimeMillis();
             RecursivelySecureContentHandler secureContentHandler =
                     context.get(RecursivelySecureContentHandler.class);
@@ -288,7 +298,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
     private static class ParserState {
         private final AbstractRecursiveParserWrapperHandler recursiveParserWrapperHandler;
         private int unknownCount = 0;
-
+        private int embeddedCount = 0;//this is effectively 1-indexed
         private ParserState(AbstractRecursiveParserWrapperHandler handler) {
             this.recursiveParserWrapperHandler = handler;
         }

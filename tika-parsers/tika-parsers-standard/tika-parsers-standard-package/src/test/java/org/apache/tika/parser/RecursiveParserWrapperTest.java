@@ -86,7 +86,6 @@ public class RecursiveParserWrapperTest extends TikaTest {
         assertNull(content);
     }
 
-
     @Test
     public void testCharLimit() throws Exception {
         ParseContext context = new ParseContext();
@@ -304,13 +303,18 @@ public class RecursiveParserWrapperTest extends TikaTest {
         List<Metadata> list = getMetadata(metadata,
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
                 true, new CommonsDigester(100000, "md5"));
-        int i = 0;
-        Metadata m0 = list.get(0);
-        Metadata m6 = list.get(6);
+
         String md5Key = "X-TIKA:digest:MD5";
         assertEquals("59f626e09a8c16ab6dbc2800c685f772", list.get(0).get(md5Key));
         assertEquals("ccdf3882e7e4c2454e28884db9b0a54d", list.get(6).get(md5Key));
         assertEquals("a869bf6432ebd14e19fc79416274e0c9", list.get(7).get(md5Key));
+
+        //while we're at it, also test the embedded path id
+        assertEquals("/2/5/8/9", list.get(6).get(TikaCoreProperties.EMBEDDED_ID_PATH));
+        assertEquals("/embed1.zip/embed2.zip/embed3.zip/embed3.txt",
+                list.get(6).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        assertEquals(9, list.get(6).getInt(TikaCoreProperties.EMBEDDED_ID));
+        assertEquals(4, list.get(6).getInt(TikaCoreProperties.EMBEDDED_DEPTH));
     }
 
     @Test
