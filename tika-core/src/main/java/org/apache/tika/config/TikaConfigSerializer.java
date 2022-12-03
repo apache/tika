@@ -348,7 +348,7 @@ public class TikaConfigSerializer {
         MethodTuples primitiveSetters = new MethodTuples();
         MethodTuples nonPrimitiveGetters = new MethodTuples();
         MethodTuples primitiveGetters = new MethodTuples();
-        for (Method method : object.getClass().getDeclaredMethods()) {
+        for (Method method : object.getClass().getMethods()) {
             Class[] parameterTypes = method.getParameterTypes();
 
             if (setterMatcher.reset(method.getName()).find()) {

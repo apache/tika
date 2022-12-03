@@ -37,7 +37,7 @@ public class OfficeParserConfig implements Serializable {
     private boolean extractAllAlternativesFromMSG;
 
     private String dateOverrideFormat = null;
-    private int maxOverride;
+    private int maxOverride = 0;//ignore
 
     /**
      * @return whether or not to extract macros
