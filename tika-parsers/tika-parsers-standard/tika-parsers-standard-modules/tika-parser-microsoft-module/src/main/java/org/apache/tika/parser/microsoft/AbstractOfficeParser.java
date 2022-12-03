@@ -146,13 +146,17 @@ public abstract class AbstractOfficeParser extends AbstractParser {
      * of overly large byte arrays.  Use carefully; and please open up issues on
      * POI's bugzilla to bump values for specific records.
      *
+     * If the value is &lt;&eq; 0, this value is ignored
+     *
      * @param maxOverride
      */
     @Field
     public void setByteArrayMaxOverride(int maxOverride) {
-        IOUtils.setByteArrayMaxOverride(maxOverride);
-        //required for serialization
-        defaultOfficeParserConfig.setMaxOverride(maxOverride);
+        if (maxOverride > 0) {
+            IOUtils.setByteArrayMaxOverride(maxOverride);
+            //required for serialization
+            defaultOfficeParserConfig.setMaxOverride(maxOverride);
+        }
     }
 
     public int getByteArrayMaxOverride() {
