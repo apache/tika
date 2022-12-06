@@ -67,6 +67,12 @@
       <artifactId>nd4j-api</artifactId>
       <version>${dl4j.version}</version>
       <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>commons-net</groupId>
+          <artifactId>commons-net</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.nd4j</groupId>
@@ -78,6 +84,12 @@
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-slf4j2-impl</artifactId>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>commons-net</groupId>
+      <artifactId>commons-net</artifactId>
+      <version>${commons.net.version}</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 
