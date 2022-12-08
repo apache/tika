@@ -306,7 +306,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.16.0</google.cloud.version>
-    <aws.version>1.12.359</aws.version>
+    <aws.version>1.12.360</aws.version>
     <asm.version>9.4</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
@@ -351,7 +351,7 @@
     <jbig2.version>3.0.4</jbig2.version>
     <jdom2.version>2.0.6.1</jdom2.version>
     <jempbox.version>1.8.17</jempbox.version>
-    <jetty.version>9.4.49.v20220914</jetty.version>
+    <jetty.version>9.4.50.v20221201</jetty.version>
     <jhighlight.version>1.1.0</jhighlight.version>
     <jna.version>5.12.1</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
