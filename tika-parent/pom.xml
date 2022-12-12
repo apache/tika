@@ -1024,6 +1024,11 @@
                 <artifactId>h2</artifactId>
                 <version>2.1.214</version>
             </exclude>
+            <exclude>
+              <groupId>com.fasterxml.jackson.core</groupId>
+              <artifactId>jackson-core</artifactId>
+              <version>2.14.1</version>
+            </exclude>
           </excludeCoordinates>
           <fail>true</fail>
         </configuration>
