@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import org.apache.tika.TikaTest;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -45,7 +46,7 @@ import org.apache.tika.utils.DateUtils;
 /**
  * JUnit based tests of class {@link org.apache.tika.metadata.Metadata}.
  */
-public class TestMetadata {
+public class TestMetadata extends TikaTest {
 
     private static final String CONTENTTYPE = "contenttype";
 
@@ -478,7 +479,10 @@ public class TestMetadata {
         m.add("key", "value1");
         m.add("key", "value2");
         m.add("key2", "value12");
-        assertEquals("key2=value12 key=value1 key=value2", m.toString());
+        String metadata = m.toString();
+        assertContains("key=value1", metadata);
+        assertContains("key=value2", metadata);
+        assertContains("key2=value12", metadata);
     }
 
     @Test
