@@ -219,28 +219,11 @@ public abstract class ConfigBase {
                 params = child.getChildNodes();
             } else if (child.getNodeType() == 1 && ! child.getLocalName().equals(exceptNodeName)) {
                 String itemName = child.getLocalName();
-                String setter = "set" + itemName.substring(0, 1).toUpperCase(Locale.US) +
-                        itemName.substring(1);
-                Class itemClass = null;
-                Method setterMethod = null;
-                for (Method method : object.getClass().getMethods()) {
-                    if (setter.equals(method.getName())) {
-                        Class<?>[] classes = method.getParameterTypes();
-                        if (classes.length == 1) {
-                            itemClass = classes[0];
-                            setterMethod = method;
-                            break;
-                        }
-                    }
-                }
-                if (itemClass == null) {
-                    throw new TikaConfigException("Couldn't find setter '" +
-                            setter + "' for " + itemName);
-                }
-                Object item = buildClass(child, itemName, itemClass);
-                setParams(itemClass.cast(item), child, new HashSet<>());
+                SetterClassPair setterClassPair = findSetterClassPair(object, itemName);
+                Object item = buildClass(child, itemName, setterClassPair.itemClass);
+                setParams(setterClassPair.itemClass.cast(item), child, new HashSet<>());
                 try {
-                    setterMethod.invoke(object, item);
+                    setterClassPair.setterMethod.invoke(object, item);
                 } catch (IllegalAccessException | InvocationTargetException e) {
                     throw new TikaConfigException("problem creating " + itemName, e);
                 }
@@ -276,6 +259,40 @@ public abstract class ConfigBase {
             ((Initializable)object).initialize(Collections.EMPTY_MAP);
             ((Initializable) object).checkInitialization(InitializableProblemHandler.THROW);
         }
+    }
+
+    private static SetterClassPair findSetterClassPair(Object object, String itemName)
+            throws TikaConfigException {
+        String setter = "set" + itemName.substring(0, 1).toUpperCase(Locale.US) +
+                itemName.substring(1);
+        Class itemClass = null;
+        Method setterMethod = null;
+        for (Method method : object.getClass().getMethods()) {
+            if (setter.equals(method.getName())) {
+                Class<?>[] classes = method.getParameterTypes();
+                if (classes.length == 1) {
+                    itemClass = classes[0];
+                    setterMethod = method;
+                    return new SetterClassPair(setterMethod, itemClass);
+                }
+            }
+        }
+
+        String adder = "add" + itemName.substring(0, 1).toUpperCase(Locale.US) +
+                itemName.substring(1);
+        for (Method method : object.getClass().getMethods()) {
+            if (adder.equals(method.getName())) {
+                Class<?>[] classes = method.getParameterTypes();
+                if (classes.length == 1) {
+                    itemClass = classes[0];
+                    setterMethod = method;
+                    return new SetterClassPair(setterMethod, itemClass);
+                }
+            }
+        }
+        throw new TikaConfigException("Couldn't find setter '" +
+                setter + "' or adder '" + adder + "' for " + itemName +
+                " of class: " + object.getClass());
     }
 
     private static boolean hasChildNodes(Node param) {
@@ -323,7 +340,7 @@ public abstract class ConfigBase {
 
         } catch (ClassNotFoundException | InvocationTargetException | NoSuchMethodException |
                  IllegalAccessException e) {
-            throw new TikaConfigException("couldn't find class", e);
+            throw new TikaConfigException("couldn't build class for " + name, e);
         }
     }
 
@@ -522,5 +539,14 @@ public abstract class ConfigBase {
         }
 
         return settings;
+    }
+
+    private static class SetterClassPair {
+        private final Method setterMethod;
+        private final Class itemClass;
+        public SetterClassPair(Method setterMethod, Class itemClass) {
+            this.setterMethod = setterMethod;
+            this.itemClass = itemClass;
+        }
     }
 }

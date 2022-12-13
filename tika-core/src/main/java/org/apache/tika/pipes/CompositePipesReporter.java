@@ -17,6 +17,7 @@
 package org.apache.tika.pipes;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -29,7 +30,7 @@ import org.apache.tika.pipes.pipesiterator.TotalCountResult;
 
 public class CompositePipesReporter extends PipesReporter implements Initializable {
 
-    private List<PipesReporter> pipesReporters;
+    private List<PipesReporter> pipesReporters = new ArrayList<>();
 
     @Override
     public void report(FetchEmitTuple t, PipesResult result, long elapsed) {
@@ -70,12 +71,21 @@ public class CompositePipesReporter extends PipesReporter implements Initializab
         }
     }
 
+    /**
+     * 
+     * @param pipesReporters
+     * @deprecated use {@link CompositePipesReporter#addPipesReporter(PipesReporter)}
+     */
     @Field
+    @Deprecated
     public void setPipesReporters(List<PipesReporter> pipesReporters) {
         this.pipesReporters = pipesReporters;
     }
 
-
+    @Field
+    public void addPipesReporter(PipesReporter pipesReporter) {
+        this.pipesReporters.add(pipesReporter);
+    }
     public List<PipesReporter> getPipesReporters() {
         return pipesReporters;
     }
