@@ -387,7 +387,7 @@
     <rome.version>1.18.0</rome.version>
     <scm.version>2.0.0-M3</scm.version>
     <sis.version>1.2</sis.version>
-    <slf4j.version>2.0.5</slf4j.version>
+    <slf4j.version>2.0.6</slf4j.version>
     <solrj.version>8.11.2</solrj.version>
     <!-- NOTE: Spring 6 requires jdk17 -->
     <spring.version>5.3.24</spring.version>
