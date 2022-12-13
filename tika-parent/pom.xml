@@ -325,7 +325,7 @@
     <commons.math3.version>3.6.1</commons.math3.version>
     <commons.net.version>3.9.0</commons.net.version>
     <ctakes.version>4.0.0.1</ctakes.version>
-    <cxf.version>3.5.4</cxf.version>
+    <cxf.version>3.5.5</cxf.version>
     <ddplist.version>1.26</ddplist.version>
     <dl4j.version>1.0.0-M2</dl4j.version>
     <!-- fakeload versions &gt; 0.4.0 require java > 8 -->
