@@ -22,48 +22,36 @@
     in the base paths.  We need the "empty" fetchers and emitters to
     handle the temp files that are created via fuzzing-->
 <properties>
-	<fetchers>
-		<fetcher class="org.apache.tika.pipes.fetcher.fs.FileSystemFetcher">
-			<params>
-				<name>fsf</name>
-				<basePath>{FILL_IN_HERE}</basePath>
-			</params>
-		</fetcher>
-		<fetcher class="org.apache.tika.pipes.fetcher.fs.FileSystemFetcher">
-			<params>
-				<name>temp</name>
-			</params>
-		</fetcher>
-	</fetchers>
-	<emitters>
-		<emitter class="org.apache.tika.pipes.emitter.fs.FileSystemEmitter">
-			<params>
-				<name>fse</name>
-				<basePath>{FILL_IN_HERE}</basePath>
-			</params>
-		</emitter>
-		<emitter class="org.apache.tika.pipes.emitter.fs.FileSystemEmitter">
-			<params>
-				<name>temp</name>
-			</params>
-		</emitter>
-	</emitters>
-	<pipesIterator class="org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator">
-		<params>
-			<basePath>{FILL_IN_HERE}</basePath>
-			<fetcherName>fsf</fetcherName>
-			<emitterName>fse</emitterName>
-		</params>
-	</pipesIterator>
-	<pipes>
-		<params>
-			<numClients>5</numClients>
-			<forkedJvmArgs>
-				<arg>-Xmx1g</arg>
-				<arg>-XX:ParallelGCThreads=2</arg>
-				<arg>-Dlog4j.configurationFile={FILL_IN_HERE}</arg>
-			</forkedJvmArgs>
-			<timeoutMillis>10000</timeoutMillis>
-		</params>
-	</pipes>
+  <fetchers>
+    <fetcher class="org.apache.tika.pipes.fetcher.fs.FileSystemFetcher">
+      <name>fsf</name>
+      <basePath>{FILL_IN_HERE}</basePath>
+    </fetcher>
+    <fetcher class="org.apache.tika.pipes.fetcher.fs.FileSystemFetcher">
+      <name>temp</name>
+    </fetcher>
+  </fetchers>
+  <emitters>
+    <emitter class="org.apache.tika.pipes.emitter.fs.FileSystemEmitter">
+      <name>fse</name>
+      <basePath>{FILL_IN_HERE}</basePath>
+    </emitter>
+    <emitter class="org.apache.tika.pipes.emitter.fs.FileSystemEmitter">
+      <name>temp</name>
+    </emitter>
+  </emitters>
+  <pipesIterator class="org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator">
+    <basePath>{FILL_IN_HERE}</basePath>
+    <fetcherName>fsf</fetcherName>
+    <emitterName>fse</emitterName>
+  </pipesIterator>
+  <pipes>
+    <numClients>5</numClients>
+    <forkedJvmArgs>
+      <arg>-Xmx1g</arg>
+      <arg>-XX:ParallelGCThreads=2</arg>
+      <arg>-Dlog4j.configurationFile={FILL_IN_HERE}</arg>
+    </forkedJvmArgs>
+    <timeoutMillis>10000</timeoutMillis>
+  </pipes>
 </properties>

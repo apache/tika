@@ -20,37 +20,35 @@
 <properties>
   <emitters>
     <emitter class="org.apache.tika.pipes.emitter.jdbc.JDBCEmitter">
-      <params>
-        <name>jdbc</name>
-        <connection>CONNECTION_STRING</connection>
-        <createTable>create table test
-          (path varchar(512) primary key,
-          k1 boolean,
-          k2 varchar(512),
-          k3 integer,
-          k4 long,
-          k5 bigint,
-          k6 timestamp);
-        </createTable>
-        <!-- the jdbc emitter always puts ths emitKey value as the first
-             item -->
-        <insert>insert into test (path, k1, k2, k3, k4, k5, k6) values (?,?,?,?,?,?,?);
-        </insert>
-        <!-- these are the keys in the metadata object.
-            The emitKey is added as the first element in the insert statement.
-            Then the these values are added in order.
-            They must be in the order of the insert statement.
-            -->
-        <keys>
-          <key k="k1" v="boolean"/>
-          <key k="k2" v="string"/>
-          <key k="k3" v="int"/>
-          <key k="k4" v="long"/>
-          <key k="k5" v="bigint"/>
-          <key k="k6" v="timestamp"/>
-        </keys>
-        <attachmentStrategy>first_only</attachmentStrategy>
-      </params>
+      <name>jdbc</name>
+      <connection>CONNECTION_STRING</connection>
+      <createTable>create table test
+        (path varchar(512) primary key,
+        k1 boolean,
+        k2 varchar(512),
+        k3 integer,
+        k4 long,
+        k5 bigint,
+        k6 timestamp);
+      </createTable>
+      <!-- the jdbc emitter always puts ths emitKey value as the first
+           item -->
+      <insert>insert into test (path, k1, k2, k3, k4, k5, k6) values (?,?,?,?,?,?,?);
+      </insert>
+      <!-- these are the keys in the metadata object.
+          The emitKey is added as the first element in the insert statement.
+          Then the these values are added in order.
+          They must be in the order of the insert statement.
+          -->
+      <keys>
+        <key k="k1" v="boolean"/>
+        <key k="k2" v="string"/>
+        <key k="k3" v="int"/>
+        <key k="k4" v="long"/>
+        <key k="k5" v="bigint"/>
+        <key k="k6" v="timestamp"/>
+      </keys>
+      <attachmentStrategy>first_only</attachmentStrategy>
     </emitter>
   </emitters>
 </properties>

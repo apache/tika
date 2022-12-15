@@ -80,24 +80,24 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
         TIKA_CONFIG_TIMEOUT = TEMP_WORKING_DIR.resolve("tika-config-timeout.xml");
         //TODO -- clean this up so that port is sufficient and we don't need portString
         String xml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" +
-                "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" + "<params>" +
+                "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" +
                 "<name>" + FETCHER_NAME + "</name>" +
                 "<basePath>" + inputDir.toAbsolutePath() +
-                "</basePath>" + "</params>" + "</fetcher>" + "</fetchers>" + "<emitters>" +
+                "</basePath>" + "</fetcher>" + "</fetchers>" + "<emitters>" +
                 "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" +
-                "<params>" + "<name>" + EMITTER_NAME + "</name>" +
+                "<name>" + EMITTER_NAME + "</name>" +
                 "<basePath>" + TEMP_OUTPUT_DIR.toAbsolutePath() +
-                "</basePath>" + "</params>" + "</emitter>" + "</emitters>" + "<server><params>" +
+                "</basePath>" + "</emitter>" + "</emitters>" + "<server>" +
                 "<enableUnsecureFeatures>true</enableUnsecureFeatures>" + "<port>9999</port>" +
                 "<endpoints>" + "<endpoint>pipes</endpoint>" + "<endpoint>status</endpoint>" +
                 "</endpoints>";
-        String xml2 = "</params></server>" +
-                "<pipes><params><tikaConfig>" +
+        String xml2 = "</server>" +
+                "<pipes><tikaConfig>" +
                 ProcessUtils.escapeCommandLine(TIKA_CONFIG.toAbsolutePath().toString()) +
                 "</tikaConfig><numClients>10</numClients><forkedJvmArgs><arg>-Xmx256m" +
                 "</arg>" + //TODO: need to add logging config here
                 "</forkedJvmArgs><timeoutMillis>5000</timeoutMillis>" +
-                "</params></pipes>" + "</properties>";
+                "</pipes>" + "</properties>";
 
         String tikaConfigXML = xml1 + xml2;
 

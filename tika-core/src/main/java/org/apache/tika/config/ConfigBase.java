@@ -43,6 +43,10 @@ import org.apache.tika.utils.XMLReaderUtils;
 
 public abstract class ConfigBase {
 
+    private static Class[] SUPPORTED_PRIMITIVES =
+            new Class[]{String.class, boolean.class, long.class, int.class, double.class,
+                    float.class};
+
     /**
      * Use this to build a single class, where the user specifies the instance class, e.g.
      * PipesIterator
@@ -78,8 +82,7 @@ public abstract class ConfigBase {
      * @throws IOException
      */
     protected static <T> T buildSingle(String itemName, Class<T> itemClass, Element properties,
-                                       T defaultValue)
-            throws TikaConfigException, IOException {
+                                       T defaultValue) throws TikaConfigException, IOException {
 
         NodeList children = properties.getChildNodes();
         T toConfigure = null;
@@ -90,12 +93,12 @@ public abstract class ConfigBase {
             }
             if (itemName.equals(child.getLocalName())) {
                 if (toConfigure != null) {
-                    throw new TikaConfigException("There can only be one " + itemName +
-                            " in a config");
+                    throw new TikaConfigException(
+                            "There can only be one " + itemName + " in a config");
                 }
                 T item = buildClass(child, itemName, itemClass);
                 setParams(item, child, new HashSet<>());
-                toConfigure = (T)item;
+                toConfigure = (T) item;
             }
         }
         if (toConfigure == null) {
@@ -134,8 +137,9 @@ public abstract class ConfigBase {
     }
 
     protected static <P, T> P buildComposite(String compositeElementName, Class<P> compositeClass,
-                String itemName, Class<T> itemClass, Element properties) throws TikaConfigException,
-            IOException {
+                                             String itemName, Class<T> itemClass,
+                                             Element properties)
+            throws TikaConfigException, IOException {
 
         if (!properties.getLocalName().equals("properties")) {
             throw new TikaConfigException("expect properties as root node");
@@ -156,7 +160,7 @@ public abstract class ConfigBase {
                     setParams(composite, child, new HashSet<>(), itemName);
                     return composite;
                 } catch (NoSuchMethodException | InvocationTargetException |
-                    InstantiationException | IllegalAccessException e) {
+                         InstantiationException | IllegalAccessException e) {
                     throw new TikaConfigException("can't build composite class", e);
                 }
             }
@@ -195,12 +199,13 @@ public abstract class ConfigBase {
             Class clazz = Class.forName(className);
             if (!itemClass.isAssignableFrom(clazz)) {
                 throw new TikaConfigException(
-                    elementName + " with class name " + className + " must be of type '" +
-                        itemClass.getName() + "'");
+                        elementName + " with class name " + className + " must be of type '" +
+                                itemClass.getName() + "'");
             }
             return (T) clazz.newInstance();
         } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
-            throw new TikaConfigException("problem loading " + elementName, e);
+            throw new TikaConfigException("problem loading " + elementName +
+                    " with class " + itemClass.getName(), e);
         }
     }
 
@@ -212,87 +217,128 @@ public abstract class ConfigBase {
     private static void setParams(Object object, Node targetNode, Set<String> settings,
                                   String exceptNodeName) throws TikaConfigException {
         NodeList children = targetNode.getChildNodes();
-        NodeList params = null;
+        List<Node> params = new ArrayList<>();
         for (int i = 0; i < children.getLength(); i++) {
             Node child = children.item(i);
-            if ("params".equals(child.getLocalName())) {
-                params = child.getChildNodes();
-            } else if (child.getNodeType() == 1 && ! child.getLocalName().equals(exceptNodeName)) {
-                String itemName = child.getLocalName();
-                SetterClassPair setterClassPair = findSetterClassPair(object, itemName);
-                Object item = buildClass(child, itemName, setterClassPair.itemClass);
-                setParams(setterClassPair.itemClass.cast(item), child, new HashSet<>());
-                try {
-                    setterClassPair.setterMethod.invoke(object, item);
-                } catch (IllegalAccessException | InvocationTargetException e) {
-                    throw new TikaConfigException("problem creating " + itemName, e);
-                }
-            }
-        }
-        if (params != null) {
-            for (int i = 0; i < params.getLength(); i++) {
-                Node param = params.item(i);
-                if (param.getNodeType() != 1) {
-                    continue;
-                }
-                String localName = param.getLocalName();
-                if (localName == null || localName.equals(exceptNodeName)) {
-                    continue;
-                }
-                String txt = param.getTextContent();
-                if (hasChildNodes(param)) {
-                    if (isMap(param)) {
-                        tryToSetMap(object, param);
-                    } else {
-                        tryToSetList(object, param);
-                    }
-                } else {
-                    tryToSet(object, localName, txt);
-                }
 
-                if (txt != null) {
-                    settings.add(localName);
+            if ("params".equals(child.getLocalName())) {
+                NodeList paramsList = child.getChildNodes();
+                for (int j = 0; j < paramsList.getLength(); j++) {
+                    params.add(paramsList.item(j));
                 }
+            } else {
+                params.add(child);
             }
         }
+        for (int i = 0; i < params.size(); i++) {
+            Node param = params.get(i);
+            if (param.getNodeType() != 1) {
+                continue;
+            }
+            String localName = param.getLocalName();
+            if (localName == null || localName.equals(exceptNodeName)) {
+                continue;
+            }
+            String txt = param.getTextContent();
+            String itemName = param.getLocalName();
+            SetterClassPair setterClassPair = findSetterClassPair(object, itemName);
+            boolean processed = false;
+            if (!hasClass(param)) {
+                if (setterClassPair.itemClass.isAssignableFrom(Map.class) && isMap(param)) {
+                    tryToSetMap(object, param);
+                    processed = true;
+                } else if (setterClassPair.itemClass.isAssignableFrom(List.class)) {
+                    tryToSetList(object, param);
+                    processed = true;
+                }
+            }
+            if (!processed) {
+                if (isPrimitive(setterClassPair.itemClass)) {
+                    tryToSetPrimitive(object, setterClassPair, param.getTextContent());
+                } else {
+                    //tryToSetPrimitive(object, localName, txt);
+                    Object item = buildClass(param, itemName, setterClassPair.itemClass);
+                    setParams(setterClassPair.itemClass.cast(item), param, new HashSet<>());
+                    try {
+                        setterClassPair.setterMethod.invoke(object, item);
+                    } catch (IllegalAccessException | InvocationTargetException e) {
+                        throw new TikaConfigException("problem creating " + itemName, e);
+                    }
+                }
+            }
+
+            if (txt != null) {
+                settings.add(localName);
+            }
+        }
+
         if (object instanceof Initializable) {
-            ((Initializable)object).initialize(Collections.EMPTY_MAP);
+            ((Initializable) object).initialize(Collections.EMPTY_MAP);
             ((Initializable) object).checkInitialization(InitializableProblemHandler.THROW);
         }
     }
 
+    private static boolean isPrimitive(Class itemClass) {
+        for (int i = 0; i < SUPPORTED_PRIMITIVES.length; i++) {
+            if (SUPPORTED_PRIMITIVES[i].equals(itemClass)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasClass(Node param) {
+        if (param.hasAttributes() && param.getAttributes().getNamedItem("class") != null) {
+            return true;
+        }
+        return false;
+    }
+
     private static SetterClassPair findSetterClassPair(Object object, String itemName)
             throws TikaConfigException {
-        String setter = "set" + itemName.substring(0, 1).toUpperCase(Locale.US) +
-                itemName.substring(1);
+
+        //TODO -- we could do more with info from the node -- is it complex, does it have
+        //a text value, does it have a class, etc...  This works for now.
+        String setter =
+                "set" + itemName.substring(0, 1).toUpperCase(Locale.US) + itemName.substring(1);
         Class itemClass = null;
         Method setterMethod = null;
         for (Method method : object.getClass().getMethods()) {
             if (setter.equals(method.getName())) {
                 Class<?>[] classes = method.getParameterTypes();
                 if (classes.length == 1) {
-                    itemClass = classes[0];
-                    setterMethod = method;
-                    return new SetterClassPair(setterMethod, itemClass);
+                    //if both setX(String) and setX(Object), prefer setX(String)
+                    if (itemClass == null || classes[0].equals(String.class)) {
+                        itemClass = classes[0];
+                        setterMethod = method;
+                    }
                 }
             }
         }
-
-        String adder = "add" + itemName.substring(0, 1).toUpperCase(Locale.US) +
-                itemName.substring(1);
+        if (setterMethod != null && itemClass != null) {
+            return new SetterClassPair(setterMethod, itemClass);
+        }
+        //now try adders
+        String adder =
+                "add" + itemName.substring(0, 1).toUpperCase(Locale.US) + itemName.substring(1);
         for (Method method : object.getClass().getMethods()) {
             if (adder.equals(method.getName())) {
                 Class<?>[] classes = method.getParameterTypes();
                 if (classes.length == 1) {
-                    itemClass = classes[0];
-                    setterMethod = method;
-                    return new SetterClassPair(setterMethod, itemClass);
+                    //if both setX(String) and setX(Object), prefer setX(String)
+                    if (itemClass == null || classes[0].equals(String.class)) {
+                        itemClass = classes[0];
+                        setterMethod = method;
+                    }
                 }
             }
         }
-        throw new TikaConfigException("Couldn't find setter '" +
-                setter + "' or adder '" + adder + "' for " + itemName +
-                " of class: " + object.getClass());
+        if (setterMethod == null && itemClass == null) {
+            throw new TikaConfigException(
+                    "Couldn't find setter '" + setter + "' or adder '" + adder + "' for " + itemName +
+                            " of class: " + object.getClass());
+        }
+        return new SetterClassPair(setterMethod, itemClass);
     }
 
     private static boolean hasChildNodes(Node param) {
@@ -311,7 +357,7 @@ public abstract class ConfigBase {
     }
 
     private static void tryToSetList(Object object, Node param) throws TikaConfigException {
-        if (param.hasAttributes() && param.getAttributes().getNamedItem("class") != null) {
+        if (hasClass(param)) {
             tryToSetClassList(object, param);
         } else {
             tryToSetStringList(object, param);
@@ -394,12 +440,12 @@ public abstract class ConfigBase {
                     value = m.getNamedItem("v").getTextContent();
                 }
                 if (key == null) {
-                    throw new TikaConfigException("must specify a 'key' or 'from' value in a map " +
-                            "object : " + param);
+                    throw new TikaConfigException(
+                            "must specify a 'key' or 'from' value in a map " + "object : " + param);
                 }
                 if (value == null) {
-                    throw new TikaConfigException("must specify a 'value' or 'to' value in a " +
-                            "map object : " + param);
+                    throw new TikaConfigException(
+                            "must specify a 'value' or 'to' value in a " + "map object : " + param);
                 }
                 map.put(key, value);
             }
@@ -433,65 +479,25 @@ public abstract class ConfigBase {
         return false;
     }
 
-    private static void tryToSet(Object object, String name, String value)
-            throws TikaConfigException {
-        String setter = "set" + name.substring(0, 1).toUpperCase(Locale.US) + name.substring(1);
-        Class[] types =
-                new Class[]{String.class, boolean.class, long.class, int.class, double.class,
-                    float.class};
-        for (Class t : types) {
-            try {
-                Method m = object.getClass().getMethod(setter, t);
-
-                if (t == int.class) {
-                    try {
-                        m.invoke(object, Integer.parseInt(value));
-                        return;
-                    } catch (IllegalAccessException | InvocationTargetException e) {
-                        throw new TikaConfigException("bad parameter " + setter, e);
-                    }
-                } else if (t == long.class) {
-                    try {
-                        m.invoke(object, Long.parseLong(value));
-                        return;
-                    } catch (IllegalAccessException | InvocationTargetException e) {
-                        throw new TikaConfigException("bad parameter " + setter, e);
-                    }
-                } else if (t == boolean.class) {
-                    try {
-                        m.invoke(object, Boolean.parseBoolean(value));
-                        return;
-                    } catch (IllegalAccessException | InvocationTargetException e) {
-                        throw new TikaConfigException("bad parameter " + setter, e);
-                    }
-                } else if (t == float.class) {
-                    try {
-                        m.invoke(object, Float.parseFloat(value));
-                        return;
-                    } catch (IllegalAccessException | InvocationTargetException e) {
-                        throw new TikaConfigException("bad parameter " + setter, e);
-                    }
-                } else if (t == double.class) {
-                    try {
-                        m.invoke(object, Double.parseDouble(value));
-                        return;
-                    } catch (IllegalAccessException | InvocationTargetException e) {
-                        throw new TikaConfigException("bad parameter " + setter, e);
-                    }
-                } else {
-                    try {
-                        m.invoke(object, value);
-                        return;
-                    } catch (IllegalAccessException | InvocationTargetException e) {
-                        throw new TikaConfigException("bad parameter " + setter, e);
-                    }
-                }
-            } catch (NoSuchMethodException e) {
-                //swallow
+    private static void tryToSetPrimitive(Object object, SetterClassPair setterClassPair,
+                                          String value) throws TikaConfigException {
+        try {
+            if (setterClassPair.itemClass == int.class) {
+                setterClassPair.setterMethod.invoke(object, Integer.parseInt(value));
+            } else if (setterClassPair.itemClass == long.class) {
+                setterClassPair.setterMethod.invoke(object, Long.parseLong(value));
+            } else if (setterClassPair.itemClass == float.class) {
+                setterClassPair.setterMethod.invoke(object, Float.parseFloat(value));
+            } else if (setterClassPair.itemClass == double.class) {
+                setterClassPair.setterMethod.invoke(object, Double.parseDouble(value));
+            } else if (setterClassPair.itemClass == boolean.class) {
+                setterClassPair.setterMethod.invoke(object, Boolean.parseBoolean(value));
+            } else {
+                setterClassPair.setterMethod.invoke(object, value);
             }
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new TikaConfigException("bad parameter " + setterClassPair + " " + value, e);
         }
-        throw new TikaConfigException(
-            "Couldn't find setter: " + setter + " for object " + object.getClass());
     }
 
 
@@ -544,9 +550,16 @@ public abstract class ConfigBase {
     private static class SetterClassPair {
         private final Method setterMethod;
         private final Class itemClass;
+
         public SetterClassPair(Method setterMethod, Class itemClass) {
             this.setterMethod = setterMethod;
             this.itemClass = itemClass;
+        }
+
+        @Override
+        public String toString() {
+            return "SetterClassPair{" + "setterMethod=" + setterMethod + ", itemClass=" +
+                    itemClass + '}';
         }
     }
 }

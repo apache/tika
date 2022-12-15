@@ -20,25 +20,23 @@
 <properties>
   <emitters>
     <emitter class="org.apache.tika.pipes.emitter.jdbc.JDBCEmitter">
-      <params>
-        <name>jdbc</name>
-        <connection>CONNECTION_STRING</connection>
-        <insert>insert into test (path, k1, k2, k3, k4) values (?,?,?,?,?);
-        </insert>
-        <!-- these are the keys in the metadata object.
-            The emitKey is added as the first element in the insert statement.
-            Then the these values are added in order.
-            They must be in the order of the insert statement.
-            The emit key is added as
-            -->
-        <keys>
-          <key k="k1" v="boolean"/>
-          <key k="k2" v="string"/>
-          <key k="k3" v="int"/>
-          <key k="k4" v="long"/>
-        </keys>
-        <attachmentStrategy>first_only</attachmentStrategy>
-      </params>
+      <name>jdbc</name>
+      <connection>CONNECTION_STRING</connection>
+      <insert>insert into test (path, k1, k2, k3, k4) values (?,?,?,?,?);
+      </insert>
+      <!-- these are the keys in the metadata object.
+          The emitKey is added as the first element in the insert statement.
+          Then the these values are added in order.
+          They must be in the order of the insert statement.
+          The emit key is added as
+          -->
+      <keys>
+        <key k="k1" v="boolean"/>
+        <key k="k2" v="string"/>
+        <key k="k3" v="int"/>
+        <key k="k4" v="long"/>
+      </keys>
+      <attachmentStrategy>first_only</attachmentStrategy>
     </emitter>
   </emitters>
 </properties>

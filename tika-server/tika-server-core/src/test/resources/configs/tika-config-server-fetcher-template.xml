@@ -18,21 +18,17 @@
 <properties>
   <fetchers>
     <fetcher class="org.apache.tika.pipes.fetcher.fs.FileSystemFetcher">
-      <params>
-        <name>fsf</name>
-        <basePath>{FETCHER_BASE_PATH}</basePath>
-      </params>
+      <name>fsf</name>
+      <basePath>{FETCHER_BASE_PATH}</basePath>
     </fetcher>
   </fetchers>
   <server>
-    <params>
-      <port>{PORT}</port>
-      <taskTimeoutMillis>54321</taskTimeoutMillis>
-      <enableUnsecureFeatures>true</enableUnsecureFeatures>
-      <noFork>true</noFork>
-      <endpoints>
-        <endpoint>tika</endpoint>
-      </endpoints>
-    </params>
+    <port>{PORT}</port>
+    <taskTimeoutMillis>54321</taskTimeoutMillis>
+    <enableUnsecureFeatures>true</enableUnsecureFeatures>
+    <noFork>true</noFork>
+    <endpoints>
+      <endpoint>tika</endpoint>
+    </endpoints>
   </server>
 </properties>

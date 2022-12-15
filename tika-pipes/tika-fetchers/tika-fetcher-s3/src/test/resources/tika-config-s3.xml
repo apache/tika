@@ -16,14 +16,12 @@
   limitations under the License.
 -->
 <properties>
-    <fetchers>
-        <fetcher class="org.apache.tika.pipes.fetcher.s3.S3Fetcher">
-            <params>
-                <name>s3</name>
-                <region>us-east-1</region>
-                <profile>my_profile</profile>
-                <credentialsProvider>profile</credentialsProvider>
-            </params>
-        </fetcher>
-    </fetchers>
+  <fetchers>
+    <fetcher class="org.apache.tika.pipes.fetcher.s3.S3Fetcher">
+      <name>s3</name>
+      <region>us-east-1</region>
+      <profile>my_profile</profile>
+      <credentialsProvider>profile</credentialsProvider>
+    </fetcher>
+  </fetchers>
 </properties>

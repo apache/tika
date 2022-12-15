@@ -107,15 +107,15 @@ public class TikaPipesTest extends CXFTestBase {
         TIKA_CONFIG_XML =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" +
                         "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" +
-                        "<params>" + "<name>fsf</name>" +
+                        "<name>fsf</name>" +
                         "<basePath>" + inputDir.toAbsolutePath() +
-                        "</basePath>" + "</params>" + "</fetcher>" + "</fetchers>" + "<emitters>" +
+                        "</basePath>" + "</fetcher>" + "</fetchers>" + "<emitters>" +
                         "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" +
-                        "<params>" + "<name>fse</name>" +
+                        "<name>fse</name>" +
                         "<basePath>" +
-                        TMP_OUTPUT_DIR.toAbsolutePath() + "</basePath>" + "</params>" +
+                        TMP_OUTPUT_DIR.toAbsolutePath() + "</basePath>" +
                         "</emitter>" +
-                        "</emitters>" + "<pipes><params><tikaConfig>" +
+                        "</emitters>" + "<pipes><tikaConfig>" +
                 ProcessUtils.escapeCommandLine(TIKA_CONFIG_PATH.toAbsolutePath().toString()) +
                         "</tikaConfig><numClients>10</numClients>" +
                         "<forkedJvmArgs>" +
@@ -123,7 +123,7 @@ public class TikaPipesTest extends CXFTestBase {
                         "<arg>-Dlog4j.configurationFile=file:" +
                         ProcessUtils.escapeCommandLine(TIKA_PIPES_LOG4j2_PATH.toAbsolutePath().toString()) + "</arg>" +
                         "</forkedJvmArgs>" +
-                        "</params></pipes>" + "</properties>";
+                        "</pipes>" + "</properties>";
         Files.write(TIKA_CONFIG_PATH, TIKA_CONFIG_XML.getBytes(StandardCharsets.UTF_8));
     }
 

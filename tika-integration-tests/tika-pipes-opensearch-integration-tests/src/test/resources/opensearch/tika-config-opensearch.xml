@@ -51,76 +51,64 @@
      -->
     <metadataFilter class="org.apache.tika.metadata.filter.DateNormalizingMetadataFilter"/>
     <metadataFilter class="org.apache.tika.metadata.filter.FieldNameMappingFilter">
-      <params>
-        <excludeUnmapped>true</excludeUnmapped>
-        <mappings>
-          <mapping from="X-TIKA:content" to="content"/>
-          <mapping from="Content-Length" to="length"/>
-          <mapping from="dc:creator" to="creators"/>
-          <mapping from="dc:title" to="title"/>
-          <mapping from="Content-Type" to="mime"/>
-          <mapping from="X-TIKA:EXCEPTION:container_exception" to="tika_exception"/>
-        </mappings>
-      </params>
+      <excludeUnmapped>true</excludeUnmapped>
+      <mappings>
+        <mapping from="X-TIKA:content" to="content"/>
+        <mapping from="Content-Length" to="length"/>
+        <mapping from="dc:creator" to="creators"/>
+        <mapping from="dc:title" to="title"/>
+        <mapping from="Content-Type" to="mime"/>
+        <mapping from="X-TIKA:EXCEPTION:container_exception" to="tika_exception"/>
+      </mappings>
     </metadataFilter>
   </metadataFilters>
   <async>
-    <params>
-      <maxForEmitBatchBytes>10000</maxForEmitBatchBytes>
-      <emitMaxEstimatedBytes>100000</emitMaxEstimatedBytes>
-      <emitWithinMillis>60000</emitWithinMillis>
-      <numEmitters>1</numEmitters>
-      <numClients>3</numClients>
-      <tikaConfig>{TIKA_CONFIG}</tikaConfig>
-      <forkedJvmArgs>
-        <arg>-Xmx512m</arg>
-        <arg>-XX:ParallelGCThreads=2</arg>
-        <arg>-Dlog4j.configurationFile={LOG4J_PROPERTIES_FILE}</arg>
-      </forkedJvmArgs>
-      <timeoutMillis>60000</timeoutMillis>
-    </params>
+    <maxForEmitBatchBytes>10000</maxForEmitBatchBytes>
+    <emitMaxEstimatedBytes>100000</emitMaxEstimatedBytes>
+    <emitWithinMillis>60000</emitWithinMillis>
+    <numEmitters>1</numEmitters>
+    <numClients>3</numClients>
+    <tikaConfig>{TIKA_CONFIG}</tikaConfig>
+    <forkedJvmArgs>
+      <arg>-Xmx512m</arg>
+      <arg>-XX:ParallelGCThreads=2</arg>
+      <arg>-Dlog4j.configurationFile={LOG4J_PROPERTIES_FILE}</arg>
+    </forkedJvmArgs>
+    <timeoutMillis>60000</timeoutMillis>
     <pipesReporter class="org.apache.tika.pipes.reporters.opensearch.OpenSearchPipesReporter">
-      <params>
-        <openSearchUrl>{OPENSEARCH_CONNECTION}</openSearchUrl>
-        <keyPrefix>my_test_</keyPrefix>
-        <connectionTimeout>10000</connectionTimeout>
-        <socketTimeout>60000</socketTimeout>
-        <includeRouting>{INCLUDE_ROUTING}</includeRouting>
-        <userName>admin</userName>
-        <password>admin</password>
-      </params>
+      <openSearchUrl>{OPENSEARCH_CONNECTION}</openSearchUrl>
+      <keyPrefix>my_test_</keyPrefix>
+      <connectionTimeout>10000</connectionTimeout>
+      <socketTimeout>60000</socketTimeout>
+      <includeRouting>{INCLUDE_ROUTING}</includeRouting>
+      <userName>admin</userName>
+      <password>admin</password>
     </pipesReporter>
   </async>
   <fetchers>
     <fetcher class="org.apache.tika.pipes.fetcher.fs.FileSystemFetcher">
-      <params>
-        <name>fsf</name>
-        <basePath>{PATH_TO_DOCS}</basePath>
-      </params>
+      <name>fsf</name>
+      <basePath>{PATH_TO_DOCS}</basePath>
     </fetcher>
   </fetchers>
   <emitters>
     <emitter class="org.apache.tika.pipes.emitter.opensearch.OpenSearchEmitter">
-      <params>
-        <name>ose</name>
-        <openSearchUrl>{OPENSEARCH_CONNECTION}</openSearchUrl>
-        <updateStrategy>{UPDATE_STRATEGY}</updateStrategy>
-        <attachmentStrategy>{ATTACHMENT_STRATEGY}</attachmentStrategy>
-        <commitWithin>10</commitWithin>
-        <idField>_id</idField>
-        <connectionTimeout>10000</connectionTimeout>
-        <socketTimeout>60000</socketTimeout>
-        <userName>admin</userName>
-        <password>admin</password>
-      </params>
+      <name>ose</name>
+      <openSearchUrl>{OPENSEARCH_CONNECTION}</openSearchUrl>
+      <updateStrategy>{UPDATE_STRATEGY}</updateStrategy>
+      <attachmentStrategy>{ATTACHMENT_STRATEGY}</attachmentStrategy>
+      <commitWithin>10</commitWithin>
+      <idField>_id</idField>
+      <connectionTimeout>10000</connectionTimeout>
+      <socketTimeout>60000</socketTimeout>
+      <userName>admin</userName>
+      <password>admin</password>
     </emitter>
   </emitters>
   <pipesIterator class="org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator">
-    <params>
-      <basePath>{PATH_TO_DOCS}</basePath>
-      <fetcherName>fsf</fetcherName>
-      <emitterName>ose</emitterName>
-      <parseMode>{PARSE_MODE}</parseMode>
-    </params>
+    <basePath>{PATH_TO_DOCS}</basePath>
+    <fetcherName>fsf</fetcherName>
+    <emitterName>ose</emitterName>
+    <parseMode>{PARSE_MODE}</parseMode>
   </pipesIterator>
 </properties>

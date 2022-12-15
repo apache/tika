@@ -16,13 +16,11 @@
   limitations under the License.
 -->
 <properties>
-    <fetchers>
-        <fetcher class="org.apache.tika.pipes.fetcher.gcs.GCSFetcher">
-            <params>
-                <name>gcs</name>
-                <projectId>My First Project</projectId>
-                <bucket>tika-tallison-test-bucket</bucket>
-            </params>
-        </fetcher>
-    </fetchers>
+  <fetchers>
+    <fetcher class="org.apache.tika.pipes.fetcher.gcs.GCSFetcher">
+      <name>gcs</name>
+      <projectId>My First Project</projectId>
+      <bucket>tika-tallison-test-bucket</bucket>
+    </fetcher>
+  </fetchers>
 </properties>

@@ -17,17 +17,15 @@
 -->
 <properties>
   <server>
-    <params>
-      <port>9999</port>
-      <taskTimeoutMillis>54321</taskTimeoutMillis>
-      <enableUnsecureFeatures>true</enableUnsecureFeatures>
-      <forkedJvmArgs>
-        <arg>-Xms20m</arg>
-        <arg>-Xmx10m</arg>
-      </forkedJvmArgs>
-      <endpoints>
-        <endpoint>rmeta</endpoint>
-      </endpoints>
-    </params>
+    <port>9999</port>
+    <taskTimeoutMillis>54321</taskTimeoutMillis>
+    <enableUnsecureFeatures>true</enableUnsecureFeatures>
+    <forkedJvmArgs>
+      <arg>-Xms20m</arg>
+      <arg>-Xmx10m</arg>
+    </forkedJvmArgs>
+    <endpoints>
+      <endpoint>rmeta</endpoint>
+    </endpoints>
   </server>
 </properties>

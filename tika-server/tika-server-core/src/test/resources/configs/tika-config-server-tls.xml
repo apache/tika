@@ -17,29 +17,25 @@
 -->
 <properties>
   <server>
-    <params>
-      <port>9999</port>
-      <taskTimeoutMillis>54321</taskTimeoutMillis>
-      <minimumTimeoutMillis>10</minimumTimeoutMillis>
-      <enableUnsecureFeatures>true</enableUnsecureFeatures>
-      <maxFiles>20</maxFiles>
-      <forkedJvmArgs>
-        <arg>-Xmx2g</arg>
-      </forkedJvmArgs>
-      <endpoints>
-        <endpoint>rmeta</endpoint>
-      </endpoints>
-    </params>
+    <port>9999</port>
+    <taskTimeoutMillis>54321</taskTimeoutMillis>
+    <minimumTimeoutMillis>10</minimumTimeoutMillis>
+    <enableUnsecureFeatures>true</enableUnsecureFeatures>
+    <maxFiles>20</maxFiles>
+    <forkedJvmArgs>
+      <arg>-Xmx2g</arg>
+    </forkedJvmArgs>
+    <endpoints>
+      <endpoint>rmeta</endpoint>
+    </endpoints>
     <tlsConfig>
-      <params>
-        <active>true</active>
-        <keyStoreType>myType</keyStoreType>
-        <keyStorePassword>pass</keyStorePassword>
-        <keyStoreFile>/something/or/other</keyStoreFile>
-        <trustStoreType>myType2</trustStoreType>
-        <trustStorePassword>pass2</trustStorePassword>
-        <trustStoreFile>/something/or/other2</trustStoreFile>
-      </params>
+      <active>true</active>
+      <keyStoreType>myType</keyStoreType>
+      <keyStorePassword>pass</keyStorePassword>
+      <keyStoreFile>/something/or/other</keyStoreFile>
+      <trustStoreType>myType2</trustStoreType>
+      <trustStorePassword>pass2</trustStorePassword>
+      <trustStoreFile>/something/or/other2</trustStoreFile>
     </tlsConfig>
   </server>
 </properties>

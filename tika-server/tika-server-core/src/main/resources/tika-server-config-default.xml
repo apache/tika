@@ -17,6 +17,7 @@
 -->
 <properties>
   <server>
+    <!-- as of Tika 2.7.0, we do not require the params element here -->
     <params>
       <!-- which port to start the server on. If you specify a range,
           e.g. 9995-9998, TikaServerCli will start four forked servers,

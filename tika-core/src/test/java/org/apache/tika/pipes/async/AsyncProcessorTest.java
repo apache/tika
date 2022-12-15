@@ -80,18 +80,18 @@ public class AsyncProcessorTest {
         String xml =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<properties>" + "  <emitters>" +
                 "  <emitter class=\"org.apache.tika.pipes.async.MockEmitter\">\n" +
-                "    <params>\n" + "      <name>mock</name>\n" + "    </params>" + "  </emitter>" +
+                "         <name>mock</name>\n" + "  </emitter>" +
                 "  </emitters>" + "  <fetchers>" +
                 "    <fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" +
-                "      <params><name>mock</name>\n" + "      <basePath>" +
+                "      <name>mock</name>\n" + "      <basePath>" +
                 ProcessUtils.escapeCommandLine(inputDir.toAbsolutePath().toString()) +
-                "</basePath></params>\n" + "    </fetcher>" + "  </fetchers>" +
-                        "<async><params><tikaConfig>" +
+                "</basePath>\n" + "    </fetcher>" + "  </fetchers>" +
+                        "<async><tikaConfig>" +
                         ProcessUtils.escapeCommandLine(tikaConfigPath.toAbsolutePath().toString()) +
                         "</tikaConfig><forkedJvmArgs><arg>-Xmx512m</arg" +
                         "></forkedJvmArgs><maxForEmitBatchBytes>1000000</maxForEmitBatchBytes>" +
                         "<timeoutMillis>5000</timeoutMillis>" +
-                        "<numClients>4</numClients></params></async>" +
+                        "<numClients>4</numClients></async>" +
                         "</properties>";
         Files.write(tikaConfigPath, xml.getBytes(StandardCharsets.UTF_8));
         Random r = new Random();

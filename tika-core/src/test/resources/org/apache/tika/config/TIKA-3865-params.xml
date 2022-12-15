@@ -26,20 +26,16 @@
       <numEmitters>1</numEmitters>
     </params>
     <pipesReporter class="org.apache.tika.pipes.CompositePipesReporter">
-      <params>
-        <pipesReporters class="org.apache.tika.pipes.PipesReporter">
-          <pipesReporter class="org.apache.tika.pipes.async.MockReporter">
-            <params>
-              <endpoint>somethingOrOther1</endpoint>
-            </params>
-          </pipesReporter>
-          <pipesReporter class="org.apache.tika.pipes.async.MockReporter">
-            <params>
-              <endpoint>somethingOrOther2</endpoint>
-            </params>
-          </pipesReporter>
-        </pipesReporters>
-      </params>
+      <pipesReporter class="org.apache.tika.pipes.async.MockReporter">
+        <params>
+          <endpoint>somethingOrOther1</endpoint>
+        </params>
+      </pipesReporter>
+      <pipesReporter class="org.apache.tika.pipes.async.MockReporter">
+        <params>
+          <endpoint>somethingOrOther2</endpoint>
+        </params>
+      </pipesReporter>
     </pipesReporter>
   </async>
 </properties>

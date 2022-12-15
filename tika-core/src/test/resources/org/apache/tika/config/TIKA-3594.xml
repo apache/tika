@@ -20,9 +20,7 @@
     <parser class="org.apache.tika.parser.DefaultParser"/>
   </parsers>
   <autoDetectParserConfig>
-    <params>
-      <spoolToDisk>12345</spoolToDisk>
-      <outputThreshold>6789</outputThreshold>
-    </params>
+    <spoolToDisk>12345</spoolToDisk>
+    <outputThreshold>6789</outputThreshold>
   </autoDetectParserConfig>
 </properties>

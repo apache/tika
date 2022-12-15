@@ -18,9 +18,7 @@
 <properties>
   <metadataFilters>
     <metadataFilter class="org.apache.tika.metadata.filter.GeoPointMetadataFilter">
-      <params>
-        <geoPointFieldName>myGeoPoint</geoPointFieldName>
-      </params>
+      <geoPointFieldName>myGeoPoint</geoPointFieldName>
     </metadataFilter>
   </metadataFilters>
 </properties>

@@ -144,7 +144,6 @@ public class TestJDBCPipesIterator {
         String config = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><properties>\n" +
                 "        <pipesIterator " +
                 "       class=\"org.apache.tika.pipes.pipesiterator.jdbc.JDBCPipesIterator\">\n" +
-                "            <params>\n" +
                 "                <fetcherName>s3f</fetcherName>\n" +
                 "                <emitterName>s3e</emitterName>\n" +
                 "                <queueSize>57</queueSize>\n" +
@@ -156,7 +155,6 @@ public class TestJDBCPipesIterator {
                 "from fetchkeys</select>\n" +
                 "                <connection>jdbc:h2:file:" + DB_DIR.toAbsolutePath() + "/" +
                     db + "</connection>\n" +
-                "            </params>\n" +
                 "        </pipesIterator>\n" +
                 "</properties>";
         Path tmp = Files.createTempFile("tika-jdbc-", ".xml");

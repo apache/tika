@@ -16,16 +16,14 @@
   limitations under the License.
 -->
 <properties>
-    <fetchers>
-        <fetcher class="org.apache.tika.pipes.fetcher.http.HttpFetcher">
-            <params>
-                <name>http</name>
-                <httpHeaders>
-                    <header>Connection</header>
-                    <header>Expires</header>
-                    <header>Content-Length</header>
-                </httpHeaders>
-            </params>
-        </fetcher>
-    </fetchers>
+  <fetchers>
+    <fetcher class="org.apache.tika.pipes.fetcher.http.HttpFetcher">
+      <name>http</name>
+      <httpHeaders>
+        <header>Connection</header>
+        <header>Expires</header>
+        <header>Content-Length</header>
+      </httpHeaders>
+    </fetcher>
+  </fetchers>
 </properties>

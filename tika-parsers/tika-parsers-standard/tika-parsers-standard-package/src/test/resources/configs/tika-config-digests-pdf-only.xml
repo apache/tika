@@ -22,16 +22,12 @@
     </parser>
   </parsers>
   <autoDetectParserConfig>
-    <params>
-      <spoolToDisk>1000000</spoolToDisk>
-      <outputThreshold>1000000</outputThreshold>
-    </params>
+    <spoolToDisk>1000000</spoolToDisk>
+    <outputThreshold>1000000</outputThreshold>
     <digesterFactory
         class="org.apache.tika.parser.digestutils.CommonsDigesterFactory">
-      <params>
-        <markLimit>100000</markLimit>
-        <algorithmString>sha256:32,md5</algorithmString>
-      </params>
+      <markLimit>100000</markLimit>
+      <algorithmString>sha256:32,md5</algorithmString>
     </digesterFactory>
   </autoDetectParserConfig>
 </properties>

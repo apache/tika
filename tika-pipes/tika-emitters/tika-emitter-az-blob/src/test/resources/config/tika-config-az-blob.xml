@@ -16,15 +16,13 @@
   limitations under the License.
 -->
 <properties>
-    <emitters>
-        <emitter class="org.apache.tika.pipes.emitter.azblob.AZBlobEmitter">
-            <params>
-                <name>az-blob</name>
-                <!-- these have to be non-null -->
-                <endpoint></endpoint>
-                <container></container>
-                <sasToken></sasToken>
-            </params>
-        </emitter>
-    </emitters>
+  <emitters>
+    <emitter class="org.apache.tika.pipes.emitter.azblob.AZBlobEmitter">
+      <name>az-blob</name>
+      <!-- these have to be non-null -->
+      <endpoint></endpoint>
+      <container></container>
+      <sasToken></sasToken>
+    </emitter>
+  </emitters>
 </properties>

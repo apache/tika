@@ -16,13 +16,11 @@
   limitations under the License.
 -->
 <properties>
-    <emitters>
-        <emitter class="org.apache.tika.pipes.emitter.gcs.GCSEmitter">
-            <params>
-                <name>gcs</name>
-                <projectId>My First Project</projectId>
-                <bucket>tika-tallison-test-bucket</bucket>
-            </params>
-        </emitter>
-    </emitters>
+  <emitters>
+    <emitter class="org.apache.tika.pipes.emitter.gcs.GCSEmitter">
+      <name>gcs</name>
+      <projectId>My First Project</projectId>
+      <bucket>tika-tallison-test-bucket</bucket>
+    </emitter>
+  </emitters>
 </properties>

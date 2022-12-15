@@ -20,28 +20,26 @@
 <properties>
   <emitters>
     <emitter class="org.apache.tika.pipes.emitter.jdbc.JDBCEmitter">
-      <params>
-        <name>jdbc</name>
-        <connection>CONNECTION_STRING</connection>
-        <createTable>create table test
-          (path varchar(512) primary key,
-          k1 varchar(512));
-        </createTable>
-        <!-- the jdbc emitter always puts ths emitKey value as the first
-             item -->
-        <insert>insert into test (path, k1) values (?,?);
-        </insert>
-        <!-- these are the keys in the metadata object.
-            The emitKey is added as the first element in the insert statement.
-            Then the these values are added in order.
-            They must be in the order of the insert statement.
-            -->
-        <keys>
-          <key k="k1" v="varchar(512)"/>
-        </keys>
-        <multivaluedFieldStrategy>concatenate</multivaluedFieldStrategy>
-        <multivaluedFieldDelimiter>, </multivaluedFieldDelimiter>
-      </params>
+      <name>jdbc</name>
+      <connection>CONNECTION_STRING</connection>
+      <createTable>create table test
+        (path varchar(512) primary key,
+        k1 varchar(512));
+      </createTable>
+      <!-- the jdbc emitter always puts ths emitKey value as the first
+           item -->
+      <insert>insert into test (path, k1) values (?,?);
+      </insert>
+      <!-- these are the keys in the metadata object.
+          The emitKey is added as the first element in the insert statement.
+          Then the these values are added in order.
+          They must be in the order of the insert statement.
+          -->
+      <keys>
+        <key k="k1" v="varchar(512)"/>
+      </keys>
+      <multivaluedFieldStrategy>concatenate</multivaluedFieldStrategy>
+      <multivaluedFieldDelimiter>, </multivaluedFieldDelimiter>
     </emitter>
   </emitters>
 </properties>
