@@ -271,6 +271,8 @@ public class TikaServerConfig extends ConfigBase {
                         return param.getTextContent();
                     }
                 }
+            } else if ("name".equals(child.getLocalName())) {
+                return child.getTextContent();
             }
         }
         return null;
