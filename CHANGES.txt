@@ -1,5 +1,7 @@
 Release 2.6.1 - ???
 
+   * Remove need for <params/> element in classes that extend ConfigBase (TIKA-3946).
+
    * Add X-TIKA:embedded_id_path to ensure unique embedded file paths (TIKA-3942).
 
    * Fix bug that prevented digests when the fallback/EmptyParser
