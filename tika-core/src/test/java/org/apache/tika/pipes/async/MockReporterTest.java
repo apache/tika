@@ -23,7 +23,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.pipes.CompositePipesReporter;
@@ -40,17 +39,6 @@ public class MockReporterTest {
         assertEquals("somethingOrOther", ((MockReporter)reporter).getEndpoint());
     }
 
-    @Test
-    @Disabled
-    public void testDeprecatedCompositePipesReporter() throws Exception {
-        Path configPath = Paths.get(this.getClass().getResource("TIKA-3865-deprecated.xml").toURI());
-        AsyncConfig asyncConfig = AsyncConfig.load(configPath);
-        PipesReporter reporter = asyncConfig.getPipesReporter();
-        assertTrue(reporter instanceof CompositePipesReporter);
-        List<PipesReporter> reporters = ((CompositePipesReporter)reporter).getPipesReporters();
-        assertEquals("somethingOrOther1", ((MockReporter)reporters.get(0)).getEndpoint());
-        assertEquals("somethingOrOther2", ((MockReporter)reporters.get(1)).getEndpoint());
-    }
 
     @Test
     public void testCompositePipesReporter() throws Exception {
