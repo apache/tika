@@ -852,7 +852,7 @@
       <dependency>
         <groupId>org.netpreserve</groupId>
         <artifactId>jwarc</artifactId>
-        <version>0.20.0</version>
+        <version>0.20.1</version>
       </dependency>
       <dependency>
         <groupId>org.ops4j.base</groupId>
