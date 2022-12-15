@@ -357,7 +357,6 @@
     <json.simple.version>1.1.1</json.simple.version>
     <junit4.version>4.13.2</junit4.version>
     <junit5.version>5.9.1</junit5.version>
-    <juniversalchardet.version>1.0.3</juniversalchardet.version>
     <junrar.version>7.5.4</junrar.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.19.0</log4j2.version>
@@ -535,6 +534,11 @@
             <artifactId>jakarta.activation-api</artifactId>
           </exclusion>
         </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>com.github.albfernandez</groupId>
+        <artifactId>juniversalchardet</artifactId>
+        <version>2.4.0</version>
       </dependency>
       <!-- jai-imageio-core is allowed since LEGAL-304 -->
       <dependency>
