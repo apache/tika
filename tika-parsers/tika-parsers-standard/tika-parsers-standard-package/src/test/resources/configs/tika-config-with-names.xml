@@ -20,14 +20,10 @@
     <parser class="org.apache.tika.parser.DefaultParser"/>
   </parsers>
   <autoDetectParserConfig>
-    <params>
-      <spoolToDisk>123450</spoolToDisk>
-      <outputThreshold>678900</outputThreshold>
-    </params>
+    <spoolToDisk>123450</spoolToDisk>
+    <outputThreshold>678900</outputThreshold>
     <embeddedDocumentExtractorFactory class="org.apache.tika.extractor.ParsingEmbeddedDocumentExtractorFactory">
-      <params>
-        <writeFileNameToContent>true</writeFileNameToContent>
-      </params>
+      <writeFileNameToContent>true</writeFileNameToContent>
     </embeddedDocumentExtractorFactory>
   </autoDetectParserConfig>
 </properties>

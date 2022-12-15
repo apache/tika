@@ -16,17 +16,15 @@
   limitations under the License.
 -->
 <properties>
-    <fetchers>
-        <fetcher class="org.apache.tika.pipes.fetcher.azblob.AZBlobFetcher">
-            <params>
-                <name>az-blob</name>
-                <!-- Either configure these three and send in the path for the blob OR
-                     do not configure any of these and send in the full SAS url for the blob
-                     as the fetchkey-->
-                <endpoint></endpoint>
-                <container></container>
-                <sasToken></sasToken>
-            </params>
-        </fetcher>
-    </fetchers>
+  <fetchers>
+    <fetcher class="org.apache.tika.pipes.fetcher.azblob.AZBlobFetcher">
+      <name>az-blob</name>
+      <!-- Either configure these three and send in the path for the blob OR
+           do not configure any of these and send in the full SAS url for the blob
+           as the fetchkey-->
+      <endpoint></endpoint>
+      <container></container>
+      <sasToken></sasToken>
+    </fetcher>
+  </fetchers>
 </properties>

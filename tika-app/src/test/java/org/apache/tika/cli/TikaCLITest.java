@@ -63,18 +63,18 @@ public class TikaCLITest {
     @BeforeAll
     public static void setUpClass() throws Exception {
         ASYNC_CONFIG = Files.createTempFile(ASYNC_OUTPUT_DIR, "async-config-", ".xml");
-        String xml = "<properties>" + "<async>" + "<params>" + "<numClients>3</numClients>" +
-                "<tikaConfig>" + ASYNC_CONFIG.toAbsolutePath() + "</tikaConfig>" + "</params>" +
+        String xml = "<properties>" + "<async>" + "<numClients>3</numClients>" +
+                "<tikaConfig>" + ASYNC_CONFIG.toAbsolutePath() + "</tikaConfig>" +
                 "</async>" + "<fetchers>" +
                 "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" +
-                "<params>" + "<name>fsf</name>" + "<basePath>" + TEST_DATA_FILE.getAbsolutePath() +
-                "</basePath>" + "</params>" + "</fetcher>" + "</fetchers>" + "<emitters>" +
+                "<name>fsf</name>" + "<basePath>" + TEST_DATA_FILE.getAbsolutePath() +
+                "</basePath>" + "</fetcher>" + "</fetchers>" + "<emitters>" +
                 "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" +
-                "<params>" + "<name>fse</name>" + "<basePath>" + ASYNC_OUTPUT_DIR.toAbsolutePath() +
-                "</basePath>" + "</params></emitter>" + "</emitters>" + "<pipesIterator " +
+                "<name>fse</name>" + "<basePath>" + ASYNC_OUTPUT_DIR.toAbsolutePath() +
+                "</basePath>" + "</emitter>" + "</emitters>" + "<pipesIterator " +
                 "class=\"org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator\">" +
-                "<params>" + "<basePath>" + TEST_DATA_FILE.getAbsolutePath() + "</basePath>" +
-                "<fetcherName>fsf</fetcherName>" + "<emitterName>fse</emitterName>" + "</params>" +
+                "<basePath>" + TEST_DATA_FILE.getAbsolutePath() + "</basePath>" +
+                "<fetcherName>fsf</fetcherName>" + "<emitterName>fse</emitterName>" +
                 "</pipesIterator>" + "</properties>";
         Files.write(ASYNC_CONFIG, xml.getBytes(UTF_8));
     }

@@ -18,14 +18,10 @@
 <properties>
   <emitters>
     <emitter class="org.apache.tika.pipes.async.MockEmitter">
-      <params>
-        <name>em1</name>
-      </params>
+      <name>em1</name>
     </emitter>
     <emitter class="org.apache.tika.pipes.async.MockEmitter">
-      <params>
-        <name>em2</name>
-      </params>
+      <name>em2</name>
     </emitter>
   </emitters>
 </properties>

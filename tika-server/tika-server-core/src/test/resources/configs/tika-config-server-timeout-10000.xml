@@ -17,14 +17,12 @@
 -->
 <properties>
   <server>
-    <params>
-      <port>9999</port>
-      <taskTimeoutMillis>10000</taskTimeoutMillis>
-      <taskPulseMillis>100</taskPulseMillis>
-      <maxFiles>20</maxFiles>
-      <forkedJvmArgs>
-        <arg>-Xmx512m</arg>
-      </forkedJvmArgs>
-    </params>
+    <port>9999</port>
+    <taskTimeoutMillis>10000</taskTimeoutMillis>
+    <taskPulseMillis>100</taskPulseMillis>
+    <maxFiles>20</maxFiles>
+    <forkedJvmArgs>
+      <arg>-Xmx512m</arg>
+    </forkedJvmArgs>
   </server>
 </properties>

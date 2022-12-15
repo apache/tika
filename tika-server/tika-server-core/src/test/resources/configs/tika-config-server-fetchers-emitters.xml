@@ -18,32 +18,26 @@
 <properties>
   <fetchers>
     <fetcher class="org.apache.tika.pipes.fetcher.fs.FileSystemFetcher">
-      <params>
-        <name>fsf</name>
-        <basePath>/somePathOrOther</basePath>
-      </params>
+      <name>fsf</name>
+      <basePath>/somePathOrOther</basePath>
     </fetcher>
   </fetchers>
   <emitters>
     <emitter class="org.apache.tika.pipes.emitter.fs.FileSystemEmitter">
-      <params>
-        <name>fse</name>
-        <basePath>/path/or/other/extracts</basePath>
-      </params>
+      <name>fse</name>
+      <basePath>/path/or/other/extracts</basePath>
     </emitter>
   </emitters>
   <server>
-    <params>
-      <port>9999</port>
-      <taskTimeoutMillis>54321</taskTimeoutMillis>
-      <enableUnsecureFeatures>true</enableUnsecureFeatures>
-      <maxFiles>20</maxFiles>
-      <forkedJvmArgs>
-        <arg>-Xmx2g</arg>
-      </forkedJvmArgs>
-      <endpoints>
-        <endpoint>rmeta</endpoint>
-      </endpoints>
-    </params>
+    <port>9999</port>
+    <taskTimeoutMillis>54321</taskTimeoutMillis>
+    <enableUnsecureFeatures>true</enableUnsecureFeatures>
+    <maxFiles>20</maxFiles>
+    <forkedJvmArgs>
+      <arg>-Xmx2g</arg>
+    </forkedJvmArgs>
+    <endpoints>
+      <endpoint>rmeta</endpoint>
+    </endpoints>
   </server>
 </properties>

@@ -18,35 +18,29 @@
   under the License.
 -->
 <properties>
-    <fetchers>
-        <fetcher class="org.apache.tika.pipes.fetcher.s3.S3Fetcher">
-            <params>
-                <name>s3f</name>
-                <region>us-east-1</region>
-                <bucket><!-- fill in here --></bucket>
-                <profile><!-- fill in here --></profile>
-            </params>
-        </fetcher>
-    </fetchers>
-    <pipesIterators>
-        <pipesIterator class="org.apache.tika.pipes.pipesiterator.s3.S3PipesIterator">
-            <params>
-                <fetcherName>s3f</fetcherName>
-                <region>us-east-1</region>
-                <bucket><!-- fill in here --></bucket>
-                <profile><!-- fill in here --></profile>
-            </params>
-        </pipesIterator>
-    </pipesIterators>
-    <emitters>
-        <emitter class="org.apache.tika.pipes.emitter.s3.S3Emitter">
-            <params>
-                <name>s3e</name>
-                <region>us-east-1</region>
-                <bucket><!-- fill in here -->></bucket>
-                <profile><!-- fill in here --></profile>
-                <fileExtension></fileExtension>
-            </params>
-        </emitter>
-    </emitters>
+  <fetchers>
+    <fetcher class="org.apache.tika.pipes.fetcher.s3.S3Fetcher">
+      <name>s3f</name>
+      <region>us-east-1</region>
+      <bucket><!-- fill in here --></bucket>
+      <profile><!-- fill in here --></profile>
+    </fetcher>
+  </fetchers>
+  <pipesIterators>
+    <pipesIterator class="org.apache.tika.pipes.pipesiterator.s3.S3PipesIterator">
+      <fetcherName>s3f</fetcherName>
+      <region>us-east-1</region>
+      <bucket><!-- fill in here --></bucket>
+      <profile><!-- fill in here --></profile>
+    </pipesIterator>
+  </pipesIterators>
+  <emitters>
+    <emitter class="org.apache.tika.pipes.emitter.s3.S3Emitter">
+      <name>s3e</name>
+      <region>us-east-1</region>
+      <bucket><!-- fill in here -->></bucket>
+      <profile><!-- fill in here --></profile>
+      <fileExtension></fileExtension>
+    </emitter>
+  </emitters>
 </properties>

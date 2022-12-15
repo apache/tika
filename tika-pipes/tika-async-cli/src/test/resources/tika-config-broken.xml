@@ -20,17 +20,13 @@
 <properties>
   <fetchers>
     <fetcher class="org.apache.tika.pipes.fetcher.s3.S3Fetcher">
-      <params>
-        <name>s3</name>
-        <region>us-east-1</region>
-        <profile><!-- fill in here --></profile>
-      </params>
+      <name>s3</name>
+      <region>us-east-1</region>
+      <profile><!-- fill in here --></profile>
     </fetcher>
   </fetchers>
-    <pipesIterator class="org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator">
-      <params>
-        <fetcherName>fs</fetcherName>
-        <basePath>basePath</basePath>
-      </params>
-    </pipesIterator>
+  <pipesIterator class="org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator">
+    <fetcherName>fs</fetcherName>
+    <basePath>basePath</basePath>
+  </pipesIterator>
 </properties>

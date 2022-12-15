@@ -20,10 +20,8 @@
     <parser class="org.apache.tika.parser.DefaultParser"/>
   </parsers>
   <autoDetectParserConfig>
-    <params>
-      <spoolToDisk>123450</spoolToDisk>
-      <outputThreshold>678900</outputThreshold>
-    </params>
+    <spoolToDisk>123450</spoolToDisk>
+    <outputThreshold>678900</outputThreshold>
     <contentHandlerDecoratorFactory class="org.apache.tika.sax.UpcasingContentHandlerDecoratorFactory"/>
   </autoDetectParserConfig>
 </properties>

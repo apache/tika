@@ -31,13 +31,11 @@
   </metadataFilters>
   <emitters>
     <emitter class="org.apache.tika.pipes.emitter.opensearch.OpenSearchEmitter">
-      <params>
-        <name>opensearch1</name>
-        <url>http://localhost:9200/tika-test</url>
-        <attachmentStrategy>concatenate-content</attachmentStrategy>
-        <contentField>content</contentField>
-        <commitWithin>10</commitWithin>
-      </params>
+      <name>opensearch1</name>
+      <url>http://localhost:9200/tika-test</url>
+      <attachmentStrategy>concatenate-content</attachmentStrategy>
+      <contentField>content</contentField>
+      <commitWithin>10</commitWithin>
     </emitter>
   </emitters>
 </properties>

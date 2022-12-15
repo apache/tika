@@ -16,15 +16,13 @@
   limitations under the License.
 -->
 <properties>
-    <metadataFilters>
-        <metadataFilter class="org.apache.tika.metadata.filter.IncludeFieldMetadataFilter">
-            <params>
-                <include>
-                    <field>X-TIKA:content</field>
-                    <field>extended-properties:Application</field>
-                    <field>Content-Type</field>
-                </include>
-            </params>
-        </metadataFilter>
-    </metadataFilters>
+  <metadataFilters>
+    <metadataFilter class="org.apache.tika.metadata.filter.IncludeFieldMetadataFilter">
+      <include>
+        <field>X-TIKA:content</field>
+        <field>extended-properties:Application</field>
+        <field>Content-Type</field>
+      </include>
+    </metadataFilter>
+  </metadataFilters>
 </properties>

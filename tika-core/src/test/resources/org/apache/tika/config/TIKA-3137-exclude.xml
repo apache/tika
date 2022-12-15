@@ -18,12 +18,10 @@
 <properties>
   <metadataFilters>
     <metadataFilter class="org.apache.tika.metadata.filter.ExcludeFieldMetadataFilter">
-      <params>
-        <exclude>
-          <field>title</field>
-          <field>author</field>
-        </exclude>
-      </params>
+      <exclude>
+        <field>title</field>
+        <field>author</field>
+      </exclude>
     </metadataFilter>
   </metadataFilters>
 </properties>

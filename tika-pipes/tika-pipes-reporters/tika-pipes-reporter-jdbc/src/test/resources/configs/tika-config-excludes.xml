@@ -19,7 +19,6 @@
 -->
 <properties>
   <async>
-  <params>
     <maxForEmitBatchBytes>10000</maxForEmitBatchBytes>
     <emitMaxEstimatedBytes>100000</emitMaxEstimatedBytes>
     <emitWithinMillis>60000</emitWithinMillis>
@@ -32,15 +31,12 @@
       <arg>-Dlog4j.configurationFile={LOG4J_PROPERTIES_FILE}</arg>
     </forkedJvmArgs>
     <timeoutMillis>60000</timeoutMillis>
-  </params>
-  <pipesReporter class="org.apache.tika.pipes.reporters.jdbc.JDBCPipesReporter">
-    <params>
+    <pipesReporter class="org.apache.tika.pipes.reporters.jdbc.JDBCPipesReporter">
       <connection>CONNECTION_STRING</connection>
       <excludes>
         <exclude>PARSE_SUCCESS</exclude>
         <exclude>PARSE_SUCCESS_WITH_EXCEPTION</exclude>
       </excludes>
-    </params>
-  </pipesReporter>
-</async>
+    </pipesReporter>
+  </async>
 </properties>

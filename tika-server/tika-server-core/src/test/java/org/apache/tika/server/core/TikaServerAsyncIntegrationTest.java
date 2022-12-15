@@ -102,25 +102,22 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
         TIKA_CONFIG_XML =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" +
                         "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" +
-                        "<params>" + "<name>" + FETCHER_NAME +
-                        "</name>" + "<basePath>" +
-                        inputDir.toAbsolutePath() + "</basePath>" + "</params>" + "</fetcher>" +
+                        "<name>" + FETCHER_NAME + "</name>" +
+                        "<basePath>" + inputDir.toAbsolutePath() + "</basePath>" + "</fetcher>" +
                         "</fetchers>" + "<emitters>" +
                         "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" +
-                        "<params>" + "<name>" + EMITTER_NAME +
-                        "</name>" +
-
+                        "<name>" + EMITTER_NAME + "</name>" +
                         "<basePath>" +
-                        TMP_OUTPUT_DIR.toAbsolutePath() + "</basePath>" + "</params>" +
+                        TMP_OUTPUT_DIR.toAbsolutePath() + "</basePath>" +
                         "</emitter>" +
                         "</emitters>" +
-                        "<server><params><endpoints><endpoint>async</endpoint></endpoints>" +
-                        "<enableUnsecureFeatures>true</enableUnsecureFeatures></params></server>" +
-                        "<async><params><tikaConfig>" +
+                        "<server><endpoints><endpoint>async</endpoint></endpoints>" +
+                        "<enableUnsecureFeatures>true</enableUnsecureFeatures></server>" +
+                        "<async><tikaConfig>" +
                         ProcessUtils.escapeCommandLine(TIKA_CONFIG.toAbsolutePath().toString()) +
                         "</tikaConfig><numClients>10</numClients><forkedJvmArgs><arg>-Xmx256m" +
                         "</arg></forkedJvmArgs><timeoutMillis>5000</timeoutMillis>" +
-                        "</params></async>" +
+                        "</async>" +
                         "</properties>";
 
         FileUtils.write(TIKA_CONFIG.toFile(), TIKA_CONFIG_XML, UTF_8);
