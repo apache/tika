@@ -39,7 +39,6 @@ public class MockReporterTest {
         assertEquals("somethingOrOther", ((MockReporter)reporter).getEndpoint());
     }
 
-
     @Test
     public void testCompositePipesReporter() throws Exception {
         Path configPath = Paths.get(this.getClass().getResource("TIKA-3865.xml").toURI());
