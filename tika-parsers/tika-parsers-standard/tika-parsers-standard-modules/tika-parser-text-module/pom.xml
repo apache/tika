@@ -31,9 +31,8 @@
 
   <dependencies>
     <dependency>
-      <groupId>com.googlecode.juniversalchardet</groupId>
+      <groupId>com.github.albfernandez</groupId>
       <artifactId>juniversalchardet</artifactId>
-      <version>${juniversalchardet.version}</version>
     </dependency>
     <dependency>
       <groupId>commons-codec</groupId>
