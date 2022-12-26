@@ -385,7 +385,7 @@
     <reactor.netty.version>1.1.1</reactor.netty.version>
     <rome.version>1.18.0</rome.version>
     <scm.version>2.0.0-M3</scm.version>
-    <sis.version>1.2</sis.version>
+    <sis.version>1.3</sis.version>
     <slf4j.version>2.0.6</slf4j.version>
     <solrj.version>8.11.2</solrj.version>
     <!-- NOTE: Spring 6 requires jdk17 -->
