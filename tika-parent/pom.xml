@@ -287,7 +287,7 @@
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
     <project.build.outputTimestamp>1667480073</project.build.outputTimestamp>
     <!-- plugin versions -->
-    <checkstyle.plugin.version>3.2.0</checkstyle.plugin.version>
+    <checkstyle.plugin.version>3.2.1</checkstyle.plugin.version>
     <forbiddenapis.version>3.4</forbiddenapis.version>
     <groovy.maven.version>2.1.1</groovy.maven.version>
     <maven.antrun.version>3.1.0</maven.antrun.version>
@@ -306,7 +306,7 @@
 
     <!-- dependency versions -->
     <google.cloud.version>2.17.1</google.cloud.version>
-    <aws.version>1.12.383</aws.version>
+    <aws.version>1.12.384</aws.version>
     <asm.version>9.4</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
@@ -389,7 +389,7 @@
     <slf4j.version>2.0.6</slf4j.version>
     <solrj.version>8.11.2</solrj.version>
     <!-- NOTE: Spring 6 requires jdk17 -->
-    <spring.version>5.3.24</spring.version>
+    <spring.version>5.3.25</spring.version>
     <sqlite.version>3.40.0.0</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
     <test.containers.version>1.17.6</test.containers.version>
@@ -403,7 +403,7 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <zstd.version>1.5.2-5</zstd.version>
     <kafka.version>3.3.1</kafka.version>
-    <netty.version>4.1.86.Final</netty.version>
+    <netty.version>4.1.87.Final</netty.version>
   </properties>
 
   <dependencyManagement>
