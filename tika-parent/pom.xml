@@ -353,7 +353,7 @@
     <jempbox.version>1.8.17</jempbox.version>
     <jetty.version>9.4.50.v20221201</jetty.version>
     <jhighlight.version>1.1.0</jhighlight.version>
-    <jna.version>5.12.1</jna.version>
+    <jna.version>5.13.0</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
     <junit4.version>4.13.2</junit4.version>
     <junit5.version>5.9.2</junit5.version>
