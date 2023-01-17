@@ -47,7 +47,6 @@ import org.apache.james.mime4j.dom.address.AddressList;
 import org.apache.james.mime4j.dom.address.Mailbox;
 import org.apache.james.mime4j.dom.address.MailboxList;
 import org.apache.james.mime4j.dom.field.AddressListField;
-import org.apache.james.mime4j.dom.field.DateTimeField;
 import org.apache.james.mime4j.dom.field.MailboxListField;
 import org.apache.james.mime4j.dom.field.ParsedField;
 import org.apache.james.mime4j.dom.field.UnstructuredField;
@@ -71,6 +70,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.csv.TextAndCSVParser;
 import org.apache.tika.parser.html.HtmlParser;
+import org.apache.tika.parser.mailcommons.MailDateParser;
 import org.apache.tika.parser.mailcommons.MailUtil;
 import org.apache.tika.parser.txt.TXTParser;
 import org.apache.tika.sax.BodyContentHandler;
@@ -85,14 +85,6 @@ import org.apache.tika.sax.XHTMLContentHandler;
 class MailContentHandler implements ContentHandler {
 
     private static final String MULTIPART_ALTERNATIVE = "multipart/alternative";
-
-    //TIKA-1970 Mac Mail's format
-    private static final Pattern GENERAL_TIME_ZONE_NO_MINUTES_PATTERN =
-            Pattern.compile("(?:UTC|GMT)([+-])(\\d?\\d)\\Z");
-
-    //find a time ending in am/pm without a space: 10:30am and
-    //use this pattern to insert space: 10:30 am
-    private static final Pattern AM_PM = Pattern.compile("(?i)(\\d)([ap]m)\\b");
 
     private static final DateFormatInfo[] ALTERNATE_DATE_FORMATS = new DateFormatInfo[] {
             //note that the string is "cleaned" before processing:
@@ -162,35 +154,6 @@ class MailContentHandler implements ContentHandler {
         }
         sdf.setLenient(dateFormatInfo.lenient);
         return sdf;
-    }
-
-    private static Date tryOtherDateFormats(String text) {
-        if (text == null) {
-            return null;
-        }
-        text = text.replaceAll("\\s+", " ").trim();
-        //strip out commas
-        text = text.replaceAll(",", "");
-
-        Matcher matcher = GENERAL_TIME_ZONE_NO_MINUTES_PATTERN.matcher(text);
-        if (matcher.find()) {
-            text = matcher.replaceFirst("GMT$1$2:00");
-        }
-
-        matcher = AM_PM.matcher(text);
-        if (matcher.find()) {
-            text = matcher.replaceFirst("$1 $2");
-        }
-
-        for (DateFormatInfo formatInfo : ALTERNATE_DATE_FORMATS) {
-            try {
-                DateFormat format = createDateFormat(formatInfo);
-                return format.parse(text);
-            } catch (ParseException e) {
-                //continue
-            }
-        }
-        return null;
     }
 
     @Override
@@ -431,12 +394,18 @@ class MailContentHandler implements ContentHandler {
                             field.getBody());
                 }
             } else if (fieldname.equalsIgnoreCase("Date")) {
-                DateTimeField dateField = (DateTimeField) parsedField;
-                Date date = dateField.getDate();
-                if (date == null) {
-                    date = tryOtherDateFormats(field.getBody());
+                String dateBody = parsedField.getBody();
+                Date date = null;
+                try {
+                    date = MailDateParser.parseDateLenient(dateBody);
+                } catch (SecurityException e) {
+                    throw e;
+                } catch (Exception e) {
+                    //swallow
                 }
-                metadata.set(TikaCoreProperties.CREATED, date);
+                if (date != null) {
+                    metadata.set(TikaCoreProperties.CREATED, date);
+                }
             } else {
                 metadata.add(Metadata.MESSAGE_RAW_HEADER_PREFIX + parsedField.getName(),
                         field.getBody());
