@@ -530,7 +530,7 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
         Metadata embeddedMetadata = new Metadata();
         if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
             try (InputStream is = TikaInputStream.get(bytes)) {
-                embeddedDocumentExtractor.parseEmbedded(is, handler, embeddedMetadata, false);
+                embeddedDocumentExtractor.parseEmbedded(is, handler, embeddedMetadata, true);
             }
         }
     }

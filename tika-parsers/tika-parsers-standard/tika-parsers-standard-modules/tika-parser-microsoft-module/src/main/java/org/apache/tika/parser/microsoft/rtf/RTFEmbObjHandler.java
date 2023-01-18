@@ -16,13 +16,13 @@
  */
 package org.apache.tika.parser.microsoft.rtf;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -61,8 +61,10 @@ class RTFEmbObjHandler {
     private static final String EMPTY_STRING = "";
     private final ContentHandler handler;
     private final EmbeddedDocumentUtil embeddedDocumentUtil;
-    private final ByteArrayOutputStream os;
+    private final UnsynchronizedByteArrayOutputStream os;
     private final int memoryLimitInKb;
+
+    private boolean isPictBitmap = false;
     //high hex cached for writing hexpair chars (data)
     private int hi = -1;
     private int thumbCount = 0;
@@ -79,7 +81,7 @@ class RTFEmbObjHandler {
                                int memoryLimitInKb) {
         this.handler = handler;
         this.embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
-        os = new ByteArrayOutputStream();
+        os = new UnsynchronizedByteArrayOutputStream();
         this.memoryLimitInKb = memoryLimitInKb;
     }
 
@@ -125,6 +127,10 @@ class RTFEmbObjHandler {
 
     protected void writeMetadataChar(char c) {
         sb.append(c);
+    }
+
+    protected void setPictBitmap(boolean isPictBitmap) {
+        this.isPictBitmap = isPictBitmap;
     }
 
     protected void writeHexChar(int b) throws IOException, TikaException {
@@ -189,6 +195,10 @@ class RTFEmbObjHandler {
                 metadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, filePath);
             }
             metadata.set(RTFMetadata.THUMBNAIL, Boolean.toString(inObject));
+            if (isPictBitmap) {
+                metadata.set(
+                        TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, "image/x-rtf-raw-bitmap");
+            }
             extractObj(bytes, handler, metadata);
 
         } else if (state == EMB_STATE.NADA) {
@@ -222,7 +232,7 @@ class RTFEmbObjHandler {
             try {
                 embeddedDocumentUtil
                         .parseEmbedded(stream, new EmbeddedContentHandler(handler), metadata,
-                                false);
+                                true);
             } catch (IOException e) {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
             } finally {
@@ -243,6 +253,7 @@ class RTFEmbObjHandler {
         sv = EMPTY_STRING;
         sn = EMPTY_STRING;
         sb.setLength(0);
+        isPictBitmap = false;
     }
 
     private enum EMB_STATE {

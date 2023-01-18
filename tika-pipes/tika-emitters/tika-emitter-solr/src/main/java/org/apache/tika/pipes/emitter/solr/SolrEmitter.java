@@ -30,6 +30,7 @@ import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.impl.CloudSolrClient;
 import org.apache.solr.client.solrj.impl.LBHttpSolrClient;
 import org.apache.solr.client.solrj.request.UpdateRequest;
+import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.common.SolrInputDocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -151,7 +152,11 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
                 req.add(docsToUpdate);
                 req.setCommitWithin(commitWithin);
                 req.setParam("failOnVersionConflicts", "false");
-                req.process(solrClient, solrCollection);
+                UpdateResponse updateResponse = req.process(solrClient, solrCollection);
+                LOG.debug("update response: " + updateResponse);
+                if (updateResponse.getStatus() != 0) {
+                    throw new TikaEmitterException("Bad status: " + updateResponse);
+                }
             } catch (Exception e) {
                 throw new TikaEmitterException("Could not add batch to solr", e);
             }

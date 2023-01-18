@@ -63,7 +63,7 @@ public class DetectorResource {
         long taskId = serverStatus.start(ServerStatus.TASK.DETECT, filename, timeoutMillis);
 
         try (TikaInputStream tis = TikaInputStream
-                .get(TikaResource.getInputStream(is, met, httpHeaders))) {
+                .get(TikaResource.getInputStream(is, met, httpHeaders, info))) {
             return TikaResource.getConfig().getDetector().detect(tis, met).toString();
         } catch (IOException e) {
             LOG.warn("Unable to detect MIME type for file. Reason: {} ({})", e.getMessage(),
@@ -72,6 +72,9 @@ public class DetectorResource {
         } catch (OutOfMemoryError e) {
             LOG.error("OOM while detecting: ({})", filename, e);
             serverStatus.setStatus(ServerStatus.STATUS.ERROR);
+            throw e;
+        } catch (Throwable e) {
+            LOG.error("Exception while detecting: ({})", filename, e);
             throw e;
         } finally {
             serverStatus.complete(taskId);

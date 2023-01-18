@@ -20,6 +20,7 @@ import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -34,6 +35,7 @@ import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.emitter.AbstractEmitter;
+import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
 import org.apache.tika.utils.StringUtils;
 
@@ -46,10 +48,16 @@ public class OpenSearchEmitter extends AbstractEmitter implements Initializable 
         //anything else?
     }
 
+    public enum UpdateStrategy {
+        OVERWRITE, UPSERT
+        //others?
+    }
+
     public static String DEFAULT_EMBEDDED_FILE_FIELD_NAME = "embedded";
     private static final Logger LOG = LoggerFactory.getLogger(OpenSearchEmitter.class);
     private AttachmentStrategy attachmentStrategy = AttachmentStrategy.PARENT_CHILD;
 
+    private UpdateStrategy updateStrategy = UpdateStrategy.OVERWRITE;
     private String openSearchUrl = null;
     private String idField = "_id";
     private int commitWithin = 1000;
@@ -62,15 +70,34 @@ public class OpenSearchEmitter extends AbstractEmitter implements Initializable 
     }
 
     @Override
-    public void emit(String emitKey, List<Metadata> metadataList)
-            throws IOException, TikaEmitterException {
-        if (metadataList == null || metadataList.size() == 0) {
-            LOG.warn("metadataList is null or empty");
+    public void emit(List<? extends EmitData> emitData) throws IOException, TikaEmitterException {
+        if (emitData == null || emitData.size() == 0) {
+            LOG.debug("metadataList is null or empty");
             return;
         }
         try {
-            openSearchClient.addDocument(emitKey, metadataList);
+            LOG.debug("about to emit {} docs", emitData.size());
+            openSearchClient.emitDocuments(emitData);
+            LOG.info("successfully emitted {} docs", emitData.size());
         } catch (TikaClientException e) {
+            LOG.warn("problem emitting docs", e);
+            throw new TikaEmitterException(e.getMessage());
+        }
+    }
+
+    @Override
+    public void emit(String emitKey, List<Metadata> metadataList)
+            throws IOException, TikaEmitterException {
+        if (metadataList == null || metadataList.size() == 0) {
+            LOG.debug("metadataList is null or empty");
+            return;
+        }
+        try {
+            LOG.debug("about to emit one doc");
+            openSearchClient.emitDocument(emitKey, metadataList);
+            LOG.info("successfully emitted one doc");
+        } catch (TikaClientException e) {
+            LOG.warn("problem emitting doc", e);
             throw new TikaEmitterException("failed to add document", e);
         }
     }
@@ -159,6 +186,24 @@ public class OpenSearchEmitter extends AbstractEmitter implements Initializable 
         httpClientFactory.setProxyPort(proxyPort);
     }
 
+    public void setUpdateStrategy(UpdateStrategy updateStrategy) {
+        this.updateStrategy = updateStrategy;
+    }
+
+    public void setUpdateStrategy(String strategy) throws TikaConfigException {
+        switch (strategy.toLowerCase(Locale.US)) {
+            case "overwrite" :
+                setUpdateStrategy(UpdateStrategy.OVERWRITE);
+                break;
+            case "upsert" :
+                setUpdateStrategy(UpdateStrategy.UPSERT);
+                break;
+            default :
+                throw new TikaConfigException("'overwrite' and 'upsert' are the two options so " +
+                        "far. I regret I don't understand: " + strategy);
+        }
+    }
+
     /**
      * If using the {@link AttachmentStrategy#PARENT_CHILD}, this is the field name
      * used to store the child documents.  Note that we artificially flatten all embedded
@@ -180,7 +225,7 @@ public class OpenSearchEmitter extends AbstractEmitter implements Initializable 
         } else {
             openSearchClient =
                     new OpenSearchClient(openSearchUrl,
-                            httpClientFactory.build(), attachmentStrategy,
+                            httpClientFactory.build(), attachmentStrategy, updateStrategy,
                             embeddedFileFieldName);
         }
     }

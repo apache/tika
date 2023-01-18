@@ -38,6 +38,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -55,6 +57,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * text content and metadata from a given document.
  */
 public class ExternalParser extends AbstractParser {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ExternalParser.class);
 
     /**
      * The token, which if present in the Command string, will
@@ -165,6 +169,7 @@ public class ExternalParser extends AbstractParser {
                 throw new TimeoutException();
             }
             int result = process.exitValue();
+            LOG.debug("exit value for {}: {}", checkCmd[0], result);
             for (int err : errorValue) {
                 if (result == err) {
                     return false;
@@ -172,6 +177,7 @@ public class ExternalParser extends AbstractParser {
             }
             return true;
         } catch (IOException | InterruptedException | TimeoutException e) {
+            LOG.debug("exception trying to run  " + checkCmd[0], e);
             // Some problem, command is there or is broken
             return false;
         } catch (SecurityException se) {
@@ -180,6 +186,7 @@ public class ExternalParser extends AbstractParser {
         } catch (Error err) {
             if (err.getMessage() != null && (err.getMessage().contains("posix_spawn") ||
                     err.getMessage().contains("UNIXProcess"))) {
+                LOG.debug("(TIKA-1526): exception trying to run: " + checkCmd[0], err);
                 //"Error forking command due to JVM locale bug
                 //(see TIKA-1526 and SOLR-6387)"
                 return false;
@@ -264,7 +271,7 @@ public class ExternalParser extends AbstractParser {
 
         TemporaryResources tmp = new TemporaryResources();
         try {
-            parse(TikaInputStream.get(stream, tmp), xhtml, metadata, tmp);
+            parse(TikaInputStream.get(stream, tmp, metadata), xhtml, metadata, tmp);
         } finally {
             tmp.dispose();
         }
@@ -307,7 +314,7 @@ public class ExternalParser extends AbstractParser {
                 process = Runtime.getRuntime().exec(cmd);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.warn("problem with process exec", e);
         }
 
         try {
@@ -346,7 +353,9 @@ public class ExternalParser extends AbstractParser {
 
         // Grab the output if we haven't already
         if (!outputFromStdOut) {
-            extractOutput(new FileInputStream(output), xhtml);
+            try (FileInputStream fileInputStream = new FileInputStream(output)) {
+                extractOutput(fileInputStream, xhtml);
+            }
         }
     }
 
@@ -408,13 +417,13 @@ public class ExternalParser extends AbstractParser {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     boolean consumed = false;
-                    for (Pattern p : metadataPatterns.keySet()) {
-                        Matcher m = p.matcher(line);
+                    for (Map.Entry<Pattern, String> entry : metadataPatterns.entrySet()) {
+                        Matcher m = entry.getKey().matcher(line);
                         if (m.find()) {
                             consumed = true;
-                            if (metadataPatterns.get(p) != null &&
-                                    !metadataPatterns.get(p).equals("")) {
-                                metadata.add(metadataPatterns.get(p), m.group(1));
+                            if (entry.getValue() != null &&
+                                    !entry.getValue().equals("")) {
+                                metadata.add(entry.getValue(), m.group(1));
                             } else {
                                 metadata.add(m.group(1), m.group(2));
                             }

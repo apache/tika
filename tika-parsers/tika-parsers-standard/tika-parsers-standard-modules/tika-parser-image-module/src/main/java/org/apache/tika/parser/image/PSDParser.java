@@ -18,7 +18,6 @@ package org.apache.tika.parser.image;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
-import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,11 +26,13 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Photoshop;
@@ -144,7 +145,7 @@ public class PSDParser extends AbstractParser {
                 //if there are multiple xmps in a file, this will
                 //overwrite the data from the earlier xmp
                 JempboxExtractor ex = new JempboxExtractor(metadata);
-                ex.parse(new ByteArrayInputStream(rb.data));
+                ex.parse(new UnsynchronizedByteArrayInputStream(rb.data));
             }
             blocks++;
         }
@@ -162,6 +163,10 @@ public class PSDParser extends AbstractParser {
     @Field
     public void setMaxDataLengthBytes(int maxDataLengthBytes) {
         this.maxDataLengthBytes = maxDataLengthBytes;
+    }
+
+    public int getMaxDataLengthBytes() {
+        return maxDataLengthBytes;
     }
 
     private static class ResourceBlock {
@@ -234,7 +239,7 @@ public class PSDParser extends AbstractParser {
             // Do we have use for the data segment?
             if (captureData(id)) {
                 if (dataLen > maxDataLengthBytes) {
-                    throw new TikaException(
+                    throw new TikaMemoryLimitException(
                             "data length must be < " + maxDataLengthBytes + ": " + dataLen);
                 }
                 data = new byte[dataLen];

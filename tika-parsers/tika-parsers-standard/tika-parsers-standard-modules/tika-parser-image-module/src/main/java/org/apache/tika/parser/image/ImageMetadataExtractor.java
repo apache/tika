@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.image;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,6 +25,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -53,6 +53,7 @@ import com.drew.metadata.iptc.IptcDirectory;
 import com.drew.metadata.jpeg.JpegCommentDirectory;
 import com.drew.metadata.jpeg.JpegDirectory;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.jempbox.xmp.XMPMetadata;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -185,7 +186,7 @@ public class ImageMetadataExtractor {
 
     public void parseRawXMP(byte[] xmpData) throws IOException, SAXException, TikaException {
         XMPMetadata xmp = null;
-        try (InputStream decoded = new ByteArrayInputStream(xmpData)) {
+        try (InputStream decoded = new UnsynchronizedByteArrayInputStream(xmpData)) {
             Document dom = XMLReaderUtils.buildDOM(decoded, EMPTY_PARSE_CONTEXT);
             if (dom != null) {
                 xmp = new XMPMetadata(dom);
@@ -377,8 +378,15 @@ public class ImageMetadataExtractor {
 
     static class ExifHandler implements DirectoryHandler {
         // There's a new ExifHandler for each file processed, so this is thread safe
-        private final SimpleDateFormat dateUnspecifiedTz =
-                new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
+        private final SimpleDateFormat dateUnspecifiedTz = getUnspecifiedTzDateFormat();
+
+        private SimpleDateFormat getUnspecifiedTzDateFormat() {
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
+            // As of Drew Noakes' metadata-extractor 2.8.1, unspecified
+            // timezones are set to TimeZone.getTimeZone("GMT")
+            df.setTimeZone(TimeZone.getTimeZone("GMT"));
+            return df;
+        }
 
 
         public boolean supports(Class<? extends Directory> directoryType) {

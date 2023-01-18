@@ -18,7 +18,7 @@
 package org.apache.tika.eval.app.db;
 
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -36,12 +36,15 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+
 
 public class AbstractBufferTest {
 
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30000)
     public void runTest() throws InterruptedException, ExecutionException {
         List<String> keys = new ArrayList<>();
         Collections

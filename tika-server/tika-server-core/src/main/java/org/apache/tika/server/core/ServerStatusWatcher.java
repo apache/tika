@@ -201,7 +201,7 @@ public class ServerStatusWatcher implements Runnable {
                             writeStatus(false);
                             lastWrite = Instant.now();
                         } catch (InterruptedException e) {
-                            e.printStackTrace();
+                            LOG.debug("interrupted", e);
                         }
                     }
                 }

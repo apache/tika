@@ -25,6 +25,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.NotSerializableException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -174,7 +175,7 @@ class ForkClient {
      * @throws IOException if the bootstrap archive could not be created
      */
     private static File createBootstrapJar() throws IOException {
-        File file = File.createTempFile("apache-tika-fork-", ".jar");
+        File file = Files.createTempFile("apache-tika-fork-", ".jar").toFile();
         boolean ok = false;
         try {
             fillBootstrapJar(file);
@@ -328,7 +329,7 @@ class ForkClient {
 
     private Throwable waitForResponse(List<ForkResource> resources) throws IOException {
         output.flush();
-        while (true) {
+        while (!Thread.currentThread().isInterrupted()) {
             int type = input.read();
             if (type == -1) {
                 throw new IOException("Lost connection to a forked server process");
@@ -345,6 +346,7 @@ class ForkClient {
                 return null;
             }
         }
+        throw new IOException(new InterruptedException());
     }
 
     public int getId() {

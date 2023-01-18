@@ -16,19 +16,21 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.poi.hdgf.extractor.VisioTextExtractor;
 import org.apache.poi.hpbf.extractor.PublisherTextExtractor;
 import org.apache.poi.poifs.crypt.Decryptor;
@@ -38,7 +40,6 @@ import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.poifs.macros.VBAMacroReader;
-import org.apache.poi.util.IOUtils;
 import org.apache.poi.util.LocaleUtil;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -73,6 +74,7 @@ public class OfficeParser extends AbstractOfficeParser {
             new HashSet<>(Arrays.asList(POIFSDocumentType.WORKBOOK.type,
                     POIFSDocumentType.OLE10_NATIVE.type, POIFSDocumentType.WORDDOCUMENT.type,
                     POIFSDocumentType.UNKNOWN.type, POIFSDocumentType.ENCRYPTED.type,
+                    POIFSDocumentType.DRMENCRYPTED.type,
                     POIFSDocumentType.POWERPOINT.type, POIFSDocumentType.PUBLISHER.type,
                     POIFSDocumentType.PROJECT.type, POIFSDocumentType.VISIO.type,
                     // Works isn't supported
@@ -113,7 +115,7 @@ public class OfficeParser extends AbstractOfficeParser {
             if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
                 embeddedDocumentExtractor.parseEmbedded(
                         //pass in space character so that we don't trigger a zero-byte exception
-                        new ByteArrayInputStream(new byte[]{'\u0020'}), xhtml, m, true);
+                        new UnsynchronizedByteArrayInputStream(new byte[]{'\u0020'}), xhtml, m, true);
             }
             return;
         }
@@ -124,7 +126,7 @@ public class OfficeParser extends AbstractOfficeParser {
             m.set(Metadata.CONTENT_TYPE, "text/x-vbasic");
             if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
                 embeddedDocumentExtractor.parseEmbedded(
-                        new ByteArrayInputStream(e.getValue().getBytes(StandardCharsets.UTF_8)),
+                        new UnsynchronizedByteArrayInputStream(e.getValue().getBytes(StandardCharsets.UTF_8)),
                         xhtml, m, true);
             }
         }
@@ -233,9 +235,9 @@ public class OfficeParser extends AbstractOfficeParser {
                 }
                 break;
             case OUTLOOK:
-                OutlookExtractor extractor = new OutlookExtractor(root, context);
+                OutlookExtractor extractor = new OutlookExtractor(root, metadata, context);
 
-                extractor.parse(xhtml, metadata);
+                extractor.parse(xhtml);
                 break;
             case ENCRYPTED:
                 EncryptionInfo info = new EncryptionInfo(root);
@@ -270,7 +272,15 @@ public class OfficeParser extends AbstractOfficeParser {
                 } catch (GeneralSecurityException ex) {
                     throw new EncryptedDocumentException(ex);
                 }
+                break;
+            case DRMENCRYPTED:
+                throw new EncryptedDocumentException("DRM encrypted document is not yet supported" +
+                        " by Apache POI");
             default:
+                if (root.hasEntry("EncryptedPackage")) {
+                    throw new EncryptedDocumentException("OLE2 file with an unrecognized " +
+                            "EncryptedPackage entry");
+                }
                 // For unsupported / unhandled types, just the metadata
                 //  is extracted, which happened above
                 break;
@@ -287,6 +297,7 @@ public class OfficeParser extends AbstractOfficeParser {
         COMP_OBJ("ole", POIFSContainerDetector.COMP_OBJ),
         WORDDOCUMENT("doc", MediaType.application("msword")),
         UNKNOWN("unknown", MediaType.application("x-tika-msoffice")),
+        DRMENCRYPTED("ole", MediaType.application("x-tika-ole-drm-encrypted")),
         ENCRYPTED("ole", MediaType.application("x-tika-ooxml-protected")),
         POWERPOINT("ppt", MediaType.application("vnd.ms-powerpoint")),
         PUBLISHER("pub", MediaType.application("x-mspublisher")),
@@ -300,6 +311,13 @@ public class OfficeParser extends AbstractOfficeParser {
         SOLIDWORKS_DRAWING("slddrw", MediaType.application("sldworks")),
         GRAPH("", MediaType.application("vnd.ms-graph"));
 
+        static Map<MediaType, POIFSDocumentType> TYPE_MAP = new HashMap<>();
+
+        static {
+            for (POIFSDocumentType t : values()) {
+                TYPE_MAP.put(t.type, t);
+            }
+        }
         private final String extension;
         private final MediaType type;
 
@@ -318,10 +336,8 @@ public class OfficeParser extends AbstractOfficeParser {
                 names.add(entry.getName());
             }
             MediaType type = POIFSContainerDetector.detect(names, node);
-            for (POIFSDocumentType poifsType : values()) {
-                if (type.equals(poifsType.type)) {
-                    return poifsType;
-                }
+            if (TYPE_MAP.containsKey(type)) {
+                return TYPE_MAP.get(type);
             }
             return UNKNOWN;
         }

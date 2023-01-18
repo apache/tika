@@ -66,6 +66,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.Tika;
+import org.apache.tika.async.cli.TikaAsyncCLI;
 import org.apache.tika.batch.BatchProcessDriverCLI;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.config.TikaConfigSerializer;
@@ -99,10 +100,6 @@ import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.digestutils.CommonsDigester;
 import org.apache.tika.parser.pdf.PDFParserConfig;
-import org.apache.tika.pipes.FetchEmitTuple;
-import org.apache.tika.pipes.PipesException;
-import org.apache.tika.pipes.async.AsyncProcessor;
-import org.apache.tika.pipes.pipesiterator.PipesIterator;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerFactory;
@@ -277,31 +274,15 @@ public class TikaCLI {
     }
 
     private static void async(String[] args)
-            throws InterruptedException, PipesException, TikaException, IOException, SAXException {
+            throws Exception {
         String tikaConfigPath = "";
+        String config = "--config=";
         for (String arg : args) {
-            if (arg.startsWith("--config=")) {
-                tikaConfigPath = arg.substring(9);
+            if (arg.startsWith(config)) {
+                tikaConfigPath = arg.substring(config.length());
             }
         }
-        PipesIterator pipesIterator = PipesIterator.build(Paths.get(tikaConfigPath));
-        long start = System.currentTimeMillis();
-        try (AsyncProcessor processor = new AsyncProcessor(Paths.get(tikaConfigPath))) {
-            for (FetchEmitTuple t : pipesIterator) {
-                processor.offer(t, 2000);
-            }
-            processor.finished();
-            while (true) {
-                if (processor.checkActive()) {
-                    Thread.sleep(500);
-                } else {
-                    break;
-                }
-            }
-            long elapsed = System.currentTimeMillis() - start;
-            LOG.info("Successfully finished processing {} files in {} ms",
-                    processor.getTotalProcessed(), elapsed);
-        }
+        TikaAsyncCLI.main(new String[]{ tikaConfigPath});
     }
 
     /**
@@ -718,6 +699,8 @@ public class TikaCLI {
             parser = new AutoDetectParser(config);
             if (digester != null) {
                 parser = new DigestingParser(parser, digester);
+                LOG.info("As of Tika 2.5.0, you can set the digester via the AutoDetectParserConfig in " +
+                        "tika-config.xml. We plan to remove this commandline option in 2.7.0");
             }
         }
         detector = config.getDetector();
@@ -884,7 +867,7 @@ public class TikaCLI {
         Set<String> tikaLacking = new TreeSet<>();
         Set<String> tikaNoMagic = new TreeSet<>();
 
-        // Sanity check
+        // Plausibility check
         File dir = new File(magicDir);
         if ((new File(dir, "elf")).exists() && (new File(dir, "mime")).exists() &&
                 (new File(dir, "vorbis")).exists()) {
@@ -1082,15 +1065,20 @@ public class TikaCLI {
                 p = new ForkParser(TikaCLI.class.getClassLoader(), p);
             }
             ContentHandler handler = getContentHandler(output, metadata);
-
-            p.parse(input, handler, metadata, context);
-            // fix for TIKA-596: if a parser doesn't generate
-            // XHTML output, the lack of an output document prevents
-            // metadata from being output: this fixes that
-            if (handler instanceof NoDocumentMetHandler) {
-                NoDocumentMetHandler metHandler = (NoDocumentMetHandler) handler;
-                if (!metHandler.metOutput()) {
-                    metHandler.endDocument();
+            try {
+                p.parse(input, handler, metadata, context);
+                // fix for TIKA-596: if a parser doesn't generate
+                // XHTML output, the lack of an output document prevents
+                // metadata from being output: this fixes that
+                if (handler instanceof NoDocumentMetHandler) {
+                    NoDocumentMetHandler metHandler = (NoDocumentMetHandler) handler;
+                    if (!metHandler.metOutput()) {
+                        metHandler.endDocument();
+                    }
+                }
+            } finally {
+                if (fork) {
+                    ((ForkParser) p).close();
                 }
             }
         }

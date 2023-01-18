@@ -136,10 +136,16 @@ public class CharsetDetectorTest extends TikaTest {
         TikaConfig tikaConfig = new TikaConfig(
                 getResourceAsStream("/test-configs/tika-config-ignore-charset.xml"));
 
-        Metadata m = new Metadata();
+        AutoDetectParser parser = new AutoDetectParser(tikaConfig);
 
+        Metadata m = new Metadata();
         m.set(TikaCoreProperties.RESOURCE_NAME_KEY, "texty-text.txt");
         assertContains("ACTIVE AGE", getXML("testIgnoreCharset.txt",
-                new AutoDetectParser(tikaConfig), m).xml);
+                parser, m).xml);
+
+        m = new Metadata();
+        m.set(TikaCoreProperties.RESOURCE_NAME_KEY, "texty-text.txt");
+        assertContains("Please check your email", getXML("test_ignore_IBM420.html",
+                parser, m).xml);
     }
 }

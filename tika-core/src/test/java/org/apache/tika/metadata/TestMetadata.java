@@ -38,6 +38,7 @@ import java.util.concurrent.Future;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.utils.DateUtils;
 
 //Junit imports
@@ -45,7 +46,7 @@ import org.apache.tika.utils.DateUtils;
 /**
  * JUnit based tests of class {@link org.apache.tika.metadata.Metadata}.
  */
-public class TestMetadata {
+public class TestMetadata extends TikaTest {
 
     private static final String CONTENTTYPE = "contenttype";
 
@@ -478,7 +479,10 @@ public class TestMetadata {
         m.add("key", "value1");
         m.add("key", "value2");
         m.add("key2", "value12");
-        assertEquals("key2=value12 key=value1 key=value2", m.toString());
+        String metadata = m.toString();
+        assertContains("key=value1", metadata);
+        assertContains("key=value2", metadata);
+        assertContains("key2=value12", metadata);
     }
 
     @Test
@@ -499,8 +503,8 @@ public class TestMetadata {
                 start += random.nextInt(1000000);
                 Date now = new Date(start);
                 DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
-                m.set(TikaCoreProperties.CREATED, df.format(now));
                 df.setTimeZone(TimeZone.getTimeZone("UTC"));
+                m.set(TikaCoreProperties.CREATED, df.format(now));
                 assertTrue(
                         Math.abs(now.getTime() - m.getDate(TikaCoreProperties.CREATED).getTime()) <
                                 2000);

@@ -270,7 +270,7 @@ public abstract class AbstractMultipleParser extends AbstractParser {
         try {
             // Ensure we'll be able to re-read safely, buffering to disk if so,
             //  to permit Parsers 2+ to be able to read the same data
-            InputStream taggedStream = ParserUtils.ensureStreamReReadable(stream, tmp);
+            InputStream taggedStream = ParserUtils.ensureStreamReReadable(stream, tmp, originalMetadata);
 
             for (Parser p : parsers) {
                 // Get a new handler for this parser, if we can

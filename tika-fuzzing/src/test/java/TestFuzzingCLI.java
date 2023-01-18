@@ -20,8 +20,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.apache.commons.io.FileUtils;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.fuzzing.cli.FuzzingCLI;
 import org.apache.tika.utils.ProcessUtils;
@@ -29,7 +29,7 @@ import org.apache.tika.utils.ProcessUtils;
 public class TestFuzzingCLI {
 
     @Test
-    @Ignore
+    @Disabled
     public void testBasic() throws Exception {
         //convert to actual unit test
         String inputDir = "";// fill in
@@ -42,7 +42,7 @@ public class TestFuzzingCLI {
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void testMock() throws Exception {
         //convert to actual unit test
         Path inputDir = Paths.get(getClass().getResource("/test-documents").toURI());

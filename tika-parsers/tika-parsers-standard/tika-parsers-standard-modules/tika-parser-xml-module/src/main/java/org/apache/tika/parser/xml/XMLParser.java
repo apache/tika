@@ -33,7 +33,6 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.EmbeddedContentHandler;
-import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.TaggedContentHandler;
 import org.apache.tika.sax.TextContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -69,9 +68,9 @@ public class XMLParser extends AbstractParser {
 
         TaggedContentHandler tagged = new TaggedContentHandler(handler);
         try {
-            XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream), new OfflineContentHandler(
+            XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream),
                             new EmbeddedContentHandler(
-                                    getContentHandler(tagged, metadata, context))),
+                                    getContentHandler(tagged, metadata, context)),
                     context);
         } catch (SAXException e) {
             tagged.throwIfCauseOf(e);

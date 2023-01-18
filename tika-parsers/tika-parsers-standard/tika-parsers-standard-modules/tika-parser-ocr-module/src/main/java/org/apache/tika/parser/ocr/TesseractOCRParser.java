@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -72,7 +73,6 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractExternalProcessParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.external.ExternalParser;
-import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
@@ -247,7 +247,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
 
 
         try (TemporaryResources tmp = new TemporaryResources()) {
-            TikaInputStream tikaStream = TikaInputStream.get(stream, tmp);
+            TikaInputStream tikaStream = TikaInputStream.get(stream, tmp, metadata);
 
             //trigger the spooling to a tmp file if the stream wasn't
             //already a TikaInputStream that contained a file
@@ -496,7 +496,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         AttributesImpl attrs = new AttributesImpl();
         attrs.addAttribute("", "class", "class", "CDATA", "ocr");
         xhtml.startElement(XHTML, "div", "div", attrs);
-        XMLReaderUtils.parseSAX(is, new OfflineContentHandler(new HOCRPassThroughHandler(xhtml)),
+        XMLReaderUtils.parseSAX(is, new HOCRPassThroughHandler(xhtml),
                 parseContext);
         xhtml.endElement(XHTML, "div", "div");
 
@@ -664,9 +664,22 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         }
     }
 
+    public List<String> getOtherTesseractSettings() {
+        List<String> settings = new ArrayList<>();
+        Map<String, String> sorted = new TreeMap<>(defaultConfig.getOtherTesseractConfig());
+        for (Map.Entry<String, String> e :sorted.entrySet()) {
+            settings.add(e.getKey() + " " + e.getValue());
+        }
+        return settings;
+    }
+
     @Field
     public void setSkipOCR(boolean skipOCR) {
         defaultConfig.setSkipOcr(skipOCR);
+    }
+
+    public boolean isSkipOCR() {
+        return defaultConfig.isSkipOcr();
     }
 
     @Field
@@ -674,19 +687,34 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         defaultConfig.setLanguage(language);
     }
 
+    public String getLanguage() {
+        return defaultConfig.getLanguage();
+    }
+
     @Field
     public void setPageSegMode(String pageSegMode) {
         defaultConfig.setPageSegMode(pageSegMode);
     }
 
+    public String getPageSegMode() {
+        return defaultConfig.getPageSegMode();
+    }
     @Field
     public void setMaxFileSizeToOcr(long maxFileSizeToOcr) {
         defaultConfig.setMaxFileSizeToOcr(maxFileSizeToOcr);
     }
 
+    public long getMaxFileSizeToOcr() {
+        return defaultConfig.getMaxFileSizeToOcr();
+    }
+
     @Field
     public void setMinFileSizeToOcr(long minFileSizeToOcr) {
         defaultConfig.setMinFileSizeToOcr(minFileSizeToOcr);
+    }
+
+    public long getMinFileSizeToOcr() {
+        return defaultConfig.getMinFileSizeToOcr();
     }
 
     /**
@@ -701,9 +729,17 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         defaultConfig.setTimeoutSeconds(timeout);
     }
 
+    public int getTimeout() {
+        return defaultConfig.getTimeoutSeconds();
+    }
+
     @Field
     public void setOutputType(String outputType) {
         defaultConfig.setOutputType(outputType);
+    }
+
+    public String getOutputType() {
+        return defaultConfig.getOutputType().name();
     }
 
     @Field
@@ -711,14 +747,25 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         defaultConfig.setPreserveInterwordSpacing(preserveInterwordSpacing);
     }
 
+    public boolean isPreserveInterwordSpacing() {
+        return defaultConfig.isPreserveInterwordSpacing();
+    }
+
     @Field
     public void setEnableImagePreprocessing(boolean enableImagePreprocessing) {
         defaultConfig.setEnableImagePreprocessing(enableImagePreprocessing);
     }
 
+    public boolean isEnableImagePreprocessing() {
+        return defaultConfig.isEnableImagePreprocessing();
+    }
     @Field
     public void setDensity(int density) {
         defaultConfig.setDensity(density);
+    }
+
+    public int getDensity() {
+        return defaultConfig.getDensity();
     }
 
     @Field
@@ -726,14 +773,24 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         defaultConfig.setDepth(depth);
     }
 
+    public int getDepth() {
+        return defaultConfig.getDepth();
+    }
     @Field
     public void setColorspace(String colorspace) {
         defaultConfig.setColorspace(colorspace);
     }
 
+    public String getColorspace() {
+        return defaultConfig.getColorspace();
+    }
     @Field
     public void setFilter(String filter) {
         defaultConfig.setFilter(filter);
+    }
+
+    public String getFilter() {
+        return defaultConfig.getFilter();
     }
 
     @Field
@@ -741,11 +798,18 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         defaultConfig.setResize(resize);
     }
 
+    public int getResize() {
+        return defaultConfig.getResize();
+    }
+
     @Field
     public void setApplyRotation(boolean applyRotation) {
         defaultConfig.setApplyRotation(applyRotation);
     }
 
+    public boolean isApplyRotation() {
+        return defaultConfig.isApplyRotation();
+    }
     /**
      * If set to <code>true</code> and if tesseract is found, this will load the
      * langs that result from --list-langs. At parse time, the
@@ -764,6 +828,9 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         this.preloadLangs = preloadLangs;
     }
 
+    public boolean isPreloadLangs() {
+        return this.preloadLangs;
+    }
     public TesseractOCRConfig getDefaultConfig() {
         return defaultConfig;
     }

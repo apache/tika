@@ -117,7 +117,7 @@ public class TNEFParser extends AbstractParser {
 
         if (embeddedExtractor.shouldParseEmbedded(metadata)) {
             embeddedExtractor.parseEmbedded(TikaInputStream.get(contents),
-                    new EmbeddedContentHandler(handler), metadata, false);
+                    new EmbeddedContentHandler(handler), metadata, true);
         }
     }
 }

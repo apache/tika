@@ -17,18 +17,31 @@
 package org.apache.tika.config;
 
 import java.io.Writer;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.nio.charset.Charset;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -48,9 +61,29 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.multiple.AbstractMultipleParser;
+import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
 
 public class TikaConfigSerializer {
+
+    private static final Logger LOG = LoggerFactory.getLogger(TikaConfigSerializer.class);
+    private static Map<Class, String> PRIMITIVES = new HashMap<>();
+
+    static {
+        PRIMITIVES.put(Integer.class, "int");
+        PRIMITIVES.put(int.class, "int");
+        PRIMITIVES.put(String.class, "string");
+        PRIMITIVES.put(Boolean.class, "bool");
+        PRIMITIVES.put(boolean.class, "bool");
+        PRIMITIVES.put(Float.class, "float");
+        PRIMITIVES.put(float.class, "float");
+        PRIMITIVES.put(Double.class, "double");
+        PRIMITIVES.put(double.class, "double");
+        PRIMITIVES.put(Long.class, "long");
+        PRIMITIVES.put(long.class, "long");
+        PRIMITIVES.put(Map.class, "map");
+        PRIMITIVES.put(List.class, "list");
+    }
 
     /**
      * @param config  config to serialize
@@ -171,6 +204,8 @@ public class TikaConfigSerializer {
             for (EncodingDetector d : children) {
                 Element encDetectorElement = doc.createElement("encodingDetector");
                 encDetectorElement.setAttribute("class", d.getClass().getCanonicalName());
+                serializeParams(doc, encDetectorElement, d);
+
                 encDetectorsElement.appendChild(encDetectorElement);
             }
         }
@@ -200,6 +235,7 @@ public class TikaConfigSerializer {
             for (Detector d : children) {
                 Element detectorElement = doc.createElement("detector");
                 detectorElement.setAttribute("class", d.getClass().getCanonicalName());
+                serializeParams(doc, detectorElement, d);
                 detectorsElement.appendChild(detectorElement);
             }
         }
@@ -287,16 +323,7 @@ public class TikaConfigSerializer {
         parserElement.setAttribute("class", className);
         rootElement.appendChild(parserElement);
 
-        // TODO Output configurable parameters in a genric way, see TIKA-1508
-        if (parser instanceof AbstractMultipleParser) {
-            Element paramsElement = doc.createElement("params");
-            Element paramElement = doc.createElement("param");
-            paramElement.setAttribute("name", "metadataPolicy");
-            paramElement.setAttribute("value",
-                    ((AbstractMultipleParser) parser).getMetadataPolicy().toString());
-            paramsElement.appendChild(paramElement);
-            parserElement.appendChild(paramsElement);
-        }
+        serializeParams(doc, parserElement, parser);
 
         for (MediaType type : addedTypes) {
             Element mimeElement = doc.createElement("mime");
@@ -312,6 +339,283 @@ public class TikaConfigSerializer {
         return parserElement;
     }
 
+    public static void serializeParams(Document doc, Element element, Object object) {
+        Matcher setterMatcher = Pattern.compile("\\Aset([A-Z].*)").matcher("");
+        Matcher getterMatcher = Pattern.compile("\\A(?:get|is)([A-Z].+)\\Z").matcher("");
+
+        //TODO -- check code base for setters with lowercase initial letters?!
+        MethodTuples nonPrimitiveSetters = new MethodTuples();
+        MethodTuples primitiveSetters = new MethodTuples();
+        MethodTuples nonPrimitiveGetters = new MethodTuples();
+        MethodTuples primitiveGetters = new MethodTuples();
+        for (Method method : object.getClass().getMethods()) {
+            Class[] parameterTypes = method.getParameterTypes();
+
+            if (setterMatcher.reset(method.getName()).find()) {
+                if (!Modifier.isPublic(method.getModifiers())) {
+                    //we could just call getMethods, but this can be helpful debugging inf
+                    LOG.trace("inaccessible setter: {} in {}", method.getName(), object.getClass());
+                    continue;
+                }
+                //require @Field on setters
+                if (method.getAnnotation(Field.class) == null) {
+                   // LOG.warn("unannotated setter {} in {}", method.getName(), object.getClass());
+                    continue;
+                }
+                if (parameterTypes.length != 1) {
+                    //TODO -- check code base for setX() zero parameters that set boolean to true
+                    LOG.warn("setter with wrong number of params " + method.getName() + " " + parameterTypes.length);
+                    continue;
+                }
+                String paramName = methodToParamName(setterMatcher.group(1));
+                if (PRIMITIVES.containsKey(parameterTypes[0])) {
+                    primitiveSetters.add(new MethodTuple(paramName, method, parameterTypes[0]));
+                } else {
+                    nonPrimitiveSetters.add(new MethodTuple(paramName, method, parameterTypes[0]));
+                }
+            } else if (getterMatcher.reset(method.getName()).find()) {
+                if (parameterTypes.length != 0) {
+                    //require 0 parameters for the getter
+                    continue;
+                }
+                String paramName = methodToParamName(getterMatcher.group(1));
+                if (PRIMITIVES.containsKey(method.getReturnType())) {
+                    primitiveGetters.add(new MethodTuple(paramName, method, method.getReturnType()));
+                } else {
+                    nonPrimitiveGetters.add(new MethodTuple(paramName, method, method.getReturnType()));
+                }
+
+            }
+        }
+
+        //TODO -- remove nonprimitive setters/getters that have a string equivalent
+        serializePrimitives(doc, element, object, primitiveSetters, primitiveGetters);
+        serializeNonPrimitives(doc, element, object, nonPrimitiveSetters, nonPrimitiveGetters);
+
+    }
+
+    private static String methodToParamName(String name) {
+        if (StringUtils.isBlank(name)) {
+            return name;
+        }
+        return name.substring(0, 1).toLowerCase(Locale.US) + name.substring(1);
+
+    }
+
+    private static void serializeNonPrimitives(Document doc, Element element,
+                                               Object object,
+                                               MethodTuples setterTuples,
+                                               MethodTuples getterTuples) {
+
+        for (Map.Entry<String, Set<MethodTuple>> e : setterTuples.tuples.entrySet()) {
+            Set<MethodTuple> getters = getterTuples.tuples.get(e.getKey());
+            processNonPrimitive(e.getKey(), e.getValue(), getters, doc, element, object);
+            if (!getterTuples.tuples.containsKey(e.getKey())) {
+                LOG.warn("no getter for setter non-primitive: {} in {}", e.getKey(),
+                        object.getClass());
+                continue;
+            }
+        }
+    }
+
+    private static void processNonPrimitive(String name, Set<MethodTuple> setters,
+                                            Set<MethodTuple> getters, Document doc, Element element,
+                                            Object object) {
+        for (MethodTuple setter : setters) {
+            for (MethodTuple getter : getters) {
+                if (setter.singleParam.equals(getter.singleParam)) {
+                    serializeObject(name, doc, element, setter, getter, object);
+                    return;
+                }
+            }
+        }
+    }
+
+    private static void serializeObject(String name, Document doc, Element element,
+                                        MethodTuple setter,
+                                         MethodTuple getter, Object object) {
+
+        Object item = null;
+        try {
+            item = getter.method.invoke(object);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            LOG.warn("couldn't get " + name + " on " + object.getClass(), e);
+            return;
+        }
+        if (item == null) {
+            LOG.warn("Getter {} on {} returned null", getter.name, object.getClass());
+        }
+        Element entry = doc.createElement(name);
+        entry.setAttribute("class", item.getClass().getCanonicalName());
+        element.appendChild(entry);
+        serializeParams(doc, element, item);
+    }
+
+    private static void serializePrimitives(Document doc, Element root,
+                                            Object object,
+                                            MethodTuples setterTuples, MethodTuples getterTuples) {
+
+        Element paramsElement = null;
+        if (object instanceof AbstractMultipleParser) {
+            paramsElement = doc.createElement("params");
+            Element paramElement = doc.createElement("param");
+            paramElement.setAttribute("name", "metadataPolicy");
+            paramElement.setAttribute("value",
+                    ((AbstractMultipleParser) object).getMetadataPolicy().toString());
+            paramsElement.appendChild(paramElement);
+            root.appendChild(paramsElement);
+        }
+        for (Map.Entry<String, Set<MethodTuple>> e : setterTuples.tuples.entrySet()) {
+            if (!getterTuples.tuples.containsKey(e.getKey())) {
+                LOG.info("no getter for setter: {} in {}", e.getKey(), object.getClass());
+                continue;
+            }
+            Set<MethodTuple> getters = getterTuples.tuples.get(e.getKey());
+            Set<MethodTuple> setters = e.getValue();
+            MethodTuple getterTuple = null;
+            for (MethodTuple getterCandidate : getters) {
+                for (MethodTuple setter : setters) {
+                    if (getterCandidate.singleParam.equals(setter.singleParam)) {
+                        getterTuple = getterCandidate;
+                        break;
+                    }
+                }
+            }
+
+            if (getterTuple == null) {
+                LOG.debug("Could not find getter to match setter for: {}", e.getKey());
+                continue;
+            }
+            Object value = null;
+            try {
+                value = getterTuple.method.invoke(object);
+            } catch (IllegalAccessException ex) {
+                LOG.error("couldn't invoke " + getterTuple, ex);
+                continue;
+            } catch (InvocationTargetException ex) {
+                LOG.error("couldn't invoke " + getterTuple, ex);
+                continue;
+            }
+            if (value == null) {
+                LOG.debug("null value: {} in {}", getterTuple.name, object.getClass());
+            }
+            String valString = (value == null) ? "" : value.toString();
+            Element param = doc.createElement("param");
+            param.setAttribute("name", getterTuple.name);
+            param.setAttribute("type", PRIMITIVES.get(getterTuple.singleParam));
+            if (List.class.isAssignableFrom(getterTuple.singleParam)) {
+                //this outputs even empty list elements, which I think is good.
+                addList(param, doc, getterTuple, (List<String>) value);
+            } else if (Map.class.isAssignableFrom(getterTuple.singleParam)) {
+                //this outputs even empty lists, which I think is good.
+                addMap(param, doc, getterTuple, (Map<String, String>) value);
+            } else {
+                param.setTextContent(valString);
+            }
+            if (paramsElement == null) {
+                paramsElement = doc.createElement("params");
+                root.appendChild(paramsElement);
+            }
+            paramsElement.appendChild(param);
+        }
+    }
+
+    private static void addMap(Element param, Document doc, MethodTuple getterTuple,
+                               Map<String, String> object) {
+        for (Map.Entry<String, String> e : new TreeMap<String, String>(object).entrySet()) {
+            Element element = doc.createElement("string");
+            element.setAttribute("key", e.getKey());
+            element.setAttribute("value", e.getValue());
+            param.appendChild(element);
+        }
+
+    }
+
+    private static void addList(Element param, Document doc, MethodTuple getterTuple,
+                                List<String> list) {
+        for (String s : list) {
+            Element element = doc.createElement("string");
+            element.setTextContent(s);
+            param.appendChild(element);
+        }
+    }
+
+    private static Method findGetter(MethodTuple setter, Object object) {
+        Matcher m = Pattern.compile("\\A(?:get|is)([A-Z].+)\\Z").matcher("");
+        for (Method method : object.getClass().getMethods()) {
+            if (object.getClass().getName().contains("PDF")) {
+                System.out.println(method.getName());
+            }
+            if (m.reset(method.getName()).find()) {
+                if (object.getClass().getName().contains("PDF")) {
+                    System.out.println("2: " + method.getName());
+                }
+                String paramName = m.group(1);
+                if (setter.name.equals(paramName)) {
+                    Class returnType = method.getReturnType();
+                    if (setter.singleParam.equals(returnType)) {
+                        return method;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private static MethodTuple pickBestSetter(Set<MethodTuple> tuples) {
+        //TODO -- if both string and integer, which one do we pick?
+        //stub for now -- just pick the first
+        for (MethodTuple t : tuples) {
+            return t;
+        }
+        return null;
+    }
+
+    private static class MethodTuples {
+        Map<String, Set<MethodTuple>> tuples = new TreeMap<>();
+
+        public void add(MethodTuple tuple) {
+            Set<MethodTuple> set = tuples.get(tuple.name);
+            if (set == null) {
+                set = new HashSet<>();
+                tuples.put(tuple.name, set);
+            }
+            set.add(tuple);
+        }
+
+        public int getSize() {
+            return tuples.size();
+        }
+    }
+    private static class MethodTuple {
+        String name;
+        Method method;
+        Class singleParam;
+
+        public MethodTuple(String name, Method method, Class singleParam) {
+            this.name = name;
+            this.method = method;
+            this.singleParam = singleParam;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            MethodTuple that = (MethodTuple) o;
+            return name.equals(that.name) && method.equals(that.method) &&
+                    singleParam.equals(that.singleParam);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, method, singleParam);
+        }
+    }
     public enum Mode {
         /**
          * Minimal version of the config, defaults where possible

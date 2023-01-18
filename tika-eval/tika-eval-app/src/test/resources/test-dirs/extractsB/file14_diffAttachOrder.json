@@ -8,12 +8,15 @@
     "Content-Type": "text/plain",
     "X-TIKA:embedded_resource_path": "inner2.txt",
     "X-TIKA:content": "o p q r s t u v w x y z",
-    "X-TIKA:digest:MD5": "471d98383e9f40444e5ecf821f2c8353"
+    "X-TIKA:digest:MD5": "471d98383e9f40444e5ecf821f2c8353",
+    "X-TIKA:embedded_depth": "1"
+
   },
   {
     "Content-Type": "text/plain",
     "X-TIKA:embedded_resource_path": "inner1.txt",
     "X-TIKA:content": "a b c d e f g h i j k l m n",
-    "X-TIKA:digest:MD5": "471d98383e9f40444e5ecf821f2c8354"
+    "X-TIKA:digest:MD5": "471d98383e9f40444e5ecf821f2c8354",
+    "X-TIKA:embedded_depth": "1"
   }
 ]

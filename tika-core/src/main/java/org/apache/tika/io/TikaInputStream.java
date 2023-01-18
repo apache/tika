@@ -19,7 +19,6 @@ package org.apache.tika.io;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
@@ -38,10 +37,12 @@ import java.sql.Blob;
 import java.sql.SQLException;
 
 import org.apache.commons.io.input.TaggedInputStream;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * Input stream with extended capabilities. The purpose of this class is
@@ -118,6 +119,10 @@ public class TikaInputStream extends TaggedInputStream {
     private int consecutiveEOFs = 0;
     private byte[] skipBuffer;
 
+    //suffix of the file if known. This is used to create temp files
+    //with the right suffixes. This should include the initial . as in ".doc"
+    private String suffix = null;
+
     /**
      * Creates a TikaInputStream instance. This private constructor is used
      * by the static factory methods based on the available information.
@@ -130,6 +135,7 @@ public class TikaInputStream extends TaggedInputStream {
         this.path = path;
         this.tmp = new TemporaryResources();
         this.length = Files.size(path);
+        this.suffix = FilenameUtils.getSuffixFromPath(path.getFileName().toString());
     }
 
     private TikaInputStream(Path path, TemporaryResources tmp, long length) throws IOException {
@@ -137,6 +143,7 @@ public class TikaInputStream extends TaggedInputStream {
         this.path = path;
         this.tmp = tmp;
         this.length = length;
+        this.suffix = FilenameUtils.getSuffixFromPath(path.getFileName().toString());
     }
 
     /**
@@ -153,6 +160,8 @@ public class TikaInputStream extends TaggedInputStream {
         this.path = file.toPath();
         this.tmp = new TemporaryResources();
         this.length = file.length();
+        this.suffix = FilenameUtils.getSuffixFromPath(path.getFileName().toString());
+
     }
 
     /**
@@ -167,11 +176,12 @@ public class TikaInputStream extends TaggedInputStream {
      * @param tmp    tracker for temporary resources associated with this stream
      * @param length total length of the stream, or -1 if unknown
      */
-    private TikaInputStream(InputStream stream, TemporaryResources tmp, long length) {
+    private TikaInputStream(InputStream stream, TemporaryResources tmp, long length, String suffix) {
         super(stream);
         this.path = null;
         this.tmp = tmp;
         this.length = length;
+        this.suffix = suffix;
     }
 
     /**
@@ -214,7 +224,7 @@ public class TikaInputStream extends TaggedInputStream {
      * @return a TikaInputStream instance
      * @since Apache Tika 0.10
      */
-    public static TikaInputStream get(InputStream stream, TemporaryResources tmp) {
+    public static TikaInputStream get(InputStream stream, TemporaryResources tmp, Metadata metadata) {
         if (stream == null) {
             throw new NullPointerException("The Stream must not be null");
         }
@@ -226,8 +236,19 @@ public class TikaInputStream extends TaggedInputStream {
             if (!(stream.markSupported())) {
                 stream = new BufferedInputStream(stream);
             }
-            return new TikaInputStream(stream, tmp, -1);
+            return new TikaInputStream(stream, tmp, -1, getExtension(metadata));
         }
+    }
+
+    /**
+     * @deprecated use {@link TikaInputStream#get(InputStream, TemporaryResources, Metadata)}
+     * @param stream
+     * @param tmp
+     * @return
+     */
+    @Deprecated
+    public static TikaInputStream get(InputStream stream, TemporaryResources tmp) {
+        return get(stream, tmp, null);
     }
 
     /**
@@ -236,7 +257,7 @@ public class TikaInputStream extends TaggedInputStream {
      * even when given just a normal input stream instance.
      * <p>
      * Use this method instead of the
-     * {@link #get(InputStream, TemporaryResources)} alternative when you
+     * {@link #get(InputStream, TemporaryResources, Metadata)} alternative when you
      * <em>do</em> explicitly close the returned stream. The recommended
      * access pattern is:
      * <pre>
@@ -253,7 +274,7 @@ public class TikaInputStream extends TaggedInputStream {
      * @return a TikaInputStream instance
      */
     public static TikaInputStream get(InputStream stream) {
-        return get(stream, new TemporaryResources());
+        return get(stream, new TemporaryResources(), null);
     }
 
     /**
@@ -299,8 +320,8 @@ public class TikaInputStream extends TaggedInputStream {
      */
     public static TikaInputStream get(byte[] data, Metadata metadata) {
         metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(data.length));
-        return new TikaInputStream(new ByteArrayInputStream(data), new TemporaryResources(),
-                data.length);
+        return new TikaInputStream(new UnsynchronizedByteArrayInputStream(data), new TemporaryResources(),
+                data.length, getExtension(metadata));
     }
 
     /**
@@ -321,6 +342,9 @@ public class TikaInputStream extends TaggedInputStream {
      * Creates a TikaInputStream from the file at the given path. The file name
      * and length are stored as input metadata in the given metadata instance.
      * <p>
+     * If there's an {@link TikaCoreProperties#RESOURCE_NAME_KEY} in the
+     * metadata object, this will not overwrite that value with the path's name.
+     * <p>
      * Note that you must always explicitly close the returned stream to
      * prevent leaking open file handles.
      *
@@ -330,7 +354,9 @@ public class TikaInputStream extends TaggedInputStream {
      * @throws IOException if an I/O error occurs
      */
     public static TikaInputStream get(Path path, Metadata metadata) throws IOException {
-        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, path.getFileName().toString());
+        if (StringUtils.isBlank(metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY))) {
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, path.getFileName().toString());
+        }
         metadata.set(Metadata.CONTENT_LENGTH, Long.toString(Files.size(path)));
         return new TikaInputStream(path);
     }
@@ -338,7 +364,9 @@ public class TikaInputStream extends TaggedInputStream {
     public static TikaInputStream get(Path path, Metadata metadata, TemporaryResources tmp)
             throws IOException {
         long length = Files.size(path);
-        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, path.getFileName().toString());
+        if (StringUtils.isBlank(metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY))) {
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, path.getFileName().toString());
+        }
         metadata.set(Metadata.CONTENT_LENGTH, Long.toString(length));
         return new TikaInputStream(path, tmp, length);
     }
@@ -377,7 +405,9 @@ public class TikaInputStream extends TaggedInputStream {
      */
     @Deprecated
     public static TikaInputStream get(File file, Metadata metadata) throws FileNotFoundException {
-        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, file.getName());
+        if (StringUtils.isBlank(metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY))) {
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, file.getName());
+        }
         metadata.set(Metadata.CONTENT_LENGTH, Long.toString(file.length()));
         return new TikaInputStream(file);
     }
@@ -404,7 +434,7 @@ public class TikaInputStream extends TaggedInputStream {
      */
     public static TikaInputStream get(InputStreamFactory factory, TemporaryResources tmp)
             throws IOException {
-        TikaInputStream stream = get(factory.getInputStream(), tmp);
+        TikaInputStream stream = get(factory.getInputStream(), tmp, null);
         stream.streamFactory = factory;
         return stream;
     }
@@ -441,6 +471,7 @@ public class TikaInputStream extends TaggedInputStream {
      * @throws SQLException if BLOB data can not be accessed
      */
     public static TikaInputStream get(Blob blob, Metadata metadata) throws SQLException {
+
         long length = -1;
         try {
             length = blob.length();
@@ -455,8 +486,17 @@ public class TikaInputStream extends TaggedInputStream {
             return get(blob.getBytes(1, (int) length), metadata);
         } else {
             return new TikaInputStream(new BufferedInputStream(blob.getBinaryStream()),
-                    new TemporaryResources(), length);
+                    new TemporaryResources(), length,
+                    getExtension(metadata));
         }
+    }
+
+    private static String getExtension(Metadata metadata) {
+        if (metadata == null) {
+            return StringUtils.EMPTY;
+        }
+        String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+        return FilenameUtils.getSuffixFromPath(name);
     }
 
     /**
@@ -560,7 +600,7 @@ public class TikaInputStream extends TaggedInputStream {
         }
 
         return new TikaInputStream(new BufferedInputStream(connection.getInputStream()),
-                new TemporaryResources(), length);
+                new TemporaryResources(), length, getExtension(metadata));
     }
 
     /**
@@ -668,14 +708,18 @@ public class TikaInputStream extends TaggedInputStream {
             if (position > 0) {
                 throw new IOException("Stream is already being read");
             } else {
-                Path tmpFile = tmp.createTempFile();
+                Path tmpFile = tmp.createTempFile(suffix);
                 if (maxBytes > -1) {
-                    try (InputStream lookAhead = new LookaheadInputStream(this, maxBytes)) {
-                        Files.copy(lookAhead, tmpFile, REPLACE_EXISTING);
-                        if (Files.size(tmpFile) >= maxBytes) {
+                    this.mark(maxBytes);
+                    try (BoundedInputStream boundedInputStream =
+                                 new BoundedInputStream(maxBytes, this)) {
+                        Files.copy(boundedInputStream, tmpFile, REPLACE_EXISTING);
+                        if (boundedInputStream.hasHitBound()) {
                             //tmpFile will be cleaned up when this TikaInputStream is closed
                             return null;
                         }
+                    } finally {
+                        this.reset();
                     }
                 } else {
                     // Spool the entire stream into a temporary file

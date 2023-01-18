@@ -18,13 +18,13 @@ package org.apache.tika.detect.zip;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 
 import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TikaInputStream;
@@ -57,13 +57,13 @@ public class OpenDocumentDetector implements ZipContainerDetector {
         if ("mimetype".equals(name)) {
             //can't rely on zae.getSize to determine if there is any
             //content here. :(
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            UnsynchronizedByteArrayOutputStream bos = new UnsynchronizedByteArrayOutputStream();
             BoundedInputStream bis = new BoundedInputStream(MAX_MIME_TYPE, zis);
             IOUtils.copy(bis, bos);
             //do anything with an inputstream > MAX_MIME_TYPE?
-            if (bos.toByteArray().length > 0) {
+            if (bos.size() > 0) {
                 //odt -- TODO -- check that the results are valid
-                return MediaType.parse(new String(bos.toByteArray(), UTF_8));
+                return MediaType.parse(bos.toString(UTF_8));
             }
         }
         return null;

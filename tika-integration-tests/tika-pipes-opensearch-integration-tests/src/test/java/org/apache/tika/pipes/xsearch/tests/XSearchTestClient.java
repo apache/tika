@@ -43,10 +43,11 @@ import org.apache.tika.pipes.emitter.opensearch.OpenSearchEmitter;
  */
 public class XSearchTestClient extends OpenSearchClient {
 
-    protected XSearchTestClient(String openSearchUrl, HttpClient httpClient,
-                                OpenSearchEmitter.AttachmentStrategy attachmentStrategy,
-                                String embeddedFileFieldName) {
-        super(openSearchUrl, httpClient, attachmentStrategy, embeddedFileFieldName);
+    public XSearchTestClient(String openSearchUrl, HttpClient httpClient,
+                             OpenSearchEmitter.AttachmentStrategy attachmentStrategy,
+                             OpenSearchEmitter.UpdateStrategy updateStrategy,
+                             String embeddedFileFieldName) {
+        super(openSearchUrl, httpClient, attachmentStrategy, updateStrategy, embeddedFileFieldName);
     }
 
     protected JsonResponse putJson(String url, String json) throws IOException {
@@ -86,7 +87,7 @@ public class XSearchTestClient extends OpenSearchClient {
         }
     }
 
-    protected JsonResponse getJson(String url) throws IOException {
+    public JsonResponse getJson(String url) throws IOException {
         HttpGet httpRequest = new HttpGet(url);
         httpRequest.setHeader("Accept", "application/json");
         httpRequest.setHeader("Content-type", "application/json; charset=utf-8");

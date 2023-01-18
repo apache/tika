@@ -21,6 +21,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -84,7 +85,7 @@ public abstract class CXFTestBase {
         return new ByteArrayInputStream(out.toByteArray());
     }
 
-    protected static String getStringFromInputStream(InputStream in) throws Exception {
+    protected static String getStringFromInputStream(InputStream in) throws IOException {
         return IOUtils.toString(in, UTF_8);
     }
 
@@ -105,7 +106,8 @@ public abstract class CXFTestBase {
         TikaResource.init(tika, tikaServerConfig,
                 new CommonsDigester(DIGESTER_READ_LIMIT, "md5," +
                         "sha1:32"),
-                getInputStreamFactory(tika), new ServerStatus("", 0, true));
+                getInputStreamFactory(getTikaConfigInputStream()),
+                new ServerStatus("", 0, true));
         JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
         //set compression interceptors
         sf.setOutInterceptors(Collections.singletonList(new GZIPOutInterceptor()));
@@ -131,11 +133,11 @@ public abstract class CXFTestBase {
         return tikaServerConfig;
     }
 
-    protected InputStreamFactory getInputStreamFactory(TikaConfig tikaConfig) {
+    protected InputStreamFactory getInputStreamFactory(InputStream tikaConfig) {
         return new DefaultInputStreamFactory();
     }
 
-    protected InputStream getTikaConfigInputStream() {
+    protected InputStream getTikaConfigInputStream() throws IOException {
         return new ByteArrayInputStream(new String(
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + "<properties>\n" +
                         "    <parsers>\n" +
@@ -163,17 +165,45 @@ public abstract class CXFTestBase {
 
     protected Map<String, String> readZipArchive(InputStream inputStream) throws IOException {
         Map<String, String> data = new HashMap<>();
-        Path tempFile = writeTemporaryArchiveFile(inputStream, "zip");
-        ZipFile zip = new ZipFile(tempFile.toFile());
-        Enumeration<ZipArchiveEntry> entries = zip.getEntries();
-        while (entries.hasMoreElements()) {
-            ZipArchiveEntry entry = entries.nextElement();
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            IOUtils.copy(zip.getInputStream(entry), bos);
-            data.put(entry.getName(), DigestUtils.md5Hex(bos.toByteArray()));
+        Path tempFile = null;
+        try {
+            tempFile = writeTemporaryArchiveFile(inputStream, "zip");
+            ZipFile zip = new ZipFile(tempFile.toFile());
+            Enumeration<ZipArchiveEntry> entries = zip.getEntries();
+            while (entries.hasMoreElements()) {
+                ZipArchiveEntry entry = entries.nextElement();
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                IOUtils.copy(zip.getInputStream(entry), bos);
+                data.put(entry.getName(), DigestUtils.md5Hex(bos.toByteArray()));
+            }
+            zip.close();
+        } finally {
+            if (tempFile != null ) {
+                Files.delete(tempFile);
+            }
         }
-        zip.close();
-        Files.delete(tempFile);
+        return data;
+    }
+
+    protected Map<String, byte[]> readZipArchiveBytes(InputStream inputStream) throws IOException {
+        Map<String, byte[]> data = new HashMap<>();
+        Path tempFile = null;
+        try {
+            tempFile = writeTemporaryArchiveFile(inputStream, "zip");
+            ZipFile zip = new ZipFile(tempFile.toFile());
+            Enumeration<ZipArchiveEntry> entries = zip.getEntries();
+            while (entries.hasMoreElements()) {
+                ZipArchiveEntry entry = entries.nextElement();
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                IOUtils.copy(zip.getInputStream(entry), bos);
+                data.put(entry.getName(), bos.toByteArray());
+            }
+            zip.close();
+        } finally {
+            if (tempFile != null ) {
+                Files.delete(tempFile);
+            }
+        }
         return data;
     }
 
@@ -231,4 +261,54 @@ public abstract class CXFTestBase {
         return tmp;
     }
 
+    protected static AverageColor getAverageColor(BufferedImage image, int minX, int maxX, int minY,
+                                                  int maxY) {
+        long totalRed = 0;
+        long totalGreen = 0;
+        long totalBlue = 0;
+        int pixels = 0;
+        for (int x = minX; x < maxX; x++) {
+            for (int y = minY; y < maxY; y++) {
+                int clr = image.getRGB(x, y);
+                int red = (clr & 0x00ff0000) >> 16;
+                int green = (clr & 0x0000ff00) >> 8;
+                int blue = clr & 0x000000ff;
+                totalRed += red;
+                totalGreen += green;
+                totalBlue += blue;
+                pixels++;
+            }
+        }
+        return new AverageColor((double) totalRed / (double) pixels,
+                (double) totalGreen / (double) pixels, (double) totalBlue / (double) pixels);
+    }
+
+    public static class AverageColor {
+        double red;
+        double green;
+        double blue;
+
+        public AverageColor(double averageRed, double averageGreen, double averageBlue) {
+            this.red = averageRed;
+            this.green = averageGreen;
+            this.blue = averageBlue;
+        }
+
+        public double getRed() {
+            return red;
+        }
+
+        public double getGreen() {
+            return green;
+        }
+
+        public double getBlue() {
+            return blue;
+        }
+
+        @Override
+        public String toString() {
+            return "AverageColor{" + "red=" + red + ", green=" + green + ", blue=" + blue + '}';
+        }
+    }
 }

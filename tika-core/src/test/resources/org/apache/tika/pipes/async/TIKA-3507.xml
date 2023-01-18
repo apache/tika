@@ -19,16 +19,12 @@
 -->
 <properties>
   <async>
-    <params>
-      <maxForEmitBatchBytes>10000</maxForEmitBatchBytes>
-      <emitMaxEstimatedBytes>100000</emitMaxEstimatedBytes>
-      <emitWithinMillis>60000</emitWithinMillis>
-      <numEmitters>1</numEmitters>
-    </params>
+    <maxForEmitBatchBytes>10000</maxForEmitBatchBytes>
+    <emitMaxEstimatedBytes>100000</emitMaxEstimatedBytes>
+    <emitWithinMillis>60000</emitWithinMillis>
+    <numEmitters>1</numEmitters>
     <pipesReporter class="org.apache.tika.pipes.async.MockReporter">
-      <params>
-        <endpoint>somethingOrOther</endpoint>
-      </params>
+      <endpoint>somethingOrOther</endpoint>
     </pipesReporter>
   </async>
 </properties>

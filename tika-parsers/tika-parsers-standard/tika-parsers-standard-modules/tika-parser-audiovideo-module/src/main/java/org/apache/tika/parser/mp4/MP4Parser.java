@@ -96,7 +96,7 @@ public class MP4Parser extends AbstractParser {
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         TemporaryResources tmp = new TemporaryResources();
-        TikaInputStream tstream = TikaInputStream.get(stream, tmp);
+        TikaInputStream tstream = TikaInputStream.get(stream, tmp, metadata);
 
         try (InputStream is = Files.newInputStream(tstream.getPath())) {
 

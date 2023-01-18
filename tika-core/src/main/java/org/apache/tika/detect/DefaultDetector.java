@@ -111,10 +111,14 @@ public class DefaultDetector extends CompositeDetector {
 
     @Override
     public List<Detector> getDetectors() {
-        if (loader != null) {
+        if (loader != null && loader.isDynamic()) {
             List<Detector> detectors = loader.loadDynamicServiceProviders(Detector.class);
-            detectors.addAll(super.getDetectors());
-            return detectors;
+            if (detectors.size() > 0) {
+                detectors.addAll(super.getDetectors());
+                return detectors;
+            } else {
+                return super.getDetectors();
+            }
         } else {
             return super.getDetectors();
         }

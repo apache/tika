@@ -17,9 +17,9 @@
 package org.apache.tika.batch.fs;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,8 +27,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import org.apache.tika.batch.BatchProcessDriverCLI;
 
@@ -37,7 +38,8 @@ public class BatchDriverTest extends FSBatchTestBase {
     //for debugging, turn logging off/on via resources/log4j2.properties for the driver
     //and log4j2_process.properties for the process.
 
-    @Test(timeout = 15000)
+    @Test
+    @Timeout(15000)
     public void oneHeavyHangTest() throws Exception {
         //batch runner hits one heavy hang file, keep going
         Path outputDir = getNewOutputDir("daemon-");
@@ -57,7 +59,8 @@ public class BatchDriverTest extends FSBatchTestBase {
                 readFileToString(outputDir.resolve("test2_ok.xml.xml"), UTF_8));
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30000)
     public void restartOnFullHangTest() throws Exception {
         //batch runner hits more heavy hangs than threads; needs to restart
         Path outputDir = getNewOutputDir("daemon-");
@@ -75,7 +78,8 @@ public class BatchDriverTest extends FSBatchTestBase {
                 readFileToString(outputDir.resolve("test6_ok.xml.xml"), UTF_8));
     }
 
-    @Test(timeout = 15000)
+    @Test
+    @Timeout(15000)
     public void noRestartTest() throws Exception {
         Path outputDir = getNewOutputDir("daemon-");
 
@@ -93,12 +97,13 @@ public class BatchDriverTest extends FSBatchTestBase {
         assertFalse(driver.isUserInterrupted());
         assertEquals(2, countChildren(outputDir));
         Path test2 = outputDir.resolve("test2_norestart.xml.xml");
-        assertTrue("test2_norestart.xml", Files.exists(test2));
+        assertTrue(Files.exists(test2), "test2_norestart.xml");
         Path test3 = outputDir.resolve("test3_ok.xml.xml");
-        assertFalse("test3_ok.xml", Files.exists(test3));
+        assertFalse(Files.exists(test3), "test3_ok.xml");
     }
 
-    @Test(timeout = 15000)
+    @Test
+    @Timeout(15000)
     public void restartOnOOMTest() throws Exception {
         //batch runner hits more heavy hangs than threads; needs to restart
         Path outputDir = getNewOutputDir("daemon-");
@@ -115,7 +120,8 @@ public class BatchDriverTest extends FSBatchTestBase {
                 readFileToString(outputDir.resolve("test2_ok.xml.xml"), UTF_8));
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60000)
     public void allHeavyHangsTestWithStarvedCrawler() throws Exception {
         //this tests that if all consumers are hung and the crawler is
         //waiting to add to the queue, there isn't deadlock.  The BatchProcess should
@@ -133,7 +139,8 @@ public class BatchDriverTest extends FSBatchTestBase {
                 readFileToString(outputDir.resolve("test6_ok.xml.xml"), UTF_8));
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30000)
     public void maxRestarts() throws Exception {
         //tests that maxRestarts works
         //if -maxRestarts is not correctly removed from the commandline,
@@ -154,7 +161,8 @@ public class BatchDriverTest extends FSBatchTestBase {
         assertEquals(3, countChildren(outputDir));
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30000)
     public void maxRestartsBadParameter() throws Exception {
         //tests that maxRestarts must be followed by an Integer
         Path outputDir = getNewOutputDir("allHeavyHangsStarvedCrawler-");
@@ -171,10 +179,11 @@ public class BatchDriverTest extends FSBatchTestBase {
         } catch (IllegalArgumentException e) {
             ex = true;
         }
-        assertTrue("IllegalArgumentException should have been thrown", ex);
+        assertTrue(ex, "IllegalArgumentException should have been thrown");
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30000)
     public void testNoRestartIfProcessFails() throws Exception {
         //tests that if something goes horribly wrong with FSBatchProcessCLI
         //the driver will not restart it again and again
@@ -191,7 +200,8 @@ public class BatchDriverTest extends FSBatchTestBase {
         assertEquals(0, driver.getNumRestarts());
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30000)
     public void testNoRestartIfProcessFailsTake2() throws Exception {
         Path outputDir = getNewOutputDir("nostart-norestart-");
         Map<String, String> args = new HashMap<>();
@@ -206,7 +216,8 @@ public class BatchDriverTest extends FSBatchTestBase {
         assertEquals(0, driver.getNumRestarts());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60000)
     public void testSystemExit() throws Exception {
         Path outputDir = getNewOutputDir("system-exit");
         Map<String, String> args = new HashMap<>();
@@ -218,8 +229,8 @@ public class BatchDriverTest extends FSBatchTestBase {
         assertEquals(6, countChildren(outputDir));
         assertTrue(driver.getNumRestarts() > 1);
         for (int i = 0; i < 3; i++) {
-            assertEquals("problem with " + i, 0,
-                    Files.size(outputDir.resolve("test" + i + "_system_exit.xml.xml")));
+            assertEquals(0, Files.size(outputDir.resolve("test" + i + "_system_exit.xml.xml")),
+                    "problem with " + i);
         }
         //sys exit may prevent test3 from running successfully
         for (int i = 5; i < 6; i++) {
@@ -228,8 +239,9 @@ public class BatchDriverTest extends FSBatchTestBase {
         }
     }
 
-    @Test(timeout = 60000)
-    @Ignore("Java 11-ea+23 makes outputstreams uninterruptible")
+    @Test
+    @Disabled("Java 11-ea+23 makes outputstreams uninterruptible")
+    @Timeout(60000)
     public void testThreadInterrupt() throws Exception {
         Path outputDir = getNewOutputDir("thread-interrupt");
         Map<String, String> args = new HashMap<>();
@@ -241,8 +253,9 @@ public class BatchDriverTest extends FSBatchTestBase {
         assertEquals(6, countChildren(outputDir));
 
         for (int i = 0; i < 3; i++) {
-            assertEquals("problem with " + i, 0,
-                    Files.size(outputDir.resolve("test" + i + "_thread_interrupt.xml.xml")));
+            assertEquals(0,
+                    Files.size(outputDir.resolve("test" + i + "_thread_interrupt.xml.xml")),
+                    "problem with " + i);
         }
         //sys exit may prevent test3 from running successfully
         for (int i = 5; i < 6; i++) {

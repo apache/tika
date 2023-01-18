@@ -220,7 +220,7 @@ public class ProbabilisticMimeDetectionSelector implements Detector {
         float maxProb = -1f;
         MediaType bestEstimate = rootMediaType;
 
-        if (possibleTypes != null && !possibleTypes.isEmpty()) {
+        if (!possibleTypes.isEmpty()) {
             int i;
             for (i = 0; i < n; i++) {
                 MediaType magictype = possibleTypes.get(i).getType();

@@ -23,11 +23,13 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.NotSerializableException;
+import java.net.ServerSocket;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
@@ -150,10 +152,18 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
         ParseContext context = new ParseContext();
         context.set(Parser.class, tika.getParser());
 
+        int availSocket = 0;
+        try (ServerSocket serverSocket = new ServerSocket(0)) {
+            Assertions.assertNotNull(serverSocket);
+            availSocket = serverSocket.getLocalPort();
+            Assertions.assertTrue(availSocket > 0);
+        } catch (IOException e) {
+            fail("Port is not available");
+        }
         ForkParser parser =
                 new ForkParser(ForkParserIntegrationTest.class.getClassLoader(), tika.getParser());
-        parser.setJavaCommand(Arrays.asList("java", "-Xmx32m", "-Xdebug",
-                "-Xrunjdwp:transport=dt_socket,address=54321,server=y,suspend=n"));
+        parser.setJavaCommand(Arrays.asList("java", "-Xmx32m", "-Xdebug", "-Xrunjdwp:transport" +
+                "=dt_socket,address=" + availSocket + ",server=y,suspend=n"));
         try {
             ContentHandler body = new BodyContentHandler();
             InputStream stream = getResourceAsStream("/test-documents/testTXT.txt");
@@ -228,6 +238,8 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
             });
         } catch (Throwable t) {
             t.printStackTrace();
+        } finally {
+            parser.close();
         }
     }
 

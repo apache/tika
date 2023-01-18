@@ -16,28 +16,27 @@
  */
 package org.apache.tika.language.translate.impl;
 
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import static org.junit.Assert.assertTrue;
-
-import org.apache.tika.language.translate.impl.JoshuaNetworkTranslator;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class JoshuaNetworkTranslatorTest {
+    JoshuaNetworkTranslator translator;
 
-  JoshuaNetworkTranslator translator;
+    @BeforeEach
+    public void setUp() {
+        translator = new JoshuaNetworkTranslator();
+    }
 
-  @Before
-  public void setUp() {
-    translator = new JoshuaNetworkTranslator();
-  }
-
-  @Test
-  public void testSimpleSpanishToEnglishTranslation() throws Exception {
-    String source = "hola";
-    String expected = "hello";
-    String translated = translator.translate(source, "spanish", "english");
-    if (translator.isAvailable()) assertTrue("Translate " + source + " to " + expected + " (was " + translated + ")",
-        expected.equalsIgnoreCase(translated));
-  }
+    @Test
+    public void testSimpleSpanishToEnglishTranslation() throws Exception {
+        String source = "hola";
+        String expected = "hello";
+        String translated = translator.translate(source, "spanish", "english");
+        if (translator.isAvailable()) {
+            assertTrue(expected.equalsIgnoreCase(translated),
+                    "Translate " + source + " to " + expected + " (was " + translated + ")");
+        }
+    }
 }

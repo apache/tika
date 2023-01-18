@@ -136,10 +136,10 @@ class RecursiveMetadataContentHandlerProxy extends RecursiveParserWrapperHandler
         //when I try to use ForkedObjectInputStream, but
         //not when I do this manually ?!
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(bos);
-        oos.writeObject(object);
-        oos.flush();
-        oos.close();
+        try (ObjectOutputStream oos = new ObjectOutputStream(bos)) {
+            oos.writeObject(object);
+            oos.flush();
+        }
         return bos.toByteArray();
 
     }

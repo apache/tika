@@ -540,7 +540,8 @@ public class SXWPFExtractorTest extends TikaTest {
             System.setErr(origErr);
 
             String err = errContent.toString(UTF_8.name());
-            assertTrue(err.length() == 0);
+            assertTrue(err.length() == 0, "expected no error msg, but got >" +
+                    err + "<");
         }
     }
 

@@ -197,6 +197,7 @@ public class ExtractComparer extends AbstractProfiler {
             try {
                 metadataListA = extractReader.loadExtract(fpsA.getExtractFile());
             } catch (ExtractReaderException e) {
+                e.printStackTrace();
                 extractExceptionA = e.getType();
             }
         }

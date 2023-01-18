@@ -91,7 +91,7 @@ public class HtmlParser extends AbstractEncodingDetectorParser {
         try {
             if (!TikaInputStream.isTikaInputStream(stream)) {
                 tmp = new TemporaryResources();
-                stream = TikaInputStream.get(stream, tmp);
+                stream = TikaInputStream.get(stream, tmp, metadata);
             }
             //AutoDetectReader can throw exceptions during
             //initialization.  If we just created a

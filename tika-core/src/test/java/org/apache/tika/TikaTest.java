@@ -42,7 +42,9 @@ import java.util.Set;
 import org.apache.commons.io.IOUtils;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.extractor.EmbeddedResourceHandler;
+import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -62,8 +64,16 @@ import org.apache.tika.sax.ToXMLContentHandler;
  */
 public abstract class TikaTest {
 
+    protected static TikaConfig DEFAULT_TIKA_CONFIG;
     protected static Parser AUTO_DETECT_PARSER = new AutoDetectParser();
 
+    static {
+        try {
+            DEFAULT_TIKA_CONFIG = new TikaConfig();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
     public static void assertContainsCount(String needle, String haystack, int targetCount) {
         int i = haystack.indexOf(needle);
         int count = 0;
@@ -424,8 +434,10 @@ public abstract class TikaTest {
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parserToWrap);
         RecursiveParserWrapperHandler handler =
                 new RecursiveParserWrapperHandler(new BasicContentHandlerFactory(handlerType, -1));
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, FilenameUtils.getName(filePath));
         try (InputStream is = getResourceAsStream("/test-documents/" + filePath)) {
-            wrapper.parse(is, handler, new Metadata(), context);
+            wrapper.parse(is, handler, metadata, context);
         }
         return handler.getMetadataList();
     }

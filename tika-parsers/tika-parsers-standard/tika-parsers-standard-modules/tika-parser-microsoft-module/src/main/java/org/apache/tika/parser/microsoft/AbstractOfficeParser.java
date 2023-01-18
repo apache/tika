@@ -99,9 +99,17 @@ public abstract class AbstractOfficeParser extends AbstractParser {
         defaultOfficeParserConfig.setIncludeShapeBasedContent(includeShapeBasedContent);
     }
 
+    public boolean isIncludeShapeBasedContent() {
+        return defaultOfficeParserConfig.isIncludeShapeBasedContent();
+    }
+
     @Field
     public void setUseSAXPptxExtractor(boolean useSAXPptxExtractor) {
         defaultOfficeParserConfig.setUseSAXPptxExtractor(useSAXPptxExtractor);
+    }
+
+    public boolean isUseSAXPptxExtractor() {
+        return defaultOfficeParserConfig.isUseSAXPptxExtractor();
     }
 
     @Field
@@ -109,8 +117,8 @@ public abstract class AbstractOfficeParser extends AbstractParser {
         defaultOfficeParserConfig.setConcatenatePhoneticRuns(concatenatePhoneticRuns);
     }
 
-    void getConcatenatePhoneticRuns() {
-        defaultOfficeParserConfig.isConcatenatePhoneticRuns();
+    public boolean isConcatenatePhoneticRuns() {
+        return defaultOfficeParserConfig.isConcatenatePhoneticRuns();
     }
 
     public boolean isExtractAllAlternativesFromMSG() {
@@ -138,15 +146,38 @@ public abstract class AbstractOfficeParser extends AbstractParser {
      * of overly large byte arrays.  Use carefully; and please open up issues on
      * POI's bugzilla to bump values for specific records.
      *
+     * If the value is &lt;&eq; 0, this value is ignored
+     *
      * @param maxOverride
      */
     @Field
     public void setByteArrayMaxOverride(int maxOverride) {
-        IOUtils.setByteArrayMaxOverride(maxOverride);
+        if (maxOverride > 0) {
+            IOUtils.setByteArrayMaxOverride(maxOverride);
+            //required for serialization
+            defaultOfficeParserConfig.setMaxOverride(maxOverride);
+        }
+    }
+
+    public int getByteArrayMaxOverride() {
+        return defaultOfficeParserConfig.getMaxOverride();
     }
 
     @Field
     public void setDateFormatOverride(String format) {
         defaultOfficeParserConfig.setDateOverrideFormat(format);
+    }
+
+    public String getDateFormatOverride() {
+        return defaultOfficeParserConfig.getDateFormatOverride();
+    }
+
+    @Field
+    public void setIncludeHeadersAndFooters(boolean includeHeadersAndFooters) {
+        defaultOfficeParserConfig.setIncludeHeadersAndFooters(includeHeadersAndFooters);
+    }
+
+    public boolean isIncludeHeadersAndFooters() {
+        return defaultOfficeParserConfig.isIncludeHeadersAndFooters();
     }
 }

@@ -29,7 +29,10 @@ import org.apache.tika.mime.MediaType;
  * <p>
  * This is also required to override detection by some parsers
  * via {@link TikaCoreProperties#CONTENT_TYPE_PARSER_OVERRIDE}.
+ *
+ * @deprecated after 2.5.0 this functionality was moved to the CompositeDetector
  */
+@Deprecated
 public class OverrideDetector implements Detector {
 
     @Override

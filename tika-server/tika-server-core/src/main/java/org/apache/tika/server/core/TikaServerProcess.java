@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.BindException;
 import java.nio.file.Paths;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -35,15 +36,23 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.cxf.binding.BindingFactoryManager;
+import org.apache.cxf.configuration.jsse.TLSParameterJaxBUtils;
+import org.apache.cxf.configuration.jsse.TLSServerParameters;
+import org.apache.cxf.configuration.security.ClientAuthentication;
+import org.apache.cxf.configuration.security.KeyManagersType;
+import org.apache.cxf.configuration.security.KeyStoreType;
+import org.apache.cxf.configuration.security.TrustManagersType;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.apache.cxf.jaxrs.utils.JAXRSServerFactoryCustomizationUtils;
 import org.apache.cxf.rs.security.cors.CrossOriginResourceSharingFilter;
 import org.apache.cxf.service.factory.ServiceConstructionException;
 import org.apache.cxf.transport.common.gzip.GZIPInInterceptor;
 import org.apache.cxf.transport.common.gzip.GZIPOutInterceptor;
+import org.apache.cxf.transport.http_jetty.JettyHTTPServerEngineFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -100,7 +109,7 @@ public class TikaServerProcess {
         options.addOption("i", "id", true,
                 "id to use for server in server status endpoint");
         options.addOption("?", "help", false, "this help message");
-        options.addOption("noFork", false, "if launched in no fork mode");
+        options.addOption("noFork", "noFork", false, "if launched in no fork mode");
         options.addOption("forkedStatusFile", true,
                 "Not allowed in -noFork: temporary file used to communicate " +
                         "with forking process -- do not use this! " +
@@ -248,19 +257,58 @@ public class TikaServerProcess {
         sf.setOutInterceptors(Collections.singletonList(new GZIPOutInterceptor()));
         sf.setInInterceptors(Collections.singletonList(new GZIPInInterceptor()));
 
-        String url = "http://" + host + ":" + port + "/";
+        String protocol = tikaServerConfig.getTlsConfig().isActive() ? "https" : "http";
+        String url = protocol + "://" + host + ":" + port + "/";
         sf.setAddress(url);
         sf.setResourceComparator(new ProduceTypeResourceComparator());
         BindingFactoryManager manager = sf.getBus().getExtension(BindingFactoryManager.class);
-        JAXRSBindingFactory factory = new JAXRSBindingFactory();
-        factory.setBus(sf.getBus());
-        manager.registerBindingFactory(JAXRSBindingFactory.JAXRS_BINDING_ID, factory);
+        if (tikaServerConfig.getTlsConfig().isActive()) {
+            LOG.warn("The TLS configuration is in BETA and might change " +
+                    "dramatically in future releases.");
+            TLSServerParameters tlsParams = getTlsParams(tikaServerConfig.getTlsConfig());
+            JettyHTTPServerEngineFactory factory = new JettyHTTPServerEngineFactory();
+            factory.setBus(sf.getBus());
+            factory.setTLSServerParametersForPort(host, port, tlsParams);
+            JAXRSServerFactoryCustomizationUtils.customize(sf);
+        } else {
+            JAXRSBindingFactory factory = new JAXRSBindingFactory();
+            factory.setBus(sf.getBus());
+            manager.registerBindingFactory(JAXRSBindingFactory.JAXRS_BINDING_ID, factory);
+        }
         ServerDetails details = new ServerDetails();
         details.sf = sf;
         details.url = url;
         details.serverId = serverId;
         details.serverStatus = serverStatus;
         return details;
+    }
+
+    private static TLSServerParameters getTlsParams(TlsConfig tlsConfig)
+            throws GeneralSecurityException, IOException {
+        KeyStoreType keyStore = new KeyStoreType();
+        keyStore.setType(tlsConfig.getKeyStoreType());
+        keyStore.setPassword(tlsConfig.getKeyStorePassword());
+        keyStore.setFile(tlsConfig.getKeyStoreFile());
+        KeyManagersType kmt = new KeyManagersType();
+        kmt.setKeyStore(keyStore);
+        kmt.setKeyPassword(tlsConfig.getKeyStorePassword());
+        TLSServerParameters parameters = new TLSServerParameters();
+        parameters.setKeyManagers(TLSParameterJaxBUtils.getKeyManagers(kmt));
+
+        if (tlsConfig.hasTrustStore()) {
+            KeyStoreType trustKeyStore = new KeyStoreType();
+            trustKeyStore.setType(tlsConfig.getTrustStoreType());
+            trustKeyStore.setPassword(tlsConfig.getTrustStorePassword());
+            trustKeyStore.setFile(tlsConfig.getTrustStoreFile());
+            TrustManagersType tmt = new TrustManagersType();
+            tmt.setKeyStore(trustKeyStore);
+            parameters.setTrustManagers(TLSParameterJaxBUtils.getTrustManagers(tmt, true));
+        }
+        ClientAuthentication clientAuthentication = new ClientAuthentication();
+        clientAuthentication.setRequired(tlsConfig.isClientAuthenticationRequired());
+        clientAuthentication.setWant(tlsConfig.isClientAuthenticationWanted());
+        parameters.setClientAuthentication(clientAuthentication);
+        return parameters;
     }
 
     private static void loadAllProviders(TikaServerConfig tikaServerConfig,
@@ -387,7 +435,7 @@ public class TikaServerProcess {
                 try {
                     localAsyncResource.shutdownNow();
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    LOG.warn("problem shutting down local async resource", e);
                 }
             }));
             resourceProviders.add(new SingletonResourceProvider(localAsyncResource));
@@ -399,12 +447,12 @@ public class TikaServerProcess {
                 try {
                     localPipesResource.close();
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    LOG.warn("exception closing local pipes resource", e);
                 }
             }));
             resourceProviders.add(new SingletonResourceProvider(localPipesResource));
         }
-        resourceProviders.addAll(loadResourceServices());
+        resourceProviders.addAll(loadResourceServices(serverStatus));
         return resourceProviders;
     }
 
@@ -468,13 +516,16 @@ public class TikaServerProcess {
         }
     }
 
-    private static Collection<? extends ResourceProvider> loadResourceServices() {
+    private static Collection<? extends ResourceProvider> loadResourceServices(ServerStatus serverStatus) {
         List<TikaServerResource> resources =
                 new ServiceLoader(TikaServerProcess.class.getClassLoader())
                         .loadServiceProviders(TikaServerResource.class);
         List<ResourceProvider> providers = new ArrayList<>();
-
         for (TikaServerResource r : resources) {
+            LOG.info("loading resource from SPI: " + r.getClass());
+            if (r instanceof ServerStatusResource) {
+                ((ServerStatusResource)r).setServerStatus(serverStatus);
+            }
             providers.add(new SingletonResourceProvider(r));
         }
         return providers;

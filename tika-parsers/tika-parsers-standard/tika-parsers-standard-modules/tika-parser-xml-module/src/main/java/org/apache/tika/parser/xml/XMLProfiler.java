@@ -39,7 +39,6 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
 
 
@@ -91,7 +90,7 @@ public class XMLProfiler extends AbstractParser {
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream),
-                new OfflineContentHandler(new XMLProfileHandler(metadata)), context);
+                new XMLProfileHandler(metadata), context);
     }
 
     private static class XMLProfileHandler extends DefaultHandler {

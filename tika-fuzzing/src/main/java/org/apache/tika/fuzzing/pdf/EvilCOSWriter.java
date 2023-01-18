@@ -46,6 +46,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.apache.pdfbox.cos.COSArray;
 import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSBoolean;
@@ -873,7 +874,7 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
         // write existing PDF
         IOUtils.copy(new RandomAccessInputStream(incrementalInput), incrementalOutput);
         // write the actual incremental update
-        incrementalOutput.write(((ByteArrayOutputStream) output).toByteArray());
+        incrementalOutput.write(getBytes(output));
     }
 
     private void doWriteSignature() throws IOException {
@@ -899,9 +900,8 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
         }
 
         // copy the new incremental data into a buffer (e.g. signature dict, trailer)
-        ByteArrayOutputStream byteOut = (ByteArrayOutputStream) output;
-        byteOut.flush();
-        incrementPart = byteOut.toByteArray();
+        output.flush();
+        incrementPart = getBytes(output);
 
         // overwrite the ByteRange in the buffer
         byte[] byteRangeBytes = byteRange.getBytes(StandardCharsets.ISO_8859_1);
@@ -1473,5 +1473,14 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
         willEncrypt = false;
         COSDocument cosDoc = fdfDocument.getDocument();
         cosDoc.accept(this);
+    }
+
+    private byte[] getBytes(OutputStream stream) throws IOException {
+        if (stream instanceof ByteArrayOutputStream) {
+            return ((ByteArrayOutputStream) stream).toByteArray();
+        } else if (stream instanceof UnsynchronizedByteArrayOutputStream) {
+            return ((UnsynchronizedByteArrayOutputStream) stream).toByteArray();
+        }
+        throw new IOException("OutputStream " + stream.getClass().getName() + " is not supported");
     }
 }

@@ -949,7 +949,7 @@ final class TextExtractor {
                 } else if (equals("listtemplateid")) {
                     currentList.templateID = param;
                 } else if (equals("levelnfc") || equals("levelnfcn")) {
-                    //sanity check to make sure list information isn't corrupt
+                    //check to make sure list information isn't corrupt
                     if (listTableLevel > -1 && listTableLevel < currentList.numberType.length) {
                         currentList.numberType[listTableLevel] = param;
                     }
@@ -999,6 +999,8 @@ final class TextExtractor {
                 groupState.list = param;
             } else if (equals("lslvl")) {
                 groupState.listLevel = param;
+            } else if (equals("wbitmap")) {
+                embObjHandler.setPictBitmap(true);
             }
         }
 

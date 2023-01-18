@@ -123,9 +123,9 @@ public final class Property implements Comparable<Property> {
         SortedSet<Property> set = new TreeSet<>();
         String p = prefix + ":";
         synchronized (PROPERTIES) {
-            for (String name : PROPERTIES.keySet()) {
-                if (name.startsWith(p)) {
-                    set.add(PROPERTIES.get(name));
+            for (Map.Entry<String, Property> entry : PROPERTIES.entrySet()) {
+                if (entry.getKey().startsWith(p)) {
+                    set.add(entry.getValue());
                 }
             }
         }
@@ -142,6 +142,10 @@ public final class Property implements Comparable<Property> {
 
     public static Property internalDate(String name) {
         return new Property(name, true, ValueType.DATE);
+    }
+
+    public static Property internalDateBag(String name) {
+        return new Property(name, true, PropertyType.BAG, ValueType.DATE);
     }
 
     public static Property internalInteger(String name) {

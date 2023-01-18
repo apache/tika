@@ -38,10 +38,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.pipes.FetchEmitTuple;
 import org.apache.tika.pipes.pipesiterator.PipesIterator;
@@ -52,11 +52,12 @@ public class TestJDBCPipesIterator {
     static final String db = "mydb";
     private static final int NUM_ROWS = 1000;
     static Connection CONNECTION;
+
+    @TempDir
     static Path DB_DIR;
 
     @BeforeAll
     public static void setUp() throws Exception {
-        DB_DIR = Files.createTempDirectory("tika-jdbc-pipesiterator-test-");
 
         CONNECTION =
                 DriverManager.getConnection("jdbc:h2:file:" +
@@ -82,7 +83,6 @@ public class TestJDBCPipesIterator {
     @AfterAll
     public static void tearDown() throws Exception {
         CONNECTION.close();
-        FileUtils.deleteDirectory(DB_DIR.toFile());
     }
 
     @Test
@@ -144,7 +144,6 @@ public class TestJDBCPipesIterator {
         String config = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><properties>\n" +
                 "        <pipesIterator " +
                 "       class=\"org.apache.tika.pipes.pipesiterator.jdbc.JDBCPipesIterator\">\n" +
-                "            <params>\n" +
                 "                <fetcherName>s3f</fetcherName>\n" +
                 "                <emitterName>s3e</emitterName>\n" +
                 "                <queueSize>57</queueSize>\n" +
@@ -156,7 +155,6 @@ public class TestJDBCPipesIterator {
                 "from fetchkeys</select>\n" +
                 "                <connection>jdbc:h2:file:" + DB_DIR.toAbsolutePath() + "/" +
                     db + "</connection>\n" +
-                "            </params>\n" +
                 "        </pipesIterator>\n" +
                 "</properties>";
         Path tmp = Files.createTempFile("tika-jdbc-", ".xml");

@@ -17,18 +17,16 @@
 -->
 <properties>
   <server>
-    <params>
-      <taskTimeoutMillis>120000</taskTimeoutMillis>
-      <minimumTimeoutMillis>10</minimumTimeoutMillis>
-      <port>9999</port>
-      <maxFiles>1000</maxFiles>
-      <forkedJvmArgs>
-        <arg>-Xmx512m</arg>
-      </forkedJvmArgs>
-      <endpoints>
-        <endpoint>rmeta</endpoint>
-        <endpoint>status</endpoint>
-      </endpoints>
-    </params>
+    <taskTimeoutMillis>120000</taskTimeoutMillis>
+    <minimumTimeoutMillis>10</minimumTimeoutMillis>
+    <port>9999</port>
+    <maxFiles>1000</maxFiles>
+    <forkedJvmArgs>
+      <arg>-Xmx512m</arg>
+    </forkedJvmArgs>
+    <endpoints>
+      <endpoint>rmeta</endpoint>
+      <endpoint>status</endpoint>
+    </endpoints>
   </server>
 </properties>

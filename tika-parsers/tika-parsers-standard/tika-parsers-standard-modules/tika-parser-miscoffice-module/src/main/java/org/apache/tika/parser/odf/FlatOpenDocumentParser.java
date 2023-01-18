@@ -37,7 +37,6 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.ContentHandlerDecorator;
 import org.apache.tika.sax.EmbeddedContentHandler;
-import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -73,7 +72,7 @@ public class FlatOpenDocumentParser extends AbstractParser {
         try {
             ContentHandler fodHandler = getContentHandler(xhtml, metadata, context);
             XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream),
-                    new OfflineContentHandler(new EmbeddedContentHandler(fodHandler)), context);
+                    new EmbeddedContentHandler(fodHandler), context);
             //can only detect subtype (text/pres/sheet) during parse.
             //update it here.
             MediaType detected = ((FlatOpenDocumentParserHandler) fodHandler).getDetectedType();
@@ -90,6 +89,9 @@ public class FlatOpenDocumentParser extends AbstractParser {
         this.extractMacros = extractMacros;
     }
 
+    public boolean isExtractMacros() {
+        return extractMacros;
+    }
     private ContentHandler getContentHandler(ContentHandler handler, Metadata metadata,
                                              ParseContext context) {
         return new FlatOpenDocumentParserHandler(handler, metadata, context, extractMacros);
@@ -115,16 +117,14 @@ public class FlatOpenDocumentParser extends AbstractParser {
                                               ParseContext parseContext, boolean extractMacros) {
             this.extractMacros = extractMacros;
 
-            this.bodyHandler = new OfflineContentHandler(
-                    new OpenDocumentBodyHandler(new NSNormalizerContentHandler(baseHandler),
-                            parseContext));
+            this.bodyHandler = new OpenDocumentBodyHandler(new NSNormalizerContentHandler(baseHandler),
+                            parseContext);
 
-            this.metadataHandler = new OfflineContentHandler(new NSNormalizerContentHandler(
-                    OpenDocumentMetaParser.getContentHandler(metadata, parseContext)));
+            this.metadataHandler = new NSNormalizerContentHandler(
+                    OpenDocumentMetaParser.getContentHandler(metadata, parseContext));
 
             if (extractMacros) {
-                this.macroHandler = new OfflineContentHandler(
-                        new FlatOpenDocumentMacroHandler(baseHandler, parseContext));
+                this.macroHandler = new FlatOpenDocumentMacroHandler(baseHandler, parseContext);
             } else {
                 this.macroHandler = null;
             }

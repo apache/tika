@@ -18,11 +18,22 @@
 package org.apache.tika.config;
 
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+
+import org.apache.tika.parser.CompositeParser;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.ParserDecorator;
+import org.apache.tika.parser.mock.MockParser;
+import org.apache.tika.parser.multiple.FallbackParser;
 
 public class TikaConfigSerializerTest extends TikaConfigTest {
 
@@ -47,6 +58,32 @@ public class TikaConfigSerializerTest extends TikaConfigTest {
                 "<encodingDetector class=\"org.apache.tika.detect" +
                 ".NonDetectingEncodingDetector\"/> " +
                 "</encodingDetectors>", xml);
+    }
+
+    @Test
+    public void testMultipleWithFallback() throws Exception {
+        TikaConfig config = getConfig("TIKA-1509-multiple-fallback.xml");
+        StringWriter writer = new StringWriter();
+        TikaConfigSerializer.serialize(config,
+                TikaConfigSerializer.Mode.STATIC_FULL, writer, StandardCharsets.UTF_8);
+        try (InputStream is =
+                     new ByteArrayInputStream(writer.toString().getBytes(StandardCharsets.UTF_8))) {
+            config = new TikaConfig(is);
+        }
+
+        CompositeParser parser = (CompositeParser) config.getParser();
+        assertEquals(2, parser.getAllComponentParsers().size());
+        Parser p;
+
+        p = parser.getAllComponentParsers().get(0);
+        assertEquals(MockParser.class, ((ParserDecorator) p).getWrappedParser().getClass());
+
+        p = parser.getAllComponentParsers().get(1);
+        assertTrue(p instanceof ParserDecorator, p.toString());
+        assertEquals(FallbackParser.class, ((ParserDecorator) p).getWrappedParser().getClass());
+
+        FallbackParser fbp = (FallbackParser) ((ParserDecorator) p).getWrappedParser();
+        assertEquals("DISCARD_ALL", fbp.getMetadataPolicy().toString());
     }
 
     @Test

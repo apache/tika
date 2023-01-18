@@ -47,7 +47,7 @@ public class DigestingParser extends ParserDecorator {
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         TemporaryResources tmp = new TemporaryResources();
-        TikaInputStream tis = TikaInputStream.get(stream, tmp);
+        TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
         try {
             if (digester != null) {
                 digester.digest(tis, metadata, context);
@@ -59,6 +59,14 @@ public class DigestingParser extends ParserDecorator {
     }
 
     /**
+     * This is used in {@link AutoDetectParserConfig} to (optionally)
+     * wrap the parser in a digesting parser.
+     */
+    public interface DigesterFactory {
+        Digester build();
+    }
+
+        /**
      * Interface for digester. See
      * org.apache.parser.utils.CommonsDigester in tika-parsers for an
      * implementation.

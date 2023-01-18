@@ -16,16 +16,19 @@
  */
 package org.apache.tika.eval.core.util;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import org.apache.tika.eval.core.langid.LanguageIDWrapper;
 import org.apache.tika.language.detect.LanguageResult;
 
 public class LanguageIdTest {
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10000)
     public void testDefenseAgainstBadRegexInOpenNLP() throws Exception {
         //TIKA-2777
         StringBuilder sb = new StringBuilder();
@@ -34,6 +37,6 @@ public class LanguageIdTest {
         }
         LanguageIDWrapper wrapper = new LanguageIDWrapper();
         List<LanguageResult> languages = wrapper.calculate(sb.toString());
-        Assert.assertEquals("mri", languages.get(0).getLanguage());
+        assertEquals("mri", languages.get(0).getLanguage());
     }
 }

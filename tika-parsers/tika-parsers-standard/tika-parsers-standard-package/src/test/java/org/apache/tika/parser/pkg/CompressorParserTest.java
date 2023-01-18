@@ -39,7 +39,7 @@ public class CompressorParserTest extends TikaTest {
 
     @Test
     public void testZstd() throws Exception {
-        XMLResult r = getXML("testZSTD.zstd");
+        XMLResult r = getXML("testZSTD.zst");
         assertContains("0123456789", r.xml);
     }
 

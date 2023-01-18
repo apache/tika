@@ -25,6 +25,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.CorruptedFileException;
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.exception.ZeroByteFileException;
@@ -35,9 +36,10 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
-import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.sax.SecureContentHandler;
+import org.apache.tika.sax.WriteLimiter;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.ParserUtils;
 
@@ -135,7 +137,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
                     "ContentHandler must implement RecursiveParserWrapperHandler");
         }
         EmbeddedParserDecorator decorator =
-                new EmbeddedParserDecorator(getWrappedParser(), "/", parserState);
+                new EmbeddedParserDecorator(getWrappedParser(), "/", "/", parserState);
         context.set(Parser.class, decorator);
         ContentHandler localHandler =
                 parserState.recursiveParserWrapperHandler.getNewContentHandler();
@@ -143,19 +145,27 @@ public class RecursiveParserWrapper extends ParserDecorator {
         parserState.recursiveParserWrapperHandler.startDocument();
         TemporaryResources tmp = new TemporaryResources();
         int writeLimit = -1;
-        //TODO -- rely on a new interface WriteLimiting...?
-        //It'd be better not to tie this to a specific class
-        if (recursiveParserWrapperHandler instanceof BasicContentHandlerFactory) {
-            writeLimit =
-                    ((BasicContentHandlerFactory)recursiveParserWrapperHandler).getWriteLimit();
+        boolean throwOnWriteLimitReached = true;
+
+        if (recursiveParserWrapperHandler instanceof AbstractRecursiveParserWrapperHandler) {
+            ContentHandlerFactory factory =
+                    ((AbstractRecursiveParserWrapperHandler)recursiveParserWrapperHandler).getContentHandlerFactory();
+            if (factory instanceof WriteLimiter) {
+                writeLimit = ((WriteLimiter)factory).getWriteLimit();
+                throwOnWriteLimitReached = ((WriteLimiter)factory).isThrowOnWriteLimitReached();
+            }
         }
         try {
-            TikaInputStream tis = TikaInputStream.get(stream, tmp);
+            TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
             RecursivelySecureContentHandler secureContentHandler =
-                    new RecursivelySecureContentHandler(localHandler, tis, writeLimit);
+                    new RecursivelySecureContentHandler(localHandler, tis, writeLimit,
+                            throwOnWriteLimitReached, context);
             context.set(RecursivelySecureContentHandler.class, secureContentHandler);
             getWrappedParser().parse(tis, secureContentHandler, metadata, context);
         } catch (Throwable e) {
+            if (e instanceof EncryptedDocumentException) {
+                metadata.set(TikaCoreProperties.IS_ENCRYPTED, "true");
+            }
             if (WriteLimitReachedException.isWriteLimitReached(e)) {
                 metadata.set(TikaCoreProperties.WRITE_LIMIT_REACHED, "true");
             } else {
@@ -194,13 +204,17 @@ public class RecursiveParserWrapper extends ParserDecorator {
         private final ParserState parserState;
         private String location = null;
 
+        private String embeddedIdPath = null;
 
-        private EmbeddedParserDecorator(Parser parser, String location, ParserState parseState) {
+
+        private EmbeddedParserDecorator(Parser parser, String location,
+                                        String embeddedIdPath, ParserState parseState) {
             super(parser);
             this.location = location;
             if (!this.location.endsWith("/")) {
                 this.location += "/";
             }
+            this.embeddedIdPath = embeddedIdPath;
             this.parserState = parseState;
         }
 
@@ -217,7 +231,12 @@ public class RecursiveParserWrapper extends ParserDecorator {
 
             metadata.add(TikaCoreProperties.EMBEDDED_RESOURCE_PATH, objectLocation);
 
-
+            String idPath =
+                    this.embeddedIdPath.equals("/") ?
+                            this.embeddedIdPath + ++parserState.embeddedCount :
+                            this.embeddedIdPath + "/" + ++parserState.embeddedCount;
+            metadata.add(TikaCoreProperties.EMBEDDED_ID_PATH, idPath);
+            metadata.set(TikaCoreProperties.EMBEDDED_ID, parserState.embeddedCount);
             //get a fresh handler
             ContentHandler localHandler =
                     parserState.recursiveParserWrapperHandler.getNewContentHandler();
@@ -225,7 +244,8 @@ public class RecursiveParserWrapper extends ParserDecorator {
 
             Parser preContextParser = context.get(Parser.class);
             context.set(Parser.class,
-                    new EmbeddedParserDecorator(getWrappedParser(), objectLocation, parserState));
+                    new EmbeddedParserDecorator(getWrappedParser(), objectLocation,
+                            idPath, parserState));
             long started = System.currentTimeMillis();
             RecursivelySecureContentHandler secureContentHandler =
                     context.get(RecursivelySecureContentHandler.class);
@@ -249,6 +269,9 @@ public class RecursiveParserWrapper extends ParserDecorator {
             } catch (CorruptedFileException e) {
                 throw e;
             } catch (TikaException e) {
+                if (e instanceof EncryptedDocumentException) {
+                    metadata.set(TikaCoreProperties.IS_ENCRYPTED, true);
+                }
                 if (context.get(ZeroByteFileException.IgnoreZeroByteFileException.class) != null &&
                         e instanceof ZeroByteFileException) {
                     //do nothing
@@ -275,25 +298,34 @@ public class RecursiveParserWrapper extends ParserDecorator {
     private static class ParserState {
         private final AbstractRecursiveParserWrapperHandler recursiveParserWrapperHandler;
         private int unknownCount = 0;
-
+        private int embeddedCount = 0;//this is effectively 1-indexed
         private ParserState(AbstractRecursiveParserWrapperHandler handler) {
             this.recursiveParserWrapperHandler = handler;
         }
     }
 
-    private static class RecursivelySecureContentHandler extends SecureContentHandler {
+    static class RecursivelySecureContentHandler extends SecureContentHandler {
         private ContentHandler handler;
 
         //total allowable chars across all handlers
         private final int totalWriteLimit;
 
+        private final boolean throwOnWriteLimitReached;
+
+        private final ParseContext parseContext;
+
+        private boolean writeLimitReached = false;
+
         //total chars written to all handlers
         private int totalChars = 0;
         public RecursivelySecureContentHandler(ContentHandler handler, TikaInputStream stream,
-                                               int totalWriteLimit) {
+                                               int totalWriteLimit,
+                                               boolean throwOnWriteLimitReached, ParseContext parseContext) {
             super(handler, stream);
             this.handler = handler;
             this.totalWriteLimit = totalWriteLimit;
+            this.throwOnWriteLimitReached = throwOnWriteLimitReached;
+            this.parseContext = parseContext;
         }
 
         public void updateContentHandler(ContentHandler handler) {
@@ -328,6 +360,10 @@ public class RecursiveParserWrapper extends ParserDecorator {
 
         @Override
         public void characters(char[] ch, int start, int length) throws SAXException {
+            if (writeLimitReached) {
+                return;
+            }
+
             if (totalWriteLimit < 0) {
                 super.characters(ch, start, length);
                 return;
@@ -335,12 +371,16 @@ public class RecursiveParserWrapper extends ParserDecorator {
             int availableLength = Math.min(totalWriteLimit - totalChars, length);
             super.characters(ch, start, availableLength);
             if (availableLength < length) {
-                throw new WriteLimitReachedException(totalWriteLimit);
+                handleWriteLimitReached();
             }
         }
 
         @Override
         public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
+            if (writeLimitReached) {
+                return;
+            }
+
             if (totalWriteLimit < 0) {
                 super.ignorableWhitespace(ch, start, length);
                 return;
@@ -348,7 +388,20 @@ public class RecursiveParserWrapper extends ParserDecorator {
             int availableLength = Math.min(totalWriteLimit - totalChars, length);
             super.ignorableWhitespace(ch, start, availableLength);
             if (availableLength < length) {
+                handleWriteLimitReached();
+            }
+        }
+
+        private void handleWriteLimitReached() throws WriteLimitReachedException {
+            writeLimitReached = true;
+
+            if (throwOnWriteLimitReached) {
                 throw new WriteLimitReachedException(totalWriteLimit);
+            } else {
+                ParseRecord parseRecord = parseContext.get(ParseRecord.class);
+                if (parseRecord != null) {
+                    parseRecord.setWriteLimitReached(true);
+                }
             }
         }
     }

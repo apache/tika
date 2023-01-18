@@ -63,7 +63,8 @@ public class XMPMetadataResource extends MetadataResource implements TikaServerR
                                 @Context UriInfo info) throws Exception {
         Metadata metadata = new Metadata();
         return Response
-                .ok(parseMetadata(TikaResource.getInputStream(is, metadata, httpHeaders), metadata,
+                .ok(parseMetadata(TikaResource.getInputStream(is, metadata, httpHeaders, info),
+                        metadata,
                         httpHeaders.getRequestHeaders(), info)).build();
     }
 }

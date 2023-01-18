@@ -24,7 +24,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.Collections;
 import java.util.Set;
 
-import org.apache.poi.util.IOUtils;
+import org.apache.commons.io.IOUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -55,7 +55,7 @@ public class PRTParser extends AbstractParser {
      * How long do we allow a text run to claim to be, before we
      * decide we're confused and it's not really text after all?
      */
-    private static final int MAX_SANE_TEXT_LENGTH = 0x0800;
+    private static final int MAX_TEXT_LENGTH = 0x0800;
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -145,8 +145,8 @@ public class PRTParser extends AbstractParser {
         }
 
         int length = EndianUtils.readUShortLE(stream);
-        if (length <= MAX_SANE_TEXT_LENGTH) {
-            // Length sanity check passed
+        if (length <= MAX_TEXT_LENGTH) {
+            // Length check passed
             handleText(length, stream, xhtml);
         }
     }
@@ -170,15 +170,15 @@ public class PRTParser extends AbstractParser {
             byte[] b2 = new byte[2];
             IOUtils.readFully(stream, b2);
             int length = EndianUtils.getUShortLE(b2);
-            if (length > 1 && length <= MAX_SANE_TEXT_LENGTH) {
-                // Length sanity check passed
+            if (length > 1 && length <= MAX_TEXT_LENGTH) {
+                // Length check passed
                 handleText(length, stream, xhtml);
             } else {
                 // Was probably something else
                 l5.record(b2[0]);
                 l5.record(b2[1]);
             }
-        } else if (maybeLength > 0 && maybeLength < MAX_SANE_TEXT_LENGTH) {
+        } else if (maybeLength > 0 && maybeLength < MAX_TEXT_LENGTH) {
             // Looks like it's straight into the text
             handleText(maybeLength, stream, xhtml);
         }

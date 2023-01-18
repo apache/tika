@@ -18,8 +18,8 @@ package org.apache.tika.example;
 
 import static java.nio.charset.StandardCharsets.UTF_16LE;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -27,10 +27,11 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.config.TikaConfigSerializer;
@@ -42,16 +43,16 @@ import org.apache.tika.parser.Parser;
 public class DumpTikaConfigExampleTest {
     private File configFile;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         try {
-            configFile = File.createTempFile("tmp", ".xml");
+            configFile = Files.createTempFile("tmp", ".xml").toFile();
         } catch (IOException e) {
             throw new RuntimeException("Failed to create tmp file");
         }
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         if (configFile != null && configFile.exists()) {
             configFile.delete();
@@ -73,15 +74,15 @@ public class DumpTikaConfigExampleTest {
                 writer.close();
 
                 TikaConfig c = new TikaConfig(configFile);
-                assertTrue(c.getParser().toString(), c.getParser() instanceof CompositeParser);
-                assertTrue(c.getDetector().toString(),
-                        c.getDetector() instanceof CompositeDetector);
+                assertTrue(c.getParser() instanceof CompositeParser, c.getParser().toString());
+                assertTrue(c.getDetector() instanceof CompositeDetector,
+                        c.getDetector().toString());
 
                 CompositeParser p = (CompositeParser) c.getParser();
-                assertTrue("enough parsers?", p.getParsers().size() > 130);
+                assertTrue(p.getParsers().size() > 130, "enough parsers?");
 
                 CompositeDetector d = (CompositeDetector) c.getDetector();
-                assertTrue("enough detectors?", d.getDetectors().size() > 3);
+                assertTrue(d.getDetectors().size() > 3, "enough detectors?");
 
                 //just try to load it into autodetect to make sure no errors are thrown
                 Parser auto = new AutoDetectParser(c);

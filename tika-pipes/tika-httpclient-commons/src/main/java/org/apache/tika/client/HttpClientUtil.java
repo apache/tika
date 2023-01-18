@@ -23,6 +23,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.util.EntityUtils;
 
 public class HttpClientUtil {
@@ -31,7 +32,7 @@ public class HttpClientUtil {
             throws IOException, TikaClientException {
         HttpPost post = new HttpPost(url);
         post.setHeader("Content-Encoding", "gzip");
-        ByteArrayEntity entity = new ByteArrayEntity(json.getBytes(StandardCharsets.UTF_8));
+        StringEntity entity = new StringEntity(json, StandardCharsets.UTF_8);
 
         post.setEntity(entity);
         post.setHeader("Content-Type", "application/json");

@@ -27,7 +27,9 @@ import org.apache.commons.io.IOUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Photoshop;
@@ -46,6 +48,10 @@ public class BPGParser extends AbstractImageParser {
     protected static final int EXTENSION_TAG_ICC_PROFILE = 2;
     protected static final int EXTENSION_TAG_XMP = 3;
     protected static final int EXTENSION_TAG_THUMBNAIL = 4;
+
+    //50 MB -- throw TikaMemoryLimitException if xmp or exif is allegedly longer than this
+    private static final int DEFAULT_MAX_RECORD_LENGTH = 50 * 1024 * 1024;
+
     private static final long serialVersionUID = -161736541253892772L;
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
             new HashSet<>(
@@ -54,6 +60,8 @@ public class BPGParser extends AbstractImageParser {
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
+
+    private int maxRecordLength = DEFAULT_MAX_RECORD_LENGTH;
 
     @Override
     void extractMetadata(InputStream stream, ContentHandler contentHandler, Metadata metadata,
@@ -145,6 +153,12 @@ public class BPGParser extends AbstractImageParser {
             while (extensionsDataSeen < extensionDataLength) {
                 int extensionType = (int) EndianUtils.readUE7(stream);
                 int extensionLength = (int) EndianUtils.readUE7(stream);
+                if (extensionLength > maxRecordLength) {
+                    throw new TikaMemoryLimitException("extension length (" +
+                            extensionLength + " bytes) is greater than 'maxRecordLength' (" +
+                            maxRecordLength + " bytes).  If this file is not corrupt, " +
+                            "consider bumping the maxRecordLength via tika-config.xml");
+                }
                 switch (extensionType) {
                     case EXTENSION_TAG_EXIF:
                         metadataExtractor.parseRawExif(stream, extensionLength, true);
@@ -153,7 +167,7 @@ public class BPGParser extends AbstractImageParser {
                         handleXMP(stream, extensionLength, metadataExtractor);
                         break;
                     default:
-                        stream.skip(extensionLength);
+                        IOUtils.skipFully(stream, extensionLength);
                 }
                 extensionsDataSeen += extensionLength;
             }
@@ -163,8 +177,26 @@ public class BPGParser extends AbstractImageParser {
         // We can't do anything with these parts
     }
 
+    @Field
+    public void setMaxRecordLength(int maxRecordLength) {
+        this.maxRecordLength = maxRecordLength;
+    }
+
+    public int getMaxRecordLength() {
+        return this.maxRecordLength;
+    }
+
     protected void handleXMP(InputStream stream, int xmpLength, ImageMetadataExtractor extractor)
             throws IOException, TikaException, SAXException {
+        if (xmpLength < 0) {
+            throw new TikaException("xmp length must be >= 0");
+        }
+        if (xmpLength > maxRecordLength) {
+            throw new TikaMemoryLimitException("xmplength (" + xmpLength + " bytes) is larger than maxXMPLength (" +
+                    maxRecordLength + "). Consider setting maxXMPLength to a greater value for " +
+                    "this parser via" +
+                    " tika-config.xml if this file is not corrupt.");
+        }
         byte[] xmp = new byte[xmpLength];
         IOUtils.readFully(stream, xmp);
         extractor.parseRawXMP(xmp);

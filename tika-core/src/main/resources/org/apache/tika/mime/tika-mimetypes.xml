@@ -440,16 +440,18 @@
     <magic priority="50">
       <!-- built from, e.g. https://www.loc.gov/marc/community/cileader.html -->
       <match value="[0-9]{5,5}" type="regex" offset="0">
-        <!-- bibliographic -->
-        <match value="[acdnp][acdefgijkmoprt][abcdims]" type="regex" offset="5"/>
-        <!-- authority-->
-        <match value="[acdnosx]z" type="regex" offset="5"/>
-        <!-- holdings -->
-        <match value="[cdn][uvxy]" type="regex" offset="5"/>
-        <!-- classification -->
-        <match value="[acdn]w" type="regex" offset="5"/>
-        <!-- community -->
-        <match value="[cdn]q" type="regex" offset="5"/>
+        <match value="45" type="string" offset="20">
+          <!-- bibliographic -->
+          <match value="[acdnp][acdefgijkmoprt][abcdims]" type="regex" offset="5"/>
+          <!-- authority-->
+          <match value="[acdnosx]z" type="regex" offset="5"/>
+          <!-- holdings -->
+          <match value="[cdn][uvxy]" type="regex" offset="5"/>
+          <!-- classification -->
+          <match value="[acdn]w" type="regex" offset="5"/>
+          <!-- community -->
+          <match value="[cdn]q" type="regex" offset="5"/>
+        </match>
       </match>
     </magic>
   </mime-type>
@@ -1214,6 +1216,22 @@
     <glob pattern="*.pcurl"/>
   </mime-type>
   <mime-type type="application/vnd.cybank"/>
+  <mime-type type="application/x-wacz">
+    <_comment>web archive frictionless zip</_comment>
+    <sub-class-of type="application/x-vnd.datapackage+zip"/>
+  </mime-type>
+  <mime-type type="application/x-vnd.datapackage+zip">
+    <_comment>frictionless data package zip package</_comment>
+    <sub-class-of type="application/zip"/>
+  </mime-type>
+  <mime-type type="application/x-vnd.datapackage+json">
+    <_comment>frictionless data package - standalong datapackage.json</_comment>
+    <sub-class-of type="application/json"/>
+  </mime-type>
+  <mime-type type="application/x-vnd.datapackage+gz">
+    <_comment>frictionless data package - gzip of standalone datapackage.json</_comment>
+    <sub-class-of type="application/gzip"/>
+  </mime-type>
   <mime-type type="application/vnd.data-vision.rdz">
     <glob pattern="*.rdz"/>
   </mime-type>
@@ -2848,6 +2866,18 @@
   <mime-type type="application/vnd.tmobile-livetv">
     <glob pattern="*.tmo"/>
   </mime-type>
+
+  <mime-type type="application/x-tmx">
+    <sub-class-of type="application/xml"/>
+    <_comment>TMX Translation Memory</_comment>
+    <tika:link>https://www.gala-global.org/tmx-14b</tika:link>
+    <acronym>TMX</acronym>
+    <magic priority="80">
+      <match value="&lt;tmx" type="string" offset="0:256"/>
+    </magic>
+    <glob pattern="*.tmx"/>
+  </mime-type>
+
   <mime-type type="application/vnd.trid.tpt">
     <glob pattern="*.tpt"/>
   </mime-type>
@@ -3086,7 +3116,7 @@
   <mime-type type="application/warc">
     <acronym>WARC</acronym>
     <_comment>WARC</_comment>
-    <magic priority="50">
+    <magic priority="60">
        <match value="WARC/" type="string" offset="0"/>
     </magic>
     <glob pattern="*.warc"/>
@@ -3166,6 +3196,12 @@
     <magic priority="50">
       <match value="0x0606edf5d81d46e5bd31efe7fe74b71d" type="string" offset="0" />
     </magic>
+  </mime-type>
+
+  <mime-type type="application/vnd.adobe.indesign-idml-package">
+    <sub-class-of type="application/zip"/>
+    <_comment>IDML</_comment>
+    <glob pattern="*.idml"/>
   </mime-type>
 
   <mime-type type="application/x-adobe-indesign-interchange">
@@ -3470,7 +3506,7 @@
 
   <mime-type type="application/x-bzip">
     <magic priority="40">
-      <match value="BZh" type="string" offset="0"/>
+      <match value="BZ0" type="string" offset="0"/>
     </magic>
     <glob pattern="*.bz"/>
     <glob pattern="*.tbz"/>
@@ -3480,7 +3516,7 @@
     <sub-class-of type="application/x-bzip"/>
     <_comment>Bzip 2 UNIX Compressed File</_comment>
     <magic priority="40">
-      <match value="\x42\x5a\x68\x39\x31" type="string" offset="0"/>
+      <match value="BZh[1-9]" type="regex" offset="0"/>
     </magic>
     <glob pattern="*.bz2"/>
     <glob pattern="*.tbz2"/>
@@ -3841,7 +3877,7 @@
     <magic priority="50">
       <match value="0xFD2FB528" type="little32" offset="0"/>
     </magic>
-    <glob pattern="*.zstd"/>
+    <glob pattern="*.zst"/>
   </mime-type>
   <mime-type type="application/x-esri-layer">
     <_comment>ESRI Layer file</_comment>
@@ -5791,6 +5827,12 @@
     <acronym>SVG</acronym>
     <_comment>Scalable Vector Graphics</_comment>
     <root-XML localName="svg" namespaceURI="http://www.w3.org/2000/svg"/>
+    <magic priority="50">
+      <!-- Version of 0x0001 is PSD -->
+      <match value="&lt;svg" type="string" offset="0">
+        <match value="http://www.w3.org/2000/svg" type="string" offset="5:256"/>
+      </match>
+    </magic>
     <glob pattern="*.svg"/>
     <glob pattern="*.svgz"/>
   </mime-type>
@@ -5835,6 +5877,27 @@
   </mime-type>
 
   <mime-type type="image/vnd.cns.inf2"/>
+
+  <!-- credit: peeveen's tika-dgn-detector https://github.com/peeveen/tika-dgn-detector/ -->
+  <mime-type type="image/vnd.dgn">
+    <glob pattern="*.dgn" />
+    <glob pattern="*.dgnlib" />
+    <glob pattern="*.cel" />
+  </mime-type>
+  <mime-type type="image/vnd.dgn;version=7">
+    <_comment>MicroStation v7 drawing</_comment>
+    <_comment>Sometimes first byte is C8, sometimes it is 08.</_comment>
+    <magic priority="50">
+      <match value="0x0809FE02" type="string" offset="0" mask="0x0FFFFFFF" />
+    </magic>
+    <sub-class-of type="image/vnd.dgn"/>
+  </mime-type>
+  <mime-type type="image/vnd.dgn;version=8">
+    <_comment>MicroStation v8 drawing; requires ole2 detector</_comment>
+    <alias type="image/vnd.dgn;ver=8"/>
+    <sub-class-of type="application/x-tika-msoffice"/>
+  </mime-type>
+
   <mime-type type="image/vnd.djvu">
     <glob pattern="*.djvu"/>
     <glob pattern="*.djv"/>
@@ -6400,6 +6463,8 @@
         <match value="\nUser-Agent:" type="string" offset="0:1024"/>
         <match value="\nX-Mailer:" type="string" offset="0:1024"/>
         <match value="\nX-Originating-IP:" type="stringignorecase" offset="0:1024"/>
+        <match value="\nDKIM-" type="string" offset="0:1024"/>
+        <match value="\nARC-" type="string" offset="0:1024"/>        
       </match>
       <!-- match X- DKIM- ARC- at start of file and then require at least one
            of the usual: from, received, date...but look farther into the file
@@ -6428,6 +6493,22 @@
     <sub-class-of type="text/x-tika-text-based-message"/>
   </mime-type>
 
+  <mime-type type="application/x-httpresponse">
+    <!-- sometimes PDFs and other files may include the http headers
+        from their retrieval.
+        -->
+    <magic priority="60">
+      <match value="HTTP/" type="string" offset="0">
+        <match value="\nCache-Control:" type="string" offset="0:1000"/>
+        <match value="\nContent-Type:" type="string" offset="0:1000"/>
+        <match value="\nContent-Length:" type="string" offset="0:1000"/>
+        <match value="\nContent-Disposition:" type="string" offset="0:1000"/>
+        <match value="\nDate:" type="string" offset="0:1000"/>
+        <match value="\nServer:" type="string" offset="0:1000"/>
+      </match>
+      <sub-class-of type="text/x-tika-text-based-message"/>
+    </magic>
+  </mime-type>
   <!-- TODO See TIKA-2723 for discussions on the mime type hierarchy -->
   <!--  and best parser structure for these email-like formats -->
   <mime-type type="multipart/related">
@@ -6454,9 +6535,14 @@
   <mime-type type="message/sipfrag"/>
   <mime-type type="message/tracking-status"/>
   <mime-type type="message/vnd.si.simp"/>
-
+  <mime-type type="model/e57">
+    <_comment>3d imaging data exchange</_comment>
+    <magic priority="60">
+      <match value="ASTM-E57" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.e57"/>
+  </mime-type>
   <mime-type type="model/example"/>
-
   <mime-type type="model/iges">
     <_comment>Initial Graphics Exchange Specification Format</_comment>
     <glob pattern="*.igs"/>
@@ -6662,6 +6748,10 @@
     <root-XML localName="SCRIPT"/>
     <root-XML localName="frameset"/>
     <root-XML localName="FRAMESET"/>
+    <magic priority="60">
+      <match value="(?i)&lt;(html|head|body|title|div)[ >]" type="regex" offset="0"/>
+      <match value="(?i)&lt;h[123][ >]" type="regex" offset="0"/>
+    </magic>
     <!-- The magic priority needs to be lower than that of -->
     <!--  files which contain HTML within them, eg mime emails -->
     <magic priority="40">
@@ -6674,14 +6764,6 @@
       <match value="&lt;TITLE" type="string" offset="0:64"/>
       <match value="&lt;title" type="string" offset="0:64"/>
       <match value="&lt;HTML" type="string" offset="0:64"/>
-      <match value="&lt;BODY" type="string" offset="0"/>
-      <match value="&lt;body" type="string" offset="0"/>
-      <match value="&lt;DIV" type="string" offset="0"/>
-      <match value="&lt;div" type="string" offset="0"/>
-      <match value="&lt;TITLE" type="string" offset="0"/>
-      <match value="&lt;title" type="string" offset="0"/>
-      <match value="&lt;h1" type="string" offset="0"/>
-      <match value="&lt;H1" type="string" offset="0"/>
       <match value="&lt;html" type="string" offset="0:128"/>
     </magic>
     <magic priority="20">
@@ -6933,9 +7015,15 @@
       <!-- With Byte Order Mark -->
       <match value="0xfeff" offset="0">
          <match value="WEBVTT\r" type="string" offset="2"/>
+         <match value="WEBVTT\n" type="string" offset="2"/>
       </match>
       <match value="0xfeff" offset="0">
+         <match value="WEBVTT\r" type="string" offset="2"/>
          <match value="WEBVTT\n" type="string" offset="2"/>
+      </match>
+      <match value="0xefbbbf" offset="0">
+         <match value="WEBVTT\r" type="string" offset="3"/>
+         <match value="WEBVTT\n" type="string" offset="3"/>
       </match>
       <!-- Common Header -->
       <match value="WEBVTT FILE\r" type="string" offset="0"/>

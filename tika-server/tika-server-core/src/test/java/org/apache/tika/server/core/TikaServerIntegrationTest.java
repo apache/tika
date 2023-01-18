@@ -21,11 +21,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.GeneralSecurityException;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -35,10 +39,19 @@ import javax.ws.rs.core.Response;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.io.IOUtils;
+import org.apache.cxf.configuration.jsse.TLSClientParameters;
+import org.apache.cxf.configuration.jsse.TLSParameterJaxBUtils;
+import org.apache.cxf.configuration.security.KeyManagersType;
+import org.apache.cxf.configuration.security.KeyStoreType;
+import org.apache.cxf.configuration.security.TrustManagersType;
 import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.cxf.transport.http.HTTPConduit;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,6 +63,35 @@ import org.apache.tika.utils.ProcessUtils;
 public class TikaServerIntegrationTest extends IntegrationTestBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerIntegrationTest.class);
+    private static Path TLS_KEYS;
+
+    @TempDir
+    private static Path TLS_CONFIG;
+
+    private static Path TIKA_TLS_ONE_WAY_CONFIG;
+    private static Path TIKA_TLS_TWO_WAY_CONFIG;
+    @BeforeAll
+    public static void setUpSSL() throws Exception {
+        TLS_KEYS =
+                Paths.get(TikaServerIntegrationTest.class.getResource("/ssl-keys").toURI());
+
+        String xml = IOUtils.resourceToString(
+                "/configs/tika-config-server-tls-two-way-template.xml",
+                UTF_8);
+        xml = xml.replace("{SSL_KEYS}", TLS_KEYS.toAbsolutePath().toString());
+
+        TIKA_TLS_TWO_WAY_CONFIG = Files.createTempFile(TLS_CONFIG, "tika-config-tls-", ".xml");
+        Files.write(TIKA_TLS_TWO_WAY_CONFIG, xml.getBytes(UTF_8));
+
+        xml = IOUtils.resourceToString(
+                "/configs/tika-config-server-tls-one-way-template.xml",
+                UTF_8);
+        xml = xml.replace("{SSL_KEYS}", TLS_KEYS.toAbsolutePath().toString());
+
+        TIKA_TLS_ONE_WAY_CONFIG = Files.createTempFile(TLS_CONFIG, "tika-config-tls-", ".xml");
+        Files.write(TIKA_TLS_ONE_WAY_CONFIG, xml.getBytes(UTF_8));
+
+    }
 
     @Test
     public void testBasic() throws Exception {
@@ -260,6 +302,16 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         }
     }
 
+    private String getSSL(String file) {
+        try {
+            return Paths.get(TikaServerIntegrationTest.class.
+                    getResource("/ssl-keys/" + file).toURI()).toAbsolutePath().toString();
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
     @Test
     public void testStdErrOutBasic() throws Exception {
         startProcess(
@@ -274,6 +326,134 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         assertContains("quick brown fox", metadataList.get(0).get("X-TIKA:content"));
         testBaseline();
 
+    }
+
+    @Test
+    public void test1WayTLS() throws Exception {
+        startProcess(
+                new String[]{"-config",
+                        ProcessUtils.escapeCommandLine(TIKA_TLS_ONE_WAY_CONFIG.toAbsolutePath().toString())});
+
+        String httpsEndpoint = "https://localhost:" + INTEGRATION_TEST_PORT;
+        WebClient webClient = WebClient.create(httpsEndpoint);
+        configure1WayTLS(webClient);
+
+        awaitServerStartup(webClient);
+
+        webClient.close();
+        webClient = WebClient.create(httpsEndpoint + RMETA_PATH);
+        configure1WayTLS(webClient);
+
+        Response response = webClient.accept("application/json")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+
+        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+        assertEquals(1, metadataList.size());
+        assertEquals("Nikolai Lobachevsky", metadataList.get(0).get("author"));
+        assertContains("hello world", metadataList.get(0).get("X-TIKA:content"));
+
+        //now test no tls config
+        webClient = WebClient.create(httpsEndpoint + RMETA_PATH);
+
+        try {
+            response = webClient.accept("application/json").put(
+                    ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
+            fail("bad, bad, bad. this should have failed!");
+        } catch (Exception e) {
+            assertContains("javax.net.ssl.SSLHandshakeException", e.getMessage());
+        }
+    }
+    @Test
+    public void test2WayTLS() throws Exception {
+        startProcess(
+                new String[]{"-config",
+                        ProcessUtils.escapeCommandLine(TIKA_TLS_TWO_WAY_CONFIG.toAbsolutePath().toString())});
+
+        String httpsEndpoint = "https://localhost:" + INTEGRATION_TEST_PORT;
+        WebClient webClient = WebClient.create(httpsEndpoint);
+        configure2WayTLS(webClient);
+
+        awaitServerStartup(webClient);
+
+        webClient.close();
+        webClient = WebClient.create(httpsEndpoint + RMETA_PATH);
+        configure2WayTLS(webClient);
+
+        Response response = webClient.accept("application/json")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+
+        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+        assertEquals(1, metadataList.size());
+        assertEquals("Nikolai Lobachevsky", metadataList.get(0).get("author"));
+        assertContains("hello world", metadataList.get(0).get("X-TIKA:content"));
+
+        //now test that no tls config fails
+        webClient = WebClient.create(httpsEndpoint + RMETA_PATH);
+
+        try {
+            response = webClient.accept("application/json").put(
+                    ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
+            fail("bad, bad, bad. this should have failed!");
+        } catch (Exception e) {
+            assertContains("javax.net.ssl.SSLHandshakeException", e.getMessage());
+        }
+
+        //now test that 1 way fails
+        webClient = WebClient.create(httpsEndpoint + RMETA_PATH);
+        configure1WayTLS(webClient);
+        try {
+            response = webClient.accept("application/json").put(
+                    ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
+            fail("bad, bad, bad. this should have failed!");
+        } catch (Exception e) {
+            //the messages vary too much between operating systems and
+            //java versions to make a reliable assertion
+        }
+    }
+
+    private void configure2WayTLS(WebClient webClient) throws GeneralSecurityException, IOException {
+        HTTPConduit conduit = WebClient.getConfig(webClient)
+                .getHttpConduit();
+        KeyStoreType keystore = new KeyStoreType();
+        keystore.setType("PKCS12");
+        keystore.setPassword("tika-secret");
+        keystore.setFile(getSSL("tika-client-keystore.p12"));
+        KeyManagersType kmt = new KeyManagersType();
+        kmt.setKeyStore(keystore);
+        kmt.setKeyPassword("tika-secret");
+        TLSClientParameters parameters = new TLSClientParameters();
+        parameters.setKeyManagers(TLSParameterJaxBUtils.getKeyManagers(kmt));
+
+        KeyStoreType trustKeyStore = new KeyStoreType();
+        trustKeyStore.setType("PKCS12");
+        trustKeyStore.setPassword("tika-secret");
+        trustKeyStore.setFile(getSSL("tika-client-truststore.p12"));
+
+        TrustManagersType tmt = new TrustManagersType();
+        tmt.setKeyStore(trustKeyStore);
+        parameters.setTrustManagers(TLSParameterJaxBUtils.getTrustManagers(tmt, true));
+
+        conduit.setTlsClientParameters(parameters);
+
+    }
+
+    private void configure1WayTLS(WebClient webClient) throws GeneralSecurityException,
+            IOException {
+        HTTPConduit conduit = WebClient.getConfig(webClient)
+                .getHttpConduit();
+        TLSClientParameters parameters = new TLSClientParameters();
+
+        KeyStoreType trustKeyStore = new KeyStoreType();
+        trustKeyStore.setType("PKCS12");
+        trustKeyStore.setPassword("tika-secret");
+        trustKeyStore.setFile(getSSL("tika-client-truststore.p12"));
+
+        TrustManagersType tmt = new TrustManagersType();
+        tmt.setKeyStore(trustKeyStore);
+        parameters.setTrustManagers(TLSParameterJaxBUtils.getTrustManagers(tmt, true));
+        conduit.setTlsClientParameters(parameters);
     }
 
     @Test
@@ -324,6 +504,39 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         }
     }
 
+    @Test
+    @Disabled("figure out how to test this with the forked process")
+    public void testSystemExitViaStopMethod() throws Exception {
+
+        Thread serverThread = new Thread() {
+            @Override
+            public void run() {
+                TikaServerCli.main(new String[]{"-p", INTEGRATION_TEST_PORT,});
+            }
+
+            //Add custom implementation of the destroy method
+            //This method was never implemented in the super class, and gives us
+            // an easy way to invoke our stop command.
+            //We pass in the preventSystemExit option to stop the call to System.Exit,
+            // which would terminate the JVM and cause a test failure.
+            @Override
+            public void interrupt() {
+                TikaServerCli.stop(new String[]{"-preventSystemExit"});
+            }
+        };
+        serverThread.start();
+        awaitServerStartup();
+        serverThread.interrupt();
+
+        //give some time for the server to crash/kill itself
+        Thread.sleep(2000);
+
+        try {
+            testBaseline();
+        } finally {
+            serverThread.interrupt();
+        }
+    }
 
     @Test
     @Disabled("turn this into a real test")

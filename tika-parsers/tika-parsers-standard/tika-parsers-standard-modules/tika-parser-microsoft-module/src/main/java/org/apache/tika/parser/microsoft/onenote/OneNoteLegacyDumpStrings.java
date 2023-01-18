@@ -16,11 +16,11 @@
  */
 package org.apache.tika.parser.microsoft.onenote;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
+import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
@@ -71,7 +71,7 @@ class OneNoteLegacyDumpStrings {
     private void dumpAscii() throws SAXException, TikaException {
         try {
             oneNoteDirectFileResource.position(0);
-            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            UnsynchronizedByteArrayOutputStream os = new UnsynchronizedByteArrayOutputStream();
             long sz = oneNoteDirectFileResource.size();
             long pos;
             while ((pos = oneNoteDirectFileResource.position()) != sz) {
@@ -108,7 +108,7 @@ class OneNoteLegacyDumpStrings {
     private void dumpUtf16LE() throws SAXException, TikaException {
         try {
             oneNoteDirectFileResource.position(0);
-            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            UnsynchronizedByteArrayOutputStream os = new UnsynchronizedByteArrayOutputStream();
             long sz = oneNoteDirectFileResource.size();
             long bufSize = BUFFER_SIZE;
             // Make sure the buffer size is a multiple of 2.
@@ -154,8 +154,8 @@ class OneNoteLegacyDumpStrings {
      *
      * @param os Byte array output stream containing the buffer.
      */
-    private void writeIfUseful(ByteArrayOutputStream os) throws SAXException {
-        String str = new String(os.toByteArray(), StandardCharsets.ISO_8859_1);
+    private void writeIfUseful(UnsynchronizedByteArrayOutputStream os) throws SAXException {
+        String str = os.toString(StandardCharsets.ISO_8859_1);
         String[] spl = str.split(" ");
         if (spl.length > 1) {
             int numAlpha = 0;

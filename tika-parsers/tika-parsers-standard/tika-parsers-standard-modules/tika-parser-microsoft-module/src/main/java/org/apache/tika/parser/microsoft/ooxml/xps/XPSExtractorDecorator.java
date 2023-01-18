@@ -45,7 +45,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.ooxml.AbstractOOXMLExtractor;
 import org.apache.tika.sax.EmbeddedContentHandler;
-import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -150,8 +149,8 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
     private void handleDocuments(PackageRelationship packageRelationship, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
         try (InputStream stream = pkg.getPart(packageRelationship).getInputStream()) {
-            XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream), new OfflineContentHandler(
-                    new EmbeddedContentHandler(new FixedDocSeqHandler(xhtml))), context);
+            XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream),
+                    new EmbeddedContentHandler(new FixedDocSeqHandler(xhtml)), context);
         }
     }
 
@@ -200,8 +199,8 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
             if (pkg instanceof ZipPackage) {
                 try (InputStream stream = getZipStream(zipPath, pkg)) {
                     XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream),
-                            new OfflineContentHandler(new EmbeddedContentHandler(
-                                    new PageContentPartHandler(relativeRoot, xhtml))), context);
+                            new EmbeddedContentHandler(
+                                    new PageContentPartHandler(relativeRoot, xhtml)), context);
 
                 } catch (IOException | TikaException e) {
                     throw new SAXException(
@@ -248,8 +247,7 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
                     }
                     try (InputStream stream = getZipStream(pagePath, pkg)) {
                         XMLReaderUtils.parseSAX(new CloseShieldInputStream(stream),
-                                new OfflineContentHandler(
-                                        new XPSPageContentHandler(xhtml, embeddedImages)), context);
+                                        new XPSPageContentHandler(xhtml, embeddedImages), context);
                     } catch (TikaException | IOException e) {
                         throw new SAXException(e);
                     }

@@ -70,7 +70,7 @@ public class RarParser extends AbstractParser {
         }
         Archive rar = null;
         try (TemporaryResources tmp = new TemporaryResources()) {
-            TikaInputStream tis = TikaInputStream.get(stream, tmp);
+            TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
             rar = new Archive(tis.getFile());
 
             if (rar.isEncrypted()) {
@@ -83,12 +83,10 @@ public class RarParser extends AbstractParser {
             FileHeader header = rar.nextFileHeader();
             while (header != null && !Thread.currentThread().isInterrupted()) {
                 if (!header.isDirectory()) {
+                    Metadata entrydata = PackageParser.handleEntryMetadata(header.getFileName(),
+                            header.getCTime(), header.getMTime(), header.getFullUnpackSize(),
+                            xhtml);
                     try (InputStream subFile = rar.getInputStream(header)) {
-                        Metadata entrydata = PackageParser.handleEntryMetadata(
-                                "".equals(header.getFileNameW()) ? header.getFileNameString() :
-                                        header.getFileNameW(), header.getCTime(), header.getMTime(),
-                                header.getFullUnpackSize(), xhtml);
-
                         if (extractor.shouldParseEmbedded(entrydata)) {
                             extractor.parseEmbedded(subFile, handler, entrydata, true);
                         }

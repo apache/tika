@@ -16,7 +16,7 @@
  */
 package org.apache.tika.langdetect.opennlp;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -27,8 +27,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.langdetect.LanguageDetectorTest;
 import org.apache.tika.language.detect.LanguageResult;
@@ -37,7 +37,7 @@ public class OpenNLPDetectorTest {
 
     static Map<String, String> OPTIMAIZE_TO_OPENNLP = new HashMap<>();
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() {
         OPTIMAIZE_TO_OPENNLP.put("da", "dan");
         OPTIMAIZE_TO_OPENNLP.put("de", "deu");

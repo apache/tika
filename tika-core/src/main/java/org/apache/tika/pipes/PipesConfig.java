@@ -22,9 +22,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.exception.TikaConfigException;
 
 public class PipesConfig extends PipesConfigBase {
+
+    private static final Logger LOG = LoggerFactory.getLogger(PipesClient.class);
 
     private long maxWaitForClientMillis = 60000;
 
@@ -34,8 +39,9 @@ public class PipesConfig extends PipesConfigBase {
             Set<String> settings = pipesConfig.configure("pipes", is);
         }
         if (pipesConfig.getTikaConfig() == null) {
-            throw new TikaConfigException("must specify at least a <tikaConfig> element in the " +
-                    "<params> of <pipes>");
+            LOG.debug("A separate tikaConfig was not specified in the <pipes/> element in the  " +
+                    "config file; will use {} for pipes", tikaConfig);
+            pipesConfig.setTikaConfig(tikaConfig);
         }
         return pipesConfig;
     }

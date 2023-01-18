@@ -155,7 +155,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
             }
 
             handleSlideEmbeddedPictures(ss, xhtml);
-            handleShowEmbeddedResources(ss, xhtml);
+            handleShowEmbeddedResources(ss, xhtml, true);
 
             if (officeParserConfig.isExtractMacros()) {
                 extractMacros(ss, xhtml);
@@ -172,7 +172,8 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
      * them in the shapes in the slides, headers/footers, etc, try to
      * extract them here.
      **/
-    private void handleShowEmbeddedResources(HSLFSlideShow ss, XHTMLContentHandler xhtml)
+    private void handleShowEmbeddedResources(HSLFSlideShow ss, XHTMLContentHandler xhtml,
+                                             boolean outputHtml)
             throws SAXException {
         
         HSLFObjectData[] objectData = ss.getEmbeddedObjects();
@@ -193,7 +194,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                         if (pfs.getRoot().getEntryNames().size() < 1) {
                             return;
                         }
-                        handleEmbeddedOfficeDoc(pfs.getRoot(), filename, xhtml);
+                        handleEmbeddedOfficeDoc(pfs.getRoot(), filename, xhtml, outputHtml);
                     }
                 } else {
                     boolean shouldProcess = false;
@@ -512,6 +513,8 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
             byte[] data = null;
             try {
                 data = pic.getData();
+            } catch (SecurityException e) {
+                throw e;
             } catch (Exception e) {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
                 continue;
@@ -562,40 +565,42 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                         EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
                         continue;
                     }
-                    try (TikaInputStream stream = TikaInputStream.get(dataStream)) {
-                        String mediaType = null;
-                        if ("Excel.Chart.8".equals(oleShape.getProgId())) {
-                            mediaType = "application/vnd.ms-excel";
-                        } else {
-                            MediaType mt =
-                                    getTikaConfig().getDetector().detect(stream, new Metadata());
-                            mediaType = mt.toString();
-                        }
-                        if (mediaType
-                                .equals("application/x-tika-msoffice-embedded; format=comp_obj") ||
-                                mediaType.equals("application/x-tika-msoffice")) {
-                            POIFSFileSystem poifs = null;
-
-                            try {
-                                poifs = new POIFSFileSystem(new CloseShieldInputStream(stream));
-                            } catch (RuntimeException e) {
-                                throw new IOException(e);
-                            }
-                            try {
-                                handleEmbeddedOfficeDoc(poifs.getRoot(), objID, xhtml);
-                            } finally {
-                                if (poifs != null) {
-                                    poifs.close();
-                                }
-                            }
-                        } else {
-                            handleEmbeddedResource(stream, objID, objID, mediaType, xhtml, false);
-                        }
-                    } catch (IOException e) {
-                        EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
-                    }
+                    handleDataStream(dataStream, objID, oleShape.getProgId(), xhtml);
                 }
             }
+        }
+    }
+
+    private void handleDataStream(InputStream dataStream, String objID, String progId,
+                                  XHTMLContentHandler xhtml) {
+        try (TikaInputStream stream = TikaInputStream.get(dataStream)) {
+            String mediaType = null;
+            if ("Excel.Chart.8".equals(progId)) {
+                mediaType = "application/vnd.ms-excel";
+            } else {
+                MediaType mt =
+                        getTikaConfig().getDetector().detect(stream, new Metadata());
+                mediaType = mt.toString();
+            }
+            if (mediaType
+                    .equals("application/x-tika-msoffice-embedded; format=comp_obj") ||
+                    mediaType.equals("application/x-tika-msoffice")) {
+                POIFSFileSystem poifs = new POIFSFileSystem(new CloseShieldInputStream(stream));
+
+                try {
+                    handleEmbeddedOfficeDoc(poifs.getRoot(), objID, xhtml, false);
+                } finally {
+                    if (poifs != null) {
+                        poifs.close();
+                    }
+                }
+            } else {
+                handleEmbeddedResource(stream, objID, objID, mediaType, xhtml, false);
+            }
+        } catch (SecurityException e) {
+            throw e;
+        } catch (Exception e) {
+            EmbeddedDocumentUtil.recordException(e, parentMetadata);
         }
     }
 

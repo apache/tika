@@ -118,6 +118,8 @@ public class ODFParserTest extends TikaTest {
                 assertEquals(null, metadata.get("custom:Info 3"));
                 assertEquals(null, metadata.get("custom:Info 4"));
 
+                assertEquals("1.0", metadata.get(OpenDocumentMetaParser.ODF_VERSION_KEY));
+
                 String content = handler.toString();
                 assertTrue(content.contains("This is a sample Open Office document," +
                         " written in NeoOffice 2.2.1 for the Mac."));
@@ -173,10 +175,12 @@ public class ODFParserTest extends TikaTest {
             assertEquals(null, metadata.get("nbPara"));
             assertEquals(null, metadata.get("nbWord"));
             assertEquals(null, metadata.get("nbCharacter"));
+            assertEquals("1.0", metadata.get(OpenDocumentMetaParser.ODF_VERSION_KEY));
+
 
             // Note - contents of maths files not currently supported
             String content = handler.toString().trim();
-            assertEquals("", content);
+            assertEquals("", content.trim());
         }
     }
 
@@ -221,6 +225,7 @@ public class ODFParserTest extends TikaTest {
             assertEquals("0", metadata.get(Office.TABLE_COUNT));
             assertEquals("2", metadata.get(Office.OBJECT_COUNT));
             assertEquals("0", metadata.get(Office.IMAGE_COUNT));
+            assertEquals("1.1", metadata.get(OpenDocumentMetaParser.ODF_VERSION_KEY));
 
             String content = handler.toString();
             assertTrue(content.contains("Apache Tika Tika is part of the Lucene project."));
@@ -277,6 +282,7 @@ public class ODFParserTest extends TikaTest {
 
             assertEquals("application/vnd.oasis.opendocument.text",
                     metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("1.1", metadata.get(OpenDocumentMetaParser.ODF_VERSION_KEY));
 
             String content = handler.toString();
             assertContains("Tika is part of the Lucene project.", content);
@@ -408,6 +414,9 @@ public class ODFParserTest extends TikaTest {
         assertThrows(EncryptedDocumentException.class, () -> {
             getRecursiveMetadata(p, false);
         });
+
+        List<Metadata> metadataList = getRecursiveMetadata(p, true);
+        assertEquals("true", metadataList.get(0).get(TikaCoreProperties.IS_ENCRYPTED));
     }
 
     //this, of course, should throw an EncryptedDocumentException
@@ -490,4 +499,21 @@ public class ODFParserTest extends TikaTest {
         assertTrue(filesTested > 10);
     }
 
+    @Test
+    public void testVersions() throws Exception {
+        //test at least that all files from
+        // https://github.com/openpreserve/format-corpus/tree/master/office-examples/LibreOffice7-ODF-1.3
+        //pass as 1.3.  Note that we don't currently parse base files, so skip that one.
+        for (String name : new String[]{
+                //"LibreOfficeBase_odb_1.3.odb",
+                "LibreOfficeCalc_ods_1.3.ods",
+                "LibreOfficeDraw_odg_1.3.odg",
+                "LibreOfficeImpress_odp_1.3.odp",
+                "LibreOfficeWriter_odt_1.3.odt",
+        }) {
+            List<Metadata> metadataList = getRecursiveMetadata("/versions/" + name);
+            Metadata metadata = metadataList.get(0);
+            assertEquals("1.3", metadata.get(OpenDocumentMetaParser.ODF_VERSION_KEY), "failed on " + name);
+        }
+    }
 }

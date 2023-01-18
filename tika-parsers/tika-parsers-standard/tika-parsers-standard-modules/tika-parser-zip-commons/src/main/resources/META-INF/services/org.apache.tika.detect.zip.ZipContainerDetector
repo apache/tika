@@ -17,3 +17,4 @@ org.apache.tika.detect.zip.JarDetector
 org.apache.tika.detect.zip.KMZDetector
 org.apache.tika.detect.zip.OpenDocumentDetector
 org.apache.tika.detect.zip.StarOfficeDetector
+org.apache.tika.detect.zip.FrictionlessPackageDetector

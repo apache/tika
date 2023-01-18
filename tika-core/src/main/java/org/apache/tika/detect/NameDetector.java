@@ -116,7 +116,7 @@ public class NameDetector implements Detector {
 
             // Strip any fragments from the end, but only ones after the extension
             int hash = name.lastIndexOf('#');
-            int dot = name.indexOf('.');
+            int dot = name.lastIndexOf('.');
             if (hash != -1) {
                 if (dot == -1 || hash > dot) {
                     name = name.substring(0, hash);
@@ -137,9 +137,9 @@ public class NameDetector implements Detector {
             name = name.trim();
             if (name.length() > 0) {
                 // Match the name against the registered patterns
-                for (Pattern pattern : patterns.keySet()) {
-                    if (pattern.matcher(name).matches()) {
-                        return patterns.get(pattern);
+                for (Map.Entry<Pattern, MediaType> entry : patterns.entrySet()) {
+                    if (entry.getKey().matcher(name).matches()) {
+                        return entry.getValue();
                     }
                 }
             }

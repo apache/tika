@@ -163,6 +163,7 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         // With a filename of a totally different type, data will trump filename
         assertTypeByNameAndData("testEXCEL.xls", "notPDF.pdf", "application/vnd.ms-excel");
         assertTypeByNameAndData("testEXCEL.xls", "notPNG.png", "application/vnd.ms-excel");
+        assertTypeByData("testDGN8.dgn", "image/vnd.dgn; version=8");
     }
 
     /**
@@ -381,6 +382,9 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
     }
 
     private int countTemporaryFiles() {
+        //TODO: fix this.  This can prevent multiple parallel builds
+        //from running at the same time because there can be more than one
+        //process writing to apache-tika-*
         return Objects.requireNonNull(new File(System.getProperty("java.io.tmpdir"))
                 .listFiles((dir, name) -> name.startsWith("apache-tika-"))).length;
     }

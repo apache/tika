@@ -17,7 +17,7 @@
 
 package org.apache.tika.eval.app;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,11 +32,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.utils.ProcessUtils;
@@ -45,30 +44,25 @@ public class TikaEvalCLITest extends TikaTest {
     //TODO: these barely reach the minimal acceptable stage for unit tests
 
     private final static String dbName = "testdb";
+
+    @TempDir
+    private static Path TEMP_DIR;
     private static Path extractsDir = Paths.get("src/test/resources/test-dirs");
     private static Path compareDBDir;
     private static Path profileDBDir;
     private static Path compareReportsDir;
     private static Path profileReportsDir;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws Exception {
-        compareDBDir = Files.createTempDirectory("tika-eval-cli-compare-db-");
-        profileDBDir = Files.createTempDirectory("tika-eval-cli-profile-db-");
-        compareReportsDir = Files.createTempDirectory("tika-eval-cli-compare-reports-");
-        profileReportsDir = Files.createTempDirectory("tika-eval-cli-profile-reports-");
+        compareDBDir = Files.createTempDirectory(TEMP_DIR, "tika-eval-cli-compare-db-");
+        profileDBDir = Files.createTempDirectory(TEMP_DIR, "tika-eval-cli-profile-db-");
+        compareReportsDir = Files.createTempDirectory(TEMP_DIR, "tika-eval-cli-compare-reports-");
+        profileReportsDir = Files.createTempDirectory(TEMP_DIR, "tika-eval-cli-profile-reports-");
         compare();
         profile();
         reportCompare();
         reportProfile();
-    }
-
-    @AfterClass
-    public static void tearDown() throws Exception {
-        FileUtils.deleteDirectory(compareDBDir.toFile());
-        FileUtils.deleteDirectory(profileDBDir.toFile());
-        FileUtils.deleteDirectory(compareReportsDir.toFile());
-        FileUtils.deleteDirectory(profileReportsDir.toFile());
     }
 
     private static void compare() throws IOException {
@@ -217,7 +211,7 @@ public class TikaEvalCLITest extends TikaTest {
     }
 
     @Test
-    @Ignore("use this for development")
+    @Disabled("use this for development")
     public void testOneOff() throws Exception {
         List<String> args = new ArrayList<>();
         args.add("Compare");

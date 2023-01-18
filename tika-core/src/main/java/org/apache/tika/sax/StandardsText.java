@@ -53,7 +53,8 @@ import org.apache.tika.sax.StandardReference.StandardReferenceBuilder;
 public class StandardsText {
     // Regular expression to match uppercase headers
     private static final String REGEX_HEADER =
-            "(\\d+\\.(\\d+\\.?)*)\\p{Blank}+([A-Z]+(\\s[A-Z]+)*){5,}";
+            "(\\d{1,10}+\\.(\\d{1,10}+\\.?){0,10}+)\\p{Blank}+([A-Z]{1,64}+(\\s[A-Z]{1,64}+){0," +
+                    "256}+){5,10}+";
 
     // Regular expression to match the "APPLICABLE DOCUMENTS" and equivalent
     // sections
@@ -62,7 +63,8 @@ public class StandardsText {
 
     // Regular expression to match the alphanumeric identifier of the standard
     private static final String REGEX_IDENTIFIER =
-            "(?<identifier>([0-9]{3,}|([A-Z]+(-|_|\\.)?[0-9]{2,}))((-|_|\\.)?[A-Z0-9]+)*)";
+            "(?<identifier>([0-9]{3,64}+|([A-Z]{1,64}+(-|_|\\.)?[0-9]{2,64}+))((-|_|\\.)" +
+                    "?[A-Z0-9]{1,64}+){0,64}+)";
 
     // Regular expression to match the standard organization
     private static final String REGEX_ORGANIZATION = StandardOrganizations.getOrganzationsRegex();
@@ -73,8 +75,9 @@ public class StandardsText {
 
     // Regular expression to match a string that is supposed to be a standard
     // reference
-    private static final String REGEX_FALLBACK = "\\(?" + "(?<mainOrganization>[A-Z]\\w+)" +
-            "\\)?((\\s?(?<separator>\\/)\\s?)(\\w+\\s)*\\(?" + "(?<secondOrganization>[A-Z]\\w+)" +
+    private static final String REGEX_FALLBACK = "\\(?" + "(?<mainOrganization>[A-Z]\\w{1,64}+)" +
+            "\\)?((\\s?(?<separator>\\/)\\s?)(\\w{1,64}+\\s)*\\(?" + "(?<secondOrganization>[A-Z" +
+            "]\\w{1,64}+)" +
             "\\)?)?" + REGEX_STANDARD_TYPE + "?" + "(-|\\s)?" + REGEX_IDENTIFIER;
 
     // Regular expression to match the standard organization within a string

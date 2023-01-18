@@ -21,7 +21,7 @@
   <parent>
     <artifactId>tika-integration-tests</artifactId>
     <groupId>org.apache.tika</groupId>
-    <version>2.2.2-SNAPSHOT</version>
+    <version>2.6.1-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
@@ -33,6 +33,11 @@
       <groupId>org.testcontainers</groupId>
       <artifactId>testcontainers</artifactId>
       <version>${test.containers.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>junit-jupiter</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -59,6 +64,7 @@
       <version>${solrj.version}</version>
       <scope>test</scope>
     </dependency>
+
 
   </dependencies>
 

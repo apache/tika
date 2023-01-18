@@ -108,6 +108,8 @@ public class TextAndCSVParserTest extends TikaTest {
         assertMediaTypeEquals("csv", "ISO-8859-1", "comma",
                 xmlResult.metadata.get(Metadata.CONTENT_TYPE));
         assertContainsIgnoreWhiteSpaceDiffs(EXPECTED_CSV, xmlResult.xml);
+        assertEquals(3, metadata.getInt(TextAndCSVParser.NUM_COLUMNS));
+        assertEquals(3, metadata.getInt(TextAndCSVParser.NUM_ROWS));
     }
 
     @Test

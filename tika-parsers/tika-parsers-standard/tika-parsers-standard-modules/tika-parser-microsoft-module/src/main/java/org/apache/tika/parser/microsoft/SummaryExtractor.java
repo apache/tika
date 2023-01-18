@@ -102,7 +102,15 @@ public class SummaryExtractor {
             if (!root.hasEntry(entryName)) {
                 return;
             }
-            DocumentEntry entry = (DocumentEntry) root.getEntry(entryName);
+            DocumentEntry entry = null;
+
+            try {
+                entry = (DocumentEntry) root.getEntry(entryName);
+            } catch (FileNotFoundException | IllegalArgumentException e) {
+                //POI throws these if there is a key in the entries map
+                //but the entry is null
+                return;
+            }
             PropertySet properties = new PropertySet(new DocumentInputStream(entry));
             if (properties.isSummaryInformation()) {
                 parse(new SummaryInformation(properties));
@@ -110,8 +118,6 @@ public class SummaryExtractor {
             if (properties.isDocumentSummaryInformation()) {
                 parse(new DocumentSummaryInformation(properties));
             }
-        } catch (FileNotFoundException e) {
-            // entry does not exist, just skip it
         } catch (NoPropertySetStreamException e) {
             // no property stream, just skip it
         } catch (UnexpectedPropertySetTypeException e) {

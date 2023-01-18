@@ -17,9 +17,9 @@
 package org.apache.tika.langdetect.tika;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,8 +29,8 @@ import java.util.HashMap;
 import java.util.Locale;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * JUnit based test of class {@link LanguageIdentifier}.
@@ -45,7 +45,7 @@ public class LanguageIdentifierTest {
             // Enable when language detection works better.
             "da", "de", /* "et", "el", */ "en", "es", "fi", "fr", "it", "lt", "nl", "pt", "sv"};
 
-    @Before
+    @BeforeEach
     public void setUp() {
         LanguageIdentifier.initProfiles();
     }
@@ -60,7 +60,7 @@ public class LanguageIdentifierTest {
             assertEquals(language, identifier.getLanguage());
             // Lithuanian is detected but isn't reasonably certain:
             if (!language.equals("lt")) {
-                assertTrue(identifier.toString(), identifier.isReasonablyCertain());
+                assertTrue(identifier.isReasonablyCertain(), identifier.toString());
             }
         }
     }
@@ -157,9 +157,9 @@ public class LanguageIdentifierTest {
                     writeTo(other, writer);
                     LanguageIdentifier identifier = null;
                     identifier = new LanguageIdentifier(writer.getProfile());
-                    assertFalse(
+                    assertFalse(identifier.isReasonablyCertain(),
                             "mix of " + language + " and " + other + " incorrectly detected as " +
-                                    identifier, identifier.isReasonablyCertain());
+                                    identifier);
                 }
             }
         }

@@ -16,15 +16,15 @@
  */
 package org.apache.tika.langdetect.mitll;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.apache.tika.langdetect.LanguageDetectorTest;
 import org.apache.tika.language.detect.LanguageDetector;

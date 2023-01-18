@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>2.2.2-SNAPSHOT</version>
+    <version>2.6.1-SNAPSHOT</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -41,6 +41,11 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-parsers-standard-package</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-parser-html-commons</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -68,28 +73,24 @@
       <artifactId>tika-emitter-fs</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-async-cli</artifactId>
+      <version>${project.version}</version>
+    </dependency>
 
     <!-- logging -->
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-core</artifactId>
-      <version>${log4j2.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-slf4j-impl</artifactId>
-      <version>${log4j2.version}</version>
+      <artifactId>log4j-slf4j2-impl</artifactId>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>jcl-over-slf4j</artifactId>
-    </dependency>
-    <!-- after we migrate everything to junit5, we can get rid of this -->
-    <dependency>
-      <groupId>org.junit.vintage</groupId>
-      <artifactId>junit-vintage-engine</artifactId>
-      <version>${junit5.version}</version>
-      <scope>test</scope>
     </dependency>
   </dependencies>
 
@@ -142,6 +143,8 @@
                     <exclude>ucar/nc2/iosp/fysat/Fysat*.class</exclude>
                     <exclude>ucar/nc2/dataset/transform/VOceanSG1*class</exclude>
                     <exclude>ucar/unidata/geoloc/vertical/OceanSG*.class</exclude>
+                    <!-- https://issues.apache.org/jira/browse/TIKA-3650-->
+                    <exclude>javax/**/*</exclude>
 
                   </excludes>
                 </filter>
@@ -254,7 +257,7 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>build-helper-maven-plugin</artifactId>
-            <version>3.0.0</version>
+            <version>3.3.0</version>
             <executions>
               <execution>
                 <phase>package</phase>

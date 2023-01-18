@@ -167,7 +167,8 @@ public abstract class PipesIterator extends ConfigBase
     }
 
     protected HandlerConfig getHandlerConfig() {
-        return new HandlerConfig(handlerType, parseMode, writeLimit, maxEmbeddedResources);
+        //TODO: make throwOnWriteLimitReached configurable
+        return new HandlerConfig(handlerType, parseMode, writeLimit, maxEmbeddedResources, false);
     }
 
     protected abstract void enqueue() throws IOException, TimeoutException, InterruptedException;

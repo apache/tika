@@ -16,6 +16,8 @@
  */
 package org.apache.tika.pipes.solr.tests;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,55 +32,90 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.impl.LBHttpSolrClient;
-import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.common.SolrInputDocument;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.testcontainers.containers.FixedHostPortGenericContainer;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
+import org.testcontainers.utility.DockerImageName;
+
 import org.apache.tika.cli.TikaCLI;
 import org.apache.tika.pipes.HandlerConfig;
 import org.apache.tika.pipes.emitter.solr.SolrEmitter;
-import org.jetbrains.annotations.NotNull;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.jupiter.api.AfterEach;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
-import org.testcontainers.utility.DockerImageName;
+import org.apache.tika.utils.SystemUtils;
+
 
 public abstract class TikaPipesSolrTestBase {
 
     private final String collection = "testcol";
     private final int numDocs = 42;
     private final File testFileFolder = new File("target", "test-files");
+
+    @Container
     protected GenericContainer<?> solr;
     private String solrHost;
     private int solrPort;
     private int zkPort;
     private String solrEndpoint;
 
+    public TikaPipesSolrTestBase() {
+        try {
+            init();
+        } catch (InterruptedException e) {
+            //swallow
+        }
+    }
+
     public abstract boolean useZk();
 
     public abstract String getSolrImageName();
-
 
     public boolean handlesParentChild() {
         return true;
     }
 
-    @Rule
-    public GenericContainer<?> solrContainer =
-            new GenericContainer<>(DockerImageName.parse(getSolrImageName())).withExposedPorts(8983,
-                    9983)
+    private void init() throws InterruptedException {
+        if (SystemUtils.IS_OS_MAC_OSX || SystemUtils.IS_OS_VERSION_WSL) {
+            // Networking on these operating systems needs fixed ports and localhost to be passed for the SolrCloud
+            // with Zookeeper tests to succeed. This means stopping and starting needs
+            solr = new FixedHostPortGenericContainer<>(
+                    DockerImageName.parse(getSolrImageName()).toString()).withFixedExposedPort(8983,
+                    8983).withFixedExposedPort(9983, 9983).withCommand("-DzkRun -Dhost=localhost");
+        } else {
+            solr = new GenericContainer<>(
+                    DockerImageName.parse(getSolrImageName())).withExposedPorts(8983, 9983)
                     .withCommand("-DzkRun");
+        }
+        solr.start();
 
-    @Before
+        // Ideally wanted to use TestContainers WaitStrategy but they were inconsistent
+        Thread.sleep(2000);
+    }
+
+    @BeforeEach
     public void setupTest() throws Exception {
-        setupSolr(solrContainer);
+        setupSolr();
     }
 
     @AfterEach
-    public void tearDown() throws Exception {
+    public void tearDownAfter() throws Exception {
         FileUtils.deleteDirectory(testFileFolder);
+        if (solr != null) {
+            solr.stop();
+            long totalWait = 0;
+            long maxWait = 250000;
+            while (solr.getContainerInfo() != null) {
+                if (totalWait >= maxWait) {
+                    break;
+                }
+                Thread.sleep(1000);
+                totalWait += 1000;
+            }
+        }
     }
 
     @Test
@@ -92,13 +129,13 @@ public abstract class TikaPipesSolrTestBase {
             FileUtils.writeStringToFile(new File(testFileFolder, "test-" + i + ".html"),
                     "<html><body>" + bodyContent + "</body></html>", StandardCharsets.UTF_8);
         }
-        FileUtils.copyInputStreamToFile(this.getClass().getResourceAsStream("/embedded/embedded.docx"),
+        FileUtils.copyInputStreamToFile(
+                this.getClass().getResourceAsStream("/embedded/embedded.docx"),
                 new File(testFileFolder, "test-embedded.docx"));
     }
 
-    protected void setupSolr(GenericContainer<?> solr) throws Exception {
+    protected void setupSolr() throws Exception {
         createTestFiles("initial");
-        this.solr = solr;
         solrHost = solr.getHost();
         solrPort = solr.getMappedPort(8983);
         zkPort = solr.getMappedPort(9983);
@@ -109,6 +146,7 @@ public abstract class TikaPipesSolrTestBase {
         try (SolrClient solrClient = new LBHttpSolrClient.Builder().withBaseSolrUrls(solrEndpoint)
                 .build()) {
 
+            addBasicSchemaFields(solrEndpoint + "/" + collection);
             addSchemaFieldsForNestedDocs(solrEndpoint + "/" + collection);
             for (int i = 0; i < numDocs; ++i) {
                 SolrInputDocument solrDoc = new SolrInputDocument();
@@ -126,29 +164,38 @@ public abstract class TikaPipesSolrTestBase {
         }
     }
 
+    private void addBasicSchemaFields(String solrUrl) throws IOException {
+        try (CloseableHttpClient client = HttpClients.createMinimal()) {
+            HttpPost postAddRoot = new HttpPost(solrUrl + "/schema");
+            postAddRoot.setHeader("Content-Type", "application/json");
+            postAddRoot.setEntity(new StringEntity(
+                    "{\n" + "  \"add-field\":{\n" + "     \"name\":\"path\",\n" +
+                            "     \"type\":\"string\",\n" + "     \"indexed\":true,\n" +
+                            "     \"stored\":true, \n" + "     \"docValues\":false \n" + "  }\n" +
+                            "}"));
+            CloseableHttpResponse resp = client.execute(postAddRoot);
+            assertEquals(200, resp.getStatusLine().getStatusCode());
+        }
+    }
+
     private void addSchemaFieldsForNestedDocs(String solrUrl) throws IOException {
         try (CloseableHttpClient client = HttpClients.createMinimal()) {
             HttpPost postAddRoot = new HttpPost(solrUrl + "/schema");
             postAddRoot.setHeader("Content-Type", "application/json");
-            postAddRoot.setEntity(new StringEntity("{\n" +
-                    "  \"replace-field\":{\n" +
-                    "     \"name\":\"_root_\",\n" +
-                    "     \"type\":\"string\",\n" +
-                    "     \"indexed\":true,\n" +
-                    "     \"stored\":true, \n" +
-                    "     \"docValues\":false \n" +
-                    "  }\n" +
-                    "}"));
+            postAddRoot.setEntity(new StringEntity(
+                    "{\n" + "  \"replace-field\":{\n" + "     \"name\":\"_root_\",\n" +
+                            "     \"type\":\"string\",\n" + "     \"indexed\":true,\n" +
+                            "     \"stored\":true, \n" + "     \"docValues\":false \n" + "  }\n" +
+                            "}"));
             CloseableHttpResponse resp = client.execute(postAddRoot);
-            Assert.assertEquals(200, resp.getStatusLine().getStatusCode());
+            assertEquals(200, resp.getStatusLine().getStatusCode());
         }
     }
 
     /**
      * Runs a test using Solr Pipe Iterator, File Fetcher and Solr Emitter.
      */
-    protected void runTikaAsyncSolrPipeIteratorFileFetcherSolrEmitter()
-            throws Exception {
+    protected void runTikaAsyncSolrPipeIteratorFileFetcherSolrEmitter() throws Exception {
         File tikaConfigFile = new File("target", "ta.xml");
         File log4jPropFile = new File("target", "tmp-log4j2.xml");
         try (InputStream is = this.getClass()
@@ -156,30 +203,28 @@ public abstract class TikaPipesSolrTestBase {
             FileUtils.copyInputStreamToFile(is, log4jPropFile);
         }
         String tikaConfigTemplateXml;
-        try (InputStream is = this.getClass()
-                .getResourceAsStream("/tika-config-solr-urls.xml")) {
+        try (InputStream is = this.getClass().getResourceAsStream("/tika-config-solr-urls.xml")) {
             tikaConfigTemplateXml = IOUtils.toString(is, StandardCharsets.UTF_8);
         }
 
         String tikaConfigXml =
                 createTikaConfigXml(useZk(), tikaConfigFile, log4jPropFile, tikaConfigTemplateXml,
-                        SolrEmitter.UpdateStrategy.ADD,
-                        SolrEmitter.AttachmentStrategy.PARENT_CHILD,
+                        SolrEmitter.UpdateStrategy.ADD, SolrEmitter.AttachmentStrategy.PARENT_CHILD,
                         HandlerConfig.PARSE_MODE.RMETA);
         FileUtils.writeStringToFile(tikaConfigFile, tikaConfigXml, StandardCharsets.UTF_8);
-        TikaCLI.main(new String[] {"-a", "--config=" + tikaConfigFile.getAbsolutePath()});
+        TikaCLI.main(new String[]{"-a", "--config=" + tikaConfigFile.getAbsolutePath()});
 
         try (SolrClient solrClient = new LBHttpSolrClient.Builder().withBaseSolrUrls(solrEndpoint)
                 .build()) {
             solrClient.commit(collection, true, true);
-            Assert.assertEquals(numDocs, solrClient
-                    .query(collection, new SolrQuery("mime_s:\"text/html; charset=ISO-8859-1\""))
-                    .getResults().getNumFound());
-            Assert.assertEquals(numDocs,
+            assertEquals(numDocs, solrClient.query(collection,
+                            new SolrQuery("mime_s:\"text/html; charset=ISO-8859-1\"")).getResults()
+                    .getNumFound());
+            assertEquals(numDocs,
                     solrClient.query(collection, new SolrQuery("content_s:*initial*")).getResults()
                             .getNumFound());
-            if(handlesParentChild()) {
-                Assert.assertEquals(3,
+            if (handlesParentChild()) {
+                assertEquals(3,
                         solrClient.query(collection, new SolrQuery("_root_:\"test-embedded.docx\""))
                                 .getResults().getNumFound());
             }
@@ -202,15 +247,15 @@ public abstract class TikaPipesSolrTestBase {
                         HandlerConfig.PARSE_MODE.RMETA);
         FileUtils.writeStringToFile(tikaConfigFile, tikaConfigXml, StandardCharsets.UTF_8);
 
-        TikaCLI.main(new String[] {"-a", "--config=" + tikaConfigFile.getAbsolutePath()});
+        TikaCLI.main(new String[]{"-a", "--config=" + tikaConfigFile.getAbsolutePath()});
 
         try (SolrClient solrClient = new LBHttpSolrClient.Builder().withBaseSolrUrls(solrEndpoint)
                 .build()) {
             solrClient.commit(collection, true, true);
-            Assert.assertEquals(numDocs, solrClient
-                    .query(collection, new SolrQuery("mime_s:\"text/html; charset=ISO-8859-1\""))
-                    .getResults().getNumFound());
-            Assert.assertEquals(numDocs,
+            assertEquals(numDocs, solrClient.query(collection,
+                            new SolrQuery("mime_s:\"text/html; charset=ISO-8859-1\"")).getResults()
+                    .getNumFound());
+            assertEquals(numDocs,
                     solrClient.query(collection, new SolrQuery("content_s:*updated*")).getResults()
                             .getNumFound());
         }

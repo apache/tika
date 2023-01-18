@@ -254,6 +254,9 @@ public class Mp3Parser extends AbstractParser {
         ID3v2Frame.setMaxRecordSize(maxRecordSize);
     }
 
+    public int getMaxRecordSize() {
+        return ID3v2Frame.getMaxRecordSize();
+    }
     protected static class ID3TagsAndAudio {
         private ID3Tags[] tags;
         private AudioFrame audio;

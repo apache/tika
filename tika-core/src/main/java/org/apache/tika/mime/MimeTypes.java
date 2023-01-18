@@ -18,7 +18,6 @@ package org.apache.tika.mime;
 
 // JDK imports
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,6 +31,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import javax.xml.namespace.QName;
+
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 
 import org.apache.tika.Tika;
 import org.apache.tika.detect.Detector;
@@ -289,7 +290,7 @@ public final class MimeTypes implements Detector, Serializable {
         // Finally, assume plain text if no control bytes are found
         try {
             TextDetector detector = new TextDetector(getMinLength());
-            ByteArrayInputStream stream = new ByteArrayInputStream(data);
+            UnsynchronizedByteArrayInputStream stream = new UnsynchronizedByteArrayInputStream(data);
             MimeType type = forName(detector.detect(stream, new Metadata()).toString());
             return Collections.singletonList(type);
         } catch (Exception e) {

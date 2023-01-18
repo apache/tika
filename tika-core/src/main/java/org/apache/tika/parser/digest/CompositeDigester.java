@@ -39,7 +39,7 @@ public class CompositeDigester implements DigestingParser.Digester {
     @Override
     public void digest(InputStream is, Metadata m, ParseContext parseContext) throws IOException {
         TemporaryResources tmp = new TemporaryResources();
-        TikaInputStream tis = TikaInputStream.get(is, tmp);
+        TikaInputStream tis = TikaInputStream.get(is, tmp, m);
         try {
             for (DigestingParser.Digester digester : digesters) {
                 digester.digest(tis, m, parseContext);

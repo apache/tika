@@ -305,15 +305,15 @@ public class PowerPointParserTest extends TikaTest {
         XMLResult r = getXML("testPPT_skipBadCompressedObject.ppt");
         assertContains("NASA Human", r.xml);
         assertEquals(2, r.metadata
-                .getValues(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM).length);
+                .getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING).length);
         assertContains("incorrect data check",
-                r.metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM));
+                r.metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
 
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_skipBadCompressedObject.ppt");
         assertEquals(2, metadataList.get(0)
-                .getValues(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM).length);
+                .getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING).length);
         assertContains("incorrect data check",
-                metadataList.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM));
+                metadataList.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
     }
 
     @Test

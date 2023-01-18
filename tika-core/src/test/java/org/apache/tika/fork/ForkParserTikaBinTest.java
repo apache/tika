@@ -35,9 +35,9 @@ import java.util.jar.JarOutputStream;
 
 import com.google.common.reflect.ClassPath;
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -52,12 +52,13 @@ import org.apache.tika.sax.ToXMLContentHandler;
 public class ForkParserTikaBinTest extends TikaTest {
     private static final String JAR_FILE_NAME = "mock-tika-app.jar";
     private static final Map<String, String> EMPTY_MAP = Collections.emptyMap();
+
+    @TempDir
     private static Path JAR_DIR;
     private static Path JAR_FILE;
 
     @BeforeAll
     public static void bootstrapJar() throws Exception {
-        JAR_DIR = Files.createTempDirectory("tika-fork-tikabin-");
         JAR_FILE = JAR_DIR.resolve(JAR_FILE_NAME);
 
         try (JarOutputStream jarOs = new JarOutputStream(Files.newOutputStream(JAR_FILE))) {
@@ -102,14 +103,6 @@ public class ForkParserTikaBinTest extends TikaTest {
                 OutputStream os = Files.newOutputStream(tikaConfigVowelParser)) {
             IOUtils.copy(is, os);
         }
-    }
-
-
-    @AfterAll
-    public static void tearDown() throws Exception {
-        Files.delete(JAR_DIR.resolve("TIKA_2653-iou.xml"));
-        Files.delete(JAR_FILE);
-        Files.delete(JAR_DIR);
     }
 
     private static void addClasses(JarOutputStream jarOs, ClassPath classPath,

@@ -30,7 +30,6 @@ import org.apache.tika.exception.TikaException;
  * Abstract class used to interact with command line/external Translators.
  *
  * @see MosesTranslator for an example of extending this class.
- *
  * @since Tika 1.7
  */
 public abstract class ExternalTranslator extends AbstractTranslator {
@@ -38,16 +37,18 @@ public abstract class ExternalTranslator extends AbstractTranslator {
     /**
      * Run the given command and return the output written to standard out.
      *
-     * @param command The complete command to run.
-     * @param env The environment to pass along to the Runtime.
+     * @param command          The complete command to run.
+     * @param env              The environment to pass along to the Runtime.
      * @param workingDirectory The directory from which to run the command.
      * @return The output of the command written to standard out.
      * @throws IOException
      * @throws InterruptedException
      */
-    public Reader runAndGetOutput(String command, String[] env, File workingDirectory) throws IOException, InterruptedException {
+    public Reader runAndGetOutput(String command, String[] env, File workingDirectory)
+            throws IOException, InterruptedException {
         Process process = Runtime.getRuntime().exec(command, env, workingDirectory);
-        InputStreamReader reader = new InputStreamReader(process.getInputStream(), Charset.defaultCharset());
+        InputStreamReader reader =
+                new InputStreamReader(process.getInputStream(), Charset.defaultCharset());
         BufferedReader bufferedReader = new BufferedReader(reader);
         process.waitFor();
         return bufferedReader;
@@ -55,11 +56,11 @@ public abstract class ExternalTranslator extends AbstractTranslator {
 
     /**
      * Checks to see if the command can be run. Typically used with
-     *  something like "myapp --version" to check to see if "myapp"
-     *  is installed and on the path.
+     * something like "myapp --version" to check to see if "myapp"
+     * is installed and on the path.
      *
      * @param checkCommandString The command to run and check the return code of.
-     * @param successCodes Return codes that signify success.
+     * @param successCodes       Return codes that signify success.
      */
     public boolean checkCommand(String checkCommandString, int... successCodes) {
         try {
@@ -67,10 +68,12 @@ public abstract class ExternalTranslator extends AbstractTranslator {
             process.waitFor();
             int result = process.waitFor();
             for (int code : successCodes) {
-                if (code == result) return true;
+                if (code == result) {
+                    return true;
+                }
             }
             return false;
-        } catch(IOException e) {
+        } catch (IOException e) {
             // Some problem, command is there or is broken
             System.err.println("Broken pipe");
             return false;
@@ -83,7 +86,8 @@ public abstract class ExternalTranslator extends AbstractTranslator {
 
     /**
      * Default translate method which uses built Tika language identification.
-     * @param text The text to translate.
+     *
+     * @param text           The text to translate.
      * @param targetLanguage The desired language to translate to (for example, "hi").
      * @return The translated text.
      * @throws Exception
